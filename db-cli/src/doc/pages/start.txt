@@ -1,0 +1,10 @@
+====== Bytle Db - Documentation ======
+
+
+===== About =====
+''Bytle-Db'' is a command line client called [[db|db]] that helps you to perform database operations in a simple and effective way.
+
+<WRAP round tip>
+If you have no previous experience with ''Bytle-Db'', we advice you to follow this [[getting_started|getting started]].
+</WRAP>
+

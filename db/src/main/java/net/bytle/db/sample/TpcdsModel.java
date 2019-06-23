@@ -1,0 +1,1168 @@
+package net.bytle.db.sample;
+
+import net.bytle.db.database.Databases;
+import net.bytle.db.model.SchemaDef;
+import net.bytle.db.model.TableDef;
+
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+
+public class TpcdsModel implements SchemaSample {
+
+    public static final String TPCDS_SCHEMA = "tpcds";
+    public static final String TPCDS_SCHEMA_DWH = "tpcds-dwh";
+    public static final String TPCDS_SCHEMA_STG = "tpcds-stg";
+    public static final String TPCDS_SCHEMA_STORE_SALES = "tpcds-store-sales";
+
+    /**
+     * Dwh Table Name
+     */
+    public static final String DBGEN_VERSION = "dbgen_version";
+    public static final String CUSTOMER_ADDRESS = "customer_address";
+    public static final String CUSTOMER_DEMOGRAPHICS = "customer_demographics";
+    public static final String DATE_DIM = "date_dim";
+    public static final String TIME_DIM = "time_dim";
+    public static final String WAREHOUSE = "warehouse";
+    public static final String SHIP_MODE = "ship_mode";
+    public static final String REASON = "reason";
+    public static final String INCOME_BAND = "income_band";
+    public static final String ITEM = "item";
+    public static final String STORE = "store";
+    public static final String CALL_CENTER = "call_center";
+    public static final String CUSTOMER = "customer";
+    public static final String WEB_SITE = "web_site";
+    public static final String STORE_RETURNS = "store_returns";
+    public static final String HOUSEHOLD_DEMOGRAPHICS = "household_demographics";
+    public static final String WEB_PAGE = "web_page";
+    public static final String PROMOTION = "promotion";
+    public static final String CATALOG_PAGE = "catalog_page";
+    public static final String INVENTORY = "inventory";
+    public static final String CATALOG_RETURNS = "catalog_returns";
+    public static final String WEB_RETURNS = "web_returns";
+    public static final String WEB_SALES = "web_sales";
+    public static final String CATALOG_SALES = "catalog_sales";
+    public static final String STORE_SALES = "store_sales";
+
+    /**
+     * Staging tables
+     */
+    public static final String S_CATALOG_PAGE = "s_catalog_page";
+    public static final String S_ZIP_TO_GMT = "s_zip_to_gmt";
+    public static final String S_PURCHASE_LINEITEM = "s_purchase_lineitem";
+    public static final String S_CUSTOMER = "s_customer";
+    public static final String S_CUSTOMER_ADDRESS = "s_customer_address";
+    public static final String S_PURCHASE = "s_purchase";
+    public static final String S_CATALOG_ORDER = "s_catalog_order";
+    public static final String S_WEB_ORDER = "s_web_order";
+    public static final String S_ITEM = "s_item";
+    public static final String S_CATALOG_ORDER_LINEITEM = "s_catalog_order_lineitem";
+    public static final String S_WEB_ORDER_LINEITEM = "s_web_order_lineitem";
+    public static final String S_STORE = "s_store";
+    public static final String S_CALL_CENTER = "s_call_center";
+    public static final String S_WEB_SITE = "s_web_site";
+    public static final String S_WAREHOUSE = "s_warehouse";
+    public static final String S_WEB_PAGE = "s_web_page";
+    public static final String S_PROMOTION = "s_promotion";
+    public static final String S_STORE_RETURNS = "s_store_returns";
+    public static final String S_CATALOG_RETURNS = "s_catalog_returns";
+    public static final String S_WEB_RETURNS = "s_web_returns";
+    public static final String S_INVENTORY = "s_inventory";
+
+    static final List<String> dwhTables = Arrays.asList(
+            DBGEN_VERSION,
+            CUSTOMER_ADDRESS,
+            CUSTOMER_DEMOGRAPHICS,
+            DATE_DIM,
+            TIME_DIM,
+            WAREHOUSE,
+            SHIP_MODE,
+            REASON,
+            INCOME_BAND,
+            ITEM,
+            STORE,
+            CALL_CENTER,
+            CUSTOMER,
+            WEB_SITE,
+            STORE_RETURNS,
+            HOUSEHOLD_DEMOGRAPHICS,
+            WEB_PAGE,
+            PROMOTION,
+            CATALOG_PAGE,
+            INVENTORY,
+            CATALOG_RETURNS,
+            WEB_RETURNS,
+            WEB_SALES,
+            CATALOG_SALES,
+            STORE_SALES
+    );
+
+    static final List<String> stagingTables = Arrays.asList(
+            S_CATALOG_PAGE
+            , S_ZIP_TO_GMT
+            , S_PURCHASE_LINEITEM
+            , S_CUSTOMER
+            , S_CUSTOMER_ADDRESS
+            , S_PURCHASE
+            , S_CATALOG_ORDER
+            , S_WEB_ORDER
+            , S_ITEM
+            , S_CATALOG_ORDER_LINEITEM
+            , S_WEB_ORDER_LINEITEM
+            , S_STORE
+            , S_CALL_CENTER
+            , S_WEB_SITE
+            , S_WAREHOUSE
+            , S_WEB_PAGE
+            , S_PROMOTION
+            , S_STORE_RETURNS
+            , S_CATALOG_RETURNS
+            , S_WEB_RETURNS
+            , S_INVENTORY
+    );
+
+    /**
+     * The store sales snowflake schema
+     */
+    static final List<String> storeSalesTables = Arrays.asList(
+            DBGEN_VERSION,
+            CUSTOMER,
+            CUSTOMER_ADDRESS,
+            CUSTOMER_DEMOGRAPHICS,
+            HOUSEHOLD_DEMOGRAPHICS,
+            INCOME_BAND,
+            PROMOTION,
+            ITEM,
+            TIME_DIM,
+            DATE_DIM,
+            STORE,
+            STORE_SALES
+    );
+
+    private final SchemaDef schema;
+    private final String type;
+
+    /**
+     * Use {@link #get(String)} function
+     * to get a Tpcds object
+     */
+    private TpcdsModel(String type) {
+
+        this.schema = Databases.get().getSchema("tpcds");
+        if (type == null) {
+            this.type = TPCDS_SCHEMA;
+        } else {
+            this.type = type;
+        }
+
+        switch (this.type) {
+            case TPCDS_SCHEMA_DWH:
+                buildDataWarehouseTables(schema);
+                break;
+            case TPCDS_SCHEMA_STG:
+                buildStagingTables(schema);
+                break;
+            default:
+                buildDataWarehouseTables(schema);
+                buildStagingTables(schema);
+                break;
+        }
+
+
+    }
+
+    /**
+     * @return a tpcds model object
+     * in the default namespace
+     */
+    public static TpcdsModel get() {
+
+        return get(TPCDS_SCHEMA);
+
+    }
+
+
+    /**
+     * @param type
+     * @return a sample schema object for tcpds
+     */
+    public static TpcdsModel get(String type) {
+
+        return new TpcdsModel(type);
+
+    }
+
+
+    /**
+     * Add the datawarehouse table to the schema
+     * in memory (The tables are not created against the database)
+     * <p>
+     * This is equivalent to the file (tpcds.sql)
+     *
+     * @param schema - The schema where to build the datawarehous table
+     */
+    void buildDataWarehouseTables(SchemaDef schema) {
+
+
+        schema.getTableOf(DBGEN_VERSION)
+                .addColumn("dv_version", Types.VARCHAR, 16)
+                .addColumn("dv_create_date", Types.DATE)
+                .addColumn("dv_create_time", Types.TIME)
+                .addColumn("dv_cmdline_args", Types.VARCHAR, 200);
+
+
+        schema.getTableOf(CUSTOMER_ADDRESS)
+                .addColumn("ca_address_sk", Types.INTEGER, false)
+                .addColumn("ca_address_id", Types.CHAR, 16, false)
+                .addColumn("ca_street_number", Types.CHAR, 10)
+                .addColumn("ca_street_name", Types.VARCHAR, 60)
+                .addColumn("ca_street_type", Types.CHAR, 15)
+                .addColumn("ca_suite_number", Types.CHAR, 10)
+                .addColumn("ca_city", Types.VARCHAR, 60)
+                .addColumn("ca_county", Types.VARCHAR, 30)
+                .addColumn("ca_state", Types.CHAR, 2)
+                .addColumn("ca_zip", Types.CHAR, 10)
+                .addColumn("ca_country", Types.VARCHAR, 20)
+                .addColumn("ca_gmt_offset", Types.DECIMAL, 5, 2)
+                .addColumn("ca_location_type", Types.CHAR, 20)
+                .setPrimaryKey("ca_address_sk");
+
+
+        schema.getTableOf(CUSTOMER_DEMOGRAPHICS)
+                .addColumn("cd_demo_sk", Types.INTEGER, false)
+                .addColumn("cd_gender", Types.CHAR, 1)
+                .addColumn("cd_marital_status", Types.CHAR, 1)
+                .addColumn("cd_education_status", Types.CHAR, 20)
+                .addColumn("cd_purchase_estimate", Types.INTEGER)
+                .addColumn("cd_credit_rating", Types.CHAR, 10)
+                .addColumn("cd_dep_count", Types.INTEGER)
+                .addColumn("cd_dep_employed_count", Types.INTEGER)
+                .addColumn("cd_dep_college_count", Types.INTEGER)
+                .setPrimaryKey("cd_demo_sk");
+
+
+        schema.getTableOf(DATE_DIM)
+                .addColumn("d_date_sk", Types.INTEGER, false)
+                .addColumn("d_date_id", Types.CHAR, 16, false)
+                .addColumn("d_date", Types.DATE)
+                .addColumn("d_month_seq", Types.INTEGER)
+                .addColumn("d_week_seq", Types.INTEGER)
+                .addColumn("d_quarter_seq", Types.INTEGER)
+                .addColumn("d_year", Types.INTEGER)
+                .addColumn("d_dow", Types.INTEGER)
+                .addColumn("d_moy", Types.INTEGER)
+                .addColumn("d_dom", Types.INTEGER)
+                .addColumn("d_qoy", Types.INTEGER)
+                .addColumn("d_fy_year", Types.INTEGER)
+                .addColumn("d_fy_quarter_seq", Types.INTEGER)
+                .addColumn("d_fy_week_seq", Types.INTEGER)
+                .addColumn("d_day_name", Types.CHAR, 9)
+                .addColumn("d_quarter_name", Types.CHAR, 6)
+                .addColumn("d_holiday", Types.CHAR, 1)
+                .addColumn("d_weekend", Types.CHAR, 1)
+                .addColumn("d_following_holiday", Types.CHAR, 1)
+                .addColumn("d_first_dom", Types.INTEGER)
+                .addColumn("d_last_dom", Types.INTEGER)
+                .addColumn("d_same_day_ly", Types.INTEGER)
+                .addColumn("d_same_day_lq", Types.INTEGER)
+                .addColumn("d_current_day", Types.CHAR, 1)
+                .addColumn("d_current_week", Types.CHAR, 1)
+                .addColumn("d_current_month", Types.CHAR, 1)
+                .addColumn("d_current_quarter", Types.CHAR, 1)
+                .addColumn("d_current_year", Types.CHAR, 1)
+                .setPrimaryKey("d_date_sk");
+
+        schema.getTableOf(WAREHOUSE)
+                .addColumn("w_warehouse_sk", Types.INTEGER, false)
+                .addColumn("w_warehouse_id", Types.CHAR, 16, false)
+                .addColumn("w_warehouse_name", Types.VARCHAR, 20)
+                .addColumn("w_warehouse_sq_ft", Types.INTEGER)
+                .addColumn("w_street_number", Types.CHAR, 10)
+                .addColumn("w_street_name", Types.VARCHAR, 60)
+                .addColumn("w_street_type", Types.CHAR, 15)
+                .addColumn("w_suite_number", Types.CHAR, 10)
+                .addColumn("w_city", Types.VARCHAR, 60)
+                .addColumn("w_county", Types.VARCHAR, 30)
+                .addColumn("w_state", Types.CHAR, 2)
+                .addColumn("w_zip", Types.CHAR, 10)
+                .addColumn("w_country", Types.VARCHAR, 20)
+                .addColumn("w_gmt_offset", Types.DECIMAL, 5, 2)
+                .setPrimaryKey("w_warehouse_sk");
+
+
+        schema.getTableOf(SHIP_MODE)
+                .addColumn("sm_ship_mode_sk", Types.INTEGER, false)
+                .addColumn("sm_ship_mode_id", Types.CHAR, 16, false)
+                .addColumn("sm_type", Types.CHAR, 30)
+                .addColumn("sm_code", Types.CHAR, 10)
+                .addColumn("sm_carrier", Types.CHAR, 20)
+                .addColumn("sm_contract", Types.CHAR, 20)
+                .setPrimaryKey("sm_ship_mode_sk");
+
+        schema.getTableOf(TIME_DIM)
+                .addColumn("t_time_sk", Types.INTEGER, false)
+                .addColumn("t_time_id", Types.CHAR, 16, false)
+                .addColumn("t_time", Types.INTEGER)
+                .addColumn("t_hour", Types.INTEGER)
+                .addColumn("t_minute", Types.INTEGER)
+                .addColumn("t_second", Types.INTEGER)
+                .addColumn("t_am_pm", Types.CHAR, 2)
+                .addColumn("t_shift", Types.CHAR, 20)
+                .addColumn("t_sub_shift", Types.CHAR, 20)
+                .addColumn("t_meal_time", Types.CHAR, 20)
+                .setPrimaryKey("t_time_sk");
+
+        schema.getTableOf(REASON)
+                .addColumn("r_reason_sk", Types.INTEGER, false)
+                .addColumn("r_reason_id", Types.CHAR, 16, false)
+                .addColumn("r_reason_desc", Types.CHAR, 100)
+                .setPrimaryKey("r_reason_sk");
+
+        schema.getTableOf(INCOME_BAND)
+                .addColumn("ib_income_band_sk", Types.INTEGER, false)
+                .addColumn("ib_lower_bound", Types.INTEGER)
+                .addColumn("ib_upper_bound", Types.INTEGER)
+                .setPrimaryKey("ib_income_band_sk");
+
+        schema.getTableOf(ITEM)
+                .addColumn("i_item_sk", Types.INTEGER, false)
+                .addColumn("i_item_id", Types.CHAR, 16, false)
+                .addColumn("i_rec_start_date", Types.DATE)
+                .addColumn("i_rec_end_date", Types.DATE)
+                .addColumn("i_item_desc", Types.VARCHAR, 200)
+                .addColumn("i_current_price", Types.DECIMAL, 7, 2)
+                .addColumn("i_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("i_brand_id", Types.INTEGER)
+                .addColumn("i_brand", Types.CHAR, 50)
+                .addColumn("i_class_id", Types.INTEGER)
+                .addColumn("i_class", Types.CHAR, 50)
+                .addColumn("i_category_id", Types.INTEGER)
+                .addColumn("i_category", Types.CHAR, 50)
+                .addColumn("i_manufact_id", Types.INTEGER)
+                .addColumn("i_manufact", Types.CHAR, 50)
+                .addColumn("i_size", Types.CHAR, 20)
+                .addColumn("i_formulation", Types.CHAR, 20)
+                .addColumn("i_color", Types.CHAR, 20)
+                .addColumn("i_units", Types.CHAR, 10)
+                .addColumn("i_container", Types.CHAR, 10)
+                .addColumn("i_manager_id", Types.INTEGER)
+                .addColumn("i_product_name", Types.CHAR, 50)
+                .setPrimaryKey("i_item_sk");
+
+
+        schema.getTableOf(STORE)
+                .addColumn("s_store_sk", Types.INTEGER, false)
+                .addColumn("s_store_id", Types.CHAR, 16, false)
+                .addColumn("s_rec_start_date", Types.DATE)
+                .addColumn("s_rec_end_date", Types.DATE)
+                .addColumn("s_closed_date_sk", Types.INTEGER)
+                .addColumn("s_store_name", Types.VARCHAR, 50)
+                .addColumn("s_number_employees", Types.INTEGER)
+                .addColumn("s_floor_space", Types.INTEGER)
+                .addColumn("s_hours", Types.CHAR, 20)
+                .addColumn("s_manager", Types.VARCHAR, 40)
+                .addColumn("s_market_id", Types.INTEGER)
+                .addColumn("s_geography_class", Types.VARCHAR, 100)
+                .addColumn("s_market_desc", Types.VARCHAR, 100)
+                .addColumn("s_market_manager", Types.VARCHAR, 40)
+                .addColumn("s_division_id", Types.INTEGER)
+                .addColumn("s_division_name", Types.VARCHAR, 50)
+                .addColumn("s_company_id", Types.INTEGER)
+                .addColumn("s_company_name", Types.VARCHAR, 50)
+                .addColumn("s_street_number", Types.VARCHAR, 10)
+                .addColumn("s_street_name", Types.VARCHAR, 60)
+                .addColumn("s_street_type", Types.CHAR, 15)
+                .addColumn("s_suite_number", Types.CHAR, 10)
+                .addColumn("s_city", Types.VARCHAR, 60)
+                .addColumn("s_county", Types.VARCHAR, 30)
+                .addColumn("s_state", Types.CHAR, 2)
+                .addColumn("s_zip", Types.CHAR, 10)
+                .addColumn("s_country", Types.VARCHAR, 20)
+                .addColumn("s_gmt_offset", Types.DECIMAL, 5, 2)
+                .addColumn("s_tax_precentage", Types.DECIMAL, 5, 2)
+                .setPrimaryKey("s_store_sk")
+                .addForeignKey(DATE_DIM, "s_closed_date_sk");
+
+        schema.getTableOf(CALL_CENTER)
+                .addColumn("cc_call_center_sk", Types.INTEGER, false)
+                .addColumn("cc_call_center_id", Types.CHAR, 16, false)
+                .addColumn("cc_rec_start_date", Types.DATE)
+                .addColumn("cc_rec_end_date", Types.DATE)
+                .addColumn("cc_closed_date_sk", Types.INTEGER)
+                .addColumn("cc_open_date_sk", Types.INTEGER)
+                .addColumn("cc_name", Types.VARCHAR, 50)
+                .addColumn("cc_class", Types.VARCHAR, 50)
+                .addColumn("cc_employees", Types.INTEGER)
+                .addColumn("cc_sq_ft", Types.INTEGER)
+                .addColumn("cc_hours", Types.CHAR, 20)
+                .addColumn("cc_manager", Types.VARCHAR, 40)
+                .addColumn("cc_mkt_id", Types.INTEGER)
+                .addColumn("cc_mkt_class", Types.CHAR, 50)
+                .addColumn("cc_mkt_desc", Types.VARCHAR, 100)
+                .addColumn("cc_market_manager", Types.VARCHAR, 40)
+                .addColumn("cc_division", Types.INTEGER)
+                .addColumn("cc_division_name", Types.VARCHAR, 50)
+                .addColumn("cc_company", Types.INTEGER)
+                .addColumn("cc_company_name", Types.CHAR, 50)
+                .addColumn("cc_street_number", Types.CHAR, 10)
+                .addColumn("cc_street_name", Types.VARCHAR, 60)
+                .addColumn("cc_street_type", Types.CHAR, 15)
+                .addColumn("cc_suite_number", Types.CHAR, 10)
+                .addColumn("cc_city", Types.VARCHAR, 60)
+                .addColumn("cc_county", Types.VARCHAR, 30)
+                .addColumn("cc_state", Types.CHAR, 2)
+                .addColumn("cc_zip", Types.CHAR, 10)
+                .addColumn("cc_country", Types.VARCHAR, 20)
+                .addColumn("cc_gmt_offset", Types.DECIMAL, 5, 2)
+                .addColumn("cc_tax_percentage", Types.DECIMAL, 5, 2)
+                .setPrimaryKey("cc_call_center_sk")
+                .addForeignKey(DATE_DIM, "cc_closed_date_sk")
+                .addForeignKey(DATE_DIM, "cc_open_date_sk");
+
+        schema.getTableOf(CUSTOMER)
+                .addColumn("c_customer_sk", Types.INTEGER, false)
+                .addColumn("c_customer_id", Types.CHAR, 16, false)
+                .addColumn("c_current_cdemo_sk", Types.INTEGER)
+                .addColumn("c_current_hdemo_sk", Types.INTEGER)
+                .addColumn("c_current_addr_sk", Types.INTEGER)
+                .addColumn("c_first_shipto_date_sk", Types.INTEGER)
+                .addColumn("c_first_sales_date_sk", Types.INTEGER)
+                .addColumn("c_salutation", Types.CHAR, 10)
+                .addColumn("c_first_name", Types.CHAR, 20)
+                .addColumn("c_last_name", Types.CHAR, 30)
+                .addColumn("c_preferred_cust_flag", Types.CHAR, 1)
+                .addColumn("c_birth_day", Types.INTEGER)
+                .addColumn("c_birth_month", Types.INTEGER)
+                .addColumn("c_birth_year", Types.INTEGER)
+                .addColumn("c_birth_country", Types.VARCHAR, 20)
+                .addColumn("c_login", Types.CHAR, 13)
+                .addColumn("c_email_address", Types.CHAR, 50)
+                .addColumn("c_last_review_date_sk", Types.INTEGER, 10)
+                .setPrimaryKey("c_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "c_current_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "c_current_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "c_current_addr_sk")
+                .addForeignKey(DATE_DIM, "c_first_shipto_date_sk")
+                .addForeignKey(DATE_DIM, "c_first_sales_date_sk")
+                .addForeignKey(DATE_DIM, "c_last_review_date_sk");
+
+        schema.getTableOf(WEB_SITE)
+                .addColumn("web_site_sk", Types.INTEGER, false)
+                .addColumn("web_site_id", Types.CHAR, 16)
+                .addColumn("web_rec_start_date", Types.DATE)
+                .addColumn("web_rec_end_date", Types.DATE)
+                .addColumn("web_name", Types.VARCHAR, 50)
+                .addColumn("web_open_date_sk", Types.INTEGER)
+                .addColumn("web_close_date_sk", Types.INTEGER)
+                .addColumn("web_class", Types.VARCHAR, 50)
+                .addColumn("web_manager", Types.VARCHAR, 40)
+                .addColumn("web_mkt_id", Types.INTEGER)
+                .addColumn("web_mkt_class", Types.VARCHAR, 50)
+                .addColumn("web_mkt_desc", Types.VARCHAR, 100)
+                .addColumn("web_market_manager", Types.VARCHAR, 40)
+                .addColumn("web_company_id", Types.INTEGER)
+                .addColumn("web_company_name", Types.CHAR, 50)
+                .addColumn("web_street_number", Types.CHAR)
+                .addColumn("web_street_name", Types.VARCHAR, 60)
+                .addColumn("web_street_type", Types.CHAR, 15)
+                .addColumn("web_suite_number", Types.CHAR, 10)
+                .addColumn("web_city", Types.VARCHAR, 60)
+                .addColumn("web_county", Types.VARCHAR, 30)
+                .addColumn("web_state", Types.CHAR, 2)
+                .addColumn("web_zip", Types.CHAR, 10)
+                .addColumn("web_country", Types.VARCHAR, 20)
+                .addColumn("web_gmt_offset", Types.DECIMAL, 5, 2)
+                .addColumn("web_tax_percentage", Types.DECIMAL, 5, 2)
+                .setPrimaryKey("web_site_sk")
+                .addForeignKey(DATE_DIM, "web_open_date_sk")
+                .addForeignKey(DATE_DIM, "web_close_date_sk");
+
+        schema.getTableOf(STORE_RETURNS)
+                .addColumn("sr_returned_date_sk", Types.INTEGER)
+                .addColumn("sr_return_time_sk", Types.INTEGER)
+                .addColumn("sr_item_sk", Types.INTEGER, false)
+                .addColumn("sr_customer_sk", Types.INTEGER)
+                .addColumn("sr_cdemo_sk", Types.INTEGER)
+                .addColumn("sr_hdemo_sk", Types.INTEGER)
+                .addColumn("sr_addr_sk", Types.INTEGER)
+                .addColumn("sr_store_sk", Types.INTEGER)
+                .addColumn("sr_reason_sk", Types.INTEGER)
+                .addColumn("sr_ticket_number", Types.INTEGER, false)
+                .addColumn("sr_return_quantity", Types.INTEGER)
+                .addColumn("sr_return_amt", Types.DECIMAL, 7, 2)
+                .addColumn("sr_return_tax", Types.DECIMAL, 7, 2)
+                .addColumn("sr_return_amt_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("sr_fee", Types.DECIMAL, 7, 2)
+                .addColumn("sr_return_ship_cost", Types.DECIMAL, 7, 2)
+                .addColumn("sr_refunded_cash", Types.DECIMAL, 7, 2)
+                .addColumn("sr_reversed_charge", Types.DECIMAL, 7, 2)
+                .addColumn("sr_store_credit", Types.DECIMAL, 7, 2)
+                .addColumn("sr_net_loss", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("sr_item_sk", "sr_ticket_number")
+                .addForeignKey(DATE_DIM, "sr_returned_date_sk")
+                .addForeignKey(TIME_DIM, "sr_return_time_sk")
+                .addForeignKey(ITEM, "sr_item_sk")
+                .addForeignKey(STORE_SALES, "sr_item_sk", "sr_ticket_number")
+                .addForeignKey(CUSTOMER, "sr_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "sr_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "sr_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "sr_addr_sk")
+                .addForeignKey(STORE, "sr_store_sk")
+                .addForeignKey(REASON, "sr_reason_sk")
+        ;
+
+        schema.getTableOf(HOUSEHOLD_DEMOGRAPHICS)
+                .addColumn("hd_demo_sk", Types.INTEGER, false)
+                .addColumn("hd_income_band_sk", Types.INTEGER)
+                .addColumn("hd_buy_potential", Types.CHAR, 15)
+                .addColumn("hd_dep_count", Types.INTEGER)
+                .addColumn("hd_vehicle_count", Types.INTEGER)
+                .setPrimaryKey("hd_demo_sk")
+                .addForeignKey(INCOME_BAND, "hd_income_band_sk");
+
+        schema.getTableOf(WEB_PAGE)
+                .addColumn("wp_web_page_sk", Types.INTEGER, false)
+                .addColumn("wp_web_page_id", Types.CHAR, 16, false)
+                .addColumn("wp_rec_start_date", Types.DATE)
+                .addColumn("wp_rec_end_date", Types.DATE)
+                .addColumn("wp_creation_date_sk", Types.INTEGER)
+                .addColumn("wp_access_date_sk", Types.INTEGER)
+                .addColumn("wp_autogen_flag", Types.CHAR, 1)
+                .addColumn("wp_customer_sk", Types.INTEGER)
+                .addColumn("wp_url", Types.VARCHAR, 100)
+                .addColumn("wp_type", Types.CHAR, 50)
+                .addColumn("wp_char_count", Types.INTEGER)
+                .addColumn("wp_link_count", Types.INTEGER)
+                .addColumn("wp_image_count", Types.INTEGER)
+                .addColumn("wp_max_ad_count", Types.INTEGER)
+                .setPrimaryKey("wp_web_page_sk")
+                .addForeignKey(DATE_DIM, "wp_creation_date_sk")
+                .addForeignKey(DATE_DIM, "wp_access_date_sk")
+                .addForeignKey(CUSTOMER, "wp_customer_sk");
+
+        schema.getTableOf(PROMOTION)
+                .addColumn("p_promo_sk", Types.INTEGER, false)
+                .addColumn("p_promo_id", Types.CHAR, 16, false)
+                .addColumn("p_start_date_sk", Types.INTEGER)
+                .addColumn("p_end_date_sk", Types.INTEGER)
+                .addColumn("p_item_sk", Types.INTEGER)
+                .addColumn("p_cost", Types.DECIMAL, 15, 2)
+                .addColumn("p_response_target", Types.INTEGER)
+                .addColumn("p_promo_name", Types.CHAR, 50)
+                .addColumn("p_channel_dmail", Types.CHAR, 1)
+                .addColumn("p_channel_email", Types.CHAR, 1)
+                .addColumn("p_channel_catalog", Types.CHAR, 1)
+                .addColumn("p_channel_tv", Types.CHAR, 1)
+                .addColumn("p_channel_radio", Types.CHAR, 1)
+                .addColumn("p_channel_press", Types.CHAR, 1)
+                .addColumn("p_channel_event", Types.CHAR, 1)
+                .addColumn("p_channel_demo", Types.CHAR, 1)
+                .addColumn("p_channel_details", Types.VARCHAR, 100)
+                .addColumn("p_purpose", Types.CHAR, 15)
+                .addColumn("p_discount_active", Types.CHAR, 1)
+                .setPrimaryKey("p_promo_sk")
+                .addForeignKey(DATE_DIM, "p_start_date_sk")
+                .addForeignKey(DATE_DIM, "p_end_date_sk")
+                .addForeignKey(ITEM, "p_item_sk");
+
+
+        schema.getTableOf(CATALOG_PAGE)
+                .addColumn("cp_catalog_page_sk", Types.INTEGER, false)
+                .addColumn("cp_catalog_page_id", Types.CHAR, 16, false)
+                .addColumn("cp_start_date_sk", Types.INTEGER)
+                .addColumn("cp_end_date_sk", Types.INTEGER)
+                .addColumn("cp_department", Types.VARCHAR, 50)
+                .addColumn("cp_catalog_number", Types.INTEGER)
+                .addColumn("cp_catalog_page_number", Types.INTEGER)
+                .addColumn("cp_description", Types.VARCHAR, 100)
+                .addColumn("cp_type", Types.VARCHAR, 100)
+                .setPrimaryKey("cp_catalog_page_sk")
+                .addForeignKey(DATE_DIM, "cp_start_date_sk")
+                .addForeignKey(DATE_DIM, "cp_end_date_sk");
+
+        schema.getTableOf(INVENTORY)
+                .addColumn("inv_date_sk", Types.INTEGER, false)
+                .addColumn("inv_item_sk", Types.INTEGER, false)
+                .addColumn("inv_warehouse_sk", Types.INTEGER, false)
+                .addColumn("inv_quantity_on_hand", Types.INTEGER)
+                .setPrimaryKey("inv_date_sk", "inv_item_sk", "inv_warehouse_sk")
+                .addForeignKey(DATE_DIM, "inv_date_sk")
+                .addForeignKey(ITEM, "inv_item_sk")
+                .addForeignKey(WAREHOUSE, "inv_warehouse_sk");
+
+        schema.getTableOf(CATALOG_RETURNS)
+                .addColumn("cr_returned_date_sk", Types.INTEGER)
+                .addColumn("cr_returned_time_sk", Types.INTEGER)
+                .addColumn("cr_item_sk", Types.INTEGER, false)
+                .addColumn("cr_refunded_customer_sk", Types.INTEGER)
+                .addColumn("cr_refunded_cdemo_sk", Types.INTEGER)
+                .addColumn("cr_refunded_hdemo_sk", Types.INTEGER)
+                .addColumn("cr_refunded_addr_sk", Types.INTEGER)
+                .addColumn("cr_returning_customer_sk", Types.INTEGER)
+                .addColumn("cr_returning_cdemo_sk", Types.INTEGER)
+                .addColumn("cr_returning_hdemo_sk", Types.INTEGER)
+                .addColumn("cr_returning_addr_sk", Types.INTEGER)
+                .addColumn("cr_call_center_sk", Types.INTEGER)
+                .addColumn("cr_catalog_page_sk", Types.INTEGER)
+                .addColumn("cr_ship_mode_sk", Types.INTEGER)
+                .addColumn("cr_warehouse_sk", Types.INTEGER)
+                .addColumn("cr_reason_sk", Types.INTEGER)
+                .addColumn("cr_order_number", Types.INTEGER, false)
+                .addColumn("cr_return_quantity", Types.INTEGER)
+                .addColumn("cr_return_amount", Types.DECIMAL, 7, 2)
+                .addColumn("cr_return_tax", Types.DECIMAL, 7, 2)
+                .addColumn("cr_return_amt_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("cr_fee", Types.DECIMAL, 7, 2)
+                .addColumn("cr_return_ship_cost", Types.DECIMAL, 7, 2)
+                .addColumn("cr_refunded_cash", Types.DECIMAL, 7, 2)
+                .addColumn("cr_reversed_charge", Types.DECIMAL, 7, 2)
+                .addColumn("cr_store_credit", Types.DECIMAL, 7, 2)
+                .addColumn("cr_net_loss", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("cr_item_sk", "cr_order_number")
+                .addForeignKey(DATE_DIM, "cr_returned_date_sk")
+                .addForeignKey(TIME_DIM, "cr_returned_time_sk")
+                .addForeignKey(ITEM, "cr_item_sk")
+                .addForeignKey(CATALOG_SALES, "cr_item_sk", "cr_order_number")
+                .addForeignKey(CUSTOMER, "cr_refunded_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "cr_refunded_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "cr_refunded_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "cr_refunded_addr_sk")
+                .addForeignKey(CUSTOMER, "cr_returning_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "cr_returning_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "cr_returning_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "cr_returning_addr_sk")
+                .addForeignKey(CALL_CENTER, "cr_call_center_sk")
+                .addForeignKey(CATALOG_PAGE, "cr_catalog_page_sk")
+                .addForeignKey(SHIP_MODE, "cr_ship_mode_sk")
+                .addForeignKey(WAREHOUSE, "cr_warehouse_sk")
+                .addForeignKey(REASON, "cr_reason_sk");
+
+
+        schema.getTableOf(WEB_RETURNS)
+                .addColumn("wr_returned_date_sk", Types.INTEGER)
+                .addColumn("wr_returned_time_sk", Types.INTEGER)
+                .addColumn("wr_item_sk", Types.INTEGER, false)
+                .addColumn("wr_refunded_customer_sk", Types.INTEGER)
+                .addColumn("wr_refunded_cdemo_sk", Types.INTEGER)
+                .addColumn("wr_refunded_hdemo_sk", Types.INTEGER)
+                .addColumn("wr_refunded_addr_sk", Types.INTEGER)
+                .addColumn("wr_returning_customer_sk", Types.INTEGER)
+                .addColumn("wr_returning_cdemo_sk", Types.INTEGER)
+                .addColumn("wr_returning_hdemo_sk", Types.INTEGER)
+                .addColumn("wr_returning_addr_sk", Types.INTEGER)
+                .addColumn("wr_web_page_sk", Types.INTEGER)
+                .addColumn("wr_reason_sk", Types.INTEGER)
+                .addColumn("wr_order_number", Types.INTEGER, false)
+                .addColumn("wr_return_quantity", Types.INTEGER)
+                .addColumn("wr_return_amt", Types.DECIMAL, 7, 2)
+                .addColumn("wr_return_tax", Types.DECIMAL, 7, 2)
+                .addColumn("wr_return_amt_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("wr_fee", Types.DECIMAL, 7, 2)
+                .addColumn("wr_return_ship_cost", Types.DECIMAL, 7, 2)
+                .addColumn("wr_refunded_cash", Types.DECIMAL, 7, 2)
+                .addColumn("wr_reversed_charge", Types.DECIMAL, 7, 2)
+                .addColumn("wr_account_credit", Types.DECIMAL, 7, 2)
+                .addColumn("wr_net_loss", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("wr_item_sk", "wr_order_number")
+                .addForeignKey(DATE_DIM, "wr_returned_date_sk")
+                .addForeignKey(TIME_DIM, "wr_returned_time_sk")
+                .addForeignKey(ITEM, "wr_item_sk")
+                .addForeignKey(WEB_SALES, "wr_item_sk", "wr_order_number")
+                .addForeignKey(CUSTOMER, "wr_refunded_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "wr_refunded_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "wr_refunded_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "wr_refunded_addr_sk")
+                .addForeignKey(CUSTOMER, "wr_returning_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "wr_returning_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "wr_returning_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "wr_returning_addr_sk")
+                .addForeignKey(WEB_PAGE, "wr_web_page_sk")
+                .addForeignKey(REASON, "wr_reason_sk");
+
+
+        schema.getTableOf(WEB_SALES)
+                .addColumn("ws_sold_date_sk", Types.INTEGER)
+                .addColumn("ws_sold_time_sk", Types.INTEGER)
+                .addColumn("ws_ship_date_sk", Types.INTEGER)
+                .addColumn("ws_item_sk", Types.INTEGER, false)
+                .addColumn("ws_bill_customer_sk", Types.INTEGER)
+                .addColumn("ws_bill_cdemo_sk", Types.INTEGER)
+                .addColumn("ws_bill_hdemo_sk", Types.INTEGER)
+                .addColumn("ws_bill_addr_sk", Types.INTEGER)
+                .addColumn("ws_ship_customer_sk", Types.INTEGER)
+                .addColumn("ws_ship_cdemo_sk", Types.INTEGER)
+                .addColumn("ws_ship_hdemo_sk", Types.INTEGER)
+                .addColumn("ws_ship_addr_sk", Types.INTEGER)
+                .addColumn("ws_web_page_sk", Types.INTEGER)
+                .addColumn("ws_web_site_sk", Types.INTEGER)
+                .addColumn("ws_ship_mode_sk", Types.INTEGER)
+                .addColumn("ws_warehouse_sk", Types.INTEGER)
+                .addColumn("ws_promo_sk", Types.INTEGER)
+                .addColumn("ws_order_number", Types.INTEGER, false)
+                .addColumn("ws_quantity", Types.INTEGER)
+                .addColumn("ws_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("ws_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("ws_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_discount_amt", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_tax", Types.DECIMAL, 7, 2)
+                .addColumn("ws_coupon_amt", Types.DECIMAL, 7, 2)
+                .addColumn("ws_ext_ship_cost", Types.DECIMAL, 7, 2)
+                .addColumn("ws_net_paid", Types.DECIMAL, 7, 2)
+                .addColumn("ws_net_paid_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("ws_net_paid_inc_ship", Types.DECIMAL, 7, 2)
+                .addColumn("ws_net_paid_inc_ship_tax", Types.DECIMAL, 7, 2)
+                .addColumn("ws_net_profit", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("ws_item_sk", "ws_order_number")
+                .addForeignKey(DATE_DIM, "ws_sold_date_sk")
+                .addForeignKey(TIME_DIM, "ws_sold_time_sk")
+                .addForeignKey(DATE_DIM, "ws_ship_date_sk")
+                .addForeignKey(ITEM, "ws_item_sk")
+                .addForeignKey(CUSTOMER, "ws_bill_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "ws_bill_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "ws_bill_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "ws_bill_addr_sk")
+                .addForeignKey(CUSTOMER, "ws_ship_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "ws_ship_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "ws_ship_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "ws_ship_addr_sk")
+                .addForeignKey(WEB_PAGE, "ws_web_page_sk")
+                .addForeignKey(WEB_SITE, "ws_web_site_sk")
+                .addForeignKey(SHIP_MODE, "ws_ship_mode_sk")
+                .addForeignKey(WAREHOUSE, "ws_warehouse_sk")
+                .addForeignKey(PROMOTION, "ws_promo_sk");
+
+        schema.getTableOf(CATALOG_SALES)
+                .addColumn("cs_sold_date_sk", Types.INTEGER)
+                .addColumn("cs_sold_time_sk", Types.INTEGER)
+                .addColumn("cs_ship_date_sk", Types.INTEGER)
+                .addColumn("cs_bill_customer_sk", Types.INTEGER)
+                .addColumn("cs_bill_cdemo_sk", Types.INTEGER)
+                .addColumn("cs_bill_hdemo_sk", Types.INTEGER)
+                .addColumn("cs_bill_addr_sk", Types.INTEGER)
+                .addColumn("cs_ship_customer_sk", Types.INTEGER)
+                .addColumn("cs_ship_cdemo_sk", Types.INTEGER)
+                .addColumn("cs_ship_hdemo_sk", Types.INTEGER)
+                .addColumn("cs_ship_addr_sk", Types.INTEGER)
+                .addColumn("cs_call_center_sk", Types.INTEGER)
+                .addColumn("cs_catalog_page_sk", Types.INTEGER)
+                .addColumn("cs_ship_mode_sk", Types.INTEGER)
+                .addColumn("cs_warehouse_sk", Types.INTEGER)
+                .addColumn("cs_item_sk", Types.INTEGER, false)
+                .addColumn("cs_promo_sk", Types.INTEGER)
+                .addColumn("cs_order_number", Types.INTEGER, false)
+                .addColumn("cs_quantity", Types.INTEGER)
+                .addColumn("cs_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("cs_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("cs_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_discount_amt", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_tax", Types.DECIMAL, 7, 2)
+                .addColumn("cs_coupon_amt", Types.DECIMAL, 7, 2)
+                .addColumn("cs_ext_ship_cost", Types.DECIMAL, 7, 2)
+                .addColumn("cs_net_paid", Types.DECIMAL, 7, 2)
+                .addColumn("cs_net_paid_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("cs_net_paid_inc_ship", Types.DECIMAL, 7, 2)
+                .addColumn("cs_net_paid_inc_ship_tax", Types.DECIMAL, 7, 2)
+                .addColumn("cs_net_profit", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("cs_item_sk", "cs_order_number")
+                .addForeignKey(DATE_DIM, "cs_sold_date_sk")
+                .addForeignKey(TIME_DIM, "cs_sold_time_sk")
+                .addForeignKey(DATE_DIM, "cs_ship_date_sk")
+                .addForeignKey(CUSTOMER, "cs_bill_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "cs_bill_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "cs_bill_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "cs_bill_addr_sk")
+                .addForeignKey(CUSTOMER, "cs_ship_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "cs_ship_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "cs_ship_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "cs_ship_addr_sk")
+                .addForeignKey(CALL_CENTER, "cs_call_center_sk")
+                .addForeignKey(CATALOG_PAGE, "cs_catalog_page_sk")
+                .addForeignKey(SHIP_MODE, "cs_ship_mode_sk")
+                .addForeignKey(WAREHOUSE, "cs_warehouse_sk")
+                .addForeignKey(ITEM, "cs_item_sk")
+                .addForeignKey(PROMOTION, "cs_promo_sk");
+
+
+        schema.getTableOf(STORE_SALES)
+                .addColumn("ss_sold_date_sk", Types.INTEGER)
+                .addColumn("ss_sold_time_sk", Types.INTEGER)
+                .addColumn("ss_item_sk", Types.INTEGER, false)
+                .addColumn("ss_customer_sk", Types.INTEGER)
+                .addColumn("ss_cdemo_sk", Types.INTEGER)
+                .addColumn("ss_hdemo_sk", Types.INTEGER)
+                .addColumn("ss_addr_sk", Types.INTEGER)
+                .addColumn("ss_store_sk", Types.INTEGER)
+                .addColumn("ss_promo_sk", Types.INTEGER)
+                .addColumn("ss_ticket_number", Types.INTEGER, false)
+                .addColumn("ss_quantity", Types.INTEGER)
+                .addColumn("ss_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("ss_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("ss_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("ss_ext_discount_amt", Types.DECIMAL, 7, 2)
+                .addColumn("ss_ext_sales_price", Types.DECIMAL, 7, 2)
+                .addColumn("ss_ext_wholesale_cost", Types.DECIMAL, 7, 2)
+                .addColumn("ss_ext_list_price", Types.DECIMAL, 7, 2)
+                .addColumn("ss_ext_tax", Types.DECIMAL, 7, 2)
+                .addColumn("ss_coupon_amt", Types.DECIMAL, 7, 2)
+                .addColumn("ss_net_paid", Types.DECIMAL, 7, 2)
+                .addColumn("ss_net_paid_inc_tax", Types.DECIMAL, 7, 2)
+                .addColumn("ss_net_profit", Types.DECIMAL, 7, 2)
+                .setPrimaryKey("ss_item_sk", "ss_ticket_number")
+                .addForeignKey(DATE_DIM, "ss_sold_date_sk")
+                .addForeignKey(TIME_DIM, "ss_sold_time_sk")
+                .addForeignKey(ITEM, "ss_item_sk")
+                .addForeignKey(CUSTOMER, "ss_customer_sk")
+                .addForeignKey(CUSTOMER_DEMOGRAPHICS, "ss_cdemo_sk")
+                .addForeignKey(HOUSEHOLD_DEMOGRAPHICS, "ss_hdemo_sk")
+                .addForeignKey(CUSTOMER_ADDRESS, "ss_addr_sk")
+                .addForeignKey(STORE, "ss_store_sk")
+                .addForeignKey(PROMOTION, "ss_promo_sk");
+
+
+    }
+
+
+    /**
+     * Build the source table/staging tables.
+     * The table are build in the given schema. If the schema is null,
+     * it will be in the schema chosen during initialization of the tpcds application.
+     * <p>
+     * This are the tables of the file tpcds_source.sql
+     *
+     * @param schema -  The schema where to build the source table
+     */
+    void buildStagingTables(SchemaDef schema) {
+
+        schema.getTableOf(S_CATALOG_PAGE)
+                .addColumn("cpag_catalog_number", Types.INTEGER, false)
+                .addColumn("cpag_catalog_page_number", Types.INTEGER, false)
+                .addColumn("cpag_department", Types.CHAR, 20)
+                .addColumn("cpag_id", Types.CHAR, 16)
+                .addColumn("cpag_start_date", Types.CHAR, 10)
+                .addColumn("cpag_end_date", Types.CHAR, 10)
+                .addColumn("cpag_description", Types.VARCHAR, 100)
+                .addColumn("cpag_type", Types.VARCHAR, 100);
+
+        schema.getTableOf(S_ZIP_TO_GMT)
+                .addColumn("zipg_zip", Types.CHAR, 5, false)
+                .addColumn("zipg_gmt_offset", Types.INTEGER, false);
+
+        schema.getTableOf(S_PURCHASE_LINEITEM)
+                .addColumn("plin_purchase_id", Types.INTEGER, false)
+                .addColumn("plin_line_number", Types.INTEGER, false)
+                .addColumn("plin_item_id", Types.CHAR, 16)
+                .addColumn("plin_promotion_id", Types.CHAR, 16)
+                .addColumn("plin_quantity", Types.INTEGER)
+                .addColumn("plin_sale_price", Types.NUMERIC, 7, 2)
+                .addColumn("plin_coupon_amt", Types.NUMERIC, 7, 2)
+                .addColumn("plin_comment", Types.VARCHAR, 100)
+        ;
+
+        schema.getTableOf(S_CUSTOMER)
+                .addColumn("cust_customer_id", Types.CHAR, 16, false)
+                .addColumn("cust_salutation", Types.CHAR, 10)
+                .addColumn("cust_last_name", Types.CHAR, 20)
+                .addColumn("cust_first_name", Types.CHAR, 20)
+                .addColumn("cust_preffered_flag", Types.CHAR, 1)
+                .addColumn("cust_birth_date", Types.CHAR, 10)
+                .addColumn("cust_birth_country", Types.CHAR, 20)
+                .addColumn("cust_login_id", Types.CHAR, 13)
+                .addColumn("cust_email_address", Types.CHAR, 50)
+                .addColumn("cust_last_login_chg_date", Types.CHAR, 10)
+                .addColumn("cust_first_shipto_date", Types.CHAR, 10)
+                .addColumn("cust_first_purchase_date", Types.CHAR, 10)
+                .addColumn("cust_last_review_date", Types.CHAR, 10)
+                .addColumn("cust_primary_machine_id", Types.CHAR, 15)
+                .addColumn("cust_secondary_machine_id", Types.CHAR, 15)
+                .addColumn("cust_street_number", Types.SMALLINT)
+                .addColumn("cust_suite_number", Types.CHAR, 10)
+                .addColumn("cust_street_name1", Types.CHAR, 30)
+                .addColumn("cust_street_name2", Types.CHAR, 30)
+                .addColumn("cust_street_type", Types.CHAR, 15)
+                .addColumn("cust_city", Types.CHAR, 60)
+                .addColumn("cust_zip", Types.CHAR, 10)
+                .addColumn("cust_county", Types.CHAR, 30)
+                .addColumn("cust_state", Types.CHAR, 2)
+                .addColumn("cust_country", Types.CHAR, 20)
+                .addColumn("cust_loc_type", Types.CHAR, 20)
+                .addColumn("cust_gender", Types.CHAR, 1)
+                .addColumn("cust_marital_status", Types.CHAR, 1)
+                .addColumn("cust_educ_status", Types.CHAR, 20)
+                .addColumn("cust_credit_rating", Types.CHAR, 10)
+                .addColumn("cust_purch_est", Types.NUMERIC, 7, 2)
+                .addColumn("cust_buy_potential", Types.CHAR, 15)
+                .addColumn("cust_depend_cnt", Types.SMALLINT)
+                .addColumn("cust_depend_emp_cnt", Types.SMALLINT)
+                .addColumn("cust_depend_college_cnt", Types.SMALLINT)
+                .addColumn("cust_vehicle_cnt", Types.SMALLINT)
+                .addColumn("cust_annual_income", Types.NUMERIC, 9, 2);
+
+
+        schema.getTableOf(S_CUSTOMER_ADDRESS)
+                .addColumn("cadr_address_id", Types.CHAR, 16, false)
+                .addColumn("cadr_street_number", Types.INTEGER)
+                .addColumn("cadr_street_name1", Types.CHAR, 25)
+                .addColumn("cadr_street_name2", Types.CHAR, 25)
+                .addColumn("cadr_street_type", Types.CHAR, 15)
+                .addColumn("cadr_suitnumber", Types.CHAR, 10)
+                .addColumn("cadr_city", Types.CHAR, 60)
+                .addColumn("cadr_county", Types.CHAR, 30)
+                .addColumn("cadr_state", Types.CHAR, 2)
+                .addColumn("cadr_zip", Types.CHAR, 10)
+                .addColumn("cadr_country", Types.CHAR, 20);
+
+        schema.getTableOf(S_PURCHASE)
+                .addColumn("purc_purchase_id", Types.INTEGER, false)
+                .addColumn("purc_store_id", Types.CHAR, 16)
+                .addColumn("purc_customer_id", Types.CHAR, 16)
+                .addColumn("purc_purchase_date", Types.CHAR, 10)
+                .addColumn("purc_purchase_time", Types.INTEGER)
+                .addColumn("purc_register_id", Types.INTEGER)
+                .addColumn("purc_clerk_id", Types.INTEGER)
+                .addColumn("purc_comment", Types.CHAR, 100);
+
+        schema.getTableOf(S_CATALOG_ORDER)
+                .addColumn("cord_order_id", Types.INTEGER, false)
+                .addColumn("cord_bill_customer_id", Types.CHAR, 16)
+                .addColumn("cord_ship_customer_id", Types.CHAR, 16)
+                .addColumn("cord_order_date", Types.CHAR, 10)
+                .addColumn("cord_order_time", Types.INTEGER)
+                .addColumn("cord_ship_mode_id", Types.CHAR, 16)
+                .addColumn("cord_call_center_id", Types.CHAR, 16)
+                .addColumn("cord_order_comments", Types.VARCHAR, 100);
+
+        schema.getTableOf(S_WEB_ORDER)
+                .addColumn("word_order_id", Types.INTEGER, false)
+                .addColumn("word_bill_customer_id", Types.CHAR, 16)
+                .addColumn("word_ship_customer_id", Types.CHAR, 16)
+                .addColumn("word_order_date", Types.CHAR, 10)
+                .addColumn("word_order_time", Types.INTEGER)
+                .addColumn("word_ship_mode_id", Types.CHAR, 16)
+                .addColumn("word_web_site_id", Types.CHAR, 16)
+                .addColumn("word_order_comments", Types.CHAR, 100);
+
+        schema.getTableOf(S_ITEM)
+                .addColumn("item_item_id", Types.CHAR, 16, false)
+                .addColumn("item_item_description", Types.CHAR, 200)
+                .addColumn("item_list_price", Types.NUMERIC, 7, 2)
+                .addColumn("item_wholesale_cost", Types.NUMERIC, 7, 2)
+                .addColumn("item_size", Types.CHAR, 20)
+                .addColumn("item_formulation", Types.CHAR, 20)
+                .addColumn("item_color", Types.CHAR, 20)
+                .addColumn("item_units", Types.CHAR, 10)
+                .addColumn("item_container", Types.CHAR, 10)
+                .addColumn("item_manager_id", Types.INTEGER);
+
+        schema.getTableOf(S_CATALOG_ORDER_LINEITEM)
+                .addColumn("clin_order_id", Types.INTEGER, false)
+                .addColumn("clin_line_number", Types.INTEGER, false)
+                .addColumn("clin_item_id", Types.CHAR, 16)
+                .addColumn("clin_promotion_id", Types.CHAR, 16)
+                .addColumn("clin_quantity", Types.INTEGER)
+                .addColumn("clin_sales_price", Types.NUMERIC, 7, 2)
+                .addColumn("clin_coupon_amt", Types.NUMERIC, 7, 2)
+                .addColumn("clin_warehouse_id", Types.CHAR, 16)
+                .addColumn("clin_ship_date", Types.CHAR, 10)
+                .addColumn("clin_catalog_number", Types.INTEGER)
+                .addColumn("clin_catalog_page_number", Types.INTEGER)
+                .addColumn("clin_ship_cost", Types.NUMERIC, 7, 2);
+
+        schema.getTableOf(S_WEB_ORDER_LINEITEM)
+                .addColumn("wlin_order_id", Types.INTEGER, false)
+                .addColumn("wlin_line_number", Types.INTEGER, false)
+                .addColumn("wlin_item_id", Types.CHAR, 16)
+                .addColumn("wlin_promotion_id", Types.CHAR, 16)
+                .addColumn("wlin_quantity", Types.INTEGER)
+                .addColumn("wlin_sales_price", Types.NUMERIC, 7, 2)
+                .addColumn("wlin_coupon_amt", Types.NUMERIC, 7, 2)
+                .addColumn("wlin_warehouse_id", Types.CHAR, 16)
+                .addColumn("wlin_ship_date", Types.CHAR, 10)
+                .addColumn("wlin_ship_cost", Types.NUMERIC, 7, 2)
+                .addColumn("wlin_web_page_id", Types.CHAR, 16);
+
+        schema.getTableOf(S_STORE)
+                .addColumn("stor_store_id", Types.CHAR, 1, false)
+                .addColumn("stor_closed_date", Types.CHAR, 10)
+                .addColumn("stor_name", Types.CHAR, 50)
+                .addColumn("stor_employees", Types.INTEGER)
+                .addColumn("stor_floor_space", Types.INTEGER)
+                .addColumn("stor_hours", Types.CHAR, 20)
+                .addColumn("stor_store_manager", Types.CHAR, 40)
+                .addColumn("stor_market_id", Types.INTEGER)
+                .addColumn("stor_geography_class", Types.CHAR, 100)
+                .addColumn("stor_market_manager", Types.CHAR, 40)
+                .addColumn("stor_tax_percentage", Types.NUMERIC, 5, 2);
+
+        schema.getTableOf(S_CALL_CENTER)
+                .addColumn("call_center_id", Types.CHAR, 16, false)
+                .addColumn("call_open_date", Types.CHAR, 10)
+                .addColumn("call_closed_date", Types.CHAR, 10)
+                .addColumn("call_center_name", Types.CHAR, 50)
+                .addColumn("call_center_class", Types.CHAR, 50)
+                .addColumn("call_center_employees", Types.INTEGER)
+                .addColumn("call_center_sq_ft", Types.INTEGER)
+                .addColumn("call_center_hours", Types.CHAR, 20)
+                .addColumn("call_center_manager", Types.CHAR, 40)
+                .addColumn("call_center_tax_percentage", Types.NUMERIC, 7, 2);
+
+
+        schema.getTableOf(S_WEB_SITE)
+                .addColumn("wsit_web_site_id", Types.CHAR, 16, false)
+                .addColumn("wsit_open_date", Types.CHAR, 10)
+                .addColumn("wsit_closed_date", Types.CHAR, 10)
+                .addColumn("wsit_site_name", Types.CHAR, 50)
+                .addColumn("wsit_site_class", Types.CHAR, 50)
+                .addColumn("wsit_site_manager", Types.CHAR, 40)
+                .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2);
+
+        schema.getTableOf(S_WAREHOUSE)
+                .addColumn("wrhs_warehouse_id", Types.CHAR, 16, false)
+                .addColumn("wrhs_warehouse_desc", Types.CHAR, 200)
+                .addColumn("wrhs_warehouse_sq_ft", Types.INTEGER);
+
+        schema.getTableOf(S_WEB_PAGE)
+                .addColumn("wpag_web_page_id", Types.CHAR, 16, false)
+                .addColumn("wpag_create_date", Types.CHAR, 10)
+                .addColumn("wpag_access_date", Types.CHAR, 10)
+                .addColumn("wpag_autogen_flag", Types.CHAR, 1)
+                .addColumn("wpag_url", Types.CHAR, 100)
+                .addColumn("wpag_type", Types.CHAR, 50)
+                .addColumn("wpag_char_cnt", Types.INTEGER)
+                .addColumn("wpag_link_cnt", Types.INTEGER)
+                .addColumn("wpag_image_cnt", Types.INTEGER)
+                .addColumn("wpag_max_ad_cnt", Types.INTEGER);
+
+        schema.getTableOf(S_PROMOTION)
+                .addColumn("prom_promotion_id", Types.CHAR, 16, false)
+                .addColumn("prom_promotion_name", Types.CHAR, 30)
+                .addColumn("prom_start_date", Types.CHAR, 10)
+                .addColumn("prom_end_date", Types.CHAR, 10)
+                .addColumn("prom_cost", Types.NUMERIC, 7, 2)
+                .addColumn("prom_response_target", Types.CHAR, 1)
+                .addColumn("prom_channel_dmail", Types.CHAR, 1)
+                .addColumn("prom_channel_email", Types.CHAR, 1)
+                .addColumn("prom_channel_catalog", Types.CHAR, 1)
+                .addColumn("prom_channel_tv", Types.CHAR, 1)
+                .addColumn("prom_channel_radio", Types.CHAR, 1)
+                .addColumn("prom_channel_press", Types.CHAR, 1)
+                .addColumn("prom_channel_event", Types.CHAR, 1)
+                .addColumn("prom_channel_demo", Types.CHAR, 1)
+                .addColumn("prom_channel_details", Types.CHAR, 100)
+                .addColumn("prom_purpose", Types.CHAR, 15)
+                .addColumn("prom_discount_active", Types.CHAR, 1)
+                .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2);
+
+        schema.getTableOf(S_STORE_RETURNS)
+                .addColumn("sret_store_id", Types.CHAR, 16)
+                .addColumn("sret_purchase_id", Types.CHAR, 16, false)
+                .addColumn("sret_line_number", Types.INTEGER, false)
+                .addColumn("sret_item_id", Types.CHAR, 16, false)
+                .addColumn("sret_customer_id", Types.CHAR, 16)
+                .addColumn("sret_return_date", Types.CHAR, 10)
+                .addColumn("sret_return_time", Types.CHAR, 10)
+                .addColumn("sret_ticket_number", Types.CHAR, 20)
+                .addColumn("sret_return_qty", Types.INTEGER)
+                .addColumn("sret_return_amt", Types.NUMERIC, 7, 2)
+                .addColumn("sret_return_tax", Types.NUMERIC, 7, 2)
+                .addColumn("sret_return_fee", Types.NUMERIC, 7, 2)
+                .addColumn("sret_return_ship_cost", Types.NUMERIC, 7, 2)
+                .addColumn("sret_refunded_cash", Types.NUMERIC, 7, 2)
+                .addColumn("sret_reversed_charge", Types.NUMERIC, 7, 2)
+                .addColumn("sret_store_credit", Types.NUMERIC, 7, 2)
+                .addColumn("sret_reason_id", Types.CHAR, 16);
+
+        schema.getTableOf(S_CATALOG_RETURNS)
+                .addColumn("cret_call_center_id", Types.CHAR, 16)
+                .addColumn("cret_order_id", Types.INTEGER, false)
+                .addColumn("cret_line_number", Types.INTEGER, false)
+                .addColumn("cret_item_id", Types.CHAR, 16, false)
+                .addColumn("cret_return_customer_id", Types.CHAR, 16)
+                .addColumn("cret_refund_customer_id", Types.CHAR, 16)
+                .addColumn("cret_return_date", Types.CHAR, 10)
+                .addColumn("cret_return_time", Types.CHAR, 10)
+                .addColumn("cret_return_qty", Types.INTEGER)
+                .addColumn("cret_return_amt", Types.NUMERIC, 7, 2)
+                .addColumn("cret_return_tax", Types.NUMERIC, 7, 2)
+                .addColumn("cret_return_fee", Types.NUMERIC, 7, 2)
+                .addColumn("cret_return_ship_cost", Types.NUMERIC, 7, 2)
+                .addColumn("cret_refunded_cash", Types.NUMERIC, 7, 2)
+                .addColumn("cret_reversed_charge", Types.NUMERIC, 7, 2)
+                .addColumn("cret_merchant_credit", Types.NUMERIC, 7, 2)
+                .addColumn("cret_reason_id", Types.CHAR, 16)
+                .addColumn("cret_shipmode_id", Types.CHAR, 16)
+                .addColumn("cret_catalog_page_id", Types.CHAR, 16)
+                .addColumn("cret_warehouse_id", Types.CHAR, 16);
+
+        schema.getTableOf(S_WEB_RETURNS)
+                .addColumn("wret_web_site_id", Types.CHAR, 16)
+                .addColumn("wret_order_id", Types.INTEGER, false)
+                .addColumn("wret_line_number", Types.INTEGER, false)
+                .addColumn("wret_item_id", Types.CHAR, 16, false)
+                .addColumn("wret_return_customer_id", Types.CHAR, 16)
+                .addColumn("wret_refund_customer_id", Types.CHAR, 16)
+                .addColumn("wret_return_date", Types.CHAR, 10)
+                .addColumn("wret_return_time", Types.CHAR, 10)
+                .addColumn("wret_return_qty", Types.INTEGER)
+                .addColumn("wret_return_amt", Types.NUMERIC, 7, 2)
+                .addColumn("wret_return_tax", Types.NUMERIC, 7, 2)
+                .addColumn("wret_return_fee", Types.NUMERIC, 7, 2)
+                .addColumn("wret_return_ship_cost", Types.NUMERIC, 7, 2)
+                .addColumn("wret_refunded_cash", Types.NUMERIC, 7, 2)
+                .addColumn("wret_reversed_charge", Types.NUMERIC, 7, 2)
+                .addColumn("wret_account_credit", Types.NUMERIC, 7, 2)
+                .addColumn("wret_reason_id", Types.CHAR, 16);
+
+        schema.getTableOf(S_INVENTORY)
+                .addColumn("invn_warehouse_id", Types.CHAR, 16, false)
+                .addColumn("invn_item_id", Types.CHAR, 16, false)
+                .addColumn("invn_date", Types.CHAR, 10, false)
+                .addColumn("invn_qty_on_hand", Types.INTEGER);
+
+
+    }
+
+    /**
+     * @return all tables
+     */
+    public List<TableDef> getTables() {
+
+        switch (this.type) {
+            case TPCDS_SCHEMA:
+                return schema.getTables();
+            case TPCDS_SCHEMA_DWH:
+                return schema.getTables().stream()
+                        .filter(s -> dwhTables.contains(s.getName()))
+                        .collect(Collectors.toList());
+            case TPCDS_SCHEMA_STG:
+                return schema.getTables().stream()
+                        .filter(s -> stagingTables.contains(s.getName()))
+                        .collect(Collectors.toList());
+            case TPCDS_SCHEMA_STORE_SALES:
+                return schema.getTables().stream()
+                        .filter(s -> storeSalesTables.contains(s.getName()))
+                        .collect(Collectors.toList());
+            default:
+                throw new RuntimeException("Schema Type (" + this.type + ") is unknown");
+        }
+
+
+    }
+
+    /**
+     * @param tableName - one of the static constant field that represents a table name
+     * @return - the definition of this table
+     */
+    public TableDef getTable(String tableName) {
+        return schema.getTableOf(tableName);
+    }
+
+
+}

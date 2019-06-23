@@ -1,0 +1,91 @@
+# https://app.quickdatabasediagrams.com/ Grammar
+
+SalesTerritory
+-
+SalesTerritoryID PK int
+
+Customer
+-
+CustomerID PK int
+TerritoryID int FK >- SalesTerritory.SalesTerritoryID
+AccountNumber int
+CustomerType varchar(1)
+Name string
+rowguid int
+ModifiedDate 
+
+
+SalesOrderHeader
+-
+SalesOrderID PK int
+# Incremental number to track changes to the sales order over time.
+RevisionNumber tinyint 
+# Dates the sales order was created.
+OrderDate datetime
+# Date the order is due to the customer.
+DueDate datetime
+# Date the order was shipped to the customer
+ShipDate datetime
+# Order current status. 1 = In process, 2 = Approved, 3 = Back ordered, 4 = Rejected, 5 = Shipped, 6 = Canceled
+Status tinyint
+# 0 = Order placed by sales person. 1 = Order placed online by customer.
+OnlineOrderFlag bit
+# Unique sales order identification number
+SalesOrderNumber nvarchar(25)
+# Customer purchase order number reference.
+PurchaseOrderNumber nvarchar(25) 
+# Financial accounting number reference.
+AccountNumber nvarchar(15) 
+# Customer identification number. 
+CustomerID int FK >- Customer.CustomerID
+# Customer contact identification number.
+ContactID int FK >- Contact.ContactID
+
+
+Contact
+-
+ContactID PK int
+
+
+
+# Contains individual products associated with a specific sales order. 
+# A sales order may include orders for multiple products. 
+# The general, or parent, information for each sales order is stored in SalesOrderHeader.
+# Each product that is ordered, or child, is stored in SalesOrderDetail.
+# (Complete)
+SalesOrderDetail
+-
+# Primary Key
+SalesOrderDetailID PK int
+# Foreign key to SalesOrderHeader.SalesOrderID
+SalesOrderID int FK >- SalesOrderHeader.SalesOrderID
+# Shipment tracking number supplied by the shipper
+CarrierTrackingNumber nvarchar(25)
+# Quantity ordered per product
+OrderQty smallint
+# Product sold to customer
+ProductID int FK >- Product.ProductID
+# Promotional code
+SpecialOfferID int FK >- SpecialOffer.SpecialOfferID
+# Selling price of a single product.
+UnitPrice money
+# Discount amount
+UnitPriceDiscount money
+# Computed as OrderQty * UnitPrice Per product subtotal
+LineTotal computed
+rowguid uniqueidentifier
+ModifiedDate datetime
+
+SpecialOffer
+-
+SpecialOfferID PK int
+
+
+# Table documentation comment 1 (try the PDF/RTF export)
+Product as p # Table documentation comment 2
+------------
+ProductID PK int
+# Field documentation comment 1
+# Field documentation comment 2 
+Name nvarchar(50) # Field documentation comment 3
+Price money

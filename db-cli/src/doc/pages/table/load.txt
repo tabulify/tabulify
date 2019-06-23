@@ -1,0 +1,112 @@
+====== Bytle Db - Load a table ======
+
+
+===== About ===== 
+The Bytle Db [[table|table]] load action permits you to load data into a table from a file. 
+
+The source data file may be:
+  * a [[..:csv:start|CSV]]
+  * or [[..:excel:start|Excel file]].
+
+<wrap info>
+If you want to load data from a [[..:database:|database]] to another, see the [[transfer|transfer]] action.
+</wrap>
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db table load --help
+</code>
+<console>
+Load a file into a database. 
+
+Syntax:
+
+	db [options] table load <File.csv>
+
+where:
+
+	Options:
+		* --target.table       defines the TARGET table database
+		* --tw                 defines the TARGET number of thread against the TARGET database
+		* --bs                 defines the size of the buffer between SOURCE and TARGET threads
+		* --tcf                defines the commit frequency against the TARGET table by batch
+		* --tbs                defines the batch size against the TARGET table
+		* --tcs                defines a file that contains script that must be run against the target database
+		* --mp                 defines the file path that will save the metrics
+
+	Global Options:
+		* --help,-h            Print this help
+		* --config             The path to the config file
+
+	Config File Options (.\conf\db.ini ):
+		* --db.target.url      defines the TARGET Jdbc connection String for the TARGET database (Example: jdbc:sap://192.168.0.132:30015/?user=loing&password=pwd)
+		* --db.target.driver   defines the TARGET driver for the TARGET database (Example: com.sap.db.jdbc.Driver)
+
+	Args:
+		* File.csv             A CSV file
+
+The last argument is a CSV file
+</console>
+</unit>
+
+===== Example =====
+===== Load a CSV file =====
+
+
+<unit envBYTLE_DB_HOME=src>
+  * The file
+<file txt characters.csv>
+Id,Last Name,First Name,Birth Date,Wikipedia Page
+1,Schwarzenegger,Arnold,1947-07-30,https://en.wikipedia.org/wiki/Arnold_Schwarzenegger
+2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
+
+</file>
+  * We can load the above data using the ''load'' command.
+<code dos>
+db table load %BYTLE_DB_HOME%\doc\files\characters.csv
+</code>
+<console>
+2018-11-15 08:51:02, 0 Commits, Producer: Thread-1
+2018-11-15 08:51:02, 0 Records, Producer: Thread-1
+2018-11-15 08:51:02, 0 Commits, Consumer: pool-1-thread-1
+2018-11-15 08:51:02, 0 Records, Consumer: pool-1-thread-1
+2018-11-15 08:51:02, Buffer Size, 1
+2018-11-15 08:51:02, Buffer MaxSize, 20000
+2018-11-15 08:51:02, Buffer Ratio, 0.005
+2018-11-15 08:51:02, 0 Commits, Producer: Thread-1
+2018-11-15 08:51:02, 0 Records, Producer: Thread-1
+2018-11-15 08:51:02, 0 Commits, Consumer: pool-1-thread-1
+2018-11-15 08:51:02, 0 Records, Consumer: pool-1-thread-1
+</console>
+</unit>
+
+<unit >
+  * The process has then created a table with the same structure.
+<code dos>
+db table describe characters
+</code>
+<console>
+#   Key   Colum Name       Data Type   Not Null   Default   Auto Increment   Description   
+-   ---   --------------   ---------   --------   -------   --------------   -----------   
+1         Id               TEXT                                                            
+2         Last Name        TEXT                                                            
+3         First Name       TEXT                                                            
+4         Birth Date       TEXT                                                            
+5         Wikipedia Page   TEXT
+</console>
+</unit>
+
+<unit>
+  * And the data were loaded
+<code dos>
+db table show characters
+</code>
+<console>
+Id   Last Name        First Name   Birth Date   Wikipedia Page                                        
+--   --------------   ----------   ----------   ---------------------------------------------------   
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman
+</console>
+</unit>

@@ -1,0 +1,20 @@
+====== Bytle Db - Flag ======
+
+
+===== About =====
+A ''flag'' is an [[option#short format|short format option]] that set a variable to:
+  * ''true'' if set.
+  * or to a number. ''1'' if present one time, ''2'' if present two times, etc...
+
+
+===== Example =====
+A short formation option is a one letter [[option|option]] that is expecting any value.
+
+You can set one ''flag option''
+<code dos>
+db module action -f
+</code>
+or several
+<code dos>
+db module action -fanbv
+</code>

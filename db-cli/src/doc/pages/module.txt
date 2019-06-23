@@ -1,0 +1,105 @@
+====== Bytle Db - Module ======
+
+===== About =====
+A module in [[db|Bytle-Db Cli]]  is the first word that follows the [[db|db]] executable.
+
+
+They represent generally a data structure where we can perform [[action|action (also known as command)]].
+
+===== Articles Related =====
+{{backlinks>.}}
+
+===== Syntax =====
+A module is called by adding its name after the [[db|db]] word.
+
+
+<code dos>
+db module ...
+</code>
+
+===== List =====
+
+[[db|db]] provides actually the following modules:
+  * [[table:table|table]] - operations on one or more table
+  * [[schema|schema]] - operations on one or more schema
+  * [[database|database]] - operations on a database
+  * [[query|query]] - operations on one or more queries
+  * [[sample|sample]] - operations on sample schema (database)
+  * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)
+
+
+To get the list of modules for your [[db|db]] version from the console, you would call the [[help|help]] on the [[db|db]] cli.
+
+Example:
+
+<unit>
+<code dos db_help.cmd>
+db --help
+</code>
+<file>
+A Sdk for the database
+
+Syntax:
+
+	db [options] <command>
+
+where:
+
+	Command (is one of):
+		* table             operations on one or several tables
+		* schema            operations on a schema
+		* query             operations on a query
+		* sample            create and fill data into a sample schema
+		* fkey              operations on foreign key (ie on relation and constraints between tables)
+
+	Options:
+		* --help,-h         Print this help
+		* --config          The path to the config file
+
+To load data from a csv file you would type:
+db table load TABLE_NAME.csv
+</file>
+</unit>
+
+
+===== Help =====
+To get [[help|help]] on the console for a module, just add the ''%%--help%%'' [[flag|flag]] after the module word.
+
+
+Example:
+<unit>
+<code dos table_help.cmd>
+db table --help
+</code>
+<file>
+operations on one or several tables
+
+Syntax:
+
+	db [options] table <command>
+
+where:
+
+	Command (is one of):
+		* load              load data into a table from a file
+		* download          download a table into a file
+		* transfer          transfer a table from a database to another
+		* fill              fill a table with generated data
+		* list              list tables
+		* drop              drop table(s)
+		* count             count the number of tables
+		* show              show the table structures
+
+	Global Options:
+		* --help,-h         Print this help
+		* --config          The path to the config file
+</file>
+</unit>
+
+You can also get help on this site directly via this links:
+  * [[table:table|table]] - operations on one or more table
+  * [[schema|schema]] - operations on one or more schema
+  * [[database|database]] - operations on a database
+  * [[query|query]] - operations on one or more queries
+  * [[sample|sample]] - operations on sample schema (database)
+  * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)

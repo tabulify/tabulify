@@ -1,0 +1,56 @@
+====== Bytle Db - Installation ======
+
+
+===== Steps =====
+To install [[db|Bytle Db]], you need to follow this steps:
+
+''Bytle Db'' is distributed for different operation system.
+
+
+==== Download ====
+You need to download the distribution for your operating system.
+
+
+==== Unzip ====
+
+Unzip it where you want to install it. The subsequent directory is called the ''BYTLE_DB_HOME''
+
+==== Path ====
+Add the ''BYTLE_DB_HOME'' directory to your ''PATH'' environment variable. 
+
+==== Installation validation ====
+
+  * Opening a console and asking for the [[help|help]] should give you a response.
+
+Example;
+<unit>
+<code dos>
+db --help
+</code>
+<file>
+A Sdk for the database
+
+Syntax:
+
+	db [options] <command>
+
+where:
+
+	Command (is one of):
+		* table             operations on one or several tables
+		* schema            operations on a schema
+		* query             operations on a query
+		* sample            create and fill data into a sample schema
+		* fkey              operations on foreign key (ie on relation and constraints between tables)
+
+	Options:
+		* --help,-h         Print this help
+		* --config          The path to the config file
+
+To load data from a csv file you would type:
+db table load TABLE_NAME.csv
+</file>
+</unit>
+
+==== Next Step ====
+If you have any experience with [[db|Bytle Db]], you can continue by following the [[getting_started|getting started]].

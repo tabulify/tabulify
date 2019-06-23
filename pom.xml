@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <!-- Pom Version -->
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Coordinates -->
+    <groupId>net.bytle</groupId>
+    <artifactId>bytle-parent</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <modules>
+        <module>cli</module>
+        <module>db</module>
+        <module>db-cli</module>
+        <module>bytle-doctest</module>
+        <module>log</module>
+        <module>bytle-db-test</module>
+    </modules>
+    <packaging>pom</packaging>
+
+    <!-- Description -->
+    <name>Bytle Parent</name>
+    <url>http://bytle.net</url>
+    <description>The parent POM used in most of the Bytle Maven library</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <checkstyle.version>2.12.1</checkstyle.version>
+        <checkstyle.header.file>${basedir}/LICENSE-notice.md</checkstyle.header.file>
+        <jre.version.3digit>1.8.144</jre.version.3digit>
+        <!-- jre version must be 3 digits (required by the exe wrapper launch4j -->
+        <jre.version>1.8</jre.version>
+
+        <!-- The local bin path of the developer -->
+        <bin.path>${env.USERPROFILE}/bin/${project.build.finalName}</bin.path>
+        <lib.path>${env.USERPROFILE}/bin/${project.build.finalName}/lib</lib.path>
+
+        <!-- What means main ? it will add it as project.parent.basedir-->
+        <main.basedir>${project.basedir}</main.basedir>
+    </properties>
+
+    <!-- Plugin Dependency Version Management -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.5.1</version>
+                    <configuration>
+                        <source>${jre.version}</source>
+                        <target>${jre.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.0.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.20</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <extensions>
+            <!-- Enabling the use of SSH for the deployment phase of Maven, not for this Sftp-->
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>2.10</version>
+            </extension>
+        </extensions>
+    </build>
+
+
+    <!-- Global Dependency -->
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- System Rule for Junit SystemExit test -->
+        <!-- See https://stackoverflow.com/questions/309396/java-how-to-test-methods-that-call-system-exit/8658497#8658497 -->
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.17.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- To be able to unpack them in the assembly -->
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>jre</artifactId>
+            <version>${jre.version.3digit}</version>
+            <type>zip</type>
+            <classifier>windows-x64</classifier>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- To be able to unpack them in the assembly -->
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>jre</artifactId>
+            <version>${jre.version.3digit}</version>
+            <type>zip</type>
+            <classifier>linux-x64</classifier>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- In Maven 3.5, the dependency version must come here
+         then you can specify them in the child project without version
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <!--Strings Manipulation -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.1</version>
+            </dependency>
+            <!-- Collection -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>4.0</version>
+            </dependency>
+            <!-- Csv, Excel, ... -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>1.4</version>
+            </dependency>
+            <!-- ??? -->
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.6</version>
+            </dependency>
+            <!-- ??? -->
+            <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>2.6</version>
+            </dependency>
+            <!-- Obiee Obis Driver -->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>bijdbc</artifactId>
+                <version>1</version>
+            </dependency>
+            <!-- MySQL Jbdc Driver -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>5.1.6</version>
+            </dependency>
+            <!-- Sqlite -->
+            <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>3.14.2.1</version>
+            </dependency>
+            <!-- Timesten -->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>ttjdbc</artifactId>
+                <version>6</version>
+            </dependency>
+            <!-- Oracle Db -->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>ojdbc</artifactId>
+                <version>6</version>
+            </dependency>
+            <!-- Microsoft Sql Server -->
+            <dependency>
+                <groupId>com.microsoft</groupId>
+                <artifactId>sqljdbc</artifactId>
+                <version>4.2</version>
+            </dependency>
+            <!-- Sap Hana -->
+            <dependency>
+                <groupId>com.sap</groupId>
+                <artifactId>ngdbc</artifactId>
+                <version>1</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-common -->
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analyzers-common</artifactId>
+                <version>6.2.1</version>
+            </dependency>
+            <!-- xml parser -->
+            <dependency>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <artifactId>xstream</artifactId>
+                <version>1.4.7</version>
+            </dependency>
+            <!-- Bytle Library -->
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-cli</artifactId>
+                <version>2.0.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-sftp</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <!-- Excel -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>3.13</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>3.13</version>
+            </dependency>
+            <!-- Graph -->
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>1.1.0</version>
+            </dependency>
+            <!-- Obiee Password Modification utility-->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>BIServerT2PProvisioner</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <!-- Drill from https://drill.apache.org/docs/using-the-jdbc-driver/-->
+            <dependency>
+                <groupId>org.apache.drill.exec</groupId>
+                <artifactId>drill-jdbc</artifactId>
+                <version>1.10.0</version>
+            </dependency>
+            <!-- Calcite Core -->
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-core</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <!-- Calcite Csv -->
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-example-csv</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <!-- The Weblogic client for JMX -->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>wljmxclient</artifactId>
+                <version>10.3.6.0</version>
+            </dependency>
+            <!-- The second Weblogic client (needed for JMX call) -->
+            <dependency>
+                <groupId>com.oracle</groupId>
+                <artifactId>wlclient</artifactId>
+                <version>10.3.6.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+    <distributionManagement>
+        <repository>
+            <id>bytle-m2-repo</id>
+            <name>Bytle Remote</name>
+            <url>scp://sftp.bytle.net:22/home/gerardni-m2repo</url>
+        </repository>
+    </distributionManagement>
+
+
+    <organization>
+        <name>Bytle</name>
+        <url>https://bytle.net</url>
+    </organization>
+
+    <profiles>
+        <profile>
+            <!-- Deploy -->
+            <id>deploy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- Will create a Windows Assembly -->
+            <id>assembly-windows-zip</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>net.bytle</groupId>
+                                <artifactId>bytle-cli</artifactId>
+                                <version>2.0.0-SNAPSHOT</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>Parent Create Zip Windows Distribution</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <!-- https://maven.apache.org/plugins/maven-assembly-plugin/examples/sharing-descriptors.html -->
+                                <configuration>
+                                    <descriptorRefs>
+                                        <descriptorRef>windows-x64</descriptorRef>
+                                    </descriptorRefs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- Will unzip the Windows Assembly -->
+            <id>assembly-windows-unzip</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-unizp</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${bin.path}
+                                    </outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>${project.groupId}</groupId>
+                                            <artifactId>${project.artifactId}</artifactId>
+                                            <version>${project.version}</version>
+                                            <classifier>windows-x64</classifier>
+                                            <type>zip</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>default-cli</id>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${bin.path}
+                                    </outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>${project.groupId}</groupId>
+                                            <artifactId>${project.artifactId}</artifactId>
+                                            <version>${project.version}</version>
+                                            <classifier>windows-x64</classifier>
+                                            <type>zip</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- Will copy the jar to the local installation -->
+            <id>copy-jar</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-jar</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>
+                                        ${lib.path}
+                                    </outputDirectory>
+                                    <overwrite>true</overwrite>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>${project.build.finalName}.jar</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+
+        <profile>
+            <!-- Will create a Linux Assembly -->
+            <id>assembly-linux</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>net.bytle</groupId>
+                                <artifactId>bytle-assembly</artifactId>
+                                <version>1.0.0</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>create-distribution</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <!-- https://maven.apache.org/plugins/maven-assembly-plugin/examples/sharing-descriptors.html -->
+                                <configuration>
+                                    <descriptorRefs>
+                                        <descriptorRef>linux-x64</descriptorRef>
+                                    </descriptorRefs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
+</project>

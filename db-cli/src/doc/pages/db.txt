@@ -1,0 +1,42 @@
+====== Bytle Db - Db ======
+
+
+===== Introduction =====
+''db'' is the command line client of [[getting_started|Bytle-Db]]. 
+
+You can install it by following the [[install|install instructions]].
+
+
+===== Syntax =====
+
+<unit>
+<code dos>
+db --help
+</code>
+<console>
+A Sdk for the database
+
+Syntax: (1)
+
+	db [options|flags] <command>
+
+where:
+
+	Command (is one of):
+		* table                                     operations on one or several tables
+		* database                                  operations on database
+		* schema                                    operations on a schema
+		* query                                     operations on a query
+		* sample                                    create and fill data into a sample schema
+		* fkey                                      operations on foreign key (ie on relation and constraints between tables)
+
+	Local: (1)
+		* -h,--help (1 - false)                     Print this help
+		* --conf <path> (1 - false)                 The path to the config file
+		* --db.target.url <value> (1 - false)       No Description available
+		* --db.target.driver <value> (1 - false)    No Description available
+
+To load data from a csv file you would type:
+db table load TABLE_NAME.csv
+</console>
+</unit>

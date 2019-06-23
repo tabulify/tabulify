@@ -1,0 +1,59 @@
+====== Bytle Db - Options ======
+
+===== About =====
+An ''option'' is a property that set a ''value'' to a ''option name''.
+
+An ''option'' is used to passed parameters to the [[action|actions]].
+
+
+
+
+===== Syntax =====
+[[db|Bytle Db]] supports two ''option'' format:
+  * a [[#long format|long]] where the full name of the option  is given
+  * and a [[#short format|short]] one where only **1** letter is given
+
+
+==== Long format ====
+
+The long ''option'' format start with ''%%--%%'' followed by the option name.
+
+Example: the option ''longOptionName'' will got the value ''value''
+<code dos>
+db module action --longOptionName value
+</code>
+
+==== Short format ====
+
+The short option format start with ''-'' followed by one letter. 
+
+<code dos>
+db module action -l [value]
+</code>
+
+<WRAP round tip>
+If the option is a [[flag|flag]] (ie the option does not except any value), you can put several letters option after the ''%%-%%''
+
+Example:
+<code dos>
+db module action -fabn
+</code>
+</WRAP>
+
+===== Example =====
+==== Long format ====
+
+<unit>
+<code dos>
+db --help
+</code>
+</unit>
+
+==== Short format ====
+
+<unit>
+<code dos>
+db -h
+</code>
+</unit>
+

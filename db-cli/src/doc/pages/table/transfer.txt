@@ -1,0 +1,6 @@
+====== Bytle Db - Transfer (a table from one database to another) ======
+
+
+===== About =====
+How to transfer data between two [[..:database:|databases]].
+

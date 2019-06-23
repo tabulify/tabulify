@@ -1,0 +1,197 @@
+package net.bytle.db.sample;
+
+import com.teradata.tpcds.Options;
+import com.teradata.tpcds.Session;
+import com.teradata.tpcds.Table;
+import com.teradata.tpcds.TableGenerator;
+import net.bytle.db.DbLoggers;
+import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
+import net.bytle.db.engine.Dag;
+import net.bytle.db.model.TableDef;
+import net.bytle.db.stream.InsertStreamListener;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+public class TpcdsDgen {
+
+    public static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
+
+    Options options = new Options();
+    private Database database;
+    // Every 5 * 10 000 = 50 000 rows
+    private Integer feedbackFrequency = 5;
+
+    private TpcdsDgen() {
+
+        options.overwrite = true;
+        options.directory = "./target";
+
+    }
+
+    static public TpcdsDgen get() {
+
+        return new TpcdsDgen();
+
+    }
+
+
+
+    public TpcdsDgen setDirectory(Path path) {
+        this.options.directory = path.normalize().toAbsolutePath().toString();
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return this;
+    }
+
+    public TpcdsDgen setChunkNumber(Integer n) {
+        this.options.parallelism = n;
+        return this;
+    }
+
+    public TpcdsDgen setSeparator(char separator) {
+        this.options.separator = separator;
+        return this;
+    }
+
+    public TpcdsDgen setDatabase(Database database) {
+        this.database = database;
+        return this;
+    }
+
+    /**
+     * Volume of data to generate in GB (Default: 1)
+     *
+     * @param scale
+     * @return tpcdsgen for chaining init
+     */
+    public TpcdsDgen setScale(Double scale) {
+        this.options.scale = scale;
+        return this;
+    }
+
+
+    /**
+     * Load only one table
+     *
+     * @param table
+     * @return
+     */
+    public List<InsertStreamListener> load(TableDef table) {
+        ArrayList<TableDef> tables = new ArrayList<TableDef>();
+        tables.add(table);
+        return load(tables);
+    }
+
+
+    public List<InsertStreamListener> load(List<TableDef> tables) {
+
+        Session session = options.toSession();
+
+        if (tables.size() == 1) {
+            // session.generateOnlyOneTable()
+            this.options.table = tables.get(0).getName();
+            LOGGER.info("Loading only one Tpcds table " + tables.get(0).getName());
+        } else {
+            LOGGER.info("Loading " + tables.size() + " Tpcds tables");
+        }
+
+
+
+        Database targetDatabase;
+        if (database != null) {
+            targetDatabase = database;
+            LOGGER.info("Loading the tables into the database (" + database + ")");
+        } else {
+            // Memory database for file
+            targetDatabase = Databases.get();
+            LOGGER.info("Loading the tables into the directory (" + options.directory + ")");
+        }
+
+        // Building the table to load
+        tables = Dag.get(tables).getCreateOrderedTables();
+        List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
+        for (TableDef tableDef : tables) {
+
+            LOGGER.info("Loading the table " + tableDef.getFullyQualifiedName());
+            List<Thread> threads = new ArrayList<>();
+
+            for (int i = 1; i <= session.getParallelism(); i++) {
+
+                int chunkNumber = i;
+
+                Table table = Table.getBaseTables()
+                        .stream()
+                        .filter(s -> s.getName().toLowerCase().equals(tableDef.getName().toLowerCase()))
+                        .collect(Collectors.toList())
+                        .get(0);
+
+
+                Thread thread;
+                if (database == null) {
+                    LOGGER.fine("Generate the chunk " + chunkNumber + " for the table (" + tableDef.getName() + ") in a file");
+                    thread = new Thread(() -> {
+
+                        TableGenerator tableGenerator = new TableGenerator(session.withChunkNumber(chunkNumber));
+                        tableGenerator.generateTable(table);
+
+                    });
+                } else {
+                    LOGGER.fine("Loading the table (" + tableDef.getName() + ") with the " + chunkNumber + " thread");
+                    thread = new Thread(() -> {
+
+                        List<InsertStreamListener> insertStreamListener = TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), database)
+                                .setRowFeedback(feedbackFrequency)
+                                .generateTable(table);
+                        if (insertStreamListener != null) {
+                            insertStreamListeners.addAll(insertStreamListener);
+                        }
+
+                    });
+                }
+                final String threadId = "Table " + tableDef.getName() + ", chunk " + chunkNumber;
+                thread.setName(threadId);
+                threads.add(thread);
+                thread.start();
+                LOGGER.fine(thread.getName() + "thread started");
+            }
+
+            try {
+
+                for (Thread thread : threads) {
+                    LOGGER.fine("Waiting that the thread (" + thread.getName() + ") has finished.");
+                    thread.join();
+                    LOGGER.fine("Thread (" + thread.getName() + ") has finished.");
+                }
+
+            } catch (InterruptedException e) {
+
+                throw new RuntimeException(e);
+
+            }
+
+        }
+
+        return insertStreamListeners;
+
+    }
+
+
+    public TpcdsDgen setFeedbackFrequency(Integer rowNumber) {
+        this.feedbackFrequency = rowNumber;
+        return this;
+    }
+
+
+}

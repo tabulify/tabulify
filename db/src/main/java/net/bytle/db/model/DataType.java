@@ -1,0 +1,322 @@
+package net.bytle.db.model;
+
+import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.database.DataTypeDriver;
+import net.bytle.db.database.DataTypeJdbc;
+
+import java.sql.Types;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ *
+ * The data type of a column.
+ *
+ * DataType composition with the following order:
+ * <p>
+ * * dataTypeDatabase from the database definition
+ * * dataTypeJdbc form the Jdbc Standard
+ * * dataTypeDriver from the driver (Info)
+ *
+ * Created by gerard on 28-11-2015.
+ */
+public class DataType {
+
+    public static Set<Integer> numericTypes = new HashSet<>();
+    public static Set<Integer> characterTypes = new HashSet<>();
+    public static Set<Integer> timeTypes = new HashSet<>();
+
+
+    static {
+
+        numericTypes.add(Types.NUMERIC); // numeric (10,0) - BigDecimal
+        numericTypes.add(Types.INTEGER);
+        numericTypes.add(Types.SMALLINT);
+        numericTypes.add(Types.DOUBLE); // float
+        numericTypes.add(Types.FLOAT);
+        numericTypes.add(Types.DECIMAL);
+
+        characterTypes.add(Types.VARCHAR);
+        characterTypes.add(Types.CHAR);
+        characterTypes.add(Types.NVARCHAR);
+        characterTypes.add(Types.NCHAR);
+        characterTypes.add(Types.CLOB);
+
+        timeTypes.add(Types.DATE);
+        timeTypes.add(Types.TIMESTAMP);
+
+    }
+
+
+    private final int dataType;
+
+    private final DataTypeDriver dataTypeDriver;
+    private final DataTypeDatabase dataTypeDatabase;
+    private final DataTypeJdbc dataTypeJdbc;
+
+    public DataTypeDatabase getDataTypeDatabase() {
+        return dataTypeDatabase;
+    }
+
+    public DataType(DataTypeBuilder dataTypeInfoBuilder) {
+        // The type number
+        this.dataType = dataTypeInfoBuilder.dataType;
+
+        // The data type info of each source
+        this.dataTypeJdbc = dataTypeInfoBuilder.jdbcDataType;
+        this.dataTypeDriver = dataTypeInfoBuilder.dataTypeDriver;
+        this.dataTypeDatabase = dataTypeInfoBuilder.dataTypeDatabase;
+    }
+
+
+    /**
+     * The Java class that corresponds to the SQL Types.
+     *
+     * @return
+     */
+    public Class getClazz() {
+
+        final DataTypeDatabase dataTypeDatabase = this.dataTypeDatabase;
+        if (this.dataTypeDatabase != null) {
+            if (dataTypeDatabase.getJavaDataType() != null) {
+                return dataTypeDatabase.getJavaDataType();
+            }
+        }
+
+        if (this.dataTypeJdbc.getJavaDataType() != null) {
+            return this.dataTypeJdbc.getJavaDataType();
+        } else {
+            throw new RuntimeException("The data type" + getTypeName() + "(" + getTypeCode() + " has no class java defined");
+        }
+
+    }
+
+    public int getTypeCode() {
+        return dataType;
+    }
+
+    public String getTypeName() {
+
+        String typeName;
+        if (this.dataTypeDatabase != null) {
+            typeName = dataTypeDatabase.getTypeName();
+            if (typeName != null) {
+                return typeName;
+            }
+        }
+        if (this.dataTypeDriver != null) {
+            typeName = dataTypeDriver.getTypeName();
+            if (typeName != null) {
+                return typeName;
+            }
+        }
+        return dataTypeJdbc.getTypeName();
+
+    }
+
+    /**
+     * The PRECISION column represents the maximum column size that the server supports for the given datatype.
+     * For numeric data, this is the maximum precision.
+     * For character data, this is the length in characters.
+     * For datetime datatypes, this is the length in characters of the String representation (assuming the maximum allowed precision of the fractional seconds component).
+     * For binary data, this is the length in bytes.
+     * For the ROWID datatype, this is the length in bytes.
+     * 0 is returned for data types where the column size is not applicable or unknown
+     */
+    public Integer getMaxPrecision() {
+
+
+        if (this.dataTypeDriver != null) {
+            return dataTypeDriver.getMaxPrecision();
+        }
+        // A character must have always a precision
+        // but not a number
+        return 0;
+
+    }
+
+    /**
+     * @return prefix used to quote a literal (may be null)
+     */
+    public String getLiteralPrefix() {
+
+        return this.dataTypeDriver.getLiteralPrefix();
+
+    }
+
+    /**
+     * @return suffix used to quote a literal (may be null)
+     * TODO: Is This the thing before a word in select "myColumn", ...
+     */
+    public String getLiteralSuffix() {
+
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getLiteralPrefix();
+        } else {
+            return null;
+        }
+
+    }
+
+    /**
+     * @return parameters used in creating the type (may be null)
+     */
+    public String getCreateParams() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getCreateParams();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return can you use null for this type
+     */
+    public Short getNullable() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getNullable();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return is it case sensitive
+     */
+    public Boolean getCaseSensitive() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getCaseSensitive();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return can you use "WHERE" based on this type:
+     */
+    public Short getSearchable() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getSearchable();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return is it unsigned
+     */
+    public Boolean getUnsignedAttribute() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getUnsignedAttribute();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return can it be a money value.
+     */
+    public Boolean getFixedPrecScale() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getFixedPrecScale();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return can it be used for an auto-increment value.
+     */
+    public Boolean getAutoIncrement() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getAutoIncrement();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return localized version of type name (may be null)
+     */
+    public String getLocalTypeName() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getLocalTypeName();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return minimum scale supported
+     */
+    public Integer getMinimumScale() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getMinimumScale();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @return maximum scale supported
+     * 0 if unknown
+     */
+    public Integer getMaximumScale() {
+        if (this.dataTypeDriver != null) {
+            return this.dataTypeDriver.getMaximumScale();
+        } else {
+            return 0;
+        }
+    }
+
+    public DataTypeDriver getDataTypeDriver() {
+        return dataTypeDriver;
+    }
+
+
+    public static class DataTypeBuilder {
+
+        private final int dataType;
+        private DataTypeDatabase dataTypeDatabase;
+        private DataTypeJdbc jdbcDataType;
+        private DataTypeDriver dataTypeDriver;
+
+
+        public DataTypeBuilder(int dataType) {
+            this.dataType = dataType;
+        }
+
+        public DataTypeBuilder JdbcDataType(DataTypeJdbc jdbcDataType) {
+            this.jdbcDataType = jdbcDataType;
+            return this;
+        }
+
+        public DataTypeBuilder DriverDataType(DataTypeDriver dataTypeDriver) {
+            this.dataTypeDriver = dataTypeDriver;
+            return this;
+        }
+
+        public DataTypeBuilder DatabaseDataType(DataTypeDatabase dataTypeDatabase) {
+            this.dataTypeDatabase = dataTypeDatabase;
+            return this;
+        }
+
+
+        public DataType build() {
+            if (dataTypeDatabase != null || dataTypeDriver != null || jdbcDataType != null) {
+                return new DataType(this);
+            } else {
+                return null;
+            }
+        }
+
+    }
+
+    @Override
+    public String toString() {
+        return "DataTypeDriver{" +
+                "typeName='" + getTypeName() + '\'' +
+                ", dataType=" + dataType +
+                '}';
+    }
+}

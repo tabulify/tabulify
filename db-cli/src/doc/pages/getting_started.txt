@@ -1,0 +1,502 @@
+====== Bytle Db - Getting started ======
+
+
+====== Introduction ======
+
+[[start|Bytle-Db]] is a database software development kit (sdk) that helps you perform operations against any databases at the command line in a simple and effective way.
+
+This ''Getting Started'' will demonstrate basic database relational operations such as:
+  * [[#listing_tables|listing tables]]
+  * [[#creating_a_sample_schema|creating sample tables]]
+  * [[#filling_the_schema_with_data|filling tables with data]]
+  * [[#listing_the_relations_between_tables_ie_foreign_key|listing the relationship between tables]]
+  * [[#execute_a_query|executing a query]]
+  * [[#executing_a_query_benchmark|executing multiple queries (ie query benchmark)]]
+
+
+
+====== Steps ======
+===== Installation =====
+To install [[db|Bytle-Db]] on your computer, follow the instructions on the [[install|installation page]]
+
+===== Command line Syntax =====
+  * Typing ''db'' at the command line should give you the following response
+<unit>
+<code dos>
+db
+</code>
+<console>
+A Sdk for the database
+
+Syntax: (1)
+
+	db [options|flags] <command>
+
+where:
+
+	Command (is one of):
+		* table                                     operations on one or several tables
+		* database                                  operations on database
+		* schema                                    operations on a schema
+		* query                                     operations on a query
+		* sample                                    create and fill data into a sample schema
+		* fkey                                      operations on foreign key (ie on relation and constraints between tables)
+
+	Local: (1)
+		* -h,--help (1 - false)                     Print this help
+		* --conf <path> (1 - false)                 The path to the config file
+		* --db.target.url <value> (1 - false)       No Description available
+		* --db.target.driver <value> (1 - false)    No Description available
+
+To load data from a csv file you would type:
+db table load TABLE_NAME.csv
+</console>
+</unit>
+
+[[db|db]] is a command line client that is made of the following [[module|module]]:
+  * [[table:table]]
+  * [[schema]]
+  * [[query]]
+
+For each ''sub-command'', you may specify optional [[option|options]] that change the default behavior. 
+
+===== Listing tables =====
+
+''db'' uses as default database a local embedded ''sqlite'' database.
+
+To list all ''tables'' in your current database schema, you need to perform the following command:
+<unit>
+<code dos>
+db table list
+</code>
+<console>
+
+No tables found
+
+
+</console>
+</unit>
+
+There is obviously no table in our default database. We will create some below by creating a [[sample|sample database]].
+
+===== Creating a sample schema =====
+The [[sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
+
+<unit>
+<code dos>
+db sample create tpcds-dwh
+</code>
+<console>
+Table (date_dim) created.
+Table (income_band) created.
+Table (customer_address) created.
+Table (reason) created.
+Table (item) created.
+Table (time_dim) created.
+Table (customer_demographics) created.
+Table (ship_mode) created.
+Table (warehouse) created.
+Table (dbgen_version) created.
+Table (call_center) created.
+Table (catalog_page) created.
+Table (store) created.
+Table (web_site) created.
+Table (household_demographics) created.
+Table (promotion) created.
+Table (inventory) created.
+Table (customer) created.
+Table (catalog_sales) created.
+Table (store_sales) created.
+Table (web_page) created.
+Table (catalog_returns) created.
+Table (store_returns) created.
+Table (web_sales) created.
+Table (web_returns) created.
+
+</console>
+</unit>
+<wrap info>Note that the tables are not created by alphabetic order but by foreign key graph order. (Ie the primary key must be created before the foreign key).
+That's why we see at the end of the list most of the fact tables. They are created after the dimensions.</wrap>
+
+  * How many tables do we have ?
+<unit>
+<code dos>
+db table count
+</code>
+<console>
+25 tables
+
+</console>
+</unit>
+===== Filling the schema with data =====
+To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample|sample]].
+
+<unit>
+<code dos>
+db sample fill tpcds-dwh
+</code>
+At the end of the process, you get a list of all tables where data were loaded and the number of row that were inserted.
+<console>
+The table (date_dim) exists in the target database (target)
+The table (income_band) exists in the target database (target)
+The table (customer_address) exists in the target database (target)
+The table (reason) exists in the target database (target)
+The table (item) exists in the target database (target)
+The table (time_dim) exists in the target database (target)
+The table (customer_demographics) exists in the target database (target)
+The table (ship_mode) exists in the target database (target)
+The table (warehouse) exists in the target database (target)
+The table (dbgen_version) exists in the target database (target)
+The table (call_center) exists in the target database (target)
+The table (catalog_page) exists in the target database (target)
+The table (store) exists in the target database (target)
+The table (web_site) exists in the target database (target)
+The table (household_demographics) exists in the target database (target)
+The table (promotion) exists in the target database (target)
+The table (inventory) exists in the target database (target)
+The table (customer) exists in the target database (target)
+The table (catalog_sales) exists in the target database (target)
+The table (store_sales) exists in the target database (target)
+The table (web_page) exists in the target database (target)
+The table (catalog_returns) exists in the target database (target)
+The table (store_returns) exists in the target database (target)
+The table (web_sales) exists in the target database (target)
+The table (web_returns) exists in the target database (target)
+Results:
+Tables Loaded            Rows Inserted   
+----------------------   -------------   
+call_center                          2   
+catalog_page                     11718   
+catalog_returns                   8923   
+catalog_sales                    89807   
+customer                          1000   
+customer_address                  1000   
+customer_demographics          1920800   
+date_dim                         73049   
+dbgen_version                        1   
+household_demographics            7200   
+income_band                         20   
+inventory                       261261   
+item                              2000   
+promotion                            3   
+reason                               1   
+ship_mode                           20   
+store                                2   
+store_returns                    11925   
+store_sales                     120527   
+time_dim                         86400   
+warehouse                            1   
+web_page                             2   
+web_returns                       1152   
+web_sales                        11876   
+web_site                             2
+</console>
+</unit>
+
+===== Listing the tables again =====
+
+You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the ''db sample fill'' command.</wrap>
+<unit>
+<code dos>
+db table list
+</code>
+<console>
+
+Tables:
+
+Table Name                 Count   
+----------------------   -------   
+call_center                    2   
+catalog_page               11718   
+catalog_returns             8923   
+catalog_sales              89807   
+customer                    1000   
+customer_address            1000   
+customer_demographics    1920800   
+date_dim                   73049   
+dbgen_version                  1   
+household_demographics      7200   
+income_band                   20   
+inventory                 261261   
+item                        2000   
+promotion                      3   
+reason                         1   
+ship_mode                     20   
+store                          2   
+store_returns              11925   
+store_sales               120527   
+time_dim                   86400   
+warehouse                      1   
+web_page                       2   
+web_returns                 1152   
+web_sales                  11876   
+web_site                       2   
+
+
+</console>
+</unit>
+
+===== Listing the relations between tables (ie foreign key) =====
+
+<unit>
+<code dos>
+db fkey list
+</code>
+<console>
+
+ForeignKeys:
+Id   Child Table              <-   Parent Table             From Foreign Key             
+--   ----------------------   --   ----------------------   --------------------------   
+ 1   call_center              <-   date_dim                 call_center_fk1              
+ 2   catalog_page             <-   date_dim                 catalog_page_fk0             
+ 3   catalog_returns          <-   call_center              catalog_returns_fk10         
+ 4   catalog_returns          <-   catalog_page             catalog_returns_fk7          
+ 5   catalog_returns          <-   catalog_sales            catalog_returns_fk8          
+ 6   catalog_returns          <-   customer                 catalog_returns_fk11         
+ 7   catalog_returns          <-   customer_address         catalog_returns_fk16         
+ 8   catalog_returns          <-   customer_demographics    catalog_returns_fk0          
+ 9   catalog_returns          <-   date_dim                 catalog_returns_fk15         
+10   catalog_returns          <-   household_demographics   catalog_returns_fk17         
+11   catalog_returns          <-   item                     catalog_returns_fk13         
+12   catalog_returns          <-   reason                   catalog_returns_fk14         
+13   catalog_returns          <-   ship_mode                catalog_returns_fk5          
+14   catalog_returns          <-   time_dim                 catalog_returns_fk12         
+15   catalog_returns          <-   warehouse                catalog_returns_fk3          
+16   catalog_sales            <-   call_center              catalog_sales_fk6            
+17   catalog_sales            <-   catalog_page             catalog_sales_fk4            
+18   catalog_sales            <-   customer                 catalog_sales_fk12           
+19   catalog_sales            <-   customer_address         catalog_sales_fk8            
+20   catalog_sales            <-   customer_demographics    catalog_sales_fk9            
+21   catalog_sales            <-   date_dim                 catalog_sales_fk2            
+22   catalog_sales            <-   household_demographics   catalog_sales_fk10           
+23   catalog_sales            <-   item                     catalog_sales_fk14           
+24   catalog_sales            <-   promotion                catalog_sales_fk13           
+25   catalog_sales            <-   ship_mode                catalog_sales_fk16           
+26   catalog_sales            <-   time_dim                 catalog_sales_fk7            
+27   catalog_sales            <-   warehouse                catalog_sales_fk15           
+28   customer                 <-   customer_address         customer_fk2                 
+29   customer                 <-   customer_demographics    customer_fk0                 
+30   customer                 <-   date_dim                 customer_fk5                 
+31   customer                 <-   household_demographics   customer_fk1                 
+32   household_demographics   <-   income_band              household_demographics_fk0   
+33   inventory                <-   date_dim                 inventory_fk2                
+34   inventory                <-   item                     inventory_fk1                
+35   inventory                <-   warehouse                inventory_fk0                
+36   promotion                <-   date_dim                 promotion_fk2                
+37   promotion                <-   item                     promotion_fk1                
+38   store_returns            <-   customer                 store_returns_fk10           
+39   store_returns            <-   customer_address         store_returns_fk1            
+40   store_returns            <-   customer_demographics    store_returns_fk6            
+41   store_returns            <-   date_dim                 store_returns_fk5            
+42   store_returns            <-   household_demographics   store_returns_fk7            
+43   store_returns            <-   item                     store_returns_fk4            
+44   store_returns            <-   reason                   store_returns_fk0            
+45   store_returns            <-   store                    store_returns_fk2            
+46   store_returns            <-   store_sales              store_returns_fk8            
+47   store_returns            <-   time_dim                 store_returns_fk3            
+48   store_sales              <-   customer                 store_sales_fk0              
+49   store_sales              <-   customer_address         store_sales_fk7              
+50   store_sales              <-   customer_demographics    store_sales_fk3              
+51   store_sales              <-   date_dim                 store_sales_fk5              
+52   store_sales              <-   household_demographics   store_sales_fk2              
+53   store_sales              <-   item                     store_sales_fk1              
+54   store_sales              <-   promotion                store_sales_fk8              
+55   store_sales              <-   store                    store_sales_fk6              
+56   store_sales              <-   time_dim                 store_sales_fk4              
+57   store                    <-   date_dim                 store_fk0                    
+58   web_page                 <-   customer                 web_page_fk0                 
+59   web_page                 <-   date_dim                 web_page_fk1                 
+60   web_returns              <-   customer                 web_returns_fk11             
+61   web_returns              <-   customer_address         web_returns_fk5              
+62   web_returns              <-   customer_demographics    web_returns_fk12             
+63   web_returns              <-   date_dim                 web_returns_fk6              
+64   web_returns              <-   household_demographics   web_returns_fk9              
+65   web_returns              <-   item                     web_returns_fk2              
+66   web_returns              <-   reason                   web_returns_fk1              
+67   web_returns              <-   time_dim                 web_returns_fk8              
+68   web_returns              <-   web_page                 web_returns_fk7              
+69   web_returns              <-   web_sales                web_returns_fk4              
+70   web_sales                <-   customer                 web_sales_fk11               
+71   web_sales                <-   customer_address         web_sales_fk8                
+72   web_sales                <-   customer_demographics    web_sales_fk12               
+73   web_sales                <-   date_dim                 web_sales_fk3                
+74   web_sales                <-   household_demographics   web_sales_fk9                
+75   web_sales                <-   item                     web_sales_fk10               
+76   web_sales                <-   promotion                web_sales_fk0                
+77   web_sales                <-   ship_mode                web_sales_fk7                
+78   web_sales                <-   time_dim                 web_sales_fk2                
+79   web_sales                <-   warehouse                web_sales_fk6                
+80   web_sales                <-   web_page                 web_sales_fk5                
+81   web_sales                <-   web_site                 web_sales_fk4                
+82   web_site                 <-   date_dim                 web_site_fk0                 
+
+Tip: You can show the columns by adding the c flag.
+
+
+</console>
+</unit>
+
+===== Execute a Query =====
+
+Tpcds offers 100 queries. We will execute the query number 11 with the [[execute|execute]] command of the query module. 
+
+The file containing this query is located at
+''DB_HOME\sql\tpcds\query\sqlite\query_11.sql'' where ''DB_HOME'' is where you have [[install|unzipped/installed Bytle Db]].
+
+Below is an excerpt because this query is very long.
+
+It shows customers that have generated growing sales from one year to another in the ''s'' and ''w'' sales type.
+
+<code sql query_11.sql>
+with year_total as (
+ select c_customer_id customer_id
+       ,c_first_name customer_first_name
+       ,c_last_name customer_last_name
+       ,c_preferred_cust_flag customer_preferred_cust_flag
+       ,c_birth_country customer_birth_country
+       ,c_login customer_login
+       ,c_email_address customer_email_address
+       ,d_year dyear
+       ,sum(ss_ext_list_price-ss_ext_discount_amt) year_total
+       ,'s' sale_type
+ from customer
+     ,store_sales
+     ,date_dim
+ where
+...
+</code>
+  * Executing the query will show us this customers.
+<unit envBYTLE_DB_HOME=.\src\main>
+<code dos db_query_execute.cmd>
+db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
+</code> 
+<console>
+
+customer_id        customer_first_name   customer_last_name   customer_email_address                   
+----------------   -------------------   ------------------   --------------------------------------   
+AAAAAAAABMDAAAAA   Jose                  Guzman               Jose.Guzman@stJp.edu                     
+AAAAAAAAFLAAAAAA   Joseph                Riley                Joseph.Riley@znxF.com                    
+AAAAAAAAFNCAAAAA   Jennifer              Fitzpatrick          Jennifer.Fitzpatrick@9AK6ZnfkDN7T.edu    
+AAAAAAAAJCAAAAAA   Maxine                Carlson              Maxine.Carlson@StyP5lAokmQ29QHYMLa.edu   
+AAAAAAAAJGBAAAAA   Bonnie                Harrison             Bonnie.Harrison@AKYSOPlHEYkd.com         
+AAAAAAAAKMDAAAAA   Alexander             White                Alexander.White@7v2XsptkFrc50K.org       
+AAAAAAAAOFCAAAAA   Timothy               Grogan               Timothy.Grogan@pn3NH2BDng.org            
+AAAAAAAAPCBAAAAA   Luz                   Ransom               Luz.Ransom@fXu5MmHo2tfK.edu              
+AAAAAAAAPDDAAAAA   Reginald              Garcia               Reginald.Garcia@8NKIJxQZ.org             
+
+
+</console>
+</unit>
+
+
+===== Executing a Query benchmark =====
+''Bytle-Db'' is able to [[execute|execute]] every query stored in ''sql'' files in a directory.
+
+[[tpcds|tpcds]] is a benchmark and offers 100 queries that we will execute. 
+
+<wrap info>All 100 queries are not present because ''Sqlite'' does not implement all standard ANSI clause but as since version [[https://www.sqlite.org/draft/releaselog/3_25_0.html|3.25]] support window functions, most of the analytics query are working.</wrap>
+
+All ''Tpcds'' queries are located at ''DB_HOME\sql\tpcds\query\sqlite'' where ''DB_HOME'' is the directory where ''Bytle-Db'' was unzipped/installed.
+
+<unit envBYTLE_DB_HOME=.\src\main>
+<code dos>
+db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite
+</code>
+<console>
+Query Name     Latency (ms)   Row Count   Error   Message   
+------------   ------------   ---------   -----   -------   
+query_1.sql              89         100                     
+query_10.sql          39111           1                     
+query_11.sql            284           9                     
+query_12.sql             18          19                     
+query_13.sql            105           1                     
+query_14.sql           2648         100                     
+query_15.sql             53          21                     
+query_18.sql            258          60                     
+query_19.sql             71          17                     
+query_2.sql             353        2513                     
+query_20.sql            106         100                     
+query_21.sql            255           0                     
+query_22.sql            175         100                     
+query_23.sql           1208           1                     
+query_24.sql            152           0                     
+query_25.sql            236           0                     
+query_26.sql            239         100                     
+query_27.sql            247         100                     
+query_28.sql            214           1                     
+query_29.sql            247           0                     
+query_3.sql              78           2                     
+query_30.sql             22           3                     
+query_31.sql            441           0                     
+query_32.sql             66           1                     
+query_33.sql            133         100                     
+query_34.sql             73          12                     
+query_35.sql          33423         100                     
+query_36.sql            105         100                     
+query_37.sql            124           0                     
+query_38.sql            157           1                     
+query_4.sql             501           7                     
+query_40.sql            127          40                     
+query_41.sql             28           0                     
+query_42.sql             68           6                     
+query_43.sql             84           2                     
+query_44.sql           1775          10                     
+query_45.sql             10           5                     
+query_46.sql             83         100                     
+query_47.sql            687         100                     
+query_48.sql            104           1                     
+query_49.sql           1602           5                     
+query_5.sql             264         100                     
+query_50.sql             11           2                     
+query_52.sql             71          10                     
+query_53.sql            266           0                     
+query_54.sql            506           0                     
+query_55.sql             70           7                     
+query_56.sql            124           3                     
+query_57.sql            514         100                     
+query_58.sql            576           0                     
+query_59.sql            415         100                     
+query_6.sql             315           3                     
+query_60.sql            129         100                     
+query_61.sql             95           1                     
+query_62.sql             14           6                     
+query_63.sql            271           0                     
+query_64.sql            512           0                     
+query_65.sql            148           4                     
+query_66.sql             96           1                     
+query_67.sql            188         100                     
+query_68.sql             68          79                     
+query_69.sql          36588          18                     
+query_7.sql             243         100                     
+query_70.sql            156           1                     
+query_71.sql            144          28                     
+query_72.sql           2325          22                     
+query_73.sql            133           0                     
+query_74.sql            189          14                     
+query_75.sql            597          32                     
+query_76.sql             87         100                     
+query_77.sql            164           7                     
+query_78.sql           1715         100                     
+query_79.sql             74         100                     
+query_8.sql              13           0                     
+query_80.sql            247          87                     
+query_81.sql             38           6                     
+query_82.sql             63           1                     
+query_83.sql            326           0                     
+query_84.sql             11           1                     
+query_85.sql             29           0                     
+query_86.sql             13         100                     
+query_88.sql            742           1                     
+query_89.sql            138         100                     
+query_9.sql             360           1                     
+query_90.sql             20           1                     
+query_91.sql             14           0                     
+query_92.sql             13           1                     
+query_93.sql            163           0                     
+query_94.sql          55300           1                     
+query_95.sql             29           1                     
+query_96.sql             83           1                     
+query_98.sql            131         237                     
+query_99.sql            115          12
+</console>
+</unit>

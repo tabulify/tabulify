@@ -1,0 +1,50 @@
+====== Bytle Db - Table module ======
+
+
+===== About =====
+The ''table'' [[:module|module]] helps you to perform operations against one or more tables.
+
+===== Operations =====
+  * [[load|load]] -            load data into a table from a file
+  * [[download|download]] -         download a table into a file
+  * [[transfer|transfer]] -         transfer a table from a database to another
+  * [[fill|fill]]              fill a table with generated data
+  * [[list|list]]              list tables
+  * [[drop|drop]]              drop table(s)
+  * [[count|count]]             count the number of tables
+  * [[show|show]]              show the table structures
+
+===== Syntax =====
+
+<unit>
+<code dos>
+db table --help
+</code>
+<console>
+operations on one or several tables
+
+Syntax:
+
+	db [options] table <command>
+
+where:
+
+	Command (is one of):
+		* load              load data into a table from a file
+		* download          download a table into a file
+		* transfer          transfer a table from a database to another
+		* fill              fill a table with generated data
+		* list              list tables
+		* drop              drop table(s)
+		* count             count the number of tables
+		* show              show the table structures
+
+	Global Options:
+		* --help,-h         Print this help
+		* --config          The path to the config file
+</console>
+</unit>
+
+
+
+

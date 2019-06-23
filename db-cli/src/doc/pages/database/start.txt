@@ -1,0 +1,12 @@
+====== Bytle Db - Database ======
+
+
+===== About =====
+For Bytle, a database is an application that store data in a relational format. Bytle-Db call this structure a ''tabular''.
+
+
+[[..:db|Bytle Db]] helps you operate on this tables with the following [[..:module|module]]:
+  * [[..:table:|Table]] for a table stored in a relational database and supporting its operations through SQL.
+  * [[..:csv:|Csv]] for a table stored in a CSV format
+  * [[..:excel:|Excel]] for a table stored in a Excel format
+

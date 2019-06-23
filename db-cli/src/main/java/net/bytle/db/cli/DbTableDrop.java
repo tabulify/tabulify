@@ -1,0 +1,131 @@
+package net.bytle.db.cli;
+
+
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
+import net.bytle.db.DbLoggers;
+import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
+import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.Tables;
+import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.TableDef;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.System.exit;
+import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
+import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
+
+
+public class DbTableDrop {
+
+    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    public static final String STRICT = "strict";
+    public static final String FORCE = "force";
+    private static final String ARG_NAME = "name|pattern";
+
+    public static void run(CliCommand cliCommand, String[] args) {
+
+        String description = "Drop table(s).";
+        String example = "";
+        example += "To drop the tables D_TIME and F_SALES:\n\n" +
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME F_SALES\n\n";
+        example += "To drop only the table D_TIME with force (ie deleting the foreign keys constraint):\n\n" +
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + FORCE + " D_TIME\n\n";
+        example += "To drop all dimension tables that begins with (D_):\n\n" +
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "\"^D\\_.*\"\n\n";
+        example += "To drop all tables:\n\n" +
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " \".*\"\n\n";
+
+        // Create the parser
+        cliCommand
+                .setDescription(description)
+                .setExample(example);
+
+
+        cliCommand.argOf(ARG_NAME)
+                .setDescription("table or regular expression.")
+                .setMandatory(true);
+        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
+        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
+
+        cliCommand.flagOf(STRICT)
+                .setDescription("if set, it will throw an error if a table is not found");
+
+        cliCommand.flagOf(FORCE)
+                .setDescription("if set, the table will be dropped even if referenced by a foreign constraint");
+
+        CliParser cliParser = Clis.getParser(cliCommand, args);
+
+        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
+                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+
+        // Bring the get statement out of the output zone
+        // Otherwise we will not see them their log in the output stream
+        final Boolean withForce = cliParser.getBoolean(FORCE);
+        final Boolean isStrict = cliParser.getBoolean(STRICT);
+
+        // Start output zone
+        // Shutting down the info of the Db Engine
+        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
+
+        // Get the tables asked
+        List<String> tableNames = cliParser.getStrings(ARG_NAME);
+        List<TableDef> tables = new ArrayList<>();
+        for (String pattern : tableNames) {
+            List<TableDef> tablesFound = database.getCurrentSchema().getTables(pattern);
+            if (tablesFound.size() != 0) {
+
+                tables.addAll(tablesFound);
+
+            } else {
+
+                final String msg = "No tables found with the name/pattern (" + pattern + ")";
+                if (isStrict) {
+
+                    LOGGER.severe(msg);
+                    exit(1);
+
+                } else {
+
+                    LOGGER.warning(msg);
+
+                }
+
+            }
+
+        }
+
+        // Doing the work
+        System.out.println();
+        Dag dag = Dag.get(tables);
+        for (TableDef tableDef : dag.getDropOrderedTables()) {
+
+            if (withForce) {
+                List<ForeignKeyDef> foreignKeys = tableDef.getExternalForeignKeys();
+                for (ForeignKeyDef foreignKeyDef : foreignKeys) {
+                    Tables.dropForeignKey(foreignKeyDef);
+                    System.out.println("ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")");
+                }
+            }
+            Tables.drop(tableDef);
+            System.out.println("Table (" + tableDef.getFullyQualifiedName() + ") was dropped.");
+        }
+
+        // End
+        System.out.println();
+        // Setting the log back to see them in a test
+        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
+        LOGGER.info("Bye !");
+
+    }
+
+
+}

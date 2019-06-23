@@ -1,0 +1,51 @@
+====== Bytle Db - Download a table ======
+
+
+===== About ===== 
+The Bytle Db [[table|table]] ''download'' action permits you to download a relational table into a file. 
+
+The target data file may be:
+  * a [[..:csv:start|CSV]]
+  * or [[..:excel:start|Excel file]].
+
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db table download --help
+</code>
+<console>
+Load a file into a database. 
+
+Syntax:
+
+	db [options] table load <File.csv>
+
+where:
+
+	Options:
+		* --target.table       defines the TARGET table database
+		* --tw                 defines the TARGET number of thread against the TARGET database
+		* --bs                 defines the size of the buffer between SOURCE and TARGET threads
+		* --tcf                defines the commit frequency against the TARGET table by batch
+		* --tbs                defines the batch size against the TARGET table
+		* --tcs                defines a file that contains script that must be run against the target database
+		* --mp                 defines the file path that will save the metrics
+
+	Global Options:
+		* --help,-h            Print this help
+		* --config             The path to the config file
+
+	Config File Options (.\conf\db.ini ):
+		* --db.target.url      defines the TARGET Jdbc connection String for the TARGET database (Example: jdbc:sap://192.168.0.132:30015/?user=loing&password=pwd)
+		* --db.target.driver   defines the TARGET driver for the TARGET database (Example: com.sap.db.jdbc.Driver)
+
+	Args:
+		* File.csv             A CSV file
+
+The last argument is a CSV file
+</console>
+</unit>
+
+===== Example =====
