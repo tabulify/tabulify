@@ -5,13 +5,36 @@ import net.bytle.db.model.TableDef;
 
 import java.util.List;
 
-public abstract class DatabaseExtensionAbs implements DatabaseExtension {
+public abstract class SqlDatabase implements SqlDatabaseI {
 
-    private final Database database;
+    /**
+     * Initializes a new instance of this class.
+     */
+//    protected SqlDatabase() {
+//    }
 
-    public DatabaseExtensionAbs(Database database) {
+    // TODO: Should be replace by the protected constructor above when all SqlDatabase
+    // are implemened as extension
+    // 20190624
+    private  Database database = null;
+    private  SqlDatabaseProvider sqlDatabaseProvider = null;
+
+    public SqlDatabase(Database database) {
         this.database = database;
     }
+
+    public SqlDatabase(SqlDatabaseProvider databaseProvider) {
+        this.sqlDatabaseProvider = databaseProvider;
+    }
+
+
+    /**
+     * Returns the provider that created this SqlDatabase system.
+     *
+     * @return The provider that created this SqlDatabase
+     */
+//    public abstract SqlDatabaseProvider provider();
+
 
     /**
      * Return a DataTypeDatabase for the corresponding typeCode

@@ -73,6 +73,15 @@ public class RelationMeta {
 
     }
 
+    public RelationMeta addColumn(String columnName, String typeName) {
+
+        getColumnOf(columnName)
+                .typeName(typeName);
+
+        return this;
+
+    }
+
     public RelationMeta addColumn(String columnName, int typeCode, int precision) {
 
         getColumnOf(columnName)

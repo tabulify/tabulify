@@ -1,7 +1,7 @@
-package net.bytle.db.database.Sqlite;
+package net.bytle.db.sqlite;
 
 import net.bytle.db.database.Database;
-import net.bytle.db.database.DatabaseExtensionAbs;
+import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 /**
  * Created by gerard on 28-11-2015.
  */
-public class DatabaseExtensionSqlite extends DatabaseExtensionAbs {
+public class SqlDatabaseISqlite extends SqlDatabase {
 
 
-    public DatabaseExtensionSqlite(Database database) {
+    public SqlDatabaseISqlite(Database database) {
         super(database);
     }
 

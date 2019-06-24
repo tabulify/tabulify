@@ -325,6 +325,11 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return this;
     }
 
+    public TableDef addColumn(String columnName, String type) {
+        meta.addColumn(columnName, type);
+        return this;
+    }
+
     public TableDef addColumn(String columnName, int type, int precision) {
         meta.addColumn(columnName, type, precision);
         return this;

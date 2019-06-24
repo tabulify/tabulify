@@ -2,7 +2,7 @@ package net.bytle.db.database.SqlServer;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.DatabaseExtensionAbs;
+import net.bytle.db.database.SqlDatabase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.Map;
  * Logger logger = Logger.getLogger("com.microsoft.sqlserver.jdbc");
  * logger.setLevel(Level.FINE);
  */
-public class DatabaseExtensionSqlServer extends DatabaseExtensionAbs {
+public class SqlDatabaseISqlServer extends SqlDatabase {
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer,DataTypeDatabase>();
 
@@ -28,7 +28,7 @@ public class DatabaseExtensionSqlServer extends DatabaseExtensionAbs {
         dataTypeDatabaseSet.put(SlqServerDbSmallIntType.TYPE_CODE, new SlqServerDbSmallIntType());
     }
 
-    public DatabaseExtensionSqlServer(Database database) {
+    public SqlDatabaseISqlServer(Database database) {
         super(database);
     }
 

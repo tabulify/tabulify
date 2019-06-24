@@ -3,12 +3,11 @@ package net.bytle.db.database;
 import net.bytle.db.DbDefaultValue;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.connection.URIExtended;
-import net.bytle.db.database.Hana.DatabaseExtensionHana;
-import net.bytle.db.database.Hive.DatabaseExtensionHive;
+import net.bytle.db.database.Hana.SqlDatabaseIHana;
+import net.bytle.db.database.Hive.SqlDatabaseIHive;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.database.Oracle.DatabaseExtensionOracle;
-import net.bytle.db.database.SqlServer.DatabaseExtensionSqlServer;
-import net.bytle.db.database.Sqlite.DatabaseExtensionSqlite;
+import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
+import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
 import net.bytle.db.model.*;
 
 import java.net.URI;
@@ -40,7 +39,7 @@ public class Database implements AutoCloseable {
 
     private DatabaseMetaData databaseMetadata;
 
-    private DatabaseExtension databaseExtension;
+    private SqlDatabaseI sqlDatabaseI;
 
     // The database name
     private final String databaseName;
@@ -81,8 +80,8 @@ public class Database implements AutoCloseable {
     public String getStatementTableName(String objectName) {
 
         String normativeObjectName = objectName;
-        if (this.getDatabaseExtension() != null) {
-            String objectNameExtension = this.getDatabaseExtension().getNormativeSchemaObjectName(objectName);
+        if (this.getSqlDatabase() != null) {
+            String objectNameExtension = this.getSqlDatabase().getNormativeSchemaObjectName(objectName);
             if (objectNameExtension != null) {
                 normativeObjectName = objectNameExtension;
             }
@@ -339,8 +338,8 @@ public class Database implements AutoCloseable {
     public Object getLoadObject(int targetColumnType, Object sourceObject) {
 
         Object object = null;
-        if (this.getDatabaseExtension() != null) {
-            object = this.getDatabaseExtension().getLoadObject(targetColumnType, sourceObject);
+        if (this.getSqlDatabase() != null) {
+            object = this.getSqlDatabase().getLoadObject(targetColumnType, sourceObject);
         }
         if (object == null) {
             return sourceObject;
@@ -420,8 +419,8 @@ public class Database implements AutoCloseable {
      */
     public Integer getMaxWriterConnection() {
         Integer maxWriterConnection = null;
-        if (this.getDatabaseExtension() != null) {
-            maxWriterConnection = this.getDatabaseExtension().getMaxWriterConnection();
+        if (this.getSqlDatabase() != null) {
+            maxWriterConnection = this.getSqlDatabase().getMaxWriterConnection();
         }
         if (maxWriterConnection != null) {
             return maxWriterConnection;
@@ -581,31 +580,31 @@ public class Database implements AutoCloseable {
     }
 
 
-    public DatabaseExtension getDatabaseExtension() {
+    public SqlDatabaseI getSqlDatabase() {
 
-        if (databaseExtension == null) {
+        if (sqlDatabaseI == null) {
             if (this.getDatabaseProductName() != null) {
 
                 switch (this.getDatabaseProductName()) {
                     case DB_ORACLE:
-                        databaseExtension = new DatabaseExtensionOracle(this);
+                        sqlDatabaseI = new SqlDatabaseIOracle(this);
                         break;
                     case DB_HANA:
-                        databaseExtension = new DatabaseExtensionHana(this);
+                        sqlDatabaseI = new SqlDatabaseIHana(this);
                         break;
                     case DB_SQL_SERVER:
-                        databaseExtension = new DatabaseExtensionSqlServer(this);
+                        sqlDatabaseI = new SqlDatabaseISqlServer(this);
                         break;
                     case DB_SQLITE:
-                        databaseExtension = new DatabaseExtensionSqlite(this);
+                        sqlDatabaseI = SqlDatabases.getSqlDatabase(url);
                         break;
                     case DB_HIVE:
-                        databaseExtension = new DatabaseExtensionHive(this);
+                        sqlDatabaseI = new SqlDatabaseIHive(this);
                         break;
                 }
             }
         }
-        return databaseExtension;
+        return sqlDatabaseI;
     }
 
     /**
@@ -619,9 +618,9 @@ public class Database implements AutoCloseable {
 
         if (dataType == null) {
             DataTypeDatabase dataTypeDatabase = null;
-            DatabaseExtension databaseExtension = this.getDatabaseExtension();
-            if (databaseExtension != null) {
-                dataTypeDatabase = databaseExtension.dataTypeOf(typeCode);
+            SqlDatabaseI sqlDatabaseI = this.getSqlDatabase();
+            if (sqlDatabaseI != null) {
+                dataTypeDatabase = sqlDatabaseI.dataTypeOf(typeCode);
             }
 
             DataTypeDriver dataTypeDriver = this.getDataTypeDriver(typeCode);

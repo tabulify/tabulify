@@ -2,7 +2,7 @@ package net.bytle.db.database.Hive;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.DatabaseExtensionAbs;
+import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.model.TableDef;
 
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Created by gerard on 11-01-2016.
  */
-public class DatabaseExtensionHive extends DatabaseExtensionAbs {
+public class SqlDatabaseIHive extends SqlDatabase {
 
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
@@ -26,7 +26,7 @@ public class DatabaseExtensionHive extends DatabaseExtensionAbs {
         dataTypeDatabaseSet.put(HiveSmallIntType.TYPE_CODE, new HiveSmallIntType());
     }
 
-    public DatabaseExtensionHive(Database database) {
+    public SqlDatabaseIHive(Database database) {
         super(database);
     }
 

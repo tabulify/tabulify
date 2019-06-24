@@ -2,7 +2,7 @@ package net.bytle.db.database.Hana;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.DatabaseExtensionAbs;
+import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Created by gerard on 11-01-2016.
  */
-public class DatabaseExtensionHana extends DatabaseExtensionAbs {
+public class SqlDatabaseIHana extends SqlDatabase {
 
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
@@ -26,8 +26,8 @@ public class DatabaseExtensionHana extends DatabaseExtensionAbs {
         dataTypeDatabaseSet.put(HanaDbVarcharType.TYPE_CODE, new HanaDbVarcharType());
     }
 
-    public DatabaseExtensionHana(Database database) {
-        super(database);
+    public SqlDatabaseIHana(Database database) {
+            super(database);
     }
 
 

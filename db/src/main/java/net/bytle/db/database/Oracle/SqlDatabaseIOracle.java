@@ -2,7 +2,7 @@ package net.bytle.db.database.Oracle;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.DatabaseExtensionAbs;
+import net.bytle.db.database.SqlDatabase;
 import oracle.jdbc.OracleTypes;
 
 import java.util.HashMap;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by gerard on 28-11-2015.
  */
-public class DatabaseExtensionOracle extends DatabaseExtensionAbs {
+public class SqlDatabaseIOracle extends SqlDatabase {
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer,DataTypeDatabase>();
 
@@ -26,7 +26,7 @@ public class DatabaseExtensionOracle extends DatabaseExtensionAbs {
         dataTypeDatabaseSet.put(OraDbLongRawType.TYPE_CODE, new OraDbLongRawType());
     }
 
-    public DatabaseExtensionOracle(Database database) {
+    public SqlDatabaseIOracle(Database database) {
         super(database);
     }
 

@@ -71,7 +71,7 @@ public class DbObjectBuilder {
 
         // Bug in SQLite Driver - Hack
         // that doesn't return the good primary ley
-        Boolean done = tableDef.getDatabase().getDatabaseExtension().addPrimaryKey(tableDef);
+        Boolean done = tableDef.getDatabase().getSqlDatabase().addPrimaryKey(tableDef);
         if (done == null || done) {
             return;
         }
@@ -310,7 +310,7 @@ public class DbObjectBuilder {
 
         // SQLite Driver doesn't return a empty string as key name
         // for all foreigns key
-        Boolean done = tableDef.getDatabase().getDatabaseExtension().addForeignKey(tableDef);
+        Boolean done = tableDef.getDatabase().getSqlDatabase().addForeignKey(tableDef);
         if (done == null || done) {
             return;
         }

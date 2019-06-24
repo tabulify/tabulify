@@ -13,7 +13,7 @@ import java.util.List;
  *
  * Within a pattern String in the databaseMetadata function, "%" means match any substring of 0 or more characters, and "_" means match any one character.
  */
-public interface DatabaseExtension {
+public interface SqlDatabaseI {
 
 
     /**

@@ -21,6 +21,16 @@ public class DbDdl {
      *
      * @param tableDef The table Name in the create statement
      */
+    public static List<String> getCreateTableStatements(TableDef tableDef) {
+
+        return getCreateTableStatements(tableDef, tableDef.getSchema(), tableDef.getName());
+    }
+
+    /**
+     * Return create statements (inclusive primary key, foreign key and unique key)
+     *
+     * @param tableDef The table Name in the create statement
+     */
     public static List<String> getCreateTableStatements(TableDef tableDef, SchemaDef schemaDef) {
 
         return getCreateTableStatements(tableDef, schemaDef, tableDef.getName());
@@ -39,10 +49,10 @@ public class DbDdl {
 
         // If the databaseDefault implements its own logic, we return it.
         try {
-            statements = database.getDatabaseExtension().getCreateTableStatements(tableDef, name);
+            statements = database.getSqlDatabase().getCreateTableStatements(tableDef, name);
             if (statements != null) {
                 if (statements.size() == 0) {
-                    LOGGER.warning("The database extension " + database.getDatabaseExtension() + " returns 0 statements.");
+                    LOGGER.warning("The database extension " + database.getSqlDatabase() + " returns 0 statements.");
                 } else {
                     return statements;
                 }

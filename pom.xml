@@ -16,6 +16,7 @@
         <module>db-cli</module>
         <module>db-loader</module>
         <module>db-tpc</module>
+        <module>db-sqlite</module>
     </modules>
     <packaging>pom</packaging>
 

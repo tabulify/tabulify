@@ -30,11 +30,6 @@ public class ColumnDef implements Comparable<ColumnDef> {
     /* Mandatory */
     private final String columnName;
 
-
-    /* Precision = Length for string, Precision =  Precision for Fix Number */
-    private Integer precision;
-    /* Only needed for number */
-    private Integer scale;
     private int nullable = DatabaseMetaData.columnNullable;
     private String isAutoincrement;
     private String isGeneratedColumn;
@@ -45,7 +40,15 @@ public class ColumnDef implements Comparable<ColumnDef> {
     // Default type code is given in the getter function
     private DataType dataType;
     private Integer typeCode;
+    private String typeName; // Db such as sqlite doesn't have the notion of typcode
+    /* Precision = Length for string, Precision =  Precision for Fix Number */
+    private Integer precision;
+    /* Only needed for number */
+    private Integer scale;
+
+    //
     private Class clazz;
+
 
     public String getIsGeneratedColumn() {
         return isGeneratedColumn;
@@ -292,5 +295,12 @@ public class ColumnDef implements Comparable<ColumnDef> {
      */
     public String getDescription() {
         return "";
+    }
+
+    public ColumnDef typeName(String typeName) {
+        if (typeName != null) {
+            this.typeName = typeName;
+        }
+        return this;
     }
 }
