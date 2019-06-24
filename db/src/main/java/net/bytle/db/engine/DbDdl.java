@@ -71,10 +71,19 @@ public class DbDdl {
 
 
         // The database extension doesn't implements its own logic, we create then a standard SQL
-        String createTableStatement = "create table " + schemaDef.getName() + "." + name + " (\n";
-        createTableStatement += getCreateTableStatementColumnsDefinition(tableDef.getColumnDefs(), schemaDef);
-        createTableStatement += " )\n";
-        statements.add(createTableStatement);
+
+        StringBuilder createTableStatement = new StringBuilder()
+                .append("create table ");
+        final String schemaName = schemaDef.getName();
+        if (schemaName != null) {
+            createTableStatement.append(schemaName).append(".");
+        }
+        createTableStatement
+                .append(name)
+                .append(" (\n")
+                .append(getCreateTableStatementColumnsDefinition(tableDef.getColumnDefs(), schemaDef))
+                .append(" )\n");
+        statements.add(createTableStatement.toString());
 
         // Primary Key
         if (tableDef.getPrimaryKey().getColumns().size() != 0) {
@@ -104,8 +113,6 @@ public class DbDdl {
 
 
     /**
-     * This function can be used by database extension to create their own statement
-     *
      * @param columnDefs : The result set meta contains the table columns structures
      * @param schemaDef  : The target schema
      * @return the column string part of a create statement
@@ -113,15 +120,14 @@ public class DbDdl {
     public static String getCreateTableStatementColumnsDefinition(List<ColumnDef> columnDefs, SchemaDef schemaDef) {
 
 
-        String statementColumnPart = "";
+        StringBuilder statementColumnPart = new StringBuilder();
         for (int i = 0; i < columnDefs.size(); i++) {
 
             try {
 
-
                 ColumnDef columnDef = columnDefs.get(i);
                 // Add it to the columns statement
-                statementColumnPart += getColumnStatementForCreateTable(columnDef, schemaDef);
+                statementColumnPart.append(getColumnStatementForCreateTable(columnDef, schemaDef));
 
             } catch (Exception e) {
 
@@ -131,19 +137,19 @@ public class DbDdl {
 
             // Is it the end ...
             if (i != columnDefs.size() - 1) {
-                statementColumnPart += ",\n";
+                statementColumnPart.append(",\n");
             } else {
-                statementColumnPart += "\n";
+                statementColumnPart.append("\n");
             }
 
         }
 
-        return statementColumnPart;
+        return statementColumnPart.toString();
 
     }
 
     /**
-     * A blank statement in the form "columnName datatype"
+     * A blank statement in the form "columnName datatype(scale, precision)"
      * The constraint such as NOT NULL unique may change between database
      * Example Sqlite has the primary key statement before NOT NULL
      *
@@ -164,7 +170,6 @@ public class DbDdl {
         if (scale == null) {
             scale = targetDataType.getMaximumScale();
         }
-
 
         String dataTypeCreateStatement = null;
 
@@ -354,6 +359,7 @@ public class DbDdl {
             return null;
         }
 
+        // TODO: Move to Hive
         // Constraint are supported from 2.1
         // https://issues.apache.org/jira/browse/HIVE-13290
         if (schemaDef.getDatabase().getDatabaseProductName().equals(Database.DB_HIVE)) {
@@ -366,18 +372,31 @@ public class DbDdl {
             }
         }
 
-        String statement = "ALTER TABLE " + schemaDef.getName() + "." + primaryKeyDef.getTableDef().getName() + " ADD ";
+        StringBuilder statement = new StringBuilder().append("ALTER TABLE ");
+        if (schemaDef.getName() != null) {
+            statement
+                    .append(schemaDef.getName())
+                    .append(".");
+        }
+        statement
+                .append(primaryKeyDef.getTableDef().getName())
+                .append(" ADD ");
         if (primaryKeyDef.getName() != null) {
-            statement += "CONSTRAINT " + primaryKeyDef.getName() + " ";
+            statement
+                    .append("CONSTRAINT ")
+                    .append(primaryKeyDef.getName())
+                    .append(" ");
         }
         List<String> columnNames = new ArrayList<>();
         for (ColumnDef columnDef : columns) {
             columnNames.add(columnDef.getColumnName());
         }
-        statement += "PRIMARY KEY  (" + String.join(", ", columnNames) + ")";
+        statement
+                .append("PRIMARY KEY  (")
+                .append(String.join(", ", columnNames))
+                .append(")");
 
-
-        return statement;
+        return statement.toString();
     }
 
 

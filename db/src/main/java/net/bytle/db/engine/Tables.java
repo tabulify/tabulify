@@ -7,6 +7,8 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
 
+import javax.xml.crypto.Data;
+import javax.xml.validation.Schema;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -111,20 +113,19 @@ public class Tables {
      * <p>
      * TODO: the table may exist in a non-relational database
      */
-    public synchronized static boolean exists(TableDef tableDef, Database database) {
+    public synchronized static boolean exists(TableDef tableDef, SchemaDef schema) {
 
         // Tables exists ?
-        final Connection currentConnection = database.getCurrentConnection();
+        final Connection currentConnection = schema.getDatabase().getCurrentConnection();
         if (currentConnection == null) {
-            throw new RuntimeException("The database (" + database + ") has no connection (no URL ?). We then cannot check the existence of a table.");
+            throw new RuntimeException("The database (" + schema.getDatabase() + ") has no connection (no URL ?). We then cannot check the existence of a table.");
         }
-        Boolean tableExist;
+        boolean tableExist;
         try {
             String[] types = {"TABLE"};
             ResultSet tableResultSet;
             String schemaName = null;
-            SchemaDef schema = database.getCurrentSchema();
-            if (schema != null) {
+            if (schema.getName() != null) {
                 schemaName = schema.getName();
             }
 
@@ -147,7 +148,18 @@ public class Tables {
      * The structure of the table is not checked
      */
     public static boolean exists(TableDef tableDef) {
-        return exists(tableDef, tableDef.getDatabase());
+        return exists(tableDef, tableDef.getDatabase().getCurrentSchema());
+    }
+
+    /**
+     * Check if the table exists in the current schema of the database
+     *
+     * @param tableDef
+     * @param database
+     * @return
+     */
+    public static boolean exists(TableDef tableDef, Database database) {
+        return exists(tableDef, database.getCurrentSchema());
     }
 
     public static String getMaxStringValue(ColumnDef columnDef) {
@@ -346,6 +358,37 @@ public class Tables {
 
     }
 
+    public static void drop(TableDef tableDef, SchemaDef schemaDef) {
+        Database database = schemaDef.getDatabase();
+
+        if (database.getUrl() != null) {
+            StringBuilder dropTableStatement = new StringBuilder().append("drop table ");
+            if (schemaDef.getName() != null) {
+                dropTableStatement
+                        .append(schemaDef.getName())
+                        .append(".");
+            }
+            dropTableStatement.append(tableDef.getName());
+            try (
+
+                    Connection currentConnection = database.getCurrentConnection();
+                    Statement statement = currentConnection.createStatement();
+            ) {
+
+                statement.execute(dropTableStatement.toString());
+                LOGGER.info("Table " + tableDef.getFullyQualifiedName() + " dropped");
+
+            } catch (SQLException e) {
+                System.err.println(dropTableStatement);
+                throw new RuntimeException(e);
+            }
+        } else {
+
+            StorageManager.drop(tableDef);
+
+        }
+    }
+
     /**
      * Drop one or more tables
      * <p>
@@ -361,29 +404,7 @@ public class Tables {
 
         for (TableDef tableDef : dag.getDropOrderedTables()) {
 
-            Database database = tableDef.getDatabase();
-
-            if (database.getUrl() != null) {
-                String dropTableStatement = "drop table " + tableDef.getFullyQualifiedName();
-                try {
-
-                    Connection currentConnection = database.getCurrentConnection();
-                    Statement statement = currentConnection.createStatement();
-                    statement.execute(dropTableStatement);
-                    statement.close();
-
-
-                    LOGGER.info("Table " + tableDef.getFullyQualifiedName() + " dropped");
-
-                } catch (SQLException e) {
-                    System.err.println(dropTableStatement);
-                    throw new RuntimeException(e);
-                }
-            } else {
-
-                StorageManager.drop(tableDef);
-
-            }
+            drop(tableDef, tableDef.getSchema());
 
         }
     }
@@ -421,6 +442,16 @@ public class Tables {
     public static void dropIfExist(TableDef... tableDefs) {
 
         Tables.dropIfExist(Arrays.asList(tableDefs));
+
+    }
+
+    public static void dropIfExist(TableDef tableDef, SchemaDef schemaDef) {
+
+
+        if (exists(tableDef, schemaDef)) {
+            drop(tableDef, schemaDef);
+        }
+
 
     }
 
@@ -551,4 +582,6 @@ public class Tables {
         Tables.print(tableStructure);
         Tables.drop(tableStructure);
     }
+
+
 }

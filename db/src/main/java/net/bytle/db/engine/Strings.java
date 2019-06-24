@@ -11,7 +11,6 @@ public class Strings {
 
     public static Integer numberOfOccurences(String s, String regexp) {
 
-
         Pattern pattern = Pattern.compile(regexp, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(s);
         Integer counter = 0;
@@ -23,12 +22,14 @@ public class Strings {
     }
 
     /**
+     * Function used before a text comparison to normalize the text
      * @param string
-     * @return a compact string that is written on one line and has no double space
+     * @return a compact string that is written on one line, has no double space and is trimmed
      */
-    static public String onOneLine(String string) {
+    static public String normalize(String string) {
         return string.replaceAll("\r\n|\n", " ") // No new line
-                .replaceAll("[ ]{2,10}", ""); // No double space;
+                .replaceAll("[ ]{2,10}", "")
+                .trim(); // No double space;
     }
 
     public static String get(Path path) {
