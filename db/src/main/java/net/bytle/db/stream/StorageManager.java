@@ -29,6 +29,5 @@ public class StorageManager {
 
     public static void drop(TableDef tableDef) {
         StorageManager.delete(tableDef);
-        Tables.dropCache(tableDef);
     }
 }

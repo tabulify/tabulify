@@ -10,7 +10,6 @@ public class SchemaDef {
 
     private final Database database;
     private String name;
-    private Map<String, TableDef> tableDefCache = new HashMap<>();
 
     /**
      * Should be private. Can be called only from a database object
@@ -48,8 +47,6 @@ public class SchemaDef {
             }
         }
 
-        tableDefCache.put(tableDef.getFullyQualifiedName(), tableDef);
-
     }
 
     public String getName() {
@@ -79,14 +76,10 @@ public class SchemaDef {
         return result;
     }
 
-    boolean wasBuild = false;
-
     public List<TableDef> getTables() {
 
-        if (!wasBuild) {
-            database.getObjectBuilder().buildSchema(this);
-        }
-        List<TableDef> tableDefs = new ArrayList<>(tableDefCache.values());
+        // Scan the database
+        List<TableDef> tableDefs = database.getObjectBuilder().buildSchema(this);
         Collections.sort(tableDefs);
         return tableDefs;
 
@@ -94,17 +87,6 @@ public class SchemaDef {
 
     public Database getDatabase() {
         return database;
-    }
-
-    /**
-     * TODO: Have the engine with the model to be able to protect this kind of intern function
-     * <p>
-     * Just to remove the cache
-     *
-     * @param tableDef - the table to remove from the cache
-     */
-    public void dropTableFromCache(TableDef tableDef) {
-        tableDefCache.remove(tableDef.getFullyQualifiedName());
     }
 
 
@@ -155,7 +137,5 @@ public class SchemaDef {
         return getForeignKeys(".*");
     }
 
-    public void dropCache() {
-        this.tableDefCache = new HashMap<>();
-    }
+
 }

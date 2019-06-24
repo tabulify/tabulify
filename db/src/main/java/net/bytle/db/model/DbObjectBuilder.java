@@ -26,7 +26,6 @@ public class DbObjectBuilder {
         this.database = database;
     }
 
-    private Map<String, TableDef> tablesCache = new HashMap<>();
 
     /**
      * A {@link TableDef} can be created manually. This operation will add the data type information to the {@link ColumnDef} from the {@link TableDef}.
@@ -153,70 +152,59 @@ public class DbObjectBuilder {
 
         // Table already build and in the cache ?
         String id = getId(tableName, schemaName);
-        if (tablesCache.keySet().contains(id)) {
+        SchemaDef schemaDef = database.getSchema(schemaName);
+        TableDef tableDef = new TableDef(database, tableName).schema(schemaDef);
 
-            return tablesCache.get(id);
+
+        if (database.getCurrentConnection() == null) {
+
+            return tableDef;
 
         } else {
 
-            SchemaDef schemaDef = database.getSchema(schemaName);
-            TableDef tableDef = new TableDef(database, tableName).schema(schemaDef);
-            tablesCache.put(id, tableDef);
+            try {
 
-            if (database.getCurrentConnection() == null) {
-
-                return tableDef;
-
-            } else {
-
-                try {
-
-                    LOGGER.fine("Building the table (or view)" + id);
-                    String[] types = {"TABLE"};
-                    String schemaPattern = schemaName;
-                    if (schemaPattern == null) {
-                        schemaPattern = database.getCurrentConnection().getSchema();
-                    }
-
-                    ResultSet tableResultSet = database.getCurrentConnection().getMetaData().getTables(null, schemaPattern, tableName, types);
-                    boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-                    if (!tableExist) {
-
-                        tableResultSet.close();
-                        return tableDef;
-
-                    } else {
-
-                        tableDef.JdbcType(tableResultSet.getString("TABLE_TYPE"));
-                        tableResultSet.close();
-
-                        // Put the table in the cache before the call of the primary key
-                        // to avoid a possible cycle when the foreignKey are build
-                        tablesCache.put(id, tableDef);
-
-                        // Columns building
-                        buildTableColumns(tableDef);
-                        // Pk Building
-                        buildPrimaryKey(tableDef);
-                        // Foreign Key building
-                        buildForeignKey(tableDef);
-                        // Unique Key
-                        buildUniqueKey(tableDef);
-
-                        // Return the table
-                        return tableDef;
-
-                    }
-
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                LOGGER.fine("Building the table (or view)" + id);
+                String[] types = {"TABLE"};
+                String schemaPattern = schemaName;
+                if (schemaPattern == null) {
+                    schemaPattern = database.getCurrentConnection().getSchema();
                 }
 
+                ResultSet tableResultSet = database.getCurrentConnection().getMetaData().getTables(null, schemaPattern, tableName, types);
+                boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
+                if (!tableExist) {
+
+                    tableResultSet.close();
+                    return tableDef;
+
+                } else {
+
+                    tableDef.JdbcType(tableResultSet.getString("TABLE_TYPE"));
+                    tableResultSet.close();
+
+                    // Columns building
+                    buildTableColumns(tableDef);
+                    // Pk Building
+                    buildPrimaryKey(tableDef);
+                    // Foreign Key building
+                    buildForeignKey(tableDef);
+                    // Unique Key
+                    buildUniqueKey(tableDef);
+
+                    // Return the table
+                    return tableDef;
+
+                }
+
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
 
         }
 
     }
+
 
 
     /**
@@ -315,9 +303,6 @@ public class DbObjectBuilder {
         TableDef tableDef = database.getTable(tableName, schemaName);
         Tables.addColumns(tableDef, relationDef);
 
-
-        // Add it to the cache
-        this.tablesCache.put(tableDef.getFullyQualifiedName(), tableDef);
         return tableDef;
     }
 
@@ -520,8 +505,9 @@ public class DbObjectBuilder {
      * @param schemaDef
      * @return
      */
-    public void buildSchema(SchemaDef schemaDef) {
+    public List<TableDef> buildSchema(SchemaDef schemaDef) {
 
+        List<TableDef> tableDefs = new ArrayList<>();
         if (schemaDef.getDatabase().getCurrentConnection() != null) {
 
             String[] types = {"TABLE"};
@@ -541,7 +527,7 @@ public class DbObjectBuilder {
                 // We do then a second loop
                 for (String tableName : tableNames) {
                     TableDef tableDef = getTableDef(tableName, schemaDef.getName());
-                    schemaDef.addTable(tableDef);
+                    tableDefs.add(tableDef);
                 }
 
             } catch (SQLException e) {
@@ -549,11 +535,8 @@ public class DbObjectBuilder {
             }
 
         }
+        return tableDefs;
 
-    }
-
-    public void dropTableFromCache(TableDef tableDef) {
-        this.tablesCache.remove(tableDef.getId());
     }
 
 
@@ -595,12 +578,6 @@ public class DbObjectBuilder {
         return schemaDefList;
     }
 
-    /**
-     * Drop the cache
-     */
-    public void dropCache() {
-        this.tablesCache = new HashMap<>();
-    }
 
     /**
      * @param query

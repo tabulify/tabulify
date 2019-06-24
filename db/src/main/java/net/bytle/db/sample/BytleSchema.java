@@ -1,13 +1,13 @@
 package net.bytle.db.sample;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.dataGenerator.yml.DataGenYmlProperty;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import java.sql.Types;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -58,6 +58,7 @@ public class BytleSchema implements SchemaSample {
      * The schema where the table will be stored
      */
     private final SchemaDef schemaDef;
+    private Map<String,TableDef> bytleTables = new HashMap<>();
 
     /**
      *
@@ -79,16 +80,17 @@ public class BytleSchema implements SchemaSample {
     void buildTables() {
 
         // Dim Cat Table
-        schemaDef.getTableOf(TABLE_CATEGORY_NAME)
+        bytleTables.put(TABLE_CATEGORY_NAME,schemaDef.getTableOf(TABLE_CATEGORY_NAME)
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
                 .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR)
                 .addColumn(COLUMN_CATEGORY_LOAD_DATE, Types.DATE)
                 .setPrimaryKey(COLUMN_CATEGORY_ID)
-                .addUniqueKey(COLUMN_CATEGORY_DESC_NAME);
+                .addUniqueKey(COLUMN_CATEGORY_DESC_NAME)
+        );
 
 
         // Dim timeTable
-        schemaDef.getTableOf(TABLE_TIME_NAME)
+        bytleTables.put(TABLE_TIME_NAME,schemaDef.getTableOf(TABLE_TIME_NAME)
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_MONTH_ID, Types.VARCHAR, 6)
                 .addColumn(COLUMN_MONTH_NUMBER, Types.INTEGER)
@@ -96,11 +98,11 @@ public class BytleSchema implements SchemaSample {
                 .addColumn(COLUMN_MONTH_DESC, Types.VARCHAR, 20)
                 .addColumn(COLUMN_MONTH_DESC_SHORT, Types.VARCHAR, 10)
                 .addColumn(COLUMN_YEAR_NUMBER, Types.VARCHAR, 4)
-                .setPrimaryKey(COLUMN_DATE_ID);
+                .setPrimaryKey(COLUMN_DATE_ID));
 
 
         // Fact Table
-        schemaDef.getTableOf(TABLE_FACT_NAME)
+        bytleTables.put(TABLE_FACT_NAME,schemaDef.getTableOf(TABLE_FACT_NAME)
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -108,7 +110,8 @@ public class BytleSchema implements SchemaSample {
                 .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE)
                 .setPrimaryKey(COLUMN_FACT_ID)
                 .addForeignKey(schemaDef.getTableOf(TABLE_TIME_NAME).getPrimaryKey(), COLUMN_DATE_ID)
-                .addForeignKey(schemaDef.getTableOf(TABLE_CATEGORY_NAME).getPrimaryKey(), COLUMN_CATEGORY_ID);
+                .addForeignKey(schemaDef.getTableOf(TABLE_CATEGORY_NAME).getPrimaryKey(), COLUMN_CATEGORY_ID)
+        );
 
 
     }
@@ -116,14 +119,12 @@ public class BytleSchema implements SchemaSample {
 
     @Override
     public List<TableDef> getTables() {
-        return schemaDef.getTables().stream()
-                .filter(s -> tables.contains(s.getName()))
-                .collect(Collectors.toList());
+        return new ArrayList<>(bytleTables.values());
     }
 
     @Override
     public TableDef getTable(String tableName) {
-        return schemaDef.getTableOf(tableName);
+        return bytleTables.get(tableName);
     }
 
 }

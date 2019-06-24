@@ -108,7 +108,7 @@ public class Tables {
      * @return if the table exist in the underlying database (actually the letter case is important)
      * <p>
      * The structure of the table is not checked
-     *
+     * <p>
      * TODO: the table may exist in a non-relational database
      */
     public synchronized static boolean exists(TableDef tableDef, Database database) {
@@ -327,11 +327,8 @@ public class Tables {
     public static void dropIfExist(List<TableDef> tableDefs) {
 
         for (TableDef tableDef : Dag.get(tableDefs).getDropOrderedTables()) {
-
             if (exists(tableDef)) {
                 drop(tableDef);
-            } else {
-                Tables.dropCache(tableDef);
             }
         }
 
@@ -356,7 +353,6 @@ public class Tables {
      * prevent the table to be dropped if the child table is not given.
      * <p>
      *
-     *
      * @param tableDefs - The tables to drop
      */
     public static void drop(List<TableDef> tableDefs) {
@@ -364,8 +360,6 @@ public class Tables {
         Dag dag = Dag.get(tableDefs);
 
         for (TableDef tableDef : dag.getDropOrderedTables()) {
-
-            Tables.dropCache(tableDef);
 
             Database database = tableDef.getDatabase();
 
@@ -393,18 +387,6 @@ public class Tables {
 
         }
     }
-
-
-    public static void dropCache(TableDef tableDef) {
-
-        // Cache
-        // Schema Cache Drop
-        tableDef.getSchema().dropTableFromCache(tableDef);
-        // Database Table Cache
-        tableDef.getDatabase().getObjectBuilder().dropTableFromCache(tableDef);
-
-    }
-
 
 
     /**
@@ -466,20 +448,6 @@ public class Tables {
 
     }
 
-    /**
-     * Empty all caches
-     *
-     * @param database
-     */
-    public static void emptyAllCache(Database database) {
-
-        // Cache
-        // Schema Cache Drop
-        database.getCurrentSchema().dropCache();
-        // Database Table Cache
-        database.getObjectBuilder().dropCache();
-
-    }
 
     /**
      * @param tableName - the name of the table

@@ -26,17 +26,6 @@ public class SchemaManager {
 
     }
 
-    /**
-     * Drop all tables, parents included
-     *
-     * @param schema
-     */
-    public static void dropAllTables(SchemaDef schema) {
-
-        Tables.drop(schema.getTables());
-        Tables.emptyAllCache(schema.getDatabase());
-
-    }
 
     /**
      * @return the null schema
