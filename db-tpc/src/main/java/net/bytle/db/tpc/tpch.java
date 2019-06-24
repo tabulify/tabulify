@@ -1,8 +1,9 @@
-package net.bytle.db.sample;
+package net.bytle.db.tpc;
 
 import com.google.common.base.Preconditions;
 import io.airlift.tpch.Customer;
 import io.airlift.tpch.CustomerGenerator;
+import io.airlift.tpch.GenerateUtils;
 import io.airlift.tpch.TpchTable;
 
 import java.io.FileWriter;
@@ -28,10 +29,10 @@ public class tpch {
         double scaleFactor = 1;
         int part = 1;
         int partCount = 1;
-        long rowCount = calculateRowCount(scaleBase, scaleFactor, part, partCount);
+        long rowCount = GenerateUtils.calculateRowCount(scaleBase, scaleFactor, part, partCount);
 
 
-        long startIndex = calculateStartIndex(scaleBase, scaleFactor, part, partCount);
+        long startIndex = GenerateUtils.calculateStartIndex(scaleBase, scaleFactor, part, partCount);
         System.out.printf("Row Count: %s\n",rowCount);
         System.out.printf("Start Index: %s\n",startIndex);
     }

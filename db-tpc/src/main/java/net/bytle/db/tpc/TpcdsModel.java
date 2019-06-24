@@ -1,8 +1,9 @@
-package net.bytle.db.sample;
+package net.bytle.db.tpc;
 
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.sample.SchemaSample;
 
 import java.sql.Types;
 import java.util.Arrays;

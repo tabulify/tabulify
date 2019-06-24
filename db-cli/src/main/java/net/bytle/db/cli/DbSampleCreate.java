@@ -10,7 +10,6 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.sample.Samples;
 import net.bytle.db.sample.SchemaSample;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public class DbSampleCreate {
                 .setDescription(description);
 
         cliCommand.argOf(ARG_NAME)
-                .setDescription("The name of the sample schema. One of " + String.join(", ", Samples.getNames()))
+                .setDescription("The name of the sample schema. One of " + String.join(", ", DbSamples.getNames()))
                 .setMandatory(true);
 
         cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
@@ -49,14 +48,14 @@ public class DbSampleCreate {
                 .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
 
         String sampleName = cliParser.getString(ARG_NAME);
-        if (!Samples.getNames().contains(sampleName)) {
+        if (!DbSamples.getNames().contains(sampleName)) {
             System.err.println();
             System.err.println("The sample schema (" + sampleName + ") is unknown");
-            System.err.println("It must be one of (" + String.join(", ", Samples.getNames()) + ")");
+            System.err.println("It must be one of (" + String.join(", ", DbSamples.getNames()) + ")");
             System.exit(1);
         }
 
-        SchemaSample schemaSample = Samples.get(sampleName);
+        SchemaSample schemaSample = DbSamples.get(sampleName);
         Dag dag = Dag.get(schemaSample.getTables());
         List<TableDef> tables = dag.getCreateOrderedTables();
 

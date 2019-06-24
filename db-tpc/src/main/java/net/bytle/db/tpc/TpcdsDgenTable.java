@@ -1,4 +1,4 @@
-package net.bytle.db.sample;
+package net.bytle.db.tpc;
 
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
@@ -72,7 +72,7 @@ public class TpcdsDgenTable {
             }
             // OutputStreamWriter parentWriter = addFileWriterForTable(table);
             // OutputStreamWriter childWriter = table.hasChild() && !session.generateOnlyOneTable() ? addFileWriterForTable(table.getChild()) : null)
-            Results results = constructResults(table, session);
+            Results results = Results.constructResults(table, session);
             try {
 
                 for (List<List<String>> parentAndChildRows : results) {

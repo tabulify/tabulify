@@ -1,12 +1,15 @@
-package net.bytle.db.sample;
+package net.bytle.db.cli;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.sample.BytleSchema;
+import net.bytle.db.sample.SchemaSample;
+import net.bytle.db.tpc.TpcdsModel;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class Samples {
+public class DbSamples {
 
     public static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
 

@@ -1,4 +1,4 @@
-package net.bytle.db.sample;
+package net.bytle.db.tpc;
 
 import com.teradata.tpcds.Options;
 import com.teradata.tpcds.Session;
@@ -40,7 +40,6 @@ public class TpcdsDgen {
         return new TpcdsDgen();
 
     }
-
 
 
     public TpcdsDgen setDirectory(Path path) {
@@ -108,7 +107,6 @@ public class TpcdsDgen {
         }
 
 
-
         Database targetDatabase;
         if (database != null) {
             targetDatabase = database;
@@ -131,16 +129,23 @@ public class TpcdsDgen {
 
                 int chunkNumber = i;
 
-                Table table = Table.getBaseTables()
-                        .stream()
-                        .filter(s -> s.getName().toLowerCase().equals(tableDef.getName().toLowerCase()))
-                        .collect(Collectors.toList())
-                        .get(0);
+                Table table;
+                if (!tableDef.getName().startsWith("s_")) {
+                    table = Table.getTable(tableDef.getName());
+                } else {
+                    LOGGER.severe("The staging table are not yet supported");
+                    continue;
+//                    table = Table.getSourceTables()
+//                            .stream()
+//                            .filter(s -> s.getName().toLowerCase().equals(tableDef.getName().toLowerCase()))
+//                            .collect(Collectors.toList())
+//                            .get(0);
+                }
 
 
                 Thread thread;
                 if (database == null) {
-                    LOGGER.fine("Generate the chunk " + chunkNumber + " for the table (" + tableDef.getName() + ") in a file");
+                    LOGGER.info("Generate the chunk " + chunkNumber + " for the table (" + tableDef.getName() + ") in a file");
                     thread = new Thread(() -> {
 
                         TableGenerator tableGenerator = new TableGenerator(session.withChunkNumber(chunkNumber));

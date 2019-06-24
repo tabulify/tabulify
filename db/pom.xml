@@ -10,7 +10,6 @@
         <groupId>net.bytle</groupId>
         <artifactId>bytle-parent</artifactId>
         <version>1.1.0-SNAPSHOT</version>
-        <relativePath>..</relativePath>
     </parent>
 
     <artifactId>bytle-db</artifactId>
@@ -118,12 +117,6 @@
         </dependency>
 
 
-        <!-- tpch -->
-        <dependency>
-            <groupId>io.airlift.tpch</groupId>
-            <artifactId>tpch</artifactId>
-            <version>0.9</version>
-        </dependency>
 
 
         <!--Test-->
@@ -142,21 +135,7 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.teradata.tpcds</groupId>
-            <artifactId>tpcds</artifactId>
-            <version>1.3-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>airline</artifactId>
-                    <groupId>io.airlift</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
 
         <!--TODO: Delete this cycle ?
             https://github.com/mplushnikov/lombok-intellij-plugin/issues/161
