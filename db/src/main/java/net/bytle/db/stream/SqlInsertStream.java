@@ -2,10 +2,10 @@ package net.bytle.db.stream;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.engine.DbDml;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.loader.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;

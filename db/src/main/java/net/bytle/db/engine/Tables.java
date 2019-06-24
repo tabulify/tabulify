@@ -4,7 +4,6 @@ package net.bytle.db.engine;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
 
@@ -356,8 +355,7 @@ public class Tables {
      * If the table is a foreign table, the child constraint will
      * prevent the table to be dropped if the child table is not given.
      * <p>
-     * If you want to drop this table and its parents without giving the full list,
-     * see the function {@link #dropWithParentsIfExist(TableDef)}
+     *
      *
      * @param tableDefs - The tables to drop
      */
@@ -407,11 +405,7 @@ public class Tables {
 
     }
 
-    public static InsertStreamListener load(TableDef targetTable, RelationDef sourceDef) {
 
-        return (new ResultSetLoader(targetTable, sourceDef).load()).get(0);
-
-    }
 
     /**
      * Suppress all rows of the table

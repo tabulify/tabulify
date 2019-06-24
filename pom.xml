@@ -14,9 +14,7 @@
         <module>cli</module>
         <module>db</module>
         <module>db-cli</module>
-        <module>bytle-doctest</module>
-        <module>log</module>
-        <module>bytle-db-test</module>
+        <module>db-loader</module>
     </modules>
     <packaging>pom</packaging>
 

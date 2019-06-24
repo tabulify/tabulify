@@ -1,6 +1,14 @@
 # Bytle Db
 
 
+## About
+
+The core module containing:
+  * the model
+  * the data generator because:
+      * the model tests used it and we don't want to introduce a cycle ie gen -> db and db -> gen
+      * all other modules used it to test
+      * Idea has an issue with that (https://github.com/mplushnikov/lombok-intellij-plugin/issues/161)
 
 ## Design
 
@@ -21,6 +29,11 @@ The top object is:
 
 ## Object Hierarchy
 
+RelationDef is the base object:
+
+  * TableDef implements a SQL Relation
+  * ...
+
 ### Model
   * A database object is a wrapper around a connection
   * A schemaDef object is created from a database object
@@ -29,7 +42,7 @@ The top object is:
   * A primaryKey object is created from a targetTableDef object
   * A foreignKey object is created from a targetTableDef object
 
-The dataType object is the only independant object and comes from a collection created from the database.
+The dataType object is the only independent object and comes from a collection created from the database.
 Precision and scale are attributes of the column object.
 
 ### Stream

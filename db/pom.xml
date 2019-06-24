@@ -10,7 +10,7 @@
         <groupId>net.bytle</groupId>
         <artifactId>bytle-parent</artifactId>
         <version>1.1.0-SNAPSHOT</version>
-        <relativePath>../parent-github</relativePath>
+        <relativePath>..</relativePath>
     </parent>
 
     <artifactId>bytle-db</artifactId>
@@ -158,6 +158,24 @@
             </exclusions>
         </dependency>
 
+        <!--TODO: Delete this cycle ?
+            https://github.com/mplushnikov/lombok-intellij-plugin/issues/161
+            Settings -> Build, Execution, Deployment -> Compiler -> Annotation Processors
+        -->
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-gen</artifactId>
+            <version>1.1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-test</artifactId>
+            <version>1.1.0-SNAPSHOT</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
     </dependencies>
 
 
@@ -171,45 +189,23 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+            <!-- Creating the test jar that is shared with the other modules -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.1.0</version>
-                <!-- Creation of the bin file (bat and sh) -->
-                <!-- A filter property file must be created in src/build/filters and given for each execution -->
-                <executions>
-                    <execution>
-                        <!-- Create the bin for the XML Update Class -->
-                        <id>createDbBin</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/bin</outputDirectory>
-                            <overwrite>true</overwrite>
-                            <fileNameFiltering>true</fileNameFiltering>
-                            <useBuildFilters>false</useBuildFilters>
-                            <filters>
-                                <filter>${project.basedir}/src/build/filters/db.properties</filter>
-                            </filters>
-                            <resources>
-                                <resource>
-                                    <filtering>true</filtering>
-                                    <directory>${project.basedir}/../cli-xp/src/main/resources/shell</directory>
-                                    <includes>
-                                        <include>*.*</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+
             <!-- Test with several database -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -3,6 +3,7 @@ package net.bytle.db.loader;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.DbDml;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.DbObjectBuilder;
 import net.bytle.db.model.TableDef;
 
 import java.security.InvalidParameterException;
@@ -16,8 +17,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
-
-import static net.bytle.db.model.DbObjectBuilder.cleanTableDef;
 
 
 /**
@@ -126,7 +125,7 @@ public class TableLoader implements AutoCloseable {
                 tableDef = database.getTable("test");
             }
             // Get a table with the good data type
-            tableDef = cleanTableDef(tableDef);
+            tableDef = DbObjectBuilder.cleanTableDef(tableDef);
 
             /**
              * Loading preparation
