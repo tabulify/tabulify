@@ -40,19 +40,20 @@ public class DbDdl {
      * Return create statements (inclusive primary key, foreign key and unique key)
      *
      * @param tableDef The table Name in the create statement
+     * @param schemaDef The target schema
      */
     public static List<String> getCreateTableStatements(TableDef tableDef, SchemaDef schemaDef, String name) {
 
 
         List<String> statements = new ArrayList<>();
-        Database database = schemaDef.getDatabase();
+        Database targetDatabase = schemaDef.getDatabase();
 
         // If the databaseDefault implements its own logic, we return it.
         try {
-            statements = database.getSqlDatabase().getCreateTableStatements(tableDef, name);
+            statements = targetDatabase.getSqlDatabase().getCreateTableStatements(tableDef, name);
             if (statements != null) {
                 if (statements.size() == 0) {
-                    LOGGER.warning("The database extension " + database.getSqlDatabase() + " returns 0 statements.");
+                    LOGGER.warning("The database extension " + targetDatabase.getSqlDatabase() + " returns 0 statements.");
                 } else {
                     return statements;
                 }
@@ -329,24 +330,42 @@ public class DbDdl {
                 }
             }
         }
-
-        String statement = "ALTER TABLE " + targetSchemaDef.getName() + "." + foreignKeyDef.getTableDef().getName() + " ADD ";
-
-
-        List<ColumnDef> nativeColumns = foreignKeyDef.getChildColumns();
-
-        List<String> nativeColumnNames = new ArrayList<>();
-        for (ColumnDef columnDef : nativeColumns) {
-            nativeColumnNames.add(columnDef.getColumnName());
+        StringBuilder statement = new StringBuilder().append("ALTER TABLE ");
+        if (targetSchemaDef.getName() != null) {
+            statement
+                    .append(targetSchemaDef.getName())
+                    .append(".");
         }
-        statement = statement + "CONSTRAINT " + foreignKeyDef.getName() + " FOREIGN KEY (" + String.join(",", nativeColumnNames) + ") ";
-
-        List<String> foreignColumnNames = new ArrayList<>();
-        for (ColumnDef columnDef : foreignKeyDef.getForeignPrimaryKey().getColumns()) {
-            foreignColumnNames.add(columnDef.getColumnName());
+        statement.append(foreignKeyDef.getTableDef().getName())
+                .append(" ADD ")
+                .append("CONSTRAINT ")
+                .append(foreignKeyDef.getName())
+                .append(" FOREIGN KEY (");
+        final List<ColumnDef> nativeColumns = foreignKeyDef.getChildColumns();
+        for (int i = 0; i < nativeColumns.size(); i++) {
+            statement.append(nativeColumns.get(i).getColumnName());
+            if (i!=nativeColumns.size()){
+                statement.append(", ");
+            }
         }
-        statement = statement + "REFERENCES " + targetSchemaDef.getName() + "." + foreignKeyDef.getForeignPrimaryKey().getTableDef().getName() + " (" + String.join(",", foreignColumnNames) + ")";
-        return statement;
+
+
+        statement
+                .append("REFERENCES ")
+                .append(targetSchemaDef.getName())
+                .append(".")
+                .append(foreignKeyDef.getForeignPrimaryKey().getTableDef().getName())
+                .append(" (");
+        List<ColumnDef> foreignColumns = foreignKeyDef.getForeignPrimaryKey().getColumns();
+        for (int i=0;i < foreignColumns.size();i++) {
+            statement.append(foreignColumns.get(i).getColumnName());
+            if (i!=foreignColumns.size()){
+                statement.append(", ");
+            }
+        }
+        statement.append(")");
+
+        return statement.toString();
 
 
     }

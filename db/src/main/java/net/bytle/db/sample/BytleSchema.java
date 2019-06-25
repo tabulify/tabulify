@@ -80,17 +80,17 @@ public class BytleSchema implements SchemaSample {
     void buildTables() {
 
         // Dim Cat Table
-        bytleTables.put(TABLE_CATEGORY_NAME,schemaDef.getTableOf(TABLE_CATEGORY_NAME)
+        final TableDef catTable = schemaDef.getTableOf(TABLE_CATEGORY_NAME)
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
                 .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR)
                 .addColumn(COLUMN_CATEGORY_LOAD_DATE, Types.DATE)
                 .setPrimaryKey(COLUMN_CATEGORY_ID)
-                .addUniqueKey(COLUMN_CATEGORY_DESC_NAME)
-        );
+                .addUniqueKey(COLUMN_CATEGORY_DESC_NAME);
+        bytleTables.put(TABLE_CATEGORY_NAME, catTable);
 
 
         // Dim timeTable
-        bytleTables.put(TABLE_TIME_NAME,schemaDef.getTableOf(TABLE_TIME_NAME)
+        final TableDef timeTable = schemaDef.getTableOf(TABLE_TIME_NAME)
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_MONTH_ID, Types.VARCHAR, 6)
                 .addColumn(COLUMN_MONTH_NUMBER, Types.INTEGER)
@@ -98,7 +98,8 @@ public class BytleSchema implements SchemaSample {
                 .addColumn(COLUMN_MONTH_DESC, Types.VARCHAR, 20)
                 .addColumn(COLUMN_MONTH_DESC_SHORT, Types.VARCHAR, 10)
                 .addColumn(COLUMN_YEAR_NUMBER, Types.VARCHAR, 4)
-                .setPrimaryKey(COLUMN_DATE_ID));
+                .setPrimaryKey(COLUMN_DATE_ID);
+        bytleTables.put(TABLE_TIME_NAME, timeTable);
 
 
         // Fact Table
@@ -109,8 +110,8 @@ public class BytleSchema implements SchemaSample {
                 .addColumn(COLUMN_SALES_QTY, Types.DOUBLE)
                 .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE)
                 .setPrimaryKey(COLUMN_FACT_ID)
-                .addForeignKey(schemaDef.getTableOf(TABLE_TIME_NAME).getPrimaryKey(), COLUMN_DATE_ID)
-                .addForeignKey(schemaDef.getTableOf(TABLE_CATEGORY_NAME).getPrimaryKey(), COLUMN_CATEGORY_ID)
+                .addForeignKey(timeTable.getPrimaryKey(), COLUMN_DATE_ID)
+                .addForeignKey(catTable.getPrimaryKey(), COLUMN_CATEGORY_ID)
         );
 
 
