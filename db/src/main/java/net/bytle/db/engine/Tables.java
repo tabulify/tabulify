@@ -192,7 +192,6 @@ public class Tables {
      * Create all tables if they don't exist
      * taking into account the foreign key constraints
      * <p>
-     * To throw an exception if the table already exist, see @{link {@link #create(List)}}
      *
      * @param tables
      */
@@ -201,11 +200,7 @@ public class Tables {
         Dag dag = Dag.get(tables);
         tables = dag.getCreateOrderedTables();
         for (TableDef tableDef : tables) {
-            if (!Tables.exists(tableDef)) {
-                Tables.create(tableDef);
-            } else {
-                throw new RuntimeException("Table (" + tableDef.getFullyQualifiedName() + ") already exist");
-            }
+            createIfNotExist(tableDef);
         }
 
     }
@@ -285,6 +280,14 @@ public class Tables {
      */
     public static TableDef create(TableDef tableDef, SchemaDef schemaDef, String tableName) {
 
+        // Check that the foreign tables exist
+        for (ForeignKeyDef foreignKeyDef: tableDef.getForeignKeys()){
+            TableDef foreignTable = foreignKeyDef.getForeignPrimaryKey().getTableDef();
+            if (!exists(foreignTable,schemaDef)){
+                throw new RuntimeException("The foreign table ("+foreignTable+") does not exist");
+            }
+        }
+
         // Standard SQL
         List<String> createTableStatements = DbDdl.getCreateTableStatements(tableDef, schemaDef, tableName);
         for (String createTableStatement : createTableStatements) {
@@ -320,6 +323,7 @@ public class Tables {
     public static void createIfNotExist(TableDef tableDef) {
 
         if (!exists(tableDef)) {
+
             create(tableDef);
 
         } else {
@@ -584,4 +588,9 @@ public class Tables {
     }
 
 
+    public static void createIfNotExist(TableDef tableDef, Database database) {
+        if (!exists(tableDef,database)) {
+            create(tableDef, database);
+        }
+    }
 }

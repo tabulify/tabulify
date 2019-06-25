@@ -30,7 +30,7 @@ public class DbSamples {
                 return TpcdsModel.get(TpcdsModel.TPCDS_SCHEMA_STORE_SALES);
 
             case BytleSchema.SCHEMA_NAME:
-                return BytleSchema.get();
+                return BytleSchema.get(database);
 
             default:
                 throw new RuntimeException("The sample schema (" + sample + ") is unknown");

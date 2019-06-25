@@ -1,15 +1,15 @@
 package net.bytle.db.sample;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.dataGenerator.yml.DataGenYmlProperty;
+import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
+import javax.xml.validation.Schema;
 import java.sql.Types;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * The test model of Bytle
@@ -63,18 +63,28 @@ public class BytleSchema implements SchemaSample {
     /**
      *
      *
+     * @param currentSchema
      */
-    BytleSchema() {
-        this.schemaDef = Databases.get().getSchema("bytle");
+    BytleSchema(SchemaDef currentSchema) {
+        this.schemaDef = currentSchema;
         buildTables();
     }
 
 
     /**
      * @return @return a Bytle Sample Schema object with the current database schema
+     * @param database
      */
-    public static BytleSchema get() {
-        return new BytleSchema();
+    public static BytleSchema get(Database database) {
+        return new BytleSchema(database.getCurrentSchema());
+    }
+
+    /**
+     * @return @return a Bytle Sample Schema object in the schema def
+     * @param schemaDef
+     */
+    public static BytleSchema get(SchemaDef schemaDef) {
+        return new BytleSchema(schemaDef);
     }
 
     void buildTables() {
