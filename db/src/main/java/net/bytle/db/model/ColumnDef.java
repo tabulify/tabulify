@@ -1,8 +1,8 @@
 package net.bytle.db.model;
 
-import net.bytle.cli.CliLog;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.engine.Strings;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
@@ -38,9 +38,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
     private String fullyQualifiedName;
 
     // Default type code is given in the getter function
-    private DataType dataType;
-    private Integer typeCode;
-    private String typeName; // Db such as sqlite doesn't have the notion of typcode
+    private Integer typeCode; // No typename please as we want to be able to maps type between database
     /* Precision = Length for string, Precision =  Precision for Fix Number */
     private Integer precision;
     /* Only needed for number */
@@ -114,7 +112,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
         // If the data type is not known
         if (dataType == null) {
 
-            throw new RuntimeException("No DataType could be found for the type code (" + CliLog.toStringNullSafe(typeCode) + " and the class (" + CliLog.toStringNullSafe(clazz) + ")");
+            throw new RuntimeException("No DataType could be found for the type code (" + Strings.toStringNullSafe(typeCode) + " and the class (" + Strings.toStringNullSafe(clazz) + ")");
 
         }
         return dataType;
@@ -252,13 +250,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     @Override
     public String toString() {
-        return "ColumnDef{" +
-                "columnName='" + columnName + '\'' +
-                ", columnType=" + dataType +
-                ", precision=" + precision +
-                ", scale=" + scale +
-                ", nullable=" + nullable +
-                '}';
+        return columnName + " "+getDataType().getTypeName()+ '(' + precision +","+scale+") " + (nullable==DatabaseMetaData.columnNullable?"null" : "not null");
     }
 
     @Override
@@ -297,10 +289,4 @@ public class ColumnDef implements Comparable<ColumnDef> {
         return "";
     }
 
-    public ColumnDef typeName(String typeName) {
-        if (typeName != null) {
-            this.typeName = typeName;
-        }
-        return this;
-    }
 }

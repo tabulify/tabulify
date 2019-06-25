@@ -48,7 +48,7 @@ public class DataType {
     }
 
 
-    private final int dataType;
+    private final int typeCode;
 
     private final DataTypeDriver dataTypeDriver;
     private final DataTypeDatabase dataTypeDatabase;
@@ -60,7 +60,7 @@ public class DataType {
 
     public DataType(DataTypeBuilder dataTypeInfoBuilder) {
         // The type number
-        this.dataType = dataTypeInfoBuilder.dataType;
+        this.typeCode = dataTypeInfoBuilder.dataType;
 
         // The data type info of each source
         this.dataTypeJdbc = dataTypeInfoBuilder.jdbcDataType;
@@ -92,7 +92,7 @@ public class DataType {
     }
 
     public int getTypeCode() {
-        return dataType;
+        return typeCode;
     }
 
     public String getTypeName() {
@@ -131,6 +131,7 @@ public class DataType {
         }
         // A character must have always a precision
         // but not a number
+        // TODO: This may cause a problem if the driver returns null as maxPrecision ...
         return 0;
 
     }
@@ -316,7 +317,7 @@ public class DataType {
     public String toString() {
         return "DataTypeDriver{" +
                 "typeName='" + getTypeName() + '\'' +
-                ", dataType=" + dataType +
+                ", typeCode=" + typeCode +
                 '}';
     }
 }

@@ -48,21 +48,6 @@ public class CliLog {
         this.name = name;
     }
 
-    /**
-     * A function to help written error message in the log that are safe
-     *
-     * @param o the input object
-     * @return "null" if the object is null or the string representation of the object
-     */
-    static public String toStringNullSafe(Object o) {
-
-        if (o == null) {
-            return "null";
-        } else {
-            return o.toString();
-        }
-
-    }
 
 
     public static CliLog getCliLog() {

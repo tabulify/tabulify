@@ -245,7 +245,8 @@ public class DbDdl {
             }
 
 
-            if (precision > dataType.getMaxPrecision()) {
+            final Integer maxPrecision = dataType.getMaxPrecision();
+            if (precision > maxPrecision && maxPrecision !=0) {
                 precision = dataType.getMaxPrecision();
             } else if (precision < 0) {
                 precision = 0;
