@@ -1,6 +1,7 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;
@@ -16,6 +17,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SqliteSqlDatabase extends SqlDatabase {
+
+    private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer,DataTypeDatabase>();
+
+    static {
+        dataTypeDatabaseSet.put(SqliteTypeText.TYPE_CODE, new SqliteTypeText());
+    }
+
+    @Override
+    public DataTypeDatabase dataTypeOf(Integer typeCode) {
+        return dataTypeDatabaseSet.get(typeCode);
+    }
 
     private final SqliteProvider sqliteProvider;
 
@@ -48,7 +60,6 @@ public class SqliteSqlDatabase extends SqlDatabase {
      *
      * @param tableDef
      * @return a create statement https://www.sqlite.org/lang_createtable.html
-     *
      */
     @Override
     public List<String> getCreateTableStatements(TableDef tableDef, String name) {
@@ -159,7 +170,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
     public Boolean addForeignKey(TableDef tableDef) {
 
         Connection connection = tableDef.getDatabase().getCurrentConnection();
-        Map<Integer,List<String>> foreignKeys = new HashMap<>();
+        Map<Integer, List<String>> foreignKeys = new HashMap<>();
         try (
                 Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery("PRAGMA foreign_key_list(" + tableDef.getName() + ")");
@@ -168,7 +179,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
                 String parentTable = resultSet.getString("table");
                 String fromColumn = resultSet.getString("from");
                 Integer id = resultSet.getInt("id");
-                foreignKeys.put(id,Arrays.asList(parentTable, fromColumn));
+                foreignKeys.put(id, Arrays.asList(parentTable, fromColumn));
             }
         } catch (SQLException e) {
             if (!e.getMessage().equals("query does not return ResultSet")) {
@@ -179,7 +190,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         // Sqlite seems to preserve the order of the foreign keys but descendant
         // Hack to get it right
-        for(int i=foreignKeys.size()-1;i>=0;i--){
+        for (int i = foreignKeys.size() - 1; i >= 0; i--) {
             tableDef.addForeignKey(foreignKeys.get(i).get(0), foreignKeys.get(i).get(1));
         }
 
@@ -188,8 +199,44 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
     }
 
+    /**
+     * Add columns to a table
+     * This function was created because Sqlite does not really implements a JDBC type
+     * Sqlite gives them back via a string
+     *
+     * @param tableDef
+     * @return true if the columns were added to the table
+     */
+    @Override
+    public boolean addColumns(TableDef tableDef) {
 
-
+        // Because the driver returns 20000000 and no data type name
+        try (Statement statement = tableDef.getDatabase().getCurrentConnection().createStatement();
+             ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + tableDef.getName() + "')");
+        ) {
+            while (resultSet.next()) {
+                // ie INTEGER(50)
+                String dataType = resultSet.getString("type");
+                SqliteType type = SqliteType.get(dataType);
+                final String typeCodeName = type.getTypeName();
+                Integer typeCode = type.getTypeCode();
+                // SQlite use class old data type
+                if (typeCodeName.equals("TEXT")) {
+                    typeCode = DataTypesJdbc.of("VARCHAR").getTypeCode();
+                }
+                tableDef.getColumnOf(resultSet.getString("name"))
+                        .typeCode(typeCode)
+                        .precision(type.getPrecision())
+                        .scale(type.getScale())
+                        .isAutoincrement("")
+                        .isGeneratedColumn("")
+                        .setNullable(resultSet.getInt("notnull") == 0 ? 1 : 0);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return true;
+    }
 
 
 }

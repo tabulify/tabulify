@@ -226,32 +226,9 @@ public class DbObjectBuilder {
 
     private static void buildTableColumns(TableDef tableDef) throws SQLException {
 
+        Boolean added = tableDef.getDatabase().getSqlDatabase().addColumns(tableDef);
+        if (!added) {
 
-        if (tableDef.getDatabase().getDatabaseProductName().equals(Database.DB_SQLITE)) {
-            // TODO: Move this in the SQlite database
-            // Because the driver returns 20000000 and no data type name
-            Statement statement = tableDef.getDatabase().getCurrentConnection().createStatement();
-            ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + tableDef.getName() + "')");
-            while (resultSet.next()) {
-                // ie INTEGER(50)
-                String dataType = resultSet.getString("type");
-                DataTypee type = DataTypee.get(dataType);
-                final String typeCodeName = type.getTypeName();
-                Integer typeCode = type.getTypeCode();
-                //SQlite use class od data tyep
-                if (typeCodeName.equals("TEXT")) {
-                    typeCode = DataTypesJdbc.of("VARCHAR").getTypeCode();
-                }
-                tableDef.getColumnOf(resultSet.getString("name"))
-                        .typeCode(typeCode)
-                        .precision(type.getPrecision())
-                        .scale(type.getScale())
-                        .isAutoincrement("")
-                        .isGeneratedColumn("")
-                        .setNullable(resultSet.getInt("notnull") == 0 ? 1 : 0);
-            }
-            statement.close();
-        } else {
             ResultSet columnResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getColumns(null, tableDef.getSchema().getName(), tableDef.getName(), null);
 
             while (columnResultSet.next()) {

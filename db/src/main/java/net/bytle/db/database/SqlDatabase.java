@@ -120,4 +120,16 @@ public abstract class SqlDatabase implements SqlDatabaseI {
         return false;
     }
 
+    /**
+     * Add columns to a table
+     * This function was created because Sqlite does not really implements a JDBC type
+     * Sqlite gives them back via a string
+     *
+     * @param tableDef
+     * @return true if the columns were added to the table
+     */
+    @Override
+    public boolean addColumns(TableDef tableDef) {
+        return false;
+    }
 }

@@ -80,4 +80,13 @@ public interface SqlDatabaseI {
      */
     Boolean addForeignKey(TableDef tableDef);
 
+    /**
+     * Add columns to a table
+     * This function was created because Sqlite does not really implements a JDBC type
+     * Sqlite gives them back via a string
+     *
+     * @param tableDef
+     * @return true if the columns were added to the table
+     */
+    boolean addColumns(TableDef tableDef);
 }

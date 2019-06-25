@@ -1,4 +1,4 @@
-package net.bytle.db.model;
+package net.bytle.db.sqlite;
 
 
 import net.bytle.db.DbLoggers;
@@ -10,10 +10,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A class representing a data type definition
- * Typee with two ee because DataType was already taken
+ * A class that takes the value of the column type from the PRAGMA table_info();
+ * and return type information (typeName, Precision and scale)
+ *
  */
-public class DataTypee {
+public class SqliteType {
 
     private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
@@ -21,7 +22,7 @@ public class DataTypee {
     Integer scale;
     Integer precision;
 
-    private DataTypee(String type, Integer precision, Integer scale) {
+    private SqliteType(String type, Integer precision, Integer scale) {
         this.type = type;
         this.scale = scale;
         this.precision = precision;
@@ -37,7 +38,7 @@ public class DataTypee {
      * Example: INTEGER(50,2)
      */
 
-    static public DataTypee get(String description) {
+    static public SqliteType get(String description) {
         Pattern pattern = Pattern.compile("\\s*([a-zA-Z]+)\\s*(?:\\(([0-9,]+)\\))?\\s*");
         Matcher matcher = pattern.matcher(description);
         String typeName = null;
@@ -56,7 +57,7 @@ public class DataTypee {
             }
 
         }
-        return new DataTypee(typeName, precision, scale);
+        return new SqliteType(typeName, precision, scale);
     }
 
     public String getTypeName() {
