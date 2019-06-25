@@ -12,8 +12,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SqliteSqlDatabase extends SqlDatabase {
@@ -48,7 +47,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
      * See https://sqlite.org/faq.html#q11
      *
      * @param tableDef
-     * @return a create statement http://www.hwaci.com/sw/sqlite/lang_createtable.html
+     * @return a create statement https://www.sqlite.org/lang_createtable.html
      *
      */
     @Override
@@ -160,16 +159,16 @@ public class SqliteSqlDatabase extends SqlDatabase {
     public Boolean addForeignKey(TableDef tableDef) {
 
         Connection connection = tableDef.getDatabase().getCurrentConnection();
+        Map<Integer,List<String>> foreignKeys = new HashMap<>();
         try (
                 Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery("PRAGMA foreign_key_list(" + tableDef.getName() + ")");
         ) {
             while (resultSet.next()) {
-                // https://sqlite.org/pragma.html#pragma_foreign_key_list
-                // One row by constraint
                 String parentTable = resultSet.getString("table");
                 String fromColumn = resultSet.getString("from");
-                tableDef.addForeignKey(parentTable, fromColumn);
+                Integer id = resultSet.getInt("id");
+                foreignKeys.put(id,Arrays.asList(parentTable, fromColumn));
             }
         } catch (SQLException e) {
             if (!e.getMessage().equals("query does not return ResultSet")) {
@@ -177,6 +176,13 @@ public class SqliteSqlDatabase extends SqlDatabase {
             }
 
         }
+
+        // Sqlite seems to preserve the order of the foreign keys but descendant
+        // Hack to get it right
+        for(int i=foreignKeys.size()-1;i>=0;i--){
+            tableDef.addForeignKey(foreignKeys.get(i).get(0), foreignKeys.get(i).get(1));
+        }
+
 
         return true;
 

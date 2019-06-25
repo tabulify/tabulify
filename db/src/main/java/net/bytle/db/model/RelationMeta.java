@@ -157,4 +157,9 @@ public class RelationMeta {
     public ColumnDef getColumnDef(Integer columnIndex) {
         return getColumnDefs().get(columnIndex);
     }
+
+    @Override
+    public String toString() {
+        return relationDef.getFullyQualifiedName();
+    }
 }

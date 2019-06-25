@@ -104,8 +104,8 @@ public class BytleSchema implements SchemaSample {
 
         // Fact Table
         bytleTables.put(TABLE_FACT_NAME,schemaDef.getTableOf(TABLE_FACT_NAME)
-                .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)
+                .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
                 .addColumn(COLUMN_SALES_QTY, Types.DOUBLE)
                 .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE)

@@ -369,9 +369,9 @@ public class Tables {
                         .append(".");
             }
             dropTableStatement.append(tableDef.getName());
+            // The connection must not be clause, don't put it in the try clause below
+            Connection currentConnection = database.getCurrentConnection();
             try (
-
-                    Connection currentConnection = database.getCurrentConnection();
                     Statement statement = currentConnection.createStatement();
             ) {
 
