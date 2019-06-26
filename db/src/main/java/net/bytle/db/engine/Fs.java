@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +129,35 @@ public class Fs {
             }
         } else {
             pathsCollector.add(path);
+        }
+
+    }
+
+    /**
+     *
+     * @param content
+     * @return a path to a txt file with the string as content
+     */
+    public static Path createTempFile(String content) {
+        return createTempFile(content, ".txt");
+    }
+
+    public static Path createTempFile(String content, String suffix) {
+
+        try {
+
+            Path temp = Paths.get(System.getProperty("java.io.tmpdir"), "bytle");
+            Files.createDirectories(temp);
+
+            Path tempFile = Files.createTempFile(temp, "bytle-test", suffix, new FileAttribute[0]);
+            Files.write(tempFile, content.getBytes());
+
+            return tempFile;
+
+        } catch (IOException e) {
+
+            throw new RuntimeException(e);
+
         }
 
     }

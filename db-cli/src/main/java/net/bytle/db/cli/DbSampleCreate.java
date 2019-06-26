@@ -10,7 +10,6 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.sample.SchemaSample;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -55,8 +54,7 @@ public class DbSampleCreate {
             System.exit(1);
         }
 
-        SchemaSample schemaSample = DbSamples.get(sampleName);
-        Dag dag = Dag.get(schemaSample.getTables());
+        Dag dag = Dag.get(DbSamples.getTables(sampleName));
         List<TableDef> tables = dag.getCreateOrderedTables();
 
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);

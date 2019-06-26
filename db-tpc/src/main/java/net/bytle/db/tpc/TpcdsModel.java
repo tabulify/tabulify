@@ -882,12 +882,12 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cpag_type", Types.VARCHAR, 100)
                 .setSchema(schema));
 
-        tables.put(S_ZIP_TO_GMT,Tables.get(S_ZIP_TO_GMT)
+        tables.put(S_ZIP_TO_GMT, Tables.get(S_ZIP_TO_GMT)
                 .addColumn("zipg_zip", Types.CHAR, 5, false)
                 .addColumn("zipg_gmt_offset", Types.INTEGER, false)
                 .setSchema(schema));
 
-        tables.put(S_PURCHASE_LINEITEM,Tables.get(S_PURCHASE_LINEITEM)
+        tables.put(S_PURCHASE_LINEITEM, Tables.get(S_PURCHASE_LINEITEM)
                 .addColumn("plin_purchase_id", Types.INTEGER, false)
                 .addColumn("plin_line_number", Types.INTEGER, false)
                 .addColumn("plin_item_id", Types.CHAR, 16)
@@ -898,7 +898,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("plin_comment", Types.VARCHAR, 100)
                 .setSchema(schema));
 
-        tables.put(S_CUSTOMER,Tables.get(S_CUSTOMER)
+        tables.put(S_CUSTOMER, Tables.get(S_CUSTOMER)
                 .addColumn("cust_customer_id", Types.CHAR, 16, false)
                 .addColumn("cust_salutation", Types.CHAR, 10)
                 .addColumn("cust_last_name", Types.CHAR, 20)
@@ -939,7 +939,7 @@ public class TpcdsModel implements SchemaSample {
                 .setSchema(schema));
 
 
-        tables.put(S_CUSTOMER_ADDRESS,Tables.get(S_CUSTOMER_ADDRESS)
+        tables.put(S_CUSTOMER_ADDRESS, Tables.get(S_CUSTOMER_ADDRESS)
                 .addColumn("cadr_address_id", Types.CHAR, 16, false)
                 .addColumn("cadr_street_number", Types.INTEGER)
                 .addColumn("cadr_street_name1", Types.CHAR, 25)
@@ -953,7 +953,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cadr_country", Types.CHAR, 20)
                 .setSchema(schema));
 
-        tables.put(S_PURCHASE,Tables.get(S_PURCHASE)
+        tables.put(S_PURCHASE, Tables.get(S_PURCHASE)
                 .addColumn("purc_purchase_id", Types.INTEGER, false)
                 .addColumn("purc_store_id", Types.CHAR, 16)
                 .addColumn("purc_customer_id", Types.CHAR, 16)
@@ -964,7 +964,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("purc_comment", Types.CHAR, 100)
                 .setSchema(schema));
 
-        tables.put(S_CATALOG_ORDER,Tables.get(S_CATALOG_ORDER)
+        tables.put(S_CATALOG_ORDER, Tables.get(S_CATALOG_ORDER)
                 .addColumn("cord_order_id", Types.INTEGER, false)
                 .addColumn("cord_bill_customer_id", Types.CHAR, 16)
                 .addColumn("cord_ship_customer_id", Types.CHAR, 16)
@@ -975,7 +975,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cord_order_comments", Types.VARCHAR, 100)
                 .setSchema(schema));
 
-        tables.put(S_WEB_ORDER,Tables.get(S_WEB_ORDER)
+        tables.put(S_WEB_ORDER, Tables.get(S_WEB_ORDER)
                 .addColumn("word_order_id", Types.INTEGER, false)
                 .addColumn("word_bill_customer_id", Types.CHAR, 16)
                 .addColumn("word_ship_customer_id", Types.CHAR, 16)
@@ -986,7 +986,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("word_order_comments", Types.CHAR, 100)
                 .setSchema(schema));
 
-        tables.put(S_ITEM,Tables.get(S_ITEM)
+        tables.put(S_ITEM, Tables.get(S_ITEM)
                 .addColumn("item_item_id", Types.CHAR, 16, false)
                 .addColumn("item_item_description", Types.CHAR, 200)
                 .addColumn("item_list_price", Types.NUMERIC, 7, 2)
@@ -999,7 +999,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("item_manager_id", Types.INTEGER)
                 .setSchema(schema));
 
-        tables.put(S_CATALOG_ORDER_LINEITEM,Tables.get(S_CATALOG_ORDER_LINEITEM)
+        tables.put(S_CATALOG_ORDER_LINEITEM, Tables.get(S_CATALOG_ORDER_LINEITEM)
                 .addColumn("clin_order_id", Types.INTEGER, false)
                 .addColumn("clin_line_number", Types.INTEGER, false)
                 .addColumn("clin_item_id", Types.CHAR, 16)
@@ -1014,7 +1014,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("clin_ship_cost", Types.NUMERIC, 7, 2)
                 .setSchema(schema));
 
-        tables.put(S_WEB_ORDER_LINEITEM,Tables.get(S_WEB_ORDER_LINEITEM)
+        tables.put(S_WEB_ORDER_LINEITEM, Tables.get(S_WEB_ORDER_LINEITEM)
                 .addColumn("wlin_order_id", Types.INTEGER, false)
                 .addColumn("wlin_line_number", Types.INTEGER, false)
                 .addColumn("wlin_item_id", Types.CHAR, 16)
@@ -1028,7 +1028,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wlin_web_page_id", Types.CHAR, 16)
                 .setSchema(schema));
 
-        tables.put(S_STORE,Tables.get(S_STORE)
+        tables.put(S_STORE, Tables.get(S_STORE)
                 .addColumn("stor_store_id", Types.CHAR, 1, false)
                 .addColumn("stor_closed_date", Types.CHAR, 10)
                 .addColumn("stor_name", Types.CHAR, 50)
@@ -1042,7 +1042,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("stor_tax_percentage", Types.NUMERIC, 5, 2)
                 .setSchema(schema));
 
-        tables.put(S_CALL_CENTER,Tables.get(S_CALL_CENTER)
+        tables.put(S_CALL_CENTER, Tables.get(S_CALL_CENTER)
                 .addColumn("call_center_id", Types.CHAR, 16, false)
                 .addColumn("call_open_date", Types.CHAR, 10)
                 .addColumn("call_closed_date", Types.CHAR, 10)
@@ -1056,7 +1056,7 @@ public class TpcdsModel implements SchemaSample {
                 .setSchema(schema));
 
 
-        tables.put(S_WEB_SITE,Tables.get(S_WEB_SITE)
+        tables.put(S_WEB_SITE, Tables.get(S_WEB_SITE)
                 .addColumn("wsit_web_site_id", Types.CHAR, 16, false)
                 .addColumn("wsit_open_date", Types.CHAR, 10)
                 .addColumn("wsit_closed_date", Types.CHAR, 10)
@@ -1066,13 +1066,13 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2)
                 .setSchema(schema));
 
-        tables.put(S_WAREHOUSE,Tables.get(S_WAREHOUSE)
+        tables.put(S_WAREHOUSE, Tables.get(S_WAREHOUSE)
                 .addColumn("wrhs_warehouse_id", Types.CHAR, 16, false)
                 .addColumn("wrhs_warehouse_desc", Types.CHAR, 200)
                 .addColumn("wrhs_warehouse_sq_ft", Types.INTEGER)
                 .setSchema(schema));
 
-        tables.put(S_WEB_PAGE,Tables.get(S_WEB_PAGE)
+        tables.put(S_WEB_PAGE, Tables.get(S_WEB_PAGE)
                 .addColumn("wpag_web_page_id", Types.CHAR, 16, false)
                 .addColumn("wpag_create_date", Types.CHAR, 10)
                 .addColumn("wpag_access_date", Types.CHAR, 10)
@@ -1085,7 +1085,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wpag_max_ad_cnt", Types.INTEGER)
                 .setSchema(schema));
 
-        tables.put(S_PROMOTION,Tables.get(S_PROMOTION)
+        tables.put(S_PROMOTION, Tables.get(S_PROMOTION)
                 .addColumn("prom_promotion_id", Types.CHAR, 16, false)
                 .addColumn("prom_promotion_name", Types.CHAR, 30)
                 .addColumn("prom_start_date", Types.CHAR, 10)
@@ -1106,7 +1106,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2)
                 .setSchema(schema));
 
-        tables.put(S_STORE_RETURNS,Tables.get(S_STORE_RETURNS)
+        tables.put(S_STORE_RETURNS, Tables.get(S_STORE_RETURNS)
                 .addColumn("sret_store_id", Types.CHAR, 16)
                 .addColumn("sret_purchase_id", Types.CHAR, 16, false)
                 .addColumn("sret_line_number", Types.INTEGER, false)
@@ -1126,7 +1126,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("sret_reason_id", Types.CHAR, 16)
                 .setSchema(schema));
 
-        tables.put(S_CATALOG_RETURNS,Tables.get(S_CATALOG_RETURNS)
+        tables.put(S_CATALOG_RETURNS, Tables.get(S_CATALOG_RETURNS)
                 .addColumn("cret_call_center_id", Types.CHAR, 16)
                 .addColumn("cret_order_id", Types.INTEGER, false)
                 .addColumn("cret_line_number", Types.INTEGER, false)
@@ -1149,7 +1149,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cret_warehouse_id", Types.CHAR, 16)
                 .setSchema(schema));
 
-        tables.put(S_WEB_RETURNS,Tables.get(S_WEB_RETURNS)
+        tables.put(S_WEB_RETURNS, Tables.get(S_WEB_RETURNS)
                 .addColumn("wret_web_site_id", Types.CHAR, 16)
                 .addColumn("wret_order_id", Types.INTEGER, false)
                 .addColumn("wret_line_number", Types.INTEGER, false)
@@ -1169,7 +1169,7 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wret_reason_id", Types.CHAR, 16)
                 .setSchema(schema));
 
-        tables.put(S_INVENTORY,Tables.get(S_INVENTORY)
+        tables.put(S_INVENTORY, Tables.get(S_INVENTORY)
                 .addColumn("invn_warehouse_id", Types.CHAR, 16, false)
                 .addColumn("invn_item_id", Types.CHAR, 16, false)
                 .addColumn("invn_date", Types.CHAR, 10, false)
@@ -1222,6 +1222,13 @@ public class TpcdsModel implements SchemaSample {
      */
     public TableDef getTable(String tableName) {
         return tables.get(tableName);
+    }
+
+    @Override
+    public List<TableDef> getTables(String... tableNames) {
+
+        return Arrays.stream(tableNames).map(name -> tables.get(name)).collect(Collectors.toList());
+
     }
 
 

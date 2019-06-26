@@ -70,8 +70,7 @@ public class DbSampleFill {
             System.exit(1);
         }
 
-        SchemaSample schemaSample = DbSamples.get(sampleName);
-        Dag dag = Dag.get(schemaSample.getTables());
+        Dag dag = Dag.get(DbSamples.getTables(sampleName));
         List<TableDef> tableDefs = dag.getCreateOrderedTables();
 
 

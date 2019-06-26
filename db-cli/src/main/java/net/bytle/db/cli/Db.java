@@ -5,6 +5,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.sqlite.SqliteSqlDatabase;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,15 +43,7 @@ public class Db {
     static {
         final String appName = Words.CLI_NAME;
         Path dbFile = Paths.get(System.getProperty("user.home"), "." + appName, appName + ".db");
-        Path dirDbFile = dbFile.getParent();
-        if (Files.notExists(dirDbFile)) {
-            try {
-                Files.createDirectories(dirDbFile);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        JDBC_URL_TARGET_DEFAULT = "jdbc:sqlite:" + dbFile.toAbsolutePath().toString().replace("\\", "/");
+        JDBC_URL_TARGET_DEFAULT = SqliteSqlDatabase.getJdbcUrl(dbFile);
         JDBC_DRIVER_TARGET_DEFAULT = "org.sqlite.JDBC";
     }
 

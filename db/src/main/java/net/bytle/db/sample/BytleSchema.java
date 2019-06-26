@@ -10,6 +10,7 @@ import net.bytle.db.model.TableDef;
 import java.sql.Types;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The test model of Bytle
@@ -58,11 +59,9 @@ public class BytleSchema implements SchemaSample {
      * The schema where the table will be stored
      */
     private final SchemaDef schemaDef;
-    private Map<String,TableDef> bytleTables = new HashMap<>();
+    private Map<String, TableDef> bytleTables = new HashMap<>();
 
     /**
-     *
-     *
      * @param currentSchema
      */
     BytleSchema(SchemaDef currentSchema) {
@@ -72,16 +71,16 @@ public class BytleSchema implements SchemaSample {
 
 
     /**
-     * @return @return a Bytle Sample Schema object with the current database schema
      * @param database
+     * @return @return a Bytle Sample Schema object with the current database schema
      */
     public static BytleSchema get(Database database) {
         return new BytleSchema(database.getCurrentSchema());
     }
 
     /**
-     * @return @return a Bytle Sample Schema object in the schema def
      * @param schemaDef
+     * @return @return a Bytle Sample Schema object in the schema def
      */
     public static BytleSchema get(SchemaDef schemaDef) {
         return new BytleSchema(schemaDef);
@@ -143,6 +142,11 @@ public class BytleSchema implements SchemaSample {
     @Override
     public TableDef getTable(String tableName) {
         return bytleTables.get(tableName);
+    }
+
+    @Override
+    public List<TableDef> getTables(String... tableNames) {
+        return Arrays.stream(tableNames).map(name -> bytleTables.get(name)).collect(Collectors.toList());
     }
 
 }

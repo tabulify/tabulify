@@ -21,4 +21,5 @@ public interface SchemaSample {
     TableDef getTable(String tableName);
 
 
+    List<TableDef> getTables(String... tableNames);
 }

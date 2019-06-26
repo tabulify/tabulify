@@ -9,6 +9,10 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.db.model.TableDef;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -238,5 +242,27 @@ public class SqliteSqlDatabase extends SqlDatabase {
         return true;
     }
 
+    /**
+     *
+     * @param path whatever/youwant/db.db
+     * @return an JDBC Url from a path
+     */
+    static public String getJdbcUrl(Path path){
+
+        Path dirDbFile = path.getParent();
+        if (!Files.exists(dirDbFile)) {
+            try {
+                Files.createDirectory(dirDbFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        // TODO: what if linux
+        String rootWindows = "///";
+        return "jdbc:sqlite:" + rootWindows + path.toString().replace("\\", "/");
+
+    }
 
 }
