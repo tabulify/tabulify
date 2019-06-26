@@ -476,9 +476,9 @@ public class Database implements AutoCloseable {
             // https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-2017
             //https://docs.microsoft.com/en-us/sql/t-sql/functions/context-info-transact-sql?view=sql-server-2017
             connectionProperties.put("applicationName", DbDefaultValue.LIBRARY_NAME + " " + appName);
-            if (this.user!=null) {
+            if (this.user != null) {
                 connectionProperties.put("user", this.user);
-                if (this.password !=null ){
+                if (this.password != null) {
                     connectionProperties.put("password", this.password);
                 }
             }
@@ -523,8 +523,6 @@ public class Database implements AutoCloseable {
     }
 
 
-    Map<String, SchemaDef> schemaCache = new HashMap<>();
-
     /**
      * For database that does not support multiple schema (Sqlite for instance), you will get a schema without databaseName
      *
@@ -534,15 +532,9 @@ public class Database implements AutoCloseable {
     public SchemaDef getSchema(String schema) {
 
 
-        SchemaDef schemaDef = schemaCache.get(schema);
-        if (schemaDef != null) {
-            return schemaDef;
-        } else {
-            schemaDef = new SchemaDef(this)
-                    .name(schema);
-            schemaCache.put(schema, schemaDef);
-            return schemaDef;
-        }
+        return new SchemaDef(this)
+                .name(schema);
+
 
     }
 
@@ -688,6 +680,7 @@ public class Database implements AutoCloseable {
                     break;
                 default:
                     schema = this.getCurrentConnection().getSchema();
+                    break;
             }
 
             return getSchema(schema);

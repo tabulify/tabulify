@@ -2,6 +2,7 @@ package net.bytle.db.model;
 
 import net.bytle.db.database.Database;
 
+import javax.xml.validation.Schema;
 import java.util.Objects;
 
 /**
@@ -12,7 +13,6 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
 
     String name;
     protected SchemaDef schema;
-    protected Database database;
     private String fullyQualifiedName;
 
     public String getName() {
@@ -20,7 +20,7 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
     }
 
     public Database getDatabase() {
-        return database;
+        return schema.getDatabase();
     }
 
     public SchemaDef getSchema() {
@@ -32,7 +32,7 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
         if (fullyQualifiedName == null) {
             // The Qualified name is needed for the table build cache
             // As only the name are knwon
-            this.fullyQualifiedName = database.getObjectBuilder().getFullyQualifiedName(getName(), getSchema().getName());
+            this.fullyQualifiedName = schema.getDatabase().getObjectBuilder().getFullyQualifiedName(getName(), getSchema().getName());
         }
         return fullyQualifiedName;
 
@@ -72,8 +72,10 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
      * @return The unique table ID identifier
      */
     public String getId() {
-        return database.getObjectBuilder().getId(getName(), getSchema().getName());
+        return schema.getDatabase().getObjectBuilder().getId(getName(), getSchema().getName());
     }
+
+
 
 
 }

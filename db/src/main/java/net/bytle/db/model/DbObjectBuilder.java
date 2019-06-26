@@ -2,12 +2,10 @@ package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.engine.Tables;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -153,7 +151,7 @@ public class DbObjectBuilder {
         // Table already build and in the cache ?
         String id = getId(tableName, schemaName);
         SchemaDef schemaDef = database.getSchema(schemaName);
-        TableDef tableDef = new TableDef(database, tableName).schema(schemaDef);
+        TableDef tableDef = new TableDef(database, tableName).setSchema(schemaDef);
 
 
         if (database.getCurrentConnection() == null) {
@@ -529,19 +527,23 @@ public class DbObjectBuilder {
             try {
 
                 // Always NULL
-                // because owtherise it's not a pattern but
+                // because otherwise it's not a pattern but
                 // it must match the schema name
                 // We build all schemas then
                 final String schemaPattern = null;
                 ResultSet schemaResultSet = database.getCurrentConnection().getMetaData().getSchemas(null, schemaPattern);
 
-                while (schemaResultSet.next()) {
+                // Sqlite Driver return a NULL resultSet
+                // because SQLite does not support schema ?
+                if (schemaResultSet!=null) {
+                    while (schemaResultSet.next()) {
 
-                    SchemaDef schema = database.getSchema(schemaResultSet.getString("TABLE_SCHEM"));
-                    schemaDefList.add(schema);
+                        SchemaDef schema = database.getSchema(schemaResultSet.getString("TABLE_SCHEM"));
+                        schemaDefList.add(schema);
 
+                    }
+                    schemaResultSet.close();
                 }
-                schemaResultSet.close();
 
             } catch (java.sql.SQLFeatureNotSupportedException e) {
 

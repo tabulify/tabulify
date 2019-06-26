@@ -44,7 +44,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     public TableDef(Database database, String tableName) {
 
         this.name = tableName;
-        this.database = database;
+        this.schema = database.getCurrentSchema();
         meta = new RelationMeta(this);
 
     }
@@ -309,9 +309,8 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-    public TableDef schema(SchemaDef schemaDef) {
+    public TableDef setSchema(SchemaDef schemaDef) {
         this.schema = schemaDef;
-        schemaDef.addTable(this);
         return this;
     }
 
@@ -351,5 +350,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return Queries.getResultSet(this);
 
     }
+
 
 }

@@ -486,13 +486,13 @@ public class Tables {
 
     /**
      * @param tableName - the name of the table
-     * @return a tableDef in the default bytle database (namespace)
-     * <p>
-     * The database was get with the function @{link Databases.get}
+     * @return An alias for the function {{@link #getTable(String)}}
+     *
      */
     public static TableDef get(String tableName) {
-        Database database = Databases.get();
-        return database.getTable(tableName);
+
+        return getTable(tableName);
+
     }
 
     /**

@@ -28,7 +28,7 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation {
             this.name = queryName;
         }
         this.query = query;
-        this.database = database;
+        this.schema = database.getCurrentSchema();
 
 
     }

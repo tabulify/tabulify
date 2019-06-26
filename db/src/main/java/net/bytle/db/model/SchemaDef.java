@@ -26,29 +26,6 @@ public class SchemaDef {
         return this;
     }
 
-    /**
-     * Add a table to this set
-     * If the table is alreayd present, the previous added is replaced
-     * <p>
-     * If the table has already a schema that is different that
-     * this one, we will throw an error.
-     * <p>
-     * You need to set it
-     *
-     * @param tableDef - The tableDef to add to this schema
-     */
-    public void addTable(TableDef tableDef) {
-
-        if (tableDef.getSchema() == null) {
-            tableDef.schema(this);
-        } else {
-            if (tableDef.getSchema() != this) {
-                throw new RuntimeException("You are trying to add a table to the schema (" + this.getName() + ") whereas the table (" + tableDef.getFullyQualifiedName() + ") has already a different schema (" + tableDef.getSchema().getName() + ")");
-            }
-        }
-
-    }
-
     public String getName() {
         return name;
     }
@@ -94,7 +71,7 @@ public class SchemaDef {
 
         return database
                 .getTable(tableName)
-                .schema(this);
+                .setSchema(this);
 
     }
 
