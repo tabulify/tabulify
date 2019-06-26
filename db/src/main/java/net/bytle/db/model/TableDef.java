@@ -264,23 +264,13 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      * that add for you the foreign key
      *
      * @param table
-     * @param columnName
+     * @param columnNames
      * @return the tableDef for chaining initialization
      */
-    public TableDef addForeignKey(TableDef table, String columnName) {
-        return addForeignKey(table.getPrimaryKey(), columnName);
+    public TableDef addForeignKey(TableDef table, String... columnNames) {
+        return addForeignKey(table.getPrimaryKey(), columnNames);
     }
 
-    /**
-     * A short cut function to @{link {@link #addForeignKey(PrimaryKeyDef, String...)}}
-     *
-     * @param tableName
-     * @param columnName
-     * @return the tableDef for chaining
-     */
-    public TableDef addForeignKey(String tableName, String... columnName) {
-        return addForeignKey(this.getSchema().getTableOf(tableName).getPrimaryKey(), columnName);
-    }
 
     public TableDef addPrimaryKey(List<String> primaryKeyColumns) {
         this.getPrimaryKey().addColumn(primaryKeyColumns);
