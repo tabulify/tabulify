@@ -1,7 +1,7 @@
-package net.bytle.db.dataGenerator.yml;
+package net.bytle.db.gen.yml;
 
 
-import net.bytle.db.dataGenerator.DataGenLoader;
+import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;

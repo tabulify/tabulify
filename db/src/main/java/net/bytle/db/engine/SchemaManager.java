@@ -33,4 +33,9 @@ public class SchemaManager {
     public static SchemaDef getNull(Database database) {
         return database.getSchema("null");
     }
+
+    public static void dropAllTables(SchemaDef schemaDef) {
+        List<TableDef> tables = schemaDef.getTables();
+        Tables.dropIfExist(tables);
+    }
 }

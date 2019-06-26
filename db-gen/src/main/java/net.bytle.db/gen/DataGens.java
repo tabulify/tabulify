@@ -1,4 +1,4 @@
-package net.bytle.db.dataGenerator;
+package net.bytle.db.gen;
 
 import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;

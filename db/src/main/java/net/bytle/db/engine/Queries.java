@@ -1,6 +1,5 @@
 package net.bytle.db.engine;
 
-import net.bytle.cli.CliLog;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ISqlRelation;
 import net.bytle.db.model.QueryDef;
@@ -277,7 +276,7 @@ public class Queries {
             }
             statement = currentConnection.createStatement();
             LOGGER.info("Executing the query " + query.getName());
-            LOGGER.info(CliLog.onOneLine(query.getQuery()));
+            LOGGER.info(Strings.normalize(query.getQuery()));
             return statement.executeQuery(query.getQuery());
 
 

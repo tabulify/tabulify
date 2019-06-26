@@ -3,8 +3,8 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.dataGenerator.DataGenLoader;
-import net.bytle.db.dataGenerator.yml.DataGenYml;
+import net.bytle.db.gen.DataGenLoader;
+import net.bytle.db.gen.yml.DataGenYml;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;

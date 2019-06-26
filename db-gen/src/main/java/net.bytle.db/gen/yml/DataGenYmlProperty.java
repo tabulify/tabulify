@@ -1,4 +1,4 @@
-package net.bytle.db.dataGenerator.yml;
+package net.bytle.db.gen.yml;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bytle-cli</artifactId>
-    <name>Cli</name>
+    <artifactId>bytle-log</artifactId>
+
 
 </project>

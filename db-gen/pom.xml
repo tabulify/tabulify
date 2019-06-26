@@ -9,9 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bytle-db-loader</artifactId>
-    <name>Db Loader</name>
-
+    <artifactId>bytle-db-gen</artifactId>
+    <name>Db Gen</name>
     <dependencies>
         <dependency>
             <groupId>net.bytle</groupId>
@@ -20,9 +19,15 @@
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
-            <artifactId>bytle-db-gen</artifactId>
+            <artifactId>bytle-db</artifactId>
             <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.20</version>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
@@ -30,12 +35,6 @@
             <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>net.bytle</groupId>
-            <artifactId>bytle-db</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
-            <scope>test</scope>
-            <type>test-jar</type>
-        </dependency>
     </dependencies>
+
 </project>

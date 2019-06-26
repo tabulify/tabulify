@@ -87,6 +87,10 @@ public class BytleSchema implements SchemaSample {
         return new BytleSchema(schemaDef);
     }
 
+    public static BytleSchema get() {
+        return get(Databases.get().getSchema(SCHEMA_NAME));
+    }
+
     void buildTables() {
 
         // Dim Cat Table
