@@ -27,7 +27,7 @@
     <packaging>pom</packaging>
 
     <!-- Description -->
-    <name>Bytle Parent</name>
+    <name>Root</name>
     <url>http://bytle.net</url>
     <description>The parent POM used in most of the Bytle Maven library</description>
 

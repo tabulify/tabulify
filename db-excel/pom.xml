@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-excel</artifactId>
-
+    <name>Excel</name>
     <dependencies>
         <dependency>
             <groupId>org.apache.poi</groupId>

@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-sqlserver</artifactId>
-
+    <name>Sql Server</name>
     <dependencies>
         <dependency>
             <groupId>net.bytle</groupId>
