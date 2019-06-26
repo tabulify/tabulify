@@ -352,4 +352,8 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
+    public TableDef setDatabase(Database database) {
+        this.schema = database.getCurrentSchema();
+        return this;
+    }
 }
