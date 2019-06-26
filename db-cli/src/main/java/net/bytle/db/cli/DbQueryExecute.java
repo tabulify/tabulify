@@ -6,12 +6,14 @@ import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Fs;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.engine.Strings;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.stream.SelectStreamListener;
+import net.bytle.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,7 +97,7 @@ public class DbQueryExecute {
                 } else {
                     System.err.println("The first argument is a file (" + arg0 + ") that seems to not contain a query");
                     System.err.println("The file content is: ");
-                    System.err.println(CliLog.toStringNullSafe(query));
+                    System.err.println(Strings.toStringNullSafe(query));
                     CliUsage.print(cliCommand);
                     System.exit(1);
                 }
@@ -115,7 +117,7 @@ public class DbQueryExecute {
                                 System.err.println("The execution of the directory (" + arg0 + ") was asked but");
                                 System.err.println("the content of the file (" + path + ") is not a query");
                                 System.err.println("The content is: ");
-                                System.err.println(CliLog.toStringNullSafe(query));
+                                System.err.println(Strings.toStringNullSafe(query));
                                 CliUsage.print(cliCommand);
                                 System.exit(1);
                             }
@@ -131,7 +133,7 @@ public class DbQueryExecute {
                 } else {
                     System.err.println("The first argument value seems not to be a file, a directory or a query");
                     System.err.println("The argument value is: ");
-                    System.err.println(CliLog.toStringNullSafe(arg0));
+                    System.err.println(Strings.toStringNullSafe(arg0));
                     CliUsage.print(cliCommand);
                     System.exit(1);
                 }
@@ -188,7 +190,7 @@ public class DbQueryExecute {
                         rowCount = String.valueOf(feedback.getRowCount());
                     } catch (Exception e) {
                         status = "Err";
-                        message = CliLog.onOneLine(e.getMessage());
+                        message = Log.onOneLine(e.getMessage());
                         LOGGER.severe(e.getMessage());
                     }
 

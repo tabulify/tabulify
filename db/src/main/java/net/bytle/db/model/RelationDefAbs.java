@@ -5,7 +5,7 @@ import net.bytle.db.database.Database;
 import java.util.Objects;
 
 /**
- * Abstract clas that implements the scope data
+ * Abstract class that implements the scope data
  */
 public abstract class RelationDefAbs implements RelationDef, Comparable<RelationDef> {
 

@@ -1,4 +1,4 @@
-package net.bytle.db.engine;
+package net.bytle.command;
 
 import java.io.InputStream;
 import java.util.Scanner;

@@ -1,4 +1,4 @@
-package net.bytle.cli;
+package net.bytle.log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class CliLog {
+public class Log {
 
 
     /**
@@ -23,7 +23,7 @@ public class CliLog {
     /**
      * The clis
      */
-    private static Map<String, CliLog> cliLogs = new HashMap<>();
+    private static Map<String, Log> cliLogs = new HashMap<>();
     /**
      * The namespace and its default
      */
@@ -44,23 +44,23 @@ public class CliLog {
      *
      * @param name
      */
-    CliLog(String name) {
+    Log(String name) {
         this.name = name;
     }
 
 
 
-    public static CliLog getCliLog() {
+    public static Log getCliLog() {
         return getCliLog(MODULE_NAME);
     }
 
-    public static CliLog getCliLog(String name) {
-        CliLog cliLog = cliLogs.get(name);
-        if (cliLog == null) {
-            cliLog = new CliLog(name);
-            cliLogs.put(name, cliLog);
+    public static Log getCliLog(String name) {
+        Log log = cliLogs.get(name);
+        if (log == null) {
+            log = new Log(name);
+            cliLogs.put(name, log);
         }
-        return cliLog;
+        return log;
     }
 
     /**
@@ -106,13 +106,13 @@ public class CliLog {
             // %4 = level - formatter %4$s
             // %5 = message
             // %6 = thrown message if any
-            CliLogFormatter fmt = CliLogFormatter
+            LogFormatter fmt = LogFormatter
                     .get(name)
                     .setFormat(this.format);
 
 //            Handler streamHandler = new StreamHandler(System.out,fmt);
 //            streamHandler.setLevel(Level.INFO);
-            CliLogHandler consoleHandler = new CliLogHandler();
+            LogHandler consoleHandler = new LogHandler();
             consoleHandler.setFormatter(fmt);
             logger.addHandler(consoleHandler);
 
@@ -127,17 +127,17 @@ public class CliLog {
 
     }
 
-    public CliLog setFormat(String format) {
+    public Log setFormat(String format) {
         this.format = format;
         if (getLogger().getHandlers().length > 0) {
-            CliLogFormatter fmt = CliLogFormatter.get(this.name)
+            LogFormatter fmt = LogFormatter.get(this.name)
                     .setFormat(this.format);
             getLogger().getHandlers()[0].setFormatter(fmt);
         }
         return this;
     }
 
-    public CliLog setNameSpace(String namespace) {
+    public Log setNameSpace(String namespace) {
         this.namespace = namespace;
         return this;
     }

@@ -5,7 +5,9 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.engine.Strings;
 import net.bytle.db.model.QueryDef;
+import net.bytle.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,10 +83,10 @@ public class DbQueryDownload {
             System.err.println("The first argument is expected to be an SQL file or a SQL query containing the SELECT keyword.");
             if (isRegularFile) {
                 System.err.println("The first argument (" + arg0 + ") is a file but its content below does not contain the SELECT word in the first positions");
-                System.err.println("Query: \n" + CliLog.toStringNullSafe(sourceFileQuery));
+                System.err.println("Query: \n" + Strings.toStringNullSafe(sourceFileQuery));
             } else {
                 System.err.println("The first argument is not a file and its value below does not contain the SELECT word in the first positions");
-                System.err.println("Arg Value: \n" + CliLog.toStringNullSafe(arg0));
+                System.err.println("Arg Value: \n" + Strings.toStringNullSafe(arg0));
             }
             CliUsage.print(cliParser.getCommand());
             System.exit(1);

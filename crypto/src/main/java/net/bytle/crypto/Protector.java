@@ -1,4 +1,4 @@
-package net.bytle.db.queryExecutor;
+package net.bytle.crypto;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -10,6 +10,7 @@ import javax.crypto.spec.PBEParameterSpec;
 import java.security.GeneralSecurityException;
 
 public class Protector {
+
     private final static byte[] SALT = {
             (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
             (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,

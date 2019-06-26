@@ -1,4 +1,4 @@
-package net.bytle.db.engine;
+package net.bytle.command;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Bprocess {
+public class Command {
 
 
 
@@ -17,22 +17,22 @@ public class Bprocess {
     private Path workingDirectory = Paths.get(".");
     private Process process;
 
-    public Bprocess(String command) {
+    public Command(String command) {
         commandAndArgs.add(command);
     }
 
-    public static Bprocess get(String command) {
+    public static Command get(String command) {
 
-        return new Bprocess(command);
+        return new Command(command);
     }
 
-    public Bprocess addArg(String arg) {
+    public Command addArg(String arg) {
         String[] args = arg.split(" ");
         this.commandAndArgs.addAll(Arrays.asList(args));
         return this;
     }
 
-    public Bprocess setWorkingDirectory(Path workingDirectory) {
+    public Command setWorkingDirectory(Path workingDirectory) {
         if (!Files.exists(workingDirectory)){
             try {
                 Files.createDirectories(workingDirectory);
@@ -70,7 +70,7 @@ public class Bprocess {
         return InputStreams.toString(input)+InputStreams.toString(inputErr);
     }
 
-    public Bprocess addArgs(List<String> args) {
+    public Command addArgs(List<String> args) {
         for (String arg:args){
             addArg(arg);
         }

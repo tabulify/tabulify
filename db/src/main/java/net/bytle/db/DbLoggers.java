@@ -1,44 +1,44 @@
 package net.bytle.db;
 
-import net.bytle.cli.CliLog;
+import net.bytle.log.Log;
 
 import java.util.logging.Logger;
 
 
 public class DbLoggers {
 
-    public static final String format = CliLog.DEFAULT_FORMAT;
+    public static final String format = Log.DEFAULT_FORMAT;
 
     public static final Logger LOGGER_DB_GENERATOR =
-            CliLog
+            Log
                     .getCliLog("generator")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.generator")
                     .getLogger();
 
     public static final Logger LOGGER_DB_CLI =
-            CliLog
+            Log
                     .getCliLog("cli")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.cli.main")
                     .getLogger();
 
     public static final Logger LOGGER_DB_DOWNLOADER =
-            CliLog
+            Log
                     .getCliLog("downloader")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.downloader")
                     .getLogger();
 
     public static final Logger LOGGER_DB_ENGINE =
-            CliLog
+            Log
                     .getCliLog("engine")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.engine")
                     .getLogger();
 
     public static final Logger LOGGER_DB_LOADER =
-            CliLog
+            Log
                     .getCliLog("loader")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.loader")
@@ -46,19 +46,19 @@ public class DbLoggers {
 
 
     public static final Logger LOGGER_DB_QUERY =
-            CliLog
+            Log
                     .getCliLog("query")
                     .setFormat(format)
                     .setNameSpace("net.bytle.db.query")
                     .getLogger();
 
-    public static final Logger LOGGER_DB_SAMPLE = CliLog
+    public static final Logger LOGGER_DB_SAMPLE = Log
             .getCliLog("tpcds")
             .setFormat(format)
             .setNameSpace("net.bytle.db.tpcds")
             .getLogger();
 
-    public static final Logger LOGGER_DB_TEST = CliLog
+    public static final Logger LOGGER_DB_TEST = Log
             .getCliLog("test")
             .setFormat(format)
             .setNameSpace("net.bytle.test")

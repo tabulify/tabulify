@@ -1,4 +1,4 @@
-package net.bytle.cli;
+package net.bytle.log;
 
 
 import java.util.logging.LogRecord;
@@ -8,10 +8,10 @@ import java.util.logging.StreamHandler;
  * An handler that send the output to System.out
  * Using a streamHandler in place of this handler suppress some message (strange)
  */
-public class CliLogHandler extends StreamHandler {
+public class LogHandler extends StreamHandler {
 
 
-    public CliLogHandler() {
+    public LogHandler() {
 
         this.setOutputStream(System.out);
 

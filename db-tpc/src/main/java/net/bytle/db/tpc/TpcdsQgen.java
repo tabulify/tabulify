@@ -1,7 +1,8 @@
 package net.bytle.db.tpc;
 
+import net.bytle.command.Command;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.Bprocess;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +35,7 @@ public class TpcdsQgen {
         return this;
     }
 
-    public TpcdsQgen setQueryTenplatesDirectory(Path path) {
+    public TpcdsQgen setQueryTemplatesDirectory(Path path) {
         this.queryTemplatesDirectory = path;
         return this;
     }
@@ -56,14 +57,14 @@ public class TpcdsQgen {
         int queryTemplatesCount = 99;
         for (int i = 1; i <= queryTemplatesCount; i++) {
 
-            Bprocess bprocess = Bprocess.get(dsqgenExe)
+            Command command = Command.get(dsqgenExe)
                     .addArgs(args)
                     .addArg("/template query" + i + ".tpl")
                     .setWorkingDirectory(workingDirectory);
-            bprocess.startAndWait();
-            if (bprocess.getExitValue() != 0) {
+            command.startAndWait();
+            if (command.getExitValue() != 0) {
                 System.err.println("Error while generating the sql");
-                System.err.println(bprocess.getOutput());
+                System.err.println(command.getOutput());
                 System.exit(1);
             } else {
                 System.out.println("Query " + i + " generated to " + queryOutput);

@@ -1,4 +1,4 @@
-package net.bytle.db.fileResultSet;
+package net.bytle.db.excel;
 
 import org.apache.commons.collections4.bidimap.TreeBidiMap;
 import org.apache.poi.openxml4j.opc.OPCPackage;

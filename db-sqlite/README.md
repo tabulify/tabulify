@@ -1,5 +1,8 @@
 # Sqlite Database implementation
 
+## About
+
+`Sqlite` is the reference SQL Database implementation.
 
 ## Type
 

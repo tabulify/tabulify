@@ -1,4 +1,4 @@
-package net.bytle.cli;
+package net.bytle.log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -9,7 +9,7 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-class CliLogFormatter extends Formatter {
+class LogFormatter extends Formatter {
 
     // Windows
     // https://superuser.com/questions/413073/windows-console-with-ansi-colors-handling/1105718#1105718
@@ -19,7 +19,7 @@ class CliLogFormatter extends Formatter {
     // format string for printing the log record
     static final String ANSI_RESET = ESC + "[0m";
     static final String ANSI_RED = ESC + "[31m";
-    private static Map<String, CliLogFormatter> cliLogFormatters = new HashMap<>();
+    private static Map<String, LogFormatter> cliLogFormatters = new HashMap<>();
     private final Date dat = new Date();
     private final String sourceModuleName;
     private String format;
@@ -30,17 +30,17 @@ class CliLogFormatter extends Formatter {
      *
      * @param moduleName
      */
-    private CliLogFormatter(String moduleName) {
+    private LogFormatter(String moduleName) {
         this.sourceModuleName = moduleName;
     }
 
-    static CliLogFormatter get(String moduleName) {
-        CliLogFormatter cliLogFormatter = cliLogFormatters.get(moduleName);
-        if (cliLogFormatter == null) {
-            cliLogFormatter = new CliLogFormatter(moduleName);
-            cliLogFormatters.put(moduleName, cliLogFormatter);
+    static LogFormatter get(String moduleName) {
+        LogFormatter logFormatter = cliLogFormatters.get(moduleName);
+        if (logFormatter == null) {
+            logFormatter = new LogFormatter(moduleName);
+            cliLogFormatters.put(moduleName, logFormatter);
         }
-        return cliLogFormatter;
+        return logFormatter;
     }
 
     public synchronized String format(LogRecord record) {
@@ -86,7 +86,7 @@ class CliLogFormatter extends Formatter {
         return formatted;
     }
 
-    public CliLogFormatter setFormat(String format) {
+    public LogFormatter setFormat(String format) {
         this.format = format;
         return this;
     }

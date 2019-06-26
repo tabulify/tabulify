@@ -593,4 +593,15 @@ public class Tables {
             create(tableDef, database);
         }
     }
+
+    /**
+     *
+     * @param tableName
+     * @return a table with the default database
+     */
+    public static TableDef getTable(String tableName) {
+
+        return Databases.get().getTable(tableName);
+
+    }
 }

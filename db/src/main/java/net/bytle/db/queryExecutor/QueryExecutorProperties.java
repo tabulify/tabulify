@@ -1,5 +1,7 @@
 package net.bytle.db.queryExecutor;
 
+import net.bytle.crypto.Protector;
+
 import java.util.Properties;
 
 public class QueryExecutorProperties {

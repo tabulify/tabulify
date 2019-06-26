@@ -1,6 +1,6 @@
 package net.bytle.doctest;
 
-import net.bytle.cli.CliLog;
+import net.bytle.log.Log;
 import net.bytle.db.engine.Fs;
 import net.bytle.db.engine.Strings;
 
@@ -70,7 +70,7 @@ public class DocTestRunner {
             }
             String result;
             try {
-                LOGGER.info("Running the code (" + CliLog.onOneLine(docTestUnit.getCode()) + ")");
+                LOGGER.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ")");
                 result = docTestCodeRunner.eval(docTestUnit).trim();
             } catch (Exception e) {
                 docTestRunResult.addError();

@@ -19,6 +19,10 @@
         <module>db-sqlite</module>
         <module>db-gen</module>
         <module>log</module>
+        <module>db-excel</module>
+        <module>crypto</module>
+        <module>db-sqlserver</module>
+        <module>command</module>
     </modules>
     <packaging>pom</packaging>
 

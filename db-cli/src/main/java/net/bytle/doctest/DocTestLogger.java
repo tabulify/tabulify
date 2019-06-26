@@ -1,15 +1,15 @@
 package net.bytle.doctest;
 
-import net.bytle.cli.CliLog;
+import net.bytle.log.Log;
 
 import java.util.logging.Logger;
 
 public class DocTestLogger {
 
-    public static final String format = CliLog.DEFAULT_FORMAT;
+    public static final String format = Log.DEFAULT_FORMAT;
 
     public static final Logger LOGGER_DOCTEST =
-            CliLog
+            Log
                     .getCliLog("doctest")
                     .setFormat(format)
                     .setNameSpace("net.bytle.doctest")
