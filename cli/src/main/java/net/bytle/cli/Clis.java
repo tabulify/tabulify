@@ -15,16 +15,16 @@ public class Clis {
 
 
     /**
-     * The only static function to return the first command called the cli.
-     * The cli is the root command in the chain of command.
+     * The only static function to return the first command called the appHome.
+     * The appHome is the root command in the chain of command.
      * When you want to create a child command, you will call the
      * non-static function {@link CliCommand#commandOf(String)}
      * <p>
      * Normally, you call this function only once.
      * The function will always return a new object. There is no cache.
      *
-     * @param commandName the name of the cli which is what you need to type in the console to call it
-     * @return a cli (ie a root {@link CliCommand}
+     * @param commandName the name of the appHome which is what you need to type in the console to call it
+     * @return a appHome (ie a root {@link CliCommand}
      */
     @SuppressWarnings("WeakerAccess")
     public static CliCommand getCli(String commandName) {

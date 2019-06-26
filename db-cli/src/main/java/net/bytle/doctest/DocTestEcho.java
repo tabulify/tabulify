@@ -2,7 +2,7 @@ package net.bytle.doctest;
 
 /**
  * An example of a {@link DocTestCodeRunner#addMainClass(String, String) MainClass}
- * implementing a basic echo cli
+ * implementing a basic echo appHome
  * <p>
  * This class is used for testing purpose
  * <p>

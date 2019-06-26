@@ -18,9 +18,9 @@ public class DbLoggers {
 
     public static final Logger LOGGER_DB_CLI =
             Log
-                    .getCliLog("cli")
+                    .getCliLog("appHome")
                     .setFormat(format)
-                    .setNameSpace("net.bytle.db.cli.main")
+                    .setNameSpace("net.bytle.db.appHome.main")
                     .getLogger();
 
     public static final Logger LOGGER_DB_DOWNLOADER =

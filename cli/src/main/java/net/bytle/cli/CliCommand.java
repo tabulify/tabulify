@@ -1,5 +1,7 @@
 package net.bytle.cli;
 
+import net.bytle.log.Log;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,7 +14,7 @@ import java.util.stream.Collectors;
  * <p>
  * A command
  * <p>
- * The root command is called the cli command
+ * The root command is called the appHome command
  * <p>
  * A command can have:
  * * children commands creating a chain of command
@@ -25,8 +27,8 @@ public class CliCommand {
     public static final String CONF_DIR = "conf";
     // The default value
     public static final String DEFAULT_APP_HOME_WORD = "BCLI_APP_HOME";
-    private static final java.util.logging.Logger LOGGER = CliLog.getCliLog().getLogger();
-    // The name of the cli (ie command)
+    private static final java.util.logging.Logger LOGGER = Log.getCliLog().getLogger();
+    // The name of the appHome (ie command)
     private final String name;
     // To retrieve a local word by name
     private final Map<String, CliWord> localWordsMap = new HashMap<>();
@@ -40,7 +42,7 @@ public class CliCommand {
     private String description;
     // To retrieve the position of the arg on this client
     private List<CliWord> localWordsList = new ArrayList<>();
-    // Only for the root cli
+    // Only for the root appHome
     // A repository of word that is normally only used in the root
     // To retrieve the word by name
     private Map<String, CliWord> globalWordMap = new HashMap<>();
@@ -152,7 +154,7 @@ public class CliCommand {
     }
 
     /**
-     * Return a child (command|cli) from this (client|command)
+     * Return a child (command|appHome) from this (client|command)
      * creating a (hierarchy|chain) of command
      *
      * @param word - the new word name that is used to create the command
@@ -165,12 +167,12 @@ public class CliCommand {
 
         if (childCommand == null) {
 
-            // Create the cli
+            // Create the appHome
             childCommand = new CliCommand(this, word);
             childCommandsMap.put(word, childCommand);
             childCommandsList.add(childCommand);
 
-            // Add the cli as a word for the parsing process
+            // Add the appHome as a word for the parsing process
             wordOf(word).setTypeAsCommand();
 
         }
@@ -209,13 +211,13 @@ public class CliCommand {
     }
 
     /**
-     * From the actual cli to the parent
+     * From the actual appHome to the parent
      * * the children are not included
      * * the root also as this will not be a word
      * <p>
      * If you want a full chain of command (ie with the root), see {@link #getFullParentsCommand()}
      *
-     * @return a list of all command name from this command to the cli (the root command)
+     * @return a list of all command name from this command to the appHome (the root command)
      */
     @SuppressWarnings("WeakerAccess")
     public List<CliCommand> getParentsCommands() {
@@ -298,7 +300,7 @@ public class CliCommand {
      * Create a global word definition in order to share the same definition
      * between different commands.
      * <p>
-     * This function may be called normally only from the root command (the cli)
+     * This function may be called normally only from the root command (the appHome)
      * but it's also possible from a child
      * <p>
      * If you add a word to a command using the same name, this definition will be used.
@@ -322,10 +324,10 @@ public class CliCommand {
     }
 
     /**
-     * Return the root command of the chain (the cli)
-     * If the cli is the root, it returns itself
+     * Return the root command of the chain (the appHome)
+     * If the appHome is the root, it returns itself
      *
-     * @return the root command (ie the cli)
+     * @return the root command (ie the appHome)
      */
     @SuppressWarnings("WeakerAccess")
     public CliCommand getRootCommand() {
@@ -619,7 +621,7 @@ public class CliCommand {
 
     /**
      * @param path - the path to the config ini file
-     * @return - a cli command
+     * @return - a appHome command
      * <p>
      * This function can be called from all command
      * but there is only one value
@@ -686,7 +688,7 @@ public class CliCommand {
      * Which words define the application home directory
      *
      * @param appHomeWord - the app home word
-     * @return - the cli command for chaining
+     * @return - the appHome command for chaining
      */
     public CliCommand setAppHomeWord(CliWord appHomeWord) {
 

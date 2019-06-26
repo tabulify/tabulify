@@ -19,7 +19,7 @@ public class Log {
     /**
      * The module name (short name that the class)
      */
-    static final String MODULE_NAME = "cli";
+    static final String MODULE_NAME = "appHome";
     /**
      * The clis
      */
@@ -27,7 +27,7 @@ public class Log {
     /**
      * The namespace and its default
      */
-    private static String CLI_NAMESPACE = "net.bytle.cli";
+    private static String CLI_NAMESPACE = "net.bytle.appHome";
     /**
      * The name of the logger
      */

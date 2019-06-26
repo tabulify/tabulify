@@ -151,7 +151,7 @@ Switch ($service)
     "jar" {
         Execute-Jar
         }
-    "cli" {
+    "appHome" {
             Execute-Cli
             }
     "doc" {

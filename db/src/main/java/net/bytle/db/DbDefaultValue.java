@@ -3,7 +3,7 @@ package net.bytle.db;
 /**
  * Default value used everywhere
  * In the class
- * but also in the cli
+ * but also in the appHome
  */
 public class DbDefaultValue {
 

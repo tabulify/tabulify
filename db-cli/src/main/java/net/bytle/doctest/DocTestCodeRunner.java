@@ -22,7 +22,7 @@ public class DocTestCodeRunner {
     public static final Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
     /**
-     * A map to hold the main class of a cli. See {@link #addMainClass(String, Class)}
+     * A map to hold the main class of a appHome. See {@link #addMainClass(String, Class)}
      */
     private HashMap<String, Class> cliClass = new HashMap<String, Class>();
 
@@ -93,7 +93,7 @@ public class DocTestCodeRunner {
                     final String cli = args[0];
                     Class importClass = this.getMainClass(cli);
                     if (importClass == null) {
-                        throw new RuntimeException("No main class was defined for the cli (" + cli + ")");
+                        throw new RuntimeException("No main class was defined for the appHome (" + cli + ")");
                     }
                     args = Arrays.copyOfRange(args, 1, args.length);
 
@@ -318,11 +318,11 @@ public class DocTestCodeRunner {
 
     /**
      * If the {@link DocTestUnit#getLanguage() language} is dos or bash,
-     * * the first name that we called here cli is replaced by the mainClass
+     * * the first name that we called here appHome is replaced by the mainClass
      * * the others args forms the args that are passed to the main method of the mainClass
      *
-     * @param cli       - the cli (ie the first word in a shell command)
-     * @param mainClass - the main class that implements this cli
+     * @param cli       - the appHome (ie the first word in a shell command)
+     * @param mainClass - the main class that implements this appHome
      * @return - a docTestRunner for chaining construction
      */
     public DocTestCodeRunner addMainClass(String cli, Class mainClass) {
@@ -332,7 +332,7 @@ public class DocTestCodeRunner {
 
     /**
      * @param cli
-     * @return the main class that implements a cli
+     * @return the main class that implements a appHome
      * <p>
      * This is used to generate Java code when the documentation is a shell documentation
      */

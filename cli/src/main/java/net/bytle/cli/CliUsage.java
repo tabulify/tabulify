@@ -1,13 +1,16 @@
 package net.bytle.cli;
 
+import net.bytle.log.Log;
+
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class CliUsage {
 
     public final static String TAB = "\t";
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
+    private static final Logger LOGGER = Log.getCliLog().getLogger();
 
     /**
      * Return the usage
@@ -219,8 +222,9 @@ public class CliUsage {
             }
         }
 
-        // Todo - if log level is fine
-        stringBuilder.append(" (" + word.getLevel() + " - " + word.isMandatory() + ")");
+        if (LOGGER.getLevel()== Level.FINE) {
+            stringBuilder.append(" (" + word.getLevel() + " - " + word.isMandatory() + ")");
+        }
         return stringBuilder.toString();
 
     }
@@ -261,7 +265,7 @@ public class CliUsage {
      * An utility function that returns the full chain of command
      * (rootCommand + cliChain) with a space between them
      * <p>
-     * Example: cli subcommand1 subcommand2
+     * Example: appHome subcommand1 subcommand2
      * <p>
      * This is mostly used when building example
      *

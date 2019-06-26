@@ -26,7 +26,7 @@ public class Db {
     /**
      * The database name is an identifiant
      * It's used by:
-     * * every cli command
+     * * every appHome command
      * * every test command
      * in order to work in the same database space
      * If the test and the command does not use the same database name
