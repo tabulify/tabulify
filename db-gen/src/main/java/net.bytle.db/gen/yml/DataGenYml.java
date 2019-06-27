@@ -47,7 +47,9 @@ public class DataGenYml {
     public DataGenYml(Database database, InputStream input) {
 
         this.database = database;
-
+        if (input==null){
+            throw new RuntimeException("The input stream of the Yaml file must not be null");
+        }
         // Transform the file in properties
         Constructor constructor = new Constructor(DataGenYmlProperty.class);
         Yaml yaml = new Yaml(constructor);

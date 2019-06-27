@@ -4,8 +4,13 @@
 ## About
 A test runner that takes its unit test from the documentation.
 
-
 See the main class [DocTest](./src/main/java/net/bytle/doctest/DocTest.java)
+
+In fact, it will for now just replace the content 
+  * of the file block with the path defined in the file unit
+  * of the console block with the output of the execution of the code block
+
+There is no assertion used.
 
 ## Syntax
 
