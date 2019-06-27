@@ -20,7 +20,7 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     public CsvRelation(Path path) {
         this.path = path;
-        this.schema = SchemaManager.getNull(getDatabase());
+        this.schema = Databases.get().getCurrentSchema();
         this.name = path.getFileName().toString();
 
         // ResultSet csvResultSet = new CsvResultSet(inputFilePath);

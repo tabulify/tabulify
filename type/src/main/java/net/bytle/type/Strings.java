@@ -1,10 +1,11 @@
-package net.bytle.db.engine;
+package net.bytle.type;
 
 import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.bytle.db.engine.Fs.getFileContent;
+import static net.bytle.fs.Fs.getFileContent;
+
 
 public class Strings {
 

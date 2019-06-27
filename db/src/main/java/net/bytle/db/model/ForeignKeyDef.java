@@ -2,6 +2,9 @@ package net.bytle.db.model;
 
 import java.util.*;
 
+/**
+ *
+ */
 public class ForeignKeyDef {
 
     private final TableDef tableDef;

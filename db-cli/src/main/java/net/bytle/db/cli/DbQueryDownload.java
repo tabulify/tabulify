@@ -5,9 +5,9 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
-import net.bytle.db.engine.Strings;
+
 import net.bytle.db.model.QueryDef;
-import net.bytle.log.Log;
+import net.bytle.type.Strings;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

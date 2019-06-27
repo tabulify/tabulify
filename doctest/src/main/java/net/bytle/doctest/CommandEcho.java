@@ -1,7 +1,7 @@
 package net.bytle.doctest;
 
 /**
- * An example of a {@link DocTestCodeRunner#addMainClass(String, String) MainClass}
+ * An example of a {@link DocTestCodeRunner#addMainClass(String, Class)} MainClass}
  * implementing a basic echo appHome
  * <p>
  * This class is used for testing purpose
@@ -10,7 +10,7 @@ package net.bytle.doctest;
  * <p>
  * echo Hello Nico
  */
-public class DocTestEcho {
+public class CommandEcho {
 
     public static void main(String[] args) {
         System.out.println(String.join("", args));

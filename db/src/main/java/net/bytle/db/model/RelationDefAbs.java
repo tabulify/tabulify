@@ -3,6 +3,7 @@ package net.bytle.db.model;
 import net.bytle.db.database.Database;
 
 import javax.xml.validation.Schema;
+import java.sql.DatabaseMetaData;
 import java.util.Objects;
 
 /**
@@ -11,6 +12,9 @@ import java.util.Objects;
 public abstract class RelationDefAbs implements RelationDef, Comparable<RelationDef> {
 
 
+    /**
+     * {@link DatabaseMetaData#getMaxTableNameLength()}
+     */
     String name;
     protected SchemaDef schema;
     private String fullyQualifiedName;
@@ -31,7 +35,7 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
 
         if (fullyQualifiedName == null) {
             // The Qualified name is needed for the table build cache
-            // As only the name are knwon
+            // As only the name are known
             this.fullyQualifiedName = schema.getDatabase().getObjectBuilder().getFullyQualifiedName(getName(), getSchema().getName());
         }
         return fullyQualifiedName;

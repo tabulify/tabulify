@@ -4,6 +4,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
 
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -117,7 +118,7 @@ public class DbObjectBuilder {
     /**
      * The fully qualified name is the name with its schema
      * that can be used in SQL Statement
-     *
+     * TODO: Move that in a SQL manager
      * @param tableName
      * @param schemaName
      * @return
@@ -132,6 +133,10 @@ public class DbObjectBuilder {
         if (schemaName == null) {
             return statementTableName;
         } else {
+            /**
+             * Only for catalog
+             * {@link DatabaseMetaData#getCatalogSeparator()}
+             */
             return schemaName + "." + statementTableName;
         }
 
@@ -281,6 +286,18 @@ public class DbObjectBuilder {
         return tableDef;
     }
 
+    /**
+     * Build Foreign Key based on
+     * {@link java.sql.DatabaseMetaData#getImportedKeys(String, String, String)}
+     *
+     * See also the counter part:
+     *   * Same schema
+     * {@link java.sql.DatabaseMetaData#getExportedKeys(String, String, String)}
+     *   * Cross Schmea ?
+     * {@link java.sql.DatabaseMetaData#getCrossReference(String, String, String, String, String, String)}
+     *
+     * @param tableDef
+     */
     private void buildForeignKey(TableDef tableDef) {
 
         // SQLite Driver doesn't return a empty string as key name

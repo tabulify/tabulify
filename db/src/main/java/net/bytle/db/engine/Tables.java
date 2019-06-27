@@ -459,25 +459,36 @@ public class Tables {
 
     }
 
+    /**
+     * Drpping a foreign key
+     * @param foreignKeyDef
+     */
     public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
 
-        final TableDef tableDef = foreignKeyDef.getTableDef();
-        final Database database = tableDef.getDatabase();
-        String dropStatement = "alter table " + tableDef.getFullyQualifiedName() + " drop constraint " + foreignKeyDef.getName();
-        try {
+        /**
+         * TODO: move that outside of the core
+         * for now a hack
+         * because Sqlite does not support alter table drop foreig keys
+         */
+        if (!foreignKeyDef.getTableDef().getDatabase().getDatabaseProductName().equals(Database.DB_SQLITE)) {
+            final TableDef tableDef = foreignKeyDef.getTableDef();
+            final Database database = tableDef.getDatabase();
+            String dropStatement = "alter table " + tableDef.getFullyQualifiedName() + " drop constraint " + foreignKeyDef.getName();
+            try {
 
-            Connection currentConnection = database.getCurrentConnection();
-            Statement statement = currentConnection.createStatement();
-            statement.execute(dropStatement);
-            statement.close();
+                Connection currentConnection = database.getCurrentConnection();
+                Statement statement = currentConnection.createStatement();
+                statement.execute(dropStatement);
+                statement.close();
 
-            LOGGER.info("Foreign Key (" + foreignKeyDef.getName() + ") deleted from the table (" + tableDef.getFullyQualifiedName() + ")");
+                LOGGER.info("Foreign Key (" + foreignKeyDef.getName() + ") deleted from the table (" + tableDef.getFullyQualifiedName() + ")");
 
-        } catch (SQLException e) {
+            } catch (SQLException e) {
 
-            System.err.println(dropStatement);
-            throw new RuntimeException(e);
+                System.err.println(dropStatement);
+                throw new RuntimeException(e);
 
+            }
         }
 
 

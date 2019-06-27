@@ -1,17 +1,29 @@
 package net.bytle.doctest;
 
+import net.bytle.fs.Fs;
 import net.bytle.log.Log;
-import net.bytle.db.engine.Fs;
-import net.bytle.db.engine.Strings;
+import net.bytle.type.Strings;
+
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class DocTestRunner {
 
     final static Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
+
+    /**
+     * Settings the root path for the files
+     * @param baseFileDirectory
+     */
+    public DocTestRunner setBaseFileDirectory(Path baseFileDirectory) {
+        this.baseFileDirectory = baseFileDirectory;
+        return this;
+    }
 
     private Path baseFileDirectory = Paths.get(".");
 
@@ -20,11 +32,12 @@ public class DocTestRunner {
     }
 
     /**
+     * TODO: Create a dry run to check for the block positions (ie file > code > console)
      * Run the doc set in the path and
      * @param path
      * @return the new page
      */
-    public DocTestRunResult run(Path path) {
+    public DocTestRunResult run(Path path, Map<String,Class> commands) {
 
         DocTestRunResult docTestRunResult = DocTestRunResult.get(path);
 
@@ -34,9 +47,11 @@ public class DocTestRunner {
         StringBuilder newDocTestContent = new StringBuilder();
 
         // A runnner
-        DocTestCodeRunner docTestCodeRunner = DocTestCodeRunner.get()
-                .addMainClass("db", net.bytle.db.cli.Db.class)
-                .addMainClass("echo", net.bytle.doctest.DocTestEcho.class); // Just for the test
+        DocTestCodeRunner docTestCodeRunner = DocTestCodeRunner.get();
+        for (String commandName :commands.keySet()){
+            docTestCodeRunner.addMainClass(commandName,commands.get(commandName));
+        }
+
 
         Integer previousEnd = 0;
         for (DocTestUnit docTestUnit : docTests) {
@@ -70,7 +85,7 @@ public class DocTestRunner {
             }
             String result;
             try {
-                LOGGER.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ")");
+                LOGGER.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file ("+docTestUnit.getPath()+")" );
                 result = docTestCodeRunner.eval(docTestUnit).trim();
             } catch (Exception e) {
                 docTestRunResult.addError();
@@ -107,6 +122,12 @@ public class DocTestRunner {
         newDocTestContent.append(docTestContent, previousEnd, docTestContent.length());
         docTestRunResult.setNewDoc(newDocTestContent.toString());
         return docTestRunResult;
+    }
+
+    public DocTestRunResult run(Path path, String command, Class mainClazz) {
+        Map<String,Class> commands = new HashMap<>();
+        commands.put(command,mainClazz);
+        return run(path,commands);
     }
 
     /**

@@ -1,4 +1,4 @@
-package net.bytle.db.engine;
+package net.bytle.fs;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -90,7 +90,7 @@ public class Fs {
                     if (Files.isRegularFile(childPath)) {
                         pathsCollector.add(childPath);
                     } else {
-                        addChildFiles(pathsCollector, path);
+                        addChildFiles(pathsCollector, childPath);
                     }
                 }
 

@@ -35,18 +35,18 @@ Syntax: (1)
 where:
 
 	Command (is one of):
-		* table                                     operations on one or several tables
-		* database                                  operations on database
-		* schema                                    operations on a schema
-		* query                                     operations on a query
-		* sample                                    create and fill data into a sample schema
-		* fkey                                      operations on foreign key (ie on relation and constraints between tables)
+		* table                         operations on one or several tables
+		* database                      operations on database
+		* schema                        operations on a schema
+		* query                         operations on a query
+		* sample                        create and fill data into a sample schema
+		* fkey                          operations on foreign key (ie on relation and constraints between tables)
 
 	Local: (1)
-		* -h,--help (1 - false)                     Print this help
-		* --conf <path> (1 - false)                 The path to the config file
-		* --db.target.url <value> (1 - false)       No Description available
-		* --db.target.driver <value> (1 - false)    No Description available
+		* -h,--help                     Print this help
+		* --conf <path>                 The path to the config file
+		* --db.target.url <value>       No Description available
+		* --db.target.driver <value>    No Description available
 
 To load data from a csv file you would type:
 db table load TABLE_NAME.csv
@@ -70,151 +70,93 @@ To list all ''tables'' in your current database schema, you need to perform the 
 db table list
 </code>
 <console>
+Jun 27, 2019 6:13:09 PM oracle.jdbc.driver.OracleDriver registerMBeans
+WARNING: Error while registering Oracle JDBC Diagnosability MBean.
+java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:585)
+	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.checkMBeanTrustPermission(DefaultMBeanServerInterceptor.java:1848)
+	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.registerMBean(DefaultMBeanServerInterceptor.java:322)
+	at com.sun.jmx.mbeanserver.JmxMBeanServer.registerMBean(JmxMBeanServer.java:522)
+	at oracle.jdbc.driver.OracleDriver.registerMBeans(OracleDriver.java:367)
+	at oracle.jdbc.driver.OracleDriver$1.run(OracleDriver.java:201)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at oracle.jdbc.driver.OracleDriver.<clinit>(OracleDriver.java:197)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at java.sql.DriverManager$2.run(DriverManager.java:603)
+	at java.sql.DriverManager$2.run(DriverManager.java:583)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.sql.DriverManager.loadInitialDrivers(DriverManager.java:583)
+	at java.sql.DriverManager.<clinit>(DriverManager.java:101)
+	at org.sqlite.JDBC.<clinit>(JDBC.java:29)
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Class.java:264)
+	at net.bytle.db.database.Database.getNewConnection(Database.java:475)
+	at net.bytle.db.database.Database.getCurrentConnection(Database.java:386)
+	at net.bytle.db.database.Database.getDatabaseProductName(Database.java:419)
+	at net.bytle.db.database.Database.getCurrentSchema(Database.java:687)
+	at net.bytle.db.cli.DbTableList.run(DbTableList.java:62)
+	at net.bytle.db.cli.DbTable.run(DbTable.java:72)
+	at net.bytle.db.cli.Db.main(Db.java:116)
+	at javademo.run(javademo.java:3)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.bytle.doctest.DocTestCodeRunner.eval(DocTestCodeRunner.java:201)
+	at net.bytle.doctest.DocTestRunner.run(DocTestRunner.java:89)
+	at net.bytle.doctest.DocTest.Run(DocTest.java:40)
+	at net.bytle.db.cli.doc.DbDocTest.docTest(DbDocTest.java:25)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)
+	at com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:47)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:242)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)
 
-No tables found
-
-
-</console>
-</unit>
-
-There is obviously no table in our default database. We will create some below by creating a [[sample|sample database]].
-
-===== Creating a sample schema =====
-The [[sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
-
-<unit>
-<code dos>
-db sample create tpcds-dwh
-</code>
-<console>
-Table (date_dim) created.
-Table (income_band) created.
-Table (customer_address) created.
-Table (reason) created.
-Table (item) created.
-Table (time_dim) created.
-Table (customer_demographics) created.
-Table (ship_mode) created.
-Table (warehouse) created.
-Table (dbgen_version) created.
-Table (call_center) created.
-Table (catalog_page) created.
-Table (store) created.
-Table (web_site) created.
-Table (household_demographics) created.
-Table (promotion) created.
-Table (inventory) created.
-Table (customer) created.
-Table (catalog_sales) created.
-Table (store_sales) created.
-Table (web_page) created.
-Table (catalog_returns) created.
-Table (store_returns) created.
-Table (web_sales) created.
-Table (web_returns) created.
-
-</console>
-</unit>
-<wrap info>Note that the tables are not created by alphabetic order but by foreign key graph order. (Ie the primary key must be created before the foreign key).
-That's why we see at the end of the list most of the fact tables. They are created after the dimensions.</wrap>
-
-  * How many tables do we have ?
-<unit>
-<code dos>
-db table count
-</code>
-<console>
-25 tables
-
-</console>
-</unit>
-===== Filling the schema with data =====
-To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample|sample]].
-
-<unit>
-<code dos>
-db sample fill tpcds-dwh
-</code>
-At the end of the process, you get a list of all tables where data were loaded and the number of row that were inserted.
-<console>
-The table (date_dim) exists in the target database (target)
-The table (income_band) exists in the target database (target)
-The table (customer_address) exists in the target database (target)
-The table (reason) exists in the target database (target)
-The table (item) exists in the target database (target)
-The table (time_dim) exists in the target database (target)
-The table (customer_demographics) exists in the target database (target)
-The table (ship_mode) exists in the target database (target)
-The table (warehouse) exists in the target database (target)
-The table (dbgen_version) exists in the target database (target)
-The table (call_center) exists in the target database (target)
-The table (catalog_page) exists in the target database (target)
-The table (store) exists in the target database (target)
-The table (web_site) exists in the target database (target)
-The table (household_demographics) exists in the target database (target)
-The table (promotion) exists in the target database (target)
-The table (inventory) exists in the target database (target)
-The table (customer) exists in the target database (target)
-The table (catalog_sales) exists in the target database (target)
-The table (store_sales) exists in the target database (target)
-The table (web_page) exists in the target database (target)
-The table (catalog_returns) exists in the target database (target)
-The table (store_returns) exists in the target database (target)
-The table (web_sales) exists in the target database (target)
-The table (web_returns) exists in the target database (target)
-Results:
-Tables Loaded            Rows Inserted   
-----------------------   -------------   
-call_center                          2   
-catalog_page                     11718   
-catalog_returns                   8923   
-catalog_sales                    89807   
-customer                          1000   
-customer_address                  1000   
-customer_demographics          1920800   
-date_dim                         73049   
-dbgen_version                        1   
-household_demographics            7200   
-income_band                         20   
-inventory                       261261   
-item                              2000   
-promotion                            3   
-reason                               1   
-ship_mode                           20   
-store                                2   
-store_returns                    11925   
-store_sales                     120527   
-time_dim                         86400   
-warehouse                            1   
-web_page                             2   
-web_returns                       1152   
-web_sales                        11876   
-web_site                             2
-</console>
-</unit>
-
-===== Listing the tables again =====
-
-You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the ''db sample fill'' command.</wrap>
-<unit>
-<code dos>
-db table list
-</code>
-<console>
 
 Tables:
 
 Table Name                 Count   
 ----------------------   -------   
+D_TIME                       100   
+D_TIME_TRANSFER              200   
 call_center                    2   
 catalog_page               11718   
 catalog_returns             8923   
 catalog_sales              89807   
+characters                    16   
 customer                    1000   
 customer_address            1000   
 customer_demographics    1920800   
 date_dim                   73049   
-dbgen_version                  1   
+dbgen_version                 17   
 household_demographics      7200   
 income_band                   20   
 inventory                 261261   
@@ -230,9 +172,517 @@ warehouse                      1
 web_page                       2   
 web_returns                 1152   
 web_sales                  11876   
-web_site                       2   
+web_site                       2
+</console>
+</unit>
 
+There is obviously no table in our default database. We will create some below by creating a [[sample|sample database]].
 
+===== Creating a sample schema =====
+The [[sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
+
+<unit>
+<code dos>
+db sample create tpcds-dwh
+</code>
+<console>
+Table (reason) already exist.
+Table (customer_demographics) already exist.
+Table (date_dim) already exist.
+Table (customer_address) already exist.
+Table (income_band) already exist.
+Table (item) already exist.
+Table (ship_mode) already exist.
+Table (warehouse) already exist.
+Table (time_dim) already exist.
+Table (dbgen_version) already exist.
+Table (web_site) already exist.
+Table (store) already exist.
+Table (call_center) already exist.
+Table (catalog_page) already exist.
+Table (household_demographics) already exist.
+Table (promotion) already exist.
+Table (inventory) already exist.
+Table (customer) already exist.
+Table (web_page) already exist.
+Table (store_sales) already exist.
+Table (catalog_sales) already exist.
+Table (web_sales) already exist.
+Table (store_returns) already exist.
+Table (catalog_returns) already exist.
+Table (web_returns) already exist.
+</console>
+</unit>
+<wrap info>Note that the tables are not created by alphabetic order but by foreign key graph order. (Ie the primary key must be created before the foreign key).
+That's why we see at the end of the list most of the fact tables. They are created after the dimensions.</wrap>
+
+  * How many tables do we have ?
+<unit>
+<code dos>
+db table count
+</code>
+<console>
+28 tables
+</console>
+</unit>
+===== Filling the schema with data =====
+To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample|sample]].
+
+<unit>
+<code dos>
+db sample fill tpcds-dwh
+</code>
+At the end of the process, you get a list of all tables where data were loaded and the number of row that were inserted.
+<console>
+The table (reason) exists in the target database (target)
+The table (customer_demographics) exists in the target database (target)
+The table (date_dim) exists in the target database (target)
+The table (customer_address) exists in the target database (target)
+The table (income_band) exists in the target database (target)
+The table (item) exists in the target database (target)
+The table (ship_mode) exists in the target database (target)
+The table (warehouse) exists in the target database (target)
+The table (time_dim) exists in the target database (target)
+The table (dbgen_version) exists in the target database (target)
+The table (web_site) exists in the target database (target)
+The table (store) exists in the target database (target)
+The table (call_center) exists in the target database (target)
+The table (catalog_page) exists in the target database (target)
+The table (household_demographics) exists in the target database (target)
+The table (promotion) exists in the target database (target)
+The table (inventory) exists in the target database (target)
+The table (customer) exists in the target database (target)
+The table (web_page) exists in the target database (target)
+The table (store_sales) exists in the target database (target)
+The table (catalog_sales) exists in the target database (target)
+The table (web_sales) exists in the target database (target)
+The table (store_returns) exists in the target database (target)
+The table (catalog_returns) exists in the target database (target)
+The table (web_returns) exists in the target database (target)
+Exception in thread "Table reason, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table customer_demographics, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
+	... 2 more
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
+	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 5 more
+Exception in thread "Table date_dim, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
+	... 2 more
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
+	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 5 more
+Exception in thread "Table customer_address, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table income_band, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table item, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table ship_mode, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table warehouse, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table time_dim, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
+	... 2 more
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
+	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 5 more
+Exception in thread "Table web_site, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table store, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table call_center, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table catalog_page, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
+	... 2 more
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
+	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 5 more
+Exception in thread "Table household_demographics, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table promotion, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table inventory, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
+	... 2 more
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
+	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 5 more
+Exception in thread "Table customer, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table web_page, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table store_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table catalog_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Exception in thread "Table web_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
+	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
+	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
+	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
+	... 2 more
+Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
+	at org.sqlite.core.DB.newSQLException(DB.java:920)
+	at org.sqlite.core.DB.newSQLException(DB.java:932)
+	at org.sqlite.core.DB.throwex(DB.java:897)
+	at org.sqlite.core.DB.executeBatch(DB.java:785)
+	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
+	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
+	... 4 more
+Results:
+Tables Loaded   Rows Inserted   
+-------------   -------------   
+dbgen_version               1
+</console>
+</unit>
+
+===== Listing the tables again =====
+
+You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the ''db sample fill'' command.</wrap>
+<unit>
+<code dos>
+db table list
+</code>
+<console>
+Tables:
+
+Table Name                 Count   
+----------------------   -------   
+D_TIME                       100   
+D_TIME_TRANSFER              200   
+call_center                    2   
+catalog_page               11718   
+catalog_returns             8923   
+catalog_sales              89807   
+characters                    16   
+customer                    1000   
+customer_address            1000   
+customer_demographics    1920800   
+date_dim                   73049   
+dbgen_version                 18   
+household_demographics      7200   
+income_band                   20   
+inventory                 261261   
+item                        2000   
+promotion                      3   
+reason                         1   
+ship_mode                     20   
+store                          2   
+store_returns              11925   
+store_sales               120527   
+time_dim                   86400   
+warehouse                      1   
+web_page                       2   
+web_returns                 1152   
+web_sales                  11876   
+web_site                       2
 </console>
 </unit>
 
@@ -243,96 +693,93 @@ web_site                       2
 db fkey list
 </code>
 <console>
-
 ForeignKeys:
 Id   Child Table              <-   Parent Table             From Foreign Key             
 --   ----------------------   --   ----------------------   --------------------------   
  1   call_center              <-   date_dim                 call_center_fk1              
  2   catalog_page             <-   date_dim                 catalog_page_fk0             
- 3   catalog_returns          <-   call_center              catalog_returns_fk10         
- 4   catalog_returns          <-   catalog_page             catalog_returns_fk7          
+ 3   catalog_returns          <-   call_center              catalog_returns_fk7          
+ 4   catalog_returns          <-   catalog_page             catalog_returns_fk9          
  5   catalog_returns          <-   catalog_sales            catalog_returns_fk8          
- 6   catalog_returns          <-   customer                 catalog_returns_fk11         
- 7   catalog_returns          <-   customer_address         catalog_returns_fk16         
- 8   catalog_returns          <-   customer_demographics    catalog_returns_fk0          
- 9   catalog_returns          <-   date_dim                 catalog_returns_fk15         
-10   catalog_returns          <-   household_demographics   catalog_returns_fk17         
-11   catalog_returns          <-   item                     catalog_returns_fk13         
-12   catalog_returns          <-   reason                   catalog_returns_fk14         
-13   catalog_returns          <-   ship_mode                catalog_returns_fk5          
-14   catalog_returns          <-   time_dim                 catalog_returns_fk12         
-15   catalog_returns          <-   warehouse                catalog_returns_fk3          
-16   catalog_sales            <-   call_center              catalog_sales_fk6            
-17   catalog_sales            <-   catalog_page             catalog_sales_fk4            
-18   catalog_sales            <-   customer                 catalog_sales_fk12           
+ 6   catalog_returns          <-   customer                 catalog_returns_fk6          
+ 7   catalog_returns          <-   customer_address         catalog_returns_fk1          
+ 8   catalog_returns          <-   customer_demographics    catalog_returns_fk16         
+ 9   catalog_returns          <-   date_dim                 catalog_returns_fk2          
+10   catalog_returns          <-   household_demographics   catalog_returns_fk10         
+11   catalog_returns          <-   item                     catalog_returns_fk4          
+12   catalog_returns          <-   reason                   catalog_returns_fk3          
+13   catalog_returns          <-   ship_mode                catalog_returns_fk11         
+14   catalog_returns          <-   time_dim                 catalog_returns_fk5          
+15   catalog_returns          <-   warehouse                catalog_returns_fk13         
+16   catalog_sales            <-   call_center              catalog_sales_fk10           
+17   catalog_sales            <-   catalog_page             catalog_sales_fk12           
+18   catalog_sales            <-   customer                 catalog_sales_fk13           
 19   catalog_sales            <-   customer_address         catalog_sales_fk8            
-20   catalog_sales            <-   customer_demographics    catalog_sales_fk9            
-21   catalog_sales            <-   date_dim                 catalog_sales_fk2            
-22   catalog_sales            <-   household_demographics   catalog_sales_fk10           
-23   catalog_sales            <-   item                     catalog_sales_fk14           
-24   catalog_sales            <-   promotion                catalog_sales_fk13           
-25   catalog_sales            <-   ship_mode                catalog_sales_fk16           
-26   catalog_sales            <-   time_dim                 catalog_sales_fk7            
-27   catalog_sales            <-   warehouse                catalog_sales_fk15           
-28   customer                 <-   customer_address         customer_fk2                 
-29   customer                 <-   customer_demographics    customer_fk0                 
-30   customer                 <-   date_dim                 customer_fk5                 
-31   customer                 <-   household_demographics   customer_fk1                 
+20   catalog_sales            <-   customer_demographics    catalog_sales_fk16           
+21   catalog_sales            <-   date_dim                 catalog_sales_fk14           
+22   catalog_sales            <-   household_demographics   catalog_sales_fk15           
+23   catalog_sales            <-   item                     catalog_sales_fk2            
+24   catalog_sales            <-   promotion                catalog_sales_fk3            
+25   catalog_sales            <-   ship_mode                catalog_sales_fk0            
+26   catalog_sales            <-   time_dim                 catalog_sales_fk9            
+27   catalog_sales            <-   warehouse                catalog_sales_fk1            
+28   customer                 <-   customer_address         customer_fk3                 
+29   customer                 <-   customer_demographics    customer_fk5                 
+30   customer                 <-   date_dim                 customer_fk2                 
+31   customer                 <-   household_demographics   customer_fk4                 
 32   household_demographics   <-   income_band              household_demographics_fk0   
-33   inventory                <-   date_dim                 inventory_fk2                
+33   inventory                <-   date_dim                 inventory_fk0                
 34   inventory                <-   item                     inventory_fk1                
-35   inventory                <-   warehouse                inventory_fk0                
+35   inventory                <-   warehouse                inventory_fk2                
 36   promotion                <-   date_dim                 promotion_fk2                
 37   promotion                <-   item                     promotion_fk1                
-38   store_returns            <-   customer                 store_returns_fk10           
-39   store_returns            <-   customer_address         store_returns_fk1            
-40   store_returns            <-   customer_demographics    store_returns_fk6            
-41   store_returns            <-   date_dim                 store_returns_fk5            
-42   store_returns            <-   household_demographics   store_returns_fk7            
-43   store_returns            <-   item                     store_returns_fk4            
-44   store_returns            <-   reason                   store_returns_fk0            
-45   store_returns            <-   store                    store_returns_fk2            
-46   store_returns            <-   store_sales              store_returns_fk8            
-47   store_returns            <-   time_dim                 store_returns_fk3            
-48   store_sales              <-   customer                 store_sales_fk0              
-49   store_sales              <-   customer_address         store_sales_fk7              
-50   store_sales              <-   customer_demographics    store_sales_fk3              
-51   store_sales              <-   date_dim                 store_sales_fk5              
-52   store_sales              <-   household_demographics   store_sales_fk2              
-53   store_sales              <-   item                     store_sales_fk1              
-54   store_sales              <-   promotion                store_sales_fk8              
-55   store_sales              <-   store                    store_sales_fk6              
+38   store_returns            <-   customer                 store_returns_fk0            
+39   store_returns            <-   customer_address         store_returns_fk8            
+40   store_returns            <-   customer_demographics    store_returns_fk3            
+41   store_returns            <-   date_dim                 store_returns_fk4            
+42   store_returns            <-   household_demographics   store_returns_fk2            
+43   store_returns            <-   item                     store_returns_fk5            
+44   store_returns            <-   reason                   store_returns_fk9            
+45   store_returns            <-   store                    store_returns_fk7            
+46   store_returns            <-   store_sales              store_returns_fk1            
+47   store_returns            <-   time_dim                 store_returns_fk6            
+48   store_sales              <-   customer                 store_sales_fk8              
+49   store_sales              <-   customer_address         store_sales_fk1              
+50   store_sales              <-   customer_demographics    store_sales_fk5              
+51   store_sales              <-   date_dim                 store_sales_fk3              
+52   store_sales              <-   household_demographics   store_sales_fk6              
+53   store_sales              <-   item                     store_sales_fk7              
+54   store_sales              <-   promotion                store_sales_fk0              
+55   store_sales              <-   store                    store_sales_fk2              
 56   store_sales              <-   time_dim                 store_sales_fk4              
 57   store                    <-   date_dim                 store_fk0                    
-58   web_page                 <-   customer                 web_page_fk0                 
-59   web_page                 <-   date_dim                 web_page_fk1                 
-60   web_returns              <-   customer                 web_returns_fk11             
-61   web_returns              <-   customer_address         web_returns_fk5              
-62   web_returns              <-   customer_demographics    web_returns_fk12             
-63   web_returns              <-   date_dim                 web_returns_fk6              
-64   web_returns              <-   household_demographics   web_returns_fk9              
-65   web_returns              <-   item                     web_returns_fk2              
-66   web_returns              <-   reason                   web_returns_fk1              
-67   web_returns              <-   time_dim                 web_returns_fk8              
+58   web_page                 <-   customer                 web_page_fk2                 
+59   web_page                 <-   date_dim                 web_page_fk0                 
+60   web_returns              <-   customer                 web_returns_fk1              
+61   web_returns              <-   customer_address         web_returns_fk9              
+62   web_returns              <-   customer_demographics    web_returns_fk0              
+63   web_returns              <-   date_dim                 web_returns_fk8              
+64   web_returns              <-   household_demographics   web_returns_fk5              
+65   web_returns              <-   item                     web_returns_fk11             
+66   web_returns              <-   reason                   web_returns_fk12             
+67   web_returns              <-   time_dim                 web_returns_fk6              
 68   web_returns              <-   web_page                 web_returns_fk7              
-69   web_returns              <-   web_sales                web_returns_fk4              
-70   web_sales                <-   customer                 web_sales_fk11               
+69   web_returns              <-   web_sales                web_returns_fk10             
+70   web_sales                <-   customer                 web_sales_fk5                
 71   web_sales                <-   customer_address         web_sales_fk8                
-72   web_sales                <-   customer_demographics    web_sales_fk12               
-73   web_sales                <-   date_dim                 web_sales_fk3                
-74   web_sales                <-   household_demographics   web_sales_fk9                
-75   web_sales                <-   item                     web_sales_fk10               
-76   web_sales                <-   promotion                web_sales_fk0                
-77   web_sales                <-   ship_mode                web_sales_fk7                
-78   web_sales                <-   time_dim                 web_sales_fk2                
-79   web_sales                <-   warehouse                web_sales_fk6                
-80   web_sales                <-   web_page                 web_sales_fk5                
-81   web_sales                <-   web_site                 web_sales_fk4                
+72   web_sales                <-   customer_demographics    web_sales_fk4                
+73   web_sales                <-   date_dim                 web_sales_fk15               
+74   web_sales                <-   household_demographics   web_sales_fk7                
+75   web_sales                <-   item                     web_sales_fk6                
+76   web_sales                <-   promotion                web_sales_fk16               
+77   web_sales                <-   ship_mode                web_sales_fk9                
+78   web_sales                <-   time_dim                 web_sales_fk14               
+79   web_sales                <-   warehouse                web_sales_fk10               
+80   web_sales                <-   web_page                 web_sales_fk11               
+81   web_sales                <-   web_site                 web_sales_fk12               
 82   web_site                 <-   date_dim                 web_site_fk0                 
 
 Tip: You can show the columns by adding the c flag.
-
-
 </console>
 </unit>
 
@@ -371,20 +818,27 @@ with year_total as (
 db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
 </code> 
 <console>
+The first argument value seems not to be a file, a directory or a query
+The argument value is: 
+.\src\main\sql\tpcds\query\sqlite\query_11.sql
 
-customer_id        customer_first_name   customer_last_name   customer_email_address                   
-----------------   -------------------   ------------------   --------------------------------------   
-AAAAAAAABMDAAAAA   Jose                  Guzman               Jose.Guzman@stJp.edu                     
-AAAAAAAAFLAAAAAA   Joseph                Riley                Joseph.Riley@znxF.com                    
-AAAAAAAAFNCAAAAA   Jennifer              Fitzpatrick          Jennifer.Fitzpatrick@9AK6ZnfkDN7T.edu    
-AAAAAAAAJCAAAAAA   Maxine                Carlson              Maxine.Carlson@StyP5lAokmQ29QHYMLa.edu   
-AAAAAAAAJGBAAAAA   Bonnie                Harrison             Bonnie.Harrison@AKYSOPlHEYkd.com         
-AAAAAAAAKMDAAAAA   Alexander             White                Alexander.White@7v2XsptkFrc50K.org       
-AAAAAAAAOFCAAAAA   Timothy               Grogan               Timothy.Grogan@pn3NH2BDng.org            
-AAAAAAAAPCBAAAAA   Luz                   Ransom               Luz.Ransom@fXu5MmHo2tfK.edu              
-AAAAAAAAPDDAAAAA   Reginald              Garcia               Reginald.Garcia@8NKIJxQZ.org             
+Execute one or several queries
+
+Syntax: (1)
+
+	db query execute [options|flags] <Query|File.sql|Directory>
+
+where:
+
+	Local: (1)
+		* --sd <value>                  defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
+
+	Args:
+		* Query|File.sql|Directory      The query defines as a command line argument, a query file or a directory of query files
 
 
+Example:
+db execute --output QueryDownloaded.csv QueryToDownload.sql
 </console>
 </unit>
 
@@ -403,100 +857,26 @@ All ''Tpcds'' queries are located at ''DB_HOME\sql\tpcds\query\sqlite'' where ''
 db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite
 </code>
 <console>
-Query Name     Latency (ms)   Row Count   Error   Message   
-------------   ------------   ---------   -----   -------   
-query_1.sql              89         100                     
-query_10.sql          39111           1                     
-query_11.sql            284           9                     
-query_12.sql             18          19                     
-query_13.sql            105           1                     
-query_14.sql           2648         100                     
-query_15.sql             53          21                     
-query_18.sql            258          60                     
-query_19.sql             71          17                     
-query_2.sql             353        2513                     
-query_20.sql            106         100                     
-query_21.sql            255           0                     
-query_22.sql            175         100                     
-query_23.sql           1208           1                     
-query_24.sql            152           0                     
-query_25.sql            236           0                     
-query_26.sql            239         100                     
-query_27.sql            247         100                     
-query_28.sql            214           1                     
-query_29.sql            247           0                     
-query_3.sql              78           2                     
-query_30.sql             22           3                     
-query_31.sql            441           0                     
-query_32.sql             66           1                     
-query_33.sql            133         100                     
-query_34.sql             73          12                     
-query_35.sql          33423         100                     
-query_36.sql            105         100                     
-query_37.sql            124           0                     
-query_38.sql            157           1                     
-query_4.sql             501           7                     
-query_40.sql            127          40                     
-query_41.sql             28           0                     
-query_42.sql             68           6                     
-query_43.sql             84           2                     
-query_44.sql           1775          10                     
-query_45.sql             10           5                     
-query_46.sql             83         100                     
-query_47.sql            687         100                     
-query_48.sql            104           1                     
-query_49.sql           1602           5                     
-query_5.sql             264         100                     
-query_50.sql             11           2                     
-query_52.sql             71          10                     
-query_53.sql            266           0                     
-query_54.sql            506           0                     
-query_55.sql             70           7                     
-query_56.sql            124           3                     
-query_57.sql            514         100                     
-query_58.sql            576           0                     
-query_59.sql            415         100                     
-query_6.sql             315           3                     
-query_60.sql            129         100                     
-query_61.sql             95           1                     
-query_62.sql             14           6                     
-query_63.sql            271           0                     
-query_64.sql            512           0                     
-query_65.sql            148           4                     
-query_66.sql             96           1                     
-query_67.sql            188         100                     
-query_68.sql             68          79                     
-query_69.sql          36588          18                     
-query_7.sql             243         100                     
-query_70.sql            156           1                     
-query_71.sql            144          28                     
-query_72.sql           2325          22                     
-query_73.sql            133           0                     
-query_74.sql            189          14                     
-query_75.sql            597          32                     
-query_76.sql             87         100                     
-query_77.sql            164           7                     
-query_78.sql           1715         100                     
-query_79.sql             74         100                     
-query_8.sql              13           0                     
-query_80.sql            247          87                     
-query_81.sql             38           6                     
-query_82.sql             63           1                     
-query_83.sql            326           0                     
-query_84.sql             11           1                     
-query_85.sql             29           0                     
-query_86.sql             13         100                     
-query_88.sql            742           1                     
-query_89.sql            138         100                     
-query_9.sql             360           1                     
-query_90.sql             20           1                     
-query_91.sql             14           0                     
-query_92.sql             13           1                     
-query_93.sql            163           0                     
-query_94.sql          55300           1                     
-query_95.sql             29           1                     
-query_96.sql             83           1                     
-query_98.sql            131         237                     
-query_99.sql            115          12
+The first argument value seems not to be a file, a directory or a query
+The argument value is: 
+.\src\main\sql\tpcds\query\sqlite
+
+Execute one or several queries
+
+Syntax: (1)
+
+	db query execute [options|flags] <Query|File.sql|Directory>
+
+where:
+
+	Local: (1)
+		* --sd <value>                  defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
+
+	Args:
+		* Query|File.sql|Directory      The query defines as a command line argument, a query file or a directory of query files
+
+
+Example:
+db execute --output QueryDownloaded.csv QueryToDownload.sql
 </console>
 </unit>

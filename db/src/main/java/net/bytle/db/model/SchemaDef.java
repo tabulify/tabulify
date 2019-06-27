@@ -2,9 +2,28 @@ package net.bytle.db.model;
 
 import net.bytle.db.database.Database;
 
+import java.sql.DatabaseMetaData;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ *
+ * Schema implementation
+ *
+ * See also:
+ * {@link DatabaseMetaData#supportsSchemasInDataManipulation()}
+ * {@link DatabaseMetaData#supportsSchemasInIndexDefinitions()}
+ * {@link DatabaseMetaData#supportsSchemasInPrivilegeDefinitions()}
+ * {@link DatabaseMetaData#supportsSchemasInProcedureCalls()}
+ * {@link DatabaseMetaData#supportsSchemasInTableDefinitions()}
+ *
+ * {@link DatabaseMetaData#supportsCatalogsInDataManipulation()}
+ * {@link DatabaseMetaData#supportsCatalogsInIndexDefinitions()}
+ * {@link DatabaseMetaData#supportsCatalogsInPrivilegeDefinitions()}
+ * {@link DatabaseMetaData#supportsCatalogsInProcedureCalls()}
+ * {@link DatabaseMetaData#supportsCatalogsInTableDefinitions()}
+ *
+ */
 public class SchemaDef {
 
 
@@ -21,6 +40,12 @@ public class SchemaDef {
         this.database = database;
     }
 
+    /**
+     * {@link DatabaseMetaData#getMaxSchemaNameLength()}
+     *
+     * @param name
+     * @return
+     */
     public SchemaDef name(String name) {
         this.name = name;
         return this;

@@ -1,6 +1,7 @@
 package net.bytle.doctest;
 
-import net.bytle.db.engine.Strings;
+
+import net.bytle.type.Strings;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

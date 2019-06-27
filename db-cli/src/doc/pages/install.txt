@@ -27,7 +27,7 @@ Example;
 <code dos>
 db --help
 </code>
-<file>
+<console>
 A Sdk for the database
 
 Syntax:
@@ -49,7 +49,7 @@ where:
 
 To load data from a csv file you would type:
 db table load TABLE_NAME.csv
-</file>
+</consnole>
 </unit>
 
 ==== Next Step ====

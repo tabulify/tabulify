@@ -23,25 +23,22 @@ db table --help
 <console>
 operations on one or several tables
 
-Syntax:
+Syntax: (1)
 
-	db [options] table <command>
+	db table <command>
 
 where:
 
 	Command (is one of):
-		* load              load data into a table from a file
-		* download          download a table into a file
-		* transfer          transfer a table from a database to another
-		* fill              fill a table with generated data
-		* list              list tables
-		* drop              drop table(s)
-		* count             count the number of tables
-		* show              show the table structures
-
-	Global Options:
-		* --help,-h         Print this help
-		* --config          The path to the config file
+		* load                          load data into a table from a file
+		* download                      download a table into a file
+		* transfer                      transfer a table from a database to another
+		* fill                          fill a table with generated data
+		* list                          list tables
+		* drop                          drop table(s)
+		* count                         count the number of tables
+		* describe                      show the table structures
+		* show                          show the data of the table
 </console>
 </unit>
 

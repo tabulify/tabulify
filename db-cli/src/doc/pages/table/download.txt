@@ -16,35 +16,26 @@ The target data file may be:
 db table download --help
 </code>
 <console>
-Load a file into a database. 
+Download a table into a file.
 
-Syntax:
+Syntax: (1)
 
-	db [options] table load <File.csv>
+	db table download [options|flags] <TableName>
 
 where:
 
-	Options:
-		* --target.table       defines the TARGET table database
-		* --tw                 defines the TARGET number of thread against the TARGET database
-		* --bs                 defines the size of the buffer between SOURCE and TARGET threads
-		* --tcf                defines the commit frequency against the TARGET table by batch
-		* --tbs                defines the batch size against the TARGET table
-		* --tcs                defines a file that contains script that must be run against the target database
-		* --mp                 defines the file path that will save the metrics
+	Local: (1)
+		* -o,--output <path>            defines the directory of the downloaded file (Default: currentWorkingDirectory)
 
-	Global Options:
-		* --help,-h            Print this help
-		* --config             The path to the config file
-
-	Config File Options (.\conf\db.ini ):
-		* --db.target.url      defines the TARGET Jdbc connection String for the TARGET database (Example: jdbc:sap://192.168.0.132:30015/?user=loing&password=pwd)
-		* --db.target.driver   defines the TARGET driver for the TARGET database (Example: com.sap.db.jdbc.Driver)
+	Local: (1)
+		* --cif <value>                 If present, the values of clob columns will be written in a apart file
 
 	Args:
-		* File.csv             A CSV file
+		* TableName                     No Description available
 
-The last argument is a CSV file
+
+Example:
+download --db.target.url  jdbc:oracle:thin:scott/tiger@myhost:1521:mysid -tdf downloaded.csv toDownload.sql
 </console>
 </unit>
 

@@ -4,6 +4,7 @@ package net.bytle.db.model;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Queries;
 
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.*;
 
@@ -293,8 +294,16 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
+    /**
+     * TODO: TableDef should only have metadata, move this
+     * The generation of a SQL must not be inside
+     * @return
+     */
     @Override
     public String getQuery() {
+        /**
+         * {@link DatabaseMetaData#getIdentifierQuoteString()}
+         */
         return "select * from " + getFullyQualifiedName();
     }
 

@@ -75,11 +75,21 @@ public class Database implements AutoCloseable {
 
 
     /**
-     * The databaseName of a table in a statement
+     * TODO: Move that in a SQL manager
+     * The databaseName of a table in a SQL statement
      */
     public String getStatementTableName(String objectName) {
 
-        String normativeObjectName = objectName;
+        String identifierQuoteString = "\"";
+        try {
+            final Connection currentConnection = this.getCurrentConnection();
+            if (currentConnection!=null) {
+                identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
+            }
+        } catch (SQLException e) {
+            LOGGER.warning("The database "+this+" throw an error when retrieving the quoted string identifier."+e.getMessage());
+        }
+        String normativeObjectName = identifierQuoteString+objectName+identifierQuoteString;
         if (this.getSqlDatabase() != null) {
             String objectNameExtension = this.getSqlDatabase().getNormativeSchemaObjectName(objectName);
             if (objectNameExtension != null) {
@@ -204,9 +214,12 @@ public class Database implements AutoCloseable {
         return dataTypeDriverMap.values();
     }
 
+    /**
+     * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
+     */
     public void printDatabaseInformation() {
 
-        System.out.println("Inforamtion about the database (" + this.getDatabaseName() + "):");
+        System.out.println("Information about the database (" + this.getDatabaseName() + "):");
 
         System.out.println();
         System.out.println("Driver Information:");
@@ -541,6 +554,7 @@ public class Database implements AutoCloseable {
 
     /**
      * Create a merge statement to load data in a table
+     * TODO: merge columns can be found at: {@link DatabaseMetaData#getBestRowIdentifier(String, String, String, int, boolean)}
      *
      * @param tableDef
      * @param mergeColumnPositions

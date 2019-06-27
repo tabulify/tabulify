@@ -2,7 +2,8 @@ package net.bytle.db.model;
 
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.engine.Strings;
+import net.bytle.type.Strings;
+
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
@@ -27,7 +28,11 @@ public class ColumnDef implements Comparable<ColumnDef> {
         allowedNullableValues.add(DatabaseMetaData.columnNullableUnknown);
     }
 
-    /* Mandatory */
+    /**
+     * Mandatory
+     * Called also an Identifier in SQL
+     * See {@link DatabaseMetaData#getIdentifierQuoteString()}
+     */
     private final String columnName;
 
     private int nullable = DatabaseMetaData.columnNullable;

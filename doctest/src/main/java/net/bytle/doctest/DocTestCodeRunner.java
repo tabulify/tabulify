@@ -326,6 +326,7 @@ public class DocTestCodeRunner {
      * @return - a docTestRunner for chaining construction
      */
     public DocTestCodeRunner addMainClass(String cli, Class mainClass) {
+
         this.cliClass.put(cli, mainClass);
         return this;
     }
