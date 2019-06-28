@@ -146,8 +146,9 @@ public class DbQueryExecute {
         LOGGER.info("Processing the request");
         switch (queries.size()) {
             case 0:
-                System.out.println();
-                System.out.println("No query found");
+                System.err.println();
+                System.err.println("No query found");
+                System.exit(1);
                 break;
 
             case 1:
@@ -179,6 +180,7 @@ public class DbQueryExecute {
                         .addColumn("Message", Types.VARCHAR);
                 InsertStream exeInput = MemoryInsertStream.get(executionTable);
 
+                int errorCounter = 0;
                 for (QueryDef queryDef : queries) {
 
                     cliTimer = CliTimer.getTimer("execute").start();
@@ -189,6 +191,7 @@ public class DbQueryExecute {
                         SelectStreamListener feedback = Queries.execute(queryDef);
                         rowCount = String.valueOf(feedback.getRowCount());
                     } catch (Exception e) {
+                        errorCounter++;
                         status = "Err";
                         message = Log.onOneLine(e.getMessage());
                         LOGGER.severe(e.getMessage());
@@ -203,6 +206,10 @@ public class DbQueryExecute {
                 Tables.print(executionTable);
                 System.out.println();
 
+                if (errorCounter>0){
+                    System.err.println(errorCounter+" Errors during Query executions were seen");
+                    System.exit(1);
+                }
                 break;
         }
 

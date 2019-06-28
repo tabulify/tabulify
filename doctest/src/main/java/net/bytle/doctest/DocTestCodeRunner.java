@@ -70,10 +70,11 @@ public class DocTestCodeRunner {
 
         try {
 
-            // The class name
+            // The class name that will be created
             // The file will have the same name
             // and we will also use it to put it as temporary directory name
-            final String className = "javademo";
+            final String buildClassName = "javademo";
+            final String runMethodName = "run";
 
 
             // Creation of the java source file
@@ -82,8 +83,9 @@ public class DocTestCodeRunner {
             String code;
             switch (docTestUnit.getLanguage()) {
                 case "java":
-                    code = "public class " + className + " {" +
-                            "public static void run() {\n" +
+
+                    code = "public class " + buildClassName + " {" +
+                            "public static void " + runMethodName + "() {\n" +
                             docTestUnit.getCode() +
                             "    }" +
                             "}";
@@ -113,8 +115,8 @@ public class DocTestCodeRunner {
                     }
 
                     // Code
-                    code = "public class " + className + " {\n" +
-                            "    public static void run() {\n" +
+                    code = "public class " + buildClassName + " {\n" +
+                            "    public static void "+runMethodName+"() {\n" +
                             "       " + importClass.getName() + ".main(new String[]{\"" + String.join("\",\"", args) + "\"});\n" +
                             "    }\n" +
                             "}";
@@ -123,7 +125,7 @@ public class DocTestCodeRunner {
                 default:
                     throw new Exception("Language (" + docTestUnit.getLanguage() + " not yet implemented");
             }
-            DocTestSource docTestSource = new DocTestSource(className, code);
+            DocTestSource docTestSource = new DocTestSource(buildClassName, code);
 
             // Verification of the presence of the compilation tool archive
             ClassLoader classLoader = DocTestCodeRunner.class.getClassLoader();
@@ -182,11 +184,12 @@ public class DocTestCodeRunner {
                     new URL[]{outputDirClass.toUri().toURL()},
                     classLoader);
 
+            // Disabling System.exit with the security manager
             System.setSecurityManager(DocTestSecurityManager.get());
 
-            // Disabling System.exit
-            Class javaDemoClass = urlClassLoader.loadClass(className);
-            Method method = javaDemoClass.getMethod("run");
+            // Loading the dynamically build class
+            Class buildClass = urlClassLoader.loadClass(buildClassName);
+            Method method = buildClass.getMethod(runMethodName);
 
             // Capturing outputStream and running the command
             PrintStream backupSystemOut = System.out;
@@ -195,24 +198,33 @@ public class DocTestCodeRunner {
             PrintStream stream = new PrintStream(byteArrayOutputStream);
             System.setOut(stream);
             System.setErr(stream);
-
-            // Inovke
+            Boolean error = false;
+            // Invoke
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
-                // An exit was invoked, do nothing
+               if (!(e.getTargetException().getClass()==PreventExitException.class)) {
+                    // An bad exit status  was seen
+                    error = true;
+                }
+            } finally {
+
+                // Get the output
+                System.out.flush(); // Into the byteArray
+                System.err.flush(); // Into the byteArray
+                System.setOut(backupSystemOut);
+                System.setErr(backupSystemErr);
+
+                // Set it back to null
+                System.setSecurityManager(null);
+
             }
 
-            // Get the output
-            System.out.flush(); // Into the byteArray
-            System.err.flush(); // Into the byteArray
-            System.setOut(backupSystemOut);
-            System.setErr(backupSystemErr);
-
-            // Set it back to null
-            System.setSecurityManager(null);
-
-            return byteArrayOutputStream.toString();
+            if (error){
+                throw new RuntimeException(byteArrayOutputStream.toString());
+            } else {
+                return byteArrayOutputStream.toString();
+            }
 
 
         } catch (NoSuchMethodException | IOException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {

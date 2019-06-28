@@ -14,8 +14,8 @@ You can install it by following the [[install|install instructions]].
 db --help
 </code>
 <console>
-18:13:09 - INFO - (conf) word was not found
-18:13:09 - INFO - (help) word was found with the value: true
+16:35:48 - INFO - (conf) word was not found
+16:35:48 - INFO - (help) word was found with the value: true
 
 A Sdk for the database
 

@@ -16,16 +16,14 @@ public class DocTestRunner {
 
     final static Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
-    /**
-     * Settings the root path for the files
-     * @param baseFileDirectory
-     */
-    public DocTestRunner setBaseFileDirectory(Path baseFileDirectory) {
-        this.baseFileDirectory = baseFileDirectory;
-        return this;
-    }
 
     private Path baseFileDirectory = Paths.get(".");
+    // Do we stop at the first execution
+    private boolean stopRunAtFirstError = true;
+
+    public void setStopRunAtFirstError(boolean stopRunAtFirstError) {
+        this.stopRunAtFirstError = stopRunAtFirstError;
+    }
 
     public static DocTestRunner get() {
         return new DocTestRunner();
@@ -95,7 +93,9 @@ public class DocTestRunner {
                     result = e.getMessage();
                 }
                 LOGGER.severe("Error during docTestRun: " + result);
-                e.printStackTrace(System.err);
+                if (stopRunAtFirstError){
+                    throw new RuntimeException(e);
+                }
             }
 
             // Console
@@ -136,8 +136,8 @@ public class DocTestRunner {
      * @param path
      * @return the runnner for chaining instantiation
      */
-//    public DocTestRunner setBaseFileDirectory(Path path) {
-//        this.baseFileDirectory = path;
-//        return this;
-//    }
+    public DocTestRunner setBaseFileDirectory(Path path) {
+        this.baseFileDirectory = path;
+        return this;
+    }
 }

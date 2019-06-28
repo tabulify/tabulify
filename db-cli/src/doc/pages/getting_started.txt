@@ -23,7 +23,7 @@ To install [[db|Bytle-Db]] on your computer, follow the instructions on the [[in
   * Typing ''db'' at the command line should give you the following response
 <unit>
 <code dos>
-db
+db --help
 </code>
 <console>
 A Sdk for the database
@@ -70,109 +70,7 @@ To list all ''tables'' in your current database schema, you need to perform the 
 db table list
 </code>
 <console>
-Jun 27, 2019 6:13:09 PM oracle.jdbc.driver.OracleDriver registerMBeans
-WARNING: Error while registering Oracle JDBC Diagnosability MBean.
-java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
-	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
-	at java.lang.SecurityManager.checkPermission(SecurityManager.java:585)
-	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.checkMBeanTrustPermission(DefaultMBeanServerInterceptor.java:1848)
-	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.registerMBean(DefaultMBeanServerInterceptor.java:322)
-	at com.sun.jmx.mbeanserver.JmxMBeanServer.registerMBean(JmxMBeanServer.java:522)
-	at oracle.jdbc.driver.OracleDriver.registerMBeans(OracleDriver.java:367)
-	at oracle.jdbc.driver.OracleDriver$1.run(OracleDriver.java:201)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at oracle.jdbc.driver.OracleDriver.<clinit>(OracleDriver.java:197)
-	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
-	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
-	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
-	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
-	at java.lang.Class.newInstance(Class.java:442)
-	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
-	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
-	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
-	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
-	at java.sql.DriverManager$2.run(DriverManager.java:603)
-	at java.sql.DriverManager$2.run(DriverManager.java:583)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at java.sql.DriverManager.loadInitialDrivers(DriverManager.java:583)
-	at java.sql.DriverManager.<clinit>(DriverManager.java:101)
-	at org.sqlite.JDBC.<clinit>(JDBC.java:29)
-	at java.lang.Class.forName0(Native Method)
-	at java.lang.Class.forName(Class.java:264)
-	at net.bytle.db.database.Database.getNewConnection(Database.java:475)
-	at net.bytle.db.database.Database.getCurrentConnection(Database.java:386)
-	at net.bytle.db.database.Database.getDatabaseProductName(Database.java:419)
-	at net.bytle.db.database.Database.getCurrentSchema(Database.java:687)
-	at net.bytle.db.cli.DbTableList.run(DbTableList.java:62)
-	at net.bytle.db.cli.DbTable.run(DbTable.java:72)
-	at net.bytle.db.cli.Db.main(Db.java:116)
-	at javademo.run(javademo.java:3)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at net.bytle.doctest.DocTestCodeRunner.eval(DocTestCodeRunner.java:201)
-	at net.bytle.doctest.DocTestRunner.run(DocTestRunner.java:89)
-	at net.bytle.doctest.DocTest.Run(DocTest.java:40)
-	at net.bytle.db.cli.doc.DbDocTest.docTest(DbDocTest.java:25)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
-	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
-	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
-	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)
-	at com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:47)
-	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:242)
-	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)
-
-
-Tables:
-
-Table Name                 Count   
-----------------------   -------   
-D_TIME                       100   
-D_TIME_TRANSFER              200   
-call_center                    2   
-catalog_page               11718   
-catalog_returns             8923   
-catalog_sales              89807   
-characters                    16   
-customer                    1000   
-customer_address            1000   
-customer_demographics    1920800   
-date_dim                   73049   
-dbgen_version                 17   
-household_demographics      7200   
-income_band                   20   
-inventory                 261261   
-item                        2000   
-promotion                      3   
-reason                         1   
-ship_mode                     20   
-store                          2   
-store_returns              11925   
-store_sales               120527   
-time_dim                   86400   
-warehouse                      1   
-web_page                       2   
-web_returns                 1152   
-web_sales                  11876   
-web_site                       2
+No tables found
 </console>
 </unit>
 
@@ -186,31 +84,31 @@ The [[sample|sample module]] provides several sample database. We will create th
 db sample create tpcds-dwh
 </code>
 <console>
-Table (reason) already exist.
-Table (customer_demographics) already exist.
-Table (date_dim) already exist.
-Table (customer_address) already exist.
-Table (income_band) already exist.
-Table (item) already exist.
-Table (ship_mode) already exist.
-Table (warehouse) already exist.
-Table (time_dim) already exist.
-Table (dbgen_version) already exist.
-Table (web_site) already exist.
-Table (store) already exist.
-Table (call_center) already exist.
-Table (catalog_page) already exist.
-Table (household_demographics) already exist.
-Table (promotion) already exist.
-Table (inventory) already exist.
-Table (customer) already exist.
-Table (web_page) already exist.
-Table (store_sales) already exist.
-Table (catalog_sales) already exist.
-Table (web_sales) already exist.
-Table (store_returns) already exist.
-Table (catalog_returns) already exist.
-Table (web_returns) already exist.
+Table (reason) created.
+Table (customer_demographics) created.
+Table (date_dim) created.
+Table (customer_address) created.
+Table (income_band) created.
+Table (item) created.
+Table (ship_mode) created.
+Table (warehouse) created.
+Table (time_dim) created.
+Table (dbgen_version) created.
+Table (web_site) created.
+Table (store) created.
+Table (call_center) created.
+Table (catalog_page) created.
+Table (household_demographics) created.
+Table (promotion) created.
+Table (inventory) created.
+Table (customer) created.
+Table (web_page) created.
+Table (store_sales) created.
+Table (catalog_sales) created.
+Table (web_sales) created.
+Table (store_returns) created.
+Table (catalog_returns) created.
+Table (web_returns) created.
 </console>
 </unit>
 <wrap info>Note that the tables are not created by alphabetic order but by foreign key graph order. (Ie the primary key must be created before the foreign key).
@@ -222,7 +120,7 @@ That's why we see at the end of the list most of the fact tables. They are creat
 db table count
 </code>
 <console>
-28 tables
+25 tables
 </console>
 </unit>
 ===== Filling the schema with data =====
@@ -259,387 +157,34 @@ The table (web_sales) exists in the target database (target)
 The table (store_returns) exists in the target database (target)
 The table (catalog_returns) exists in the target database (target)
 The table (web_returns) exists in the target database (target)
-Exception in thread "Table reason, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: reason.r_reason_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table customer_demographics, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
-	... 2 more
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
-	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_demographics.cd_demo_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 5 more
-Exception in thread "Table date_dim, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
-	... 2 more
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
-	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: date_dim.d_date_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 5 more
-Exception in thread "Table customer_address, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer_address.ca_address_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table income_band, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: income_band.ib_income_band_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table item, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: item.i_item_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table ship_mode, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: ship_mode.sm_ship_mode_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table warehouse, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: warehouse.w_warehouse_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table time_dim, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
-	... 2 more
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
-	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: time_dim.t_time_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 5 more
-Exception in thread "Table web_site, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_site.web_site_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table store, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store.s_store_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table call_center, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: call_center.cc_call_center_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table catalog_page, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
-	... 2 more
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
-	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_page.cp_catalog_page_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 5 more
-Exception in thread "Table household_demographics, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: household_demographics.hd_demo_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table promotion, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: promotion.p_promo_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table inventory, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:94)
-	... 2 more
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.insert(SqlInsertStream.java:111)
-	at net.bytle.db.stream.InsertStreamAbs.insert(InsertStreamAbs.java:40)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:81)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: inventory.inv_date_sk, inventory.inv_item_sk, inventory.inv_warehouse_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 5 more
-Exception in thread "Table customer, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: customer.c_customer_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table web_page, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:97)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_page.wp_web_page_sk)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table store_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: store_returns.sr_item_sk, store_returns.sr_ticket_number)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table catalog_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: catalog_returns.cr_item_sk, catalog_returns.cr_order_number)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
-Exception in thread "Table web_sales, chunk 1" java.lang.RuntimeException: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:110)
-	at net.bytle.db.tpc.TpcdsDgen.lambda$load$1(TpcdsDgen.java:161)
-	at java.lang.Thread.run(Thread.java:748)
-Caused by: java.lang.RuntimeException: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:256)
-	at net.bytle.db.stream.SqlInsertStream.close(SqlInsertStream.java:217)
-	at net.bytle.db.tpc.TpcdsDgenTable.generateTable(TpcdsDgenTable.java:99)
-	... 2 more
-Caused by: org.sqlite.SQLiteException: [SQLITE_CONSTRAINT_PRIMARYKEY]  A PRIMARY KEY constraint failed (UNIQUE constraint failed: web_returns.wr_item_sk, web_returns.wr_order_number)
-	at org.sqlite.core.DB.newSQLException(DB.java:920)
-	at org.sqlite.core.DB.newSQLException(DB.java:932)
-	at org.sqlite.core.DB.throwex(DB.java:897)
-	at org.sqlite.core.DB.executeBatch(DB.java:785)
-	at org.sqlite.core.CorePreparedStatement.executeBatch(CorePreparedStatement.java:79)
-	at net.bytle.db.stream.SqlInsertStream.executeBatch(SqlInsertStream.java:252)
-	... 4 more
 Results:
-Tables Loaded   Rows Inserted   
--------------   -------------   
-dbgen_version               1
+Tables Loaded            Rows Inserted   
+----------------------   -------------   
+call_center                          2   
+catalog_page                     11718   
+catalog_returns                   8923   
+catalog_sales                    89807   
+customer                          1000   
+customer_address                  1000   
+customer_demographics          1920800   
+date_dim                         73049   
+dbgen_version                        1   
+household_demographics            7200   
+income_band                         20   
+inventory                       261261   
+item                              2000   
+promotion                            3   
+reason                               1   
+ship_mode                           20   
+store                                2   
+store_returns                    11925   
+store_sales                     120527   
+time_dim                         86400   
+warehouse                            1   
+web_page                             2   
+web_returns                       1152   
+web_sales                        11876   
+web_site                             2
 </console>
 </unit>
 
@@ -655,18 +200,15 @@ Tables:
 
 Table Name                 Count   
 ----------------------   -------   
-D_TIME                       100   
-D_TIME_TRANSFER              200   
 call_center                    2   
 catalog_page               11718   
 catalog_returns             8923   
 catalog_sales              89807   
-characters                    16   
 customer                    1000   
 customer_address            1000   
 customer_demographics    1920800   
 date_dim                   73049   
-dbgen_version                 18   
+dbgen_version                  1   
 household_demographics      7200   
 income_band                   20   
 inventory                 261261   
@@ -813,32 +355,22 @@ with year_total as (
 ...
 </code>
   * Executing the query will show us this customers.
-<unit envBYTLE_DB_HOME=.\src\main>
+<unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 <code dos db_query_execute.cmd>
 db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
 </code> 
 <console>
-The first argument value seems not to be a file, a directory or a query
-The argument value is: 
-.\src\main\sql\tpcds\query\sqlite\query_11.sql
-
-Execute one or several queries
-
-Syntax: (1)
-
-	db query execute [options|flags] <Query|File.sql|Directory>
-
-where:
-
-	Local: (1)
-		* --sd <value>                  defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
-
-	Args:
-		* Query|File.sql|Directory      The query defines as a command line argument, a query file or a directory of query files
-
-
-Example:
-db execute --output QueryDownloaded.csv QueryToDownload.sql
+customer_id        customer_first_name   customer_last_name   customer_email_address                   
+----------------   -------------------   ------------------   --------------------------------------   
+AAAAAAAABMDAAAAA   Jose                  Guzman               Jose.Guzman@stJp.edu                     
+AAAAAAAAFLAAAAAA   Joseph                Riley                Joseph.Riley@znxF.com                    
+AAAAAAAAFNCAAAAA   Jennifer              Fitzpatrick          Jennifer.Fitzpatrick@9AK6ZnfkDN7T.edu    
+AAAAAAAAJCAAAAAA   Maxine                Carlson              Maxine.Carlson@StyP5lAokmQ29QHYMLa.edu   
+AAAAAAAAJGBAAAAA   Bonnie                Harrison             Bonnie.Harrison@AKYSOPlHEYkd.com         
+AAAAAAAAKMDAAAAA   Alexander             White                Alexander.White@7v2XsptkFrc50K.org       
+AAAAAAAAOFCAAAAA   Timothy               Grogan               Timothy.Grogan@pn3NH2BDng.org            
+AAAAAAAAPCBAAAAA   Luz                   Ransom               Luz.Ransom@fXu5MmHo2tfK.edu              
+AAAAAAAAPDDAAAAA   Reginald              Garcia               Reginald.Garcia@8NKIJxQZ.org
 </console>
 </unit>
 
@@ -852,31 +384,105 @@ db execute --output QueryDownloaded.csv QueryToDownload.sql
 
 All ''Tpcds'' queries are located at ''DB_HOME\sql\tpcds\query\sqlite'' where ''DB_HOME'' is the directory where ''Bytle-Db'' was unzipped/installed.
 
-<unit envBYTLE_DB_HOME=.\src\main>
+<unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 <code dos>
 db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite
 </code>
 <console>
-The first argument value seems not to be a file, a directory or a query
-The argument value is: 
-.\src\main\sql\tpcds\query\sqlite
-
-Execute one or several queries
-
-Syntax: (1)
-
-	db query execute [options|flags] <Query|File.sql|Directory>
-
-where:
-
-	Local: (1)
-		* --sd <value>                  defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
-
-	Args:
-		* Query|File.sql|Directory      The query defines as a command line argument, a query file or a directory of query files
-
-
-Example:
-db execute --output QueryDownloaded.csv QueryToDownload.sql
+Query Name     Latency (ms)   Row Count   Error   Message                                                                                             
+------------   ------------   ---------   -----   -------------------------------------------------------------------------------------------------   
+query_1.sql              99         100                                                                                                               
+query_10.sql          43391           1                                                                                                               
+query_11.sql           1862           9                                                                                                               
+query_12.sql              2               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_13.sql            134           1                                                                                                               
+query_14.sql           3290         100                                                                                                               
+query_15.sql             58          21                                                                                                               
+query_18.sql            293          60                                                                                                               
+query_19.sql             72          17                                                                                                               
+query_2.sql             350        2513                                                                                                               
+query_20.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_21.sql            339           0                                                                                                               
+query_22.sql            169         100                                                                                                               
+query_23.sql           1509           1                                                                                                               
+query_24.sql            149           0                                                                                                               
+query_25.sql            331           0                                                                                                               
+query_26.sql            315         100                                                                                                               
+query_27.sql            326         100                                                                                                               
+query_28.sql            247           1                                                                                                               
+query_29.sql            243           0                                                                                                               
+query_3.sql              85           2                                                                                                               
+query_30.sql             23           3                                                                                                               
+query_31.sql           1636           0                                                                                                               
+query_32.sql             68           1                                                                                                               
+query_33.sql            136         100                                                                                                               
+query_34.sql             77          12                                                                                                               
+query_35.sql          38234         100                                                                                                               
+query_36.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_37.sql            166           0                                                                                                               
+query_38.sql            176           1                                                                                                               
+query_4.sql            4739           7                                                                                                               
+query_40.sql            127          40                                                                                                               
+query_41.sql             32           0                                                                                                               
+query_42.sql            136           6                                                                                                               
+query_43.sql             84           2                                                                                                               
+query_44.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_45.sql             12           5                                                                                                               
+query_46.sql             86         100                                                                                                               
+query_47.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_48.sql            140           1                                                                                                               
+query_49.sql              4               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_5.sql             302         100                                                                                                               
+query_50.sql             89           2                                                                                                               
+query_52.sql            124          10                                                                                                               
+query_53.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_54.sql            365           0                                                                                                               
+query_55.sql             74           7                                                                                                               
+query_56.sql            212           3                                                                                                               
+query_57.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_58.sql            764           0                                                                                                               
+query_59.sql            485         100                                                                                                               
+query_6.sql             318           3                                                                                                               
+query_60.sql            170         100                                                                                                               
+query_61.sql            142           1                                                                                                               
+query_62.sql             36           6                                                                                                               
+query_63.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_64.sql            559           0                                                                                                               
+query_65.sql            158           4                                                                                                               
+query_66.sql            108           1                                                                                                               
+query_67.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_68.sql             75          79                                                                                                               
+query_69.sql          40478          18                                                                                                               
+query_7.sql             270         100                                                                                                               
+query_70.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_71.sql            167          28                                                                                                               
+query_72.sql           2628          22                                                                                                               
+query_73.sql            138           0                                                                                                               
+query_74.sql            906          14                                                                                                               
+query_75.sql            765          32                                                                                                               
+query_76.sql            159         100                                                                                                               
+query_77.sql            176           7                                                                                                               
+query_78.sql           1332         100                                                                                                               
+query_79.sql            102         100                                                                                                               
+query_8.sql               5           0                                                                                                               
+query_80.sql            254          87                                                                                                               
+query_81.sql             38           6                                                                                                               
+query_82.sql             69           1                                                                                                               
+query_83.sql            339           0                                                                                                               
+query_84.sql             10           1                                                                                                               
+query_85.sql             29           0                                                                                                               
+query_86.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_88.sql           1152           1                                                                                                               
+query_89.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_9.sql             390           1                                                                                                               
+query_90.sql             20           1                                                                                                               
+query_91.sql             14           0                                                                                                               
+query_92.sql             11           1                                                                                                               
+query_93.sql            165           0                                                                                                               
+query_94.sql          60724           1                                                                                                               
+query_95.sql             32           1                                                                                                               
+query_96.sql            137           1                                                                                                               
+query_98.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
+query_99.sql            150          12
 </console>
 </unit>

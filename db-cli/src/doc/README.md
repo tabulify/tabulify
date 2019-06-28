@@ -14,13 +14,18 @@ docker run ^
     gerardnico/dokuwiki:2018-04-22b
 ```
 
+
+
 Then:
    * go to http://localhost/install.php
+       * If the page takes to much time, be sure that you are not listening on the xDebug port and that a debug session is started :)
    * set up an admin user.
    * install the following plugins:
       * minimap
-      * backlinks
+      * webcomponent
       * wrap
+   * config:
+     * https://www.dokuwiki.org/config:useheading - always
 
 ## Start the container
 

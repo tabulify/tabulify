@@ -47,7 +47,6 @@ public class DocTest {
             final String msg = errorCount + " errors were seen during documentation execution.";
             System.err.println(msg);
             LOGGER.severe(msg);
-            System.exit(errorCount);
         }
 
     }

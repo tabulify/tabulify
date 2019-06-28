@@ -20,9 +20,15 @@ public class DocTestSecurityManager extends SecurityManager {
 
     @Override
     public void checkExit(int status) {
+
         // Doing nothing means that the JVM will exit
-        // throwing is the only way to prevent it
-        throw new SecurityException();
+        // throwing is the only way to prevent an exit in case of error
+        if (status!=0) {
+            throw new RuntimeException("Error: Exit status was "+status);
+        } else {
+            throw new PreventExitException("Prevent an exit");
+        }
+
     }
 
     @Override

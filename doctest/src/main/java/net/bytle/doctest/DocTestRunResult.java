@@ -1,10 +1,11 @@
 package net.bytle.doctest;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * The result of a run executed
- * via {@link DocTest#run(Path)}
+ * via {@link DocTestRunner#run(Path, Map)}
  */
 public class DocTestRunResult {
 

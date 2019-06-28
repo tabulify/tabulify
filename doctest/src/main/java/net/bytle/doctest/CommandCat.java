@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 public class CommandCat {
 
     public static void main(String[] args) {
+
         System.out.println(Fs.getFileContent(Paths.get(args[0])));
     }
 
