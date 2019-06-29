@@ -1,6 +1,5 @@
 package net.bytle.db.queryExecutor;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.cli.Log;
 
 import java.io.File;
@@ -8,13 +7,13 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class Main {
-    private final static Log logger = DbLoggers.LOGGER_DB_QUERY;
+    protected final static Log LOGGER_QUERY_EXECUTOR = Log.getLog(Main.class);
 
     public static void main(final String[] args) throws Exception {
 
 
         if (args.length != 1) {
-            logger.severe("Please provide the name of the properties file as the first argument");
+            LOGGER_QUERY_EXECUTOR.severe("Please provide the name of the properties file as the first argument");
             return;
         }
 
@@ -26,6 +25,6 @@ public class Main {
                 .run()
                 .join()
                 .collect();
-        logger.info(String.format("Total runtime : %d", System.currentTimeMillis() - start));
+        LOGGER_QUERY_EXECUTOR.info(String.format("Total runtime : %d", System.currentTimeMillis() - start));
     }
 }

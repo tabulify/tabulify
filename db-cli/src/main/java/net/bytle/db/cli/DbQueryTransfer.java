@@ -23,7 +23,7 @@ import static net.bytle.db.cli.Words.*;
 public class DbQueryTransfer {
 
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_QUERY;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
 
     public static void run(CliCommand command, String[] args) {

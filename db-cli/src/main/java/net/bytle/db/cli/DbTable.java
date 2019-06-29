@@ -1,10 +1,7 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
-import net.bytle.cli.Clis;
+import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
 
 import java.util.List;
@@ -19,7 +16,7 @@ import static net.bytle.db.cli.Words.*;
  */
 public class DbTable {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
 
     public static void run(CliCommand cliCommand, String[] args) {

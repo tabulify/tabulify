@@ -193,4 +193,9 @@ public class Log {
     public Level getLevel() {
         return getLogger().getLevel();
     }
+
+    public Log setLevel(Level level) {
+        getLogger().setLevel(level);
+        return this;
+    }
 }

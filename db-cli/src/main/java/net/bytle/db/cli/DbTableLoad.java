@@ -26,7 +26,7 @@ import static net.bytle.db.cli.Words.*;
  */
 public class DbTableLoad {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
 
     public static void run(CliCommand cliCommand, String[] args) {

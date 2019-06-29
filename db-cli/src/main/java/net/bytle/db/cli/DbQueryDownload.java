@@ -25,7 +25,7 @@ import static net.bytle.db.cli.Words.*;
 public class DbQueryDownload {
 
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
     private static final String ARG_NAME = "(Query|File.sql)";
     private static final String CLOB_OPTION = "clob";

@@ -1,9 +1,6 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliTimer;
-import net.bytle.cli.Clis;
+import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -20,8 +17,8 @@ import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 public class DbTableShow {
 
-    public static final Logger LOGGER_DB_ENGINE = DbLoggers.LOGGER_DB_ENGINE;
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    public static final Log LOGGER_DB_ENGINE = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String ARG_NAME = "(name|pattern)..";
 
     public static void run(CliCommand cliCommand, String[] args) {

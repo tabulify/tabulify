@@ -1,10 +1,7 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliTimer;
-import net.bytle.cli.Clis;
+import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.gen.yml.DataGenYml;
@@ -31,7 +28,7 @@ import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
  */
 public class DbTableFill {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final int TABLE_TYPE = 1;
     private static final Integer YML_TYPE = 2;
 

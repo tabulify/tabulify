@@ -29,7 +29,7 @@ public class Strings {
      */
     static public String normalize(String string) {
         return string.replaceAll("\r\n|\n", " ") // No new line
-                .replaceAll("[ ]{2,10}", "")
+                .replaceAll("[ ]{2,10}", " ")
                 .trim(); // No double space;
     }
 

@@ -1,5 +1,6 @@
 package net.bytle.db.cli;
 
+import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.BytleSchema;
@@ -15,7 +16,7 @@ import static net.bytle.db.tpc.TpcdsModel.TPCDS_SCHEMA_STORE_SALES;
 
 public class DbSamples {
 
-    public static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
+    public static final Log LOGGER = Db.LOGGER_DB_CLI;
 
 
     public static List<TableDef> getTables(String sample) {

@@ -1,10 +1,7 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
-import net.bytle.cli.Clis;
+import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -21,7 +18,7 @@ import static net.bytle.db.cli.Words.INFO_COMMAND;
  */
 public class DbDatabaseInfo {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_NAME = "name";
 
 

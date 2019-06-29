@@ -32,7 +32,7 @@ import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
  */
 public class DbSchemaFill {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     protected final static String ARG = "(Schema|DataGen.yml)";
 
     private static final Integer LOAD_CURRENT_SCHEMA = 1;

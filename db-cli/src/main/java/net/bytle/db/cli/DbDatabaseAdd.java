@@ -4,6 +4,7 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
+import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -23,7 +24,7 @@ public class DbDatabaseAdd {
     protected static final String url = "url";
     protected static final String login = "login";
     protected static final String password = "password";
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_NAME = "name";
 
     public static void run(CliCommand cliCommand, String[] args) {

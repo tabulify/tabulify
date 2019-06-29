@@ -2,6 +2,7 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.CliCommand;
+import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 
 import java.util.logging.Logger;
@@ -12,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class DbDatabaseList {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_NAME = "name";
 
 

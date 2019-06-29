@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Load {
 
-    private final static Log LOGGER = DbLoggers.LOGGER_DB_QUERY;
+    private final static Log LOGGER = Main.LOGGER_QUERY_EXECUTOR;
     private final static String SEPARATOR = System.getProperty("line.separator");
 
     TreeMap<Long, TreeMap<String, Integer>> tpsMap = new TreeMap<Long, TreeMap<String, Integer>>();
