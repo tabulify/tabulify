@@ -1,16 +1,14 @@
 package net.bytle.cli;
 
-import net.bytle.log.Log;
-
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import java.util.stream.Collectors;
 
 public class CliUsage {
 
     public final static String TAB = "\t";
-    private static final Logger LOGGER = Log.getCliLog().getLogger();
+    private static final Log LOGGER = CliLog.getCliLog();
 
     /**
      * Return the usage

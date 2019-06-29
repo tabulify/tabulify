@@ -1,4 +1,4 @@
-package net.bytle.log;
+package net.bytle.cli;
 
 
 import java.util.logging.LogRecord;

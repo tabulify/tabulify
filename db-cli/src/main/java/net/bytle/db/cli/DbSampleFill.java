@@ -10,7 +10,6 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.sample.SchemaSample;
 
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;

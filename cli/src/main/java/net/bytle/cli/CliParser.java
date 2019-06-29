@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
@@ -23,11 +22,9 @@ public class CliParser {
     public static final String PREFIX_LONG_OPTION = "--";
     @SuppressWarnings("WeakerAccess")
     public static final String PREFIX_SHORT_OPTION = "-";
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
+    private static final Log LOGGER = CliLog.getCliLog();
     private final String[] args;
     private final CliCommand cliCommand;
-    // A logger initialized in the {@link CliCommand#getLogger} function
-    private final Logger logger = CliLog.getCliLog().getLogger();
     // Verbosity
     private CliWord verboseWord;
     // Contains the word that are recognized
@@ -154,7 +151,7 @@ public class CliParser {
     private void checkMandatoryField() {
         for (CliWord word : cliCommand.getMandatoryWords()) {
             if (!foundWords.keySet().contains(word.getName())) {
-                logger.severe("The " + word.getTypeName() + " " + word.getName() + " is mandatory and was not found");
+                LOGGER.severe("The " + word.getTypeName() + " " + word.getName() + " is mandatory and was not found");
                 CliUsage.print(cliCommand, 2);
                 System.exit(1);
             }
@@ -215,7 +212,7 @@ public class CliParser {
                 if (Files.exists(path)) {
                     properties.load(Files.newInputStream(path));
                 } else {
-                    logger.fine("The config file (" + path.toAbsolutePath().toString() + ") was not found.");
+                    LOGGER.fine("The config file (" + path.toAbsolutePath().toString() + ") was not found.");
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -296,13 +293,13 @@ public class CliParser {
 
                 if (optionLongQualifiedNames.contains(s)) {
 
-                    logger.fine("Long Property found !" + s);
+                    LOGGER.fine("Long Property found !" + s);
                     CliWord cliWord = cliCommand.wordOf(s.substring(PREFIX_LONG_OPTION.length()));
                     i = processOptions(i, cliWord);
 
                 } else {
 
-                    logger.fine("The option (" + s + ") is not defined and was ignored.");
+                    LOGGER.fine("The option (" + s + ") is not defined and was ignored.");
 
                 }
                 continue;
@@ -314,13 +311,13 @@ public class CliParser {
 
                 if (optionShortQualifiedNames.contains(s)) {
 
-                    logger.fine("Short Property found !" + s);
+                    LOGGER.fine("Short Property found !" + s);
                     CliWord cliWord = cliCommand.wordOf(s.substring(PREFIX_SHORT_OPTION.length(), s.length()));
                     i = processOptions(i, cliWord);
 
                 } else {
 
-                    logger.fine("The option (" + s + ") is not defined and was ignored.");
+                    LOGGER.fine("The option (" + s + ") is not defined and was ignored.");
 
                 }
                 continue;
@@ -348,7 +345,7 @@ public class CliParser {
                     List<String> lastArgValues = foundWords.get(lastArg.getName());
                     lastArgValues.add(s);
                     final String msg = "Their is only " + argsSize + " argument(s) defined and the value (" + s + ") is the " + (argNumber + 1) + " arguments. It was added to the argument " + lastArg.getName();
-                    logger.fine(msg);
+                    LOGGER.fine(msg);
 
                 } else {
 
@@ -364,7 +361,7 @@ public class CliParser {
                 // This happens really often using multiple sub-command
                 // The first command does not have any notion of the others sub-command
                 // and you got this message
-                logger.fine("The word (" + s + ") is not defined as a command and no arguments were defined. It was ignored.");
+                LOGGER.fine("The word (" + s + ") is not defined as a command and no arguments were defined. It was ignored.");
 
             }
 
@@ -458,11 +455,11 @@ public class CliParser {
 
             }
 
-            logger.info("(" + word + ") word was found with the value: " + b);
+            LOGGER.info("(" + word + ") word was found with the value: " + b);
 
         } else {
 
-            logger.info("(" + word + ") word was not found");
+            LOGGER.info("(" + word + ") word was not found");
 
         }
 
@@ -716,11 +713,11 @@ public class CliParser {
         if (values.size() != 0) {
             s = String.join(" ", values);
 
-            logger.info("(" + cliWord + ") word was found with the value: " + s);
+            LOGGER.info("(" + cliWord + ") word was found with the value: " + s);
 
         } else {
 
-            logger.info("(" + cliWord + ") word was not found");
+            LOGGER.info("(" + cliWord + ") word was not found");
 
         }
         return s;
@@ -746,7 +743,7 @@ public class CliParser {
                 try {
                     i = Integer.valueOf(value);
                 } catch (Exception e) {
-                    logger.severe("The word " + word + " with the value (" + value + ") is not a integer.");
+                    LOGGER.severe("The word " + word + " with the value (" + value + ") is not a integer.");
                     CliUsage.print(cliCommand, 2);
                     System.exit(1);
                 }
@@ -776,7 +773,7 @@ public class CliParser {
                     d = Double.valueOf(value);
                     LOGGER.info("(" + word + ") word was found with the value:" + d);
                 } catch (Exception e) {
-                    logger.severe("The " + word + " with the value (" + value + ") is not a double.");
+                    LOGGER.severe("The " + word + " with the value (" + value + ") is not a double.");
                     CliUsage.print(cliCommand, 2);
                     System.exit(1);
                 }
@@ -825,17 +822,22 @@ public class CliParser {
     @SuppressWarnings("WeakerAccess")
     public String getFileContent(String word, Boolean exit) {
 
+
+        String pathAsString;
+        if (cliCommand.hasWord(word)) {
+            pathAsString = getString(word);
+        } else {
+            // This is a path
+            pathAsString = word;
+        }
+
+        Path path = Paths.get(pathAsString);
+        return getFileContent(path, exit);
+
+    }
+
+    public String getFileContent(Path path, Boolean exit) {
         try {
-
-            String pathAsString;
-            if (cliCommand.hasWord(word)) {
-                pathAsString = getString(word);
-            } else {
-                // This is a path
-                pathAsString = word;
-            }
-
-            Path path = Paths.get(pathAsString);
             if (Files.exists(path)) {
                 if (Files.isDirectory(path)) {
                     String msg = "The path word value (" + path.toAbsolutePath() + ") is not a file but a directory.";
@@ -858,16 +860,16 @@ public class CliParser {
         } catch (IOException | InvalidPathException e) {
             throw new RuntimeException(e);
         }
-
     }
+
 
     private boolean noExit(Boolean exit, String msg) {
         if (exit) {
-            logger.severe(msg);
+            LOGGER.severe(msg);
             CliUsage.print(cliCommand, 2);
             System.exit(1);
         } else {
-            logger.warning(msg);
+            LOGGER.warning(msg);
             return true;
         }
         return false;

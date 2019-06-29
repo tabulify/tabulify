@@ -1,11 +1,10 @@
 package net.bytle.db.sqlite;
 
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.cli.Log;
 
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class SqliteType {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
 
     String type;
     Integer scale;

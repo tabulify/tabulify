@@ -1,6 +1,5 @@
 package net.bytle.db.sample;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Tables;
@@ -9,7 +8,6 @@ import net.bytle.db.model.TableDef;
 
 import java.sql.Types;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +52,7 @@ public class BytleSchema implements SchemaSample {
             , TABLE_CATEGORY_NAME
             , TABLE_TIME_NAME
     );
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
+
     /**
      * The schema where the table will be stored
      */

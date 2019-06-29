@@ -4,13 +4,13 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.cli.Log;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 public class SchemaManager {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     public static void printTables(SchemaDef schemaDef) {
 

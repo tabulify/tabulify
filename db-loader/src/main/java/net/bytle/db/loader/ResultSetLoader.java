@@ -1,7 +1,6 @@
 package net.bytle.db.loader;
 
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
@@ -10,7 +9,6 @@ import java.sql.Types;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 
 /**
@@ -20,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class ResultSetLoader {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_LOADER;
+
 
 
     private final List<Integer> typesNotSupported = new ArrayList(Arrays.asList(

@@ -1,17 +1,17 @@
 package net.bytle.db.queryExecutor;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.cli.Log;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Logger;
 
 public class Load {
 
-    private final static Logger LOGGER = DbLoggers.LOGGER_DB_QUERY;
+    private final static Log LOGGER = DbLoggers.LOGGER_DB_QUERY;
     private final static String SEPARATOR = System.getProperty("line.separator");
 
     TreeMap<Long, TreeMap<String, Integer>> tpsMap = new TreeMap<Long, TreeMap<String, Integer>>();

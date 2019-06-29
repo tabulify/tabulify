@@ -3,12 +3,12 @@ package net.bytle.db.model;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
+import net.bytle.cli.Log;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.logging.Logger;
 
 
 /**
@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class DbObjectBuilder {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     private final Database database;
 

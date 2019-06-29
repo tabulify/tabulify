@@ -1,7 +1,7 @@
 package net.bytle.doctest;
 
 import net.bytle.fs.Fs;
-import net.bytle.log.Log;
+import net.bytle.cli.Log;
 import net.bytle.type.Strings;
 
 
@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 public class DocTestRunner {
 
-    final static Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
+    final static Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
 
     private Path baseFileDirectory = Paths.get(".");

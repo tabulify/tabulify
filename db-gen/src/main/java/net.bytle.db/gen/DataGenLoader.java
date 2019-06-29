@@ -1,17 +1,16 @@
 package net.bytle.db.gen;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.SqlInsertStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.cli.Log;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class DataGenLoader {
 
@@ -19,7 +18,7 @@ public class DataGenLoader {
     // https://mockaroo.com/ - Data Type
     // https://github.com/mifmif/Generex
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_GENERATOR;
+    private static final Log LOGGER = Gen.GEN_LOG;
     private final TableDef tableDef;
     private Map<String, Map<String, Object>> generatorDefinition = new HashMap<>();
     private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();

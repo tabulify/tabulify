@@ -1,6 +1,6 @@
 package net.bytle.db.queryExecutor;
 
-import net.bytle.db.DbLoggers;
+import net.bytle.cli.Log;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
@@ -11,13 +11,12 @@ import java.math.RoundingMode;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static java.lang.Thread.sleep;
 
 public class QueryExecutor implements IExecutable {
 
-    private Logger LOGGER = DbLoggers.LOGGER_DB_QUERY;
+    private Log LOGGER ;
 
     private List<String[]> parameters = new ArrayList<String[]>();
     private boolean parameterFile = false;
@@ -40,7 +39,7 @@ public class QueryExecutor implements IExecutable {
         // Logger Name is normally hierarchic "com.foo.bar"
         // We add the thread name
         String loggerName = QueryExecutor.class.getCanonicalName();
-        LOGGER = Logger.getLogger(loggerName);
+        LOGGER = Log.getLog(loggerName);
 
         // Property
         threadEnvironment = QueryExecutorProperties.build(threadName, properties);

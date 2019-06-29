@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 public class CliWord {
 
@@ -101,7 +100,7 @@ public class CliWord {
     @SuppressWarnings("WeakerAccess")
     public boolean hasValue() {
         if (isArg() || isCommand() || isFlag()) {
-            Logger.getLogger(CliLog.MODULE_NAME).fine("The word (" + getName() + ") is not an option. It then cannot ");
+            CliLog.getCliLog().fine("The word (" + getName() + ") is not an option. It then cannot ");
             return false;
         } else {
             return true;

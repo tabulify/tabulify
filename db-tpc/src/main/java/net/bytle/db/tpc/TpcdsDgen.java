@@ -4,24 +4,22 @@ import com.teradata.tpcds.Options;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
 import com.teradata.tpcds.TableGenerator;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.cli.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class TpcdsDgen {
 
-    public static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
+    public static final Log LOGGER = Tpc.LOGGER_TPC;
 
     Options options = new Options();
     private Database database;

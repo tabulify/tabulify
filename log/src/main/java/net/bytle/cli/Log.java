@@ -1,4 +1,4 @@
-package net.bytle.log;
+package net.bytle.cli;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,31 +16,37 @@ public class Log {
     public static final String DEFAULT_FORMAT = "%1$tH:%1$tM:%1$tS - %4$s - %5$s%n";
     @SuppressWarnings("unused")
     public static final String EXTENDED_FORMAT = "%1$tH:%1$tM:%1$tS - %4$s - %8$s - %9$s - %5$s%n";
+
+
     /**
-     * The module name (short name that the class)
+     * The logs
      */
-    static final String MODULE_NAME = "appHome";
+    private static Map<String, Log> Logs = new HashMap<>();
+
+
     /**
-     * The clis
+     * The default prefix for the default namespace
+     * Default to prefix + logger name
      */
-    private static Map<String, Log> cliLogs = new HashMap<>();
+    private static String LOGGER_NAMESPACE_PREFIX = "net.bytle.";
     /**
-     * The namespace and its default
+     * The namespace
      */
-    private static String CLI_NAMESPACE = "net.bytle.appHome";
+    private String namespace;
     /**
      * The name of the logger
      */
     private final String name;
+
     /**
      * The format
      */
     private String format = DEFAULT_FORMAT;
-    private String namespace = CLI_NAMESPACE;
+
 
 
     /**
-     * Use the {@link #getCliLog(String)} function to get a cliLog
+     * Use the {@link #getLog(String)} function to get a log
      *
      * @param name
      */
@@ -50,15 +56,13 @@ public class Log {
 
 
 
-    public static Log getCliLog() {
-        return getCliLog(MODULE_NAME);
-    }
 
-    public static Log getCliLog(String name) {
-        Log log = cliLogs.get(name);
+    public static Log getLog(String name) {
+        Log log = Logs.get(name);
         if (log == null) {
-            log = new Log(name);
-            cliLogs.put(name, log);
+            log = new Log(name)
+            .setNameSpace(LOGGER_NAMESPACE_PREFIX+name.toLowerCase());
+            Logs.put(name, log);
         }
         return log;
     }
@@ -70,6 +74,17 @@ public class Log {
     static public String onOneLine(String string) {
         return string.replaceAll("\r\n|\n", " ") // No new line
                 .replaceAll("  ", " "); // No double space;
+    }
+
+    /**
+     * Get a log with the name of the parent package
+     * and the canonical namespace. See {@link #setNameSpace(Class)}
+     * @param clazz
+     * @return a log
+     */
+    public static Log getLog(Class clazz) {
+        return getLog(clazz.getPackage().getName())
+                .setNameSpace(clazz);
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -91,7 +106,7 @@ public class Log {
      * @return a logger initialized
      */
     @SuppressWarnings("WeakerAccess")
-    public Logger getLogger() {
+    protected Logger getLogger() {
 
         Logger logger = Logger.getLogger(this.namespace);
         if (logger.getHandlers().length == 0) {
@@ -137,9 +152,45 @@ public class Log {
         return this;
     }
 
+    /**
+     * Logger Name is normally hierarchic "com.foo.bar"
+     * and you set it with myClass.class.getCanonicalName
+     *
+     * @param namespace
+     * @return
+     */
     public Log setNameSpace(String namespace) {
         this.namespace = namespace;
         return this;
     }
 
+    public void info(String msg) {
+        getLogger().info(msg);
+    }
+
+    public void severe(String msg) {
+        getLogger().severe(msg);
+    }
+
+    public void fine(String msg) {
+        getLogger().fine(msg);
+    }
+
+    public void warning(String msg) {
+        getLogger().fine(msg);
+    }
+
+    /**
+     * Set the namespace with the canonical name of the class
+     * @param clazz
+     * @return
+     */
+    public Log setNameSpace(Class clazz) {
+        setNameSpace(clazz.getCanonicalName());
+        return this;
+    }
+
+    public Level getLevel() {
+        return getLogger().getLevel();
+    }
 }

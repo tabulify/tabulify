@@ -1,14 +1,14 @@
 package net.bytle.db.queryExecutor;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.cli.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 public class Main {
-    private final static Logger logger = DbLoggers.LOGGER_DB_QUERY;
+    private final static Log logger = DbLoggers.LOGGER_DB_QUERY;
 
     public static void main(final String[] args) throws Exception {
 

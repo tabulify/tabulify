@@ -1,7 +1,5 @@
 package net.bytle.cli;
 
-import net.bytle.log.Log;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +25,7 @@ public class CliCommand {
     public static final String CONF_DIR = "conf";
     // The default value
     public static final String DEFAULT_APP_HOME_WORD = "BCLI_APP_HOME";
-    private static final java.util.logging.Logger LOGGER = Log.getCliLog().getLogger();
+    private static final Log LOGGER = Log.getLog(CliCommand.class);
     // The name of the appHome (ie command)
     private final String name;
     // To retrieve a local word by name

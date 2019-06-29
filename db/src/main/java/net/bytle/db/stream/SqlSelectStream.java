@@ -1,17 +1,14 @@
 package net.bytle.db.stream;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ISqlRelation;
 import net.bytle.db.model.RelationDef;
 
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 public class SqlSelectStream implements SelectStream {
 
-    private final static Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     private final ISqlRelation relationDef;
     private ResultSet resultSet;

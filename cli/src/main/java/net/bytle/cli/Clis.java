@@ -5,13 +5,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 
 @SuppressWarnings("WeakerAccess")
 public class Clis {
-
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
 
 
     /**

@@ -11,6 +11,7 @@ package net.bytle.db.connection;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.cli.Log;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,7 +19,6 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 /**
  * User: gerard
@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 @Deprecated
 public class JdbcConnectionBuilder {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     private String driver;
     private final String url;

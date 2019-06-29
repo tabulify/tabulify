@@ -1,20 +1,13 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
-import net.bytle.cli.Clis;
-import net.bytle.db.DbLoggers;
+import net.bytle.cli.*;
 import net.bytle.db.sqlite.SqliteSqlDatabase;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 
 public class Db {
@@ -22,7 +15,13 @@ public class Db {
 
     // TODO: The files in `doc\files` must be in the Bytle-Db Delivery artifact to be able to follow the tutorials
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
+    public static final String format = Log.DEFAULT_FORMAT;
+    public static final Log LOGGER_DB_CLI =
+            Log
+                    .getLog(Words.CLI_NAME)
+                    .setFormat(format)
+                    .setNameSpace(Db.class.getPackage().toString());
+
 
     /**
      * The database name is an identifiant
@@ -102,7 +101,7 @@ public class Db {
 
         List<CliCommand> cliCommands = cliParser.getChildCommands();
         if (cliCommands.size() == 0) {
-            LOGGER.severe("A known command must be given as first argument.");
+            LOGGER_DB_CLI.severe("A known command must be given as first argument.");
             CliUsage.print(cli);
             System.exit(1);
         }

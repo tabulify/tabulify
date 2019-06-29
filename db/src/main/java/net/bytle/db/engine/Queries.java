@@ -7,6 +7,7 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.db.stream.SqlSelectStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.cli.Log;
 import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -20,11 +21,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class Queries {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     private static final String SELECT_WORD = "SELECT";
     private static final String WITH_WORD = "WITH";

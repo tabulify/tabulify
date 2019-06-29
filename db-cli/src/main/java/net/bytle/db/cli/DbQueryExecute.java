@@ -12,7 +12,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.fs.Fs;
-import net.bytle.log.Log;
+import net.bytle.cli.Log;
 import net.bytle.type.Strings;
 
 import java.io.IOException;
@@ -20,8 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +36,7 @@ public class DbQueryExecute {
     private static final Logger LOGGER = DbLoggers.LOGGER_DB_CLI;
 
     private static final String ARG_NAME = "Query|File.sql|Directory";
-    private static final int ARG_TYPE = 0;
+    private static final int QUERY_TYPE = 0;
     private static final int FILE_TYPE = 1;
     private static final int DIRECTORY_TYPE = 2;
 
@@ -75,72 +74,81 @@ public class DbQueryExecute {
                 .setDriver(sourceDriver);
 
 
-        // Arg Type
-        Integer argType;
-        String arg0 = argValues.get(0);
-        if (Fs.isFile(arg0)) {
-            argType = FILE_TYPE;
-        } else if (Fs.isDirectory(arg0)) {
-            argType = DIRECTORY_TYPE;
-        } else {
-            argType = ARG_TYPE;
+        // Arguments checks
+        List<List<Object>> executionUnits = new ArrayList<>();
+        for (int i=0;i<argValues.size();i++){
+            String s = argValues.get(i);
+            if (Fs.isFile(s)) {
+                executionUnits.add(Arrays.asList(FILE_TYPE,Paths.get(s)));
+            } else if (Fs.isDirectory(s)) {
+                executionUnits.add(Arrays.asList(DIRECTORY_TYPE, Paths.get(s)));
+            } else if (Queries.isQuery(s)){
+                executionUnits.add(Arrays.asList(QUERY_TYPE,s));
+            } else {
+                System.err.println("The ("+i+") argument value is not file, a directory or a query");
+                System.err.println("The argument value is: ");
+                System.err.println(Strings.toStringNullSafe(s));
+                CliUsage.print(cliCommand);
+                System.exit(1);
+            }
         }
 
-        // Check
+
+        // Collecting the queries
         List<QueryDef> queries = new ArrayList<>();
-        String query;
-        switch (argType) {
-            case FILE_TYPE:
-                query = cliParser.getFileContent(ARG_NAME, false);
-                if (Queries.isQuery(query)) {
-                    queries.add(database.getQuery(query));
-                } else {
-                    System.err.println("The first argument is a file (" + arg0 + ") that seems to not contain a query");
-                    System.err.println("The file content is: ");
-                    System.err.println(Strings.toStringNullSafe(query));
-                    CliUsage.print(cliCommand);
-                    System.exit(1);
-                }
-                break;
-            case DIRECTORY_TYPE:
-                try {
-                    LOGGER.info("Scanning the directory (" + arg0 + ")");
-                    for (Path path : Files.newDirectoryStream(Paths.get(arg0))) {
-                        // Not sub-directory yet
-                        if (Files.isRegularFile(path) && path.toString().endsWith("sql")) {
-                            query = Fs.getFileContent(path);
-                            if (Queries.isQuery(query)) {
-                                QueryDef fileQueryDef = database.getQuery(query)
-                                        .setName(path.getFileName().toString());
-                                queries.add(fileQueryDef);
-                            } else {
-                                System.err.println("The execution of the directory (" + arg0 + ") was asked but");
-                                System.err.println("the content of the file (" + path + ") is not a query");
-                                System.err.println("The content is: ");
-                                System.err.println(Strings.toStringNullSafe(query));
-                                CliUsage.print(cliCommand);
-                                System.exit(1);
+        for (int i=0;i<executionUnits.size();i++){
+            List<Object> arg = executionUnits.get(i);
+            Integer argType = (Integer) arg.get(0);
+            String query;
+            switch (argType) {
+                case FILE_TYPE:
+                    Path path = (Path) arg.get(1);
+                    query = cliParser.getFileContent(path, false);
+                    if (Queries.isQuery(query)) {
+                        queries.add(database.getQuery(query));
+                    } else {
+                        System.err.println("The first argument is a file (" + arg0 + ") that seems to not contain a query");
+                        System.err.println("The file content is: ");
+                        System.err.println(Strings.toStringNullSafe(query));
+                        CliUsage.print(cliCommand);
+                        System.exit(1);
+                    }
+                    break;
+                case DIRECTORY_TYPE:
+                    try {
+                        LOGGER.info("Scanning the directory (" + arg0 + ")");
+                        for (Path path : Files.newDirectoryStream(Paths.get(arg0))) {
+                            // Not sub-directory yet
+                            if (Files.isRegularFile(path) && path.toString().endsWith("sql")) {
+                                query = Fs.getFileContent(path);
+                                if (Queries.isQuery(query)) {
+                                    QueryDef fileQueryDef = database.getQuery(query)
+                                            .setName(path.getFileName().toString());
+                                    queries.add(fileQueryDef);
+                                } else {
+                                    System.err.println("The execution of the directory (" + arg0 + ") was asked but");
+                                    System.err.println("the content of the file (" + path + ") is not a query");
+                                    System.err.println("The content is: ");
+                                    System.err.println(Strings.toStringNullSafe(query));
+                                    CliUsage.print(cliCommand);
+                                    System.exit(1);
+                                }
                             }
                         }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                break;
-            case ARG_TYPE:
-                if (Queries.isQuery(arg0)) {
-                    queries.add(database.getQuery(arg0));
-                } else {
-                    System.err.println("The first argument value seems not to be a file, a directory or a query");
-                    System.err.println("The argument value is: ");
-                    System.err.println(Strings.toStringNullSafe(arg0));
-                    CliUsage.print(cliCommand);
-                    System.exit(1);
-                }
-                break;
-            default:
-                throw new RuntimeException("not possible");
+                    break;
+                case QUERY_TYPE:
+                    if (Queries.isQuery(arg0)) {
+                        queries.add(database.getQuery(arg0));
+
+                        break;
+                        default:
+                            throw new RuntimeException("not possible");
+                    }
         }
+
 
 
         LOGGER.info("Processing the request");

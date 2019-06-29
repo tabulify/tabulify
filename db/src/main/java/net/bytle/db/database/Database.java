@@ -9,12 +9,12 @@ import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
 import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
 import net.bytle.db.model.*;
+import net.bytle.cli.Log;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 public class Database implements AutoCloseable {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     public static final String DB_ORACLE = "Oracle";
     public static final String DB_HANA = "HDB";

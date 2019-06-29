@@ -1,16 +1,16 @@
 package net.bytle.db.stream;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.cli.Log;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 public class QueueInsertStream extends InsertStreamAbs implements InsertStream {
 
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     private final BlockingQueue<List<Object>> queue;
     private int currentRowInBatch = 0;

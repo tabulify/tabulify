@@ -1,17 +1,11 @@
 package net.bytle.doctest;
 
-import net.bytle.log.Log;
+import net.bytle.cli.Log;
 
 import java.util.logging.Logger;
 
-public class DocTestLogger {
+class DocTestLogger {
 
-    public static final String format = Log.DEFAULT_FORMAT;
+    static final Log LOGGER_DOCTEST =  Log.getLog(DocTestLogger.class);
 
-    public static final Logger LOGGER_DOCTEST =
-            Log
-                    .getCliLog("doctest")
-                    .setFormat(format)
-                    .setNameSpace("net.bytle.doctest")
-                    .getLogger();
 }

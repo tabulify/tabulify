@@ -1,24 +1,23 @@
 package net.bytle.db.loader;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SqlInsertStream;
+import net.bytle.cli.Log;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * Created by gerard on 29-01-2016.
  */
 public class ResultSetLoaderConsumer implements Runnable {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_LOADER;
+    private static final Log LOGGER = Loaders.LOGGER_DB_LOADER;
 
     private final BlockingQueue<List<Object>> queue;
     private final AtomicBoolean producerWorkIsDone;

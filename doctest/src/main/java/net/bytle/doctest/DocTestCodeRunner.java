@@ -1,5 +1,7 @@
 package net.bytle.doctest;
 
+import net.bytle.cli.Log;
+
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class DocTestCodeRunner {
 
-    public static final Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
+    public static final Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
     /**
      * A map to hold the main class of a appHome. See {@link #addMainClass(String, Class)}

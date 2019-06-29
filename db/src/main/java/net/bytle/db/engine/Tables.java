@@ -6,17 +6,15 @@ import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
+import net.bytle.cli.Log;
 
-import javax.xml.crypto.Data;
-import javax.xml.validation.Schema;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class Tables {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
 
     public static Integer getMaxIntegerValue(ColumnDef columnDef) {

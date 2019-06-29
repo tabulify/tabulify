@@ -1,7 +1,7 @@
 package net.bytle.doctest;
 
+import net.bytle.cli.Log;
 import net.bytle.fs.Fs;
-
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,13 +9,12 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 
 public class DocTest {
 
 
-    final static Logger LOGGER = DocTestLogger.LOGGER_DOCTEST;
+    final static Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
     public static void Run(Path path, String command, Class commandClass) {
         Run(path,command,commandClass, Paths.get("."));

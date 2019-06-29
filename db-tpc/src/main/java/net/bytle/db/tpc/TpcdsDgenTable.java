@@ -3,23 +3,22 @@ package net.bytle.db.tpc;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.cli.Log;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static com.teradata.tpcds.Results.constructResults;
 import static java.util.Objects.requireNonNull;
 
 public class TpcdsDgenTable {
 
-    public static final Logger LOGGER = DbLoggers.LOGGER_DB_SAMPLE;
+    public static final Log LOGGER = Tpc.LOGGER_TPC;
 
     private final Session session;
     private final Database database;

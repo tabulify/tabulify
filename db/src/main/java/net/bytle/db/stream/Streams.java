@@ -3,15 +3,15 @@ package net.bytle.db.stream;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
 import net.bytle.db.model.*;
+import net.bytle.cli.Log;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class Streams {
 
-    private static final Logger LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     public static SqlSelectStream getSqlSelectStream(TableDef tableDef) {
 
