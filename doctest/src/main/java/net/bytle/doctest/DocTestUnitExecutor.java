@@ -14,12 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
- * A {@link DocTestCodeRunner} contains the environment variable and function to run a {@link DocTestUnit}
+ * Execute a code block found in a doc
+ *
+ * A {@link DocTestUnitExecutor} contains the environment variable and function to run a {@link DocTestUnit}
  */
-public class DocTestCodeRunner {
+public class DocTestUnitExecutor {
 
     public static final Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
 
@@ -34,9 +35,9 @@ public class DocTestCodeRunner {
     private Path outputDirClass;
 
     /**
-     * Get a {@link DocTestCodeRunner} with the {@link #get()} function please
+     * Get a {@link DocTestUnitExecutor} with the {@link #get()} function please
      */
-    private DocTestCodeRunner() {
+    private DocTestUnitExecutor() {
 
         outputDirClass = Paths.get(System.getProperty("java.io.tmpdir"), "docTestClass").normalize().toAbsolutePath();
 
@@ -50,8 +51,8 @@ public class DocTestCodeRunner {
     /**
      * @return - a docTestRunner that contains the environment variable and function to run a test
      */
-    public static DocTestCodeRunner get() {
-        return new DocTestCodeRunner();
+    public static DocTestUnitExecutor get() {
+        return new DocTestUnitExecutor();
     }
 
 
@@ -130,7 +131,7 @@ public class DocTestCodeRunner {
             DocTestSource docTestSource = new DocTestSource(buildClassName, code);
 
             // Verification of the presence of the compilation tool archive
-            ClassLoader classLoader = DocTestCodeRunner.class.getClassLoader();
+            ClassLoader classLoader = DocTestUnitExecutor.class.getClassLoader();
             final String toolsJarFileName = "tools.jar";
             String javaHome = System.getProperty("java.home");
             Path toolsJarFilePath = Paths.get(javaHome, "lib", toolsJarFileName);
@@ -339,7 +340,7 @@ public class DocTestCodeRunner {
      * @param mainClass - the main class that implements this appHome
      * @return - a docTestRunner for chaining construction
      */
-    public DocTestCodeRunner addMainClass(String cli, Class mainClass) {
+    public DocTestUnitExecutor addMainClass(String cli, Class mainClass) {
 
         this.cliClass.put(cli, mainClass);
         return this;
