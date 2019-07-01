@@ -20,6 +20,7 @@ public class DocTest {
     private Path path;
     private boolean enableCache = false;
     Map<String,Class> commands = new HashMap<>();
+    private boolean overwriteExpectation = false;
 
 
     private DocTest() {
@@ -71,10 +72,13 @@ public class DocTest {
             for (Path childPath : childPaths) {
 
                 DocTestRunResult docTestRunResult = this.execute(childPath);
-                // Overwrite the new doc
-                Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 // Capture the results
                 results.add(docTestRunResult);
+                if (overwriteExpectation) {
+                    // Overwrite the new doc
+                    Fs.toFile(docTestRunResult.getNewDoc(), childPath);
+                }
+
 
             }
         }

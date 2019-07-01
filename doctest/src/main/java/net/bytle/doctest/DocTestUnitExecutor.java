@@ -17,7 +17,7 @@ import java.util.*;
 
 /**
  * Execute a code block found in a doc
- *
+ * <p>
  * A {@link DocTestUnitExecutor} contains the environment variable and function to run a {@link DocTestUnit}
  */
 public class DocTestUnitExecutor {
@@ -66,10 +66,10 @@ public class DocTestUnitExecutor {
      *
      * @param docTestUnit - The docTestUnit to evaluate
      * @return the stdout and stderr in a string
-     * @throws Exception - if something is going wrong
+     * @throws RuntimeException - if something is going wrong
      *                   The method {@Link #run} is exception safe and return the error message back
      */
-    String eval(DocTestUnit docTestUnit) throws Exception {
+    String eval(DocTestUnit docTestUnit) {
 
         try {
 
@@ -119,14 +119,14 @@ public class DocTestUnitExecutor {
 
                     // Code
                     code = "public class " + buildClassName + " {\n" +
-                            "    public static void "+runMethodName+"() {\n" +
+                            "    public static void " + runMethodName + "() {\n" +
                             "       " + importClass.getName() + ".main(new String[]{\"" + String.join("\",\"", args) + "\"});\n" +
                             "    }\n" +
                             "}";
                     break;
 
                 default:
-                    throw new Exception("Language (" + docTestUnit.getLanguage() + " not yet implemented");
+                    throw new RuntimeException("Language (" + docTestUnit.getLanguage() + " not yet implemented");
             }
             DocTestSource docTestSource = new DocTestSource(buildClassName, code);
 
@@ -201,15 +201,14 @@ public class DocTestUnitExecutor {
             PrintStream stream = new PrintStream(byteArrayOutputStream);
             System.setOut(stream);
             System.setErr(stream);
-            Boolean error = false;
             // Invoke
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
-               if (!(e.getTargetException().getClass()==PreventExitException.class)) {
-                    // An bad exit status  was seen
-                    error = true;
-                }
+                // Error
+                System.out.flush(); // Into the byteArray
+                System.err.flush(); // Into the byteArray
+                throw new RuntimeException("Error has been seen. Console Output was: \n"+byteArrayOutputStream.toString(),e);
             } finally {
 
                 // Get the output
@@ -223,14 +222,9 @@ public class DocTestUnitExecutor {
 
             }
 
-            if (error){
-                throw new RuntimeException(byteArrayOutputStream.toString());
-            } else {
-                return byteArrayOutputStream.toString();
-            }
+            return byteArrayOutputStream.toString();
 
-
-        } catch (NoSuchMethodException | IOException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+        } catch (NoSuchMethodException | IOException | IllegalAccessException | ClassNotFoundException e) {
 
             throw new RuntimeException(e);
 
@@ -323,11 +317,9 @@ public class DocTestUnitExecutor {
      */
     public String run(DocTestUnit docTestUnit) {
 
-        try {
-            return eval(docTestUnit).trim();
-        } catch (Exception e) {
-            return e.getMessage();
-        }
+
+        return eval(docTestUnit).trim();
+
 
     }
 

@@ -24,9 +24,9 @@ public class DocTestSecurityManager extends SecurityManager {
         // Doing nothing means that the JVM will exit
         // throwing is the only way to prevent an exit in case of error
         if (status!=0) {
-            throw new RuntimeException("Error: Exit status was "+status);
+            throw new RuntimeException("An error has occurred and have the status "+status);
         } else {
-            throw new PreventExitException("Prevent an exit");
+            throw new PreventExitException("A system exit with the status 0 was seen");
         }
 
     }
