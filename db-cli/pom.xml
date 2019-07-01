@@ -11,6 +11,16 @@
 
     <artifactId>btyle-db-cli</artifactId>
     <name>Db Cli</name>
+
+    <repositories>
+        <!-- Public Repository -->
+        <repository>
+            <id>bytle-m2-repo-http</id>
+            <name>Bytle Remote</name>
+            <url>http://bytle.net/m2-repo</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>net.bytle</groupId>
@@ -82,17 +92,36 @@
                             <fileNameFiltering>true</fileNameFiltering>
                             <useBuildFilters>false</useBuildFilters>
                             <filters>
-                                <filter>${project.basedir}/src/build/filters/db.properties</filter>
+                                <filter>${project.basedir}/src/bin/filters/db.properties</filter>
                             </filters>
                             <resources>
                                 <resource>
                                     <filtering>true</filtering>
-                                    <directory>${project.basedir}/../cli-xp/src/main/resources/shell</directory>
+                                    <directory>${project.basedir}/src/main/resources/shell</directory>
                                     <includes>
                                         <include>*.*</include>
                                     </includes>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>Create Windows Distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <!-- https://maven.apache.org/plugins/maven-assembly-plugin/examples/sharing-descriptors.html -->
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/resources/assemblies/windows-x64.xml</descriptor>
+                            </descriptors>
                         </configuration>
                     </execution>
                 </executions>

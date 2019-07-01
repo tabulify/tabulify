@@ -225,12 +225,6 @@
                 <artifactId>xstream</artifactId>
                 <version>1.4.7</version>
             </dependency>
-            <!-- Bytle Library -->
-            <dependency>
-                <groupId>net.bytle</groupId>
-                <artifactId>bytle-cli</artifactId>
-                <version>2.0.0-SNAPSHOT</version>
-            </dependency>
             <dependency>
                 <groupId>net.bytle</groupId>
                 <artifactId>bytle-sftp</artifactId>
@@ -301,6 +295,15 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <!-- Public Repository -->
+        <repository>
+            <id>bytle-m2-repo-http</id>
+            <name>Bytle Remote</name>
+            <url>http://bytle.net/m2-repo</url>
+        </repository>
+    </repositories>
+
     <organization>
         <name>Bytle</name>
         <url>https://bytle.net</url>
@@ -337,60 +340,23 @@
                         </executions>
                     </plugin>
                     <!--<plugin>-->
-                        <!--<groupId>org.apache.maven.plugins</groupId>-->
-                        <!--<artifactId>maven-gpg-plugin</artifactId>-->
-                        <!--<version>1.6</version>-->
-                        <!--<executions>-->
-                            <!--<execution>-->
-                                <!--<id>sign-artifacts</id>-->
-                                <!--<phase>verify</phase>-->
-                                <!--<goals>-->
-                                    <!--<goal>sign</goal>-->
-                                <!--</goals>-->
-                            <!--</execution>-->
-                        <!--</executions>-->
+                    <!--<groupId>org.apache.maven.plugins</groupId>-->
+                    <!--<artifactId>maven-gpg-plugin</artifactId>-->
+                    <!--<version>1.6</version>-->
+                    <!--<executions>-->
+                    <!--<execution>-->
+                    <!--<id>sign-artifacts</id>-->
+                    <!--<phase>verify</phase>-->
+                    <!--<goals>-->
+                    <!--<goal>sign</goal>-->
+                    <!--</goals>-->
+                    <!--</execution>-->
+                    <!--</executions>-->
                     <!--</plugin>-->
                 </plugins>
             </build>
         </profile>
 
-        <profile>
-            <!-- Will create a Windows Assembly -->
-            <id>assembly-windows-zip</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>net.bytle</groupId>
-                                <artifactId>bytle-cli</artifactId>
-                                <version>2.0.0-SNAPSHOT</version>
-                            </dependency>
-                        </dependencies>
-                        <executions>
-                            <execution>
-                                <id>Parent Create Zip Windows Distribution</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <!-- https://maven.apache.org/plugins/maven-assembly-plugin/examples/sharing-descriptors.html -->
-                                <configuration>
-                                    <descriptorRefs>
-                                        <descriptorRef>windows-x64</descriptorRef>
-                                    </descriptorRefs>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <profile>
             <!-- Will unzip the Windows Assembly -->
