@@ -49,6 +49,9 @@ Modules Details:
         $cliName jar install : Create the Jar and install it to the local lib directory
         $cliName files unzip : Unzip the installation files
 
+    - package
+        Package without test all modules
+
     - help: Print the help
         $cliName help        : print the usage
 
@@ -109,13 +112,13 @@ function Execute-Cli {
 #### MAIN ####
 ##############
 
-
+$CLI_NAME="bdev"
 
 ##############################
 # Run Environment variable
 ##############################
 $RUN_TIMESTAMP=$(Get-Date -UFormat "%Y-%m-%d_%H-%M")
-$RUN_DIRECTORY="$env:TMP\obi\$RUN_TIMESTAMP"
+$RUN_DIRECTORY="$env:TMP\$bdev\$RUN_TIMESTAMP"
 New-Item -ItemType Directory -Force -Path  $RUN_DIRECTORY | Out-Null
 $ORIGINAL_DIRECTORY=$pwd
 cd $RUN_DIRECTORY
@@ -165,6 +168,9 @@ Switch ($service)
         "-Dexec.executable=`"C:\Java\jdk1.8.0_171\bin\java.exe`"",   `
              "-Dexec.args=`"-classpath %classpath DocTest $PROJECT_HOME\src\doc\pages\$command`"",   `
              "--file $PROJECT_HOME\pom.xml"
+    }
+    "package" {
+        mvn --offline -DskipTests=true -f $POM_PATH package
     }
 	default { 
 		Write-Error "

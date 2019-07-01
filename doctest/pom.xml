@@ -10,7 +10,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-doctest</artifactId>
-
+    <name>Doctest</name>
+    <description>Execution of code in documentation</description>
 
     <dependencies>
         <dependency>

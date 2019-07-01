@@ -4,19 +4,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class CliWord {
 
     public static final String DEFAULT_PRINTED_VALUE = "value";
-    private static final int TYPE_OPTION = 1;
-    private static final int TYPE_COMMAND = 2;
-    private static final int TYPE_ARG = 3;
-    private static final int TYPE_FLAG = 4;
     private final CliCommand command;
     /**
      * The type of word - only 3 possibilities
      */
     private int type = TYPE_OPTION;
+    private static final int TYPE_OPTION = 1;
+    private static final int TYPE_COMMAND = 2;
+    private static final int TYPE_ARG = 3;
+    private static final int TYPE_FLAG = 4;
+
+
     /**
      * The name of the word
      * It must be unique
@@ -100,7 +103,7 @@ public class CliWord {
     @SuppressWarnings("WeakerAccess")
     public boolean hasValue() {
         if (isArg() || isCommand() || isFlag()) {
-            CliLog.getCliLog().fine("The word (" + getName() + ") is not an option. It then cannot ");
+            Logger.getLogger(CliLog.MODULE_NAME).fine("The word (" + getName() + ") is not an option. It then cannot ");
             return false;
         } else {
             return true;
@@ -215,11 +218,6 @@ public class CliWord {
         return this;
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public String getEnvName() {
-        return this.envName;
-    }
-
     /**
      * Set the name of the environment variable for this word
      *
@@ -232,11 +230,9 @@ public class CliWord {
         return this;
     }
 
-    /**
-     * @return true if the word is mandatory
-     */
-    public boolean isMandatory() {
-        return mandatory;
+    @SuppressWarnings("WeakerAccess")
+    public String getEnvName() {
+        return this.envName;
     }
 
     /**
@@ -250,6 +246,13 @@ public class CliWord {
     public CliWord setMandatory(Boolean b) {
         this.mandatory = b;
         return this;
+    }
+
+    /**
+     * @return true if the word is mandatory
+     */
+    public boolean isMandatory() {
+        return mandatory;
     }
 
     /**
@@ -278,6 +281,15 @@ public class CliWord {
     }
 
     /**
+     * @param valueName - the name of the value that is used in the usage
+     * @return - this word for instance chaining
+     */
+    public CliWord setValueName(String valueName) {
+        this.valueName = valueName;
+        return this;
+    }
+
+    /**
      * @return the name of the value of this option
      * used in the syntax namely
      */
@@ -290,15 +302,6 @@ public class CliWord {
     }
 
     /**
-     * @param valueName - the name of the value that is used in the usage
-     * @return - this word for instance chaining
-     */
-    public CliWord setValueName(String valueName) {
-        this.valueName = valueName;
-        return this;
-    }
-
-    /**
      * @return if the word option is expected to be in the config file
      * Used in the usage
      */
@@ -306,16 +309,16 @@ public class CliWord {
         return this.isInConfigFile;
     }
 
+    public CliWord setShortName(String shortName) {
+        this.shortName = shortName;
+        return this;
+    }
+
     /**
      * @return the short name
      */
     public String getShortName() {
         return this.shortName;
-    }
-
-    public CliWord setShortName(String shortName) {
-        this.shortName = shortName;
-        return this;
     }
 
     public CliWord addDefaultValue(Object defaultValue) {
@@ -343,13 +346,13 @@ public class CliWord {
         return this.defaultValues;
     }
 
-    public String getSystemPropertyName() {
-        return this.systemPropertyName;
-    }
-
     public CliWord setSystemPropertyName(String systemPropertyName) {
         this.systemPropertyName = systemPropertyName;
         return this;
+    }
+
+    public String getSystemPropertyName() {
+        return this.systemPropertyName;
     }
 
     public CliWord setTypeAsFlag() {

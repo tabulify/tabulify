@@ -20,11 +20,6 @@ public class CliWordGroup {
      */
     private int level = 1;
 
-    /**
-     * A description or help text for this group
-     */
-    private String desc;
-
     public CliWordGroup(CliCommand cliCommand, String name) {
 
         this.command = cliCommand;
@@ -45,13 +40,13 @@ public class CliWordGroup {
 
     }
 
-    public int getLevel() {
-        return level;
-    }
-
     public CliWordGroup setLevel(int i) {
         this.level = i;
         return this;
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     public String getName() {
@@ -61,15 +56,6 @@ public class CliWordGroup {
     public CliWordGroup addWordOf(String name) {
         this.command.wordOf(name)
                 .setGroup(this);
-        return this;
-    }
-
-    public String getDescription() {
-        return this.desc;
-    }
-
-    public CliWordGroup setDescription(String desc) {
-        this.desc = desc;
         return this;
     }
 }

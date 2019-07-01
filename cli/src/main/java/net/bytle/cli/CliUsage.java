@@ -1,14 +1,14 @@
 package net.bytle.cli;
 
+import java.nio.file.Path;
 import java.util.List;
-import java.util.logging.Level;
-
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class CliUsage {
 
     public final static String TAB = "\t";
-    private static final Log LOGGER = CliLog.getCliLog();
+    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
 
     /**
      * Return the usage
@@ -17,12 +17,8 @@ public class CliUsage {
      */
     public static String get(CliCommand cliCommand, int level) {
 
-
         StringBuilder usage = new StringBuilder("\n" + cliCommand.getDescription());
-
-        usage.append("\n\nSyntax:");
-        usage.append(" (" + level + ")");
-        usage.append("\n\n");
+        usage.append("\n\nSyntax:\n\n");
 
         usage.append(TAB);
 
@@ -55,7 +51,7 @@ public class CliUsage {
             }
         }
 
-        // TODO - add the mandatory options ?
+        // TODO - add the mandatory
         if (properties.size() != 0) {
             usage.append(" [options|flags]");
         }
@@ -72,7 +68,7 @@ public class CliUsage {
 
         Integer maxCharArgs = 0;
         for (CliWord word : cliCommand.getWords()) {
-            int optionLength = getPrintedWord(word).length();
+            int optionLength = getPrintProperty(word).length();
             if (optionLength > maxCharArgs) {
                 maxCharArgs = optionLength;
             }
@@ -109,20 +105,16 @@ public class CliUsage {
 
                 for (CliWordGroup cliWordGroup : groups) {
 
+
                     usage
                             .append("\n\t")
-                            .append(cliWordGroup.getName())
-                            .append(":")
-                            .append(" (" + cliWordGroup.getLevel() + ")"); // TODO: add level if it's level fine
-                    if (cliWordGroup.getDescription() != null) {
-                        usage.append("\n\t")
-                                .append(cliWordGroup.getDescription());
-                    }
+                            .append(cliWordGroup.getName());
+
                     List<CliWord> words = properties.stream()
                             .filter(x -> x.getGroups().contains(cliWordGroup))
                             .collect(Collectors.toList());
 
-                    printWordUsage(usage, tabPosition, words);
+                    printProperties(usage, tabPosition, words);
 
                     usage.append("\n");
 
@@ -132,28 +124,28 @@ public class CliUsage {
 
 
             // Print the options that are not in the config file
-//            if (level > 1) {
-//                properties = cliCommand.getParentProperties();
-//                if (properties.size() > 0) {
-//
-//                    usage.append("\n\tGlobal Options:");
-//
-//                    printWordUsage(usage, tabPosition, properties);
-//
-//                    usage.append("\n");
-//
-//                }
-//            }
-//
-//            if (level >= 2) {
-//                Path configFile = cliCommand.getGlobalConfigFile();
-//                if (configFile != null) {
-//                    usage.append(configFile);
-//                } else {
-//                    usage.append("Path unknown");
-//                }
-//                usage.append(" ):");
-//            }
+            if (level > 1) {
+                properties = cliCommand.getParentProperties();
+                if (properties.size() > 0) {
+
+                    usage.append("\n\tGlobal Options:");
+
+                    printProperties(usage, tabPosition, properties);
+
+                    usage.append("\n");
+
+                }
+            }
+
+            if (level >= 2) {
+                Path configFile = cliCommand.getGlobalConfigFile();
+                if (configFile != null) {
+                    usage.append(configFile);
+                } else {
+                    usage.append("Path unknown");
+                }
+                usage.append(" ):");
+            }
 
 
             // Print the args
@@ -164,7 +156,16 @@ public class CliUsage {
                 }
 
                 usage.append("\n\tArgs:");
-                printWordUsage(usage, tabPosition, cliCommand.getArgs());
+
+                for (CliWord args : cliCommand.getArgs()) {
+                    final int generation = tabPosition - args.getName().length();
+                    String tabForOption = new String(new char[generation]).replace("\0", " ");
+                    usage.append("\n" + TAB + TAB + "* ")
+                            .append(args.getName())
+                            .append(tabForOption)
+                            .append(args.getDescription());
+                }
+
                 usage.append("\n");
 
             }
@@ -186,45 +187,29 @@ public class CliUsage {
 
     }
 
-    /**
-     * Print of a word
-     *
-     * @param word
-     * @return
-     */
-    protected static String getPrintedWord(CliWord word) {
+    protected static String getPrintProperty(CliWord word) {
         // The formatting  of the option give the max character number
         // + 1 for the minus after the shortName
         // + 2 for the double minus after the word name
         StringBuilder stringBuilder = new StringBuilder();
 
-        if (word.isArg() || word.isCommand()) {
-            stringBuilder.append(word.getName());
-
-        } else {
-            if (word.getShortName() != null) {
-                stringBuilder
-                        .append(CliParser.PREFIX_SHORT_OPTION)
-                        .append(word.getShortName())
-                        .append(",");
-            }
-
+        if (word.getShortName() != null) {
             stringBuilder
-                    .append(CliParser.PREFIX_LONG_OPTION)
-                    .append(word.getName());
-
-            if (word.isOption()) {
-                stringBuilder.append(" <")
-                        .append(word.getValueName())
-                        .append(">");
-            }
+                    .append(CliParser.PREFIX_SHORT_OPTION)
+                    .append(word.getShortName())
+                    .append(",");
         }
 
-        if (LOGGER.getLevel()== Level.FINE) {
-            stringBuilder.append(" (" + word.getLevel() + " - " + word.isMandatory() + ")");
+        stringBuilder
+                .append(CliParser.PREFIX_LONG_OPTION)
+                .append(word.getName());
+
+        if (word.isOption()) {
+            stringBuilder.append(" <")
+                    .append(word.getValueName())
+                    .append(">");
         }
         return stringBuilder.toString();
-
     }
 
     /**
@@ -235,19 +220,18 @@ public class CliUsage {
      * @param tabPosition - the position of the text
      * @param words       - the options to print
      */
-    private static void printWordUsage(StringBuilder usage, int tabPosition, List<CliWord> words) {
+    private static void printProperties(StringBuilder usage, int tabPosition, List<CliWord> words) {
         for (CliWord word : words) {
-            int length = getPrintedWord(word).length();
+            int length = getPrintProperty(word).length();
             final int generation = tabPosition - length;
             String tabForOption = new String(new char[generation]).replace("\0", " ");
             usage
                     .append("\n" + TAB + TAB + "* ")
-                    .append(getPrintedWord(word))
+                    .append(getPrintProperty(word))
                     .append(tabForOption)
                     .append(word.getDescription());
         }
     }
-
 
     @SuppressWarnings("WeakerAccess")
     public static void print(CliCommand cliCommand, int level) {
@@ -263,7 +247,7 @@ public class CliUsage {
      * An utility function that returns the full chain of command
      * (rootCommand + cliChain) with a space between them
      * <p>
-     * Example: appHome subcommand1 subcommand2
+     * Example: cli subcommand1 subcommand2
      * <p>
      * This is mostly used when building example
      *

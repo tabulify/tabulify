@@ -7,12 +7,22 @@ public class CliTimer {
 
     private static Date startTime;
     private final String name;
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+
+
+    private Date endTime;
+
     long SECONDS_IN_MILLI = 1000;
     long MINUTES_IN_MILLI = 1000 * 60;
     long HOURS_IN_MILLI = 1000 * 60 * 60;
-    private Date endTime;
-    private long responseTimeInMs;
 
+
+    private long responseTimeInMs;
 
     private CliTimer(String name) {
         this.name = name;
@@ -22,10 +32,6 @@ public class CliTimer {
         return new CliTimer(name);
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
 
     public String getName() {
 

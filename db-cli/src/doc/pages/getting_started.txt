@@ -327,7 +327,7 @@ Tip: You can show the columns by adding the c flag.
 
 ===== Execute a Query =====
 
-Tpcds offers 100 queries. We will execute the query number 11 with the [[execute|execute]] command of the query module. 
+Tpcds offers 100 queries. We will execute the query number 11 with the [[query:execute|execute]] command of the query module. 
 
 The file containing this query is located at
 ''DB_HOME\sql\tpcds\query\sqlite\query_11.sql'' where ''DB_HOME'' is where you have [[install|unzipped/installed Bytle Db]].

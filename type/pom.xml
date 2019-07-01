@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-type</artifactId>
-
+    <name>Type</name>
+    <description>All operations on type</description>
 
 </project>

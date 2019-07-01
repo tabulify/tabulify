@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * <p>
  * A command
  * <p>
- * The root command is called the appHome command
+ * The root command is called the cli command
  * <p>
  * A command can have:
  * * children commands creating a chain of command
@@ -21,41 +21,53 @@ import java.util.stream.Collectors;
  */
 public class CliCommand {
 
-    // The directory below the App Home where the config file could be found
-    public static final String CONF_DIR = "conf";
-    // The default value
-    public static final String DEFAULT_APP_HOME_WORD = "BCLI_APP_HOME";
-    private static final Log LOGGER = Log.getLog(CliCommand.class);
-    // The name of the appHome (ie command)
+    private static final java.util.logging.Logger LOGGER = CliLog.getCliLog().getLogger();
+
+    // The name of the cli (ie command)
     private final String name;
-    // To retrieve a local word by name
-    private final Map<String, CliWord> localWordsMap = new HashMap<>();
+
     // Only for the parent command
     private HashMap<String, CliCommand> childCommandsMap = new HashMap<>();
     // To preserve the order
     private List<CliCommand> childCommandsList = new ArrayList<>();
+
     // Only for the child command
     private CliCommand parentCliCommand;
+
     // General properties
     private String description;
+
+    // To retrieve a local word by name
+    private final Map<String, CliWord> localWordsMap = new HashMap<>();
     // To retrieve the position of the arg on this client
     private List<CliWord> localWordsList = new ArrayList<>();
-    // Only for the root appHome
+
+
+    // Only for the root cli
     // A repository of word that is normally only used in the root
     // To retrieve the word by name
     private Map<String, CliWord> globalWordMap = new HashMap<>();
     // To retrieve the position of the word on the global list
     private List<CliWord> globalWordList = new ArrayList<>();
+
+
     // The path to the configuration file or its word
     private Path globalConfigPath;
     private String configWord;
+    // The directory below the App Home where the config file could be found
+    public static final String CONF_DIR = "conf";
+
     // Example and footer for the usage text
     private String example;
     private String footer;
+
     // Example: the global help Word
     private CliWord helpWord = null;
+
     // The app home word
     private CliWord appHomeWord;
+    // The default value
+    public static final String DEFAULT_APP_HOME_WORD = "BCLI_APP_HOME";
 
 
     /**
@@ -137,6 +149,24 @@ public class CliCommand {
     }
 
     @SuppressWarnings("WeakerAccess")
+    public CliCommand setDescription(String desc) {
+        this.description = desc;
+        return this;
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public CliCommand setExample(String example) {
+        this.example = example;
+        return this;
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public CliCommand setFooter(String footer) {
+        this.footer = footer;
+        return this;
+    }
+
+    @SuppressWarnings("WeakerAccess")
     public String getDescription() {
         if (description == null) {
             return "Description not known.";
@@ -145,14 +175,9 @@ public class CliCommand {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public CliCommand setDescription(String desc) {
-        this.description = desc;
-        return this;
-    }
 
     /**
-     * Return a child (command|appHome) from this (client|command)
+     * Return a child (command|cli) from this (client|command)
      * creating a (hierarchy|chain) of command
      *
      * @param word - the new word name that is used to create the command
@@ -165,18 +190,19 @@ public class CliCommand {
 
         if (childCommand == null) {
 
-            // Create the appHome
+            // Create the cli
             childCommand = new CliCommand(this, word);
             childCommandsMap.put(word, childCommand);
             childCommandsList.add(childCommand);
 
-            // Add the appHome as a word for the parsing process
+            // Add the cli as a word for the parsing process
             wordOf(word).setTypeAsCommand();
 
         }
         return childCommand;
 
     }
+
 
     /**
      * @return The name of the command
@@ -198,6 +224,7 @@ public class CliCommand {
 
     }
 
+
     /**
      * @return a list of the children command of this command
      */
@@ -208,14 +235,15 @@ public class CliCommand {
 
     }
 
+
     /**
-     * From the actual appHome to the parent
-     * * the children are not included
-     * * the root also as this will not be a word
-     * <p>
+     * From the actual cli to the parent
+     *   * the children are not included
+     *   * the root also as this will not be a word
+     *
      * If you want a full chain of command (ie with the root), see {@link #getFullParentsCommand()}
      *
-     * @return a list of all command name from this command to the appHome (the root command)
+     * @return a list of all command name from this command to the cli (the root command)
      */
     @SuppressWarnings("WeakerAccess")
     public List<CliCommand> getParentsCommands() {
@@ -238,6 +266,7 @@ public class CliCommand {
 
     }
 
+
     /**
      * A recursive function to build the cliCommand chain for the function {@link #getParentsCommands()}
      *
@@ -253,6 +282,7 @@ public class CliCommand {
         }
 
     }
+
 
     /**
      * @return the properties of this command (local and of its parents)
@@ -298,7 +328,7 @@ public class CliCommand {
      * Create a global word definition in order to share the same definition
      * between different commands.
      * <p>
-     * This function may be called normally only from the root command (the appHome)
+     * This function may be called normally only from the root command (the cli)
      * but it's also possible from a child
      * <p>
      * If you add a word to a command using the same name, this definition will be used.
@@ -321,11 +351,12 @@ public class CliCommand {
 
     }
 
+
     /**
-     * Return the root command of the chain (the appHome)
-     * If the appHome is the root, it returns itself
+     * Return the root command of the chain (the cli)
+     * If the cli is the root, it returns itself
      *
-     * @return the root command (ie the appHome)
+     * @return the root command (ie the cli)
      */
     @SuppressWarnings("WeakerAccess")
     public CliCommand getRootCommand() {
@@ -365,7 +396,7 @@ public class CliCommand {
     /**
      * To retrieve a word from the local command
      * or its parents.
-     * <p>
+     *
      * To create a word, you use:
      * * {@link #optionOf(String)}
      * * {@link #argOf(String)}
@@ -430,6 +461,26 @@ public class CliCommand {
 
     }
 
+
+    /**
+     * @param path - the path to the config ini file
+     * @return - a cli command
+     * <p>
+     * This function can be called from all command
+     * but there is only one value
+     */
+    @SuppressWarnings("WeakerAccess")
+    public CliCommand setGlobalConfigFile(Path path) {
+
+        if (!Files.isRegularFile(path)) {
+            LOGGER.fine("The config file (" + path + ") is not a file");
+        }
+        getRootCommand().globalConfigPath = path;
+        return this;
+
+    }
+
+
     /**
      * @return an example string
      */
@@ -438,24 +489,12 @@ public class CliCommand {
         return example;
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public CliCommand setExample(String example) {
-        this.example = example;
-        return this;
-    }
-
     /**
      * @return the footer to print in a usage
      */
     @SuppressWarnings("WeakerAccess")
     public String getFooter() {
         return this.footer;
-    }
-
-    @SuppressWarnings("WeakerAccess")
-    public CliCommand setFooter(String footer) {
-        this.footer = footer;
-        return this;
     }
 
     /**
@@ -618,37 +657,6 @@ public class CliCommand {
     }
 
     /**
-     * @param path - the path to the config ini file
-     * @return - a appHome command
-     * <p>
-     * This function can be called from all command
-     * but there is only one value
-     */
-    @SuppressWarnings("WeakerAccess")
-    public CliCommand setGlobalConfigFile(Path path) {
-
-        if (!Files.isRegularFile(path)) {
-            LOGGER.fine("The config file (" + path + ") is not a file");
-        }
-        getRootCommand().globalConfigPath = path;
-        return this;
-
-    }
-
-    /**
-     * @return the option name that must hold the config path
-     */
-    public CliWord getConfigWord() {
-
-        final String configWord = getRootCommand().configWord;
-        if (configWord != null) {
-            return wordOf(configWord);
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Set a config word
      *
      * @param configWord
@@ -666,6 +674,20 @@ public class CliCommand {
 
     }
 
+
+    /**
+     * @return the option name that must hold the config path
+     */
+    public CliWord getConfigWord() {
+
+        final String configWord = getRootCommand().configWord;
+        if (configWord != null) {
+            return wordOf(configWord);
+        } else {
+            return null;
+        }
+    }
+
     /**
      * @param cliWord - a cliWord
      * @return - the cliCommand for this cliWord or null
@@ -674,19 +696,12 @@ public class CliCommand {
         return this.childCommandsMap.get(cliWord.getName());
     }
 
-    /**
-     * @return the app home word (generally an env variable)
-     */
-    public CliWord getAppHomeWord() {
-        CliCommand root = getRootCommand();
-        return root.appHomeWord;
-    }
 
     /**
      * Which words define the application home directory
      *
      * @param appHomeWord - the app home word
-     * @return - the appHome command for chaining
+     * @return - the cli command for chaining
      */
     public CliCommand setAppHomeWord(CliWord appHomeWord) {
 
@@ -694,12 +709,20 @@ public class CliCommand {
 
         // Technically if the user change this
         // We will have two words and we need to delete the first one
-        if (root.appHomeWord != null) {
+        if (root.appHomeWord!=null) {
             root.localWordsMap.remove(root.appHomeWord.getName());
         }
         root.appHomeWord = appHomeWord;
         return this;
 
+    }
+
+    /**
+     * @return the app home word (generally an env variable)
+     */
+    public CliWord getAppHomeWord() {
+        CliCommand root = getRootCommand();
+        return root.appHomeWord;
     }
 
     public Path getAppHome() {

@@ -10,7 +10,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-fs</artifactId>
-
+    <name>Fs</name>
+    <description>File System Management</description>
     <dependencies>
         <dependency>
             <groupId>net.bytle</groupId>

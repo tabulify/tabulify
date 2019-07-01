@@ -45,8 +45,8 @@
         <jre.version>1.8</jre.version>
 
         <!-- The local bin path of the developer -->
-        <bin.path>${env.USERPROFILE}/bin/${project.build.finalName}</bin.path>
-        <lib.path>${env.USERPROFILE}/bin/${project.build.finalName}/lib</lib.path>
+        <bin.path>${env.USERPROFILE}/bin/</bin.path>
+        <lib.path>${env.USERPROFILE}/bin/lib</lib.path>
 
         <!-- What means main ? it will add it as project.parent.basedir-->
         <main.basedir>${project.basedir}</main.basedir>
@@ -301,7 +301,6 @@
         </repository>
     </distributionManagement>
 
-
     <organization>
         <name>Bytle</name>
         <url>https://bytle.net</url>
@@ -528,5 +527,6 @@
         </profile>
 
     </profiles>
+
 
 </project>
