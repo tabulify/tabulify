@@ -5,15 +5,18 @@ import java.io.*;
 
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
-import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.bytle.type.Bytes;
+import net.bytle.os.Oss;
+
 
 import javax.xml.bind.DatatypeConverter;
+
+import static net.bytle.os.Oss.LINUX;
+import static net.bytle.os.Oss.WIN;
 
 
 public class Fs {
@@ -170,9 +173,7 @@ public class Fs {
 
     /**
      * @param path
-     * @return
-     *
-     * See also: http://code.google.com/p/guava-libraries/wiki/HashingExplained
+     * @return See also: http://code.google.com/p/guava-libraries/wiki/HashingExplained
      */
     public static String getMd5(Path path) {
 
@@ -186,4 +187,53 @@ public class Fs {
     }
 
 
+    /**
+     * Return the AppData Directory
+     * This directory contains data for one user.
+     *
+     * @param appName
+     * @return
+     */
+    public static Path getAppData(String appName) {
+        Path appData;
+        switch (Oss.getType()) {
+            case WIN:
+                appData = Paths.get(getUserHome().toString(), "AppData", "Local", appName);
+                break;
+            case LINUX:
+                appData = Paths.get(getUserHome().toString(), "." + appName);
+            default:
+                throw new RuntimeException("AppData directory for OS " + Oss.getName() + " is not implemented");
+        }
+
+        try {
+            Files.createDirectories(appData);
+            return appData;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
+    private static Path getUserHome() {
+        final String home = System.getProperty("user.home");
+        return Paths.get(home);
+    }
+
+    private static String getPathSeparator() {
+        return System.getProperty("file.separator");
+    }
+
+    /**
+     * @return the system (process) encoding
+     * ie the value of the system property file.encoding
+     */
+    private static String getSystemEncoding() {
+        return System.getProperty("file.encoding");
+    }
+
+    private static Path getTempDir() {
+        return Paths.get(System.getProperty("java.io.tmpdir"));
+    }
 }

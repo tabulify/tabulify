@@ -27,6 +27,7 @@
         <module>doctest</module>
         <module>fs</module>
         <module>type</module>
+        <module>os</module>
     </modules>
     <packaging>pom</packaging>
 

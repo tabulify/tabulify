@@ -16,10 +16,11 @@ import java.util.Map;
 public class DocTest {
 
 
-    protected final static Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
-    private Path path;
-    private boolean enableCache = false;
-    Map<String,Class> commands = new HashMap<>();
+    public static final String APP_NAME = DocTest.class.getName();
+    protected final static Log LOGGER_DOCTEST = Log.getLog(DocTest.class);
+
+    private boolean enableCacheExecution = false;
+    Map<String, Class> commands = new HashMap<>();
     private boolean overwriteExpectation = false;
 
 
@@ -27,16 +28,17 @@ public class DocTest {
     }
 
     public static List<DocTestRunResult> Run(Path path, String command, Class commandClass) {
-        return of().addCommand(command,commandClass).run(path);
+        return of().addCommand(command, commandClass).run(path);
     }
 
 
     /**
      * Run
+     *
      * @param path
      */
     public static List<DocTestRunResult> Run(Path path) {
-        return Run(path,null,null);
+        return Run(path, null, null);
     }
 
     public static DocTest of() {
@@ -44,25 +46,29 @@ public class DocTest {
         return new DocTest();
     }
 
-    public DocTest setCache(boolean b) {
-        this.enableCache = b;
+    /**
+     * If this is true, a file with the same md5 that has already been executed
+     * will not be executed a second time
+     * @param b
+     * @return
+     */
+    public DocTest useCacheExecution(boolean b) {
+        this.enableCacheExecution = b;
         return this;
     }
 
     /**
-     *
      * @param paths
      * @return
      */
     public List<DocTestRunResult> run(Path... paths) {
 
 
-
         List<DocTestRunResult> results = new ArrayList<>();
-        for (Path path: paths) {
+        for (Path path : paths) {
 
             if (!Files.exists(path)) {
-                LOGGER.severe("The path (" + path.toAbsolutePath() + ") does not exist");
+                LOGGER_DOCTEST.severe("The path (" + path.toAbsolutePath() + ") does not exist");
                 System.exit(1);
             }
 
@@ -71,21 +77,34 @@ public class DocTest {
 
             for (Path childPath : childPaths) {
 
-                String md5 = Fs.getMd5(childPath);
+                if (enableCacheExecution) {
+                    String md5Cache = DocCache.get().getMd5(path);
+                    String md5 = Fs.getMd5(childPath);
+                    if (md5.equals(md5Cache)) {
+                        LOGGER_DOCTEST.info("Cache is on and the file ("+childPath+") has already been executed. Skipping the execution");
+                        DocTestRunResult docTestRunResult = DocTestRunResult.get(childPath);
+                        results.add(docTestRunResult);
+                        continue;
+                    }
+                }
+                LOGGER_DOCTEST.info("Executing the doc file ("+childPath+")");
                 DocTestRunResult docTestRunResult = this.execute(childPath);
-                // Capture the results
                 results.add(docTestRunResult);
                 if (overwriteExpectation) {
                     // Overwrite the new doc
                     Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 }
 
+                if (enableCacheExecution){
+                    DocCache.get().store(path);
+                }
 
             }
         }
         return results;
 
     }
+
     private Path baseFileDirectory = Paths.get(".");
     // Do we stop at the first execution
     private boolean stopRunAtFirstError = true;
@@ -96,8 +115,8 @@ public class DocTest {
 
 
     /**
-     *
      * Execute one doc
+     *
      * @param path
      * @return the new page
      */
@@ -114,8 +133,8 @@ public class DocTest {
 
         // A code executor
         DocTestUnitExecutor docTestUnitExecutor = DocTestUnitExecutor.get();
-        for (String commandName :commands.keySet()){
-            docTestUnitExecutor.addMainClass(commandName,commands.get(commandName));
+        for (String commandName : commands.keySet()) {
+            docTestUnitExecutor.addMainClass(commandName, commands.get(commandName));
         }
 
 
@@ -151,7 +170,7 @@ public class DocTest {
             }
             String result;
             try {
-                LOGGER.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file ("+docTestUnit.getPath()+")" );
+                LOGGER_DOCTEST.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
                 result = docTestUnitExecutor.eval(docTestUnit).trim();
             } catch (Exception e) {
                 docTestRunResult.addError();
@@ -160,8 +179,8 @@ public class DocTest {
                 } else {
                     result = e.getMessage();
                 }
-                LOGGER.severe("Error during execute: " + result);
-                if (stopRunAtFirstError){
+                LOGGER_DOCTEST.severe("Error during execute: " + result);
+                if (stopRunAtFirstError) {
                     throw new RuntimeException(e);
                 }
             }
@@ -194,7 +213,7 @@ public class DocTest {
 
 
     public DocTest addCommand(String command, Class mainClazz) {
-        commands.put(command,mainClazz);
+        commands.put(command, mainClazz);
         return this;
     }
 
