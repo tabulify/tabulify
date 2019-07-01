@@ -1,13 +1,20 @@
 package net.bytle.fs;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+
+import java.io.*;
+
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.bytle.type.Bytes;
+
+import javax.xml.bind.DatatypeConverter;
+
 
 public class Fs {
 
@@ -134,7 +141,6 @@ public class Fs {
     }
 
     /**
-     *
      * @param content
      * @return a path to a txt file with the string as content
      */
@@ -161,4 +167,23 @@ public class Fs {
         }
 
     }
+
+    /**
+     * @param path
+     * @return
+     *
+     * See also: http://code.google.com/p/guava-libraries/wiki/HashingExplained
+     */
+    public static String getMd5(Path path) {
+
+        try {
+            byte[] bytes = Files.readAllBytes(path);
+            byte[] hash = MessageDigest.getInstance("MD5").digest(bytes);
+            return DatatypeConverter.printHexBinary(hash);
+        } catch (NoSuchAlgorithmException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

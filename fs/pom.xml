@@ -11,5 +11,13 @@
 
     <artifactId>bytle-fs</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-type</artifactId>
+            <version>1.1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
 
 </project>

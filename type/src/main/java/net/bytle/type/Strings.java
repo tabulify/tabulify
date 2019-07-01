@@ -1,10 +1,13 @@
 package net.bytle.type;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.bytle.fs.Fs.getFileContent;
 
 
 public class Strings {
@@ -34,7 +37,23 @@ public class Strings {
     }
 
     public static String get(Path path) {
-        return getFileContent(path);
+        try {
+
+            StringBuilder s = new StringBuilder();
+            BufferedReader reader;
+            reader = new BufferedReader(new FileReader(path.toFile()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                s.append(line).append(System.getProperty("line.separator"));
+            }
+
+            return s.toString();
+
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Unable to find the file (" + path.toAbsolutePath().normalize().toString() + ")", e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

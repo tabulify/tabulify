@@ -71,6 +71,7 @@ public class DocTest {
 
             for (Path childPath : childPaths) {
 
+                String md5 = Fs.getMd5(childPath);
                 DocTestRunResult docTestRunResult = this.execute(childPath);
                 // Capture the results
                 results.add(docTestRunResult);
