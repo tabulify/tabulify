@@ -28,6 +28,7 @@
         <module>fs</module>
         <module>type</module>
         <module>os</module>
+        <module>regexp</module>
     </modules>
     <packaging>pom</packaging>
 

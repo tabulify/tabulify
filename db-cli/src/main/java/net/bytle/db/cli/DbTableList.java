@@ -40,9 +40,9 @@ public class DbTableList {
         cliCommand
                 .setDescription(description);
         cliCommand.argOf(ARG_NAME)
-                .setDescription("One or more name of a table (or regular expression)")
+                .setDescription("One or more name of a table (or glob expression)")
                 .setMandatory(false)
-                .setDefaultValue(".*");
+                .setDefaultValue("*");
 
         cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
         cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);

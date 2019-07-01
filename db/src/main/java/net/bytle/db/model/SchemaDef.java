@@ -1,6 +1,7 @@
 package net.bytle.db.model;
 
 import net.bytle.db.database.Database;
+import net.bytle.regexp.Globs;
 
 import java.sql.DatabaseMetaData;
 import java.util.*;
@@ -106,13 +107,15 @@ public class SchemaDef {
 
     }
 
-    public List<TableDef> getTables(List<String> patterns) {
+    public List<TableDef> getTables(List<String> globPatterns) {
         List<TableDef> tableDefList = new ArrayList<>();
-        for (String pattern : patterns) {
+
+        for (String globPattern : globPatterns) {
+            String regexpPattern = Globs.toRegexPattern(globPattern);
             tableDefList.addAll(
                     getTables()
                             .stream()
-                            .filter(s -> s.getName().matches(pattern))
+                            .filter(s -> s.getName().matches(regexpPattern))
                             .collect(Collectors.toList())
             );
         }
@@ -136,7 +139,7 @@ public class SchemaDef {
     }
 
     public List<ForeignKeyDef> getForeignKeys() {
-        return getForeignKeys(".*");
+        return getForeignKeys("*");
     }
 
 
