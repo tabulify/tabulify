@@ -78,7 +78,7 @@ public class DocTest {
             for (Path childPath : childPaths) {
 
                 if (enableCacheExecution) {
-                    String md5Cache = DocCache.get().getMd5(path);
+                    String md5Cache = DocCache.get().getMd5(childPath);
                     String md5 = Fs.getMd5(childPath);
                     if (md5.equals(md5Cache)) {
                         LOGGER_DOCTEST.info("Cache is on and the file ("+childPath+") has already been executed. Skipping the execution");
@@ -96,7 +96,7 @@ public class DocTest {
                 }
 
                 if (enableCacheExecution){
-                    DocCache.get().store(path);
+                    DocCache.get().store(childPath);
                 }
 
             }

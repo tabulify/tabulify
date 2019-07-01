@@ -177,6 +177,9 @@ public class Fs {
      */
     public static String getMd5(Path path) {
 
+        if (Files.isDirectory(path)){
+            throw new RuntimeException("Md5 calculation for directory is not implemented. No md5 for ("+path.toAbsolutePath().toString());
+        }
         try {
             byte[] bytes = Files.readAllBytes(path);
             byte[] hash = MessageDigest.getInstance("MD5").digest(bytes);

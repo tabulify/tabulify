@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class DocTestUnitExecutor {
 
-    public static final Log LOGGER = DocTestLogger.LOGGER_DOCTEST;
+    public static final Log LOGGER = DocTest.LOGGER_DOCTEST;
 
     /**
      * A map to hold the main class of a appHome. See {@link #addMainClass(String, Class)}
@@ -205,10 +205,13 @@ public class DocTestUnitExecutor {
             try {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
-                // Error
-                System.out.flush(); // Into the byteArray
-                System.err.flush(); // Into the byteArray
-                throw new RuntimeException("Error has been seen. Console Output was: \n"+byteArrayOutputStream.toString(),e);
+                // Is this a System.exit(0) as we have after the print of a help command
+                if (e.getTargetException().getClass()!=PreventExitException.class) {
+                    // Error
+                    System.out.flush(); // Into the byteArray
+                    System.err.flush(); // Into the byteArray
+                    throw new RuntimeException("Error has been seen. Console Output was: \n" + byteArrayOutputStream.toString(), e);
+                }
             } finally {
 
                 // Get the output
