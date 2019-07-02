@@ -1,0 +1,8 @@
+====== Bytle Db - Bytle Db Home ======
+
+
+===== About =====
+''Bytle Db Home (BYTLE_DB_HOME)'' is the directory where the [[installation|installation file]] was unzipped.
+
+You should find in this directory the [[db|db]] client file.
+

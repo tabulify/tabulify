@@ -6,8 +6,6 @@ A module in [[db|Bytle-Db Cli]]  is the first word that follows the [[db|db]] ex
 
 They represent generally a data structure where we can perform [[action|action (also known as command)]].
 
-===== Articles Related =====
-{{backlinks>.}}
 
 ===== Syntax =====
 A module is called by adding its name after the [[db|db]] word.
@@ -23,7 +21,7 @@ db module ...
   * [[table:table|table]] - operations on one or more table
   * [[schema|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
-  * [[query|query]] - operations on one or more queries
+  * [[query:query|query]] - operations on one or more queries
   * [[sample|sample]] - operations on sample schema (database)
   * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)
 
@@ -100,6 +98,6 @@ You can also get help on this site directly via this links:
   * [[table:table|table]] - operations on one or more table
   * [[schema|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
-  * [[query|query]] - operations on one or more queries
+  * [[query:query|query]] - operations on one or more queries
   * [[sample|sample]] - operations on sample schema (database)
   * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)

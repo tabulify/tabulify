@@ -1,0 +1,77 @@
+====== Query - Execute ======
+
+
+===== About =====
+The ''query execute'' permits to execute a [[query|query]].
+
+
+===== Articles Related =====
+{{backlinks>.}}
+
+===== Syntax =====
+<unit name="default">
+<code dos>
+db query --help
+</code>
+<console>
+</console>
+</unit>
+
+===== Example =====
+==== Executing a Query =====
+
+Tpcds offers 100 queries. We will execute the query number 11.
+
+The file containing this query is located at ''[[..:BYTLE_DB_HOME|BYTLE_DB_HOME]]\sql\tpcds\query\sqlite\query_11.sql''
+
+
+
+It shows customers that have generated growing sales from one year to another in the ''s'' and ''w'' sales type. Below is an excerpt.
+
+<code sql query_11.sql>
+with year_total as (
+ select c_customer_id customer_id
+       ,c_first_name customer_first_name
+       ,c_last_name customer_last_name
+       ,c_preferred_cust_flag customer_preferred_cust_flag
+       ,c_birth_country customer_birth_country
+       ,c_login customer_login
+       ,c_email_address customer_email_address
+       ,d_year dyear
+       ,sum(ss_ext_list_price-ss_ext_discount_amt) year_total
+       ,'s' sale_type
+ from customer
+     ,store_sales
+     ,date_dim
+ where
+...
+</code>
+  * Creating the schema, truncating, filling it with data 
+<code dos>
+db sample create tpcds-dwh --ifNotExist
+db sample truncate tpcds-dwh
+db sample fill tpcds-dwh
+</code>
+  * Executing the query will show us this customers.
+<unit envBYTLE_DB_HOME=..\db-tpc\src\main>
+
+<code dos db_query_execute.cmd>
+db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
+</code> 
+<console>
+customer_id        customer_first_name   customer_last_name   customer_email_address                   
+----------------   -------------------   ------------------   --------------------------------------   
+AAAAAAAABMDAAAAA   Jose                  Guzman               Jose.Guzman@stJp.edu                     
+AAAAAAAAFLAAAAAA   Joseph                Riley                Joseph.Riley@znxF.com                    
+AAAAAAAAFNCAAAAA   Jennifer              Fitzpatrick          Jennifer.Fitzpatrick@9AK6ZnfkDN7T.edu    
+AAAAAAAAJCAAAAAA   Maxine                Carlson              Maxine.Carlson@StyP5lAokmQ29QHYMLa.edu   
+AAAAAAAAJGBAAAAA   Bonnie                Harrison             Bonnie.Harrison@AKYSOPlHEYkd.com         
+AAAAAAAAKMDAAAAA   Alexander             White                Alexander.White@7v2XsptkFrc50K.org       
+AAAAAAAAOFCAAAAA   Timothy               Grogan               Timothy.Grogan@pn3NH2BDng.org            
+AAAAAAAAPCBAAAAA   Luz                   Ransom               Luz.Ransom@fXu5MmHo2tfK.edu              
+AAAAAAAAPDDAAAAA   Reginald              Garcia               Reginald.Garcia@8NKIJxQZ.org
+</console>
+</unit>
+
+
+

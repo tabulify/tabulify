@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
+SCRIPT_PATH=$( dirname $(realpath "$0") )
 
 # The cygpath transformation is needed if we are on Windows
 if [ -e "/usr/bin/cygpath" ]

@@ -1,0 +1,13 @@
+====== Action ======
+
+
+===== About =====
+An action is the first word after a [[module|module]] and permits to perform an action (ie an operation).
+
+
+===== List =====
+
+  * create
+  * transfer
+  * drop
+  * move

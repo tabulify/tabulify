@@ -1,0 +1,17 @@
+====== Bytle Db - Query Module ======
+
+
+===== About =====
+The ''query'' [[..:module|module]] permits to execute operations against a ''query''.
+
+
+===== Syntax =====
+
+<unit>
+<code dos>
+db query ---help
+</code>
+<console>
+</console>
+</unit>
+

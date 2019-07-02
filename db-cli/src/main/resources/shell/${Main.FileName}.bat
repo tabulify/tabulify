@@ -1,15 +1,23 @@
 @echo off
 
 @REM The script path to reference the included JRE java file
-SET SCRIPT_PATH=%~dp0
+SET SCRIPT_DIR=%~dp0
+
+:SYMLINK
+:: If this is a symlink we search the directory of the symlink
+:: DIR gives us the symlink target directory between [ ]
+SET SCRIPT_PATH=%~dpnx0
+for /F "usebackq tokens=2 delims=[]" %%H in  (`dir /a:l %SCRIPT_PATH%`) do (
+   set SCRIPT_DIR=%%~dpH
+)
 
 :APPEND_CLASSPATH
-SET CLASSPATH="%SCRIPT_PATH%\lib\*"
+SET CLASSPATH="%SCRIPT_DIR%\lib\*"
 ::@echo %CLASSPATH%;
 
 REM Start the application
 REM The java system property BCLI_APP_HOME send the app home (used to find the default config file)
-%SCRIPT_PATH%\jre\bin\java -classpath %CLASSPATH% -DBCLI_APP_HOME=%SCRIPT_PATH% ${Main.Class} %*
+%SCRIPT_DIR%\jre\bin\java -classpath %CLASSPATH% -DBCLI_APP_HOME=%SCRIPT_DIR% ${Main.Class} %*
 SET EXIT_CODE=%ERRORLEVEL%
 
 REM Enabling colors

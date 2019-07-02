@@ -9,6 +9,17 @@ You can install it by following the [[install|install instructions]].
 
 ===== Syntax =====
 
+
+<code dos>
+db [options] module action
+</code>
+where:
+   * [[module|module]] is generally a data structure
+   * [[action|action]] is an action performed on the data structure
+   * [[option|option]] are optional words that configure an action.
+
+===== Help =====
+
 <unit>
 <code dos>
 db --help

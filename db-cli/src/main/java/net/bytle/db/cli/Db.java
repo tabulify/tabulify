@@ -2,6 +2,7 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.sqlite.SqliteSqlDatabase;
+import net.bytle.fs.Fs;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,12 +16,7 @@ public class Db {
 
     // TODO: The files in `doc\files` must be in the Bytle-Db Delivery artifact to be able to follow the tutorials
 
-    public static final String format = Log.DEFAULT_FORMAT;
-    public static final Log LOGGER_DB_CLI =
-            Log
-                    .getLog(Words.CLI_NAME)
-                    .setFormat(format)
-                    .setNameSpace(Db.class.getPackage().toString());
+    public static final Log LOGGER_DB_CLI =  Log.getLog(Db.class);
 
 
     /**
@@ -41,7 +37,7 @@ public class Db {
 
     static {
         final String appName = Words.CLI_NAME;
-        Path dbFile = Paths.get(System.getProperty("user.home"), "." + appName, appName + ".db");
+        Path dbFile = Paths.get(Fs.getAppData(appName).toAbsolutePath().toString(), appName + ".db");
         JDBC_URL_TARGET_DEFAULT = SqliteSqlDatabase.getJdbcUrl(dbFile);
         JDBC_DRIVER_TARGET_DEFAULT = "org.sqlite.JDBC";
     }
@@ -58,7 +54,7 @@ public class Db {
 
         // Initiate the client helper
         CliCommand cli = Clis.getCli(Words.CLI_NAME)
-                .setDescription("A Sdk for the database")
+                .setDescription("A command line utility tool for every database")
                 .setExample(example)
                 .setHelpWord(Words.HELP);
 
