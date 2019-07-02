@@ -49,8 +49,8 @@ Modules Details:
         $cliName jar install : Create the Jar and install it to the local lib directory
         $cliName files unzip : Unzip the installation files
 
-    - package
-        Package without test all modules
+    - install
+        Insall Db Cli Locally (ie make the distribution and unzip it in the target)
 
     - help: Print the help
         $cliName help        : print the usage
@@ -169,8 +169,9 @@ Switch ($service)
              "-Dexec.args=`"-classpath %classpath DocTest $PROJECT_HOME\src\doc\pages\$command`"",   `
              "--file $PROJECT_HOME\pom.xml"
     }
-    "package" {
-        mvn --offline -DskipTests=true -f $POM_PATH package
+    "install" {
+        $POM_DB_CLI_PATH="$PROJECT_HOME\db-cli\pom.xml"
+        mvn --offline -DskipTests=true -f $POM_PATH install
     }
 	default { 
 		Write-Error "

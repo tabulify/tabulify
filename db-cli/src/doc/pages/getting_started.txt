@@ -3,7 +3,7 @@
 
 ====== Introduction ======
 
-[[start|Bytle-Db]] is a database software development kit (sdk) that helps you perform operations against any databases at the command line in a simple and effective way.
+[[start|Bytle-Db]] is a command line (''CLI'') that helps you perform operations against any data structure at the command line in a simple and effective way.
 
 This ''Getting Started'' will demonstrate basic database relational operations such as:
   * [[#listing_tables|listing tables]]
@@ -330,7 +330,7 @@ Tip: You can show the columns by adding the c flag.
 Tpcds offers 100 queries. We will execute the query number 11 with the [[query:execute|execute]] command of the query module. 
 
 The file containing this query is located at
-''DB_HOME\sql\tpcds\query\sqlite\query_11.sql'' where ''DB_HOME'' is where you have [[install|unzipped/installed Bytle Db]].
+''BYTLE_DB_HOME\sql\tpcds\query\sqlite\query_11.sql'' where [[BYTLE_DB_HOME|BYTLE_DB_HOME]] is the installation directory.
 
 Below is an excerpt because this query is very long.
 

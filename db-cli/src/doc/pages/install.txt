@@ -1,32 +1,62 @@
 ====== Bytle Db - Installation ======
 
 
-===== Steps =====
-To install [[db|Bytle Db]], you need to follow this steps:
+===== About =====
+This pages gives you all the steps needed to install successfully [[db|Bytle Db]].
 
-''Bytle Db'' is distributed for different operation system.
+===== Steps =====
+
+
+
 
 
 ==== Download ====
-You need to download the distribution for your operating system.
+You need to download the zipped distribution file for your operating system.
 
+''Bytle Db'' is distributed for different operation system.
+
+==== Installation Directory ====
+
+
+  * Create a directory called the [[bytle_db_home|Bytle Db Home]] where you will unzip the content of the installation file. 
+<code dos>
+:: Below c:\bytle-db is the Bytle Db Home. 
+mkdir c:\bytle-db
+</code>
+  * Create an environment variable called ''BYTLE_DB_HOME'' with the path as value (In the documentation, we use it regularly to refer to resources such as SQL file)
+<code dos>
+setx BYTLE_DB_HOME=c:\bytle-db
+</code>
 
 ==== Unzip ====
+  * Unzip the downloaded file into the [[bytle_db_home|Bytle Db Home]]
+<code dos>
+unzip btyle-db-cli-1.1.0-SNAPSHOT-windows-x64.zip -d c:\bytle-db
+</code>
+==== Symlink ====
 
-Unzip it where you want to install it. The subsequent directory is called the ''BYTLE_DB_HOME''
+  * Optionally, create a symlink into your bin directory to be able to call [[db|Bytle Db]] from everywhere.
+<code dos>
+mklink c:\bytle-db\db.cmd %USERPROFILE%\bin\db.cmd
+</code>
+  * This local ''bin'' directory should be added to the ''PATH'' environment variable. 
+<code dos>
+setx PATH=%PATH%,%USERPROFILE%\bin
+</code>
 
-==== Path ====
-Add the ''BYTLE_DB_HOME'' directory to your ''PATH'' environment variable. 
+===== Installation validation =====
 
-==== Installation validation ====
-
-  * Opening a console and asking for the [[help|help]] should give you a response.
-
-Example;
+  * Open a console 
+  * Call [[db|db]] with the ''help'' option
 <unit>
 <code dos>
 db --help
+:: or if you didn't have the directory in your PATH environment variable
+:: BYTLE_DB_HOME\db.cmd --help
+:: in our installation documentation
+c:\bytle-db\db.cmd
 </code>
+  * The [[help|help]] should shows up.
 <console>
 A Sdk for the database
 
@@ -49,8 +79,8 @@ where:
 
 To load data from a csv file you would type:
 db table load TABLE_NAME.csv
-</consnole>
+</console>
 </unit>
 
 ==== Next Step ====
-If you have any experience with [[db|Bytle Db]], you can continue by following the [[getting_started|getting started]].
+If you have any experience with [[db|Bytle Db]], we advice you to continue by following the [[getting_started|getting started]].
