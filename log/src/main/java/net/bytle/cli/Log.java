@@ -177,7 +177,7 @@ public class Log {
     }
 
     public void warning(String msg) {
-        getLogger().fine(msg);
+        getLogger().warning(msg);
     }
 
     /**

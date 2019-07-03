@@ -5,7 +5,6 @@ import net.bytle.fs.Fs;
 import oracle.jdbc.OracleTypes;
 import org.ini4j.Wini;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +23,8 @@ public class Databases {
 
 
     public static final String BYTLE_LOCAL_SQLITE_DB_NAME = "BytleSqlite";
-
+    public static final String MODULE_NAME = "BytleDb";
+    public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(MODULE_NAME).toString(), "dsn.ini");
     /**
      * The default master
      */
@@ -60,10 +60,18 @@ public class Databases {
     }
 
     public static Database get(String name, String master) {
+        return get(name, master, DEFAULT_STORAGE_FILE);
+    }
+
+    public static Database get(String name, Path path) {
+        return get(name, MASTER, path);
+    }
+
+    public static Database get(String name, String master, Path path) {
 
         Database database = new Database(name);
 
-        Wini.Section iniSection = getIniFile().get(name);
+        Wini.Section iniSection = getIniFile(path).get(name);
         if (iniSection != null) {
             database.setUrl(iniSection.get(URL));
             database.setUser(iniSection.get(USER));
@@ -232,17 +240,6 @@ public class Databases {
      */
     public static void save(Database database, String master) {
 
-        Wini ini = getIniFile();
-        ini.put(database.getDatabaseName(), URL, database.getUrl());
-        ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
-        ini.put(database.getDatabaseName(), USER, database.getUser());
-        ini.put(database.getDatabaseName(), PASSWORD, Protector.get(master).encrypt(database.getPassword()));
-        ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
-        try {
-            ini.store();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
     }
 
@@ -250,14 +247,16 @@ public class Databases {
      * @return the ini file where the database information are saved to disk
      */
     private static Wini getIniFile() {
-        Path databaseFileDirectory = Fs.getAppData("BytleDb");
-        Path databaseFile = Paths.get(databaseFileDirectory.toString(), "dsn.ini");
-        if (!(Files.exists(databaseFile))) {
-            Fs.createFile(databaseFile);
+        return getIniFile(DEFAULT_STORAGE_FILE);
+    }
+
+    private static Wini getIniFile(Path path) {
+        if (!(Files.exists(path))) {
+            Fs.createFile(path);
         }
         if (wini == null) {
             try {
-                wini = new Wini(databaseFile.toFile());
+                wini = new Wini(path.toFile());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -266,19 +265,42 @@ public class Databases {
     }
 
     public static void save(Database database) {
-        save(database, MASTER);
+        save(database, MASTER, DEFAULT_STORAGE_FILE);
     }
 
     public static void remove(String name) {
-        Wini ini = getIniFile();
+        remove(name, DEFAULT_STORAGE_FILE);
+    }
+
+    public static void remove(String name, Path path) {
+        Wini ini = getIniFile(path);
         ini.remove(name);
     }
 
     public static List<Database> list() {
         List<Database> databases = new ArrayList<>();
-        for (String section: getIniFile().keySet()){
+        for (String section : getIniFile().keySet()) {
             databases.add(Databases.get(section));
         }
         return databases;
+    }
+
+    public static void save(Database database, String master, Path path) {
+        Wini ini = getIniFile(path);
+        ini.put(database.getDatabaseName(), URL, database.getUrl());
+        ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
+        ini.put(database.getDatabaseName(), USER, database.getUser());
+        String password = database.getPassword();
+        if (database.getPassword() == null && master!=null) {
+            password = Protector.get(master).encrypt(database.getPassword());
+        }
+        ini.put(database.getDatabaseName(), PASSWORD, password);
+        ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
+        try {
+            ini.store();
+        } catch (
+                IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

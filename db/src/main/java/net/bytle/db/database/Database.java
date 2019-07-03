@@ -383,7 +383,7 @@ public class Database implements AutoCloseable {
         }
 
         if (this.currentConnection == null) {
-            this.currentConnection = getNewConnection("Main");
+            this.currentConnection = getNewConnection(Databases.MODULE_NAME);
         }
         try {
             if (this.currentConnection.isClosed()) {
@@ -500,7 +500,6 @@ public class Database implements AutoCloseable {
         } catch (SQLException e) {
             String msg = "Unable to connect to the database with the following URL (" + this.url + "). Error: " + e.getMessage();
             LOGGER.severe(msg);
-            System.err.println(msg);
             throw new RuntimeException(e);
         }
 

@@ -19,9 +19,15 @@ public class Protector {
     private Cipher encryptCipher;
     private Cipher decryptCipher;
 
-    private Protector(String password) throws GeneralSecurityException {
+    /**
+     * Passphrase is mandatory (otherwise it is a nonsense)
+     * @param passphrase
+     * @throws GeneralSecurityException
+     */
+    private Protector(String passphrase) throws GeneralSecurityException {
+
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
-        SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(password.toCharArray()));
+        SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(passphrase.toCharArray()));
         encryptCipher = Cipher.getInstance(ALGORITHM);
         encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey, new PBEParameterSpec(SALT, 20));
         decryptCipher = Cipher.getInstance(ALGORITHM);

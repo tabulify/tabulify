@@ -8,6 +8,7 @@ import net.bytle.cli.Log;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 
 import static net.bytle.db.cli.Words.ADD_COMMAND;
@@ -18,11 +19,13 @@ import static net.bytle.db.cli.Words.ADD_COMMAND;
  */
 public class DbDatabaseAdd {
 
-    protected static final String driver = "driver";
-    protected static final String url = "url";
-    protected static final String login = "login";
-    protected static final String master = "master";
-    protected static final String password = "password";
+    protected static final String DRIVER = "driver";
+    protected static final String URL = "url";
+    protected static final String LOGIN = "login";
+    protected static final String PASSPHRASE = "passphrase";
+    protected static final String PASSWORD = "password";
+    protected static final String STORAGE_PATH = "store";
+    protected static final String STATEMENT = "statement";
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_NAME = "name";
 
@@ -43,52 +46,66 @@ public class DbDatabaseAdd {
                 .setMandatory(true);
 
 
-        cliCommand.argOf(url)
+        cliCommand.argOf(URL)
                 .setShortName("u")
                 .setDescription("The database url")
                 .setMandatory(true);
 
-        cliCommand.optionOf(login)
+        cliCommand.optionOf(LOGIN)
                 .setShortName("l")
                 .setDescription("The login (ie user)");
 
 
-        cliCommand.optionOf(password)
+        cliCommand.optionOf(PASSWORD)
                 .setShortName("p")
                 .setDescription("The user password");
 
-        cliCommand.optionOf(master)
-                .setShortName("m")
-                .setDescription("A master password (passphrase) to encrypt the data");
+        cliCommand.optionOf(PASSPHRASE)
+                .setShortName("pp")
+                .setDescription("A passphrase (master password) to encrypt the password")
+                .setEnvName("BYTLE_DB_PASSPHRASE");
 
 
-        cliCommand.optionOf(driver)
+        cliCommand.optionOf(DRIVER)
                 .setShortName("d")
-                .setDescription("The jdbc driver");
+                .setDescription("The jdbc driver (for a jdbc connection)");
 
-        final String statement = "statement";
-        cliCommand.optionOf(statement)
+        cliCommand.optionOf(STORAGE_PATH)
+                .setDescription("The path where the database information are stored")
+                .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
+                .setEnvName("BYTLE_DB_DATABASES_PATH");
+
+
+        cliCommand.optionOf(STATEMENT)
                 .setShortName("s")
                 .setDescription("A inline statement to be executed after a connection");
 
         cliCommand.getGroup("Database Properties")
-                .addWordOf(url)
-                .addWordOf(login)
-                .addWordOf(password)
-                .addWordOf(driver)
-                .addWordOf(master)
-                .addWordOf(statement);
+                .addWordOf(URL)
+                .addWordOf(LOGIN)
+                .addWordOf(PASSWORD)
+                .addWordOf(DRIVER)
+                .addWordOf(PASSPHRASE)
+                .addWordOf(STATEMENT)
+                .addWordOf(STORAGE_PATH);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         String databaseName = cliParser.getString(DATABASE_NAME);
 
 
-        final String urlValue = cliParser.getString(url);
-        final String driverValue = cliParser.getString(driver);
-        final String userValue = cliParser.getString(login);
-        final String pwdValue = cliParser.getString(password);
-        final String statementValue = cliParser.getString(statement);
+        final String urlValue = cliParser.getString(URL);
+        final String driverValue = cliParser.getString(DRIVER);
+        final String userValue = cliParser.getString(LOGIN);
+        final String pwdValue = cliParser.getString(PASSWORD);
+        final String statementValue = cliParser.getString(STATEMENT);
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final String passphrase = cliParser.getString(PASSPHRASE);
+
+        if (pwdValue!=null&&passphrase==null){
+            LOGGER.severe("A passphrase is mandatory to store a password");
+            System.exit(1);
+        }
 
         Database database = Databases.get(databaseName)
                 .setUrl(urlValue)
@@ -107,7 +124,8 @@ public class DbDatabaseAdd {
             System.out.println("Connection pinged");
             database.close();
         }
-        Databases.save(database,cliParser.getString(master));
+
+        Databases.save(database, passphrase, storagePathValue);
         LOGGER.info("The database ("+databaseName+") was saved.");
         LOGGER.info("Bye !");
 

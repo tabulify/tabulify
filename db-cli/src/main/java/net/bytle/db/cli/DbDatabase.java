@@ -3,7 +3,10 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.DbLoggers;
+import net.bytle.fs.Fs;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -12,6 +15,7 @@ import static net.bytle.db.cli.Words.*;
 
 public class DbDatabase {
 
+    public static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"databases.ini");
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
 
