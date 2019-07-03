@@ -239,4 +239,19 @@ public class Fs {
     private static Path getTempDir() {
         return Paths.get(System.getProperty("java.io.tmpdir"));
     }
+
+
+    /**
+     * Create a file and all sub-directories if needed
+     * @param path
+     */
+    public static void createFile(Path path) {
+        try {
+            Path parent = path.getParent();
+            Files.createDirectories(parent);
+            Files.createFile(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

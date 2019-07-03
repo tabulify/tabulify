@@ -1,6 +1,9 @@
 package net.bytle.db.database;
 
+import net.bytle.crypto.Protector;
+import net.bytle.fs.Fs;
 import oracle.jdbc.OracleTypes;
+import org.ini4j.Wini;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,8 +13,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Static function around database.
@@ -20,14 +21,29 @@ public class Databases {
 
 
     public static final String BYTLE_LOCAL_SQLITE_DB_NAME = "BytleSqlite";
+
     /**
-     * List of the database registred for this session
+     * The default master
      */
-    private static Map<String, Database> databases = new HashMap<>();
+    private static final String MASTER = "X111223300maasterX901#@";
+
+    /**
+     * Constant
+     */
+    private static final String URL = "url";
+    private static final String USER = "user";
+    private static final String DRIVER = "driver";
+    private static final String PASSWORD = "password";
+    private static final String STATEMENT = "statement";
+
+
+    /**
+     * The ini file were database information are saved to disk
+     */
+    private static Wini wini;
 
     /**
      * Initialize a database by its name.
-     *
      *
      * @param name -  the database name
      * @return a database
@@ -36,11 +52,23 @@ public class Databases {
      */
     public static Database get(String name) {
 
-        Database database = databases.get(name);
-        if (database == null) {
-            database = new Database(name);
-            databases.put(name, database);
+        return get(name, MASTER);
+
+    }
+
+    public static Database get(String name, String master) {
+
+        Database database = new Database(name);
+
+        Wini.Section iniSection = getIniFile().get(name);
+        if (iniSection != null) {
+            database.setUrl(iniSection.get(URL));
+            database.setUser(iniSection.get(USER));
+            database.setPassword(Protector.get(master).decrypt(iniSection.get(PASSWORD)));
+            database.setDriver(iniSection.get(DRIVER));
+            database.setStatement(iniSection.get(STATEMENT));
         }
+
         return database;
 
     }
@@ -72,14 +100,6 @@ public class Databases {
         return get(BYTLE_LOCAL_SQLITE_DB_NAME).setUrl(url);
     }
 
-    /**
-     * When the connection is closed, the database cache need to be removed
-     *
-     * @param database
-     */
-    public static void close(Database database) {
-        databases.remove(database.getDatabaseName());
-    }
 
     /**
      * @return the default bytle database
@@ -125,6 +145,7 @@ public class Databases {
 
     /**
      * Create an insert statement from a result set
+     *
      * @param targetTableName
      * @param sourceResultSet
      * @return the insert statement
@@ -140,7 +161,7 @@ public class Databases {
         int columnCount = metaData.getColumnCount();
 
         for (int i = 1; i <= columnCount; i++) {
-            insertStatement += "\""+metaData.getColumnName(i) + "\", ";
+            insertStatement += "\"" + metaData.getColumnName(i) + "\", ";
             insertStatementBindVariable += "?, ";
         }
 
@@ -154,14 +175,14 @@ public class Databases {
 
     }
 
-    public static void printResultSet(ResultSet resultSet){
+    public static void printResultSet(ResultSet resultSet) {
         try {
-            if (resultSet!=null) {
+            if (resultSet != null) {
                 final int columnCount = resultSet.getMetaData().getColumnCount();
                 while (resultSet.next()) {
-                    for(int i = 0; i < columnCount; i++){
-                        System.out.print(resultSet.getString(i+1));
-                        if (i!=columnCount-1) {
+                    for (int i = 0; i < columnCount; i++) {
+                        System.out.print(resultSet.getString(i + 1));
+                        if (i != columnCount - 1) {
                             System.out.print(",");
                         }
                     }
@@ -176,17 +197,18 @@ public class Databases {
 
     /**
      * Print the headers (column name)
+     *
      * @param resultSet
      */
-    public static void printColumnNames(ResultSet resultSet){
+    public static void printColumnNames(ResultSet resultSet) {
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
 
             int columnCount = metaData.getColumnCount();
 
             for (int i = 0; i < columnCount; i++) {
-                System.out.print(metaData.getColumnName(i+1));
-                if (i!=columnCount-1) {
+                System.out.print(metaData.getColumnName(i + 1));
+                if (i != columnCount - 1) {
                     System.out.print(",");
                 }
             }
@@ -199,4 +221,48 @@ public class Databases {
     }
 
 
+    /**
+     * Save a database on the disk
+     *
+     * @param database
+     * @param master
+     */
+    public static void save(Database database, String master) {
+
+        Wini ini = getIniFile();
+        ini.put(database.getDatabaseName(), URL, database.getUrl());
+        ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
+        ini.put(database.getDatabaseName(), USER, database.getUser());
+        ini.put(database.getDatabaseName(), PASSWORD, Protector.get(master).encrypt(database.getPassword()));
+        ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
+        try {
+            ini.store();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    /**
+     * @return the ini file where the database information are saved to disk
+     */
+    private static Wini getIniFile() {
+        Path databaseFileDirectory = Fs.getAppData("BytleDb");
+        Path databaseFile = Paths.get(databaseFileDirectory.toString(), "dsn.ini");
+        if (!(Files.exists(databaseFile))) {
+            Fs.createFile(databaseFile);
+        }
+        if (wini == null) {
+            try {
+                wini = new Wini(databaseFile.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return wini;
+    }
+
+    public static void save(Database database) {
+        save(database, MASTER);
+    }
 }

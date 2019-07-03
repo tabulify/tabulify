@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Created by gerard on 07-01-2016.
+ * A wrapper around a connection !
  */
 public class Database implements AutoCloseable {
 
@@ -523,7 +523,6 @@ public class Database implements AutoCloseable {
     @Override
     public void close() {
 
-        Databases.close(this);
         if (this.getCurrentConnection() != null) {
             try {
                 this.currentConnection.close();
@@ -806,7 +805,7 @@ public class Database implements AutoCloseable {
         return this;
     }
 
-    public Database setConnectionScript(String connectionScriptValue) {
+    public Database setStatement(String connectionScriptValue) {
         this.postStatement = connectionScriptValue;
         return this;
     }
@@ -825,5 +824,21 @@ public class Database implements AutoCloseable {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String getDriver() {
+        return this.driver;
+    }
+
+    public String getUser() {
+        return this.user;
+    }
+
+    public String getPassword() {
+        return this.password;
+    }
+
+    public String getConnectionStatement() {
+        return this.postStatement;
     }
 }

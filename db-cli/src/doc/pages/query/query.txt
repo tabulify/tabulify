@@ -5,6 +5,7 @@
 The ''query'' [[..:module|module]] permits to execute operations against a ''query''.
 
 
+
 ===== Syntax =====
 
 <unit>
@@ -12,6 +13,24 @@ The ''query'' [[..:module|module]] permits to execute operations against a ''que
 db query --help
 </code>
 <console>
+operations on a query
+
+Syntax:
+
+	db query <command>
+
+where:
+
+	Command (is one of):
+		* execute                       execute a query
+		* download                      download a query into a file
+		* transfer                      transfer the query from one database to another
+		* diff                          diff of two query results
 </console>
 </unit>
+where:
+  * [[execute]]
+  * [[download]]
+  * [[transfer]]
+  * [[diff]]
 

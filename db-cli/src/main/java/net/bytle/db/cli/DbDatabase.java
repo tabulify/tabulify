@@ -17,6 +17,7 @@ public class DbDatabase {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
+        cliCommand.setDescription("Database management");
 
         cliCommand.commandOf(Words.ADD_COMMAND)
                 .setDescription("add a database");

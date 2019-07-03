@@ -85,7 +85,7 @@ public class QueryExecutorProperties {
             if (masterPassword == null)
                 throw new Exception("No master password could be found for thread " + threadName);
 
-            password = new Protector(masterPassword).decrypt(password.replaceAll("^encrypted://", ""));
+            password = Protector.get(masterPassword).decrypt(password.replaceAll("^encrypted://", ""));
         } else {
             password = password.replaceAll("^plain://", "");
         }

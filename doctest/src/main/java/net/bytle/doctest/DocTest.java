@@ -23,7 +23,13 @@ public class DocTest {
 
     private boolean enableCacheExecution = false;
     Map<String, Class> commands = new HashMap<>();
-    private boolean overwriteExpectation = false;
+
+    public DocTest setOverwriteConsole(boolean overwriteConsole) {
+        this.overwriteConsole = overwriteConsole;
+        return this;
+    }
+
+    private boolean overwriteConsole = false;
 
 
     private DocTest() {
@@ -92,7 +98,7 @@ public class DocTest {
                 LOGGER_DOCTEST.info("Executing the doc file ("+childPath+")");
                 DocTestRunResult docTestRunResult = this.execute(childPath);
                 results.add(docTestRunResult);
-                if (overwriteExpectation) {
+                if (overwriteConsole) {
                     // Overwrite the new doc
                     Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 }
