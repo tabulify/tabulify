@@ -101,7 +101,7 @@ public class DocTestUnitExecutor {
                         final String cli = args[0];
                         Class importClass = this.getMainClass(cli);
                         if (importClass == null) {
-                            throw new RuntimeException("No main class was defined for the appHome (" + cli + ")");
+                            throw new RuntimeException("No main class was defined for the command (" + cli + ")");
                         }
                         args = Arrays.copyOfRange(args, 1, args.length);
 

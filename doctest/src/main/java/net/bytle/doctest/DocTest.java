@@ -20,6 +20,7 @@ public class DocTest {
 
     public static final String APP_NAME = DocTest.class.getName();
     protected final static Log LOGGER_DOCTEST = Log.getLog(DocTest.class);
+    private final String name;
 
     private boolean enableCacheExecution = false;
     Map<String, Class> commands = new HashMap<>();
@@ -32,11 +33,16 @@ public class DocTest {
     private boolean overwriteConsole = false;
 
 
-    private DocTest() {
+    /**
+     * The execution name
+     * @param name
+     */
+    private DocTest(String name) {
+        this.name = name;
     }
 
     public static List<DocTestRunResult> Run(Path path, String command, Class commandClass) {
-        return of().addCommand(command, commandClass).run(path);
+        return of("defaultRun").addCommand(command, commandClass).run(path);
     }
 
 
@@ -49,9 +55,14 @@ public class DocTest {
         return Run(path, null, null);
     }
 
-    public static DocTest of() {
+    /**
+     *
+     * @param name - The name of the run (used in the console)
+     * @return
+     */
+    public static DocTest of(String name) {
 
-        return new DocTest();
+        return new DocTest(name);
     }
 
     /**
@@ -76,7 +87,7 @@ public class DocTest {
         for (Path path : paths) {
 
             if (!Files.exists(path)) {
-                LOGGER_DOCTEST.severe("The path (" + path.toAbsolutePath() + ") does not exist");
+                LOGGER_DOCTEST.severe(this.name, "The path (" + path.toAbsolutePath() + ") does not exist");
                 System.exit(1);
             }
 
@@ -89,13 +100,13 @@ public class DocTest {
                     String md5Cache = DocCache.get().getMd5(childPath);
                     String md5 = Fs.getMd5(childPath);
                     if (md5.equals(md5Cache)) {
-                        LOGGER_DOCTEST.info("Cache is on and the file ("+childPath+") has already been executed. Skipping the execution");
+                        LOGGER_DOCTEST.info(this.name,"Cache is on and the file ("+childPath+") has already been executed. Skipping the execution");
                         DocTestRunResult docTestRunResult = DocTestRunResult.get(childPath);
                         results.add(docTestRunResult);
                         continue;
                     }
                 }
-                LOGGER_DOCTEST.info("Executing the doc file ("+childPath+")");
+                LOGGER_DOCTEST.info(this.name, "Executing the doc file ("+childPath+")");
                 DocTestRunResult docTestRunResult = this.execute(childPath);
                 results.add(docTestRunResult);
                 if (overwriteConsole) {
@@ -178,7 +189,7 @@ public class DocTest {
             }
             String result;
             try {
-                LOGGER_DOCTEST.info("Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
+                LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
                 result = docTestUnitExecutor.eval(docTestUnit).trim();
             } catch (Exception e) {
                 docTestRunResult.addError();
@@ -187,7 +198,7 @@ public class DocTest {
                 } else {
                     result = e.getMessage();
                 }
-                LOGGER_DOCTEST.severe("Error during execute: " + result);
+                LOGGER_DOCTEST.severe(this.name, "Error during execute: " + result);
                 if (stopRunAtFirstError) {
                     throw new RuntimeException(e);
                 }

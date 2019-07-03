@@ -151,6 +151,12 @@ public class Fs {
         return createTempFile(content, ".txt");
     }
 
+    /**
+     *
+     * @param content
+     * @param suffix - the file suffix. Example: ".txt"
+     * @return
+     */
     public static Path createTempFile(String content, String suffix) {
 
         try {
@@ -250,6 +256,21 @@ public class Fs {
             Path parent = path.getParent();
             Files.createDirectories(parent);
             Files.createFile(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Wrapper around {@link Files#write(Path, byte[], OpenOption...)}
+     * to write a string to a file
+     * without exception handling
+     * @param path
+     * @param s
+     */
+    public static void write(Path path, String s) {
+        try {
+            Files.write(path,s.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

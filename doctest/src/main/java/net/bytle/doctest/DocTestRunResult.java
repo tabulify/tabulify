@@ -13,7 +13,7 @@ public class DocTestRunResult {
     private String doc;
     private int error = 0;
     // Indicate if the doc has been executed
-    private boolean hasBeenExecuted = false;
+    private boolean docHasBeenExecuted = false;
 
     private DocTestRunResult(Path path) {
         this.path = path;
@@ -40,11 +40,11 @@ public class DocTestRunResult {
     }
 
     public boolean hasRun() {
-        return this.hasBeenExecuted;
+        return this.docHasBeenExecuted;
     }
 
     public DocTestRunResult setHasBeenExecuted(boolean b) {
-        this.hasBeenExecuted = true;
+        this.docHasBeenExecuted = b;
         return this;
     }
 }

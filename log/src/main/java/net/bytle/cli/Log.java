@@ -198,4 +198,12 @@ public class Log {
         getLogger().setLevel(level);
         return this;
     }
+
+    public void severe(String... s) {
+        getLogger().severe(String.join(" - ",s));
+    }
+
+    public void info(String... s) {
+        getLogger().info(String.join(" - ",s));
+    }
 }
