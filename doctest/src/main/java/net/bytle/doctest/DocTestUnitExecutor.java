@@ -67,7 +67,7 @@ public class DocTestUnitExecutor {
      * @param docTestUnit - The docTestUnit to evaluate
      * @return the stdout and stderr in a string
      * @throws RuntimeException - if something is going wrong
-     *                   The method {@Link #run} is exception safe and return the error message back
+     *                          The method {@Link #run} is exception safe and return the error message back
      */
     String eval(DocTestUnit docTestUnit) {
 
@@ -94,33 +94,41 @@ public class DocTestUnitExecutor {
                             "}";
                     break;
                 case "dos":
-                    String[] args = parseDosCommand(docTestUnit.getCode());
-                    final String cli = args[0];
-                    Class importClass = this.getMainClass(cli);
-                    if (importClass == null) {
-                        throw new RuntimeException("No main class was defined for the appHome (" + cli + ")");
-                    }
-                    args = Arrays.copyOfRange(args, 1, args.length);
-
-                    // Env variable expansion
-                    for (Map.Entry<String, String> entry : docTestUnit.getEnv().entrySet()) {
-                        for (int i = 0; i < args.length; i++) {
-                            args[i] = args[i].replace("%" + entry.getKey() + "%", entry.getValue());
+                    List<String[]> commands = DocTestDos.parseDosCommand(docTestUnit.getCode());
+                    StringBuilder javaCode = new StringBuilder();
+                    for (String[] command : commands) {
+                        String[] args = command;
+                        final String cli = args[0];
+                        Class importClass = this.getMainClass(cli);
+                        if (importClass == null) {
+                            throw new RuntimeException("No main class was defined for the appHome (" + cli + ")");
                         }
+                        args = Arrays.copyOfRange(args, 1, args.length);
+
+                        // Env variable expansion
+                        for (Map.Entry<String, String> entry : docTestUnit.getEnv().entrySet()) {
+                            for (int i = 0; i < args.length; i++) {
+                                args[i] = args[i].replace("%" + entry.getKey() + "%", entry.getValue());
+                            }
+                        }
+
+                        // Escaping (after env expansion)
+                        for (int i = 0; i < args.length; i++) {
+
+                            // Path in DOS must have two slash in the code to escape it
+                            args[i] = args[i].replace("\\", "\\\\");
+
+                        }
+                        javaCode
+                                .append(importClass.getName())
+                                .append(".main(new String[]{\"")
+                                .append(String.join("\",\"", args))
+                                .append("\"});\n");
                     }
-
-                    // Escaping (after env expansion)
-                    for (int i = 0; i < args.length; i++) {
-
-                        // Path in DOS must have two slash in the code to escape it
-                        args[i] = args[i].replace("\\", "\\\\");
-
-                    }
-
                     // Code
                     code = "public class " + buildClassName + " {\n" +
                             "    public static void " + runMethodName + "() {\n" +
-                            "       " + importClass.getName() + ".main(new String[]{\"" + String.join("\",\"", args) + "\"});\n" +
+                            "       " +  javaCode.toString() +
                             "    }\n" +
                             "}";
                     break;
@@ -206,7 +214,7 @@ public class DocTestUnitExecutor {
                 method.invoke(null);
             } catch (InvocationTargetException e) {
                 // Is this a System.exit(0) as we have after the print of a help command
-                if (e.getTargetException().getClass()!=PreventExitException.class) {
+                if (e.getTargetException().getClass() != PreventExitException.class) {
                     // Error
                     System.out.flush(); // Into the byteArray
                     System.err.flush(); // Into the byteArray
@@ -234,79 +242,6 @@ public class DocTestUnitExecutor {
         }
 
 
-    }
-
-    private String[] parseDosCommand(String code) {
-
-        final int defaultState = 1;
-        final int spaceCapture = 2;
-        final int quoteCapture = 3;
-        final char spaceChar = ' ';
-        final char quoteChar = '"';
-
-        int state = defaultState;
-        char[] dst = new char[code.length()];
-        code.getChars(0, code.length(), dst, 0);
-        StringBuilder arg = new StringBuilder();
-        List<String> args = new ArrayList<>();
-        for (char c : dst) {
-            switch (state) {
-                case defaultState:
-                    switch (c) {
-                        case spaceChar:
-                            state = spaceCapture;
-                            continue;
-                        case quoteChar:
-                            state = quoteCapture;
-                            break;
-                        default:
-                            arg.append(c);
-                            state = spaceCapture;
-                            break;
-                    }
-                    break;
-                case spaceCapture:
-                    switch (c) {
-                        case spaceChar:
-                            if (!arg.toString().equals("")) {
-                                args.add(arg.toString());
-                                arg = new StringBuilder();
-                            }
-                            state = defaultState;
-                            break;
-                        case quoteChar:
-                            if (!arg.toString().equals("")) {
-                                arg.append(c);
-                            } else {
-                                state = quoteCapture;
-                            }
-                            break;
-                        default:
-                            arg.append(c);
-                            break;
-                    }
-                    break;
-                case quoteCapture:
-                    switch (c) {
-                        case quoteChar:
-                            if (!arg.toString().equals("")) {
-                                args.add(arg.toString());
-                                arg = new StringBuilder();
-                            }
-                            state = defaultState;
-                            break;
-                        default:
-                            arg.append(c);
-                            break;
-                    }
-                    break;
-            }
-        }
-
-        if (!arg.toString().trim().equals("")) {
-            args.add(arg.toString());
-        }
-        return args.toArray(new String[args.size()]);
     }
 
 
