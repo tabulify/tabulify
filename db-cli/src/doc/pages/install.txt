@@ -54,7 +54,7 @@ db --help
 :: or if you didn't have the directory in your PATH environment variable
 :: BYTLE_DB_HOME\db.cmd --help
 :: in our installation documentation
-c:\bytle-db\db.cmd
+:: c:\bytle-db\db.cmd
 </code>
   * The [[help|help]] should shows up.
 <console>

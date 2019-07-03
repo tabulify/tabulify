@@ -9,7 +9,7 @@ The ''query'' [[..:module|module]] permits to execute operations against a ''que
 
 <unit>
 <code dos>
-db query ---help
+db query --help
 </code>
 <console>
 </console>

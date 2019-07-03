@@ -55,7 +55,7 @@ db table load TABLE_NAME.csv
 
 [[db|db]] is a command line client that is made of the following [[module|module]]:
   * [[table:table]]
-  * [[schema]]
+  * [[schema:schema]]
   * [[query]]
 
 For each ''sub-command'', you may specify optional [[option|options]] that change the default behavior. 
@@ -74,10 +74,10 @@ No tables found
 </console>
 </unit>
 
-There is obviously no table in our default database. We will create some below by creating a [[sample|sample database]].
+There is obviously no table in our default database. We will create some below by creating a [[sample:sample|sample database]].
 
 ===== Creating a sample schema =====
-The [[sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
+The [[sample:sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
 
 <unit>
 <code dos>
@@ -124,7 +124,7 @@ db table count
 </console>
 </unit>
 ===== Filling the schema with data =====
-To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample|sample]].
+To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample:sample|sample]].
 
 <unit>
 <code dos>

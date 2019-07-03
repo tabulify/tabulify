@@ -1,0 +1,20 @@
+====== Bytle Db - Schema ======
+
+
+===== About =====
+''schema'' is a [[:module|module]] to perform operations on all table of a [[:relation|relational database]] schema at once.
+
+<wrap tip>Db can also create sample schema. See [[sample:sample]]</wrap>
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db schema --help
+</code>
+<console>
+</console>
+</unit>
+where the submodule are:
+  * [[list]]
+  * [[fill]]

@@ -1,0 +1,35 @@
+====== Bytle Db - Schema List ======
+
+
+===== About =====
+''schema list'' will list the tables present in a [[schema|schema]]
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db schema list --help
+</code>
+<console>
+</console>
+</unit>
+
+===== Example =====
+
+
+<unit>
+  * First we [[sample:create|create a sample schema]] to get tables in the schema
+<code dos>
+db sample create tpcds
+</code>
+<console>
+</console>
+</unit>
+  * Then you can list the table with the following command
+<unit>
+<code dos>
+db schema list
+</code>
+<console>
+</console>
+</unit>

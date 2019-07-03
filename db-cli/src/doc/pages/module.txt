@@ -19,10 +19,10 @@ db module ...
 
 [[db|db]] provides actually the following modules:
   * [[table:table|table]] - operations on one or more table
-  * [[schema|schema]] - operations on one or more schema
+  * [[schema:schema|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
   * [[query:query|query]] - operations on one or more queries
-  * [[sample|sample]] - operations on sample schema (database)
+  * [[sample:sample|sample]] - operations on sample schema (database)
   * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)
 
 
@@ -96,8 +96,8 @@ where:
 
 You can also get help on this site directly via this links:
   * [[table:table|table]] - operations on one or more table
-  * [[schema|schema]] - operations on one or more schema
+  * [[schema:schema|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
   * [[query:query|query]] - operations on one or more queries
-  * [[sample|sample]] - operations on sample schema (database)
+  * [[sample:sample|sample]] - operations on sample schema (database)
   * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)

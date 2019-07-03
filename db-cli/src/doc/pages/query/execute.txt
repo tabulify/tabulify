@@ -47,11 +47,13 @@ with year_total as (
 ...
 </code>
   * Creating the schema, truncating, filling it with data 
+<unit>
 <code dos>
 db sample create tpcds-dwh --ifNotExist
-db sample truncate tpcds-dwh
+::db sample truncate tpcds-dwh
 db sample fill tpcds-dwh
 </code>
+</unit>
   * Executing the query will show us this customers.
 <unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 
