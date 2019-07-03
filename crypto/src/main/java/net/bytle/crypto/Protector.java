@@ -50,6 +50,9 @@ public class Protector {
     }
 
     public String decrypt(String encrypted)  {
+        if (encrypted==null){
+            return null;
+        }
         try {
             return new String(decryptCipher.doFinal(base64.decode(encrypted)));
         } catch (IllegalBlockSizeException e) {

@@ -5,6 +5,7 @@ import net.bytle.fs.Fs;
 import oracle.jdbc.OracleTypes;
 import org.ini4j.Wini;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Static function around database.
@@ -264,5 +267,18 @@ public class Databases {
 
     public static void save(Database database) {
         save(database, MASTER);
+    }
+
+    public static void remove(String name) {
+        Wini ini = getIniFile();
+        ini.remove(name);
+    }
+
+    public static List<Database> list() {
+        List<Database> databases = new ArrayList<>();
+        for (String section: getIniFile().keySet()){
+            databases.add(Databases.get(section));
+        }
+        return databases;
     }
 }
