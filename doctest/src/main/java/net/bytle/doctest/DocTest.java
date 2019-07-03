@@ -18,7 +18,7 @@ import java.util.Map;
 public class DocTest {
 
 
-    public static final String APP_NAME = DocTest.class.getName();
+    public static final String APP_NAME = DocTest.class.getSimpleName();
     protected final static Log LOGGER_DOCTEST = Log.getLog(DocTest.class);
     private final String name;
 
@@ -35,6 +35,7 @@ public class DocTest {
 
     /**
      * The execution name
+     *
      * @param name
      */
     private DocTest(String name) {
@@ -56,7 +57,6 @@ public class DocTest {
     }
 
     /**
-     *
      * @param name - The name of the run (used in the console)
      * @return
      */
@@ -68,6 +68,7 @@ public class DocTest {
     /**
      * If this is true, a file with the same md5 that has already been executed
      * will not be executed a second time
+     *
      * @param b
      * @return
      */
@@ -97,16 +98,16 @@ public class DocTest {
             for (Path childPath : childPaths) {
 
                 if (enableCacheExecution) {
-                    String md5Cache = DocCache.get().getMd5(childPath);
+                    String md5Cache = DocCache.get(name).getMd5(childPath);
                     String md5 = Fs.getMd5(childPath);
                     if (md5.equals(md5Cache)) {
-                        LOGGER_DOCTEST.info(this.name,"Cache is on and the file ("+childPath+") has already been executed. Skipping the execution");
+                        LOGGER_DOCTEST.info(this.name, "Cache is on and the file (" + childPath + ") has already been executed. Skipping the execution");
                         DocTestRunResult docTestRunResult = DocTestRunResult.get(childPath);
                         results.add(docTestRunResult);
                         continue;
                     }
                 }
-                LOGGER_DOCTEST.info(this.name, "Executing the doc file ("+childPath+")");
+                LOGGER_DOCTEST.info(this.name, "Executing the doc file (" + childPath + ")");
                 DocTestRunResult docTestRunResult = this.execute(childPath);
                 results.add(docTestRunResult);
                 if (overwriteConsole) {
@@ -114,8 +115,8 @@ public class DocTest {
                     Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 }
 
-                if (enableCacheExecution){
-                    DocCache.get().store(childPath);
+                if (enableCacheExecution) {
+                    DocCache.get(name).store(childPath);
                 }
 
             }
@@ -158,18 +159,38 @@ public class DocTest {
 
 
         Integer previousEnd = 0;
-        for (DocTestUnit docTestUnit : docTests) {
+        for (int i = 0; i < docTests.size(); i++) {
+
+            DocTestUnit docTestUnit = docTests.get(i);
+            DocTestUnit cachedDocTestUnit = DocCache.get(name).getDocTestUnits(path).get(i);
+            // Boolean to decide if we need to execute
+            boolean codeChange = false;
+            boolean fileChange = false;
+            // ############################################
+            // The order of execution is important here to reconstruct the new document
+            //    * First the processing of the file nodes
+            //    * then the code
+            //    * then the console
+            // ############################################
 
             // Replace file node with the file content on the file system
             final List<DocTestFileBlock> files = docTestUnit.getFileBlocks();
             if (files.size() != 0) {
 
-                for (DocTestFileBlock docTestFileBlock : files) {
+                for (int j = 0; i < files.size(); i++) {
+
+                    DocTestFileBlock docTestFileBlock = files.get(j);
 
                     final String fileStringPath = docTestFileBlock.getPath();
                     if (fileStringPath == null) {
                         throw new RuntimeException("The file path for this unit is null");
                     }
+                    // No need of cache test here because it's going very quick
+                    DocTestFileBlock cachedDocTestFileBlock = cachedDocTestUnit.getFileBlocks().get(j);
+                    if (!(fileStringPath.equals(cachedDocTestFileBlock.getPath()))) {
+                        fileChange = true;
+                    }
+
                     Path filePath = Paths.get(baseFileDirectory.toString(), fileStringPath);
                     String fileContent = Strings.get(filePath);
 
@@ -187,21 +208,37 @@ public class DocTest {
 
                 }
             }
+
+            // ######################## Code Block Processing #####################
+            // Check if this unit has already been executed and that the code has not changed
+            if (!(docTestUnit.getCode().equals(cachedDocTestUnit.getCode()))) {
+                codeChange = true;
+            }
+
+            // Run
             String result;
-            try {
-                LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
-                result = docTestUnitExecutor.eval(docTestUnit).trim();
-            } catch (Exception e) {
-                docTestRunResult.addError();
-                if (e.getClass().equals(NullPointerException.class)) {
-                    result = "null pointer exception";
-                } else {
-                    result = e.getMessage();
+            if (
+                    ((codeChange || fileChange) & this.enableCacheExecution)
+                    || !this.enableCacheExecution
+            ) {
+                try {
+                    LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
+                    result = docTestUnitExecutor.eval(docTestUnit).trim();
+                } catch (Exception e) {
+                    docTestRunResult.addError();
+                    if (e.getClass().equals(NullPointerException.class)) {
+                        result = "null pointer exception";
+                    } else {
+                        result = e.getMessage();
+                    }
+                    LOGGER_DOCTEST.severe(this.name, "Error during execute: " + result);
+                    if (stopRunAtFirstError) {
+                        throw new RuntimeException(e);
+                    }
                 }
-                LOGGER_DOCTEST.severe(this.name, "Error during execute: " + result);
-                if (stopRunAtFirstError) {
-                    throw new RuntimeException(e);
-                }
+            } else {
+                LOGGER_DOCTEST.info(this.name, "The run of the code (" + Log.onOneLine(docTestUnit.getCode()) + ") was skipped due to caching from the file (" + docTestUnit.getPath() + ")");
+                result = cachedDocTestUnit.getConsole();
             }
 
             // Console
@@ -209,7 +246,7 @@ public class DocTest {
             if (consoleLocation != null) {
                 Integer start = docTestUnit.getConsoleLocation()[0];
                 newDocTestContent.append(docTestContent, previousEnd, start);
-                if (!result.equals(docTestUnit.getExpectation())) {
+                if (!result.equals(docTestUnit.getConsole())) {
 
                     newDocTestContent
                             .append("\r\n")

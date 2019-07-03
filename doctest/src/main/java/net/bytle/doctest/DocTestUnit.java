@@ -44,7 +44,7 @@ public class DocTestUnit {
 
     }
 
-    public String getExpectation() {
+    public String getConsole() {
 
         return this.expectation != null ? this.expectation.trim() : null;
 

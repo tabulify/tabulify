@@ -3,26 +3,23 @@ package net.bytle.doctest;
 import net.bytle.fs.Fs;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
+import java.util.List;
 
 public class DocCache {
 
-    private final Path propertiesFile = Paths.get(Fs.getAppData(DocTest.APP_NAME).toString(),"executionCache.properties");
-    private final Properties appDataProperties = new Properties();
+
+    private final Path cacheDirectory;
 
     private static DocCache docCache;
-    private DocCache() {
+    private DocCache(String name) {
 
-        if (Files.exists(propertiesFile)) {
+        cacheDirectory = Paths.get(Fs.getAppData(DocTest.APP_NAME).toString(),name);
+        if (!Files.exists(cacheDirectory)){
             try {
-                InputStream in = Files.newInputStream(propertiesFile);
-                appDataProperties.load(in);
-                in.close();
+                Files.createDirectory(cacheDirectory);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -31,28 +28,43 @@ public class DocCache {
 
     }
 
-    public static DocCache get() {
+    /**
+     * The name is a namespace to be able to cache two different set of doc
+     * @param name
+     * @return
+     */
+    public static DocCache get(String name) {
         if (docCache==null){
-            docCache = new DocCache();
+            docCache = new DocCache(name);
         }
         return docCache;
     }
 
 
     public String getMd5(Path path) {
-        return appDataProperties.getProperty(path.toString());
+        Path cacheFilePath = getPathCacheFile(path);
+        return Fs.getMd5(cacheFilePath);
+    }
+
+    protected Path getPathCacheFile(Path path) {
+        return Paths.get(cacheDirectory.toString(),path.toString()).normalize();
     }
 
     public void store(Path path) {
         try {
-            String md5 = Fs.getMd5(path);
-            appDataProperties.put(path.toString(),md5);
-            OutputStream ou = Files.newOutputStream(propertiesFile);
-            appDataProperties.store(ou,"comments");
-            ou.close();
+            Path cachePath = getPathCacheFile(path);
+            Path parent = cachePath.getParent();
+            if (!(Files.exists(parent))){
+                Files.createDirectories(parent);
+            }
+            Files.copy(path,cachePath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public List<DocTestUnit> getDocTestUnits(Path path) {
+        return DocTestParser.getDocTests(path);
     }
 }
