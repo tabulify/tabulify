@@ -150,6 +150,7 @@ public class DocTest {
 
         final List<DocTestUnit> cachedDocTestUnits = DocCache.get(name).getDocTestUnits(path);
         Integer previousEnd = 0;
+        Boolean oneCodeBlockHasAlreadyRun = false;
         for (int i = 0; i < docTests.size(); i++) {
 
             DocTestUnit docTestUnit = docTests.get(i);
@@ -222,11 +223,13 @@ public class DocTest {
             if (
                     ((codeChange || fileChange) & this.enableCacheExecution)
                             || !this.enableCacheExecution
+                            || oneCodeBlockHasAlreadyRun
             ) {
                 try {
                     LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
                     docTestRunResult.addCodeExecution();
                     result = docTestUnitExecutor.eval(docTestUnit).trim();
+                    oneCodeBlockHasAlreadyRun = true;
                 } catch (Exception e) {
                     docTestRunResult.addError();
                     if (e.getClass().equals(NullPointerException.class)) {
