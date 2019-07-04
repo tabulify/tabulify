@@ -14,6 +14,7 @@ public class DocTestRunResult {
     private int error = 0;
     // Indicate if the doc has been executed
     private boolean docHasBeenExecuted = false;
+    private int codeExecutionCounter = 0;
 
     private DocTestRunResult(Path path) {
         this.path = path;
@@ -46,5 +47,13 @@ public class DocTestRunResult {
     public DocTestRunResult setHasBeenExecuted(boolean b) {
         this.docHasBeenExecuted = b;
         return this;
+    }
+
+    public int getCodeExecution() {
+        return this.codeExecutionCounter;
+    }
+
+    public void addCodeExecution() {
+        this.codeExecutionCounter++;
     }
 }

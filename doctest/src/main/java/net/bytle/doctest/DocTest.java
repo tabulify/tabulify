@@ -225,6 +225,7 @@ public class DocTest {
             ) {
                 try {
                     LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
+                    docTestRunResult.addCodeExecution();
                     result = docTestUnitExecutor.eval(docTestUnit).trim();
                 } catch (Exception e) {
                     docTestRunResult.addError();
