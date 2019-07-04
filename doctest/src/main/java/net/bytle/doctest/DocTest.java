@@ -48,15 +48,6 @@ public class DocTest {
 
 
     /**
-     * Run
-     *
-     * @param path
-     */
-    public static List<DocTestRunResult> Run(Path path) {
-        return Run(path, null, null);
-    }
-
-    /**
      * @param name - The name of the run (used in the console)
      * @return
      */
@@ -157,12 +148,15 @@ public class DocTest {
             docTestUnitExecutor.addMainClass(commandName, commands.get(commandName));
         }
 
-
+        final List<DocTestUnit> cachedDocTestUnits = DocCache.get(name).getDocTestUnits(path);
         Integer previousEnd = 0;
         for (int i = 0; i < docTests.size(); i++) {
 
             DocTestUnit docTestUnit = docTests.get(i);
-            DocTestUnit cachedDocTestUnit = DocCache.get(name).getDocTestUnits(path).get(i);
+            DocTestUnit cachedDocTestUnit = null;
+            if (cachedDocTestUnits != null && i < cachedDocTestUnits.size()) {
+                cachedDocTestUnit = cachedDocTestUnits.get(i);
+            }
             // Boolean to decide if we need to execute
             boolean codeChange = false;
             boolean fileChange = false;
@@ -186,8 +180,12 @@ public class DocTest {
                         throw new RuntimeException("The file path for this unit is null");
                     }
                     // No need of cache test here because it's going very quick
-                    DocTestFileBlock cachedDocTestFileBlock = cachedDocTestUnit.getFileBlocks().get(j);
-                    if (!(fileStringPath.equals(cachedDocTestFileBlock.getPath()))) {
+                    if (cachedDocTestUnit!=null) {
+                        DocTestFileBlock cachedDocTestFileBlock = cachedDocTestUnit.getFileBlocks().get(j);
+                        if (!(fileStringPath.equals(cachedDocTestFileBlock.getPath()))) {
+                            fileChange = true;
+                        }
+                    } else {
                         fileChange = true;
                     }
 
@@ -211,7 +209,11 @@ public class DocTest {
 
             // ######################## Code Block Processing #####################
             // Check if this unit has already been executed and that the code has not changed
-            if (!(docTestUnit.getCode().equals(cachedDocTestUnit.getCode()))) {
+            if (cachedDocTestUnit!=null) {
+                if (!(docTestUnit.getCode().equals(cachedDocTestUnit.getCode()))) {
+                    codeChange = true;
+                }
+            } else {
                 codeChange = true;
             }
 
@@ -219,7 +221,7 @@ public class DocTest {
             String result;
             if (
                     ((codeChange || fileChange) & this.enableCacheExecution)
-                    || !this.enableCacheExecution
+                            || !this.enableCacheExecution
             ) {
                 try {
                     LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");

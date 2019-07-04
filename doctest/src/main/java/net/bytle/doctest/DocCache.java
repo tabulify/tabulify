@@ -43,11 +43,19 @@ public class DocCache {
 
     public String getMd5(Path path) {
         Path cacheFilePath = getPathCacheFile(path);
-        return Fs.getMd5(cacheFilePath);
+        if (Files.exists(cacheFilePath)) {
+            return Fs.getMd5(cacheFilePath);
+        } else {
+            return null;
+        }
     }
 
     protected Path getPathCacheFile(Path path) {
-        return Paths.get(cacheDirectory.toString(),path.toString()).normalize();
+        Path relativeCachePath = path;
+        if (relativeCachePath.isAbsolute()){
+            relativeCachePath = Fs.relativize(path,path.getRoot());
+        }
+        return Paths.get(cacheDirectory.toString(),relativeCachePath.toString()).normalize();
     }
 
     public void store(Path path) {
@@ -57,7 +65,7 @@ public class DocCache {
             if (!(Files.exists(parent))){
                 Files.createDirectories(parent);
             }
-            Files.copy(path,cachePath);
+            Fs.overwrite(path,cachePath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -65,6 +73,11 @@ public class DocCache {
     }
 
     public List<DocTestUnit> getDocTestUnits(Path path) {
-        return DocTestParser.getDocTests(path);
+        final Path pathCacheFile = getPathCacheFile(path);
+        if (Files.exists(pathCacheFile)) {
+            return DocTestParser.getDocTests(pathCacheFile);
+        } else {
+            return null;
+        }
     }
 }

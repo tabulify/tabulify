@@ -275,4 +275,22 @@ public class Fs {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * A wrapper around path.relativize(base)
+     * @param path
+     * @param base
+     * @return a relative path
+     */
+    public static Path relativize(Path path, Path base) {
+        return base.relativize(path);
+    }
+
+    public static void overwrite(Path source, Path target) {
+        try {
+            Files.write(target,Files.readAllBytes(source), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
