@@ -318,6 +318,7 @@ public class Queries {
             }
 
         }
+        selectStream.close();
         return selectStreamListener;
 
     }
