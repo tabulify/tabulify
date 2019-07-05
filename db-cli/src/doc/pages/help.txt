@@ -18,13 +18,13 @@ db table load --help
 <console>
 Load a file into a database.
 
-Syntax: (1)
+Syntax:
 
 	db table load [options|flags] <File.csv>
 
 where:
 
-	Connection: (2)
+	Connection
 		* --db.name <value>             defines the database name. 
 A database connection is defined through its name. To know more about, see the command `db database --help`
 

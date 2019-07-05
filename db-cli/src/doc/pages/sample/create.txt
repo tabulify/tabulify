@@ -1,3 +1,30 @@
 ====== Bytle Db - Sample Schema Create ======
 
 
+===== About =====
+''sample create'' is an operation of the [[sample|sample module]] where you can create a sample schema (ie a list of [[table:table|tables]]).
+
+===== Syntax =====
+<unit name="Syntax">
+<code dos>
+db sample create --help
+</code>
+<console>
+13:33:03 - INFO - (conf) word was not found
+13:33:03 - INFO - (help) word was found with the value: true
+
+Create sample database schema.
+
+Syntax:
+
+	db sample create <schemaName>
+
+where:
+
+	Args:
+		* schemaName                    The name of the sample schema. One of tpcds, tpcds-dwh, tpcds-stg, tpcds-store-sales, BytleSchema
+</console>
+</unit>
+where:
+  * ''tpcds'' schema's are the schema of the [[tpcds|tpc-ds benchmark]] 
+  * ''BytleSchema'' is a simple sales schema used internally for testing purpose

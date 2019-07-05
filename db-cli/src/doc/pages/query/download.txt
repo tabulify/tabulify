@@ -11,9 +11,6 @@ The ''download'' action of the [[query|query]] module permits to download the da
 db query download --help
 </code>
 <console>
-07:12:31 - INFO - (conf) word was not found
-07:12:31 - INFO - (help) word was found with the value: true
-
 download a query into a file
 
 Syntax:

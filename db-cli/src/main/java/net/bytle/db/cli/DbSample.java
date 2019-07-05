@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.CREATE_COMMAND;
+import static net.bytle.db.cli.Words.DROP_COMMAND;
 import static net.bytle.db.cli.Words.FILL_COMMAND;
 
 
@@ -28,6 +29,8 @@ public class DbSample {
                 .setDescription("create a sample schema");
         cliCommand.commandOf(Words.FILL_COMMAND)
                 .setDescription("fill with data a sample schema");
+        cliCommand.commandOf(Words.DROP_COMMAND)
+                .setDescription("drop the tables of a sample schema");
 
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -41,6 +44,9 @@ public class DbSample {
                         break;
                     case CREATE_COMMAND:
                         DbSampleCreate.run(command, args);
+                        break;
+                    case DROP_COMMAND:
+                        DbSampleDrop.run(command, args);
                         break;
                     default:
                         LOGGER.severe("The command (" + command + ") is unknown.");

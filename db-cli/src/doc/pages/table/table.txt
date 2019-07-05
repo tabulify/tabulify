@@ -23,7 +23,7 @@ db table --help
 <console>
 operations on one or several tables
 
-Syntax: (1)
+Syntax:
 
 	db table <command>
 

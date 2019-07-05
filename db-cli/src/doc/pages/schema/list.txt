@@ -11,25 +11,37 @@
 db schema list --help
 </code>
 <console>
+09:58:17 - INFO - (conf) word was not found
+09:58:17 - INFO - (help) word was found with the value: true
+
+List schemas
+
+Syntax:
+
+	db schema list <schemaName|pattern...>
+
+where:
+
+	Args:
+		* schemaName|pattern...         Names of a schema or regular expression patterns
 </console>
 </unit>
 
 ===== Example =====
 
 
-<unit>
-  * First we [[sample:create|create a sample schema]] to get tables in the schema
-<code dos>
-db sample create tpcds
-</code>
-<console>
-</console>
-</unit>
-  * Then you can list the table with the following command
+You can list the schema with the following command:
 <unit>
 <code dos>
 db schema list
 </code>
+<wrap important>Because Sqlite is the default database and is not supporting any schema, there is no schemas found.</wrap>
 <console>
+13:18:28 - INFO - Driver org.sqlite.JDBC loaded
+13:18:28 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/gerard/AppData/Local/db/db.db)
+13:18:28 - INFO - Connected !
+13:18:28 - WARNING - Schemas are not supported on this database.
+No schemas found
+13:18:28 - INFO - Bye !
 </console>
 </unit>

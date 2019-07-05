@@ -13,6 +13,17 @@
 db schema --help
 </code>
 <console>
+operations on a schema
+
+Syntax:
+
+	db schema <command>
+
+where:
+
+	Command (is one of):
+		* fill                          fill a schema with generated data
+		* list                          list schemas
 </console>
 </unit>
 where the submodule are:

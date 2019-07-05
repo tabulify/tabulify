@@ -23,7 +23,7 @@ db module ...
   * [[database|database]] - operations on a database
   * [[query:query|query]] - operations on one or more queries
   * [[sample:sample|sample]] - operations on sample schema (database)
-  * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)
+  * [[fkey:fkey|fkey]] - operations on foreign keys (ie relationship between tables)
 
 
 To get the list of modules for your [[db|db]] version from the console, you would call the [[help|help]] on the [[db|db]] cli.
@@ -35,9 +35,9 @@ Example:
 db --help
 </code>
 <console>
-A Sdk for the database
+A command line utility tool for every database
 
-Syntax: (1)
+Syntax:
 
 	db [options|flags] <command>
 
@@ -51,7 +51,7 @@ where:
 		* sample                        create and fill data into a sample schema
 		* fkey                          operations on foreign key (ie on relation and constraints between tables)
 
-	Local: (1)
+	Local
 		* -h,--help                     Print this help
 		* --conf <path>                 The path to the config file
 		* --db.target.url <value>       No Description available
@@ -75,7 +75,7 @@ db table --help
 <console>
 operations on one or several tables
 
-Syntax: (1)
+Syntax:
 
 	db table <command>
 
@@ -100,4 +100,4 @@ You can also get help on this site directly via this links:
   * [[database|database]] - operations on a database
   * [[query:query|query]] - operations on one or more queries
   * [[sample:sample|sample]] - operations on sample schema (database)
-  * [[fkey|fkey]] - operations on foreign keys (ie relationship between tables)
+  * [[fkey:fkey|fkey]] - operations on foreign keys (ie relationship between tables)

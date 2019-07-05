@@ -41,8 +41,8 @@ public class DbForeignKeyList {
                 .setDescription(description);
 
         cliCommand.argOf(ARG_NAME)
-                .setDescription("Names of table or regular expression patterns")
-                .setDefaultValue(".*");
+                .setDescription("Names of table or glob patterns")
+                .setDefaultValue("*");
 
         cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
         cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);

@@ -35,9 +35,9 @@ public class DbSchemaList {
                 .setDescription(description);
 
         cliCommand.argOf(ARG_NAME)
-                .setDescription("Names of a schema or regular expression patterns")
+                .setDescription("Names of a schema or a glob patterns")
                 .setMandatory(true)
-                .setDefaultValue(".*");
+                .setDefaultValue("*");
 
         cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
         cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);

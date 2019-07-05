@@ -18,16 +18,16 @@ db table download --help
 <console>
 Download a table into a file.
 
-Syntax: (1)
+Syntax:
 
 	db table download [options|flags] <TableName>
 
 where:
 
-	Local: (1)
+	Local
 		* -o,--output <path>            defines the directory of the downloaded file (Default: currentWorkingDirectory)
 
-	Local: (1)
+	Local
 		* --cif <value>                 If present, the values of clob columns will be written in a apart file
 
 	Args:

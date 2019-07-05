@@ -25,12 +25,12 @@ where:
 db --help
 </code>
 <console>
-16:35:48 - INFO - (conf) word was not found
-16:35:48 - INFO - (help) word was found with the value: true
+09:48:35 - INFO - (conf) word was not found
+09:48:35 - INFO - (help) word was found with the value: true
 
-A Sdk for the database
+A command line utility tool for every database
 
-Syntax: (1)
+Syntax:
 
 	db [options|flags] <command>
 
@@ -44,7 +44,7 @@ where:
 		* sample                        create and fill data into a sample schema
 		* fkey                          operations on foreign key (ie on relation and constraints between tables)
 
-	Local: (1)
+	Local
 		* -h,--help                     Print this help
 		* --conf <path>                 The path to the config file
 		* --db.target.url <value>       No Description available

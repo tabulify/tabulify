@@ -21,11 +21,15 @@ db table load --help
 <console>
 Load a file into a database.
 
-Syntax: (1)
+Syntax:
 
-	db table load <File.csv>
+	db table load [options|flags] <File.csv>
 
 where:
+
+	Connection
+		* --db.name <value>             defines the database name. 
+A database connection is defined through its name. To know more about, see the command `db database --help`
 
 	Args:
 		* File.csv                      A CSV file
@@ -61,13 +65,19 @@ db table load %BYTLE_DB_HOME%\doc\files\characters.csv
 db table describe characters
 </code>
 <console>
+09:58:19 - INFO - Driver org.sqlite.JDBC loaded
+09:58:19 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/gerard/AppData/Local/db/db.db)
+09:58:19 - INFO - Connected !
+
 #   Colum Name       Data Type   Key   Not Null   Default   Auto Increment   Description   
 -   --------------   ---------   ---   --------   -------   --------------   -----------   
 1   Id               VARCHAR                                                               
 2   Last Name        VARCHAR                                                               
 3   First Name       VARCHAR                                                               
 4   Birth Date       VARCHAR                                                               
-5   Wikipedia Page   VARCHAR
+5   Wikipedia Page   VARCHAR                                                               
+
+09:58:20 - INFO - Bye !
 </console>
 </unit>
 

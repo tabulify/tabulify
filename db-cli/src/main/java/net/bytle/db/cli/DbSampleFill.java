@@ -20,6 +20,7 @@ import net.bytle.db.tpc.TpcdsDgen;
 
 import java.sql.Types;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class DbSampleFill {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String ARG_NAME = "schemaName";
-    public static final String SCALE = "scale";
+    static final String SCALE = "scale";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -60,7 +61,7 @@ public class DbSampleFill {
                 .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
                 .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
 
-        // Placed here to show the args at the begining of the output
+        // Placed here to show the args at the beginning of the output
         Double scale = cliParser.getDouble(SCALE);
 
         String sampleName = cliParser.getString(ARG_NAME);
@@ -103,22 +104,32 @@ public class DbSampleFill {
                 .addColumn("Tables Loaded")
                 .addColumn("Rows Inserted", Types.INTEGER);
 
-        InsertStream insertStream = Tables.getTableInsertStream(printTable);
+        InsertStream printTableInsertStream = Tables.getTableInsertStream(printTable);
         for (InsertStreamListener insertStreamListener : insertStreamListeners) {
-            insertStream.insert(
+            printTableInsertStream.insert(
                     insertStreamListener.getInsertStream().getTableDef().getName()
                     , insertStreamListener.getRowCount()
             );
         }
-        insertStream.close();
+        printTableInsertStream.close();
 
         System.out.println("Results:");
         MemorySelectStream outputStream = Tables.getTableOutputStream(printTable);
         Streams.print(outputStream);
         outputStream.close();
 
+        // Error ?
+        Integer errors = insertStreamListeners
+                .stream()
+                .mapToInt(s -> s.getExitStatus()>0?1:0)
+                .sum();
 
-        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
+        if (errors>0){
+            LOGGER.severe(errors+" errors were seen during data loading");
+            System.exit(1);
+        } else {
+            LOGGER.info("No errors were seen");
+        }
         LOGGER.info("Bye !");
 
 

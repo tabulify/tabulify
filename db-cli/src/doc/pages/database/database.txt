@@ -2,11 +2,31 @@
 
 
 ===== About =====
-For Bytle, a database is an application that store data in a relational format. Bytle-Db call this structure a ''tabular''.
+''Database'' is a [[..:module|Bytle-Db module]] that helps you manage connections to database.
 
 
-[[..:db|Bytle Db]] helps you operate on this tables with the following [[..:module|module]]:
-  * [[..:table:|Table]] for a table stored in a relational database and supporting its operations through SQL.
-  * [[..:csv:|Csv]] for a table stored in a CSV format
-  * [[..:excel:|Excel]] for a table stored in a Excel format
+===== Syntax =====
+<unit>
+<code dos>
+db database --help
+</code>
+<console>
+06:05:44 - INFO - (conf) word was not found
+06:05:44 - INFO - (help) word was found with the value: true
+
+Database management
+
+Syntax:
+
+	db database <command>
+
+where:
+
+	Command (is one of):
+		* add                           add a database
+		* list                          list the databases
+		* info                          show database information
+</console>
+</unit>
+
 

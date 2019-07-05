@@ -17,9 +17,9 @@ import java.util.Map;
 public class DocTestUnit {
 
     private String code;
-    private String expectation;
+    private String console;
     private String language;
-    private Integer[] expectationLocation;
+    private Integer[] consoleLocation;
     private Map<String, String> env = new HashMap<>();
     private List<DocTestFileBlock> files = new ArrayList<DocTestFileBlock>();
     private Integer[] codeLocation;
@@ -33,7 +33,7 @@ public class DocTestUnit {
 
     public String getCode() {
 
-        return this.code != null ? this.code.trim() : null;
+        return this.code;
 
     }
 
@@ -44,14 +44,18 @@ public class DocTestUnit {
 
     }
 
+    /**
+     *
+     * @return the console content
+     */
     public String getConsole() {
 
-        return this.expectation != null ? this.expectation.trim() : null;
+        return this.console != null ? this.console.trim() : "";
 
     }
 
     public DocTestUnit setConsoleContent(String expectation) {
-        this.expectation = expectation;
+        this.console = expectation;
         return this;
     }
 
@@ -64,13 +68,16 @@ public class DocTestUnit {
         return this;
     }
 
-
+    /**
+     * Location of the console in the file
+     * @return
+     */
     public Integer[] getConsoleLocation() {
-        return expectationLocation;
+        return consoleLocation;
     }
 
-    public DocTestUnit setConsoleLocation(Integer[] expectationLocation) {
-        this.expectationLocation = expectationLocation;
+    public DocTestUnit setConsoleLocation(Integer[] consoleLocation) {
+        this.consoleLocation = consoleLocation;
         return this;
     }
 

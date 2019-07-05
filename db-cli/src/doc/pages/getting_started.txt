@@ -26,9 +26,9 @@ To install [[db|Bytle-Db]] on your computer, follow the instructions on the [[in
 db --help
 </code>
 <console>
-A Sdk for the database
+A command line utility tool for every database
 
-Syntax: (1)
+Syntax:
 
 	db [options|flags] <command>
 
@@ -42,7 +42,7 @@ where:
 		* sample                        create and fill data into a sample schema
 		* fkey                          operations on foreign key (ie on relation and constraints between tables)
 
-	Local: (1)
+	Local
 		* -h,--help                     Print this help
 		* --conf <path>                 The path to the config file
 		* --db.target.url <value>       No Description available
@@ -70,14 +70,20 @@ To list all ''tables'' in your current database schema, you need to perform the 
 db table list
 </code>
 <console>
+09:48:35 - INFO - Driver org.sqlite.JDBC loaded
+09:48:35 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/gerard/AppData/Local/db/db.db)
+09:48:35 - INFO - Connected !
+
 No tables found
+
+09:48:35 - INFO - Bye !
 </console>
 </unit>
 
 There is obviously no table in our default database. We will create some below by creating a [[sample:sample|sample database]].
 
 ===== Creating a sample schema =====
-The [[sample:sample|sample module]] provides several sample database. We will create the [[tpcds|tpcds]] datawarehouse part with the ''create'' command.
+The [[sample:sample|sample module]] provides several sample database. We will create the [[sample:tpcds|tpcds]] datawarehouse part with the ''create'' command.
 
 <unit>
 <code dos>
@@ -120,11 +126,11 @@ That's why we see at the end of the list most of the fact tables. They are creat
 db table count
 </code>
 <console>
-25 tables
+0 tables
 </console>
 </unit>
 ===== Filling the schema with data =====
-To fill our schema with generated data, we will use the ''fill'' sub-command of [[sample:sample|sample]].
+To fill our schema with generated data, we will use the [[sample:fill|fill sub-command of the sample module]].
 
 <unit>
 <code dos>
@@ -157,6 +163,258 @@ The table (web_sales) exists in the target database (target)
 The table (store_returns) exists in the target database (target)
 The table (catalog_returns) exists in the target database (target)
 The table (web_returns) exists in the target database (target)
+09:48:37 - INFO - Loading 25 Tpcds tables
+09:48:37 - INFO - Loading the tables into the database (target)
+09:48:37 - INFO - Loading the table "reason"
+09:48:38 - INFO - The driver is supporting batch update. 
+09:48:38 - INFO - The driver is supporting named parameters.
+09:48:38 - INFO - Insert Statement:INSERT INTO "reason" ("r_reason_sk", "r_reason_id", "r_reason_desc") VALUES (?, ?, ?)
+09:48:38 - INFO - commit in the table "reason"
+09:48:38 - INFO - 1 rows loaded (Total) in the table "reason"
+09:48:38 - INFO - 1 commit(s) (Total) in the table "reason"
+09:48:38 - INFO - 1 batches(s) (Total) in the table "reason"
+09:48:38 - INFO - Loading the table "customer_demographics"
+09:48:38 - INFO - The driver is supporting batch update. 
+09:48:38 - INFO - The driver is supporting named parameters.
+09:48:38 - INFO - Insert Statement:INSERT INTO "customer_demographics" ("cd_demo_sk", "cd_gender", "cd_marital_status", "cd_education_status", "cd_purchase_estimate", "cd_credit_rating", "cd_dep_count", "cd_dep_employed_count", "cd_dep_college_count") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:38 - INFO - 50000 rows loaded in the table "customer_demographics"
+09:48:39 - INFO - 100000 rows loaded in the table "customer_demographics"
+09:48:39 - INFO - 150000 rows loaded in the table "customer_demographics"
+09:48:39 - INFO - 200000 rows loaded in the table "customer_demographics"
+09:48:40 - INFO - 250000 rows loaded in the table "customer_demographics"
+09:48:40 - INFO - 300000 rows loaded in the table "customer_demographics"
+09:48:40 - INFO - 350000 rows loaded in the table "customer_demographics"
+09:48:41 - INFO - 400000 rows loaded in the table "customer_demographics"
+09:48:41 - INFO - 450000 rows loaded in the table "customer_demographics"
+09:48:41 - INFO - 500000 rows loaded in the table "customer_demographics"
+09:48:42 - INFO - 550000 rows loaded in the table "customer_demographics"
+09:48:42 - INFO - 600000 rows loaded in the table "customer_demographics"
+09:48:42 - INFO - 650000 rows loaded in the table "customer_demographics"
+09:48:43 - INFO - 700000 rows loaded in the table "customer_demographics"
+09:48:43 - INFO - 750000 rows loaded in the table "customer_demographics"
+09:48:43 - INFO - 800000 rows loaded in the table "customer_demographics"
+09:48:44 - INFO - 850000 rows loaded in the table "customer_demographics"
+09:48:44 - INFO - 900000 rows loaded in the table "customer_demographics"
+09:48:44 - INFO - 950000 rows loaded in the table "customer_demographics"
+09:48:45 - INFO - commit in the table "customer_demographics"
+09:48:45 - INFO - 1000000 rows loaded in the table "customer_demographics"
+09:48:45 - INFO - 1050000 rows loaded in the table "customer_demographics"
+09:48:46 - INFO - 1100000 rows loaded in the table "customer_demographics"
+09:48:46 - INFO - 1150000 rows loaded in the table "customer_demographics"
+09:48:46 - INFO - 1200000 rows loaded in the table "customer_demographics"
+09:48:46 - INFO - 1250000 rows loaded in the table "customer_demographics"
+09:48:47 - INFO - 1300000 rows loaded in the table "customer_demographics"
+09:48:47 - INFO - 1350000 rows loaded in the table "customer_demographics"
+09:48:47 - INFO - 1400000 rows loaded in the table "customer_demographics"
+09:48:48 - INFO - 1450000 rows loaded in the table "customer_demographics"
+09:48:48 - INFO - 1500000 rows loaded in the table "customer_demographics"
+09:48:48 - INFO - 1550000 rows loaded in the table "customer_demographics"
+09:48:49 - INFO - 1600000 rows loaded in the table "customer_demographics"
+09:48:49 - INFO - 1650000 rows loaded in the table "customer_demographics"
+09:48:49 - INFO - 1700000 rows loaded in the table "customer_demographics"
+09:48:49 - INFO - 1750000 rows loaded in the table "customer_demographics"
+09:48:50 - INFO - 1800000 rows loaded in the table "customer_demographics"
+09:48:50 - INFO - 1850000 rows loaded in the table "customer_demographics"
+09:48:50 - INFO - 1900000 rows loaded in the table "customer_demographics"
+09:48:51 - INFO - commit in the table "customer_demographics"
+09:48:51 - INFO - 1920800 rows loaded (Total) in the table "customer_demographics"
+09:48:51 - INFO - 2 commit(s) (Total) in the table "customer_demographics"
+09:48:51 - INFO - 193 batches(s) (Total) in the table "customer_demographics"
+09:48:51 - INFO - Loading the table "date_dim"
+09:48:51 - INFO - The driver is supporting batch update. 
+09:48:51 - INFO - The driver is supporting named parameters.
+09:48:51 - INFO - Insert Statement:INSERT INTO "date_dim" ("d_date_sk", "d_date_id", "d_date", "d_month_seq", "d_week_seq", "d_quarter_seq", "d_year", "d_dow", "d_moy", "d_dom", "d_qoy", "d_fy_year", "d_fy_quarter_seq", "d_fy_week_seq", "d_day_name", "d_quarter_name", "d_holiday", "d_weekend", "d_following_holiday", "d_first_dom", "d_last_dom", "d_same_day_ly", "d_same_day_lq", "d_current_day", "d_current_week", "d_current_month", "d_current_quarter", "d_current_year") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:53 - INFO - 50000 rows loaded in the table "date_dim"
+09:48:54 - INFO - commit in the table "date_dim"
+09:48:54 - INFO - 73049 rows loaded (Total) in the table "date_dim"
+09:48:54 - INFO - 1 commit(s) (Total) in the table "date_dim"
+09:48:54 - INFO - 8 batches(s) (Total) in the table "date_dim"
+09:48:54 - INFO - Loading the table "customer_address"
+09:48:54 - INFO - The driver is supporting batch update. 
+09:48:54 - INFO - The driver is supporting named parameters.
+09:48:54 - INFO - Insert Statement:INSERT INTO "customer_address" ("ca_address_sk", "ca_address_id", "ca_street_number", "ca_street_name", "ca_street_type", "ca_suite_number", "ca_city", "ca_county", "ca_state", "ca_zip", "ca_country", "ca_gmt_offset", "ca_location_type") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:54 - INFO - commit in the table "customer_address"
+09:48:54 - INFO - 1000 rows loaded (Total) in the table "customer_address"
+09:48:54 - INFO - 1 commit(s) (Total) in the table "customer_address"
+09:48:54 - INFO - 1 batches(s) (Total) in the table "customer_address"
+09:48:54 - INFO - Loading the table "income_band"
+09:48:54 - INFO - The driver is supporting batch update. 
+09:48:54 - INFO - The driver is supporting named parameters.
+09:48:54 - INFO - Insert Statement:INSERT INTO "income_band" ("ib_income_band_sk", "ib_lower_bound", "ib_upper_bound") VALUES (?, ?, ?)
+09:48:54 - INFO - commit in the table "income_band"
+09:48:54 - INFO - 20 rows loaded (Total) in the table "income_band"
+09:48:54 - INFO - 1 commit(s) (Total) in the table "income_band"
+09:48:54 - INFO - 1 batches(s) (Total) in the table "income_band"
+09:48:54 - INFO - Loading the table "item"
+09:48:55 - INFO - The driver is supporting batch update. 
+09:48:55 - INFO - The driver is supporting named parameters.
+09:48:55 - INFO - Insert Statement:INSERT INTO "item" ("i_item_sk", "i_item_id", "i_rec_start_date", "i_rec_end_date", "i_item_desc", "i_current_price", "i_wholesale_cost", "i_brand_id", "i_brand", "i_class_id", "i_class", "i_category_id", "i_category", "i_manufact_id", "i_manufact", "i_size", "i_formulation", "i_color", "i_units", "i_container", "i_manager_id", "i_product_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:55 - INFO - commit in the table "item"
+09:48:55 - INFO - 2000 rows loaded (Total) in the table "item"
+09:48:55 - INFO - 1 commit(s) (Total) in the table "item"
+09:48:55 - INFO - 1 batches(s) (Total) in the table "item"
+09:48:55 - INFO - Loading the table "ship_mode"
+09:48:55 - INFO - The driver is supporting batch update. 
+09:48:55 - INFO - The driver is supporting named parameters.
+09:48:55 - INFO - Insert Statement:INSERT INTO "ship_mode" ("sm_ship_mode_sk", "sm_ship_mode_id", "sm_type", "sm_code", "sm_carrier", "sm_contract") VALUES (?, ?, ?, ?, ?, ?)
+09:48:55 - INFO - commit in the table "ship_mode"
+09:48:55 - INFO - 20 rows loaded (Total) in the table "ship_mode"
+09:48:55 - INFO - 1 commit(s) (Total) in the table "ship_mode"
+09:48:55 - INFO - 1 batches(s) (Total) in the table "ship_mode"
+09:48:55 - INFO - Loading the table "warehouse"
+09:48:55 - INFO - The driver is supporting batch update. 
+09:48:55 - INFO - The driver is supporting named parameters.
+09:48:55 - INFO - Insert Statement:INSERT INTO "warehouse" ("w_warehouse_sk", "w_warehouse_id", "w_warehouse_name", "w_warehouse_sq_ft", "w_street_number", "w_street_name", "w_street_type", "w_suite_number", "w_city", "w_county", "w_state", "w_zip", "w_country", "w_gmt_offset") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:55 - INFO - commit in the table "warehouse"
+09:48:55 - INFO - 1 rows loaded (Total) in the table "warehouse"
+09:48:55 - INFO - 1 commit(s) (Total) in the table "warehouse"
+09:48:55 - INFO - 1 batches(s) (Total) in the table "warehouse"
+09:48:55 - INFO - Loading the table "time_dim"
+09:48:55 - INFO - The driver is supporting batch update. 
+09:48:55 - INFO - The driver is supporting named parameters.
+09:48:55 - INFO - Insert Statement:INSERT INTO "time_dim" ("t_time_sk", "t_time_id", "t_time", "t_hour", "t_minute", "t_second", "t_am_pm", "t_shift", "t_sub_shift", "t_meal_time") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:55 - INFO - 50000 rows loaded in the table "time_dim"
+09:48:56 - INFO - commit in the table "time_dim"
+09:48:56 - INFO - 86400 rows loaded (Total) in the table "time_dim"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "time_dim"
+09:48:56 - INFO - 9 batches(s) (Total) in the table "time_dim"
+09:48:56 - INFO - Loading the table "dbgen_version"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "dbgen_version" ("dv_version", "dv_create_date", "dv_create_time", "dv_cmdline_args") VALUES (?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "dbgen_version"
+09:48:56 - INFO - 1 rows loaded (Total) in the table "dbgen_version"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "dbgen_version"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "dbgen_version"
+09:48:56 - INFO - Loading the table "web_site"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "web_site" ("web_site_sk", "web_site_id", "web_rec_start_date", "web_rec_end_date", "web_name", "web_open_date_sk", "web_close_date_sk", "web_class", "web_manager", "web_mkt_id", "web_mkt_class", "web_mkt_desc", "web_market_manager", "web_company_id", "web_company_name", "web_street_number", "web_street_name", "web_street_type", "web_suite_number", "web_city", "web_county", "web_state", "web_zip", "web_country", "web_gmt_offset", "web_tax_percentage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "web_site"
+09:48:56 - INFO - 2 rows loaded (Total) in the table "web_site"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "web_site"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "web_site"
+09:48:56 - INFO - Loading the table "store"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "store" ("s_store_sk", "s_store_id", "s_rec_start_date", "s_rec_end_date", "s_closed_date_sk", "s_store_name", "s_number_employees", "s_floor_space", "s_hours", "s_manager", "s_market_id", "s_geography_class", "s_market_desc", "s_market_manager", "s_division_id", "s_division_name", "s_company_id", "s_company_name", "s_street_number", "s_street_name", "s_street_type", "s_suite_number", "s_city", "s_county", "s_state", "s_zip", "s_country", "s_gmt_offset", "s_tax_precentage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "store"
+09:48:56 - INFO - 2 rows loaded (Total) in the table "store"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "store"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "store"
+09:48:56 - INFO - Loading the table "call_center"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "call_center" ("cc_call_center_sk", "cc_call_center_id", "cc_rec_start_date", "cc_rec_end_date", "cc_closed_date_sk", "cc_open_date_sk", "cc_name", "cc_class", "cc_employees", "cc_sq_ft", "cc_hours", "cc_manager", "cc_mkt_id", "cc_mkt_class", "cc_mkt_desc", "cc_market_manager", "cc_division", "cc_division_name", "cc_company", "cc_company_name", "cc_street_number", "cc_street_name", "cc_street_type", "cc_suite_number", "cc_city", "cc_county", "cc_state", "cc_zip", "cc_country", "cc_gmt_offset", "cc_tax_percentage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "call_center"
+09:48:56 - INFO - 2 rows loaded (Total) in the table "call_center"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "call_center"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "call_center"
+09:48:56 - INFO - Loading the table "catalog_page"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "catalog_page" ("cp_catalog_page_sk", "cp_catalog_page_id", "cp_start_date_sk", "cp_end_date_sk", "cp_department", "cp_catalog_number", "cp_catalog_page_number", "cp_description", "cp_type") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "catalog_page"
+09:48:56 - INFO - 11718 rows loaded (Total) in the table "catalog_page"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "catalog_page"
+09:48:56 - INFO - 2 batches(s) (Total) in the table "catalog_page"
+09:48:56 - INFO - Loading the table "household_demographics"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "household_demographics" ("hd_demo_sk", "hd_income_band_sk", "hd_buy_potential", "hd_dep_count", "hd_vehicle_count") VALUES (?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "household_demographics"
+09:48:56 - INFO - 7200 rows loaded (Total) in the table "household_demographics"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "household_demographics"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "household_demographics"
+09:48:56 - INFO - Loading the table "promotion"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "promotion" ("p_promo_sk", "p_promo_id", "p_start_date_sk", "p_end_date_sk", "p_item_sk", "p_cost", "p_response_target", "p_promo_name", "p_channel_dmail", "p_channel_email", "p_channel_catalog", "p_channel_tv", "p_channel_radio", "p_channel_press", "p_channel_event", "p_channel_demo", "p_channel_details", "p_purpose", "p_discount_active") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:56 - INFO - commit in the table "promotion"
+09:48:56 - INFO - 3 rows loaded (Total) in the table "promotion"
+09:48:56 - INFO - 1 commit(s) (Total) in the table "promotion"
+09:48:56 - INFO - 1 batches(s) (Total) in the table "promotion"
+09:48:56 - INFO - Loading the table "inventory"
+09:48:56 - INFO - The driver is supporting batch update. 
+09:48:56 - INFO - The driver is supporting named parameters.
+09:48:56 - INFO - Insert Statement:INSERT INTO "inventory" ("inv_date_sk", "inv_item_sk", "inv_warehouse_sk", "inv_quantity_on_hand") VALUES (?, ?, ?, ?)
+09:48:56 - INFO - 50000 rows loaded in the table "inventory"
+09:48:57 - INFO - 100000 rows loaded in the table "inventory"
+09:48:57 - INFO - 150000 rows loaded in the table "inventory"
+09:48:57 - INFO - 200000 rows loaded in the table "inventory"
+09:48:57 - INFO - 250000 rows loaded in the table "inventory"
+09:48:57 - INFO - commit in the table "inventory"
+09:48:57 - INFO - 261261 rows loaded (Total) in the table "inventory"
+09:48:57 - INFO - 1 commit(s) (Total) in the table "inventory"
+09:48:57 - INFO - 27 batches(s) (Total) in the table "inventory"
+09:48:57 - INFO - Loading the table "customer"
+09:48:57 - INFO - The driver is supporting batch update. 
+09:48:57 - INFO - The driver is supporting named parameters.
+09:48:57 - INFO - Insert Statement:INSERT INTO "customer" ("c_customer_sk", "c_customer_id", "c_current_cdemo_sk", "c_current_hdemo_sk", "c_current_addr_sk", "c_first_shipto_date_sk", "c_first_sales_date_sk", "c_salutation", "c_first_name", "c_last_name", "c_preferred_cust_flag", "c_birth_day", "c_birth_month", "c_birth_year", "c_birth_country", "c_login", "c_email_address", "c_last_review_date_sk") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:57 - INFO - commit in the table "customer"
+09:48:57 - INFO - 1000 rows loaded (Total) in the table "customer"
+09:48:57 - INFO - 1 commit(s) (Total) in the table "customer"
+09:48:57 - INFO - 1 batches(s) (Total) in the table "customer"
+09:48:57 - INFO - Loading the table "web_page"
+09:48:57 - INFO - The driver is supporting batch update. 
+09:48:57 - INFO - The driver is supporting named parameters.
+09:48:57 - INFO - Insert Statement:INSERT INTO "web_page" ("wp_web_page_sk", "wp_web_page_id", "wp_rec_start_date", "wp_rec_end_date", "wp_creation_date_sk", "wp_access_date_sk", "wp_autogen_flag", "wp_customer_sk", "wp_url", "wp_type", "wp_char_count", "wp_link_count", "wp_image_count", "wp_max_ad_count") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:57 - INFO - commit in the table "web_page"
+09:48:57 - INFO - 2 rows loaded (Total) in the table "web_page"
+09:48:57 - INFO - 1 commit(s) (Total) in the table "web_page"
+09:48:57 - INFO - 1 batches(s) (Total) in the table "web_page"
+09:48:57 - INFO - Loading the table "store_sales"
+09:48:57 - INFO - The driver is supporting batch update. 
+09:48:57 - INFO - The driver is supporting named parameters.
+09:48:57 - INFO - Insert Statement:INSERT INTO "store_sales" ("ss_sold_date_sk", "ss_sold_time_sk", "ss_item_sk", "ss_customer_sk", "ss_cdemo_sk", "ss_hdemo_sk", "ss_addr_sk", "ss_store_sk", "ss_promo_sk", "ss_ticket_number", "ss_quantity", "ss_wholesale_cost", "ss_list_price", "ss_sales_price", "ss_ext_discount_amt", "ss_ext_sales_price", "ss_ext_wholesale_cost", "ss_ext_list_price", "ss_ext_tax", "ss_coupon_amt", "ss_net_paid", "ss_net_paid_inc_tax", "ss_net_profit") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:57 - INFO - The driver is supporting batch update. 
+09:48:57 - INFO - The driver is supporting named parameters.
+09:48:57 - INFO - Insert Statement:INSERT INTO "store_returns" ("sr_returned_date_sk", "sr_return_time_sk", "sr_item_sk", "sr_customer_sk", "sr_cdemo_sk", "sr_hdemo_sk", "sr_addr_sk", "sr_store_sk", "sr_reason_sk", "sr_ticket_number", "sr_return_quantity", "sr_return_amt", "sr_return_tax", "sr_return_amt_inc_tax", "sr_fee", "sr_return_ship_cost", "sr_refunded_cash", "sr_reversed_charge", "sr_store_credit", "sr_net_loss") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:48:59 - INFO - 50000 rows loaded in the table "store_sales"
+09:49:01 - INFO - 100000 rows loaded in the table "store_sales"
+09:49:02 - INFO - commit in the table "store_sales"
+09:49:03 - INFO - commit in the table "store_sales"
+09:49:03 - INFO - 120527 rows loaded (Total) in the table "store_sales"
+09:49:03 - INFO - 2 commit(s) (Total) in the table "store_sales"
+09:49:03 - INFO - 14 batches(s) (Total) in the table "store_sales"
+09:49:03 - INFO - commit in the table "store_returns"
+09:49:03 - INFO - 11925 rows loaded (Total) in the table "store_returns"
+09:49:03 - INFO - 1 commit(s) (Total) in the table "store_returns"
+09:49:03 - INFO - 2 batches(s) (Total) in the table "store_returns"
+09:49:03 - INFO - Loading the table "catalog_sales"
+09:49:03 - INFO - The driver is supporting batch update. 
+09:49:03 - INFO - The driver is supporting named parameters.
+09:49:03 - INFO - Insert Statement:INSERT INTO "catalog_sales" ("cs_sold_date_sk", "cs_sold_time_sk", "cs_ship_date_sk", "cs_bill_customer_sk", "cs_bill_cdemo_sk", "cs_bill_hdemo_sk", "cs_bill_addr_sk", "cs_ship_customer_sk", "cs_ship_cdemo_sk", "cs_ship_hdemo_sk", "cs_ship_addr_sk", "cs_call_center_sk", "cs_catalog_page_sk", "cs_ship_mode_sk", "cs_warehouse_sk", "cs_item_sk", "cs_promo_sk", "cs_order_number", "cs_quantity", "cs_wholesale_cost", "cs_list_price", "cs_sales_price", "cs_ext_discount_amt", "cs_ext_sales_price", "cs_ext_wholesale_cost", "cs_ext_list_price", "cs_ext_tax", "cs_coupon_amt", "cs_ext_ship_cost", "cs_net_paid", "cs_net_paid_inc_tax", "cs_net_paid_inc_ship", "cs_net_paid_inc_ship_tax", "cs_net_profit") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:49:03 - INFO - The driver is supporting batch update. 
+09:49:03 - INFO - The driver is supporting named parameters.
+09:49:03 - INFO - Insert Statement:INSERT INTO "catalog_returns" ("cr_returned_date_sk", "cr_returned_time_sk", "cr_item_sk", "cr_refunded_customer_sk", "cr_refunded_cdemo_sk", "cr_refunded_hdemo_sk", "cr_refunded_addr_sk", "cr_returning_customer_sk", "cr_returning_cdemo_sk", "cr_returning_hdemo_sk", "cr_returning_addr_sk", "cr_call_center_sk", "cr_catalog_page_sk", "cr_ship_mode_sk", "cr_warehouse_sk", "cr_reason_sk", "cr_order_number", "cr_return_quantity", "cr_return_amount", "cr_return_tax", "cr_return_amt_inc_tax", "cr_fee", "cr_return_ship_cost", "cr_refunded_cash", "cr_reversed_charge", "cr_store_credit", "cr_net_loss") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:49:07 - INFO - 50000 rows loaded in the table "catalog_sales"
+09:49:10 - INFO - commit in the table "catalog_sales"
+09:49:10 - INFO - 89807 rows loaded (Total) in the table "catalog_sales"
+09:49:10 - INFO - 1 commit(s) (Total) in the table "catalog_sales"
+09:49:10 - INFO - 9 batches(s) (Total) in the table "catalog_sales"
+09:49:10 - INFO - commit in the table "catalog_returns"
+09:49:10 - INFO - 8923 rows loaded (Total) in the table "catalog_returns"
+09:49:10 - INFO - 1 commit(s) (Total) in the table "catalog_returns"
+09:49:10 - INFO - 1 batches(s) (Total) in the table "catalog_returns"
+09:49:10 - INFO - Loading the table "web_sales"
+09:49:10 - INFO - The driver is supporting batch update. 
+09:49:10 - INFO - The driver is supporting named parameters.
+09:49:10 - INFO - Insert Statement:INSERT INTO "web_sales" ("ws_sold_date_sk", "ws_sold_time_sk", "ws_ship_date_sk", "ws_item_sk", "ws_bill_customer_sk", "ws_bill_cdemo_sk", "ws_bill_hdemo_sk", "ws_bill_addr_sk", "ws_ship_customer_sk", "ws_ship_cdemo_sk", "ws_ship_hdemo_sk", "ws_ship_addr_sk", "ws_web_page_sk", "ws_web_site_sk", "ws_ship_mode_sk", "ws_warehouse_sk", "ws_promo_sk", "ws_order_number", "ws_quantity", "ws_wholesale_cost", "ws_list_price", "ws_sales_price", "ws_ext_discount_amt", "ws_ext_sales_price", "ws_ext_wholesale_cost", "ws_ext_list_price", "ws_ext_tax", "ws_coupon_amt", "ws_ext_ship_cost", "ws_net_paid", "ws_net_paid_inc_tax", "ws_net_paid_inc_ship", "ws_net_paid_inc_ship_tax", "ws_net_profit") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:49:10 - INFO - The driver is supporting batch update. 
+09:49:10 - INFO - The driver is supporting named parameters.
+09:49:10 - INFO - Insert Statement:INSERT INTO "web_returns" ("wr_returned_date_sk", "wr_returned_time_sk", "wr_item_sk", "wr_refunded_customer_sk", "wr_refunded_cdemo_sk", "wr_refunded_hdemo_sk", "wr_refunded_addr_sk", "wr_returning_customer_sk", "wr_returning_cdemo_sk", "wr_returning_hdemo_sk", "wr_returning_addr_sk", "wr_web_page_sk", "wr_reason_sk", "wr_order_number", "wr_return_quantity", "wr_return_amt", "wr_return_tax", "wr_return_amt_inc_tax", "wr_fee", "wr_return_ship_cost", "wr_refunded_cash", "wr_reversed_charge", "wr_account_credit", "wr_net_loss") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+09:49:11 - INFO - commit in the table "web_sales"
+09:49:11 - INFO - 11876 rows loaded (Total) in the table "web_sales"
+09:49:11 - INFO - 1 commit(s) (Total) in the table "web_sales"
+09:49:11 - INFO - 2 batches(s) (Total) in the table "web_sales"
+09:49:11 - INFO - commit in the table "web_returns"
+09:49:11 - INFO - 1152 rows loaded (Total) in the table "web_returns"
+09:49:11 - INFO - 1 commit(s) (Total) in the table "web_returns"
+09:49:11 - INFO - 1 batches(s) (Total) in the table "web_returns"
+09:49:11 - INFO - Loading the table "store_returns"
+09:49:11 - INFO - Loading the table "catalog_returns"
+09:49:11 - INFO - Loading the table "web_returns"
 Results:
 Tables Loaded            Rows Inserted   
 ----------------------   -------------   
@@ -184,7 +442,8 @@ warehouse                            1
 web_page                             2   
 web_returns                       1152   
 web_sales                        11876   
-web_site                             2
+web_site                             2   
+09:49:11 - INFO - Bye !
 </console>
 </unit>
 
@@ -235,93 +494,7 @@ web_site                       2
 db fkey list
 </code>
 <console>
-ForeignKeys:
-Id   Child Table              <-   Parent Table             From Foreign Key             
---   ----------------------   --   ----------------------   --------------------------   
- 1   call_center              <-   date_dim                 call_center_fk1              
- 2   catalog_page             <-   date_dim                 catalog_page_fk0             
- 3   catalog_returns          <-   call_center              catalog_returns_fk7          
- 4   catalog_returns          <-   catalog_page             catalog_returns_fk9          
- 5   catalog_returns          <-   catalog_sales            catalog_returns_fk8          
- 6   catalog_returns          <-   customer                 catalog_returns_fk6          
- 7   catalog_returns          <-   customer_address         catalog_returns_fk1          
- 8   catalog_returns          <-   customer_demographics    catalog_returns_fk16         
- 9   catalog_returns          <-   date_dim                 catalog_returns_fk2          
-10   catalog_returns          <-   household_demographics   catalog_returns_fk10         
-11   catalog_returns          <-   item                     catalog_returns_fk4          
-12   catalog_returns          <-   reason                   catalog_returns_fk3          
-13   catalog_returns          <-   ship_mode                catalog_returns_fk11         
-14   catalog_returns          <-   time_dim                 catalog_returns_fk5          
-15   catalog_returns          <-   warehouse                catalog_returns_fk13         
-16   catalog_sales            <-   call_center              catalog_sales_fk10           
-17   catalog_sales            <-   catalog_page             catalog_sales_fk12           
-18   catalog_sales            <-   customer                 catalog_sales_fk13           
-19   catalog_sales            <-   customer_address         catalog_sales_fk8            
-20   catalog_sales            <-   customer_demographics    catalog_sales_fk16           
-21   catalog_sales            <-   date_dim                 catalog_sales_fk14           
-22   catalog_sales            <-   household_demographics   catalog_sales_fk15           
-23   catalog_sales            <-   item                     catalog_sales_fk2            
-24   catalog_sales            <-   promotion                catalog_sales_fk3            
-25   catalog_sales            <-   ship_mode                catalog_sales_fk0            
-26   catalog_sales            <-   time_dim                 catalog_sales_fk9            
-27   catalog_sales            <-   warehouse                catalog_sales_fk1            
-28   customer                 <-   customer_address         customer_fk3                 
-29   customer                 <-   customer_demographics    customer_fk5                 
-30   customer                 <-   date_dim                 customer_fk2                 
-31   customer                 <-   household_demographics   customer_fk4                 
-32   household_demographics   <-   income_band              household_demographics_fk0   
-33   inventory                <-   date_dim                 inventory_fk0                
-34   inventory                <-   item                     inventory_fk1                
-35   inventory                <-   warehouse                inventory_fk2                
-36   promotion                <-   date_dim                 promotion_fk2                
-37   promotion                <-   item                     promotion_fk1                
-38   store_returns            <-   customer                 store_returns_fk0            
-39   store_returns            <-   customer_address         store_returns_fk8            
-40   store_returns            <-   customer_demographics    store_returns_fk3            
-41   store_returns            <-   date_dim                 store_returns_fk4            
-42   store_returns            <-   household_demographics   store_returns_fk2            
-43   store_returns            <-   item                     store_returns_fk5            
-44   store_returns            <-   reason                   store_returns_fk9            
-45   store_returns            <-   store                    store_returns_fk7            
-46   store_returns            <-   store_sales              store_returns_fk1            
-47   store_returns            <-   time_dim                 store_returns_fk6            
-48   store_sales              <-   customer                 store_sales_fk8              
-49   store_sales              <-   customer_address         store_sales_fk1              
-50   store_sales              <-   customer_demographics    store_sales_fk5              
-51   store_sales              <-   date_dim                 store_sales_fk3              
-52   store_sales              <-   household_demographics   store_sales_fk6              
-53   store_sales              <-   item                     store_sales_fk7              
-54   store_sales              <-   promotion                store_sales_fk0              
-55   store_sales              <-   store                    store_sales_fk2              
-56   store_sales              <-   time_dim                 store_sales_fk4              
-57   store                    <-   date_dim                 store_fk0                    
-58   web_page                 <-   customer                 web_page_fk2                 
-59   web_page                 <-   date_dim                 web_page_fk0                 
-60   web_returns              <-   customer                 web_returns_fk1              
-61   web_returns              <-   customer_address         web_returns_fk9              
-62   web_returns              <-   customer_demographics    web_returns_fk0              
-63   web_returns              <-   date_dim                 web_returns_fk8              
-64   web_returns              <-   household_demographics   web_returns_fk5              
-65   web_returns              <-   item                     web_returns_fk11             
-66   web_returns              <-   reason                   web_returns_fk12             
-67   web_returns              <-   time_dim                 web_returns_fk6              
-68   web_returns              <-   web_page                 web_returns_fk7              
-69   web_returns              <-   web_sales                web_returns_fk10             
-70   web_sales                <-   customer                 web_sales_fk5                
-71   web_sales                <-   customer_address         web_sales_fk8                
-72   web_sales                <-   customer_demographics    web_sales_fk4                
-73   web_sales                <-   date_dim                 web_sales_fk15               
-74   web_sales                <-   household_demographics   web_sales_fk7                
-75   web_sales                <-   item                     web_sales_fk6                
-76   web_sales                <-   promotion                web_sales_fk16               
-77   web_sales                <-   ship_mode                web_sales_fk9                
-78   web_sales                <-   time_dim                 web_sales_fk14               
-79   web_sales                <-   warehouse                web_sales_fk10               
-80   web_sales                <-   web_page                 web_sales_fk11               
-81   web_sales                <-   web_site                 web_sales_fk12               
-82   web_site                 <-   date_dim                 web_site_fk0                 
-
-Tip: You can show the columns by adding the c flag.
+No foreign key found
 </console>
 </unit>
 
@@ -389,100 +562,100 @@ All ''Tpcds'' queries are located at ''DB_HOME\sql\tpcds\query\sqlite'' where ''
 db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite
 </code>
 <console>
-Query Name     Latency (ms)   Row Count   Error   Message                                                                                             
-------------   ------------   ---------   -----   -------------------------------------------------------------------------------------------------   
-query_1.sql              99         100                                                                                                               
-query_10.sql          43391           1                                                                                                               
-query_11.sql           1862           9                                                                                                               
-query_12.sql              2               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_13.sql            134           1                                                                                                               
-query_14.sql           3290         100                                                                                                               
-query_15.sql             58          21                                                                                                               
-query_18.sql            293          60                                                                                                               
-query_19.sql             72          17                                                                                                               
-query_2.sql             350        2513                                                                                                               
-query_20.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_21.sql            339           0                                                                                                               
-query_22.sql            169         100                                                                                                               
-query_23.sql           1509           1                                                                                                               
-query_24.sql            149           0                                                                                                               
-query_25.sql            331           0                                                                                                               
-query_26.sql            315         100                                                                                                               
-query_27.sql            326         100                                                                                                               
-query_28.sql            247           1                                                                                                               
-query_29.sql            243           0                                                                                                               
-query_3.sql              85           2                                                                                                               
-query_30.sql             23           3                                                                                                               
-query_31.sql           1636           0                                                                                                               
-query_32.sql             68           1                                                                                                               
-query_33.sql            136         100                                                                                                               
-query_34.sql             77          12                                                                                                               
-query_35.sql          38234         100                                                                                                               
-query_36.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_37.sql            166           0                                                                                                               
-query_38.sql            176           1                                                                                                               
-query_4.sql            4739           7                                                                                                               
-query_40.sql            127          40                                                                                                               
-query_41.sql             32           0                                                                                                               
-query_42.sql            136           6                                                                                                               
-query_43.sql             84           2                                                                                                               
-query_44.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_45.sql             12           5                                                                                                               
-query_46.sql             86         100                                                                                                               
-query_47.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_48.sql            140           1                                                                                                               
-query_49.sql              4               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_5.sql             302         100                                                                                                               
-query_50.sql             89           2                                                                                                               
-query_52.sql            124          10                                                                                                               
-query_53.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_54.sql            365           0                                                                                                               
-query_55.sql             74           7                                                                                                               
-query_56.sql            212           3                                                                                                               
-query_57.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_58.sql            764           0                                                                                                               
-query_59.sql            485         100                                                                                                               
-query_6.sql             318           3                                                                                                               
-query_60.sql            170         100                                                                                                               
-query_61.sql            142           1                                                                                                               
-query_62.sql             36           6                                                                                                               
-query_63.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_64.sql            559           0                                                                                                               
-query_65.sql            158           4                                                                                                               
-query_66.sql            108           1                                                                                                               
-query_67.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_68.sql             75          79                                                                                                               
-query_69.sql          40478          18                                                                                                               
-query_7.sql             270         100                                                                                                               
-query_70.sql              1               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_71.sql            167          28                                                                                                               
-query_72.sql           2628          22                                                                                                               
-query_73.sql            138           0                                                                                                               
-query_74.sql            906          14                                                                                                               
-query_75.sql            765          32                                                                                                               
-query_76.sql            159         100                                                                                                               
-query_77.sql            176           7                                                                                                               
-query_78.sql           1332         100                                                                                                               
-query_79.sql            102         100                                                                                                               
-query_8.sql               5           0                                                                                                               
-query_80.sql            254          87                                                                                                               
-query_81.sql             38           6                                                                                                               
-query_82.sql             69           1                                                                                                               
-query_83.sql            339           0                                                                                                               
-query_84.sql             10           1                                                                                                               
-query_85.sql             29           0                                                                                                               
-query_86.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_88.sql           1152           1                                                                                                               
-query_89.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_9.sql             390           1                                                                                                               
-query_90.sql             20           1                                                                                                               
-query_91.sql             14           0                                                                                                               
-query_92.sql             11           1                                                                                                               
-query_93.sql            165           0                                                                                                               
-query_94.sql          60724           1                                                                                                               
-query_95.sql             32           1                                                                                                               
-query_96.sql            137           1                                                                                                               
-query_98.sql              0               Err     org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing database (near "(": syntax error)   
-query_99.sql            150          12
+Query Name     Latency (ms)   Row Count   Error   Message   
+------------   ------------   ---------   -----   -------   
+query_1.sql              85         100                     
+query_10.sql          32314           1                     
+query_11.sql            257           9                     
+query_12.sql             15          19                     
+query_13.sql            100           1                     
+query_14.sql           2460         100                     
+query_15.sql             48          21                     
+query_18.sql            227          60                     
+query_19.sql             62          17                     
+query_2.sql             323        2513                     
+query_20.sql             95         100                     
+query_21.sql            241           0                     
+query_22.sql            154         100                     
+query_23.sql           1152           1                     
+query_24.sql            135           0                     
+query_25.sql            221           0                     
+query_26.sql            218         100                     
+query_27.sql            235         100                     
+query_28.sql            173           1                     
+query_29.sql            227           0                     
+query_3.sql              67           2                     
+query_30.sql             19           3                     
+query_31.sql            398           0                     
+query_32.sql             56           1                     
+query_33.sql            117         100                     
+query_34.sql             68          12                     
+query_35.sql          29945         100                     
+query_36.sql            120         100                     
+query_37.sql            147           0                     
+query_38.sql            201           1                     
+query_4.sql             585           7                     
+query_40.sql            182          40                     
+query_41.sql             34           0                     
+query_42.sql             68           6                     
+query_43.sql            101           2                     
+query_44.sql           1914          10                     
+query_45.sql              9           5                     
+query_46.sql             75         100                     
+query_47.sql            737         100                     
+query_48.sql            106           1                     
+query_49.sql           1567           5                     
+query_5.sql             253         100                     
+query_50.sql             13           2                     
+query_52.sql             62          10                     
+query_53.sql            260           0                     
+query_54.sql            496           0                     
+query_55.sql             61           7                     
+query_56.sql            110           3                     
+query_57.sql            498         100                     
+query_58.sql            532           0                     
+query_59.sql            405         100                     
+query_6.sql             313           3                     
+query_60.sql            118         100                     
+query_61.sql             80           1                     
+query_62.sql             16           6                     
+query_63.sql            253           0                     
+query_64.sql            515           0                     
+query_65.sql            136           4                     
+query_66.sql             84           1                     
+query_67.sql            180         100                     
+query_68.sql             66          79                     
+query_69.sql          30845          18                     
+query_7.sql             242         100                     
+query_70.sql            150           1                     
+query_71.sql            124          28                     
+query_72.sql           2348          22                     
+query_73.sql            119           0                     
+query_74.sql            174          14                     
+query_75.sql            565          32                     
+query_76.sql             73         100                     
+query_77.sql            143           7                     
+query_78.sql           1629         100                     
+query_79.sql             65         100                     
+query_8.sql               4           0                     
+query_80.sql            227          87                     
+query_81.sql             34           6                     
+query_82.sql             59           1                     
+query_83.sql            280           0                     
+query_84.sql             11           1                     
+query_85.sql             28           0                     
+query_86.sql             12         100                     
+query_88.sql            645           1                     
+query_89.sql            129         100                     
+query_9.sql             277           1                     
+query_90.sql             19           1                     
+query_91.sql             13           0                     
+query_92.sql              9           1                     
+query_93.sql            144           0                     
+query_94.sql          41375           1                     
+query_95.sql             27           1                     
+query_96.sql             66           1                     
+query_98.sql            118         237                     
+query_99.sql             99          12
 </console>
 </unit>

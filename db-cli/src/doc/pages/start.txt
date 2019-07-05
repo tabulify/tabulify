@@ -2,9 +2,19 @@
 
 
 ===== About =====
-''Bytle-Db'' is a command line client called [[db|db]] that helps you perform database operations in a simple and effective way.
+''Bytle-Db'' is a command line client called [[db|db]] that helps you perform data operations in a simple and effective way.
 
 <WRAP round tip>
 If you have no previous experience with ''Bytle-Db'', we advice you to follow this [[getting_started|getting started]].
 </WRAP>
+
+===== Data Structure =====
+For ''Bytle Db'', a [[database:database|database]] is an application that stores data in a tabular format. 
+
+[[..:db|Bytle Db]] helps you operate on the data structure with the following [[..:module|module]]:
+  * [[table:|Table]] for a table stored in a relational database and supporting its operations through SQL.
+  * [[schema:schema|Schema]] - a database schema (where the tables are stored)
+  * [[csv:start|Csv]] for a table stored in a CSV format
+  * [[excel:start|Excel]] for a table stored in a Excel format
+
 
