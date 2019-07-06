@@ -1196,9 +1196,10 @@ public class TpcdsModel implements SchemaSample {
                         .filter(s -> stagingTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STORE_SALES:
-                return getTables().stream()
+                return Tables.atomic(getTables().stream()
                         .filter(s -> storeSalesTables.contains(s.getName()))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList())
+                );
             default:
                 throw new RuntimeException("TPC-DS Schema Name (" + schemaName + ") is unknown");
         }

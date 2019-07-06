@@ -105,16 +105,6 @@ public class TpcdsDgen {
         }
 
 
-        Database targetDatabase;
-        if (database != null) {
-            targetDatabase = database;
-            LOGGER.info("Loading the tables into the database (" + database + ")");
-        } else {
-            // Memory database for file
-            targetDatabase = Databases.get();
-            LOGGER.info("Loading the tables into the directory (" + options.directory + ")");
-        }
-
         // Building the table to load
         tables = Dag.get(tables).getCreateOrderedTables();
         List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
@@ -152,15 +142,14 @@ public class TpcdsDgen {
                     });
                 } else {
                     LOGGER.fine("Loading the table (" + tableDef.getName() + ") with the " + chunkNumber + " thread");
+                    //TODO: if there is an exception in the thread, it si not caucght
                     thread = new Thread(() -> {
-
-                        List<InsertStreamListener> insertStreamListener = TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), database)
-                                .setRowFeedback(feedbackFrequency)
-                                .generateTable(table);
+                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), database)
+                                    .setRowFeedback(feedbackFrequency)
+                                    .generateTable(table);
                         if (insertStreamListener != null) {
                             insertStreamListeners.addAll(insertStreamListener);
                         }
-
                     });
                 }
                 final String threadId = "Table " + tableDef.getName() + ", chunk " + chunkNumber;

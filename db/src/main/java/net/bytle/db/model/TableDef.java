@@ -297,6 +297,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     /**
      * TODO: TableDef should only have metadata, move this
      * The generation of a SQL must not be inside
+     *
      * @return
      */
     @Override
@@ -354,5 +355,23 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     public TableDef setDatabase(Database database) {
         this.schema = database.getCurrentSchema();
         return this;
+    }
+
+    public void deleteForeignKey(ForeignKeyDef foreignKeyDef) {
+
+        foreignKeyDef = foreignKeys.remove(foreignKeyDef.getName());
+        if (foreignKeyDef == null) {
+
+            throw new RuntimeException("The foreign key (" + foreignKeyDef.getName() + ") does not belong to the table (" + this + ") and could not be removed");
+        }
+
+    }
+
+    public List<TableDef> getForeignTables() {
+        List<TableDef> tableDefs = new ArrayList<>();
+        for (ForeignKeyDef foreignKeyDef:getForeignKeys()){
+            tableDefs.add(foreignKeyDef.getForeignPrimaryKey().getTableDef());
+        }
+        return tableDefs;
     }
 }

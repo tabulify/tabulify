@@ -90,7 +90,9 @@ public class TpcdsDgenTable {
                     }
                 }
             } catch (Exception e) {
+
                 throw new RuntimeException(e);
+
             } finally {
                 // Close
                 parentInsertStream.close();

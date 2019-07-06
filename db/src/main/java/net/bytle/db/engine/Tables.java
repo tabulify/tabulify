@@ -9,8 +9,10 @@ import net.bytle.db.stream.*;
 import net.bytle.cli.Log;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Tables {
 
@@ -616,5 +618,29 @@ public class Tables {
 
     public static void drop(TableDef tableDef, Database database) {
         drop(tableDef,database.getCurrentSchema());
+    }
+
+    /**
+     * Will return a set of tables independent of foreign table
+     * (ie delete the foreign keys of a table if the foreign table is not part of the set)
+     * @param tableDefs
+     * @return
+     */
+    public static List<TableDef> atomic(List<TableDef> tableDefs){
+        for (TableDef table:tableDefs){
+            List<ForeignKeyDef> foreignKeys = table.getForeignKeys();
+            for (ForeignKeyDef foreignKeyDef:foreignKeys){
+                if (!(tableDefs.contains(foreignKeyDef.getForeignPrimaryKey().getTableDef()))){
+                    table.deleteForeignKey(foreignKeyDef);
+                }
+            }
+        }
+        return tableDefs;
+    }
+
+    public static List<String> getNames(List<TableDef> tables) {
+
+        return tables.stream().map(s->s.getName()).collect(Collectors.toList());
+
     }
 }
