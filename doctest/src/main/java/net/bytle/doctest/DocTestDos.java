@@ -20,12 +20,16 @@ public class DocTestDos {
         final char[] comments = {':',':'};
 
         List<String[]> commands = new ArrayList<>();
-        String[] lines = code.split("\n|\r\n");
+        String[] lines = code.trim().split("\n|\r\n");
         for (String line:lines) {
 
+            line = line.trim();
+
             // Comments skipping
-            if (line.trim().substring(0,2).equals(new String(comments))){
-                continue;
+            if (line.length()>=comments.length) {
+                if (line.trim().substring(0, comments.length).equals(new String(comments))) {
+                    continue;
+                }
             }
 
             int state = defaultState;

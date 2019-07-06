@@ -72,4 +72,50 @@ public class Strings {
         }
 
     }
+
+    /**
+     * Left Trim
+     * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     * @param s
+     * @return
+     */
+    public static String ltrim(String s) {
+        int i = 0;
+        while (i < s.length() && Character.isWhitespace(s.charAt(i))) {
+            i++;
+        }
+        return s.substring(i);
+    }
+
+
+    /**
+     * Right Trim
+     * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     * @param s
+     * @return
+     */
+    public static String rtrim(String s) {
+        int i = s.length()-1;
+        while (i >= 0 && Character.isWhitespace(s.charAt(i))) {
+            i--;
+        }
+        return s.substring(0,i+1);
+    }
+
+    /**
+     * Right Trim only end of line
+     * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     * @param s
+     * @return
+     */
+    public static String rtrimEol(String s) {
+        char[] eofChar = {"\n".charAt(0),"\r".charAt(0)};
+
+        int i = s.length()-1;
+        while (i >= 0 && Arrayss.in(eofChar,s.charAt(i))) {
+            i--;
+        }
+        return s.substring(0,i+1);
+    }
+
 }

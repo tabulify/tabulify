@@ -13,7 +13,6 @@ public class DocCache {
 
     private final Path cacheDirectory;
 
-    private static DocCache docCache;
     private DocCache(String name) {
 
         cacheDirectory = Paths.get(Fs.getAppData(DocTest.APP_NAME).toString(),name);
@@ -34,10 +33,8 @@ public class DocCache {
      * @return
      */
     public static DocCache get(String name) {
-        if (docCache==null){
-            docCache = new DocCache(name);
-        }
-        return docCache;
+
+        return new DocCache(name);
     }
 
 

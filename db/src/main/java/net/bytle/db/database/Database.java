@@ -10,6 +10,7 @@ import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
 import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
 import net.bytle.db.model.*;
 import net.bytle.cli.Log;
+import net.bytle.regexp.Globs;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -723,15 +724,17 @@ public class Database implements AutoCloseable {
 
 
     /**
-     * @param schemaPatternName
+     * @param pattern
      * @return the list of schema for this database
      */
-    public List<SchemaDef> getSchemas(String schemaPatternName) {
+    public List<SchemaDef> getSchemas(String pattern) {
+
 
         List<SchemaDef> schemaDefList = this.getObjectBuilder().buildSchemas(this);
-        if (schemaPatternName == null) {
+        if (pattern == null) {
             return schemaDefList;
         } else {
+            String schemaPatternName = Globs.toRegexPattern(pattern);
             return schemaDefList
                     .stream()
                     .filter(s -> s.getName().matches(schemaPatternName))

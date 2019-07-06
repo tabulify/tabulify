@@ -1,5 +1,7 @@
 package net.bytle.doctest;
 
+import net.bytle.type.Strings;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +52,7 @@ public class DocTestUnit {
      */
     public String getConsole() {
 
-        return this.console != null ? this.console.trim() : "";
+        return this.console;
 
     }
 

@@ -104,7 +104,7 @@ public class Tables {
 
     /**
      * @param tableDef
-     * @param database
+     * @param schema
      * @return if the table exist in the underlying database (actually the letter case is important)
      * <p>
      * The structure of the table is not checked
@@ -612,5 +612,9 @@ public class Tables {
 
         return Databases.get().getTable(tableName);
 
+    }
+
+    public static void drop(TableDef tableDef, Database database) {
+        drop(tableDef,database.getCurrentSchema());
     }
 }
