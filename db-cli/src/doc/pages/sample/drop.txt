@@ -1,0 +1,26 @@
+====== Bytle Db - Drop Sample Schema ======
+
+
+===== About =====
+''sample drop'' is an action of the the [[sample|sample module]]. It will drop every tables that belongs to a sample schema.
+
+
+===== Syntax =====
+
+<unit>
+<code dos>
+db sample drop --help
+</code>
+<console>
+Drop the tables that belongs to a sample database schema.
+
+Syntax:
+
+	db sample drop <schemaName>
+
+where:
+
+	Args:
+		* schemaName                    The name of the sample schema. One of tpcds, tpcds-dwh, tpcds-stg, tpcds-store-sales, BytleSchema
+</console>
+</unit>

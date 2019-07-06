@@ -64,10 +64,13 @@ public class TpcdsDgenTable {
                 TableDef childTableDef = database.getTable(table.getChild().getName());
                 // The table exist ?
                 if (!Tables.exists(childTableDef)) {
-                    throw new RuntimeException("The child  table (" + childTableDef.getFullyQualifiedName() + ") of the table (" + parentTableDef.getFullyQualifiedName() + ") does not exist in the database.");
+                    // The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
+                    // Is normal when you are not taking the store returns schema
+                    LOGGER.warning("The child  table (" + childTableDef.getFullyQualifiedName() + ") of the table (" + parentTableDef.getFullyQualifiedName() + ") does not exist in the database.");
+                } else {
+                    childInsertStream = Tables.getTableInsertStream(childTableDef)
+                            .setFeedbackFrequency(rowFeedback);
                 }
-                childInsertStream = Tables.getTableInsertStream(childTableDef)
-                        .setFeedbackFrequency(rowFeedback);
             }
             // OutputStreamWriter parentWriter = addFileWriterForTable(table);
             // OutputStreamWriter childWriter = table.hasChild() && !session.generateOnlyOneTable() ? addFileWriterForTable(table.getChild()) : null)
@@ -82,11 +85,15 @@ public class TpcdsDgenTable {
                     if (parentAndChildRows.size() > 1) {
                         // requireNonNull(childWriter, "childWriter is null, but a child row was produced");
                         // writeResults(childWriter, parentAndChildRows.get(1));
-                        List<String> childValues = parentAndChildRows.get(1);
-                        if (childInsertStream.flushAtNextInsert()) {
-                            parentInsertStream.flush();
+                        // A child insert stream may be null when the child is not part of the schema
+                        // Example: The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
+                        if (childInsertStream!=null) {
+                            List<String> childValues = parentAndChildRows.get(1);
+                            if (childInsertStream.flushAtNextInsert()) {
+                                parentInsertStream.flush();
+                            }
+                            childInsertStream.insert(childValues);
                         }
-                        childInsertStream.insert(childValues);
                     }
                 }
             } catch (Exception e) {
