@@ -94,7 +94,7 @@ public class DocTestUnitExecutor {
                             "}";
                     break;
                 case "dos":
-                    List<String[]> commands = DocTestDos.parseDosCommand(docTestUnit.getCode());
+                    List<String[]> commands = DocTestDos.parseDosCommand(docTestUnit);
                     StringBuilder javaCode = new StringBuilder();
                     for (String[] command : commands) {
                         String[] args = command;
@@ -104,21 +104,6 @@ public class DocTestUnitExecutor {
                             throw new RuntimeException("No main class was defined for the command (" + cli + ")");
                         }
                         args = Arrays.copyOfRange(args, 1, args.length);
-
-                        // Env variable expansion
-                        for (Map.Entry<String, String> entry : docTestUnit.getEnv().entrySet()) {
-                            for (int i = 0; i < args.length; i++) {
-                                args[i] = args[i].replace("%" + entry.getKey() + "%", entry.getValue());
-                            }
-                        }
-
-                        // Escaping (after env expansion)
-                        for (int i = 0; i < args.length; i++) {
-
-                            // Path in DOS must have two slash in the code to escape it
-                            args[i] = args[i].replace("\\", "\\\\");
-
-                        }
                         javaCode
                                 .append(importClass.getName())
                                 .append(".main(new String[]{\"")

@@ -2,15 +2,16 @@ package net.bytle.doctest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class DocTestDos {
 
     /**
      *
-     * @param code - the input dos code
+     * @param docTestUnit - the docTestUnit
      * @return Building the commands (each command is represented as an array of args)
      */
-    protected static List<String[]> parseDosCommand(String code) {
+    protected static List<String[]> parseDosCommand(DocTestUnit docTestUnit) {
 
         final int defaultState = 1;
         final int spaceCapture = 2;
@@ -20,7 +21,7 @@ public class DocTestDos {
         final char[] comments = {':',':'};
 
         List<String[]> commands = new ArrayList<>();
-        String[] lines = code.trim().split("\n|\r\n");
+        String[] lines = docTestUnit.getCode().trim().split("\n|\r\n");
         for (String line:lines) {
 
             line = line.trim();
@@ -95,6 +96,32 @@ public class DocTestDos {
                 args.add(arg.toString());
             }
             commands.add(args.toArray(new String[args.size()]));
+        }
+
+        for (String[] args: commands) {
+
+            // Env variable expansion
+            // Declared
+            for (Map.Entry<String, String> entry : docTestUnit.getEnv().entrySet()) {
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = args[i].replace("%" + entry.getKey() + "%", entry.getValue());
+                }
+            }
+            // Env
+            for (String envName : System.getenv().keySet()) {
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = args[i].replace("%" + envName + "%", System.getenv().get(envName));
+                }
+            }
+
+            // Escaping (after env expansion)
+            for (int i = 0; i < args.length; i++) {
+
+                // Path in DOS must have two slash in the code to escape it
+                args[i] = args[i].replace("\\", "\\\\");
+
+            }
+
         }
         return commands;
     }
