@@ -2,7 +2,14 @@
 
 
 ===== About =====
-''Database'' is a [[..:module|Bytle-Db module]] that helps you manage connections to database.
+''Database'' is a [[..:module|Bytle-Db module]] that helps you manage databases (mostly database connections informations).
+
+Within the database module, you can:
+  * [[list]] - list the known databases
+  * [[info]] - get information on a database
+  * [[add]] - create/add a database
+  * [[remove]] - remove a database
+
 
 
 ===== Syntax =====

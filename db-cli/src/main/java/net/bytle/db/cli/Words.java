@@ -19,29 +19,46 @@ public class Words {
     public static final String DB_NAME = "db.name";
     // Config file words
     static final String CONFIG_FILE_PATH = "conf";
+
+    // Module
+    static final String DATABASE_COMMAND = "database";
     static final String TABLE_COMMAND = "table";
     static final String SCHEMA_COMMAND = "schema";
     static final String QUERY_COMMAND = "query";
     static final String SAMPLE_COMMAND = "sample";
     static final String FKEY_COMMAND = "fkey";
 
-    // SubCommands level 2
+    // SubCommands level 2 / Action
+    // From Local System to remote System
     static final String LOAD_COMMAND = "load";
+    // From Remote System to Local System
     static final String DOWNLOAD_COMMAND = "download";
-    static final String DIFF_COMMAND = "diff";
+    // Between two remote system ?
     static final String TRANSFER_COMMAND = "transfer";
+
+    static final String DIFF_COMMAND = "diff";
     static final String FILL_COMMAND = "fill";
-    static final String INFO_COMMAND = "info";
-    static final String LIST_COMMAND = "list";
-    static final String DROP_COMMAND = "drop";
-    static final String COUNT_COMMAND = "count";
-    static final String CREATE_COMMAND = "create";
-    static final String DESCRIBE_COMMAND = "describe";
+
     static final String EXECUTE_COMMAND = "execute";
-    static final String SHOW_COMMAND = "show";
-    // SubCommands level 1
-    static final String DATABASE_COMMAND = "database";
+    static final String COUNT_COMMAND = "count";
+
+    // Delete command
+    static final String DROP_COMMAND = "drop";
+    static final String REMOVE_COMMAND = "remove";
+
+    // Initialize DML
+    static final String CREATE_COMMAND = "create";
     static final String ADD_COMMAND = "add";
+
+    // Scalar UI - Show/Info
+    static final String SHOW_COMMAND = "show";
+    static final String INFO_COMMAND = "info";
+    static final String DESCRIBE_COMMAND = "describe";
+    // Table UI -
+    static final String LIST_COMMAND = "list";
+
+
+
     static final String JDBC_URL_TARGET_OPTION = "db.target.url";
     static final String JDBC_DRIVER_TARGET_OPTION = "db.target.driver";
 

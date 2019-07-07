@@ -1,0 +1,49 @@
+====== Bytle Db - Database add ======
+
+===== About =====
+The ''database add'' operations
+
+===== Syntax =====
+<unit>
+<code dos>
+db database add --help
+</code>
+<console>
+16:28:28 - INFO - (conf) word was not found
+16:28:28 - INFO - (help) word was found with the value: true
+
+Add a database
+
+Syntax:
+
+	db database add [options|flags] <name> <url>
+
+where:
+
+	Database Properties
+		* -l,--login <value>            The login (ie user)
+		* -p,--password <value>         The user password
+		* -pp,--passphrase <value>      A passphrase (master password) to encrypt the password
+		* -d,--driver <value>           The jdbc driver (for a jdbc connection)
+		* --store <value>               The path where the database information are stored
+		* -s,--statement <value>        A inline statement to be executed after a connection
+
+	Args:
+		* name                          the database name
+		* url                           The database url
+
+Example:  To add the database information about the database `name`:
+    db database add name
+</console>
+</unit>
+
+===== Example =====
+Adding a [[..:sqlite|Sqlite database]]:
+<unit>
+<code dos>
+db database add "sqlite" "jdbc:sqlite://%TMP%/db.db"
+</code>
+</unit>
+<console>
+</console>
+

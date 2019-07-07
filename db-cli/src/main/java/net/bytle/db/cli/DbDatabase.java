@@ -29,6 +29,8 @@ public class DbDatabase {
                 .setDescription("list the databases");
         cliCommand.commandOf(Words.INFO_COMMAND)
                 .setDescription("show database information");
+        cliCommand.commandOf(Words.REMOVE_COMMAND)
+                .setDescription("Remove a database");
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
