@@ -1,7 +1,6 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
@@ -14,7 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -97,7 +95,7 @@ public class DbQueryDownload {
         CliTimer cliTimer = CliTimer.getTimer("download").start();
 
         System.out.println("Download process started");
-        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(sourceURL)
                 .setDriver(sourceDriver);
         Connection connection = database.getCurrentConnection();

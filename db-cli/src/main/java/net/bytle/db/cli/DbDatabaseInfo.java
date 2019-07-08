@@ -7,7 +7,6 @@ import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.INFO_COMMAND;
 
@@ -55,7 +54,7 @@ public class DbDatabaseInfo {
         }
         final String driverValue = cliParser.getString(driverPropertyKey);
 
-        Database database = Databases.get(databaseName)
+        Database database = Databases.of(databaseName)
                 .setUrl(urlValue)
                 .setDriver(driverValue);
 

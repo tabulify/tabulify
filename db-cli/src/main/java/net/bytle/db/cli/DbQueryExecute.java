@@ -71,7 +71,7 @@ public class DbQueryExecute {
         // Database
         String sourceURL = cliParser.getString(JDBC_URL_TARGET_OPTION);
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(sourceURL)
                 .setDriver(sourceDriver);
 

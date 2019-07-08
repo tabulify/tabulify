@@ -5,7 +5,6 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Tables;
@@ -15,7 +14,6 @@ import net.bytle.db.stream.InsertStreamListener;
 
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static java.lang.System.exit;
 import static net.bytle.db.cli.Words.*;
@@ -100,7 +98,7 @@ public class DbTableTransfer {
         // Source Connection
         String sourceUrl = cliParser.getString(JDBC_URL_SOURCE_OPTION);
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database sourceDatabase = Databases.get(Db.CLI_DATABASE_NAME_SOURCE)
+        Database sourceDatabase = Databases.of(Db.CLI_DATABASE_NAME_SOURCE)
                 .setUrl(sourceUrl)
                 .setDriver(sourceDriver);
 
@@ -116,7 +114,7 @@ public class DbTableTransfer {
         // Target object building
         String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
         String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database targetDatabase = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(targetUrl)
                 .setDriver(targetDriver);
         TableDef targetTableDef = targetDatabase.getTable(targetTableName, targetSchemaName);

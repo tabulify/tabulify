@@ -107,7 +107,7 @@ public class DbDatabaseAdd {
             System.exit(1);
         }
 
-        Database database = Databases.get(databaseName)
+        Database database = Databases.of(databaseName)
                 .setUrl(urlValue)
                 .setDriver(driverValue)
                 .setUser(userValue)

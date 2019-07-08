@@ -2,7 +2,6 @@ package net.bytle.db.model;
 
 
 import net.bytle.db.database.Databases;
-import net.bytle.db.engine.SchemaManager;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -20,7 +19,7 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     public CsvRelation(Path path) {
         this.path = path;
-        this.schema = Databases.get().getCurrentSchema();
+        this.schema = Databases.of().getCurrentSchema();
         this.name = path.getFileName().toString();
 
         // ResultSet csvResultSet = new CsvResultSet(inputFilePath);

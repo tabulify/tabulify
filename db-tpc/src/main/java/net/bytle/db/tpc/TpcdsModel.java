@@ -6,10 +6,7 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.SchemaSample;
-import oracle.sql.DATE;
 
-import javax.xml.crypto.Data;
-import javax.xml.validation.Schema;
 import java.sql.Types;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -174,7 +171,7 @@ public class TpcdsModel implements SchemaSample {
      */
     public static TpcdsModel get() {
 
-        return new TpcdsModel(Databases.get().getCurrentSchema());
+        return new TpcdsModel(Databases.of().getCurrentSchema());
 
     }
 

@@ -10,3 +10,8 @@ Error:
 ```
 Error:java: Annotation processing is not supported for module cycles. Please ensure that all modules from cycle [db,db-gen] are excluded from annotation processing
 ```
+
+
+## Bytle Db Dev doc
+
+See [doc](db-cli/src/doc/README.md)

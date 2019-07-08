@@ -10,7 +10,6 @@ import net.bytle.db.model.TableDef;
 
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
 import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
@@ -38,7 +37,7 @@ public class DbTableShow {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
                 .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
 

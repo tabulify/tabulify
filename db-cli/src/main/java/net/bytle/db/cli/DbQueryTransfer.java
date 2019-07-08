@@ -1,7 +1,6 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.loader.ResultSetLoader;
@@ -10,7 +9,6 @@ import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -73,7 +71,7 @@ public class DbQueryTransfer {
         // Source Database
         String sourceUrl = cliParser.getString(JDBC_URL_SOURCE_OPTION);
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database sourceDatabase = Databases.get(Db.CLI_DATABASE_NAME_SOURCE)
+        Database sourceDatabase = Databases.of(Db.CLI_DATABASE_NAME_SOURCE)
                 .setUrl(sourceUrl)
                 .setDriver(sourceDriver);
         // Source Query
@@ -86,7 +84,7 @@ public class DbQueryTransfer {
         String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
         String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
 
-        Database targetDatabase = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(targetUrl)
                 .setDriver(targetDriver);
 

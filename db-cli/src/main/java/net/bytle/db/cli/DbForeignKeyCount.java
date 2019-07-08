@@ -4,7 +4,6 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.ForeignKeyDef;
@@ -12,7 +11,6 @@ import net.bytle.db.model.SchemaDef;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
 import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
@@ -40,7 +38,7 @@ public class DbForeignKeyCount {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET);
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
         /**
          * Within a test, the url of the database may have been set

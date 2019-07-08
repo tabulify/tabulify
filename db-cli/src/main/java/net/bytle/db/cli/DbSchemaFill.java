@@ -2,7 +2,6 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.gen.yml.DataGenYml;
 import net.bytle.db.database.Database;
@@ -19,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
 import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
@@ -78,7 +76,7 @@ public class DbSchemaFill {
         // Database
         String url = cliParser.getString(JDBC_URL_TARGET_OPTION);
         String driver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database database = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(url)
                 .setDriver(driver);
 

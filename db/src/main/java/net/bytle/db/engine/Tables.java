@@ -9,7 +9,6 @@ import net.bytle.db.stream.*;
 import net.bytle.cli.Log;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -612,7 +611,7 @@ public class Tables {
      */
     public static TableDef getTable(String tableName) {
 
-        return Databases.get().getTable(tableName);
+        return Databases.of().getTable(tableName);
 
     }
 

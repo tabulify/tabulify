@@ -85,7 +85,7 @@ public class BytleSchema implements SchemaSample {
     }
 
     public static BytleSchema get() {
-        return get(Databases.get().getSchema(SCHEMA_NAME));
+        return get(Databases.of().getSchema(SCHEMA_NAME));
     }
 
     void buildTables() {

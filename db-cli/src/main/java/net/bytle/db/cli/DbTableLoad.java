@@ -2,7 +2,6 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Relations;
@@ -14,7 +13,6 @@ import net.bytle.db.stream.InsertStreamListener;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -93,7 +91,7 @@ public class DbTableLoad {
         // Target Connection
         String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
         String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database targetDatabase = Databases.get(Db.CLI_DATABASE_NAME_TARGET)
+        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(targetUrl)
                 .setDriver(targetDriver);
 

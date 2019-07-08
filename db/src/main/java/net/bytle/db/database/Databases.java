@@ -53,21 +53,21 @@ public class Databases {
      * <p>
      * If the product name is not implemented, it will return an ANSI implementation.
      */
-    public static Database get(String name) {
+    public static Database of(String name) {
 
-        return get(name, MASTER);
+        return of(name, MASTER);
 
     }
 
-    public static Database get(String name, String master) {
-        return get(name, master, DEFAULT_STORAGE_FILE);
+    public static Database of(String name, String master) {
+        return of(name, master, DEFAULT_STORAGE_FILE);
     }
 
-    public static Database get(String name, Path path) {
-        return get(name, MASTER, path);
+    public static Database of(String name, Path path) {
+        return of(name, MASTER, path);
     }
 
-    public static Database get(String name, String master, Path path) {
+    public static Database of(String name, String master, Path path) {
 
         Database database = new Database(name);
 
@@ -108,15 +108,15 @@ public class Databases {
         String rootWindows = "///";
         String url = "jdbc:sqlite:" + rootWindows + pathDb.toString().replace("\\", "\\\\");
 
-        return get(BYTLE_LOCAL_SQLITE_DB_NAME).setUrl(url);
+        return of(BYTLE_LOCAL_SQLITE_DB_NAME).setUrl(url);
     }
 
 
     /**
      * @return the default bytle database
      */
-    public static Database get() {
-        return get("bytle");
+    public static Database of() {
+        return of("bytle");
     }
 
     /**
@@ -280,7 +280,7 @@ public class Databases {
     public static List<Database> list() {
         List<Database> databases = new ArrayList<>();
         for (String section : getIniFile().keySet()) {
-            databases.add(Databases.get(section));
+            databases.add(Databases.of(section));
         }
         return databases;
     }
