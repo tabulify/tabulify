@@ -2,69 +2,67 @@ package net.bytle.crypto;
 
 import org.apache.commons.codec.binary.Base64;
 
-import javax.crypto.*;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
-import java.security.GeneralSecurityException;
-
 public class Protector {
 
-    private final static byte[] SALT = {
-            (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-            (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-    };
-    private final static String ALGORITHM = "PBEWithMD5AndDES";
 
     private final Base64 base64 = new Base64();
-    private Cipher encryptCipher;
-    private Cipher decryptCipher;
+
+    // Other type getInstance
+    // bouncycastle library
+    // https://bouncycastle.org/
+    // Cipher cipher = Cipher.getInstance("AES/CTR/PKCS5Padding", "BC");
+
+    // Note
+    // KerbTicket Encryption Type: AES-256-CTS-HMAC-SHA1-96 - AES in CTR (Counter) mode, and append an HMAC
+
+
+    public final static String PBE = "PBEWithMD5AndDES";
+    public final static String AES = "AES/CBC/PKCS5PADDING";
+
+    private final CipherI cipher;
 
     /**
-     * Passphrase is mandatory (otherwise it is a nonsense)
-     * @param passphrase
-     * @throws GeneralSecurityException
+     * @param cipher
      */
-    private Protector(String passphrase) throws GeneralSecurityException {
+    private Protector(String cipher) {
 
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
-        SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(passphrase.toCharArray()));
-        encryptCipher = Cipher.getInstance(ALGORITHM);
-        encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey, new PBEParameterSpec(SALT, 20));
-        decryptCipher = Cipher.getInstance(ALGORITHM);
-        decryptCipher.init(Cipher.DECRYPT_MODE, secretKey, new PBEParameterSpec(SALT, 20));
-    }
+        switch (cipher) {
+            case PBE:
+                this.cipher = PasswordBasedEncryptionCipher
+                        .get();
+                break;
+            case AES:
+                this.cipher = AdvancedEncryptionStandardCipher
+                        .get();
+                break;
+            default:
+                throw new RuntimeException("Cipher (" + cipher + ") is not known");
 
-    public static Protector get(String master){
-        try {
-            return new Protector(master);
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
         }
     }
 
-    public String encrypt(String unencrypted)  {
-        if (unencrypted==null){
+    Protector setPassphrase(String passphrase) {
+        cipher.setPassphrase(passphrase);
+        return this;
+    }
+
+    public static Protector get(String cipher) {
+        return new Protector(cipher);
+    }
+
+    public String encrypt(String plaintext) {
+        if (plaintext == null) {
             return null;
-        }
-        try {
-            return base64.encodeAsString(encryptCipher.doFinal(unencrypted.getBytes()));
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
+        } else {
+            return base64.encodeAsString(cipher.encrypt(plaintext));
         }
     }
 
-    public String decrypt(String encrypted)  {
-        if (encrypted==null){
+    public String decrypt(String ciphertext) {
+        if (ciphertext == null) {
             return null;
-        }
-        try {
-            return new String(decryptCipher.doFinal(base64.decode(encrypted)));
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
+        } else {
+            return cipher.decrypt(base64.decode(ciphertext));
         }
     }
 }
