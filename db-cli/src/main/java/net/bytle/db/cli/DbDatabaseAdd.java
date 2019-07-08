@@ -5,12 +5,15 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 
 import java.nio.file.Path;
 import java.sql.Connection;
 
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_PATH;
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.ADD_COMMAND;
 
 
@@ -24,10 +27,11 @@ public class DbDatabaseAdd {
     protected static final String LOGIN = "login";
     protected static final String PASSPHRASE = "passphrase";
     protected static final String PASSWORD = "password";
-    protected static final String STORAGE_PATH = "store";
+
     protected static final String STATEMENT = "statement";
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_NAME = "name";
+
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -73,7 +77,7 @@ public class DbDatabaseAdd {
         cliCommand.optionOf(STORAGE_PATH)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
-                .setEnvName("BYTLE_DB_DATABASES_PATH");
+                .setEnvName(BYTLE_DB_DATABASES_PATH);
 
 
         cliCommand.optionOf(STATEMENT)
@@ -125,7 +129,9 @@ public class DbDatabaseAdd {
             database.close();
         }
 
-        Databases.save(database, passphrase, storagePathValue);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue)
+                .setPassphrase(passphrase)
+                .save(database);
         LOGGER.info("The database ("+databaseName+") was saved.");
         LOGGER.info("Bye !");
 

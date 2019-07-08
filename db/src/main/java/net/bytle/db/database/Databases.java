@@ -1,6 +1,7 @@
 package net.bytle.db.database;
 
 import net.bytle.crypto.Protector;
+import net.bytle.db.DatabasesStore;
 import net.bytle.fs.Fs;
 import oracle.jdbc.OracleTypes;
 import org.ini4j.Wini;
@@ -24,26 +25,6 @@ public class Databases {
 
     public static final String BYTLE_LOCAL_SQLITE_DB_NAME = "BytleSqlite";
     public static final String MODULE_NAME = "BytleDb";
-    public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(MODULE_NAME).toString(), "dsn.ini");
-    /**
-     * The default master
-     */
-    private static final String MASTER = "X111223300maasterX901#@";
-
-    /**
-     * Constant
-     */
-    private static final String URL = "url";
-    private static final String USER = "user";
-    private static final String DRIVER = "driver";
-    private static final String PASSWORD = "password";
-    private static final String STATEMENT = "statement";
-
-
-    /**
-     * The ini file were database information are saved to disk
-     */
-    private static Wini wini;
 
     /**
      * Initialize a database by its name.
@@ -55,32 +36,7 @@ public class Databases {
      */
     public static Database of(String name) {
 
-        return of(name, MASTER);
-
-    }
-
-    public static Database of(String name, String master) {
-        return of(name, master, DEFAULT_STORAGE_FILE);
-    }
-
-    public static Database of(String name, Path path) {
-        return of(name, MASTER, path);
-    }
-
-    public static Database of(String name, String master, Path path) {
-
-        Database database = new Database(name);
-
-        Wini.Section iniSection = getIniFile(path).get(name);
-        if (iniSection != null) {
-            database.setUrl(iniSection.get(URL));
-            database.setUser(iniSection.get(USER));
-            database.setPassword(Protector.get(master).decrypt(iniSection.get(PASSWORD)));
-            database.setDriver(iniSection.get(DRIVER));
-            database.setStatement(iniSection.get(STATEMENT));
-        }
-
-        return database;
+        return new Database(name);
 
     }
 
@@ -232,75 +188,7 @@ public class Databases {
     }
 
 
-    /**
-     * Save a database on the disk
-     *
-     * @param database
-     * @param master
-     */
-    public static void save(Database database, String master) {
-
-
-    }
-
-    /**
-     * @return the ini file where the database information are saved to disk
-     */
-    private static Wini getIniFile() {
-        return getIniFile(DEFAULT_STORAGE_FILE);
-    }
-
-    private static Wini getIniFile(Path path) {
-        if (!(Files.exists(path))) {
-            Fs.createFile(path);
-        }
-        if (wini == null) {
-            try {
-                wini = new Wini(path.toFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return wini;
-    }
-
-    public static void save(Database database) {
-        save(database, MASTER, DEFAULT_STORAGE_FILE);
-    }
-
-    public static void remove(String name) {
-        remove(name, DEFAULT_STORAGE_FILE);
-    }
-
-    public static void remove(String name, Path path) {
-        Wini ini = getIniFile(path);
-        ini.remove(name);
-    }
-
-    public static List<Database> list() {
-        List<Database> databases = new ArrayList<>();
-        for (String section : getIniFile().keySet()) {
-            databases.add(Databases.of(section));
-        }
-        return databases;
-    }
-
-    public static void save(Database database, String master, Path path) {
-        Wini ini = getIniFile(path);
-        ini.put(database.getDatabaseName(), URL, database.getUrl());
-        ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
-        ini.put(database.getDatabaseName(), USER, database.getUser());
-        String password = database.getPassword();
-        if (database.getPassword() == null && master!=null) {
-            password = Protector.get(master).encrypt(database.getPassword());
-        }
-        ini.put(database.getDatabaseName(), PASSWORD, password);
-        ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
-        try {
-            ini.store();
-        } catch (
-                IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static Database of(String name, DatabasesStore databasesStore) {
+        return databasesStore.DatabaseOf(name);
     }
 }

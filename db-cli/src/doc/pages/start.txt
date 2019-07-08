@@ -9,12 +9,14 @@ If you have no previous experience with ''Bytle-Db'', we advice you to follow th
 </WRAP>
 
 ===== Data Structure =====
-For ''Bytle Db'', a [[database:database|database]] is an application that stores data in a tabular format. 
+For ''Bytle Db'', a [[database:database|database]] is an application that stores data. 
 
-[[..:db|Bytle Db]] helps you operate on the data structure with the following [[..:module|module]]:
-  * [[table:|Table]] for a table stored in a relational database and supporting its operations through SQL.
-  * [[schema:schema|Schema]] - a database schema (where the tables are stored)
-  * [[csv:start|Csv]] for a table stored in a CSV format
-  * [[excel:start|Excel]] for a table stored in a Excel format
+[[..:db|Bytle Db]] helps you operate on the following data structure:
+  * [[table:|Table]] - a relational table supporting its operations through SQL.
+  * [[schema:schema|Schema]] - a table namespace (where the tables are stored)
+  * [[fkey:fkey|Foreign Key]] - relations between tables
+  * [[query:query|Query]] - a SQL query (ie a derived table)
+  * [[csv:start|Csv]] - a CSV table
+  * [[excel:start|Excel]] - a Excel table
 
 

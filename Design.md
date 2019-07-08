@@ -2,8 +2,8 @@
 
 ## Gold rule
 
-  * No Cache (in memory)
-  * Wel Persistence
+  * No Cache (in memory) - Wel Persistence
+  * No default on argument (wel on options) - ie target database should be seen in the Cli Command
   
 ## Functional
 
@@ -18,12 +18,12 @@ There is two static function for that:
 
 ### Object Id
 
-The name of an object is its identifier.
+Every object has a name as identifier in its own namespace (not the fully qualified).
  
 ### Setter / Getter
   
-  * A function may return null if a variable was never set
-  * A set function handle always null and never return an exception for a null value
+  * A get function may return null if a variable was never set
+  * A set function handle always null and never return an exception for a null value (to be able to chain)
   * The default values are returned in the get function and are never set on the object property to be able to know if the value was set or not.
 
 ### Data Processing

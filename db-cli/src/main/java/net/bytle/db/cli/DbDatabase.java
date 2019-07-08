@@ -15,9 +15,13 @@ import static net.bytle.db.cli.Words.*;
 
 public class DbDatabase {
 
-    public static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"databases.ini");
+
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
+    // Options used in all sub actions
+    static final String STORAGE_PATH = "store";
+    static final String BYTLE_DB_DATABASES_PATH = "BYTLE_DB_DATABASES_PATH";
+    static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"databases.ini");
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -42,6 +46,9 @@ public class DbDatabase {
                         DbDatabaseAdd.run(command, args);
                         break;
                     case LIST_COMMAND:
+                        DbTableList.run(command, args);
+                        break;
+                    case REMOVE_COMMAND:
                         DbTableList.run(command, args);
                         break;
                     case INFO_COMMAND:

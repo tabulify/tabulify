@@ -38,12 +38,19 @@ Example:  To add the database information about the database `name`:
 </unit>
 
 ===== Example =====
-Adding a [[..:sqlite|Sqlite database]]:
+Adding a [[relation:sqlite|Sqlite database]]:
+<unit render=false>
+<code dos>
+db database rm "sqlite"
+</code>
+</unit>
+
 <unit>
 <code dos>
 db database add "sqlite" "jdbc:sqlite://%TMP%/db.db"
 </code>
-</unit>
 <console>
 </console>
+</unit>
+
 

@@ -3,9 +3,7 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.Log;
-import net.bytle.db.DbLoggers;
-
-import java.util.logging.Logger;
+import net.bytle.db.database.Databases;
 
 
 /**
@@ -19,16 +17,13 @@ public class DbDatabaseList {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "List databases";
-
-        String footer = "";
+        String description = "List the databases";
 
         // Create the parser
         cliCommand
-                .setDescription(description)
-                .setFooter(footer);
+                .setDescription(description);
 
-        // To continue
+        Databases.of()
 
         LOGGER.info("Bye !");
 
