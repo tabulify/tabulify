@@ -2,8 +2,6 @@ package net.bytle.crypto;
 
 import org.apache.commons.codec.binary.Base64;
 
-import javax.crypto.SecretKey;
-
 public class Protector {
 
 
@@ -14,7 +12,7 @@ public class Protector {
     public final static int PBE = 2;
     public final static int AES = 1;
 
-    private final CipherSalt saltedCipher;
+    private final CipherTwoWay saltedCipher;
 
     // A code saved alongside the encrypted
     private final Integer cipherCode;

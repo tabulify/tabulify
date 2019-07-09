@@ -1,7 +1,5 @@
 package net.bytle.crypto;
 
-import javax.crypto.SecretKey;
-
 /**
  *
  * https://docs.oracle.com/javase/7/docs/api/javax/crypto/Cipher.html
@@ -43,7 +41,6 @@ public interface CipherAll {
     byte[] encrypt(String plaintext);
     byte[] encrypt(byte[] plaintext);
 
-    String decrypt(byte[] ciphertext);
 
     Integer getVersion();
 

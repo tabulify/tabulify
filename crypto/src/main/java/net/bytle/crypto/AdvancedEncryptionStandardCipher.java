@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * List of Cipher
  * https://docs.oracle.com/javase/7/docs/api/javax/crypto/Cipher.html
  */
-public class AdvancedEncryptionStandardCipher implements CipherSalt {
+public class AdvancedEncryptionStandardCipher implements CipherTwoWay {
 
 
     public static final String ALGORITHM = "AES";
@@ -77,12 +77,12 @@ public class AdvancedEncryptionStandardCipher implements CipherSalt {
     private byte[] key;
 
 
-    public static CipherSalt get() {
+    public static CipherTwoWay get() {
         return new AdvancedEncryptionStandardCipher();
     }
 
     @Override
-    public CipherAll setPassphrase(String passphrase) {
+    public CipherTwoWay setPassphrase(String passphrase) {
         this.passphrase = passphrase;
         return this;
     }
@@ -94,7 +94,7 @@ public class AdvancedEncryptionStandardCipher implements CipherSalt {
      * @return
      */
     @Override
-    public CipherAll setKey(byte[] key) {
+    public CipherTwoWay setKey(byte[] key) {
         this.key = key;
         return this;
     }

@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
-public class PasswordBasedEncryptionCipher implements CipherSalt {
+public class PasswordBasedEncryptionCipher implements CipherTwoWay {
 
 
 
@@ -22,7 +22,7 @@ public class PasswordBasedEncryptionCipher implements CipherSalt {
         return new PasswordBasedEncryptionCipher();
     }
 
-    public PasswordBasedEncryptionCipher setPassphrase(String passphrase) {
+    public CipherTwoWay setPassphrase(String passphrase) {
         this.passphrase = passphrase;
         return this;
     }
@@ -34,7 +34,7 @@ public class PasswordBasedEncryptionCipher implements CipherSalt {
      * @return
      */
     @Override
-    public CipherAll setKey(byte[] key) {
+    public CipherTwoWay setKey(byte[] key) {
         this.key = key;
         return this;
     }
