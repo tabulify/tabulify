@@ -3,18 +3,20 @@ package net.bytle.crypto;
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
-public class PasswordBasedEncryptionCipher implements CipherI {
+public class PasswordBasedEncryptionCipher implements CipherSalt {
 
 
 
     private final static String ALGORITHM = "PBEWithMD5AndDES";
     private String passphrase;
+    private byte[] key;
 
     public static PasswordBasedEncryptionCipher get() {
         return new PasswordBasedEncryptionCipher();
@@ -25,11 +27,38 @@ public class PasswordBasedEncryptionCipher implements CipherI {
         return this;
     }
 
+    /**
+     * To set a key (You would set a key or a passphrase but not both, if a key is given, a key is not generated from the passphrase)
+     *
+     * @param key
+     * @return
+     */
+    @Override
+    public CipherAll setKey(byte[] key) {
+        this.key = key;
+        return this;
+    }
+
+    /**
+     * Used to produce another passphrase for the digest (hmac)
+     *
+     * @return
+     */
+    @Override
+    public byte[] getKey() {
+        return this.key;
+    }
+
+
     public SecretKey getSecretKey() {
 
         try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
-            return secretKeyFactory.generateSecret(new PBEKeySpec(this.passphrase.toCharArray()));
+            if (key==null) {
+                SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+                SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(this.passphrase.toCharArray()));
+                key = secretKey.getEncoded();
+            }
+            return new SecretKeySpec(key, ALGORITHM);
         } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -55,6 +84,11 @@ public class PasswordBasedEncryptionCipher implements CipherI {
         } catch (IllegalBlockSizeException | BadPaddingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public byte[] encrypt(byte[] plaintext) {
+        return new byte[0];
     }
 
     private AlgorithmParameterSpec getSaltSpec() {

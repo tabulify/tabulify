@@ -16,30 +16,30 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * If you modify the encryption way please use the version to keep backward compatibility
- *
+ * <p>
  * https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
- *
+ * <p>
  * Inspiration by:
  * ansible/parsing/vault/__init__.py
- *
+ * <p>
  * See: _encrypt_cryptography (L1172) where you can find:
- *   * AES256,
- *   * modes CTR,
- *   * padding.PKCS7
- *   * Hmac SHA256 to combine salt, digest (key2) and data
- *
+ * * AES256,
+ * * modes CTR,
+ * * padding.PKCS7
+ * * Hmac SHA256 to combine salt, digest (key2) and data
+ * <p>
  * See: _create_key_cryptography for the key generation
  * kdf = PBKDF2HMAC(
- *  algorithm=hashes.SHA256(),
- *  length=2 * key_length + iv_length,
- *  salt=b_salt,
- *  iterations=10000,
- *  backend=CRYPTOGRAPHY_BACKEND)
- *
+ * algorithm=hashes.SHA256(),
+ * length=2 * key_length + iv_length,
+ * salt=b_salt,
+ * iterations=10000,
+ * backend=CRYPTOGRAPHY_BACKEND)
+ * <p>
  * List of Cipher
  * https://docs.oracle.com/javase/7/docs/api/javax/crypto/Cipher.html
  */
-public class AdvancedEncryptionStandardCipher implements CipherI {
+public class AdvancedEncryptionStandardCipher implements CipherSalt {
 
 
     public static final String ALGORITHM = "AES";
@@ -56,16 +56,16 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
 
     /**
      * A transformation is a string that describes the operation (or set of operations) to be performed on the given input, to produce some output.
-     *
+     * <p>
      * A transformation always includes:
-     *   * the name of a cryptographic algorithm (e.g., AES)
-     *   * and may be followed by:
-     *     * a feedback mode
-     *     * and padding scheme.
-     *
+     * * the name of a cryptographic algorithm (e.g., AES)
+     * * and may be followed by:
+     * * a feedback mode
+     * * and padding scheme.
+     * <p>
      * A transformation is of the form:
-     *    * "algorithm/mode/padding" or
-     *    * "algorithm"
+     * * "algorithm/mode/padding" or
+     * * "algorithm"
      */
     public static final String TRANSFORMATION = "AES/CBC/PKCS5PADDING";
 
@@ -73,16 +73,40 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
     private byte[] salt;
 
     private String passphrase;
+    private SecretKeySpec secretKey;
+    private byte[] key;
 
 
-    public static CipherI get() {
+    public static CipherSalt get() {
         return new AdvancedEncryptionStandardCipher();
     }
 
     @Override
-    public CipherI setPassphrase(String passphrase) {
+    public CipherAll setPassphrase(String passphrase) {
         this.passphrase = passphrase;
         return this;
+    }
+
+    /**
+     * To set a key (You would set a key or a passphrase but not both, if a key is given, a key is not generated from the passphrase)
+     *
+     * @param key
+     * @return
+     */
+    @Override
+    public CipherAll setKey(byte[] key) {
+        this.key = key;
+        return this;
+    }
+
+    /**
+     * Used to produce another passphrase for the digest (hmac)
+     *
+     * @return
+     */
+    @Override
+    public byte[] getKey() {
+        return this.key;
     }
 
     @Override
@@ -90,7 +114,7 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
 
         try {
 
-            SecretKeySpec key = getSecretKey();
+            SecretKey key = getSecretKey();
             IvParameterSpec salt = new IvParameterSpec(this.getSalt());
 
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
@@ -101,6 +125,11 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public byte[] encrypt(byte[] plaintext) {
+        return new byte[0];
     }
 
 
@@ -119,7 +148,7 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
 
     public String decrypt(byte[] cipher) {
         try {
-            return new String(getDecryptCipher().doFinal(cipher),UTF_8);
+            return new String(getDecryptCipher().doFinal(cipher), UTF_8);
         } catch (IllegalBlockSizeException | BadPaddingException e) {
             throw new RuntimeException(e);
         }
@@ -144,18 +173,27 @@ public class AdvancedEncryptionStandardCipher implements CipherI {
 
 
     /**
-     * @return a key specification derived from the passphrase, the salt, the number of iterations and the length
+     * @return a derived key from the passphrase (A key is the only input for a cipher)
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      */
-    SecretKeySpec getSecretKey() {
+    public SecretKey getSecretKey() {
         try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            final int numberOfIterations = 65536; // 10000 for Ansible
-            KeySpec pbeKeySpec = new PBEKeySpec(passphrase.toCharArray(), this.getSalt(), numberOfIterations, key_size);
-            SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
-            final SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getEncoded(), ALGORITHM);
-            return secretKeySpec;
+            if (this.secretKey == null) {
+
+                // Create a key from the passphrase
+                if (key == null) {
+                    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+                    final int numberOfIterations = 65536; // 10000 for Ansible
+                    KeySpec pbeKeySpec = new PBEKeySpec(passphrase.toCharArray(), this.getSalt(), numberOfIterations, key_size);
+                    SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
+                    key = secretKey.getEncoded();
+                }
+
+                // Set it
+                this.secretKey = new SecretKeySpec(key, ALGORITHM);
+            }
+            return this.secretKey;
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }

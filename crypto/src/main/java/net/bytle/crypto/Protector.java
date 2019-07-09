@@ -2,6 +2,8 @@ package net.bytle.crypto;
 
 import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.SecretKey;
+
 public class Protector {
 
 
@@ -12,12 +14,13 @@ public class Protector {
     public final static int PBE = 2;
     public final static int AES = 1;
 
-    private final CipherI cipher;
+    private final CipherSalt saltedCipher;
 
     // A code saved alongside the encrypted
     private final Integer cipherCode;
     // A version
     private final Integer cipherVersion;
+    private String passphrase;
 
     /**
      * @param cipherCode
@@ -26,22 +29,23 @@ public class Protector {
         this.cipherCode = cipherCode;
         switch (cipherCode) {
             case PBE:
-                this.cipher = PasswordBasedEncryptionCipher
+                this.saltedCipher = PasswordBasedEncryptionCipher
                         .get();
                 break;
             case AES:
-                this.cipher = AdvancedEncryptionStandardCipher
+                this.saltedCipher = AdvancedEncryptionStandardCipher
                         .get();
                 break;
             default:
                 throw new RuntimeException("Cipher (" + cipherCode + ") is not known");
 
         }
-        this.cipherVersion = cipher.getVersion();
+        this.cipherVersion = saltedCipher.getVersion();
     }
 
     Protector setPassphrase(String passphrase) {
-        cipher.setPassphrase(passphrase);
+        saltedCipher.setPassphrase(passphrase);
+        this.passphrase = passphrase;
         return this;
     }
 
@@ -53,11 +57,14 @@ public class Protector {
         if (plaintext == null) {
             return null;
         } else {
-            final byte[] cipherText = cipher.encrypt(plaintext);
-            final byte[] cipherSalt = cipher.getSalt();
+            final byte[] cipherText = saltedCipher.encrypt(plaintext);
+            final byte[] cipherSalt = saltedCipher.getSalt();
             final String cipherRelease = cipherCode + "." + cipherVersion;
-            final String cipherReleaseHex = base64.encodeAsString(cipherRelease.getBytes());
-            final String cipherTotal = "";
+            byte[] secretKey = saltedCipher.getKey();
+            HmacCipher.get()
+                    .setKey(secretKey)
+                    .encrypt(cipherText);
+
             return base64.encodeAsString(cipherText);
         }
     }
@@ -66,7 +73,7 @@ public class Protector {
         if (ciphertext == null) {
             return null;
         } else {
-            return cipher.decrypt(base64.decode(ciphertext));
+            return saltedCipher.decrypt(base64.decode(ciphertext));
         }
     }
 }
