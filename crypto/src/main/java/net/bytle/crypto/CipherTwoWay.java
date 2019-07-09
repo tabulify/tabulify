@@ -13,4 +13,5 @@ public interface CipherTwoWay extends CipherAll {
 
     CipherTwoWay setPassphrase(String passphrase);
     CipherTwoWay setKey(byte[] key);
+
 }

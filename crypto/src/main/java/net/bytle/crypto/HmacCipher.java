@@ -8,6 +8,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 /**
+ * Hmac is a one way algorithm used to verify
+ *   * the data integrity
+ *   * the signature (for authentication)
+ *
+ * We are using it to verify the data integrity. See test.
+ *  *
  * See doc:
  * https://docs.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#Mac
  * <p>

@@ -1,8 +1,9 @@
 package net.bytle.type;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Random;
-
+import java.util.stream.Stream;
 
 
 public class Bytes {
@@ -63,5 +64,17 @@ public class Bytes {
         new Random().nextBytes(bytes);
         return bytes;
     }
+
+    /**
+     *
+     * @param bytes
+     * @return the hexadecimal representation of the binary data. (Hexlify in Python)
+     * Every byte of data is converted into the corresponding 2-digit hex representation. The resulting string is therefore twice as long as the length of data.
+     */
+    public static String toHexaDecimal(byte[] bytes) {
+        return toHexaDecimalViaJavaxXml(bytes);
+    }
+
+
 
 }

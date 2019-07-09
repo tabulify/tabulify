@@ -1,6 +1,11 @@
 package net.bytle.crypto;
 
+import net.bytle.type.Arrayss;
+import net.bytle.type.Bytes;
 import org.apache.commons.codec.binary.Base64;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class Protector {
 
@@ -12,7 +17,7 @@ public class Protector {
     public final static int PBE = 2;
     public final static int AES = 1;
 
-    private final CipherTwoWay saltedCipher;
+    private final CipherTwoWay cipherTwoWay;
 
     // A code saved alongside the encrypted
     private final Integer cipherCode;
@@ -27,22 +32,22 @@ public class Protector {
         this.cipherCode = cipherCode;
         switch (cipherCode) {
             case PBE:
-                this.saltedCipher = PasswordBasedEncryptionCipher
+                this.cipherTwoWay = PasswordBasedEncryptionCipher
                         .get();
                 break;
             case AES:
-                this.saltedCipher = AdvancedEncryptionStandardCipher
+                this.cipherTwoWay = AdvancedEncryptionStandardCipher
                         .get();
                 break;
             default:
                 throw new RuntimeException("Cipher (" + cipherCode + ") is not known");
 
         }
-        this.cipherVersion = saltedCipher.getVersion();
+        this.cipherVersion = cipherTwoWay.getVersion();
     }
 
     Protector setPassphrase(String passphrase) {
-        saltedCipher.setPassphrase(passphrase);
+
         this.passphrase = passphrase;
         return this;
     }
@@ -55,15 +60,28 @@ public class Protector {
         if (plaintext == null) {
             return null;
         } else {
-            final byte[] cipherText = saltedCipher.encrypt(plaintext);
-            final byte[] cipherSalt = saltedCipher.getSalt();
-            final String cipherRelease = cipherCode + "." + cipherVersion;
-            byte[] secretKey = saltedCipher.getKey();
-            HmacCipher.get()
-                    .setKey(secretKey)
-                    .encrypt(cipherText);
+            final byte[] cipherText = cipherTwoWay
+                    .setPassphrase(passphrase)
+                    .encrypt(plaintext);
 
-            return base64.encodeAsString(cipherText);
+            // Always 16 byte
+            final byte[] cipherSalt = cipherTwoWay.getSalt();
+            // The secret key for the hmac digest is the same than for AES
+            byte[] secretKey = cipherTwoWay.getKey();
+
+            // Always 32 byte
+            byte[] hmacDigest = HmacCipher.get().setKey(secretKey).encrypt(plaintext);
+
+            // Always two bytes
+            final byte[] cipherRelease = new byte[] { cipherCode.byteValue(), cipherVersion.byteValue()};
+
+            // To go to string, we could have used: base64.encodeAsString(cipherText);
+            //List<String> listStoredText = Arrays.asList(Bytes.toHexaDecimal(cipherSalt), Bytes.toHexaDecimal(hmacDigest), Bytes.toHexaDecimal(cipherText));
+            // String storedText = String.join("\n",listStoredText);
+            String storedText = base64.encodeAsString(Arrayss.concatAll(cipherRelease,cipherSalt,hmacDigest,cipherText));
+
+
+            return storedText;
         }
     }
 
@@ -71,7 +89,7 @@ public class Protector {
         if (ciphertext == null) {
             return null;
         } else {
-            return saltedCipher.decrypt(base64.decode(ciphertext));
+            return cipherTwoWay.decrypt(base64.decode(ciphertext));
         }
     }
 }

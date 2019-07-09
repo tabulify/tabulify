@@ -15,6 +15,8 @@ import java.security.spec.KeySpec;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
+ * This is a block Cipher
+ *
  * If you modify the encryption way please use the version to keep backward compatibility
  * <p>
  * https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
@@ -154,10 +156,14 @@ public class AdvancedEncryptionStandardCipher implements CipherTwoWay {
         }
     }
 
+    /**
+     * The salt is fix 32 bytes
+     * @return
+     */
     @Override
     public byte[] getSalt() {
         // Init a salt
-        // The salt (init vector) has the same length than the cipher block size
+        // The salt (init vector) has the same length than the cipher block size but in bytes
         // The salt should be stored closed to the password
         if (this.salt == null) {
             int iv_length_bytes = bit_block_size / 8;

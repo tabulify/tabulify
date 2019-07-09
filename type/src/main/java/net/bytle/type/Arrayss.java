@@ -1,5 +1,7 @@
 package net.bytle.type;
 
+import java.util.Arrays;
+
 /**
  * Arrays utilities
  * Two ss to not clash with java.utils.Arrays
@@ -19,6 +21,49 @@ public class Arrayss {
             }
         }
         return false;
+    }
+
+
+    /**
+     * Concat bytes array
+     * @param first
+     * @param rest
+     * @return
+     */
+    public static byte[] concatAll(byte[] first, byte[]... rest) {
+        int totalLength = first.length;
+        for (byte[] array : rest) {
+            totalLength += array.length;
+        }
+        byte[] result = Arrays.copyOf(first, totalLength);
+        int offset = first.length;
+        for (byte[] array : rest) {
+            System.arraycopy(array, 0, result, offset, array.length);
+            offset += array.length;
+        }
+        return result;
+    }
+
+    /**
+     * StackOverflow
+     * https://stackoverflow.com/questions/80476/how-can-i-concatenate-two-arrays-in-java
+     * @param first
+     * @param rest
+     * @param <T>
+     * @return
+     */
+    public static <T> T[] concatAll(T[] first, T[]... rest) {
+        int totalLength = first.length;
+        for (T[] array : rest) {
+            totalLength += array.length;
+        }
+        T[] result = Arrays.copyOf(first, totalLength);
+        int offset = first.length;
+        for (T[] array : rest) {
+            System.arraycopy(array, 0, result, offset, array.length);
+            offset += array.length;
+        }
+        return result;
     }
 
 }
