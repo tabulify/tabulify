@@ -7,26 +7,24 @@ public class Protector {
 
     private final Base64 base64 = new Base64();
 
-    // Other type getInstance
-    // bouncycastle library
-    // https://bouncycastle.org/
-    // Cipher cipher = Cipher.getInstance("AES/CTR/PKCS5Padding", "BC");
-
-    // Note
-    // KerbTicket Encryption Type: AES-256-CTS-HMAC-SHA1-96 - AES in CTR (Counter) mode, and append an HMAC
 
 
-    public final static String PBE = "PBEWithMD5AndDES";
-    public final static String AES = "AES/CBC/PKCS5PADDING";
+    public final static int PBE = 2;
+    public final static int AES = 1;
 
     private final CipherI cipher;
 
-    /**
-     * @param cipher
-     */
-    private Protector(String cipher) {
+    // A code saved alongside the encrypted
+    private final Integer cipherCode;
+    // A version
+    private final Integer cipherVersion;
 
-        switch (cipher) {
+    /**
+     * @param cipherCode
+     */
+    private Protector(Integer cipherCode) {
+        this.cipherCode = cipherCode;
+        switch (cipherCode) {
             case PBE:
                 this.cipher = PasswordBasedEncryptionCipher
                         .get();
@@ -36,9 +34,10 @@ public class Protector {
                         .get();
                 break;
             default:
-                throw new RuntimeException("Cipher (" + cipher + ") is not known");
+                throw new RuntimeException("Cipher (" + cipherCode + ") is not known");
 
         }
+        this.cipherVersion = cipher.getVersion();
     }
 
     Protector setPassphrase(String passphrase) {
@@ -46,7 +45,7 @@ public class Protector {
         return this;
     }
 
-    public static Protector get(String cipher) {
+    public static Protector get(Integer cipher) {
         return new Protector(cipher);
     }
 
@@ -54,7 +53,12 @@ public class Protector {
         if (plaintext == null) {
             return null;
         } else {
-            return base64.encodeAsString(cipher.encrypt(plaintext));
+            final byte[] cipherText = cipher.encrypt(plaintext);
+            final byte[] cipherSalt = cipher.getSalt();
+            final String cipherRelease = cipherCode + "." + cipherVersion;
+            final String cipherReleaseHex = base64.encodeAsString(cipherRelease.getBytes());
+            final String cipherTotal = "";
+            return base64.encodeAsString(cipherText);
         }
     }
 

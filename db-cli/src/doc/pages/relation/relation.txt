@@ -1,0 +1,25 @@
+====== Bytle Db - Relational Database ======
+
+
+===== About =====
+[[:db|Bytle db]] supports the management of [[wp>Relation_(database)|relational data structure]] with the help of the following [[:module|modules]]:
+  * [[table:table]] - to perform operation on a relational table
+  * [[schema:schema]] - to perform operation on a relational schema
+  * [[database:database]] - to add/create/update database connections parameters
+  * [[fkey:fkey]] - to manage foreign keys (ie relation between tables)
+  * [[query:query]] - to perform operation on a SQL relational query
+
+
+===== Bonus =====
+The [[sample:sample|sample module]]  contains several sample relational schema.
+
+===== Supported Relational Database =====
+
+The following databases are actually tested against all ''Bytle Db'' functions:
+  * [[sqlite]]
+
+
+
+<WRAP round tip>
+All relational database that provides a JDBC driver and supports [[wp>SQL#Interoperability_and_standardization|ANSI SQL]] for the creation of data structure should work out of the box.
+</WRAP>

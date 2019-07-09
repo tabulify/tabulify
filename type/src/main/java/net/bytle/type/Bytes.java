@@ -47,7 +47,7 @@ public class Bytes {
      * @param bytes
      * @return an UTF-8 String
      */
-    static public String getString(byte[] bytes){
+    static public String toString(byte[] bytes){
         String s = new String(bytes, StandardCharsets.UTF_8);
         // Arrays.toString(bytes)
         return s;

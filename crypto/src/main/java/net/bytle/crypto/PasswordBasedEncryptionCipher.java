@@ -11,11 +11,7 @@ import java.security.spec.InvalidKeySpecException;
 
 public class PasswordBasedEncryptionCipher implements CipherI {
 
-    //TODO: the salt should be random and stored with the password
-    private final static byte[] SALT = {
-            (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-            (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-    };
+
 
     private final static String ALGORITHM = "PBEWithMD5AndDES";
     private String passphrase;
@@ -45,7 +41,7 @@ public class PasswordBasedEncryptionCipher implements CipherI {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance(ALGORITHM);
-            cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(), getSalt());
+            cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(), getSaltSpec());
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
@@ -61,16 +57,21 @@ public class PasswordBasedEncryptionCipher implements CipherI {
         }
     }
 
-    private AlgorithmParameterSpec getSalt() {
+    private AlgorithmParameterSpec getSaltSpec() {
         final int iteration = 1000;
-        return new PBEParameterSpec(SALT, iteration);
+        return new PBEParameterSpec(getSalt(), iteration);
+    }
+
+    @Override
+    public Integer getVersion() {
+        return 1;
     }
 
     Cipher getDecryptCipher() {
         Cipher cipher;
         try {
             cipher = Cipher.getInstance(ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), getSalt());
+            cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), getSaltSpec());
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
@@ -86,7 +87,15 @@ public class PasswordBasedEncryptionCipher implements CipherI {
         }
     }
 
-
+    @Override
+    public byte[] getSalt() {
+        //TODO: the salt should be random and stored with the password
+        byte[] SALT = {
+                (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
+                (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
+        };
+        return SALT;
+    }
 
 
 }
