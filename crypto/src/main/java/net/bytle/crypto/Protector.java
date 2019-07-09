@@ -10,6 +10,9 @@ import java.util.List;
 public class Protector {
 
 
+    public static final int saltLength = 16;
+    public static final int codeLength = 1;
+    public static final int digestLength = 32;
     private final Base64 base64 = new Base64();
 
 
@@ -24,6 +27,7 @@ public class Protector {
     // A version
     private final Integer cipherVersion;
     private String passphrase;
+    private int versionLength = 1;
 
     /**
      * @param cipherCode
@@ -72,16 +76,11 @@ public class Protector {
             // Always 32 byte
             byte[] hmacDigest = HmacCipher.get().setKey(secretKey).encrypt(plaintext);
 
-            // Always two bytes
-            final byte[] cipherRelease = new byte[] { cipherCode.byteValue(), cipherVersion.byteValue()};
+            // One bytes
+            final byte[] cipherCodeArray = new byte[] { cipherCode.byteValue() };
+            final byte[] cipherVersionArray  = new byte[] { cipherVersion.byteValue()};
 
-            // To go to string, we could have used: base64.encodeAsString(cipherText);
-            //List<String> listStoredText = Arrays.asList(Bytes.toHexaDecimal(cipherSalt), Bytes.toHexaDecimal(hmacDigest), Bytes.toHexaDecimal(cipherText));
-            // String storedText = String.join("\n",listStoredText);
-            String storedText = base64.encodeAsString(Arrayss.concatAll(cipherRelease,cipherSalt,hmacDigest,cipherText));
-
-
-            return storedText;
+            return base64.encodeAsString(Arrayss.concatAll(cipherSalt,cipherCodeArray, hmacDigest, cipherVersionArray, cipherText));
         }
     }
 
@@ -89,7 +88,36 @@ public class Protector {
         if (ciphertext == null) {
             return null;
         } else {
-            return cipherTwoWay.decrypt(base64.decode(ciphertext));
+            byte[] cipherTextBytes = base64.decode(ciphertext);
+            final int boundary0 = Protector.saltLength;
+            byte[] saltBytes = Arrays.copyOfRange(cipherTextBytes,0, boundary0);
+            final int boundary1 = boundary0 + codeLength;
+            byte[] codeBytes = Arrays.copyOfRange(cipherTextBytes, boundary0, boundary1);
+            final int boundary2 = boundary1+digestLength;
+            byte[] hmacBytes = Arrays.copyOfRange(cipherTextBytes, boundary1, boundary2);
+            final int boundary3 = boundary2+versionLength;
+            byte[] versionBytes = Arrays.copyOfRange(cipherTextBytes,boundary2,boundary3);
+            final int boundary4 = cipherTextBytes.length;
+            byte[] cipherBytes = Arrays.copyOfRange(cipherTextBytes, boundary3,boundary4);
+
+            final byte codeByte = codeBytes[0];
+            if (cipherCode.byteValue()!=codeByte){
+                throw new RuntimeException("Bad code");
+            }
+            if (versionBytes[0]!=cipherVersion.byteValue()){
+                throw new RuntimeException("Bad version");
+            }
+            // Data Verification
+            final String plaintext = cipherTwoWay
+                    .setPassphrase(passphrase)
+                    .setSalt(saltBytes)
+                    .decrypt(cipherBytes);
+            byte[] keyBytes = cipherTwoWay.getKey();
+            byte[] hmacDigest = HmacCipher.get().setKey(keyBytes).encrypt(plaintext);
+            if (!(Bytes.equals(hmacDigest,hmacBytes))){
+                throw new RuntimeException("Integrity error");
+            }
+            return plaintext;
         }
     }
 }

@@ -173,6 +173,12 @@ public class AdvancedEncryptionStandardCipher implements CipherTwoWay {
     }
 
     @Override
+    public CipherTwoWay setSalt(byte[] salt) {
+        this.salt = salt;
+        return this;
+    }
+
+    @Override
     public Integer getVersion() {
         return 1;
     }

@@ -17,6 +17,7 @@ public class PasswordBasedEncryptionCipher implements CipherTwoWay {
     private final static String ALGORITHM = "PBEWithMD5AndDES";
     private String passphrase;
     private byte[] key;
+    private byte[] salt;
 
     public static PasswordBasedEncryptionCipher get() {
         return new PasswordBasedEncryptionCipher();
@@ -123,12 +124,20 @@ public class PasswordBasedEncryptionCipher implements CipherTwoWay {
 
     @Override
     public byte[] getSalt() {
-        //TODO: the salt should be random and stored with the password
-        byte[] SALT = {
-                (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-                (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
-        };
-        return SALT;
+        if (this.salt==null) {
+            //TODO: the salt should be random and stored with the password
+            this.salt = new byte[] {
+                    (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
+                    (byte) 0xde, (byte) 0x33, (byte) 0x10, (byte) 0x12,
+            };
+        }
+        return this.salt;
+    }
+
+    @Override
+    public CipherTwoWay setSalt(byte[] salt) {
+        this.salt = salt;
+        return this;
     }
 
 

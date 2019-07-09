@@ -8,6 +8,7 @@ package net.bytle.crypto;
 public interface CipherTwoWay extends CipherAll {
 
     byte[] getSalt();
+    CipherTwoWay setSalt(byte[] salt);
 
     String decrypt(byte[] ciphertext);
 
