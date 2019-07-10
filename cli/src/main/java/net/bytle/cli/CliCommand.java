@@ -26,6 +26,9 @@ public class CliCommand {
     // The name of the cli (ie command)
     private final String name;
 
+    // A name alis
+    private String nameAlias;
+
     // Only for the parent command
     private HashMap<String, CliCommand> childCommandsMap = new HashMap<>();
     // To preserve the order
@@ -68,6 +71,8 @@ public class CliCommand {
     private CliWord appHomeWord;
     // The default value
     public static final String DEFAULT_APP_HOME_WORD = "BCLI_APP_HOME";
+
+
 
 
     /**
@@ -752,5 +757,14 @@ public class CliCommand {
 
     public CliWordGroup getGroup(String name) {
         return CliWordGroup.get(this, name);
+    }
+
+    public CliCommand setAliasName(String commandAlias) {
+        this.nameAlias = commandAlias;
+        return this;
+    }
+
+    public String getNameAlias() {
+        return this.nameAlias;
     }
 }

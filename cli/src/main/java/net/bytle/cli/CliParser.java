@@ -75,7 +75,7 @@ public class CliParser {
          * In the parse functions
          * The value is set if any value is null
          */
-        // Parse the command arguments
+        // Parse the command arguments into foundWords
         parseCommandArgument();
 
 
@@ -276,19 +276,28 @@ public class CliParser {
         // Number of defined cliCommand args (above this limit, the values are added to the last one)
         Integer argsSize = cliCommand.getArgs().size();
 
-        // A list of the sub-command name to check if the main argument is a sub-command
-        final List<CliCommand> cliCommandChainFromChild = cliCommand.getParentsCommands();
-        cliCommandChainFromChild.addAll(cliCommand.getChildCommands());
-        List<String> cliNames = cliCommandChainFromChild.stream()
+        // Building a list of the sub-command name to check if the main argument is a sub-command
+        final List<CliCommand> cliCommandChain = new ArrayList<>();
+        cliCommandChain.addAll(cliCommand.getParentsCommands());
+        cliCommandChain.addAll(cliCommand.getChildCommands());
+
+        // CliName
+        List<String> cliNames = cliCommandChain.stream()
                 .map(CliCommand::getName)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        // A list of the options to check if the main argument is a sub-command
+        // CliAliasName
+        List<String> cliAliasNames = cliCommandChain.stream()
+                .filter(x -> x.getNameAlias() != null)
+                .map(CliCommand::getNameAlias)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // Building a list of the options to check if the main argument is a sub-command
         List<String> optionLongQualifiedNames = cliCommand.getProperties().stream()
                 .map(x -> PREFIX_LONG_OPTION + x)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        // A list of the options to check if the main argument is a sub-command
+        // Building a list of the options to check if the main argument is a sub-command
         List<String> optionShortQualifiedNames = cliCommand.getProperties().stream()
                 .filter(x -> x.getShortName() != null)
                 .map(x -> PREFIX_SHORT_OPTION + x.getShortName())
@@ -340,6 +349,18 @@ public class CliParser {
 
                 // This is a command string
                 foundWords.put(s, null);
+                continue;
+
+            }
+            if (cliAliasNames.contains(s)) {
+
+                // This is a alias string
+                List<CliCommand> command = cliCommandChain.stream()
+                        .filter(c -> c.getNameAlias()!=null)
+                        .filter(c -> c.getNameAlias().equals(s))
+                        .collect(Collectors.toList());
+
+                foundWords.put(command.get(0).getName(), null);
                 continue;
 
             }
