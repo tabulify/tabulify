@@ -35,31 +35,30 @@ public class PasswordBasedEncryptionTransformation implements TransformationTwoW
     }
 
 
-
-
-
     @Override
     public byte[] encrypt(byte[] plaintext, String passphrase, byte[] salt) {
 
+        byte[] key = passphraseToKey(passphrase);
+        return encrypt(plaintext, key, salt);
+
+    }
+
+    private byte[] passphraseToKey(String passphrase) {
+
         try {
-            byte[] key = passphraseToKey(passphrase);
-            return encrypt(plaintext,key,salt);
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+            SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(passphrase.toCharArray()));
+            byte[] key = secretKey.getEncoded();
+            setKey(key);
+            return key;
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
 
     }
 
-    private byte[] passphraseToKey(String passphrase) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
-        SecretKey secretKey = secretKeyFactory.generateSecret(new PBEKeySpec(passphrase.toCharArray()));
-        byte[] key = secretKey.getEncoded();
-        setKey(key);
-        return key;
-    }
-
     private void setKey(byte[] key) {
-        if (key !=null){
+        if (key != null) {
             this.key = key;
         } else {
             throw new RuntimeException("The key was already set");
@@ -101,7 +100,7 @@ public class PasswordBasedEncryptionTransformation implements TransformationTwoW
 
     @Override
     public byte[] decrypt(byte[] ciphertext, String passphrase, byte[] salt) {
-        return decrypt(ciphertext, Cryptos.toBytes(passphrase),salt);
+        return decrypt(ciphertext, passphraseToKey(passphrase), salt);
     }
 
     public byte[] decrypt(byte[] cipherText, byte[] key, byte[] salt) {
@@ -122,12 +121,12 @@ public class PasswordBasedEncryptionTransformation implements TransformationTwoW
 
     @Override
     public byte[] encrypt(String plaintext, String passphrase, byte[] salt) {
-        return encrypt(Cryptos.toBytes(plaintext),passphrase,salt);
+        return encrypt(Cryptos.toBytes(plaintext), passphrase, salt);
     }
 
     @Override
     public byte[] encrypt(String plaintext, byte[] key, byte[] salt) {
-        return encrypt(Cryptos.toBytes(plaintext),key,salt);
+        return encrypt(Cryptos.toBytes(plaintext), key, salt);
     }
 
 

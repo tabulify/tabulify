@@ -25,7 +25,6 @@ public class Protector {
     /**
      * Length used in the parsing of the ciphertext
      */
-    private static final int saltLength = 16;
     private static final int transformationCodeLength = 1;
     private static final int hmacDigestLength = 32;
     private static final int protectorVersionLength = 1;
@@ -35,16 +34,18 @@ public class Protector {
 
     /**
      * A unique code representing an transformation (ie cipher + mode + padding)
+     * Only AES is for now public
      */
-    final static int AES_CODE = AdvancedEncryptionStandardTransformation.CODE;
-    private final static int PBE_CODE = PasswordBasedEncryptionTransformation.CODE;
-
+    public final static int AES_CODE = AdvancedEncryptionStandardTransformation.CODE;
+    protected final static int PBE_CODE = PasswordBasedEncryptionTransformation.CODE;
+    private Integer transformationCode = AES_CODE;
 
     // Version management
     private final Integer ProtectorVersion = 1;
 
 
     private String passphrase;
+
 
 
     /**
@@ -60,13 +61,9 @@ public class Protector {
         return new Protector(passphrase);
     }
 
-    String encrypt(String plaintext) {
-        return encrypt(plaintext, AES_CODE);
-    }
 
     /**
      * @param plaintext
-     * @param cipherCode
      * @return a ciphertext with the following structure
      * * first bit: the transformation code (default to 1 ie AES if public)
      * * second bit: the version (There is for now only one version but this if for backward compatibility)
@@ -76,11 +73,11 @@ public class Protector {
      * We can see that the first two bit stay the same. We didn't put them between the salt and the digest
      * to not show their length.
      */
-    protected String encrypt(String plaintext, Integer cipherCode) {
+    protected String encrypt(String plaintext) {
         if (plaintext == null) {
             return null;
         } else {
-            final TransformationTwoWay cipherTwoWay = getCipher(cipherCode);
+            final TransformationTwoWay cipherTwoWay = getCipher(this.transformationCode);
 
             byte[] cipherSalt = Bytes.getRandomBytes(cipherTwoWay.getSaltLength());
 
@@ -94,7 +91,7 @@ public class Protector {
             byte[] hmacDigest = HmacTransformation.get(secretKey).encrypt(plaintext);
 
             // One bytes
-            final byte[] cipherCodeArray = new byte[]{cipherCode.byteValue()};
+            final byte[] cipherCodeArray = new byte[]{this.transformationCode.byteValue()};
             final byte[] cipherVersionArray = new byte[]{ProtectorVersion.byteValue()};
 
             return base64.encodeAsString(Arrayss.concatAll(cipherCodeArray, cipherVersionArray, cipherSalt, hmacDigest, cipherText));
@@ -108,17 +105,20 @@ public class Protector {
             byte[] cipherTextBytes = base64.decode(ciphertext);
             final int boundary0 = Protector.transformationCodeLength;
             byte[] transformationCodeBytes = Arrays.copyOfRange(cipherTextBytes, 0, boundary0);
+            final byte codeByte = transformationCodeBytes[0];
+            TransformationTwoWay cipherTwoWay = getCipher(Byte.toUnsignedInt(codeByte));
+
             final int boundary1 = boundary0 + protectorVersionLength;
             byte[] protectorVersionBytes = Arrays.copyOfRange(cipherTextBytes, boundary0, boundary1);
-            final int boundary2 = boundary1 + saltLength;
+
+            final int boundary2 = boundary1 + cipherTwoWay.getSaltLength();
             byte[] saltBytes = Arrays.copyOfRange(cipherTextBytes, boundary1, boundary2);
             final int boundary3 = boundary2 + hmacDigestLength;
             byte[] hmacBytes = Arrays.copyOfRange(cipherTextBytes, boundary2, boundary3);
             final int boundary4 = cipherTextBytes.length;
             byte[] cipherBytes = Arrays.copyOfRange(cipherTextBytes, boundary3, boundary4);
 
-            final byte codeByte = transformationCodeBytes[0];
-            TransformationTwoWay cipherTwoWay = getCipher(Byte.toUnsignedInt(codeByte));
+
 
             if (protectorVersionBytes[0] != ProtectorVersion.byteValue()) {
                 throw new RuntimeException("Bad version");
@@ -127,6 +127,7 @@ public class Protector {
             final byte[] plaintext = cipherTwoWay
                     .decrypt(cipherBytes,passphrase,saltBytes);
             byte[] keyBytes = cipherTwoWay.getKey();
+
             byte[] hmacDigest = HmacTransformation.get(keyBytes).encrypt(plaintext);
             if (!(Bytes.equals(hmacDigest, hmacBytes))) {
                 throw new RuntimeException("Integrity error");
@@ -151,4 +152,8 @@ public class Protector {
     }
 
 
+    public Protector setTransformation(int code) {
+        this.transformationCode = code;
+        return this;
+    }
 }
