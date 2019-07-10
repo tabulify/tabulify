@@ -73,7 +73,7 @@ public class Protector {
      * We can see that the first two bit stay the same. We didn't put them between the salt and the digest
      * to not show their length.
      */
-    protected String encrypt(String plaintext) {
+    public String encrypt(String plaintext) {
         if (plaintext == null) {
             return null;
         } else {
