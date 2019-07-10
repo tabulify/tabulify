@@ -15,9 +15,9 @@ package net.bytle.crypto;
  *   * Mode: CTS (ciphertext stealing)
  *   * HMAC-SHA1-96 = HMAC using SHA-1 hash function with mac truncated to 96 bits
  */
-public interface CipherOneWay extends CipherAll {
+public interface TransformationOneWay extends TransformationAll {
 
-    CipherOneWay setPassphrase(String passphrase);
-    CipherOneWay setKey(byte[] key);
+    byte[] encrypt(String plaintext);
+    byte[] encrypt(byte[] plaintext);
 
 }

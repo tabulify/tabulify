@@ -15,22 +15,8 @@ package net.bytle.crypto;
  *   * Mode: CTS (ciphertext stealing)
  *   * HMAC-SHA1-96 = HMAC using SHA-1 hash function with mac truncated to 96 bits
  */
-public interface CipherAll {
+public interface TransformationAll {
 
-    /**
-     * A passphrase is by definition a string (char array)
-     * If you want to create one from a byte[], use {@link Cryptos#toString(byte[])}
-     * @param passphrase
-     * @return a cipher for construction chaining
-     */
-    CipherAll setPassphrase(String passphrase);
-
-    /**
-     * To set a key (You would set a key or a passphrase but not both, if a key is given, a key is not generated from the passphrase)
-     * @param key
-     * @return
-     */
-    CipherAll setKey(byte[] key);
 
     /**
      * Used to produce another passphrase for the digest (hmac)
@@ -38,10 +24,11 @@ public interface CipherAll {
      */
     byte[] getKey();
 
-    byte[] encrypt(String plaintext);
-    byte[] encrypt(byte[] plaintext);
 
 
-    Integer getVersion();
+    /**
+     * A unique id for the transformation
+     */
+    Integer getCode();
 
 }

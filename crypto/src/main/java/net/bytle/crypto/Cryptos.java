@@ -1,5 +1,7 @@
 package net.bytle.crypto;
 
+import net.bytle.type.Bytes;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Cryptos {
@@ -16,5 +18,9 @@ public class Cryptos {
 
     public static byte[] toBytes(String s) {
         return s.getBytes(UTF_8);
+    }
+
+    public static byte[] getSalt(int length) {
+        return Bytes.getRandomBytes(length);
     }
 }

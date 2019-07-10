@@ -9,11 +9,11 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * Hmac is a one way algorithm used to verify
- *   * the data integrity
- *   * the signature (for authentication)
- *
+ * * the data integrity
+ * * the signature (for authentication)
+ * <p>
  * We are using it to verify the data integrity. See test.
- *  *
+ * *
  * See doc:
  * https://docs.oracle.com/javase/7/docs/technotes/guides/security/crypto/CryptoSpec.html#Mac
  * <p>
@@ -23,34 +23,25 @@ import java.security.NoSuchAlgorithmException;
  * Stackoverflow:
  * From https://stackoverflow.com/questions/3208160/how-to-generate-an-hmac-in-java-equivalent-to-a-python-example
  */
-public class HmacCipher implements CipherOneWay {
+public class HmacTransformation implements TransformationOneWay {
 
-    private String passphrase;
+
     final static private String TRANSFORMATION = "HmacSHA256"; // could be also "HmacMD5"  HmacSHA1
     private byte[] key;
 
-    public static HmacCipher get() {
-        return new HmacCipher();
-    }
 
-
-    @Override
-    public CipherOneWay setPassphrase(String passphrase) {
-        this.passphrase = passphrase;
-        return this;
-    }
-
-    /**
-     * To set a key (You would set a key or a passphrase but not both, if a key is given, a key is not generated from the passphrase)
-     *
-     * @param key
-     * @return
-     */
-    @Override
-    public CipherOneWay setKey(byte[] key) {
+    private HmacTransformation(byte[] key) {
         this.key = key;
-        return this;
     }
+
+    public static HmacTransformation get(String passphrase) {
+        return new HmacTransformation(Cryptos.toBytes(passphrase));
+    }
+
+    public static HmacTransformation get(byte[] key) {
+        return new HmacTransformation(key);
+    }
+
 
 
 
@@ -61,17 +52,15 @@ public class HmacCipher implements CipherOneWay {
      */
     public byte[] getKey() {
         if (key == null) {
-            if (passphrase != null) {
-                key = passphrase.getBytes();
-            } else {
-                try {
-                    KeyGenerator keyGen = KeyGenerator.getInstance(TRANSFORMATION);
-                    SecretKey secretKey = keyGen.generateKey();
-                    key = secretKey.getEncoded();
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                }
+
+            try {
+                KeyGenerator keyGen = KeyGenerator.getInstance(TRANSFORMATION);
+                SecretKey secretKey = keyGen.generateKey();
+                key = secretKey.getEncoded();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
             }
+
         }
         return key;
     }
@@ -87,12 +76,11 @@ public class HmacCipher implements CipherOneWay {
 
 
     @Override
-    public Integer getVersion() {
+    public Integer getCode() {
         return null;
     }
 
     /**
-     *
      * @param cipherText
      * @return the signed digest hash
      */
@@ -100,7 +88,7 @@ public class HmacCipher implements CipherOneWay {
     public byte[] encrypt(byte[] cipherText) {
         try {
             Mac mac = Mac.getInstance(TRANSFORMATION);
-            SecretKeySpec secretKey = new SecretKeySpec(getKey(),TRANSFORMATION);
+            SecretKeySpec secretKey = new SecretKeySpec(getKey(), TRANSFORMATION);
             mac.init(secretKey);
             return mac.doFinal(cipherText);
         } catch (InvalidKeyException | NoSuchAlgorithmException e) {
