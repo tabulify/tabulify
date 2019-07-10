@@ -23,7 +23,7 @@ public class DbDatabaseList {
         cliCommand
                 .setDescription(description);
 
-        Databases.of()
+        Databases.of();
 
         LOGGER.info("Bye !");
 

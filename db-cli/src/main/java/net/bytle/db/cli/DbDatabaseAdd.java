@@ -129,9 +129,10 @@ public class DbDatabaseAdd {
             database.close();
         }
 
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue)
+        DatabasesStore.of(storagePathValue)
                 .setPassphrase(passphrase)
                 .save(database);
+
         LOGGER.info("The database ("+databaseName+") was saved.");
         LOGGER.info("Bye !");
 

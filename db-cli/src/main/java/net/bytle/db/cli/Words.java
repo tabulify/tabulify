@@ -45,6 +45,7 @@ public class Words {
     // Delete command
     static final String DROP_COMMAND = "drop";
     static final String REMOVE_COMMAND = "remove";
+    static final String REMOVE_COMMAND_ALIAS = "rm";
 
     // Initialize DML
     static final String CREATE_COMMAND = "create";

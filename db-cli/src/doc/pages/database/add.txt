@@ -38,18 +38,21 @@ Example:  To add the database information about the database `name`:
 </unit>
 
 ===== Example =====
-Adding a [[relation:sqlite|Sqlite database]]:
-<unit render=false>
+Adding a [[relation:sqlite|Sqlite database]] with the name ''sqliteDbName'':
+<unit display="none">
 <code dos>
-db database rm "sqlite"
+db database rm "sqliteDbName"
 </code>
 </unit>
 
 <unit>
 <code dos>
-db database add "sqlite" "jdbc:sqlite://%TMP%/db.db"
+db database add "sqliteDbName" "jdbc:sqlite://%TMP%/db.db"
 </code>
 <console>
+Connection pinged
+19:24:35 - INFO - The database (sqliteDbName) was saved.
+19:24:35 - INFO - Bye !
 </console>
 </unit>
 

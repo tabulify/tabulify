@@ -2,13 +2,11 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 import net.bytle.fs.Fs;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -34,7 +32,8 @@ public class DbDatabase {
         cliCommand.commandOf(Words.INFO_COMMAND)
                 .setDescription("show database information");
         cliCommand.commandOf(Words.REMOVE_COMMAND)
-                .setDescription("Remove a database");
+                .setDescription("Remove a database")
+                .setAliasName(REMOVE_COMMAND_ALIAS);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
@@ -46,12 +45,15 @@ public class DbDatabase {
                         DbDatabaseAdd.run(command, args);
                         break;
                     case LIST_COMMAND:
-                        DbTableList.run(command, args);
+                        DbDatabaseList.run(command, args);
                         break;
                     case REMOVE_COMMAND:
-                        DbTableList.run(command, args);
+                        DbDatabaseRemove.run(command, args);
                         break;
                     case INFO_COMMAND:
+                        DbDatabaseInfo.run(command, args);
+                        break;
+                    case SHOW_COMMAND:
                         DbDatabaseInfo.run(command, args);
                         break;
                     default:

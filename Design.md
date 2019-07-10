@@ -3,7 +3,7 @@
 ## Gold rule
 
   * No Cache (in memory) - Wel Persistence
-  * No default on argument (wel on options) - ie target database should be seen in the Cli Command
+  * No default value on mandatory options or argument - ie target database should be seen in the Cli Command
   
 ## Functional
 
