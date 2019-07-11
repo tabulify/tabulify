@@ -44,14 +44,16 @@ public class DatabasesStore {
     /**
      * The ini file were database information are saved to disk
      */
-    private Ini wini;
+    private Ini ini;
 
 
     private DatabasesStore(Path path) {
+
         if (path != null) {
             this.path = path;
+            DbLoggers.LOGGER_DB_ENGINE.info("Opening the database store (" + path.toAbsolutePath().toString() + ")");
         } else {
-            this.path = DEFAULT_STORAGE_FILE;
+            throw new RuntimeException("The path store should not be null");
         }
     }
 
@@ -76,20 +78,29 @@ public class DatabasesStore {
         ini.put(database.getDatabaseName(), URL, database.getUrl());
         ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
         ini.put(database.getDatabaseName(), USER, database.getUser());
-        String password = database.getPassword();
-        if (database.getPassword() == null && passphrase != null) {
-            password = Protector.get(passphrase).encrypt(database.getPassword());
+        if (database.getPassword() != null) {
+            if (passphrase == null) {
+                throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
+            }
+            String password = Protector.get(passphrase).encrypt(database.getPassword());
+            ini.put(database.getDatabaseName(), PASSWORD, password);
         }
-        ini.put(database.getDatabaseName(), PASSWORD, password);
         ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
-        try {
-            ini.store();
-        } catch (
-                IOException e) {
-            throw new RuntimeException(e);
-        }
+        flush();
 
         return this;
+    }
+
+    /**
+     * Write the changes to the disk
+     */
+    private void flush() {
+
+        try {
+            ini.store();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -97,14 +108,14 @@ public class DatabasesStore {
         if (!(Files.exists(this.path))) {
             Fs.createFile(this.path);
         }
-        if (wini == null) {
+        if (ini == null) {
             try {
-                wini = new Ini(this.path.toFile());
+                ini = new Ini(this.path.toFile());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        return wini;
+        return ini;
     }
 
     /**
@@ -118,18 +129,20 @@ public class DatabasesStore {
         List<String> databases = new ArrayList<>();
         for (String globPattern : globPatterns) {
             String regexpPattern = Globs.toRegexPattern(globPattern);
-            for(Profile.Section section : ini.values()){
-                if (section.getName().matches(regexpPattern)){
+            for (Profile.Section section : ini.values()) {
+                if (section.getName().matches(regexpPattern)) {
                     Profile.Section deletedSection = ini.remove(section);
                     databases.add(deletedSection.getName());
                 }
             }
         }
+        flush();
         return databases;
     }
 
     /**
      * Removes all databases
+     *
      * @return
      */
     public List<String> removeAllDatabases() {
@@ -171,11 +184,11 @@ public class DatabasesStore {
         if (iniSection != null) {
             database.setUrl(iniSection.get(URL));
             database.setUser(iniSection.get(USER));
-            if (iniSection.get(PASSWORD)!=null) {
-                if (passphrase!=null) {
+            if (iniSection.get(PASSWORD) != null) {
+                if (passphrase != null) {
                     database.setPassword(Protector.get(passphrase).decrypt(iniSection.get(PASSWORD)));
                 } else {
-                    throw new RuntimeException("The database ("+database+") has a password. A passphrase should be provided");
+                    throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
                 }
             }
             database.setDriver(iniSection.get(DRIVER));

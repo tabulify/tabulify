@@ -15,12 +15,13 @@ import java.sql.Connection;
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_PATH;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.ADD_COMMAND;
+import static net.bytle.db.cli.Words.UPSERT_COMMAND;
 
 
 /**
  * <p>
  */
-public class DbDatabaseAdd {
+public class DbDatabaseUpsert {
 
     protected static final String DRIVER = "driver";
     protected static final String URL = "url";
@@ -35,10 +36,10 @@ public class DbDatabaseAdd {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Add a database";
+        String description = "Update or insert a database";
 
-        String footer = "Example:  To add the database information about the database `name`:\n" +
-                "    db " + Words.DATABASE_COMMAND + " " + ADD_COMMAND + " name";
+        String footer = "Example:  To upsert the database information about the database `name`:\n" +
+                "    db " + Words.DATABASE_COMMAND + " " + UPSERT_COMMAND + CliParser.PREFIX_LONG_OPTION + URL + "jdbc:sqlite//%TMP%/db.db name";
 
         // Create the parser
         cliCommand
@@ -50,10 +51,9 @@ public class DbDatabaseAdd {
                 .setMandatory(true);
 
 
-        cliCommand.argOf(URL)
+        cliCommand.optionOf(URL)
                 .setShortName("u")
-                .setDescription("The database url")
-                .setMandatory(true);
+                .setDescription("The database url (if the database doesn't exist, this options is mandatory)");
 
         cliCommand.optionOf(LOGIN)
                 .setShortName("l")
@@ -118,30 +118,30 @@ public class DbDatabaseAdd {
                 .setPassword(pwdValue)
                 .setStatement(statementValue);
 
-
+        Connection connection = null;
+        try {
+            connection = database.getCurrentConnection();
+        } catch (Exception e) {
+            LOGGER.warning("We were unable to make a connection to the database " + databaseName);
+        }
+        if (connection != null) {
+            System.out.println("Connection pinged");
+            database.close();
+        }
 
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue)
                 .setPassphrase(passphrase);
-        if (databasesStore.getDatabases(databaseName).size() == 1) {
-            LOGGER.severe("The database ("+databaseName+") exist already.");
-            System.exit(1);
+        if (databasesStore.getDatabases(databaseName).size() != 0) {
+            if (database.getUrl()==null){
+                LOGGER.severe("The database doesn't exist. An Url should be then specified");
+                System.exit(1);
+            }
         } else {
-
-            // Connection test
-            Connection connection = null;
-            try {
-                connection = database.getCurrentConnection();
-            } catch (Exception e) {
-                LOGGER.warning("We were unable to make a connection to the database " + databaseName);
-            }
-            if (connection != null) {
-                System.out.println("Connection pinged");
-                database.close();
-            }
-
-            databasesStore.save(database);
-            LOGGER.info("The database (" + databaseName + ") was saved.");
+            LOGGER.info("The database exist already");
         }
+        databasesStore.save(database);
+        LOGGER.info("The database (" + databaseName + ") was saved.");
+
 
         LOGGER.info("Bye !");
 

@@ -50,6 +50,7 @@ public class Words {
     // Initialize DML
     static final String CREATE_COMMAND = "create";
     static final String ADD_COMMAND = "add";
+    static final String UPSERT_COMMAND = "upsert";
 
     // Scalar UI - Show/Info
     static final String SHOW_COMMAND = "show";

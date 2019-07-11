@@ -27,6 +27,8 @@ public class DbDatabase {
 
         cliCommand.commandOf(Words.ADD_COMMAND)
                 .setDescription("add a database");
+        cliCommand.commandOf(Words.UPSERT_COMMAND)
+                .setDescription("update or add a database if it does't exist");
         cliCommand.commandOf(Words.LIST_COMMAND)
                 .setDescription("list the databases");
         cliCommand.commandOf(Words.INFO_COMMAND)
