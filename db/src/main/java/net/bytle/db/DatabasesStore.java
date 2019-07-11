@@ -104,9 +104,6 @@ public class DatabasesStore {
 
 
     private Ini getIniFile() {
-        if (!(Files.exists(this.path))) {
-            Fs.createFile(this.path);
-        }
         if (ini == null) {
             reload();
         }
@@ -171,6 +168,10 @@ public class DatabasesStore {
         return databases;
     }
 
+    public List<Database> getDatabases(List<String> globPatterns) {
+        return getDatabases(globPatterns.toArray(new String[0]));
+    }
+
     public Database DatabaseOf(String name) {
 
         Database database = Databases.of(name);
@@ -207,7 +208,30 @@ public class DatabasesStore {
      */
     private void load() {
         try {
-            ini = new Ini(this.path.toFile());
+            if (!(Files.exists(this.path))) {
+                Fs.createFile(this.path);
+                ini = new Ini(this.path.toFile());
+
+                // Add a Sqlite
+                Path dbFile;
+                // Trick to not have the user name in the output ie C:\Users\Username\...
+                // The env value have a fake account
+                final String bytle_db_databases_store = System.getenv("BYTLE_DB_DATABASES_STORE");
+                if (bytle_db_databases_store!=null){
+                    dbFile = Paths.get(bytle_db_databases_store);
+                } else {
+                    dbFile = Paths.get(Fs.getAppData(DbDefaultValue.LIBRARY_NAME).toAbsolutePath().toString(), DbDefaultValue.LIBRARY_NAME + ".db");
+                }
+                Files.createDirectories(dbFile.getParent());
+                String rootWindows = "///";
+                Database database = Databases.of("sqlite")
+                        .setDriver("org.sqlite.JDBC")
+                        .setUrl("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
+                save(database);
+
+            } else {
+                ini = new Ini(this.path.toFile());
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

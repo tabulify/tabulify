@@ -39,7 +39,7 @@ public class Db {
         final String appName = Words.CLI_NAME;
         Path dbFile = Paths.get(Fs.getAppData(appName).toAbsolutePath().toString(), appName + ".db");
         JDBC_URL_TARGET_DEFAULT = SqliteSqlDatabase.getJdbcUrl(dbFile);
-        JDBC_DRIVER_TARGET_DEFAULT = "org.sqlite.JDBC";
+        JDBC_DRIVER_TARGET_DEFAULT = SqliteSqlDatabase.getDriver();
     }
 
     // To store  the data

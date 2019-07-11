@@ -178,6 +178,25 @@ public class Fs {
     }
 
     /**
+     *
+     * @param prefix - a prefix to generate the directory name
+     * @return a temp directory
+     */
+    public static Path createTempDirectory(String prefix) {
+
+        try {
+
+            return Files.createTempDirectory(prefix);
+
+        } catch (IOException e) {
+
+            throw new RuntimeException(e);
+
+        }
+
+    }
+
+    /**
      * @param path
      * @return See also: http://code.google.com/p/guava-libraries/wiki/HashingExplained
      */

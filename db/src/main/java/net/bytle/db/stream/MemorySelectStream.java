@@ -50,7 +50,11 @@ public class MemorySelectStream implements SelectStream {
         final int index = columnIndex;
         if (index < row.size()) {
             final Object o = row.get(index);
-            return o.toString();
+            if (o==null){
+                return null;
+            } else {
+                return o.toString();
+            }
         } else {
             return "";
         }

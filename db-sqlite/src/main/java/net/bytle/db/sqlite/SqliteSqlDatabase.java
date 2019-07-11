@@ -25,6 +25,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
         dataTypeDatabaseSet.put(SqliteTypeText.TYPE_CODE, new SqliteTypeText());
     }
 
+    public static String getDriver() {
+        return "org.sqlite.JDBC";
+    }
+
     @Override
     public DataTypeDatabase dataTypeOf(Integer typeCode) {
         return dataTypeDatabaseSet.get(typeCode);
