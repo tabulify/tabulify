@@ -12,9 +12,8 @@ import net.bytle.db.database.Databases;
 import java.nio.file.Path;
 import java.sql.Connection;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_PATH;
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
-import static net.bytle.db.cli.Words.ADD_COMMAND;
 import static net.bytle.db.cli.Words.UPSERT_COMMAND;
 
 
@@ -39,7 +38,7 @@ public class DbDatabaseUpsert {
         String description = "Update or insert a database";
 
         String footer = "Example:  To upsert the database information about the database `name`:\n" +
-                "    db " + Words.DATABASE_COMMAND + " " + UPSERT_COMMAND + CliParser.PREFIX_LONG_OPTION + URL + "jdbc:sqlite//%TMP%/db.db name";
+                "    db " + Words.DATABASE_COMMAND + " " + UPSERT_COMMAND + " "+ CliParser.PREFIX_LONG_OPTION + URL + " jdbc:sqlite//%TMP%/db.db name";
 
         // Create the parser
         cliCommand
@@ -77,7 +76,7 @@ public class DbDatabaseUpsert {
         cliCommand.optionOf(STORAGE_PATH)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_PATH);
+                .setEnvName(BYTLE_DB_DATABASES_STORE);
 
 
         cliCommand.optionOf(STATEMENT)

@@ -12,7 +12,7 @@ import net.bytle.db.database.Databases;
 import java.nio.file.Path;
 import java.sql.Connection;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_PATH;
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.ADD_COMMAND;
 
@@ -77,7 +77,7 @@ public class DbDatabaseAdd {
         cliCommand.optionOf(STORAGE_PATH)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_PATH);
+                .setEnvName(BYTLE_DB_DATABASES_STORE);
 
 
         cliCommand.optionOf(STATEMENT)

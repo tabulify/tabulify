@@ -1,0 +1,51 @@
+====== Bytle Db - Database Remove ======
+
+
+===== About =====
+''remove'' is an action of the [[database|database module]] that removes a database (metadata only).
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db database remove --help
+</code>
+<console>
+14:54:46 - INFO - (conf) word was not found
+14:54:46 - INFO - (help) word was found with the value: true
+
+List the databases
+
+Syntax:
+
+	db database remove [options|flags] <name>
+
+where:
+
+	Local
+		* --store <value>               The path where the database information are stored
+
+	Args:
+		* name                          the database name or a glob pattern
+</console>
+</unit>
+
+===== Example =====
+  * [[upsert|Add a database]]
+<unit>
+<code dos>
+db database upsert --url "jdbc:sqlite://%TMP%/db.db" "dbName"
+</code>
+</unit>
+  * Remove it
+<unit>
+<code dos>
+db database rm dbName 
+</code>
+<console>
+18:30:20 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
+18:30:20 - INFO - 1 databases were found
+18:30:20 - INFO - The database (dbName) was removed
+18:30:20 - INFO - Bye !
+</console>
+</unit>

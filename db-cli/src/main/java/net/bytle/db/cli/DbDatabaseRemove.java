@@ -5,11 +5,13 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
+import net.bytle.db.database.Database;
 
 import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_PATH;
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
 
@@ -24,7 +26,7 @@ public class DbDatabaseRemove {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "List the databases";
+        String description = "Remove a database (metadata only)";
 
         // Create the parser
         cliCommand
@@ -37,17 +39,33 @@ public class DbDatabaseRemove {
         cliCommand.optionOf(DbDatabase.STORAGE_PATH)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_PATH);
+                .setEnvName(BYTLE_DB_DATABASES_STORE);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
-        final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
 
+
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+
+        final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
+        for (String name : names) {
+            final List<Database> databases = databasesStore.getDatabases(name);
+            if (databases.size() == 0) {
+
+                LOGGER.severe("There is no database called (" + name + ")");
+                System.exit(1);
+            } else {
+                LOGGER.info(databases.size() + " databases were found");
+            }
+            for (Database database : databases) {
+                databasesStore.removeDatabase(database.getDatabaseName());
+                LOGGER.info("The database (" + database.getDatabaseName() + ") was removed");
+            }
+
+        }
         LOGGER.info("Bye !");
 
 
     }
-
-
 }

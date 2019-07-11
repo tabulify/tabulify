@@ -12,7 +12,7 @@ import net.bytle.db.database.Databases;
 public class DbDatabaseList {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String DATABASE_NAME = "name";
+
 
 
     public static void run(CliCommand cliCommand, String[] args) {

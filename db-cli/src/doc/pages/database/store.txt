@@ -1,0 +1,23 @@
+====== Bytle Db - Databases Store ======
+
+
+===== About =====
+The ''database store'' is a local file where the [[database|databases information]] are stored.
+
+
+===== Location =====
+
+In every [[database#action|database action]], you can specify the location of this file with the ''store'' option.
+
+
+Or globally if you set the path by creating the following environment variable ''BYTLE_DB_DATABASES_STORE''.
+
+
+Default:
+  * Windows: ''C:\Users\userName\AppData\Local\db\databases.ini''
+  * Linux: ''~/.db/databases.ini''
+
+===== Format =====
+This file follows the same semantic than ODBC.ini file where each section is a database (ie DSN).
+
+

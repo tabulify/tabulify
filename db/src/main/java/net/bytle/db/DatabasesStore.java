@@ -213,4 +213,11 @@ public class DatabasesStore {
         }
     }
 
+    public void removeDatabase(String name) {
+        Profile.Section deletedSection = getIniFile().remove(name);
+        if (deletedSection==null){
+            throw new RuntimeException("The database ("+name+") is non existent and therefore cannot be removed.");
+        }
+        flush();
+    }
 }

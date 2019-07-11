@@ -1,4 +1,4 @@
-====== Bytle Db - Database add ======
+====== Bytle Db - Database Add ======
 
 ===== About =====
 The ''database add'' operations

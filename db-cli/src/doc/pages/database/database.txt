@@ -9,6 +9,7 @@ Within the database module, you can:
   * [[info]] - get information on a database
   * [[add]] - create/add a database
   * [[remove]] - remove a database
+  * [[upsert]] - update or create a database
 
 
 
