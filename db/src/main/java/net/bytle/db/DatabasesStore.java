@@ -197,8 +197,9 @@ public class DatabasesStore {
     /**
      * Reread the file
      */
-    public void reload() {
+    public DatabasesStore reload() {
         load();
+        return this;
     }
 
     /**
