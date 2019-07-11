@@ -131,7 +131,7 @@ public class DbDatabaseUpsert {
 
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue)
                 .setPassphrase(passphrase);
-        if (databasesStore.getDatabases(databaseName).size() != 0) {
+        if (databasesStore.getDatabases(databaseName).size() == 0) {
             if (database.getUrl()==null){
                 LOGGER.severe("The database doesn't exist. An Url should be then specified");
                 System.exit(1);

@@ -87,7 +87,6 @@ public class DatabasesStore {
         }
         ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
         flush();
-
         return this;
     }
 
@@ -109,11 +108,7 @@ public class DatabasesStore {
             Fs.createFile(this.path);
         }
         if (ini == null) {
-            try {
-                ini = new Ini(this.path.toFile());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            reload();
         }
         return ini;
     }
@@ -199,5 +194,22 @@ public class DatabasesStore {
 
     }
 
+    /**
+     * Reread the file
+     */
+    public void reload() {
+        load();
+    }
+
+    /**
+     * Read the file
+     */
+    private void load() {
+        try {
+            ini = new Ini(this.path.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

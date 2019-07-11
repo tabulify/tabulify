@@ -46,6 +46,9 @@ public class DbDatabase {
                     case ADD_COMMAND:
                         DbDatabaseAdd.run(command, args);
                         break;
+                    case UPSERT_COMMAND:
+                        DbDatabaseUpsert.run(command, args);
+                        break;
                     case LIST_COMMAND:
                         DbDatabaseList.run(command, args);
                         break;
