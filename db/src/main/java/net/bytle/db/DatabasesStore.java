@@ -97,7 +97,7 @@ public class DatabasesStore {
     private void flush() {
 
         try {
-            ini.store();
+            getIniFile().store();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
