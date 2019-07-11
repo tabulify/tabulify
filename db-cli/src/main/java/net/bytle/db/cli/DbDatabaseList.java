@@ -69,18 +69,26 @@ public class DbDatabaseList {
         TableDef databaseInfo = Tables.get("databases")
                 .addColumn("Name")
                 .addColumn("Login")
+                .addColumn("Password")
                 .addColumn("Url")
                 .addColumn("Driver");
 
         final InsertStream tableInsertStream = Tables.getTableInsertStream(databaseInfo);
         for (Database database:databases) {
+            String password = null;
+            if (database.getPassword()!=null){
+                password = "xxx";
+            }
             tableInsertStream
-                    .insert(database.getDatabaseName(), database.getUser(), database.getUrl(), database.getDriver());
+                    .insert(database.getDatabaseName(), database.getUser(), password, database.getUrl(), database.getDriver());
         }
         tableInsertStream.close();
 
         MemorySelectStream tableOutputStream = Tables.getTableOutputStream(databaseInfo);
+
+        System.out.println();
         Streams.print(tableOutputStream);
+        System.out.println();
         tableOutputStream.close();
 
         Tables.delete(databaseInfo);

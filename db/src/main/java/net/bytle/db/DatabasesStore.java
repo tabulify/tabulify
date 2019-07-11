@@ -216,7 +216,7 @@ public class DatabasesStore {
                 Path dbFile;
                 // Trick to not have the user name in the output ie C:\Users\Username\...
                 // The env value have a fake account
-                final String bytle_db_databases_store = System.getenv("BYTLE_DB_DATABASES_STORE");
+                final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
                 if (bytle_db_databases_store!=null){
                     dbFile = Paths.get(bytle_db_databases_store);
                 } else {
