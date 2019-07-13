@@ -21,3 +21,9 @@ Default:
 This file follows the same semantic than ODBC.ini file where each section is a database (ie DSN).
 
 
+===== Password storage =====
+Every password in a database store is encrypted.
+
+The encryption ciphers used are approved by the Computer security division of the USA department of commerce via the National Institute of Standard and Technology) and follows the [[https://csrc.nist.gov/publications/detail/sp/800-38a/final|SP800-38A recommendations]].
+
+When a database connection need a password, a ''passphrase'' is mandatory. This passphrase should be unique by databases store file.

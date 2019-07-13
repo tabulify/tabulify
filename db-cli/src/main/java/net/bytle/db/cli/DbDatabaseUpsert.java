@@ -117,6 +117,7 @@ public class DbDatabaseUpsert {
                 .setPassword(pwdValue)
                 .setStatement(statementValue);
 
+        LOGGER.info("Trying to make a connection");
         Connection connection = null;
         try {
             connection = database.getCurrentConnection();
@@ -124,7 +125,7 @@ public class DbDatabaseUpsert {
             LOGGER.warning("We were unable to make a connection to the database " + databaseName);
         }
         if (connection != null) {
-            System.out.println("Connection pinged");
+            LOGGER.info("The connection was successful.");
             database.close();
         }
 

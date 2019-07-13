@@ -7,7 +7,6 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
@@ -15,7 +14,6 @@ import net.bytle.db.stream.MemorySelectStream;
 import net.bytle.db.stream.Streams;
 
 import java.nio.file.Path;
-import java.sql.Types;
 import java.util.List;
 
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;

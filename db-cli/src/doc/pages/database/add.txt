@@ -1,7 +1,9 @@
 ====== Bytle Db - Database Add ======
 
 ===== About =====
-The ''database add'' operations
+The ''database add'' operations will add database information to a [[store|databases store]].
+
+<wrap tip>If the database already exists, this operations will return an error whereas the [[upsert|upsert operation]] will not.</wrap>
 
 ===== Syntax =====
 <unit>

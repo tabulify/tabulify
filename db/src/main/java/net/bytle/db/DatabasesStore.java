@@ -229,6 +229,29 @@ public class DatabasesStore {
                         .setUrl("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
                 save(database);
 
+                database = Databases.of("oracle")
+                        .setDriver("oracle.jdbc.OracleDriver")
+                        .setUrl("jdbc:oracle:thin:@[host]:[port]/[servicename]");
+                save(database);
+
+                database = Databases.of("sqlserver")
+                        .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+                        .setUrl("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+                        .setUser("sa")
+                        .setPassword("TheSecret1!");
+                save(database);
+
+                database = Databases.of("mysql")
+                        .setDriver("com.mysql.jdbc.Driver")
+                        .setUrl("jdbc:mysql://[host]:[port]/[database]");
+                save(database);
+
+                // jdbc:postgresql://host:port/database?prop=value
+                database = Databases.of("postgresql")
+                        .setDriver("org.postgresql.Driver")
+                        .setUrl("jdbc:postgresql://host:port/test?ssl=true");
+                save(database);
+
             } else {
                 ini = new Ini(this.path.toFile());
             }

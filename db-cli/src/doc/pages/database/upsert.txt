@@ -2,7 +2,7 @@
 
 
 ===== About =====
-''upsert'' is an action of the [[database|database module]] that update a database or create it if it doesn't exist yet in the [[store|store]].
+''upsert'' is an action of the [[database|database module]] that update a [[database|database]] or create it if it doesn't exist yet in the [[store|store]].
 
 
 ===== Syntax =====
@@ -43,19 +43,22 @@ Example:  To upsert the database information about the database `name`:
   * Upsert a database
 <unit>
 <code dos>
-db database upsert --url "jdbc:sqlite://%TMP%/db.db" "name"
+db database upsert --url "jdbc:sqlite://%TMP%/db.db" mySqliteDB
 </code>
 <console>
-18:26:59 - INFO - (conf) word was not found
-18:26:59 - INFO - (help) word was not found
-18:26:59 - INFO - (name) word was found with the value: name
-18:26:59 - INFO - (url) word was found with the value: jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db
-18:26:59 - INFO - (driver) word was not found
-18:26:59 - INFO - (login) word was not found
-18:26:59 - INFO - (password) word was not found
-18:26:59 - INFO - (statement) word was not found
-18:26:59 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
-18:26:59 - INFO - (passphrase) word was not found
-Connection pinged
+21:33:28 - INFO - (conf) word was not found
+21:33:28 - INFO - (help) word was not found
+21:33:28 - INFO - (name) word was found with the value: mySqliteDB
+21:33:28 - INFO - (url) word was found with the value: jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db
+21:33:28 - INFO - (driver) word was not found
+21:33:28 - INFO - (login) word was not found
+21:33:28 - INFO - (password) word was not found
+21:33:28 - INFO - (statement) word was not found
+21:33:28 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
+21:33:28 - INFO - (passphrase) word was not found
+21:33:28 - INFO - Trying to make a connection
+21:33:28 - INFO - The connection was successful.
+21:33:28 - INFO - The database (mySqliteDB) was saved.
+21:33:28 - INFO - Bye !
 </console>
 </unit>
