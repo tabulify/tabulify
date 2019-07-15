@@ -55,8 +55,6 @@ public class DbDatabaseList {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
-
-
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);

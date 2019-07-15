@@ -26,6 +26,12 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
  */
 public class DatabasesStore {
 
+    /**
+     * This is a passphrase used to encrypt the sample database password
+     * Don't change this value
+     */
+    private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
+    private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase" ;
     private String passphrase;
     private Path path;
 
@@ -72,23 +78,42 @@ public class DatabasesStore {
         return this;
     }
 
-    public DatabasesStore save(Database database) {
+    /**
+     * @param database
+     * @param internalPassphrase - to indicate that this is an built-in database and that the internal passphrase should be used - only called from this class
+     * @return
+     */
+    private DatabasesStore save(Database database, Boolean internalPassphrase) {
 
         Ini ini = getIniFile();
         ini.put(database.getDatabaseName(), URL, database.getUrl());
         ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
         ini.put(database.getDatabaseName(), USER, database.getUser());
+        String localPassphrase;
         if (database.getPassword() != null) {
-            if (passphrase == null) {
-                throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
+            if (this.passphrase == null) {
+                if (internalPassphrase) {
+                    localPassphrase = INTERNAL_PASSPHRASE;
+                    ini.put(database.getDatabaseName(), INTERNAL_PASSPHRASE_KEY, true);
+                } else {
+                    throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
+                }
+            } else {
+                localPassphrase = this.passphrase;
             }
-            String password = Protector.get(passphrase).encrypt(database.getPassword());
+            String password = Protector.get(localPassphrase).encrypt(database.getPassword());
             ini.put(database.getDatabaseName(), PASSWORD, password);
         }
         ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
         flush();
         return this;
     }
+
+    public DatabasesStore save(Database database) {
+
+        return save(database, false);
+    }
+
 
     /**
      * Write the changes to the disk
@@ -181,11 +206,22 @@ public class DatabasesStore {
             database.setUrl(iniSection.get(URL));
             database.setUser(iniSection.get(USER));
             if (iniSection.get(PASSWORD) != null) {
-                if (passphrase != null) {
-                    database.setPassword(Protector.get(passphrase).decrypt(iniSection.get(PASSWORD)));
+                String localPassphrase;
+                if (this.passphrase != null) {
+                    localPassphrase = this.passphrase;
                 } else {
-                    throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                    final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+                    if (s!=null){
+                        if (s.equals("true")){
+                            localPassphrase = INTERNAL_PASSPHRASE;
+                        } else {
+                            throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                        }
+                    } else {
+                        throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                    }
                 }
+                database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
             }
             database.setDriver(iniSection.get(DRIVER));
             database.setStatement(iniSection.get(STATEMENT));
@@ -217,7 +253,7 @@ public class DatabasesStore {
                 // Trick to not have the user name in the output ie C:\Users\Username\...
                 // The env value have a fake account
                 final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
-                if (bytle_db_databases_store!=null){
+                if (bytle_db_databases_store != null) {
                     dbFile = Paths.get(bytle_db_databases_store);
                 } else {
                     dbFile = Paths.get(Fs.getAppData(DbDefaultValue.LIBRARY_NAME).toAbsolutePath().toString(), DbDefaultValue.LIBRARY_NAME + ".db");
@@ -239,7 +275,7 @@ public class DatabasesStore {
                         .setUrl("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
                         .setUser("sa")
                         .setPassword("TheSecret1!");
-                save(database);
+                save(database,true);
 
                 database = Databases.of("mysql")
                         .setDriver("com.mysql.jdbc.Driver")
@@ -262,8 +298,8 @@ public class DatabasesStore {
 
     public void removeDatabase(String name) {
         Profile.Section deletedSection = getIniFile().remove(name);
-        if (deletedSection==null){
-            throw new RuntimeException("The database ("+name+") is non existent and therefore cannot be removed.");
+        if (deletedSection == null) {
+            throw new RuntimeException("The database (" + name + ") is non existent and therefore cannot be removed.");
         }
         flush();
     }

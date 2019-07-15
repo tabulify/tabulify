@@ -21,9 +21,18 @@ Default:
 This file follows the same semantic than ODBC.ini file where each section is a database (ie DSN).
 
 
-===== Password storage =====
-Every password in a database store is encrypted.
+===== Encrytion =====
 
-The encryption ciphers used are approved by the Computer security division of the USA department of commerce via the National Institute of Standard and Technology) and follows the [[https://csrc.nist.gov/publications/detail/sp/800-38a/final|SP800-38A recommendations]].
+==== Password  ====
+Every password in a database store is encrypted with the following characteristisc:
 
-When a database connection need a password, a ''passphrase'' is mandatory. This passphrase should be unique by databases store file.
+  * An approved Encryption cipher: All cipher used are approved by the Computer security division of the USA department of commerce via the National Institute of Standard and Technology) and follows the [[https://csrc.nist.gov/publications/detail/sp/800-38a/final|SP800-38A recommendations]].
+  * Raw keyed encryption: Salts and Initialization Vectors (IV) have been randomized and are generated for every encryption. The same password leads even with the same [[#passphrase]] to another ciphertext.
+
+==== Passphrase ====
+
+When a database connection needs a password, a ''passphrase'' is mandatory to secure the password. This passphrase should be unique by databases store file.
+
+You can provide this passphrase:
+  * at the command line via l'option ''%%--passphrase%%''
+  * or via the following environment variable ''BYTLE_DB_PASSPHRASE''

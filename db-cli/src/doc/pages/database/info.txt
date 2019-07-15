@@ -1,0 +1,94 @@
+====== Bytle Db - Databases Info ======
+
+
+===== About =====
+''info'' is an action of the [[database|database module]] that shows the information of one or more database in a form fashion. <wrap tip>If you want to get the result in a tabular format, see the [[list|list]] action</wrap>
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db database info --help
+</code>
+<console>
+21:50:10 - INFO - (conf) word was not found
+21:50:10 - INFO - (help) word was found with the value: true
+
+List the databases present in the store
+
+Syntax:
+
+	db database list [options|flags] <name|glob>
+
+where:
+
+	Local
+		* --store <value>               The path where the database information are stored
+
+	Args:
+		* name|glob                     a sequence of database name or a glob pattern
+</console>
+</unit>
+
+===== Example =====
+
+<unit display="none">
+<code dos>
+del /i %BYTLE_DB_DATABASES_STORE%
+</code>
+</unit>
+
+==== Showing information about one database ====
+
+This command will show the information of the default ''sqlite'' database
+<unit>
+<code dos>
+db database info sqlite
+</code>
+<console>
+20:55:29 - INFO - (conf) word was not found
+20:55:29 - INFO - (help) word was not found
+20:55:29 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
+
+Name         Login   Password   Url                                                                                      Driver                                         
+----------   -----   --------   --------------------------------------------------------------------------------------   --------------------------------------------   
+mysql        null    null       jdbc:mysql://[host]:[port]/[database]                                                    com.mysql.jdbc.Driver                          
+oracle       null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]                                            oracle.jdbc.OracleDriver                       
+postgresql   null    null       jdbc:postgresql://host:port/test?ssl=true                                                org.postgresql.Driver                          
+sqlite       null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db                                   org.sqlite.JDBC                                
+sqlserver    null    null       jdbc:sqlserver://localhost;user=MyUserName;password=*****;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver   
+
+20:55:29 - INFO - Bye !
+</console>
+</unit>
+==== Selecting database with globbing ====
+
+  * List only the database with ''ora'' in their name by using a [[wp>Glob_(programming)|glob pattern]]
+<unit>
+<code dos>
+db database list *sql*
+</code>
+<console>
+Name         Login   Password   Url                                                                                      Driver                                         
+----------   -----   --------   --------------------------------------------------------------------------------------   --------------------------------------------   
+mysql        null    null       jdbc:mysql://[host]:[port]/[database]                                                    com.mysql.jdbc.Driver                          
+postgresql   null    null       jdbc:postgresql://host:port/test?ssl=true                                                org.postgresql.Driver                          
+sqlite       null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db                                   org.sqlite.JDBC                                
+sqlserver    null    null       jdbc:sqlserver://localhost;user=MyUserName;password=*****;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver
+</console>
+</unit>
+
+==== Listing only  a set of databases ====
+
+  * List only the databases with the database name ''postgresql'' and ''mysql''
+<unit>
+<code dos>
+db database info postgresql mysql
+</code>
+<console>
+Name     Login   Password   Url                                                      Driver                     
+------   -----   --------   ------------------------------------------------------   ------------------------   
+oracle   null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]            oracle.jdbc.OracleDriver   
+sqlite   null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db   org.sqlite.JDBC
+</console>
+</unit>
