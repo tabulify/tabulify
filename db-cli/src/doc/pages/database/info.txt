@@ -11,14 +11,14 @@
 db database info --help
 </code>
 <console>
-21:50:10 - INFO - (conf) word was not found
-21:50:10 - INFO - (help) word was found with the value: true
+13:40:00 - INFO - (conf) word was not found
+13:40:00 - INFO - (help) word was found with the value: true
 
-List the databases present in the store
+Print database information in a form fashion.
 
 Syntax:
 
-	db database list [options|flags] <name|glob>
+	db database info [options|flags] <name|glob>
 
 where:
 
@@ -26,7 +26,15 @@ where:
 		* --store <value>               The path where the database information are stored
 
 	Args:
-		* name|glob                     a sequence of database name or a glob pattern
+		* name|glob                     one or more database name or glob patterns
+
+Example:
+
+	To output information about the database `name`:
+		db database info name
+
+	To output information about all the databases with `sql` in their name:
+		db database info *sql*
 </console>
 </unit>
 
@@ -46,35 +54,57 @@ This command will show the information of the default ''sqlite'' database
 db database info sqlite
 </code>
 <console>
-20:55:29 - INFO - (conf) word was not found
-20:55:29 - INFO - (help) word was not found
-20:55:29 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
+13:40:01 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
 
-Name         Login   Password   Url                                                                                      Driver                                         
-----------   -----   --------   --------------------------------------------------------------------------------------   --------------------------------------------   
-mysql        null    null       jdbc:mysql://[host]:[port]/[database]                                                    com.mysql.jdbc.Driver                          
-oracle       null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]                                            oracle.jdbc.OracleDriver                       
-postgresql   null    null       jdbc:postgresql://host:port/test?ssl=true                                                org.postgresql.Driver                          
-sqlite       null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db                                   org.sqlite.JDBC                                
-sqlserver    null    null       jdbc:sqlserver://localhost;user=MyUserName;password=*****;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver   
+-------------------------------
+Name: sqlite
+URL: jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db
+Login: null
+Password: null
+Driver: org.sqlite.JDBC
+Statement: null
+-------------------------------
 
-20:55:29 - INFO - Bye !
+13:40:01 - INFO - Bye !
 </console>
 </unit>
 ==== Selecting database with globbing ====
 
-  * List only the database with ''ora'' in their name by using a [[wp>Glob_(programming)|glob pattern]]
+  * List only the database with ''sql'' in their name by using a [[wp>Glob_(programming)|glob pattern]]
 <unit>
 <code dos>
-db database list *sql*
+db database info *sql*
 </code>
 <console>
-Name         Login   Password   Url                                                                                      Driver                                         
-----------   -----   --------   --------------------------------------------------------------------------------------   --------------------------------------------   
-mysql        null    null       jdbc:mysql://[host]:[port]/[database]                                                    com.mysql.jdbc.Driver                          
-postgresql   null    null       jdbc:postgresql://host:port/test?ssl=true                                                org.postgresql.Driver                          
-sqlite       null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db                                   org.sqlite.JDBC                                
-sqlserver    null    null       jdbc:sqlserver://localhost;user=MyUserName;password=*****;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver
+-------------------------------
+Name: mysql
+URL: jdbc:mysql://[host]:[port]/[database]
+Login: null
+Password: null
+Driver: com.mysql.jdbc.Driver
+Statement: null
+-------------------------------
+Name: postgresql
+URL: jdbc:postgresql://host:port/test?ssl=true
+Login: null
+Password: null
+Driver: org.postgresql.Driver
+Statement: null
+-------------------------------
+Name: sqlite
+URL: jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db
+Login: null
+Password: null
+Driver: org.sqlite.JDBC
+Statement: null
+-------------------------------
+Name: sqlserver
+URL: jdbc:sqlserver://localhost;databaseName=AdventureWorks;
+Login: sa
+Password: xxx
+Driver: com.microsoft.sqlserver.jdbc.SQLServerDriver
+Statement: null
+-------------------------------
 </console>
 </unit>
 
@@ -86,9 +116,20 @@ sqlserver    null    null       jdbc:sqlserver://localhost;user=MyUserName;passw
 db database info postgresql mysql
 </code>
 <console>
-Name     Login   Password   Url                                                      Driver                     
-------   -----   --------   ------------------------------------------------------   ------------------------   
-oracle   null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]            oracle.jdbc.OracleDriver   
-sqlite   null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db   org.sqlite.JDBC
+-------------------------------
+Name: mysql
+URL: jdbc:mysql://[host]:[port]/[database]
+Login: null
+Password: null
+Driver: com.mysql.jdbc.Driver
+Statement: null
+-------------------------------
+Name: postgresql
+URL: jdbc:postgresql://host:port/test?ssl=true
+Login: null
+Password: null
+Driver: org.postgresql.Driver
+Statement: null
+-------------------------------
 </console>
 </unit>

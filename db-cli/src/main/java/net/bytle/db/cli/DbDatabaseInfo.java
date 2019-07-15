@@ -23,14 +23,18 @@ public class DbDatabaseInfo {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String NAME_OR_GLOB = "name|glob";
+    public static final String HORIZONTAL_LINE = "-------------------------------";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
         String description = "Print database information in a form fashion.";
 
-        String footer = "Example:  To output information about the database `name`:\n" +
-                "    db " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " name";
+        String footer = "Example:\n\n"+
+                "\tTo output information about the database `name`:\n" +
+                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " name\n\n"+
+                "\tTo output information about all the databases with `sql` in their name:\n"+
+                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " *sql*\n";
 
         // Create the parser
         cliCommand
@@ -58,13 +62,29 @@ public class DbDatabaseInfo {
         final List<Database> databases = databasesStore.getDatabases(names);
 
         //Print
-
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
-        for (Database database:databases) {
-            database.printDatabaseInformation();
+        System.out.println();
+        System.out.println(HORIZONTAL_LINE);
+        for (int i=0; i<databases.size();i++) {
+            Database database = databases.get(i);
+            System.out.println("Name: "+database.getDatabaseName());
+            System.out.println("URL: "+database.getUrl());
+            System.out.println("Login: "+database.getUser());
+            String password;
+            if (database.getPassword()!=null){
+                password="xxx";
+            } else {
+                password="null";
+            }
+            System.out.println("Password: "+password);
+            System.out.println("Driver: "+database.getDriver());
+            System.out.println("Statement: "+database.getConnectionStatement());
+            System.out.println(HORIZONTAL_LINE);
+            // TODO The below would print jdbc driver information
+            // database.printDatabaseInformation();
         }
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
-
+        System.out.println();
         LOGGER.info("Bye !");
 
 
