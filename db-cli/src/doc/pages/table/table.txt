@@ -1,12 +1,12 @@
-====== Bytle Db - Table module ======
+====== Bytle Db - Table ======
 
 
 ===== About =====
 The ''table'' [[:module|module]] helps you to perform operations against one or more tables.
 
 ===== Operations =====
-  * [[load|load]] -            load data into a table from a file
-  * [[download|download]] -         download a table into a file
+  * [[load|load]] -            load data into a table from a local file
+  * [[download|download]] -         download a table into a local file
   * [[transfer|transfer]] -         transfer a table from a database to another
   * [[fill|fill]]              fill a table with generated data
   * [[list|list]]              list tables

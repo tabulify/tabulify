@@ -1,4 +1,4 @@
-====== Bytle Db - Database Upsert (Update/Insert)======
+====== Bytle Db Database - Upsert (Update/Insert)======
 
 
 ===== About =====
@@ -8,11 +8,11 @@
 ===== Syntax =====
 <unit>
 <code dos>
-db database upsert --help
+db database upsert --help 
 </code>
 <console>
-18:13:21 - INFO - (conf) word was not found
-18:13:21 - INFO - (help) word was found with the value: true
+13:45:16 - INFO - (conf) word was not found
+13:45:16 - INFO - (help) word was found with the value: true
 
 Update or insert a database
 
@@ -35,30 +35,26 @@ where:
 		* name                          the database name
 
 Example:  To upsert the database information about the database `name`:
-    db database upsert--urljdbc:sqlite//%TMP%/db.db name
+    db database upsert --url jdbc:sqlite//%TMP%/db.db name
 </console>
 </unit>
 
 ===== Example =====
+==== Modifying the database URL ====
+
   * Upsert a database
 <unit>
 <code dos>
 db database upsert --url "jdbc:sqlite://%TMP%/db.db" mySqliteDB
 </code>
 <console>
-21:33:28 - INFO - (conf) word was not found
-21:33:28 - INFO - (help) word was not found
-21:33:28 - INFO - (name) word was found with the value: mySqliteDB
-21:33:28 - INFO - (url) word was found with the value: jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db
-21:33:28 - INFO - (driver) word was not found
-21:33:28 - INFO - (login) word was not found
-21:33:28 - INFO - (password) word was not found
-21:33:28 - INFO - (statement) word was not found
-21:33:28 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
-21:33:28 - INFO - (passphrase) word was not found
-21:33:28 - INFO - Trying to make a connection
-21:33:28 - INFO - The connection was successful.
-21:33:28 - INFO - The database (mySqliteDB) was saved.
-21:33:28 - INFO - Bye !
+13:45:16 - INFO - Trying to make a connection
+13:45:16 - INFO - Trying to connect to the connection (jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db)
+13:45:16 - INFO - Connected !
+13:45:16 - INFO - The connection was successful.
+13:45:16 - INFO - The connection (jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db) was closed.
+13:45:16 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
+13:45:16 - INFO - The database (mySqliteDB) was saved.
+13:45:16 - INFO - Bye !
 </console>
 </unit>

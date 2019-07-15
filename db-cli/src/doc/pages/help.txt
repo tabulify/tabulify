@@ -5,11 +5,11 @@
 ===== About =====
 ''help'' on a [[module|module]] or on a [[action|action]] can be found:
   * at the command line with the ''%%--help%%'' or ''%%-h%%'' [[flag|flag]]
-  * or on the [[getting_started|Bytle Db documentation]]
+  * or in the [[start|Bytle Db documentation]]
 
 
 ===== Example =====
-''help'' on the load of a table.
+''help'' on the [[table:load|load of a table]].
 
 <unit>
 <code dos table_load_help.cmd>

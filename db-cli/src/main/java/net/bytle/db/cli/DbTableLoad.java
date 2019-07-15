@@ -2,8 +2,9 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasePath;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
@@ -14,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.*;
 
 
@@ -25,28 +28,23 @@ import static net.bytle.db.cli.Words.*;
 public class DbTableLoad {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
+    private static final String FILE = "file";
+    private static final String DATABASE_PATH = "@databaseName[/schema/table]";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
 
-        String description = "Load a file into a database.";
 
-        String footer = "The last argument is a CSV file";
 
         // Create the parser
         cliCommand
-                .setDescription(description)
-                .setFooter(footer);
+                .setDescription("Load a local file into a database.");
 
+        cliCommand.argOf("LOCAL");
 
-        cliCommand.getGroup("Connection")
-                .setLevel(2)
-                .addWordOf(DB_NAME);
-
-        cliCommand.getGroup("Target table")
-                .setLevel(2)
-                .addWordOf(TARGET_TABLE_OPTION);
+        cliCommand.getGroup("Database Store").setLevel(2)
+                .addWordOf(DbDatabase.STORAGE_PATH);
 
         cliCommand.getGroup("Load option")
                 .setLevel(2)
@@ -59,24 +57,27 @@ public class DbTableLoad {
                 .setLevel(2)
                 .addWordOf(METRICS_PATH_OPTION);
 
-        String argName = "File.csv";
 
-        cliCommand.argOf(argName)
-                .setDescription("A CSV file")
+        cliCommand.argOf(FILE)
+                .setDescription("A local path to a CSV file")
+                .setMandatory(true);
+
+        cliCommand.argOf(DATABASE_PATH)
+                .setDescription("The target database location. The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
                 .setMandatory(true);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Source
         Path inputFilePath = null;
-        String fileSourcePathArg = cliParser.getString(argName);
+        String fileSourcePathArg = cliParser.getString(FILE);
         int postPoint = fileSourcePathArg.lastIndexOf(".");
         if (postPoint == -1) {
             LOGGER.severe("The file must have an extension.");
             System.exit(1);
         } else {
 
-            String fileExtension = fileSourcePathArg.substring(postPoint + 1, fileSourcePathArg.length()).toLowerCase();
+            String fileExtension = fileSourcePathArg.substring(postPoint + 1).toLowerCase();
 
             if (fileExtension.equals("csv")) {
                 inputFilePath = Paths.get(fileSourcePathArg);
@@ -87,13 +88,13 @@ public class DbTableLoad {
             }
         }
 
+        final String string = DatabasePath.of(DATABASE_PATH);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        // Target Connection
-        String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
-        String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(targetUrl)
-                .setDriver(targetDriver);
+        Database database = databasesStore;
+
 
         // Target Table
         String targetTableName = cliParser.getString(Words.TARGET_TABLE_OPTION);

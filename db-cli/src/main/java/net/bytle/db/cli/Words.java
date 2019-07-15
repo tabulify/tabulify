@@ -4,6 +4,8 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.db.DbDefaultValue;
 
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
+
 /**
  * Created by gerard on 20-06-2017.
  * Define the global options
@@ -188,6 +190,10 @@ public class Words {
                 .setValueName("path")
                 .setDescription("defines the path of the output file");
 
+        cliCommand.globalWordOf(DbDatabase.STORAGE_PATH)
+                .setDescription("The path where the database information are stored")
+                .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
+                .setEnvName(BYTLE_DB_DATABASES_STORE);
 
     }
 

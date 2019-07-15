@@ -1,4 +1,4 @@
-====== Bytle Db - Databases Info ======
+====== Bytle Db Database - Info ======
 
 
 ===== About =====
