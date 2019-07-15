@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.*;
 
@@ -31,8 +32,8 @@ import static net.bytle.db.cli.Words.*;
 public class DbTableLoad {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String FILE = "file";
-    private static final String DATABASE_PATH = "@databaseName[/schema/table]";
+    private static final String FILE = "sourceFile";
+    private static final String DATABASE_PATH = "targetDatabasePath";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -42,8 +43,7 @@ public class DbTableLoad {
         cliCommand
                 .setDescription("Load a local file into a database.");
 
-        cliCommand.getGroup("Database Store").setLevel(2)
-                .addWordOf(DbDatabase.STORAGE_PATH);
+        cliCommand.optionOf(DbDatabase.STORAGE_PATH);
 
         cliCommand.getGroup("Load option")
                 .setLevel(2)
@@ -62,7 +62,7 @@ public class DbTableLoad {
                 .setMandatory(true);
 
         cliCommand.argOf(DATABASE_PATH)
-                .setDescription("The target database location. The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
+                .setDescription("A database path (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
                 .setMandatory(true);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -86,7 +86,6 @@ public class DbTableLoad {
                 System.exit(1);
             }
         }
-
 
         // Database Store
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);

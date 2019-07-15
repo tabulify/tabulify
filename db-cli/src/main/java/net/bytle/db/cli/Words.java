@@ -191,6 +191,7 @@ public class Words {
                 .setDescription("defines the path of the output file");
 
         cliCommand.globalWordOf(DbDatabase.STORAGE_PATH)
+                .setTypeAsOption()
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);

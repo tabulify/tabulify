@@ -1,0 +1,20 @@
+====== Bytle Db - Data Path ======
+
+
+===== About =====
+A data path is a path that permits to determine the location of one or more data storage unit.
+
+===== Example =====
+
+  * In the case of a relational database system, this unit of storage is the [[table:table|table]]
+  * In the case of a file system, this unit of storage is called a file.
+
+
+
+===== Syntax =====
+
+<code bash>
+@databaseName[/schema/table]
+# or
+@globDatabaseName[/globSchemaName/globTableName]
+</code>
