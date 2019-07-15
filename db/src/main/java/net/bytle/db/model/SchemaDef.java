@@ -101,6 +101,11 @@ public class SchemaDef {
 
     }
 
+    /**
+     *
+     * @param patterns
+     * @return the tables that matches the given glob patterns
+     */
     public List<TableDef> getTables(String... patterns) {
 
         return getTables(Arrays.asList(patterns));

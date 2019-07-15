@@ -92,6 +92,7 @@ public class DbTableLoad {
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
+        // Database
         final DatabasePath databasePath = DatabasePath.of(cliParser.getString(DATABASE_PATH));
         Database targetDatabase = databasesStore.getDatabase(databasePath.getDatabaseName());
 
@@ -105,7 +106,7 @@ public class DbTableLoad {
         }
 
         // Target Table
-        String targetTableName = databasePath.getTableName();
+        String targetTableName = databasePath.getDestinationPart();
         if (targetTableName == null) {
             Path fileName = inputFilePath.getFileName();
             targetTableName = fileName.toString().substring(0, fileName.toString().lastIndexOf("."));
@@ -168,7 +169,7 @@ public class DbTableLoad {
         cliTimer.stop();
 
         LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
+        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
 
         int exitStatus = resultSetListeners.stream().mapToInt(s -> s.getExitStatus()).sum();
         if (exitStatus != 0) {

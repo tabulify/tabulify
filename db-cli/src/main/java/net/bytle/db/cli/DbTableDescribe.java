@@ -5,21 +5,23 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasePath;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
+import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
 
 public class DbTableDescribe {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "(name|pattern)..";
+    private static final String DATABASE_PATH = "(name|pattern)..";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -27,49 +29,61 @@ public class DbTableDescribe {
         String description = "Show the structure of a table";
 
 
-        // Create the parser
+        // The arguments
         cliCommand
                 .setDescription(description);
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("The name of a table (or regular expression)")
+        cliCommand.argOf(DATABASE_PATH)
+                .setDescription("One ore more database paths")
                 .setMandatory(true);
-
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
+        cliCommand.optionOf(STORAGE_PATH);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        List<String> patterns = cliParser.getStrings(ARG_NAME);
-        List<TableDef> tableDefList = database.getCurrentSchema().getTables(patterns);
+        //
+        List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
+        for (String databasePathString :databasePaths){
+            DatabasePath databasePath = DatabasePath.of(databasePathString);
+            Database database = databasesStore.getDatabase(databasePath.getDatabaseName());
 
-        System.out.println();
+            SchemaDef schemaDef;
+            if (databasePath.getSchemaName()!=null) {
+                schemaDef = database.getSchema(databasePath.getSchemaName());
+            } else {
+                schemaDef = database.getCurrentSchema();
+            }
+            List<TableDef> tableDefList = schemaDef.getTables(databasePath.getDestinationPart());
+            System.out.println();
 
-        if (tableDefList.size() != 0) {
+            if (tableDefList.size() != 0) {
 
-            switch (tableDefList.size()) {
-                case 1:
-                    Tables.printColumns(tableDefList.get(0));
-                    break;
-                default:
+                switch (tableDefList.size()) {
+                    case 1:
+                        Tables.printColumns(tableDefList.get(0));
+                        break;
+                    default:
 
-                    for (TableDef tableDef : tableDefList) {
-                        System.out.println();
-                        System.out.println("  * " + tableDef.getName() + " columns:");
-                        Tables.printColumns(tableDef);
-                    }
+                        for (TableDef tableDef : tableDefList) {
+                            System.out.println();
+                            System.out.println("  * " + tableDef.getName() + " columns:");
+                            Tables.printColumns(tableDef);
+                        }
 
+
+                }
+            } else {
+
+                System.out.println("No tables found");
 
             }
-        } else {
-
-            System.out.println("No tables found");
-
+            System.out.println();
         }
-        System.out.println();
+
+
+
         LOGGER.info("Bye !");
 
 
