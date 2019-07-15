@@ -4,7 +4,7 @@ import net.bytle.db.model.RelationDef;
 
 import java.sql.Clob;
 
-public interface SelectStream {
+public interface SelectStream extends AutoCloseable {
 
     boolean next();
 

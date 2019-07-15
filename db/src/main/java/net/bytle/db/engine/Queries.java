@@ -71,10 +71,9 @@ public class Queries {
      */
     public static int download(QueryDef query, Path outputPath, Boolean clobInApartFile) {
 
-        try {
-
-            SqlSelectStream stream = Streams.getSqlSelectStream(query);
-
+        try (
+                SqlSelectStream stream = Streams.getSqlSelectStream(query);
+        ) {
             // The directory
             Path outpathDir = outputPath.toAbsolutePath().getParent();
 

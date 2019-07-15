@@ -8,6 +8,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
 
@@ -15,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.*;
 
@@ -35,13 +35,9 @@ public class DbTableLoad {
     public static void run(CliCommand cliCommand, String[] args) {
 
 
-
-
         // Create the parser
         cliCommand
                 .setDescription("Load a local file into a database.");
-
-        cliCommand.argOf("LOCAL");
 
         cliCommand.getGroup("Database Store").setLevel(2)
                 .addWordOf(DbDatabase.STORAGE_PATH);
@@ -88,22 +84,32 @@ public class DbTableLoad {
             }
         }
 
-        final String string = DatabasePath.of(DATABASE_PATH);
+
         // Database Store
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        Database database = databasesStore;
+        final DatabasePath databasePath = DatabasePath.of(cliParser.getString(DATABASE_PATH));
+        Database targetDatabase = databasesStore.getDatabase(databasePath.getDatabaseName());
 
+        // Schema
+        SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
+        if (databasePath.getSchemaName()!=null){
+            LOGGER.info("The schema name ("+databasePath.getSchemaName()+").");
+            targetSchemaDef = targetDatabase.getSchema(databasePath.getSchemaName());
+        } else {
+            LOGGER.info("The schema name was not defined. The database default schema was taken ("+targetDatabase.getCurrentSchema()+")");
+        }
 
         // Target Table
-        String targetTableName = cliParser.getString(Words.TARGET_TABLE_OPTION);
+        String targetTableName = databasePath.getTableName();
         if (targetTableName == null) {
             Path fileName = inputFilePath.getFileName();
             targetTableName = fileName.toString().substring(0, fileName.toString().lastIndexOf("."));
-            LOGGER.info("The option (" + Words.TARGET_TABLE_OPTION + " was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
+            LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
         }
-        TableDef targetTable = targetDatabase.getTable(targetTableName);
+        TableDef targetTable = targetSchemaDef.getTableOf(targetTableName);
+
 
         // Metrics
         String metricsFilePath = cliParser.getString(Words.METRICS_PATH_OPTION);

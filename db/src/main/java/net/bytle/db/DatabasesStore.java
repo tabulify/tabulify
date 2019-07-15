@@ -185,7 +185,7 @@ public class DatabasesStore {
                     getIniFile().keySet()
                             .stream()
                             .filter(s -> s.matches(regexpPattern))
-                            .map(s -> DatabaseOf(s))
+                            .map(s -> getDatabase(s))
                             .collect(Collectors.toList())
             );
         }
@@ -197,7 +197,7 @@ public class DatabasesStore {
         return getDatabases(globPatterns.toArray(new String[0]));
     }
 
-    public Database DatabaseOf(String name) {
+    public Database getDatabase(String name) {
 
         Database database = Databases.of(name);
 

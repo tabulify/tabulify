@@ -1,10 +1,7 @@
 package net.bytle.db.database;
 
-import net.bytle.crypto.Protector;
 import net.bytle.db.DatabasesStore;
-import net.bytle.fs.Fs;
 import oracle.jdbc.OracleTypes;
-import org.ini4j.Wini;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,8 +11,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Static function around database.
@@ -189,6 +184,6 @@ public class Databases {
 
 
     public static Database of(String name, DatabasesStore databasesStore) {
-        return databasesStore.DatabaseOf(name);
+        return databasesStore.getDatabase(name);
     }
 }
