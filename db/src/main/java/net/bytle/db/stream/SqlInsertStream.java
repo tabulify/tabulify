@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class SqlInsertStream extends InsertStreamAbs implements InsertStream {
+public class SqlInsertStream extends InsertStreamAbs implements InsertStream, AutoCloseable {
 
     public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 

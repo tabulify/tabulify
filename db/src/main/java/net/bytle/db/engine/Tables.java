@@ -53,18 +53,21 @@ public class Tables {
     public static Integer getSize(TableDef tableDef) {
 
         String statementString = "select count(1) from " + tableDef.getFullyQualifiedName();
-        try {
-            Connection currentConnection = tableDef.getDatabase().getCurrentConnection();
-            if (currentConnection == null) {
-                throw new RuntimeException("The database " + tableDef.getDatabase() + " seems to have no connections (Is this a relational database supporting JDBC ?)");
-            }
-            Statement statement = currentConnection.createStatement();
-            ResultSet resultSet = statement.executeQuery(statementString);
+
+        Connection currentConnection = tableDef.getDatabase().getCurrentConnection();
+        if (currentConnection == null) {
+            throw new RuntimeException("The database " + tableDef.getDatabase() + " seems to have no connections (Is this a relational database supporting JDBC ?)");
+        }
+
+        try (
+                Statement statement = currentConnection.createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
             Integer returnValue = null;
             if (resultSet.next()) {
                 returnValue = resultSet.getInt(1);
             }
-            statement.close();
+            resultSet.close();
             return returnValue;
 
         } catch (SQLException e) {
@@ -280,10 +283,10 @@ public class Tables {
     public static TableDef create(TableDef tableDef, SchemaDef schemaDef, String tableName) {
 
         // Check that the foreign tables exist
-        for (ForeignKeyDef foreignKeyDef: tableDef.getForeignKeys()){
+        for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
             TableDef foreignTable = foreignKeyDef.getForeignPrimaryKey().getTableDef();
-            if (!exists(foreignTable,schemaDef)){
-                throw new RuntimeException("The foreign table ("+foreignTable+") does not exist");
+            if (!exists(foreignTable, schemaDef)) {
+                throw new RuntimeException("The foreign table (" + foreignTable + ") does not exist");
             }
         }
 
@@ -423,15 +426,14 @@ public class Tables {
         Database database = tableDef.getDatabase();
         if (database.getUrl() != null) {
             String deleteStatement = "delete from " + tableDef.getFullyQualifiedName();
-            try {
-
-                Connection currentConnection = database.getCurrentConnection();
-                Statement statement = currentConnection.createStatement();
+            Connection currentConnection = database.getCurrentConnection();
+            try (
+                    Statement statement = currentConnection.createStatement();
+            ) {
                 statement.execute(deleteStatement);
-                statement.close();
-
+                // Without commit, the database is locked for sqlite
+                currentConnection.commit();
                 LOGGER.info("Table " + tableDef.getFullyQualifiedName() + " deleted");
-
             } catch (SQLException e) {
                 System.err.println(deleteStatement);
                 throw new RuntimeException(e);
@@ -460,6 +462,7 @@ public class Tables {
 
     /**
      * Drpping a foreign key
+     *
      * @param foreignKeyDef
      */
     public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
@@ -497,7 +500,6 @@ public class Tables {
     /**
      * @param tableName - the name of the table
      * @return An alias for the function {{@link #getTable(String)}}
-     *
      */
     public static TableDef get(String tableName) {
 
@@ -599,13 +601,12 @@ public class Tables {
 
 
     public static void createIfNotExist(TableDef tableDef, Database database) {
-        if (!exists(tableDef,database)) {
+        if (!exists(tableDef, database)) {
             create(tableDef, database);
         }
     }
 
     /**
-     *
      * @param tableName
      * @return a table with the default database
      */
@@ -616,20 +617,21 @@ public class Tables {
     }
 
     public static void drop(TableDef tableDef, Database database) {
-        drop(tableDef,database.getCurrentSchema());
+        drop(tableDef, database.getCurrentSchema());
     }
 
     /**
      * Will return a set of tables independent of foreign table
      * (ie delete the foreign keys of a table if the foreign table is not part of the set)
+     *
      * @param tableDefs
      * @return
      */
-    public static List<TableDef> atomic(List<TableDef> tableDefs){
-        for (TableDef table:tableDefs){
+    public static List<TableDef> atomic(List<TableDef> tableDefs) {
+        for (TableDef table : tableDefs) {
             List<ForeignKeyDef> foreignKeys = table.getForeignKeys();
-            for (ForeignKeyDef foreignKeyDef:foreignKeys){
-                if (!(tableDefs.contains(foreignKeyDef.getForeignPrimaryKey().getTableDef()))){
+            for (ForeignKeyDef foreignKeyDef : foreignKeys) {
+                if (!(tableDefs.contains(foreignKeyDef.getForeignPrimaryKey().getTableDef()))) {
                     table.deleteForeignKey(foreignKeyDef);
                 }
             }
@@ -639,7 +641,7 @@ public class Tables {
 
     public static List<String> getNames(List<TableDef> tables) {
 
-        return tables.stream().map(s->s.getName()).collect(Collectors.toList());
+        return tables.stream().map(s -> s.getName()).collect(Collectors.toList());
 
     }
 }

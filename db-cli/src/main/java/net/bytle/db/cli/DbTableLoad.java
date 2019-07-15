@@ -5,11 +5,14 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasePath;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Relations;
+import net.bytle.db.engine.Tables;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 
 import java.nio.file.Path;
@@ -109,7 +112,6 @@ public class DbTableLoad {
             LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
         }
         TableDef targetTable = targetSchemaDef.getTableOf(targetTableName);
-
 
         // Metrics
         String metricsFilePath = cliParser.getString(Words.METRICS_PATH_OPTION);

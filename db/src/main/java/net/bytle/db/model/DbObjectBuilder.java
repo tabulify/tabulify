@@ -119,6 +119,7 @@ public class DbObjectBuilder {
      * The fully qualified name is the name with its schema
      * that can be used in SQL Statement
      * TODO: Move that in a SQL manager
+     *
      * @param tableName
      * @param schemaName
      * @return
@@ -209,7 +210,6 @@ public class DbObjectBuilder {
     }
 
 
-
     /**
      * Id is build at the beginning from the name
      * and not from the object
@@ -289,11 +289,11 @@ public class DbObjectBuilder {
     /**
      * Build Foreign Key based on
      * {@link java.sql.DatabaseMetaData#getImportedKeys(String, String, String)}
-     *
+     * <p>
      * See also the counter part:
-     *   * Same schema
+     * * Same schema
      * {@link java.sql.DatabaseMetaData#getExportedKeys(String, String, String)}
-     *   * Cross Schmea ?
+     * * Cross Schmea ?
      * {@link java.sql.DatabaseMetaData#getCrossReference(String, String, String, String, String, String)}
      *
      * @param tableDef
@@ -433,11 +433,10 @@ public class DbObjectBuilder {
         Map<String, Map<Integer, String>> indexData = new HashMap<>();
         final String ordinal_position_alias = "ORDINAL_POSITION";
         final String column_name_alias = "COLUMN_NAME";
-        try {
-
+        try (
             // Oracle need to have the approximate argument to true, otherwise we get a ORA-01031: insufficient privileges
             ResultSet indexResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getIndexInfo(null, tableDef.getSchema().getName(), tableDef.getName(), true, true);
-
+        ) {
             while (indexResultSet.next()) {
 
                 String index_name = indexResultSet.getString("INDEX_NAME");
@@ -455,7 +454,7 @@ public class DbObjectBuilder {
                 indexProperties.put(indexResultSet.getInt(ordinal_position_alias), indexResultSet.getString(column_name_alias));
 
             }
-            indexResultSet.close();
+
         } catch (SQLException e) {
             String s = "Error when building the unique key (ie indexinfo) of the table (" + tableDef.getFullyQualifiedName() + ")";
             LOGGER.severe(s);
@@ -552,7 +551,7 @@ public class DbObjectBuilder {
 
                 // Sqlite Driver return a NULL resultSet
                 // because SQLite does not support schema ?
-                if (schemaResultSet!=null) {
+                if (schemaResultSet != null) {
                     while (schemaResultSet.next()) {
 
                         SchemaDef schema = database.getSchema(schemaResultSet.getString("TABLE_SCHEM"));

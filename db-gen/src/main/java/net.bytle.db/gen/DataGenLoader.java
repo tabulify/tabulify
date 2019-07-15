@@ -105,22 +105,24 @@ public class DataGenLoader {
 
         if (numberOfRowToInsert > 0) {
             LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + tableDef.getFullyQualifiedName() + ")");
-            SqlInsertStream inputStream = Streams.getSqlInsertStream(tableDef);
-            for (int i = 0; i < numberOfRowToInsert; i++) {
+            try (
+                SqlInsertStream inputStream = Streams.getSqlInsertStream(tableDef);
+            ) {
+                for (int i = 0; i < numberOfRowToInsert; i++) {
 
-                Map<ColumnDef, Object> columnValues = new HashMap<>();
-                for (ColumnDef columnDef : tableDef.getColumnDefs()) {
-                    populateColumnValues(columnValues, columnDef);
-                }
+                    Map<ColumnDef, Object> columnValues = new HashMap<>();
+                    for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+                        populateColumnValues(columnValues, columnDef);
+                    }
 
-                List<Object> values = new ArrayList<>();
-                for (ColumnDef columnDef : tableDef.getColumnDefs()) {
-                    // We need also a recursion here to create the value
-                    values.add(columnValues.get(columnDef));
+                    List<Object> values = new ArrayList<>();
+                    for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+                        // We need also a recursion here to create the value
+                        values.add(columnValues.get(columnDef));
+                    }
+                    inputStream.insert(values);
                 }
-                inputStream.insert(values);
             }
-            inputStream.close();
         }
 
 
