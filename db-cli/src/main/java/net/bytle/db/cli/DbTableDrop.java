@@ -25,7 +25,7 @@ import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 public class DbTableDrop {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    public static final String NO_STRICT = "nostrict";
+    public static final String NO_STRICT = "no-strict";
     public static final String FORCE = "force";
     private static final String TABLE_URIS = "tableUri...";
 

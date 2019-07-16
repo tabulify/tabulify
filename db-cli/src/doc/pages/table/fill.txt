@@ -1,0 +1,38 @@
+====== Bytle Db - Fill a table ======
+
+
+===== About ===== 
+The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]] will insert generated data into [[table|relational table]].
+
+
+
+===== Syntax =====
+<unit>
+<code dos>
+db table fill --help
+</code>
+<console>
+15:09:17 - INFO - (conf) word was not found
+15:09:17 - INFO - (help) word was found with the value: true
+
+Load generated data into a table
+
+Syntax:
+
+	db table fill [options|flags] <(TABLE|DataGen.yml)>
+
+where:
+
+	Local
+		* --db.target.url <value>       No Description available
+		* --db.target.driver <value>    No Description available
+		* --rows <value>                defines the total number of rows that the table must have
+
+	Args:
+		* (TABLE|DataGen.yml)           A table name or a data definition file (DataGen.yml)
+</console>
+</unit>
+where:
+  * ''target table data uri'' is a [[table#uri|table uri]]
+  * ''sourceFile'' is a local path.
+===== Example =====
