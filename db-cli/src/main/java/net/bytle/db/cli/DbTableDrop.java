@@ -5,7 +5,6 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
@@ -15,19 +14,18 @@ import net.bytle.db.model.TableDef;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
 import static java.lang.System.exit;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 
 public class DbTableDrop {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    public static final String STRICT = "strict";
+    public static final String NO_STRICT = "nostrict";
     public static final String FORCE = "force";
     private static final String TABLE_URIS = "tableUri...";
 
@@ -54,9 +52,9 @@ public class DbTableDrop {
                 .setDescription("One or more table URI")
                 .setMandatory(true);
 
-        cliCommand.flagOf(STRICT)
-                .setDescription("if set, it will throw an error if a table is not found")
-                .setDefaultValue(true);
+        cliCommand.flagOf(NO_STRICT)
+                .setDescription("if set, it will not throw an error if a table is not found")
+                .setDefaultValue(false);
 
         cliCommand.flagOf(FORCE)
                 .setDescription("if set, the table will be dropped even if referenced by a foreign constraint");
@@ -73,7 +71,7 @@ public class DbTableDrop {
         // Bring the get statement out of the output zone
         // Otherwise we will not see them their log in the output stream
         final Boolean withForce = cliParser.getBoolean(FORCE);
-        final Boolean isStrict = cliParser.getBoolean(STRICT);
+        final Boolean notStrict = cliParser.getBoolean(NO_STRICT);
 
 
         // Get the tables asked
@@ -83,8 +81,11 @@ public class DbTableDrop {
             TableDataUri tableDataUri = TableDataUri.of(tableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
+            if (schemaDefs.size()==0){
+                schemaDefs = Arrays.asList(database.getCurrentSchema());
+            }
             for (SchemaDef schemaDef: schemaDefs) {
-                List<TableDef> tablesFound = schemaDef.getTables(tableUri);
+                List<TableDef> tablesFound = schemaDef.getTables(tableDataUri.getTableName());
                 if (tablesFound.size() != 0) {
 
                     tables.addAll(tablesFound);
@@ -92,14 +93,15 @@ public class DbTableDrop {
                 } else {
 
                     final String msg = "No tables found with the name/pattern (" + tableUri + ")";
-                    if (isStrict) {
+                    if (notStrict) {
+
+                        LOGGER.warning(msg);
+
+                    } else {
 
                         LOGGER.severe(msg);
                         exit(1);
 
-                    } else {
-
-                        LOGGER.warning(msg);
 
                     }
 
@@ -110,10 +112,10 @@ public class DbTableDrop {
 
         if (tables.size()==0){
             LOGGER.warning("No tables found to drop");
-            if (isStrict){
-                System.exit(0);
-            } else {
+            if (notStrict){
                 return;
+            } else {
+                System.exit(1);
             }
         }
 
