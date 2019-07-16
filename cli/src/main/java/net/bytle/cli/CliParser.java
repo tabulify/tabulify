@@ -484,6 +484,23 @@ public class CliParser {
                     b = Boolean.valueOf(value);
                 }
 
+                if (cliWord.isFlag()){
+                    final List<String> values = foundWords.get(word);
+                    if (values !=null) {
+                        Boolean isInArgs = Boolean.valueOf(values.get(0));
+                        final String defaultValue = cliWord.getDefaultValue();
+                        if (defaultValue != null) {
+                            b = Boolean.valueOf(defaultValue);
+                            if (isInArgs) {
+                                b = !b;
+                            }
+                        }
+                    }
+                }
+
+
+
+
             }
 
             logger.info("(" + word + ") word was found with the value: " + b);

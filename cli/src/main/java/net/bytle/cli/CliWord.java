@@ -399,4 +399,14 @@ public class CliWord {
             return 1;
         }
     }
+
+    public String getDefaultValue() {
+        List<String> defaultValues = getDefaultValues();
+        if (defaultValues.size()>0){
+            return defaultValues.get(0);
+        } else {
+            return null;
+        }
+
+    }
 }
