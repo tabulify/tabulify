@@ -55,7 +55,7 @@ db table load TABLE_NAME.csv
 
 [[db|db]] is a command line client that is made of the following [[module|module]]:
   * [[table:table]]
-  * [[schema:schema]]
+  * [[schema:start]]
   * [[query]]
 
 For each ''sub-command'', you may specify optional [[option|options]] that change the default behavior. 

@@ -2,24 +2,21 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasePath;
+import net.bytle.db.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Relations;
-import net.bytle.db.engine.Tables;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.*;
 
@@ -33,7 +30,7 @@ public class DbTableLoad {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String FILE = "sourceFile";
-    private static final String DATABASE_PATH = "targetDatabasePath";
+    private static final String TABLE_DATA_URI = "targetTableDataUri";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -61,8 +58,8 @@ public class DbTableLoad {
                 .setDescription("A local path to a CSV file")
                 .setMandatory(true);
 
-        cliCommand.argOf(DATABASE_PATH)
-                .setDescription("A database path (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
+        cliCommand.argOf(TABLE_DATA_URI)
+                .setDescription("A table data Uri (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
                 .setMandatory(true);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -91,27 +88,30 @@ public class DbTableLoad {
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        // Database
-        final DatabasePath databasePath = DatabasePath.of(cliParser.getString(DATABASE_PATH));
-        Database targetDatabase = databasesStore.getDatabase(databasePath.getDatabaseName());
+        // Is there a path
+        final DataUri dataUri = DataUri.of(cliParser.getString(TABLE_DATA_URI));
+        final TableDataUri tableDataUri;
+        if (dataUri.getPathSegments().length > 0){
+            tableDataUri = TableDataUri.of(dataUri);
+        } else {
+            Path fileName = inputFilePath.getFileName();
+            String targetTableName = fileName.toString().substring(0, fileName.toString().lastIndexOf("."));
+            LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
+            tableDataUri = TableDataUri.of(DataUri.get(dataUri.toString(),targetTableName));
+        }
+        Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDatabaseName());
 
         // Schema
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
-        if (databasePath.getSchemaName()!=null){
-            LOGGER.info("The schema name ("+databasePath.getSchemaName()+").");
-            targetSchemaDef = targetDatabase.getSchema(databasePath.getSchemaName());
+        if (tableDataUri.getSchemaName()!=null){
+            LOGGER.info("The schema name ("+tableDataUri.getSchemaName()+").");
+            targetSchemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());
         } else {
             LOGGER.info("The schema name was not defined. The database default schema was taken ("+targetDatabase.getCurrentSchema()+")");
         }
 
         // Target Table
-        String targetTableName = databasePath.getDestinationPart();
-        if (targetTableName == null) {
-            Path fileName = inputFilePath.getFileName();
-            targetTableName = fileName.toString().substring(0, fileName.toString().lastIndexOf("."));
-            LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
-        }
-        TableDef targetTable = targetSchemaDef.getTableOf(targetTableName);
+        TableDef targetTable = targetSchemaDef.getTableOf(tableDataUri.getTableName());
 
         // Metrics
         String metricsFilePath = cliParser.getString(Words.METRICS_PATH_OPTION);
@@ -149,11 +149,10 @@ public class DbTableLoad {
             LOGGER.info(COMMIT_FREQUENCY_OPTION + " parameter NOT found. Using default : " + commitFrequency);
         }
 
-
-        CliTimer cliTimer = CliTimer.getTimer(targetTableName)
+        CliTimer cliTimer = CliTimer.getTimer(tableDataUri.getTableName())
                 .start();
 
-        LOGGER.info("Loading Table " + targetTableName);
+        LOGGER.info("Loading Table " + tableDataUri.getTableName());
 
         RelationDef relationDef = Relations.get(inputFilePath);
 
@@ -167,7 +166,7 @@ public class DbTableLoad {
 
         cliTimer.stop();
 
-        LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+        LOGGER.info("Response Time for the load of the table (" + tableDataUri.getTableName() + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
         LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
 
         int exitStatus = resultSetListeners.stream().mapToInt(s -> s.getExitStatus()).sum();

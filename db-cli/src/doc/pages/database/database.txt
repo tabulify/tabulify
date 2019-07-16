@@ -2,39 +2,21 @@
 
 
 ===== About =====
-''Database'' is a [[..:module|Bytle-Db module]] that helps you manage databases (mostly database connections informations).
+For ''Bytle Db'', a ''database'' is a data store from where you can retrieve data.
 
-Within the database module, you can:
-  * [[list]] - list the databases in a [[store|databases store]] in a table format
-  * [[info]] - get information on a database in a forms format.
-  * [[add]] - create/add a database in a [[store|databases store]] 
-  * [[remove]] - remove a database from a [[store|databases store]] 
-  * [[upsert]] - update or create a database in a [[store|database store]] 
+===== Properties =====
+==== Name ====
+For ''Bytle Db'', the name of a database is its unique identifier and therefore should be unique inside a [[store|database store]].
 
+The name of a database is used as the first part of [[..:data_uri|data structure URI]].
 
 
-===== Syntax =====
-<unit>
-<code dos>
-db database --help
-</code>
-<console>
-06:05:44 - INFO - (conf) word was not found
-06:05:44 - INFO - (help) word was found with the value: true
-
-Database management
-
-Syntax:
-
-	db database <command>
-
-where:
-
-	Command (is one of):
-		* add                           add a database
-		* list                          list the databases
-		* info                          show database information
-</console>
-</unit>
-
-
+===== List =====
+  * [[relation:relation]]
+      * [[relation:sqlite]]
+  * File System
+      * Local File System
+      * Sftp
+  * Transfer Protocol
+      * HTTP
+      * Scp

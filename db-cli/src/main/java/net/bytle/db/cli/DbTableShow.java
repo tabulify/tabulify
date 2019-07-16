@@ -18,7 +18,7 @@ public class DbTableShow {
 
     public static final Log LOGGER_DB_ENGINE = DbLoggers.LOGGER_DB_ENGINE;
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "(name|pattern)..";
+    private static final String ARG_NAME = "TableUri..";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -32,8 +32,6 @@ public class DbTableShow {
                 .setDescription("The name of a table (or regular expression)")
                 .setMandatory(true);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 

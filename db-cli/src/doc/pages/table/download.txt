@@ -2,11 +2,11 @@
 
 
 ===== About ===== 
-The Bytle Db [[table|table]] ''download'' action permits you to download a relational table into a file. 
+The ''table download'' action permits you to download a [[table|relational table]] into a [[:tabular_file|file]]. 
 
 The target data file may be:
-  * a [[..:csv:start|CSV]]
-  * or [[..:excel:start|Excel file]].
+  * a [[csv:csv|CSV]]
+  * or [[excel:excel|Excel file]].
 
 
 

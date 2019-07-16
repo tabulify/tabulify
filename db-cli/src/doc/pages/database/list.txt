@@ -2,7 +2,7 @@
 
 
 ===== About =====
-''list'' is an action of the [[database|database module]] that shows the databases of a [[store|store]].
+''list'' is an action of the [[start|database module]] that shows the databases of a [[store|store]].
 
 
 ===== Syntax =====

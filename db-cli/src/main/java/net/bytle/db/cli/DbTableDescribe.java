@@ -5,9 +5,10 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
-import net.bytle.db.DatabasePath;
+import net.bytle.db.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -33,7 +34,7 @@ public class DbTableDescribe {
         cliCommand
                 .setDescription(description);
         cliCommand.argOf(DATABASE_PATH)
-                .setDescription("One ore more database paths")
+                .setDescription("One ore more table data uri (@database[/schema]/table")
                 .setMandatory(true);
         cliCommand.optionOf(STORAGE_PATH);
 
@@ -46,7 +47,7 @@ public class DbTableDescribe {
         //
         List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
         for (String databasePathString :databasePaths){
-            DatabasePath databasePath = DatabasePath.of(databasePathString);
+            TableDataUri databasePath = TableDataUri.of(databasePathString);
             Database database = databasesStore.getDatabase(databasePath.getDatabaseName());
 
             SchemaDef schemaDef;
@@ -55,7 +56,7 @@ public class DbTableDescribe {
             } else {
                 schemaDef = database.getCurrentSchema();
             }
-            List<TableDef> tableDefList = schemaDef.getTables(databasePath.getDestinationPart());
+            List<TableDef> tableDefList = schemaDef.getTables(databasePath.getTableName());
             System.out.println();
 
             if (tableDefList.size() != 0) {

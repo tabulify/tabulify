@@ -2,7 +2,7 @@
 
 
 ===== About =====
-''schema list'' will list the tables present in a [[schema|schema]]
+''schema list'' will list the tables present in a [[start|schema]]
 
 
 ===== Syntax =====

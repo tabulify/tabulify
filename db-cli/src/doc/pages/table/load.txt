@@ -5,8 +5,8 @@
 The Bytle Db [[table|table]] load action permits you to load data into a table from a file. 
 
 The source data file may be:
-  * a [[..:csv:start|CSV]]
-  * or [[..:excel:start|Excel file]].
+  * a [[csv:csv|CSV]]
+  * or [[excel:excel|Excel file]].
 
 <wrap info>
 If you want to load data from a [[..:database:|database]] to another, see the [[transfer|transfer]] action.
@@ -16,17 +16,17 @@ If you want to load data from a [[..:database:|database]] to another, see the [[
 ===== Syntax =====
 <unit>
 <code dos>
-db table load --help 
+db table load --help
 </code>
 <console>
-17:55:24 - INFO - (conf) word was not found
-17:55:24 - INFO - (help) word was found with the value: true
+10:03:00 - INFO - (conf) word was not found
+10:03:00 - INFO - (help) word was found with the value: true
 
 Load a local file into a database.
 
 Syntax:
 
-	db table load [options|flags] <sourceFile> <targetDatabasePath>
+	db table load [options|flags] <sourceFile> <targetDataUri>
 
 where:
 
@@ -35,11 +35,11 @@ where:
 
 	Args:
 		* sourceFile                    A local path to a CSV file
-		* targetDatabasePath            A database path (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.
+		* targetDataUri                 A table data Uri (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.
 </console>
 </unit>
 where:
-  * ''targetDatabasePath'' is a [[:data_path|database path]]
+  * ''target table data uri'' is a [[table#uri|table uri]]
 ===== Example =====
 ===== Load a CSV file =====
 
@@ -52,54 +52,46 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
 
 </file>
-  * We can load the above data using the ''load'' command.
+  * We can load the above data using the ''load'' command and the [[:database:built-in#sqlite|sqlite built-in database]]
 <code dos>
 db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite
 </code>
 <console>
-17:55:24 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-17:55:24 - INFO - Driver org.sqlite.JDBC loaded
-17:55:24 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db)
-17:55:24 - INFO - Connected !
-17:55:24 - INFO - The schema name was not defined. The database default schema was taken (sqlite.null)
-17:55:24 - INFO - The table name was not defined. The table name (characters) was taken from the input file (characters.csv).
-17:55:24 - INFO - tw parameter NOT found. Using the default : 1
-17:55:24 - INFO - bs parameter NOT found. Using default : 20000
-17:55:24 - INFO - tbs parameter NOT found. Using default : 10000
-17:55:24 - INFO - tcf parameter NOT found. Using default : 99999
-17:55:24 - INFO - Loading Table characters
-2019-07-15 17:55:24, 0 Commits, Producer: Thread-1
-2019-07-15 17:55:24, 0 Records, Producer: Thread-1
-2019-07-15 17:55:24, 0 Commits, Consumer: pool-1-thread-1
-2019-07-15 17:55:24, 0 Records, Consumer: pool-1-thread-1
-2019-07-15 17:55:24, Buffer Size, 0
-2019-07-15 17:55:24, Buffer MaxSize, 20000
-2019-07-15 17:55:24, Buffer Ratio, 0.0
-2019-07-15 17:55:24, 0 Commits, Producer: Thread-1
-2019-07-15 17:55:24, 0 Records, Producer: Thread-1
-2019-07-15 17:55:24, 0 Commits, Consumer: pool-1-thread-1
-2019-07-15 17:55:24, 0 Records, Consumer: pool-1-thread-1
-17:55:24 - INFO - The driver is supporting batch update. 
-17:55:24 - INFO - The driver is supporting named parameters.
-17:55:24 - INFO - Insert Statement:INSERT INTO "characters" ("Id", "Last Name", "First Name", "Birth Date", "Wikipedia Page") VALUES (?, ?, ?, ?, ?)
-17:55:24 - INFO - commit in the table "characters"
-17:55:24 - INFO - 2 rows loaded (Total) in the table "characters"
-17:55:24 - INFO - 1 commit(s) (Total) in the table "characters"
-17:55:24 - INFO - 1 batches(s) (Total) in the table "characters"
-2019-07-15 17:55:29, 0 Commits, Producer: Thread-1
-2019-07-15 17:55:29, 0 Records, Producer: Thread-1
-2019-07-15 17:55:29, 1 Commits, Consumer: pool-1-thread-1
-2019-07-15 17:55:29, 2 Records, Consumer: pool-1-thread-1
-2019-07-15 17:55:29, Buffer Size, 0
-2019-07-15 17:55:29, Buffer MaxSize, 20000
-2019-07-15 17:55:29, Buffer Ratio, 0.0
-2019-07-15 17:55:29, 0 Commits, Producer: Thread-1
-2019-07-15 17:55:29, 0 Records, Producer: Thread-1
-2019-07-15 17:55:29, 1 Commits, Consumer: pool-1-thread-1
-2019-07-15 17:55:29, 2 Records, Consumer: pool-1-thread-1
-17:55:29 - INFO - Response Time for the load of the table (characters) with (1) target workers: 0:0:5.36 (hour:minutes:seconds:milli)
-17:55:29 - INFO -        Ie (5036) milliseconds
-17:55:29 - INFO - Success ! No errors were seen.
+10:28:11 - INFO - (conf) word was not found
+10:28:11 - INFO - (help) word was not found
+10:28:11 - INFO - (sourceFile) word was found with the value: src\doc\files\characters.csv
+10:28:11 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
+10:28:11 - INFO - (targetTableDataUri) word was found with the value: @sqlite
+10:28:11 - INFO - The table name was not defined. The table name (characters) was taken from the input file (characters.csv).
+10:28:11 - INFO - The schema name was not defined. The database default schema was taken (sqlite.null)
+10:28:11 - INFO - (mp) word was not found
+10:28:11 - INFO - (tw) word was found with the value: 1
+10:28:11 - INFO - (bs) word was not found
+10:28:11 - INFO - bs parameter NOT found. Using default : 20000
+10:28:11 - INFO - (tbs) word was found with the value: 10000
+10:28:11 - INFO - (tcf) word was found with the value: 99999
+10:28:11 - INFO - Loading Table characters
+10:28:11 - INFO - The driver is supporting batch update. 
+2019-07-16 10:28:11, 0 Commits, Producer: Thread-1
+2019-07-16 10:28:11, 0 Records, Producer: Thread-1
+2019-07-16 10:28:11, 0 Commits, Consumer: pool-1-thread-1
+2019-07-16 10:28:11, 0 Records, Consumer: pool-1-thread-1
+2019-07-16 10:28:11, Buffer Size, 1
+2019-07-16 10:28:11, Buffer MaxSize, 20000
+2019-07-16 10:28:11, Buffer Ratio, 0.005
+2019-07-16 10:28:11, 0 Commits, Producer: Thread-1
+2019-07-16 10:28:11, 0 Records, Producer: Thread-1
+2019-07-16 10:28:11, 0 Commits, Consumer: pool-1-thread-1
+2019-07-16 10:28:11, 0 Records, Consumer: pool-1-thread-1
+10:28:11 - INFO - The driver is supporting named parameters.
+10:28:11 - INFO - Insert Statement:INSERT INTO "characters" ("Id", "Last Name", "First Name", "Birth Date", "Wikipedia Page") VALUES (?, ?, ?, ?, ?)
+10:28:11 - INFO - commit in the table "characters"
+10:28:11 - INFO - 2 rows loaded (Total) in the table "characters"
+10:28:11 - INFO - 1 commit(s) (Total) in the table "characters"
+10:28:11 - INFO - 1 batches(s) (Total) in the table "characters"
+10:28:11 - INFO - Response Time for the load of the table (characters) with (1) target workers: 0:0:0.95 (hour:minutes:seconds:milli)
+10:28:11 - INFO -        Ie (95) milliseconds
+10:28:11 - INFO - Success ! No errors were seen.
 </console>
 </unit>
 
