@@ -31,16 +31,7 @@ public class Db {
     public static final String CLI_DATABASE_NAME_TARGET = "target";
     public static final String CLI_DATABASE_NAME_SOURCE = "source";
 
-    // Db Default
-    public static final String JDBC_URL_TARGET_DEFAULT;
-    public static final String JDBC_DRIVER_TARGET_DEFAULT;
 
-    static {
-        final String appName = Words.CLI_NAME;
-        Path dbFile = Paths.get(Fs.getAppData(appName).toAbsolutePath().toString(), appName + ".db");
-        JDBC_URL_TARGET_DEFAULT = SqliteSqlDatabase.getJdbcUrl(dbFile);
-        JDBC_DRIVER_TARGET_DEFAULT = SqliteSqlDatabase.getDriver();
-    }
 
     // To store  the data
     public static List<Map<String, String>> records = new ArrayList<>();
@@ -71,11 +62,6 @@ public class Db {
                 .setDescription("Print this help");
         cli.setHelpWord(Words.HELP);
 
-        // Default values
-        cli.optionOf("db." + Db.CLI_DATABASE_NAME_TARGET + ".url")
-                .setDefaultValue(Db.JDBC_URL_TARGET_DEFAULT);
-        cli.optionOf("db." + Db.CLI_DATABASE_NAME_TARGET + ".driver")
-                .setDefaultValue(Db.JDBC_DRIVER_TARGET_DEFAULT);
 
         cli.commandOf(Words.TABLE_COMMAND)
                 .setDescription("operations on one or several tables");

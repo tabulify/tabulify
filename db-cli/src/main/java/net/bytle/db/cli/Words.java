@@ -102,36 +102,6 @@ public class Words {
                 .setDefaultValue(default_database_name)
                 .setDescription("defines the database name. \nA database connection is defined through its name. To know more about, see the command `" + Words.CLI_NAME + " " + Words.DATABASE_COMMAND + " " + CliParser.PREFIX_LONG_OPTION + Words.HELP + "`");
 
-        cliCommand.globalWordOf(JDBC_URL_TARGET_OPTION)
-                .setTypeAsOption()
-                .setEnvName("JDBC_URL_TARGET_OPTION")
-                .setMandatory(true)
-                .setDescription("defines the JDBC database name");
-
-        cliCommand.globalWordOf(JDBC_URL_TARGET_OPTION)
-                .setDefaultValue(Db.JDBC_URL_TARGET_DEFAULT);
-
-
-
-        cliCommand.globalWordOf(JDBC_DRIVER_TARGET_OPTION)
-                .setTypeAsOption()
-                .setEnvName("DB_TARGET_DRIVER")
-                .setIsInConfigFile(true)
-                .setDescription("defines the TARGET driver for the TARGET database (Example: com.sap.db.jdbc.Driver)");
-
-
-        cliCommand.globalWordOf(TARGET_TABLE_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the TARGET table database");
-
-        cliCommand.globalWordOf(TARGET_SCHEMA_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the schema of the target table (Default to the connection schema)");
-
-        cliCommand.globalWordOf(SOURCE_SCHEMA_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the schema of the source table (Default to the connection schema)")
-                .setMandatory(false);
 
 
         cliCommand.globalWordOf(TARGET_WORKER_OPTION)
