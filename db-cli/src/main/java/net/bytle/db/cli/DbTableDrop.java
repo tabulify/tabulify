@@ -2,19 +2,24 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
 import static java.lang.System.exit;
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
 import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
@@ -24,20 +29,20 @@ public class DbTableDrop {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     public static final String STRICT = "strict";
     public static final String FORCE = "force";
-    private static final String ARG_NAME = "name|pattern";
+    private static final String TABLE_URIS = "tableUri...";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
         String description = "Drop table(s).";
         String example = "";
         example += "To drop the tables D_TIME and F_SALES:\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME F_SALES\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "@database/D_TIME F_SALES\n\n";
         example += "To drop only the table D_TIME with force (ie deleting the foreign keys constraint):\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + FORCE + " D_TIME\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + FORCE + "@database/D_TIME\n\n";
         example += "To drop all dimension tables that begins with (D_):\n\n" +
                 CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "\"^D\\_.*\"\n\n";
         example += "To drop all tables:\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " \".*\"\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " \"@database/*\"\n\n";
 
         // Create the parser
         cliCommand
@@ -45,58 +50,71 @@ public class DbTableDrop {
                 .setExample(example);
 
 
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("table or regular expression.")
+        cliCommand.argOf(TABLE_URIS)
+                .setDescription("One or more table URI")
                 .setMandatory(true);
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         cliCommand.flagOf(STRICT)
-                .setDescription("if set, it will throw an error if a table is not found");
+                .setDescription("if set, it will throw an error if a table is not found")
+                .setDefaultValue(true);
 
         cliCommand.flagOf(FORCE)
                 .setDescription("if set, the table will be dropped even if referenced by a foreign constraint");
 
+        cliCommand.optionOf(STORAGE_PATH);
+
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+
 
         // Bring the get statement out of the output zone
         // Otherwise we will not see them their log in the output stream
         final Boolean withForce = cliParser.getBoolean(FORCE);
         final Boolean isStrict = cliParser.getBoolean(STRICT);
 
-        // Start output zone
-        // Shutting down the info of the Db Engine
-        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
 
         // Get the tables asked
-        List<String> tableNames = cliParser.getStrings(ARG_NAME);
+        List<String> tableUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tables = new ArrayList<>();
-        for (String pattern : tableNames) {
-            List<TableDef> tablesFound = database.getCurrentSchema().getTables(pattern);
-            if (tablesFound.size() != 0) {
+        for (String tableUri : tableUris) {
+            TableDataUri tableDataUri = TableDataUri.of(tableUri);
+            Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+            List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
+            for (SchemaDef schemaDef: schemaDefs) {
+                List<TableDef> tablesFound = schemaDef.getTables(tableUri);
+                if (tablesFound.size() != 0) {
 
-                tables.addAll(tablesFound);
-
-            } else {
-
-                final String msg = "No tables found with the name/pattern (" + pattern + ")";
-                if (isStrict) {
-
-                    LOGGER.severe(msg);
-                    exit(1);
+                    tables.addAll(tablesFound);
 
                 } else {
 
-                    LOGGER.warning(msg);
+                    final String msg = "No tables found with the name/pattern (" + tableUri + ")";
+                    if (isStrict) {
+
+                        LOGGER.severe(msg);
+                        exit(1);
+
+                    } else {
+
+                        LOGGER.warning(msg);
+
+                    }
 
                 }
-
             }
 
+        }
+
+        if (tables.size()==0){
+            LOGGER.warning("No tables found to drop");
+            if (isStrict){
+                System.exit(0);
+            } else {
+                return;
+            }
         }
 
         // Doing the work

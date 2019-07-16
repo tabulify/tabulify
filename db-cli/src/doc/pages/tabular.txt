@@ -1,0 +1,10 @@
+====== Tabular Structure ======
+
+
+===== About =====
+A ''tabular data structure'' shows data as a collection of columns with the same data type that can be traversed by rows or by columns.
+
+
+==== Storage ====
+  * [[tabular_file|Tabular File]]
+  * [[table:table|Relational Table]]

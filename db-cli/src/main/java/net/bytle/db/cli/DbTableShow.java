@@ -1,16 +1,20 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.TableDef;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
 import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
@@ -18,9 +22,10 @@ public class DbTableShow {
 
     public static final Log LOGGER_DB_ENGINE = DbLoggers.LOGGER_DB_ENGINE;
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "TableUri..";
+    private static final String TABLE_URI = "TableUri..";
 
     public static void run(CliCommand cliCommand, String[] args) {
+
 
         String description = "Show the data of a table";
 
@@ -28,60 +33,70 @@ public class DbTableShow {
         // Create the parser
         cliCommand
                 .setDescription(description);
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("The name of a table (or regular expression)")
+        cliCommand.argOf(TABLE_URI)
+                .setDescription("A table URI (@database[/schema]/table")
                 .setMandatory(true);
+
+        cliCommand.optionOf(STORAGE_PATH);
 
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        List<String> patterns = cliParser.getStrings(ARG_NAME);
-        List<TableDef> tableDefList = database.getCurrentSchema().getTables(patterns);
-        LOGGER_DB_ENGINE.info("db table show called: Starting to query the tables");
-
+        // Timer
+        CliTimer cliTimer = CliTimer.getTimer("execute").start();
+        LOGGER_DB_ENGINE.setLevel(Level.WARNING);
         System.out.println();
-        if (tableDefList.size() != 0) {
 
-            // Prep
-            CliTimer cliTimer = CliTimer.getTimer("execute").start();
-            LOGGER_DB_ENGINE.setLevel(Level.WARNING);
-            System.out.println();
+        // Start
+        List<String> tableURIs = cliParser.getStrings(TABLE_URI);
+        for (String tableUri: tableURIs) {
+            TableDataUri tableDataUri = TableDataUri.of(tableUri);
+            List<Database> databases = databasesStore.getDatabases(tableDataUri.getDatabaseName());
+            for (Database database: databases) {
+                //TODO: The schema is not taken from the table uri
+                List<TableDef> tableDefList = database.getCurrentSchema().getTables(tableDataUri.getTableName());
+                System.out.println();
+                if (tableDefList.size() != 0) {
 
-            switch (tableDefList.size()) {
-                case 1:
-                    queryPrint(tableDefList.get(0));
-                    System.out.println();
-                    break;
+                    switch (tableDefList.size()) {
+                        case 1:
+                            queryPrint(tableDefList.get(0));
+                            System.out.println();
+                            break;
 
-                default:
+                        default:
 
-                    for (TableDef tableDef : tableDefList) {
+                            for (TableDef tableDef : tableDefList) {
 
-                        System.out.println("Data from the table (" + tableDef.getName() + "): ");
-                        queryPrint(tableDef);
-                        System.out.println();
+                                System.out.println("Data from the table (" + tableDef.getName() + "): ");
+                                queryPrint(tableDef);
+                                System.out.println();
+
+                            }
+                            break;
 
                     }
-                    break;
+
+
+                } else {
+
+                    System.out.println("No tables found in the database ("+database+").");
+
+                }
 
             }
-
-            // Feedback
-            cliTimer.stop();
-            DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
-            LOGGER.info("Response Time to query the data: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-            LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
-
-
-        } else {
-
-            System.out.println("No tables found. Nothing to show.");
-
         }
+
+        // Feedback
+        cliTimer.stop();
+        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
+        LOGGER.info("Response Time to query the data: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
+
         System.out.println();
         LOGGER.info("Bye !");
 

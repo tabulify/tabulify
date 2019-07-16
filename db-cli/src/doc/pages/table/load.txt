@@ -42,7 +42,11 @@ where:
   * ''target table data uri'' is a [[table#uri|table uri]]
 ===== Example =====
 ===== Load a CSV file =====
-
+<unit display="none">
+<code dos>
+db table drop @sqlite/characters
+</code>
+</unit>
 
 <unit envBYTLE_DB_HOME=src>
   * The file
@@ -54,44 +58,38 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 </file>
   * We can load the above data using the ''load'' command and the [[:database:built-in#sqlite|sqlite built-in database]]
 <code dos>
-db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite
+db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite 
 </code>
 <console>
-10:28:11 - INFO - (conf) word was not found
-10:28:11 - INFO - (help) word was not found
-10:28:11 - INFO - (sourceFile) word was found with the value: src\doc\files\characters.csv
-10:28:11 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
-10:28:11 - INFO - (targetTableDataUri) word was found with the value: @sqlite
-10:28:11 - INFO - The table name was not defined. The table name (characters) was taken from the input file (characters.csv).
-10:28:11 - INFO - The schema name was not defined. The database default schema was taken (sqlite.null)
-10:28:11 - INFO - (mp) word was not found
-10:28:11 - INFO - (tw) word was found with the value: 1
-10:28:11 - INFO - (bs) word was not found
-10:28:11 - INFO - bs parameter NOT found. Using default : 20000
-10:28:11 - INFO - (tbs) word was found with the value: 10000
-10:28:11 - INFO - (tcf) word was found with the value: 99999
-10:28:11 - INFO - Loading Table characters
-10:28:11 - INFO - The driver is supporting batch update. 
-2019-07-16 10:28:11, 0 Commits, Producer: Thread-1
-2019-07-16 10:28:11, 0 Records, Producer: Thread-1
-2019-07-16 10:28:11, 0 Commits, Consumer: pool-1-thread-1
-2019-07-16 10:28:11, 0 Records, Consumer: pool-1-thread-1
-2019-07-16 10:28:11, Buffer Size, 1
-2019-07-16 10:28:11, Buffer MaxSize, 20000
-2019-07-16 10:28:11, Buffer Ratio, 0.005
-2019-07-16 10:28:11, 0 Commits, Producer: Thread-1
-2019-07-16 10:28:11, 0 Records, Producer: Thread-1
-2019-07-16 10:28:11, 0 Commits, Consumer: pool-1-thread-1
-2019-07-16 10:28:11, 0 Records, Consumer: pool-1-thread-1
-10:28:11 - INFO - The driver is supporting named parameters.
-10:28:11 - INFO - Insert Statement:INSERT INTO "characters" ("Id", "Last Name", "First Name", "Birth Date", "Wikipedia Page") VALUES (?, ?, ?, ?, ?)
-10:28:11 - INFO - commit in the table "characters"
-10:28:11 - INFO - 2 rows loaded (Total) in the table "characters"
-10:28:11 - INFO - 1 commit(s) (Total) in the table "characters"
-10:28:11 - INFO - 1 batches(s) (Total) in the table "characters"
-10:28:11 - INFO - Response Time for the load of the table (characters) with (1) target workers: 0:0:0.95 (hour:minutes:seconds:milli)
-10:28:11 - INFO -        Ie (95) milliseconds
-10:28:11 - INFO - Success ! No errors were seen.
+11:41:09 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
+11:41:09 - INFO - The table name was not defined. The table name (characters) was taken from the input file (characters.csv).
+11:41:09 - INFO - Driver org.sqlite.JDBC loaded
+11:41:09 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db)
+11:41:09 - INFO - Connected !
+11:41:09 - INFO - The schema name was not defined. The database default schema was taken (sqlite.null)
+11:41:09 - INFO - bs parameter NOT found. Using default : 20000
+11:41:09 - INFO - Loading Table characters
+2019-07-16 11:41:09, 0 Commits, Producer: Thread-1
+2019-07-16 11:41:09, 0 Records, Producer: Thread-1
+2019-07-16 11:41:09, 0 Commits, Consumer: pool-1-thread-1
+2019-07-16 11:41:09, 0 Records, Consumer: pool-1-thread-1
+11:41:09 - INFO - The driver is supporting batch update. 
+2019-07-16 11:41:09, Buffer Size, 1
+2019-07-16 11:41:09, Buffer MaxSize, 20000
+2019-07-16 11:41:09, Buffer Ratio, 0.005
+2019-07-16 11:41:09, 0 Commits, Producer: Thread-1
+2019-07-16 11:41:09, 0 Records, Producer: Thread-1
+2019-07-16 11:41:09, 0 Commits, Consumer: pool-1-thread-1
+2019-07-16 11:41:09, 0 Records, Consumer: pool-1-thread-1
+11:41:09 - INFO - The driver is supporting named parameters.
+11:41:09 - INFO - Insert Statement:INSERT INTO "characters" ("Id", "Last Name", "First Name", "Birth Date", "Wikipedia Page") VALUES (?, ?, ?, ?, ?)
+11:41:09 - INFO - commit in the table "characters"
+11:41:09 - INFO - 2 rows loaded (Total) in the table "characters"
+11:41:09 - INFO - 1 commit(s) (Total) in the table "characters"
+11:41:09 - INFO - 1 batches(s) (Total) in the table "characters"
+11:41:09 - INFO - Response Time for the load of the table (characters) with (1) target workers: 0:0:0.83 (hour:minutes:seconds:milli)
+11:41:09 - INFO -        Ie (83) milliseconds
+11:41:09 - INFO - Success ! No errors were seen.
 </console>
 </unit>
 
@@ -112,11 +110,28 @@ db table describe @sqlite/characters
 </unit>
 
 <unit>
-  * And the data were loaded
+  * And the data was loaded
 <code dos>
 db table show @sqlite/characters
 </code>
 <console>
-No tables found. Nothing to show.
+Id   Last Name        First Name   Birth Date   Wikipedia Page                                        
+--   --------------   ----------   ----------   ---------------------------------------------------   
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman              
+1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
+2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman
 </console>
 </unit>

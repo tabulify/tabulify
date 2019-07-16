@@ -1,0 +1,7 @@
+====== Tabular File ======
+
+===== About =====
+A ''table file'' is a [[file|file]] that shows a [[tabular|tabular structure]].
+===== List =====
+  * [[csv:csv]]
+  * [[excel:excel]]

@@ -1,0 +1,49 @@
+====== Bytle Db - Data URI ======
+
+
+===== About =====
+A data URI is a the [[wp>Uniform%20resource%20identifier|URI]] that permits to locate one or more [[resource|data resources]].
+
+
+
+In case of:
+  * a relational database system, a data resource is a [[table:table|table]] or a [[schema:start|schema]]
+  * a file system, the data resource is a [[file|file]] or a directory.
+
+
+
+===== Syntax =====
+
+<code bash>
+@databaseName[/path]
+</code>
+where:
+  * ''databaseName'' is the [[database:database#name|name of a database]]
+  * ''path'' is a hierarchical path consisting of a sequence of path segments separated by a slash (''/'').
+===== Example =====
+==== Relational Table ====
+  * A [[table:table#uri|table uri]] 
+<code bash>
+@databaseName[/schema/table]
+</code>
+
+
+==== File System ====
+
+  * A file 
+<code bash>
+@databaseName[/dir1/dir2/.../file.extension]
+</code>
+
+==== Globbing ====
+The data URI may also use a [[wp>Glob_(programming)|glob pattern]] to locate multiple data structure at once.
+
+Example:
+  * for a relational database
+<code>
+@globDatabaseName[/globSchemaName/globTableName]
+</code>
+  * for a file system
+<code>
+@globDatabaseName[/globDirectory/globFile]
+</code>

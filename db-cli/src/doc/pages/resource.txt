@@ -1,0 +1,12 @@
+====== Data Resource ======
+
+
+===== About =====
+A ''data resource'' is a container of data.
+
+
+===== Example =====
+  * [[table:table]]
+  * [[schema:start]]
+  * [[csv:csv]]
+  * [[file]]
