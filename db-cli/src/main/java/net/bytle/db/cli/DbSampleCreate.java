@@ -15,8 +15,6 @@ import net.bytle.db.model.TableDef;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 
 public class DbSampleCreate {
@@ -37,14 +35,9 @@ public class DbSampleCreate {
                 .setDescription("The name of the sample schema. One of " + String.join(", ", DbSamples.getNames()))
                 .setMandatory(true);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
-
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
         String sampleName = cliParser.getString(ARG_NAME);
         if (!DbSamples.getNames().contains(sampleName)) {

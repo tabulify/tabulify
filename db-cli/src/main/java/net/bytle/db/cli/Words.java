@@ -63,9 +63,6 @@ public class Words {
 
 
 
-    static final String JDBC_URL_TARGET_OPTION = "db.target.url";
-    static final String JDBC_DRIVER_TARGET_OPTION = "db.target.driver";
-
     static final String HELP = "help";
 
     static final String TARGET_TABLE_OPTION = "target.table";

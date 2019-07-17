@@ -56,8 +56,6 @@ public class DbQueryExecute {
 
         cliCommand.setFooter(footer);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
@@ -69,7 +67,7 @@ public class DbQueryExecute {
         }
 
         // Database
-        String sourceURL = cliParser.getString(JDBC_URL_TARGET_OPTION);
+        String sourceURL = "";
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
         Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(sourceURL)

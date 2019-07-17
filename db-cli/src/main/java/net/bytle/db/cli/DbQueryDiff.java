@@ -57,10 +57,6 @@ public class DbQueryDiff {
 
         cliCommand.setDescription(description).setFooter(footer);
         CliWord argWord = cliCommand.argOf("Directory|File|QueryFile|QueryString").setDescription("Two");
-        cliCommand.optionOf(Words.JDBC_URL_TARGET_OPTION)
-                .setDescription("defines the first Jdbc connection String (Example: jdbc:sap://localhost:30015/?user=login&password=pwd)");
-        cliCommand.optionOf(Words.JDBC_DRIVER_TARGET_OPTION)
-                .setDescription("defines the Jdbc driver of the first JDBC connection (Example: com.sap.db.jdbc.Driver)");
         cliCommand.optionOf(Words.JDBC_URL_SOURCE_OPTION)
                 .setDescription("defines the second database connection String (Example: jdbc:sap://localhost:30015/?user=login&password=pwd)");
         cliCommand.optionOf(Words.JDBC_DRIVER_SOURCE_OPTION)
@@ -166,13 +162,7 @@ public class DbQueryDiff {
                 }
             }
 
-            // Same query between two different database
-            String jdbcUrl1 = cliParser.getString(JDBC_URL_TARGET_OPTION);
-            if (jdbcUrl1 == null) {
-                System.err.println("With only one argument, we are performing a diff between two databases and therefore, the first JDBC URL option (" + JDBC_URL_TARGET_OPTION + ") is mandatory.");
-                System.exit(1);
-            }
-            String jdbcDriver1 = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
+
 
             String jdbcUrl2 = cliParser.getString(JDBC_URL_SOURCE_OPTION);
             if (jdbcUrl2 == null) {
@@ -188,6 +178,8 @@ public class DbQueryDiff {
             //TODO: Create a timer
             Date startTime = new Date();
 
+            String jdbcUrl1 = null;
+            String jdbcDriver1 = null;
             Connection connection1 = new JdbcConnectionBuilder(null, null, jdbcUrl1, jdbcDriver1).build();
             Statement statement1;
             try {

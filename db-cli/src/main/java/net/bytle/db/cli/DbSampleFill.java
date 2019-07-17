@@ -21,9 +21,6 @@ import java.sql.Types;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
-
 
 public class DbSampleFill {
 
@@ -44,8 +41,6 @@ public class DbSampleFill {
                 .setDescription("The name of the sample schema. One of " + String.join(", ", DbSamples.getNames()))
                 .setMandatory(true);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
         cliCommand.optionOf(SCALE)
                 .setShortName("s")
                 .setDescription("The size of the generated data in Gb (works only for tpc schema)")
@@ -53,9 +48,7 @@ public class DbSampleFill {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
         // Placed here to show the args at the beginning of the output
         Double scale = cliParser.getDouble(SCALE);

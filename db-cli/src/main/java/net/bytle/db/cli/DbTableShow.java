@@ -4,7 +4,7 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
+
 import net.bytle.db.engine.Queries;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.model.QueryDef;
@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
+
 
 public class DbTableShow {
 

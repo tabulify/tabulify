@@ -14,8 +14,6 @@ import net.bytle.db.stream.InsertStream;
 import java.sql.Types;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 
 /**
@@ -42,8 +40,6 @@ public class DbTableList {
                 .setMandatory(false)
                 .setDefaultValue("*");
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         cliCommand.flagOf(Words.COUNT_COMMAND)
                 .setDescription("suppress the count column")
@@ -51,9 +47,7 @@ public class DbTableList {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
         final Boolean withCount = !(cliParser.getBoolean(Words.COUNT_COMMAND));
 

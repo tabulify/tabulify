@@ -45,8 +45,6 @@ public class DbQueryTransfer {
         command.optionOf(SOURCE_FETCH_SIZE_OPTION);
         command.optionOf(JDBC_DRIVER_SOURCE_OPTION);
         command.optionOf(SOURCE_QUERY_OPTION);
-        command.optionOf(JDBC_URL_TARGET_OPTION);
-        command.optionOf(JDBC_DRIVER_TARGET_OPTION);
         command.optionOf(TARGET_TABLE_OPTION)
                 .setDescription("Define the table name (Default to the name of the file");
         command.optionOf(TARGET_WORKER_OPTION);
@@ -80,13 +78,7 @@ public class DbQueryTransfer {
         QueryDef sourceQueryDef = sourceDatabase.getQuery(query);
 
 
-        // Target Connection
-        String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
-        String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-
-        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(targetUrl)
-                .setDriver(targetDriver);
+        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
 
         // Metrics

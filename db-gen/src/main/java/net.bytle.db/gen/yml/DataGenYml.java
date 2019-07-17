@@ -2,9 +2,9 @@ package net.bytle.db.gen.yml;
 
 
 import net.bytle.db.gen.DataGenLoader;
-import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class DataGenYml {
 
-    private final Database database;
+    private final SchemaDef schemaDef;
 
 
     // Default number of rows to load
@@ -41,12 +41,12 @@ public class DataGenYml {
 
     /**
      *
-     * @param database the database object
+     * @param schemaDef the schema object
      * @param input an input stream that points to an YAML file that describe the load properties.
      */
-    public DataGenYml(Database database, InputStream input) {
+    public DataGenYml(SchemaDef schemaDef, InputStream input) {
 
-        this.database = database;
+        this.schemaDef = schemaDef;
         if (input==null){
             throw new RuntimeException("The input stream of the Yaml file must not be null");
         }
@@ -56,7 +56,7 @@ public class DataGenYml {
         Iterable<Object> dataObject = yaml.loadAll(input);
         for (Object data : dataObject) {
             final DataGenYmlProperty dataGenYmlProperty = (DataGenYmlProperty) data;
-            String fullyQualifiedName = database.getObjectBuilder().getFullyQualifiedName(dataGenYmlProperty.getTable(), dataGenYmlProperty.getSchema());
+            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataGenYmlProperty.getTable(), schemaDef.getName());
             propertiesByTable.put(fullyQualifiedName, dataGenYmlProperty);
         }
 
@@ -93,7 +93,7 @@ public class DataGenYml {
         // Load the tables
         for (DataGenYmlProperty dataGenYmlProperty : propertiesByTable.values()) {
 
-            TableDef tableDef = database.getTable(dataGenYmlProperty.getTable(), dataGenYmlProperty.getSchema());
+            TableDef tableDef = schemaDef.getTableOf(dataGenYmlProperty.getTable());
             load(tableDef);
 
         }

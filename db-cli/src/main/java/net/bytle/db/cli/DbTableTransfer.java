@@ -47,13 +47,11 @@ public class DbTableTransfer {
                 .setDescription("The table name of the target. The default value is the name of the source table")
                 .setMandatory(false);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION)
-                .setMandatory(true);
+
         cliCommand.optionOf(JDBC_URL_SOURCE_OPTION)
                 .setMandatory(true);
 
         cliCommand.optionOf(JDBC_DRIVER_SOURCE_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         cliCommand.optionOf(TARGET_WORKER_OPTION);
         cliCommand.optionOf(TARGET_TABLE_OPTION);
@@ -112,11 +110,8 @@ public class DbTableTransfer {
         }
 
         // Target object building
-        String targetUrl = cliParser.getString(JDBC_URL_TARGET_OPTION);
-        String targetDriver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(targetUrl)
-                .setDriver(targetDriver);
+
+        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
         TableDef targetTableDef = targetDatabase.getTable(targetTableName, targetSchemaName);
 
 

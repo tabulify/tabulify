@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 
 /**
@@ -37,21 +35,9 @@ public class DbSchemaList {
                 .setMandatory(true)
                 .setDefaultValue("*");
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
-
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
-
-        /**
-         * Within a test, the url of the database may have been set
-         * Because the option have a sqlite default, this will cause an error
-         */
-        if (database.getUrl() == null) {
-            database.setUrl(cliParser.getString(JDBC_URL_TARGET_OPTION))
-                    .setDriver(cliParser.getString(JDBC_DRIVER_TARGET_OPTION));
-        }
 
 
         List<String> patterns = cliParser.getStrings(ARG_NAME);

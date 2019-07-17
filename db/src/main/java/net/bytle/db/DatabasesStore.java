@@ -3,6 +3,8 @@ package net.bytle.db;
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
+import net.bytle.db.engine.Tables;
+import net.bytle.db.model.TableDef;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -13,9 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.bytle.db.database.Databases.MODULE_NAME;
@@ -31,7 +31,7 @@ public class DatabasesStore {
      * Don't change this value
      */
     private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
-    private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase" ;
+    private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase";
     private String passphrase;
     private Path path;
 
@@ -52,6 +52,17 @@ public class DatabasesStore {
      */
     private Ini ini;
 
+    /**
+     * Cache :(
+     * TODO: Clean the connection after each call of a db cli action ?
+     * A run of a db cli does not terminate with a de-connection
+     * This is cache Hack to get back the same object to not create a new connection
+     * because database such as sqlite does not permit more than two connections at the same time
+     * sqlite says that the database is locked out
+     */
+    private static Map<Path, DatabasesStore> stores = new HashMap<>();
+    private Map<String, Database> databases = new HashMap<>();
+
 
     private DatabasesStore(Path path) {
 
@@ -65,7 +76,14 @@ public class DatabasesStore {
 
     public static DatabasesStore of(Path path) {
 
-        return new DatabasesStore(path);
+        DatabasesStore databasesStore;
+        if (stores.get(path) != null) {
+            databasesStore = stores.get(path);
+        } else {
+            databasesStore = new DatabasesStore(path);
+            stores.put(path,databasesStore);
+        }
+        return databasesStore;
     }
 
     public static DatabasesStore of() {
@@ -199,34 +217,42 @@ public class DatabasesStore {
 
     public Database getDatabase(String name) {
 
-        Database database = Databases.of(name);
+        Database database;
+        if (databases.get(name) != null) {
 
-        Wini.Section iniSection = getIniFile().get(name);
-        if (iniSection != null) {
-            database.setUrl(iniSection.get(URL));
-            database.setUser(iniSection.get(USER));
-            if (iniSection.get(PASSWORD) != null) {
-                String localPassphrase;
-                if (this.passphrase != null) {
-                    localPassphrase = this.passphrase;
-                } else {
-                    final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-                    if (s!=null){
-                        if (s.equals("true")){
-                            localPassphrase = INTERNAL_PASSPHRASE;
-                        } else {
-                            throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
-                        }
+            database = databases.get(name);
+
+        } else {
+
+            database = Databases.of(name);
+            databases.put(name, database);
+
+            Wini.Section iniSection = getIniFile().get(name);
+            if (iniSection != null) {
+                database.setUrl(iniSection.get(URL));
+                database.setUser(iniSection.get(USER));
+                if (iniSection.get(PASSWORD) != null) {
+                    String localPassphrase;
+                    if (this.passphrase != null) {
+                        localPassphrase = this.passphrase;
                     } else {
-                        throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                        final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+                        if (s != null) {
+                            if (s.equals("true")) {
+                                localPassphrase = INTERNAL_PASSPHRASE;
+                            } else {
+                                throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                            }
+                        } else {
+                            throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                        }
                     }
+                    database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
                 }
-                database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+                database.setDriver(iniSection.get(DRIVER));
+                database.setStatement(iniSection.get(STATEMENT));
             }
-            database.setDriver(iniSection.get(DRIVER));
-            database.setStatement(iniSection.get(STATEMENT));
         }
-
         return database;
 
     }
@@ -275,7 +301,7 @@ public class DatabasesStore {
                         .setUrl("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
                         .setUser("sa")
                         .setPassword("TheSecret1!");
-                save(database,true);
+                save(database, true);
 
                 database = Databases.of("mysql")
                         .setDriver("com.mysql.jdbc.Driver")

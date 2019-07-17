@@ -126,7 +126,7 @@ public class DataGenLoader {
         }
 
 
-        LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
+//        LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
         LOGGER.info("The new size is: " + Tables.getSize(tableDef));
 
 

@@ -2,7 +2,7 @@
 
 
 ===== About ===== 
-The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]] will insert generated data into [[table|relational table]].
+The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]] will insert generated data into a [[table|relational table]].
 
 
 
@@ -34,5 +34,5 @@ where:
 </unit>
 where:
   * ''target table data uri'' is a [[table#uri|table uri]]
-  * ''sourceFile'' is a local path.
+  * ''DataGenDef.yml'' is a definition file of the data to be generated.
 ===== Example =====

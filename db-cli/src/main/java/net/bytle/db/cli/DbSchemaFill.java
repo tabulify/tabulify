@@ -19,8 +19,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.JDBC_DRIVER_TARGET_OPTION;
-import static net.bytle.db.cli.Words.JDBC_URL_TARGET_OPTION;
 
 
 /**
@@ -46,8 +44,6 @@ public class DbSchemaFill {
                 .setDescription(description);
         cliCommand.argOf(ARG)
                 .setDescription("A schema or a data definition file (Default: the current schema)");
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
 
         // Parser
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -74,11 +70,7 @@ public class DbSchemaFill {
 
 
         // Database
-        String url = cliParser.getString(JDBC_URL_TARGET_OPTION);
-        String driver = cliParser.getString(JDBC_DRIVER_TARGET_OPTION);
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(url)
-                .setDriver(driver);
+        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
         CliTimer cliTimer = CliTimer.getTimer("schema").start();
 
@@ -91,7 +83,7 @@ public class DbSchemaFill {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            DataGenYml dataGenYml = new DataGenYml(database, input).loadParentTable(true);
+            DataGenYml dataGenYml = new DataGenYml(database.getCurrentSchema(), input).loadParentTable(true);
             List<TableDef> tables = dataGenYml.load();
 
             LOGGER.info("The following tables where loaded:");

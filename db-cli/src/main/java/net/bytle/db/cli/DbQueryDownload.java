@@ -41,13 +41,11 @@ public class DbQueryDownload {
                 cliCommand.getName() + CliParser.PREFIX_LONG_OPTION + Words.OUTPUT_FILE_PATH + " QueryDownloaded.csv QueryToDownload.sql \n";
         cliCommand.setFooter(footer);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
         cliCommand.optionOf(CLOB_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        String sourceURL = cliParser.getString(JDBC_URL_TARGET_OPTION);
+        String sourceURL = "";
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
 
         Boolean clobInApartFile = cliParser.getBoolean(CLOB_OPTION);

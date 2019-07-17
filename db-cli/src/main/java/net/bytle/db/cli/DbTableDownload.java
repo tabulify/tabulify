@@ -38,17 +38,15 @@ public class DbTableDownload {
         cliCommand.optionOf(CLOB_OPTION)
                 .setDescription("If present, the values of clob columns will be written in a apart file");
         String footer = "\nExample:\n" +
-                cliCommand.getName() + " " + CliParser.PREFIX_LONG_OPTION + JDBC_URL_TARGET_OPTION + "  jdbc:oracle:thin:scott/tiger@myhost:1521:mysid -tdf downloaded.csv toDownload.sql \n";
+                cliCommand.getName() + "-tdf downloaded.csv toDownload.sql \n";
         cliCommand.setFooter(footer);
 
-        cliCommand.optionOf(JDBC_URL_TARGET_OPTION);
-        cliCommand.optionOf(JDBC_DRIVER_TARGET_OPTION);
         cliCommand.optionOf(CLOB_OPTION);
 
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        String sourceURL = cliParser.getString(JDBC_URL_TARGET_OPTION);
+        String sourceURL = "";
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
         Path downloadPathDir = cliParser.getPath(OUTPUT_FILE_PATH);
         if (downloadPathDir == null) {

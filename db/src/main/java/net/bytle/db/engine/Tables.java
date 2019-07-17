@@ -22,17 +22,17 @@ public class Tables {
 
         String columnStatement = columnDef.getColumnName();
         String statementString = "select max(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
+        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
+        try (
 
-        try {
 
-            Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
-            Statement statement = currentConnection.createStatement();
-            ResultSet resultSet = statement.executeQuery(statementString);
+                Statement statement = currentConnection.createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
             Integer returnValue = null;
             if (resultSet.next()) {
                 returnValue = resultSet.getInt(1);
             }
-            statement.close();
             return returnValue;
 
         } catch (SQLException e) {
@@ -52,45 +52,43 @@ public class Tables {
      */
     public static Integer getSize(TableDef tableDef) {
 
-        String statementString = "select count(1) from " + tableDef.getFullyQualifiedName();
 
         Connection currentConnection = tableDef.getDatabase().getCurrentConnection();
         if (currentConnection == null) {
             throw new RuntimeException("The database " + tableDef.getDatabase() + " seems to have no connections (Is this a relational database supporting JDBC ?)");
         }
 
-        try (
-                Statement statement = currentConnection.createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
-        ) {
-            Integer returnValue = null;
-            if (resultSet.next()) {
-                returnValue = resultSet.getInt(1);
-            }
-            resultSet.close();
-            return returnValue;
+        Integer returnValue = 0;
+        String statementString = "select count(1) from " + tableDef.getFullyQualifiedName();
 
+        try (
+                ResultSet resultSet = currentConnection.createStatement().executeQuery(statementString);
+        ) {
+            while (resultSet.next()) {
+                returnValue += resultSet.getInt(1);
+            }
         } catch (SQLException e) {
             System.err.println(statementString);
             throw new RuntimeException(e);
         }
+        return returnValue;
 
     }
 
 
     public static Date getMinDateValue(ColumnDef columnDef) {
         String statementString = "select min(" + columnDef.getColumnName() + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
-        try {
-            Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
-            Statement statement = currentConnection.createStatement();
-            ResultSet resultSet = statement.executeQuery(statementString);
+        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
+        try (
+
+                Statement statement = currentConnection.createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
             Date returnValue = null;
             if (resultSet.next()) {
                 returnValue = resultSet.getDate(1);
             }
-            statement.close();
             return returnValue;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -123,17 +121,15 @@ public class Tables {
             throw new RuntimeException("The database (" + schema.getDatabase() + ") has no connection (no URL ?). We then cannot check the existence of a table.");
         }
         boolean tableExist;
-        try {
-            String[] types = {"TABLE"};
-            ResultSet tableResultSet;
-            String schemaName = null;
-            if (schema.getName() != null) {
-                schemaName = schema.getName();
-            }
-
-            tableResultSet = currentConnection.getMetaData().getTables(null, schemaName, tableDef.getName(), types);
+        String[] types = {"TABLE"};
+        String schemaName = null;
+        if (schema.getName() != null) {
+            schemaName = schema.getName();
+        }
+        try (
+                ResultSet tableResultSet = currentConnection.getMetaData().getTables(null, schemaName, tableDef.getName(), types);
+        ) {
             tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-            tableResultSet.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -169,17 +165,15 @@ public class Tables {
         String columnStatement = columnDef.getColumnName();
 
         String statementString = "select max(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
-
-        try {
-
-            Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
-            Statement statement = currentConnection.createStatement();
-            ResultSet resultSet = statement.executeQuery(statementString);
+        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
+        try (
+                Statement statement = currentConnection.createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
             String returnValue = null;
             if (resultSet.next()) {
                 returnValue = resultSet.getString(1);
             }
-            statement.close();
             return returnValue;
 
         } catch (SQLException e) {
