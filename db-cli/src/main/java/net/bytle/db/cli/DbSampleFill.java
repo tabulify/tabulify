@@ -9,6 +9,7 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.SchemaDataUri;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
@@ -65,7 +66,7 @@ public class DbSampleFill {
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        TableDataUri schemaUri = TableDataUri.of(cliParser.getString(SCHEMA_URI));
+        SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
         Database database = databasesStore.getDatabase(schemaUri.getDatabaseName());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (schemaUri.getSchemaName()!=null){

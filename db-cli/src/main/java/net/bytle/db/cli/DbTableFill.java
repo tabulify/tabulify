@@ -6,19 +6,19 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.gen.DataDef;
+import net.bytle.db.gen.DataDefs;
 import net.bytle.db.gen.DataGenLoader;
-import net.bytle.db.gen.yml.DataGenYml;
+import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
-
 
 
 /**
@@ -32,14 +32,14 @@ public class DbTableFill {
 
 
     static final String NUMBER_OF_ROWS_OPTION = "rows";
-    private static String DEFINITION_FILE = "data-def";
+    static String DEFINITION_FILE = "data-def";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Load generated data into a table\n\n"+
-                "By default, the data would be randomly generated.\n"+
-                "You should use a data definition file (option "+DEFINITION_FILE+") to have more control over the data generated";
+        String description = "Load generated data into a table\n\n" +
+                "By default, the data would be randomly generated.\n" +
+                "You should use a data definition file (option " + DEFINITION_FILE + ") to have more control over the data generated";
 
 
         final String ARG_NAME = "(DatabaseUri|TableUri)";
@@ -80,26 +80,44 @@ public class DbTableFill {
         Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
         final String schemaName = tableDataUri.getSchemaName();
         SchemaDef schemaDef = database.getCurrentSchema();
-        if (schemaName!=null) {
+        if (schemaName != null) {
             schemaDef = database.getSchema(schemaName);
         }
         CliTimer cliTimer = CliTimer.getTimer(arg).start();
 
 
-        if (dataDefPath!=null) {
-            if (!(Files.exists(dataDefPath))){
-                LOGGER.severe("The file ("+dataDefPath.toAbsolutePath().toString()+" does not exist");
+        if (dataDefPath != null) {
+            if (!(Files.exists(dataDefPath))) {
+                LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + " does not exist");
                 System.exit(1);
             }
-            InputStream input;
-            try {
-                input = Files.newInputStream(dataDefPath);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+
+            List<DataDef> dataDefs = DataDefs.load(dataDefPath);
+            DataDef dataDef;
+            if (dataDefs.size() == 1) {
+                dataDef = dataDefs.get(0);
+                if (dataDef.getTable() == null) {
+                    dataDef.setTable(tableDataUri.getTableName());
+                }
+                if (!(dataDef.getTable().equals(tableDataUri.getTableName()))) {
+                    LOGGER.severe("The table in the data definition file (" + dataDef.getTable() + ") is not the same than the table in the table Uri (" + tableDataUri.getTableName() + ").");
+                    System.exit(1);
+                }
+            } else {
+                List<DataDef> tableDataDefs = dataDefs.stream()
+                        .filter(d -> d.getTable() != null)
+                        .filter(d -> d.getTable().equals(tableDataUri.getTableName()))
+                        .collect(Collectors.toList());
+                if (tableDataDefs.size() != 1) {
+                    LOGGER.severe("There is more than 1 table data definition in the data definition file (" + dataDefPath + ") and there is " + tableDataDefs.size() + " that corresponds to the table to load in the table uri (" + tableDataUri + ")");
+                    System.exit(1);
+                }
+                dataDef = tableDataDefs.get(0);
             }
 
-            DataGenYml dataGenYml = new DataGenYml(schemaDef, input).loadParentTable(true);
-            List<TableDef> tables = dataGenYml.load();
+            List<TableDef> tables = DataDefLoader.of(schemaDef)
+                    .loadParentTable(true)
+                    .load(dataDef);
 
             LOGGER.info("The following tables where loaded:");
             for (TableDef tableDef : tables) {

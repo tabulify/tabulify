@@ -1,0 +1,25 @@
+Rows: 10
+Columns:
+  d_date_sk:
+    Generator: sequence
+    Step: 1
+  d_date:
+    Generator: derived
+    Column_parent: d_date_sk
+    Formula: "startDate = new Date(1900,01,01); new Date(startDate.getTime()+x*1000*60*60*24)"
+  d_month_seq:
+    Generator: derived
+    Column_parent: d_date
+    Formula: "x.getMonth()"
+  d_moy:
+    Generator: derived
+    Column_parent: d_date
+    Formula: "x.getMonth()+1"
+  d_day_name:
+    Generator: derived
+    Column_parent: d_date
+    Formula: "var dayNames = ['Sunday','Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; dayNames[x.getDay()]"
+  d_fy_year:
+    Generator: derived
+    Column_parent: d_date
+    Formula: "x.getFullYear()"

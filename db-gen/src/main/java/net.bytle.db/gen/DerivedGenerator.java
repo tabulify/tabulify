@@ -1,5 +1,6 @@
 package net.bytle.db.gen;
 
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.db.model.ColumnDef;
 
 import javax.script.ScriptEngine;
@@ -58,11 +59,25 @@ public class DerivedGenerator implements DataGenerator {
         String evalScript = "var x = " + value + ";\n" + formula;
 
         try {
-            this.actualValue = engine.eval(evalScript);
+            Object evalValue = engine.eval(evalScript);
+            if (evalValue.getClass() == ScriptObjectMirror.class) {
+                ScriptObjectMirror evalValueMirror = (ScriptObjectMirror) evalValue;
+                if (evalValueMirror.getClassName().equals("Date")) {
+                    // https://stackoverflow.com/questions/25385911/nashorn-nativedate-conversion-to-java-util-date
+                    // js date returns timestamp in local time so you need to adjust it...
+                    long timestampLocalTime = (long) (double) evalValueMirror.callMember("getTime");
+                    // java.util.Date constructor utilizes UTC timestamp
+                    int timezoneOffsetMinutes = (int) (double) evalValueMirror.callMember("getTimezoneOffset");
+                    this.actualValue = new Date(timestampLocalTime + timezoneOffsetMinutes * 60 * 1000);
+                } else {
+                    this.actualValue = evalValue;
+                }
+            } else {
+                this.actualValue = evalValue;
+            }
             return this.actualValue;
         } catch (ScriptException e) {
-
-            throw new RuntimeException(evalScript,e);
+            throw new RuntimeException(evalScript, e);
         }
 
     }

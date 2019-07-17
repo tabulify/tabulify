@@ -1,4 +1,4 @@
-====== Bytle Db - Load a table ======
+====== Bytle Db - Load data from a file into a table ======
 
 
 ===== About ===== 

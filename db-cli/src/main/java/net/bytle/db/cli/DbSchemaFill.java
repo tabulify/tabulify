@@ -2,8 +2,10 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
+import net.bytle.db.gen.DataDef;
+import net.bytle.db.gen.DataDefs;
 import net.bytle.db.gen.DataGenLoader;
-import net.bytle.db.gen.yml.DataGenYml;
+import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
@@ -18,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
 
 
 /**
@@ -77,14 +78,10 @@ public class DbSchemaFill {
         if (yamlFile != null) {
 
             LOGGER.info("Loading generated data with the file " + yamlFile);
-            InputStream input = null;
-            try {
-                input = Files.newInputStream(yamlFile);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            DataGenYml dataGenYml = new DataGenYml(database.getCurrentSchema(), input).loadParentTable(true);
-            List<TableDef> tables = dataGenYml.load();
+            List<DataDef> dataDefs = DataDefs.load(yamlFile);
+            List<TableDef> tables = DataDefLoader.of(database.getCurrentSchema())
+                    .loadParentTable(true)
+                    .load(dataDefs);
 
             LOGGER.info("The following tables where loaded:");
             for (TableDef tableDef : tables) {

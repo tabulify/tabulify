@@ -7,10 +7,7 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -73,6 +70,10 @@ public class DataDefLoader {
     public DataDefLoader loadParentTable(Boolean loadParent) {
         this.loadParent = loadParent;
         return this;
+    }
+
+    public List<TableDef> load(DataDef dataDef) {
+        return load(Arrays.asList(dataDef));
     }
 
     public List<TableDef> load(List<DataDef> dataDefs) {

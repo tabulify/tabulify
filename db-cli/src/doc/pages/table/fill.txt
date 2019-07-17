@@ -1,4 +1,4 @@
-====== Bytle Db - Fill a table ======
+====== Bytle Db - Fill a table with generated data ======
 
 
 ===== About ===== 
@@ -39,7 +39,7 @@ where:
 </unit>
 where:
   * ''target table data uri'' is a [[table#uri|table uri]]
-  * ''DataGenDef.yml'' is a [[datadef|data definition file]] of the data to be generated.
+  * ''DataGenDef.yml'' is a [[:datadef|data definition file]] of the data to be generated.
 ===== Example =====
 ==== Load random generated data ====
 
@@ -126,4 +126,23 @@ Table Name   Rows Count
 ----------   ----------   
 date_dim          10000
 </console>
+</unit>
+
+==== Load generated data defined by a data definition file ====
+
+  * Let's truncate the ''date_dim'' table to delete all data
+<unit>
+<code dos>
+db sample truncate @sqlite/date_dim
+</code>
+</unit>
+
+<unit envBYTLE_DB_HOME=src>
+  * The file
+<file yml date_dim_def.yml>
+Id,Last Name,First Name,Birth Date,Wikipedia Page
+1,Schwarzenegger,Arnold,1947-07-30,https://en.wikipedia.org/wiki/Arnold_Schwarzenegger
+2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
+
+</file>
 </unit>
