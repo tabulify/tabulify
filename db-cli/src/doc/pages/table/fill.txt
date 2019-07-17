@@ -133,7 +133,7 @@ date_dim          10000
   * Let's truncate the ''date_dim'' table to delete all data
 <unit>
 <code dos>
-db sample truncate @sqlite/date_dim
+db table truncate @sqlite/date_dim
 </code>
 </unit>
 
@@ -145,4 +145,18 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
 
 </file>
+  * Fill
+<code dos>
+db table fill %BYTLE_DB_HOME%\doc\files\date_dim_def.yml @sqlite/date_dim
+</code>
+<console>
+</console>
+</unit>
+  * The table ''date_dim'' was filled with generated data
+<unit>
+<code dos>
+db table show --limit 10 @sqlite/dat_dim
+</code>
+<console>
+</console>
 </unit>
