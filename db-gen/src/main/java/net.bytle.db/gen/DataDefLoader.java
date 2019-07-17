@@ -1,15 +1,12 @@
-package net.bytle.db.gen.yml;
+package net.bytle.db.gen;
 
 
-import net.bytle.db.gen.DataGenLoader;
+import net.bytle.cli.Log;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * The input of the data generation is in a yml file
  */
-public class DataGenYml {
+public class DataDefLoader {
 
     private final SchemaDef schemaDef;
 
@@ -32,34 +29,25 @@ public class DataGenYml {
 
     // The data gen property by fully qualified table name
     // Its build on the object scope to not pass it around in the functions signature
-    private Map<String, DataGenYmlProperty> propertiesByTable = new HashMap<>();
+    private Map<String, DataDef> propertiesByTable = new HashMap<>();
 
     // A cache to know which tables was loaded
     private List<TableDef> loadedTables = new ArrayList<>();
 
-    private static final Logger LOGGER = Logger.getLogger(DataGenYml.class.getPackage().toString());
+    private static final Log LOGGER = Gen.GEN_LOG;
 
     /**
      *
      * @param schemaDef the schema object
-     * @param input an input stream that points to an YAML file that describe the load properties.
      */
-    public DataGenYml(SchemaDef schemaDef, InputStream input) {
+    public DataDefLoader(SchemaDef schemaDef) {
 
         this.schemaDef = schemaDef;
-        if (input==null){
-            throw new RuntimeException("The input stream of the Yaml file must not be null");
-        }
-        // Transform the file in properties
-        Constructor constructor = new Constructor(DataGenYmlProperty.class);
-        Yaml yaml = new Yaml(constructor);
-        Iterable<Object> dataObject = yaml.loadAll(input);
-        for (Object data : dataObject) {
-            final DataGenYmlProperty dataGenYmlProperty = (DataGenYmlProperty) data;
-            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataGenYmlProperty.getTable(), schemaDef.getName());
-            propertiesByTable.put(fullyQualifiedName, dataGenYmlProperty);
-        }
 
+    }
+
+    public static DataDefLoader of(SchemaDef schemaDef) {
+        return new DataDefLoader(schemaDef);
     }
 
     /**
@@ -69,7 +57,7 @@ public class DataGenYml {
      * @param rows
      * @return
      */
-    public DataGenYml defaultRows(Integer rows) {
+    public DataDefLoader defaultRows(Integer rows) {
         this.defaultRows = rows;
         return this;
     }
@@ -82,21 +70,31 @@ public class DataGenYml {
      * @param loadParent
      * @return
      */
-    public DataGenYml loadParentTable(Boolean loadParent) {
+    public DataDefLoader loadParentTable(Boolean loadParent) {
         this.loadParent = loadParent;
         return this;
     }
 
-    public List<TableDef> load() {
+    public List<TableDef> load(List<DataDef> dataDefs) {
 
+
+        for (DataDef dataDef:dataDefs) {
+
+            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getTable(), schemaDef.getName());
+            propertiesByTable.put(fullyQualifiedName, dataDef);
+
+        }
 
         // Load the tables
-        for (DataGenYmlProperty dataGenYmlProperty : propertiesByTable.values()) {
+        for (DataDef dataDef : propertiesByTable.values()) {
 
-            TableDef tableDef = schemaDef.getTableOf(dataGenYmlProperty.getTable());
+            TableDef tableDef = schemaDef.getTableOf(dataDef.getTable());
             load(tableDef);
 
         }
+
+        // The load order is determined by the constraint
+        // TODO: Create a graph to see the flow ?
         return loadedTables;
 
     }
@@ -135,18 +133,18 @@ public class DataGenYml {
         }
 
         // Property
-        DataGenYmlProperty dataGenYmlProperty = propertiesByTable.get(tableDef.getFullyQualifiedName());
+        DataDef dataDef = propertiesByTable.get(tableDef.getFullyQualifiedName());
 
         // Rows and gen properties
         Integer rows = this.defaultRows;
         Map<String, Map<String, Object>> columnsProperties = null;
-        if (dataGenYmlProperty != null) {
+        if (dataDef != null) {
 
-            if (dataGenYmlProperty.getRows() != null) {
-                rows = dataGenYmlProperty.getRows();
+            if (dataDef.getRows() != null) {
+                rows = dataDef.getRows();
             }
 
-            columnsProperties = dataGenYmlProperty.getColumns();
+            columnsProperties = dataDef.getColumns();
         }
 
         // Load

@@ -1,4 +1,4 @@
-package net.bytle.db.gen.yml;
+package net.bytle.db.gen;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.Map;
  * #####################################################################################################################
  *
  */
-public class DataGenYmlProperty {
+public class DataDef {
 
     public String Table;
     public String Schema;
@@ -27,16 +27,16 @@ public class DataGenYmlProperty {
      */
     public Map<String, Map<String, Object>> Columns = new HashMap<>();
 
-    public DataGenYmlProperty() {
+    public DataDef() {
 
     }
 
-    public DataGenYmlProperty schema(String schema) {
+    public DataDef schema(String schema) {
         this.Schema = schema;
         return this;
     }
 
-    public DataGenYmlProperty add(String columnName, String property, String value) {
+    public DataDef add(String columnName, String property, String value) {
         Map<String, Object> properties = Columns.get(columnName);
         if (properties==null){
             properties = new HashMap<>();

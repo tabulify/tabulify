@@ -14,9 +14,6 @@ import java.util.Map;
 
 public class DataGenLoader {
 
-    // https://github.com/interana/eventsim#config-file
-    // https://mockaroo.com/ - Data Type
-    // https://github.com/mifmif/Generex
 
     private static final Log LOGGER = Gen.GEN_LOG;
     private final TableDef tableDef;

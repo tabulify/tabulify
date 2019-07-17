@@ -19,7 +19,7 @@ public interface DataGenerator<T extends Object> {
 
     /**
      * Sqlite returns a default precision of 2000000000
-     * which result in a maxiumum heap space exceptions
+     * which result in a maximum heap space exceptions
      */
     int MAX_STRING_PRECISION = 40000;
 
