@@ -40,13 +40,13 @@ public class DbTableList {
         cliCommand
                 .setDescription(description);
         cliCommand.argOf(TABLE_URIS)
-                .setDescription("One or more name table uri")
+                .setDescription("One or more name table uri (ie @database[/schema]/table)")
                 .setMandatory(false);
 
         cliCommand.optionOf(STORAGE_PATH);
 
         cliCommand.flagOf(Words.NO_COUNT)
-                .setDescription("suppress the count column")
+                .setDescription("suppress the column showing the table count")
                 .setShortName("c");
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -78,7 +78,7 @@ public class DbTableList {
         TableDef printTable = Tables.get("tables")
                 .addColumn("Table Name");
         if (!noCountColumn) {
-            printTable.addColumn("Count", Types.INTEGER);
+            printTable.addColumn("Rows Count", Types.INTEGER);
         }
 
         InsertStream insertStream = Tables.getTableInsertStream(printTable);
@@ -93,8 +93,6 @@ public class DbTableList {
         }
         insertStream.close();
 
-        System.out.println();
-        System.out.println("Tables:");
         System.out.println();
         Tables.print(printTable);
         Tables.drop(printTable);

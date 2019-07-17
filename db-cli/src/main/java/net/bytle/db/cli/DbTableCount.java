@@ -4,44 +4,53 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
+import net.bytle.db.engine.SchemaDataUri;
+import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.model.SchemaDef;
 
+import java.nio.file.Path;
 import java.util.List;
+
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
 
 public class DbTableCount {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "pattern..";
+    private static final String TABLE_URIS = "TableUri...";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Count the number of tables in the current schema";
+        String description = "Count the number of tables";
 
         // Create the parser
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("one or more regular expressions.")
-                .setMandatory(false)
-                .setDefaultValue(".*");
-
-
+        cliCommand.argOf(TABLE_URIS)
+                .setDescription("one or more table URI (@database[/schema]/table).");
+        cliCommand.optionOf(STORAGE_PATH);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
-
-
-        List<String> patterns = cliParser.getStrings(ARG_NAME);
-        Integer size = 0;
-        for (String pattern : patterns) {
-            size += database.getCurrentSchema().getTables(pattern).size();
+        final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
+        Integer count = 0;
+        for (String stringTableUri : stringTablesUris) {
+            TableDataUri tableUri = TableDataUri.of(stringTableUri);
+            Database database = databasesStore.getDatabase(tableUri.getDatabaseName());
+            SchemaDef schemaDef = database.getCurrentSchema();
+            if (tableUri.getSchemaName() != null) {
+                schemaDef = database.getSchema(tableUri.getSchemaName());
+            }
+            count += schemaDef.getTables(tableUri.getTableName()).size();
         }
-        System.out.println(size + " tables");
+        System.out.println(count + " tables");
 
         LOGGER.info("Bye !");
 

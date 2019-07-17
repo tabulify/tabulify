@@ -32,7 +32,7 @@ public class DbTable {
                 .setDescription("list tables");
         cliCommand.commandOf(Words.DROP_COMMAND)
                 .setDescription("drop table(s)");
-        cliCommand.commandOf(Words.NO_COUNT)
+        cliCommand.commandOf(Words.COUNT)
                 .setDescription("count the number of tables");
         cliCommand.commandOf(Words.DESCRIBE_COMMAND)
                 .setDescription("show the table structures");
@@ -69,7 +69,7 @@ public class DbTable {
                     case DROP_COMMAND:
                         DbTableDrop.run(command, args);
                         break;
-                    case NO_COUNT:
+                    case COUNT:
                         DbTableCount.run(command, args);
                         break;
                     default:

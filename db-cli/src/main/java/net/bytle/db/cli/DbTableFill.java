@@ -37,9 +37,9 @@ public class DbTableFill {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Load generated data into a table\n"+
+        String description = "Load generated data into a table\n\n"+
                 "By default, the data would be randomly generated.\n"+
-                "You should use a data definition file (option "+DEFINITION_FILE+") to have more control the data generated";
+                "You should use a data definition file (option "+DEFINITION_FILE+") to have more control over the data generated";
 
 
         final String ARG_NAME = "(DatabaseUri|TableUri)";

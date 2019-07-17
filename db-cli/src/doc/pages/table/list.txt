@@ -1,0 +1,85 @@
+====== Bytle Db - List tables ======
+
+===== About =====
+''table list'' is action of the [[table|table module]] that list the tables in a tabular format.
+
+===== Syntax =====
+<unit>
+<code dos>
+db table list --help
+</code>
+<console>
+15:10:26 - INFO - (conf) word was not found
+15:10:26 - INFO - (help) word was found with the value: true
+
+Print a list of tables.
+
+Syntax:
+
+	db table list [options|flags] <TableUri...>
+
+where:
+
+	Local
+		* --store <value>            The path where the database information are stored
+
+	Args:
+		* TableUri...                One or more name table uri (ie @database[/schema]/table)
+</console>
+</unit>
+where:
+  * ''TableUri'' is a [[table#uri|Table Uri]]
+  * ''store'' is a [[database:store|database store path]]
+
+===== Example =====
+
+==== Listing all tables ====
+
+<unit display="none">
+<code dos>
+db table drop --no-strict @sqlite/* 
+</code>
+</unit>
+  * Dropping and creating the [[sample:tpcds|Tpcds store sales schema]] in the [[database:default|default sqlite database]]
+<unit>
+<code dos>
+db sample drop --no-strict tpcds-store-sales @sqlite
+db sample create tpcds-store-sales @sqlite
+</code>
+</unit>
+  * Listing all the tables for the default schema of the [[database:default|default sqlite database]]
+<unit>
+<code dos>
+db table list @sqlite/*
+</code>
+<console>
+Table Name               Rows Count   
+----------------------   ----------   
+customer                          0   
+customer_address                  0   
+customer_demographics             0   
+date_dim                          0   
+dbgen_version                     0   
+household_demographics            0   
+income_band                       0   
+item                              0   
+promotion                         0   
+store                             0   
+store_sales                       0   
+time_dim                          0
+</console>
+</unit>
+==== Filtering the output with a glob pattern ====
+
+  * Listing all the tables that have ''store'' in their name with the help of a [[wp>Glob_(programming)|glob pattern]]
+<unit>
+<code dos>
+db table list @sqlite/*store* 
+</code>
+<console>
+Table Name    Rows Count   
+-----------   ----------   
+store                  0   
+store_sales            0
+</console>
+</unit>

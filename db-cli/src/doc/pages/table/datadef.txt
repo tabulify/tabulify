@@ -1,0 +1,18 @@
+====== Data Definition File (DataDef.yml) ======
+
+
+===== About =====
+A ''data definition'' file is a file that describes the data to be generated.
+
+This is an option of the ''fill'' action such as:
+  * [[table:fill]]
+  * [[schema:fill]]
+
+<wrap info>
+The sample schema comes automatically with their own data, therefore the [[sample:fill|sample schema fill]] does not offer this option.
+</wrap>
+
+
+===== Definition =====
+
+
