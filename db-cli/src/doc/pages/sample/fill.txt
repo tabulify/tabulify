@@ -1,8 +1,8 @@
-====== Bytle Db - Sample Fill ======
+====== Bytle Db - Fill a sample schema ======
 
 
 ===== About =====
-The ''sample fill'' is an action of the [[sample|sample module]]
+The ''sample fill'' is an action of the [[schema|sample module]]
 
 
 ===== Syntax =====

@@ -80,10 +80,10 @@ No tables found
 </console>
 </unit>
 
-There is obviously no table in our default database. We will create some below by creating a [[sample:sample|sample database]].
+There is obviously no table in our default database. We will create some below by creating a [[sample:schema|sample database]].
 
 ===== Creating a sample schema =====
-The [[sample:sample|sample module]] provides several sample database. We will create the [[sample:tpcds|tpcds]] datawarehouse part with the ''create'' command.
+The [[sample:schema|sample module]] provides several sample database. We will create the [[sample:tpcds|tpcds]] datawarehouse part with the ''create'' command.
 
 <unit>
 <code dos>

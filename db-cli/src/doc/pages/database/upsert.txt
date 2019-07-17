@@ -1,8 +1,8 @@
-====== Bytle Db Database - Upsert (Update/Insert)======
+====== Bytle Db - Upsert (Update/Insert) a database ======
 
 
 ===== About =====
-''upsert'' is an action of the [[database|database module]] that update a [[database|database]] or create it if it doesn't exist yet in the [[store|store]].
+''upsert'' is an action of the [[start|database module]] that update a [[start|database]] or create it if it doesn't exist yet in the [[store|store]].
 
 
 ===== Syntax =====
@@ -56,5 +56,14 @@ db database upsert --url "jdbc:sqlite://%TMP%/db.db" mySqliteDB
 13:45:16 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
 13:45:16 - INFO - The database (mySqliteDB) was saved.
 13:45:16 - INFO - Bye !
+</console>
+</unit>
+<unit>
+  * With the [[info|info action]], we can see that the URL has changed
+<code dos>
+db database info mySqliteDB
+</code>
+<console>
+-------------------------------
 </console>
 </unit>

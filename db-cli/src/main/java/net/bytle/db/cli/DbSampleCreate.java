@@ -5,22 +5,29 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.NO_STRICT;
 
 
 public class DbSampleCreate {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "schemaName";
+    private static final String SAMPLE_SCHEMA_NAME = "SampleSchemaName";
+    private static final String SCHEMA_URI = "SchemaUri";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -31,15 +38,34 @@ public class DbSampleCreate {
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(ARG_NAME)
+        cliCommand.argOf(SAMPLE_SCHEMA_NAME)
                 .setDescription("The name of the sample schema. One of " + String.join(", ", DbSamples.getNames()))
                 .setMandatory(true);
 
+        cliCommand.argOf(SCHEMA_URI)
+                .setDescription("A relational schema uri (ie @database[/schema])")
+                .setMandatory(true);
+
+        cliCommand.flagOf(Words.NO_STRICT)
+                .setDescription("if set, it will not throw an error if a table already exist")
+                .setDefaultValue(false);
+
+        cliCommand.optionOf(STORAGE_PATH);
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        String sampleName = cliParser.getString(ARG_NAME);
+        TableDataUri tableDataUri = TableDataUri.of(cliParser.getString(SCHEMA_URI));
+        Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+        SchemaDef schemaDef = database.getCurrentSchema();
+        if (tableDataUri.getSchemaName()!=null){
+            schemaDef = database.getSchema(tableDataUri.getSchemaName());
+        }
+
+
+        String sampleName = cliParser.getString(SAMPLE_SCHEMA_NAME);
         if (!DbSamples.getNames().contains(sampleName)) {
             System.err.println();
             System.err.println("The sample schema (" + sampleName + ") is unknown");
@@ -50,13 +76,21 @@ public class DbSampleCreate {
         Dag dag = Dag.get(DbSamples.getTables(sampleName));
         List<TableDef> tables = dag.getCreateOrderedTables();
 
+        Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
         for (TableDef tableDef : tables) {
             if (!Tables.exists(tableDef, database)) {
                 Tables.create(tableDef, database);
                 System.out.println("Table (" + tableDef.getName() + ") created.");
             } else {
-                System.out.println("Table (" + tableDef.getName() + ") already exist.");
+                final String msg = "Table (" + tableDef.getName() + ") already exist.";
+                if (noStrictMode) {
+                    System.out.println(msg);
+                } else {
+                    System.err.println(msg);
+                    System.out.println("You can retry this run with the no-strict mode flag ("+NO_STRICT+") to avoid an error if a table already exist.");
+                    System.exit(1);
+                }
             }
         }
 

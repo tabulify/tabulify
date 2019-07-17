@@ -1,8 +1,8 @@
-====== Bytle Db Database - Remove ======
+====== Bytle Db - Remove a database ======
 
 
 ===== About =====
-''remove'' is an action of the [[database|database module]] that removes a database (metadata only).
+''remove'' is an action of the [[start|database module]] that removes a database (metadata only).
 
 
 ===== Syntax =====

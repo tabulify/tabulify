@@ -35,6 +35,9 @@ public class TableDataUri extends DataUri {
         localSchemaName = null;
         String[] paths = this.getPathSegments();
         switch (paths.length){
+            case 0:
+                localTableName = "*";
+                break;
             case 1:
                 localTableName = paths[0];
                 break;

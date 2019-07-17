@@ -1,12 +1,10 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 
 import java.util.List;
-import java.util.logging.Logger;
 
-import static net.bytle.db.cli.Words.COUNT_COMMAND;
+import static net.bytle.db.cli.Words.NO_COUNT;
 import static net.bytle.db.cli.Words.LIST_COMMAND;
 
 public class DbForeignKey {
@@ -19,7 +17,7 @@ public class DbForeignKey {
 
         cliCommand.commandOf(LIST_COMMAND)
                 .setDescription("list the links between tables (foreign keys)");
-        cliCommand.commandOf(COUNT_COMMAND)
+        cliCommand.commandOf(NO_COUNT)
                 .setDescription("count the total number of links");
 
 
@@ -32,7 +30,7 @@ public class DbForeignKey {
                     case LIST_COMMAND:
                         DbForeignKeyList.run(command, args);
                         break;
-                    case COUNT_COMMAND:
+                    case NO_COUNT:
                         DbForeignKeyCount.run(command, args);
                         break;
                     default:

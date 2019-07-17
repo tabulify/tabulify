@@ -1,30 +1,50 @@
-====== Bytle Db - Sample Schema Create ======
+====== Bytle Db - Create a sample schema ======
 
 
 ===== About =====
-''sample create'' is an operation of the [[sample|sample module]] where you can create a sample schema (ie a list of [[table:table|tables]]).
+''sample create'' is an operation of the [[schema|sample module]] where you can create a [[schema|sample schema]] (ie a list of [[table:table|tables]]).
+
+
 
 ===== Syntax =====
 <unit name="Syntax">
 <code dos>
-db sample create --help
+db sample create --help 
 </code>
 <console>
-13:33:03 - INFO - (conf) word was not found
-13:33:03 - INFO - (help) word was found with the value: true
+11:06:19 - INFO - (conf) word was not found
+11:06:19 - INFO - (help) word was found with the value: true
 
 Create sample database schema.
 
 Syntax:
 
-	db sample create <schemaName>
+	db sample create [options|flags] <SampleSchemaName> <SchemaUri>
 
 where:
+
+	Local
+		* --no-strict                if set, it will not throw an error if a table already exist
+
+	Local
+		* --store <value>            The path where the database information are stored
 
 	Args:
-		* schemaName                    The name of the sample schema. One of tpcds, tpcds-dwh, tpcds-stg, tpcds-store-sales, BytleSchema
+		* SampleSchemaName           The name of the sample schema. One of tpcds, tpcds-dwh, tpcds-stg, tpcds-store-sales, BytleSchema
+		* SchemaUri                  A relational schema uri (ie @database[/schema])
 </console>
 </unit>
-where:
-  * ''tpcds'' schema's are the schema of the [[tpcds|tpc-ds benchmark]] 
-  * ''BytleSchema'' is a simple sales schema used internally for testing purpose
+
+===== Example =====
+  * [[drop|Drop]] the [[tpcds|tpcds store sales schema]] from the [[database:default|default sqlite database]] (to be sure that it doesn't exist)
+<unit>
+<code dos>
+db sample drop --no-strict tpcds-store-sales @sqlite
+</code>
+</unit>
+  * Create it
+<unit>
+<code dos>
+db sample create tpcds-store-sales @sqlite
+</code>
+</unit>

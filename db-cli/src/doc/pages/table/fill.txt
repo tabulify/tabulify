@@ -36,3 +36,11 @@ where:
   * ''target table data uri'' is a [[table#uri|table uri]]
   * ''DataGenDef.yml'' is a definition file of the data to be generated.
 ===== Example =====
+
+  * Let's recreate the [[sample:tpcds|Tpc-Ds Store Sales schema]] with the [[sample:drop|sample drop]] and [[sample:create|sample create]] actions against the [[database:default|default sqlite database]].
+<unit>
+<code>
+db sample drop --no-strict tpcds-store-sales @sqlite
+db sample create tpcds-store-sales @sqlite
+</code>
+</unit>

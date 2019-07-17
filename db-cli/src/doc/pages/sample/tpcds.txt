@@ -1,9 +1,9 @@
-====== Bytle Db - TPC-DS ======
+====== Bytle Db - TPC-DS Benchmark ======
 
 
 ===== About =====
 ''Bytle Db'' supports the [[http://www.tpc.org/tpcds/|Tpc-Ds]] database benchmark on the following points:
-  * the creation of schema (tables)
+  * the creation of [[schema|schema (tables)]]
   * the creation/load of data
   * the execution of queries
 
@@ -22,13 +22,13 @@ Example:
   * To be sure to start with a fresh state, we will [[drop|drop the sample schema]]
 <unit>
 <code dos>
-db sample drop tpcds-store-sales
+db sample drop --no-strict tpcds-store-sales @sqlite
 </code>
 </unit>
 <unit>
-  * Then we create a new one
+  * Then we [[create|create]] a new one
 <code dos>
-db sample create tpcds-store-sales
+db sample create tpcds-store-sales @sqlite
 </code>
 <console>
 Table (date_dim) created.
@@ -52,7 +52,7 @@ To fill our schema with generated data, we will use the [[fill|fill sub-command 
 
 <unit>
 <code dos>
-db sample fill tpcds-store-sales
+db sample fill tpcds-store-sales @sqlite
 </code>
 <console>
 The table (date_dim) exists in the target database (target)

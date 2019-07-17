@@ -2,10 +2,8 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -34,7 +32,7 @@ public class DbTable {
                 .setDescription("list tables");
         cliCommand.commandOf(Words.DROP_COMMAND)
                 .setDescription("drop table(s)");
-        cliCommand.commandOf(Words.COUNT_COMMAND)
+        cliCommand.commandOf(Words.NO_COUNT)
                 .setDescription("count the number of tables");
         cliCommand.commandOf(Words.DESCRIBE_COMMAND)
                 .setDescription("show the table structures");
@@ -71,7 +69,7 @@ public class DbTable {
                     case DROP_COMMAND:
                         DbTableDrop.run(command, args);
                         break;
-                    case COUNT_COMMAND:
+                    case NO_COUNT:
                         DbTableCount.run(command, args);
                         break;
                     default:

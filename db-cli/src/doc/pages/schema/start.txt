@@ -4,7 +4,7 @@
 ===== About =====
 ''schema'' is a [[:module|module]] to perform operations on all [[table:table|table]] of a [[schema|relational database schema]] at once.
 
-<wrap tip>Db can also create sample schema. See [[sample:sample]]</wrap>
+<wrap tip>Db can also create sample schema. See [[sample:schema]]</wrap>
 
 
 ===== Syntax =====

@@ -1,4 +1,4 @@
-====== Bytle Db Database - Add ======
+====== Bytle Db - Add a database ======
 
 ===== About =====
 The ''database add'' operations will add database information to a [[store|databases store]].

@@ -42,7 +42,7 @@ public class Words {
     static final String FILL_COMMAND = "fill";
 
     static final String EXECUTE_COMMAND = "execute";
-    static final String COUNT_COMMAND = "count";
+    static final String NO_COUNT = "no-count";
 
     // Delete command
     static final String DROP_COMMAND = "drop";
@@ -61,9 +61,11 @@ public class Words {
     // Table UI -
     static final String LIST_COMMAND = "list";
 
-
-
     static final String HELP = "help";
+
+    // Options
+    public static final String NO_STRICT = "no-strict";
+    public static final String FORCE = "force";
 
     static final String TARGET_TABLE_OPTION = "target.table";
     static final String TARGET_SCHEMA_OPTION = "ts";
