@@ -5,10 +5,13 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import net.bytle.db.stream.InsertStream;
@@ -17,15 +20,19 @@ import net.bytle.db.stream.MemorySelectStream;
 import net.bytle.db.stream.Streams;
 import net.bytle.db.tpc.TpcdsDgen;
 
+import java.nio.file.Path;
 import java.sql.Types;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
 
 public class DbSampleFill {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "schemaName";
+    private static final String SAMPLE_SCHEMA_NAME = "SampleSchemaName";
+    private static final String SCHEMA_URI = "SchemaUri";
     static final String SCALE = "scale";
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -37,9 +44,15 @@ public class DbSampleFill {
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(ARG_NAME)
+        cliCommand.argOf(SAMPLE_SCHEMA_NAME)
                 .setDescription("The name of the sample schema. One of " + String.join(", ", DbSamples.getNames()))
                 .setMandatory(true);
+
+        cliCommand.argOf(SCHEMA_URI)
+                .setDescription("A relational schema uri (ie @database[/schema]")
+                .setMandatory(true);
+
+        cliCommand.optionOf(STORAGE_PATH);
 
         cliCommand.optionOf(SCALE)
                 .setShortName("s")
@@ -48,12 +61,21 @@ public class DbSampleFill {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+
+        TableDataUri schemaUri = TableDataUri.of(cliParser.getString(SCHEMA_URI));
+        Database database = databasesStore.getDatabase(schemaUri.getDatabaseName());
+        SchemaDef schemaDef = database.getCurrentSchema();
+        if (schemaUri.getSchemaName()!=null){
+            schemaDef = database.getSchema(schemaUri.getSchemaName());
+        }
 
         // Placed here to show the args at the beginning of the output
         Double scale = cliParser.getDouble(SCALE);
 
-        String sampleName = cliParser.getString(ARG_NAME);
+        String sampleName = cliParser.getString(SAMPLE_SCHEMA_NAME);
         if (!DbSamples.getNames().contains(sampleName)) {
             System.err.println("The sample schema (" + sampleName + ") is unknown");
             System.err.println("It must be one of (" + String.join(", ", DbSamples.getNames()) + ")");
@@ -77,7 +99,7 @@ public class DbSampleFill {
         }
         // load
         List<InsertStreamListener> insertStreamListeners = TpcdsDgen.get()
-                .setDatabase(database)
+                .setSchema(schemaDef)
                 .setScale(scale)
                 .setFeedbackFrequency(5)
                 .load(tableDefs);

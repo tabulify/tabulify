@@ -3,8 +3,8 @@ package net.bytle.db.tpc;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
-import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
@@ -21,17 +21,17 @@ public class TpcdsDgenTable {
     public static final Log LOGGER = Tpc.LOGGER_TPC;
 
     private final Session session;
-    private final Database database;
+    private final SchemaDef schemaDef;
     private Integer rowFeedback = 1;
 
-    private TpcdsDgenTable(Session session, Database database) {
+    private TpcdsDgenTable(Session session, SchemaDef schemaDef) {
         this.session = requireNonNull(session, "session is null");
-        this.database = database;
+        this.schemaDef = schemaDef;
     }
 
-    static synchronized TpcdsDgenTable get(Session session, Database database) {
+    static synchronized TpcdsDgenTable get(Session session, SchemaDef schemaDef) {
 
-        return new TpcdsDgenTable(session, database);
+        return new TpcdsDgenTable(session, schemaDef);
 
     }
 
@@ -47,7 +47,7 @@ public class TpcdsDgenTable {
             }
 
 
-            TableDef parentTableDef = database.getTable(table.getName());
+            TableDef parentTableDef = schemaDef.getTableOf(table.getName());
             // The table exist ?
             if (!Tables.exists(parentTableDef)) {
                 throw new RuntimeException("The table (" + parentTableDef.getFullyQualifiedName() + ") does not exist");
@@ -61,7 +61,7 @@ public class TpcdsDgenTable {
             InsertStream childInsertStream = null;
             if (table.hasChild()) {
 
-                TableDef childTableDef = database.getTable(table.getChild().getName());
+                TableDef childTableDef = schemaDef.getTableOf(table.getChild().getName());
                 // The table exist ?
                 if (!Tables.exists(childTableDef)) {
                     // The child  table ("store_returns") of the table ("store_sales") does not exist in the database.

@@ -1,0 +1,12 @@
+====== Bytle Db - Sample Schema ======
+
+===== About =====
+''Bytle Db'' supports a couple of sample schema (ie a set of tables that represents a process).
+
+
+===== List =====
+The following sample schema's can be created:
+  * ''tpcds'' schema's are the schema of the [[tpcds|tpc-ds benchmark]] 
+  * ''BytleSchema'' is a simple sales schema used internally for testing purpose
+
+

@@ -9,7 +9,7 @@ The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]]
 ===== Syntax =====
 <unit>
 <code dos>
-db table fill --help
+db table fill --help 
 </code>
 <console>
 15:09:17 - INFO - (conf) word was not found
@@ -39,8 +39,24 @@ where:
 
   * Let's recreate the [[sample:tpcds|Tpc-Ds Store Sales schema]] with the [[sample:drop|sample drop]] and [[sample:create|sample create]] actions against the [[database:default|default sqlite database]].
 <unit>
-<code>
+<code dos>
 db sample drop --no-strict tpcds-store-sales @sqlite
 db sample create tpcds-store-sales @sqlite
 </code>
+</unit>
+  * And fill the ''date_dim'' table with 10 rows.
+<unit>
+<code dos>
+db table fill --rows 10 @sqlite/date_dim
+</code>
+<console>
+</console>
+</unit>
+  * The result
+<unit>
+<code dos>
+db table show @sqlite/date_dim
+</code>
+<console>
+</console>
 </unit>

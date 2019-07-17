@@ -55,156 +55,156 @@ To fill our schema with generated data, we will use the [[fill|fill sub-command 
 db sample fill tpcds-store-sales @sqlite
 </code>
 <console>
-The table (date_dim) exists in the target database (target)
-The table (item) exists in the target database (target)
-The table (customer_address) exists in the target database (target)
-The table (time_dim) exists in the target database (target)
-The table (customer_demographics) exists in the target database (target)
-The table (income_band) exists in the target database (target)
-The table (dbgen_version) exists in the target database (target)
-The table (store) exists in the target database (target)
-The table (promotion) exists in the target database (target)
-The table (household_demographics) exists in the target database (target)
-The table (customer) exists in the target database (target)
-The table (store_sales) exists in the target database (target)
-08:21:23 - INFO - Loading 12 Tpcds tables
-08:21:23 - INFO - Loading the table "date_dim"
-08:21:26 - INFO - 50000 rows loaded in the table "date_dim"
-08:21:27 - INFO - commit in the table "date_dim"
-08:21:27 - INFO - 73049 rows loaded (Total) in the table "date_dim"
-08:21:27 - INFO - 1 commit(s) (Total) in the table "date_dim"
-08:21:27 - INFO - 8 batches(s) (Total) in the table "date_dim"
-08:21:27 - INFO - Loading the table "item"
-08:21:27 - INFO - The driver is supporting batch update. 
-08:21:27 - INFO - The driver is supporting named parameters.
-08:21:27 - INFO - Insert Statement:INSERT INTO "item" ("i_item_sk", "i_item_id", "i_rec_start_date", "i_rec_end_date", "i_item_desc", "i_current_price", "i_wholesale_cost", "i_brand_id", "i_brand", "i_class_id", "i_class", "i_category_id", "i_category", "i_manufact_id", "i_manufact", "i_size", "i_formulation", "i_color", "i_units", "i_container", "i_manager_id", "i_product_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:28 - INFO - commit in the table "item"
-08:21:28 - INFO - 2000 rows loaded (Total) in the table "item"
-08:21:28 - INFO - 1 commit(s) (Total) in the table "item"
-08:21:28 - INFO - 1 batches(s) (Total) in the table "item"
-08:21:28 - INFO - Loading the table "customer_address"
-08:21:28 - INFO - The driver is supporting batch update. 
-08:21:28 - INFO - The driver is supporting named parameters.
-08:21:28 - INFO - Insert Statement:INSERT INTO "customer_address" ("ca_address_sk", "ca_address_id", "ca_street_number", "ca_street_name", "ca_street_type", "ca_suite_number", "ca_city", "ca_county", "ca_state", "ca_zip", "ca_country", "ca_gmt_offset", "ca_location_type") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:28 - INFO - commit in the table "customer_address"
-08:21:28 - INFO - 1000 rows loaded (Total) in the table "customer_address"
-08:21:28 - INFO - 1 commit(s) (Total) in the table "customer_address"
-08:21:28 - INFO - 1 batches(s) (Total) in the table "customer_address"
-08:21:28 - INFO - Loading the table "time_dim"
-08:21:28 - INFO - The driver is supporting batch update. 
-08:21:28 - INFO - The driver is supporting named parameters.
-08:21:28 - INFO - Insert Statement:INSERT INTO "time_dim" ("t_time_sk", "t_time_id", "t_time", "t_hour", "t_minute", "t_second", "t_am_pm", "t_shift", "t_sub_shift", "t_meal_time") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:28 - INFO - 50000 rows loaded in the table "time_dim"
-08:21:29 - INFO - commit in the table "time_dim"
-08:21:29 - INFO - 86400 rows loaded (Total) in the table "time_dim"
-08:21:29 - INFO - 1 commit(s) (Total) in the table "time_dim"
-08:21:29 - INFO - 9 batches(s) (Total) in the table "time_dim"
-08:21:29 - INFO - Loading the table "customer_demographics"
-08:21:29 - INFO - The driver is supporting batch update. 
-08:21:29 - INFO - The driver is supporting named parameters.
-08:21:29 - INFO - Insert Statement:INSERT INTO "customer_demographics" ("cd_demo_sk", "cd_gender", "cd_marital_status", "cd_education_status", "cd_purchase_estimate", "cd_credit_rating", "cd_dep_count", "cd_dep_employed_count", "cd_dep_college_count") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:29 - INFO - 50000 rows loaded in the table "customer_demographics"
-08:21:30 - INFO - 100000 rows loaded in the table "customer_demographics"
-08:21:30 - INFO - 150000 rows loaded in the table "customer_demographics"
-08:21:30 - INFO - 200000 rows loaded in the table "customer_demographics"
-08:21:31 - INFO - 250000 rows loaded in the table "customer_demographics"
-08:21:31 - INFO - 300000 rows loaded in the table "customer_demographics"
-08:21:31 - INFO - 350000 rows loaded in the table "customer_demographics"
-08:21:32 - INFO - 400000 rows loaded in the table "customer_demographics"
-08:21:32 - INFO - 450000 rows loaded in the table "customer_demographics"
-08:21:32 - INFO - 500000 rows loaded in the table "customer_demographics"
-08:21:33 - INFO - 550000 rows loaded in the table "customer_demographics"
-08:21:33 - INFO - 600000 rows loaded in the table "customer_demographics"
-08:21:33 - INFO - 650000 rows loaded in the table "customer_demographics"
-08:21:34 - INFO - 700000 rows loaded in the table "customer_demographics"
-08:21:34 - INFO - 750000 rows loaded in the table "customer_demographics"
-08:21:34 - INFO - 800000 rows loaded in the table "customer_demographics"
-08:21:35 - INFO - 850000 rows loaded in the table "customer_demographics"
-08:21:35 - INFO - 900000 rows loaded in the table "customer_demographics"
-08:21:35 - INFO - 950000 rows loaded in the table "customer_demographics"
-08:21:37 - INFO - commit in the table "customer_demographics"
-08:21:37 - INFO - 1000000 rows loaded in the table "customer_demographics"
-08:21:37 - INFO - 1050000 rows loaded in the table "customer_demographics"
-08:21:37 - INFO - 1100000 rows loaded in the table "customer_demographics"
-08:21:38 - INFO - 1150000 rows loaded in the table "customer_demographics"
-08:21:38 - INFO - 1200000 rows loaded in the table "customer_demographics"
-08:21:38 - INFO - 1250000 rows loaded in the table "customer_demographics"
-08:21:39 - INFO - 1300000 rows loaded in the table "customer_demographics"
-08:21:39 - INFO - 1350000 rows loaded in the table "customer_demographics"
-08:21:39 - INFO - 1400000 rows loaded in the table "customer_demographics"
-08:21:40 - INFO - 1450000 rows loaded in the table "customer_demographics"
-08:21:40 - INFO - 1500000 rows loaded in the table "customer_demographics"
-08:21:40 - INFO - 1550000 rows loaded in the table "customer_demographics"
-08:21:41 - INFO - 1600000 rows loaded in the table "customer_demographics"
-08:21:41 - INFO - 1650000 rows loaded in the table "customer_demographics"
-08:21:41 - INFO - 1700000 rows loaded in the table "customer_demographics"
-08:21:42 - INFO - 1750000 rows loaded in the table "customer_demographics"
-08:21:42 - INFO - 1800000 rows loaded in the table "customer_demographics"
-08:21:42 - INFO - 1850000 rows loaded in the table "customer_demographics"
-08:21:43 - INFO - 1900000 rows loaded in the table "customer_demographics"
-08:21:43 - INFO - commit in the table "customer_demographics"
-08:21:43 - INFO - 1920800 rows loaded (Total) in the table "customer_demographics"
-08:21:43 - INFO - 2 commit(s) (Total) in the table "customer_demographics"
-08:21:43 - INFO - 193 batches(s) (Total) in the table "customer_demographics"
-08:21:43 - INFO - Loading the table "income_band"
-08:21:43 - INFO - The driver is supporting batch update. 
-08:21:43 - INFO - The driver is supporting named parameters.
-08:21:43 - INFO - Insert Statement:INSERT INTO "income_band" ("ib_income_band_sk", "ib_lower_bound", "ib_upper_bound") VALUES (?, ?, ?)
-08:21:43 - INFO - commit in the table "income_band"
-08:21:43 - INFO - 20 rows loaded (Total) in the table "income_band"
-08:21:43 - INFO - 1 commit(s) (Total) in the table "income_band"
-08:21:43 - INFO - 1 batches(s) (Total) in the table "income_band"
-08:21:43 - INFO - Loading the table "dbgen_version"
-08:21:43 - INFO - The driver is supporting batch update. 
-08:21:43 - INFO - The driver is supporting named parameters.
-08:21:43 - INFO - Insert Statement:INSERT INTO "dbgen_version" ("dv_version", "dv_create_date", "dv_create_time", "dv_cmdline_args") VALUES (?, ?, ?, ?)
-08:21:44 - INFO - commit in the table "dbgen_version"
-08:21:44 - INFO - 1 rows loaded (Total) in the table "dbgen_version"
-08:21:44 - INFO - 1 commit(s) (Total) in the table "dbgen_version"
-08:21:44 - INFO - 1 batches(s) (Total) in the table "dbgen_version"
-08:21:44 - INFO - Loading the table "store"
-08:21:44 - INFO - The driver is supporting batch update. 
-08:21:44 - INFO - The driver is supporting named parameters.
-08:21:44 - INFO - Insert Statement:INSERT INTO "store" ("s_store_sk", "s_store_id", "s_rec_start_date", "s_rec_end_date", "s_closed_date_sk", "s_store_name", "s_number_employees", "s_floor_space", "s_hours", "s_manager", "s_market_id", "s_geography_class", "s_market_desc", "s_market_manager", "s_division_id", "s_division_name", "s_company_id", "s_company_name", "s_street_number", "s_street_name", "s_street_type", "s_suite_number", "s_city", "s_county", "s_state", "s_zip", "s_country", "s_gmt_offset", "s_tax_precentage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:44 - INFO - commit in the table "store"
-08:21:44 - INFO - 2 rows loaded (Total) in the table "store"
-08:21:44 - INFO - 1 commit(s) (Total) in the table "store"
-08:21:44 - INFO - 1 batches(s) (Total) in the table "store"
-08:21:44 - INFO - Loading the table "promotion"
-08:21:44 - INFO - The driver is supporting batch update. 
-08:21:44 - INFO - The driver is supporting named parameters.
-08:21:44 - INFO - Insert Statement:INSERT INTO "promotion" ("p_promo_sk", "p_promo_id", "p_start_date_sk", "p_end_date_sk", "p_item_sk", "p_cost", "p_response_target", "p_promo_name", "p_channel_dmail", "p_channel_email", "p_channel_catalog", "p_channel_tv", "p_channel_radio", "p_channel_press", "p_channel_event", "p_channel_demo", "p_channel_details", "p_purpose", "p_discount_active") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:44 - INFO - commit in the table "promotion"
-08:21:44 - INFO - 3 rows loaded (Total) in the table "promotion"
-08:21:44 - INFO - 1 commit(s) (Total) in the table "promotion"
-08:21:44 - INFO - 1 batches(s) (Total) in the table "promotion"
-08:21:44 - INFO - Loading the table "household_demographics"
-08:21:44 - INFO - The driver is supporting batch update. 
-08:21:44 - INFO - The driver is supporting named parameters.
-08:21:44 - INFO - Insert Statement:INSERT INTO "household_demographics" ("hd_demo_sk", "hd_income_band_sk", "hd_buy_potential", "hd_dep_count", "hd_vehicle_count") VALUES (?, ?, ?, ?, ?)
-08:21:44 - INFO - commit in the table "household_demographics"
-08:21:44 - INFO - 7200 rows loaded (Total) in the table "household_demographics"
-08:21:44 - INFO - 1 commit(s) (Total) in the table "household_demographics"
-08:21:44 - INFO - 1 batches(s) (Total) in the table "household_demographics"
-08:21:44 - INFO - Loading the table "customer"
-08:21:44 - INFO - The driver is supporting batch update. 
-08:21:44 - INFO - The driver is supporting named parameters.
-08:21:44 - INFO - Insert Statement:INSERT INTO "customer" ("c_customer_sk", "c_customer_id", "c_current_cdemo_sk", "c_current_hdemo_sk", "c_current_addr_sk", "c_first_shipto_date_sk", "c_first_sales_date_sk", "c_salutation", "c_first_name", "c_last_name", "c_preferred_cust_flag", "c_birth_day", "c_birth_month", "c_birth_year", "c_birth_country", "c_login", "c_email_address", "c_last_review_date_sk") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:44 - INFO - commit in the table "customer"
-08:21:44 - INFO - 1000 rows loaded (Total) in the table "customer"
-08:21:44 - INFO - 1 commit(s) (Total) in the table "customer"
-08:21:44 - INFO - 1 batches(s) (Total) in the table "customer"
-08:21:44 - INFO - Loading the table "store_sales"
-08:21:44 - WARNING - The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
-08:21:44 - INFO - The driver is supporting batch update. 
-08:21:44 - INFO - The driver is supporting named parameters.
-08:21:44 - INFO - Insert Statement:INSERT INTO "store_sales" ("ss_sold_date_sk", "ss_sold_time_sk", "ss_item_sk", "ss_customer_sk", "ss_cdemo_sk", "ss_hdemo_sk", "ss_addr_sk", "ss_store_sk", "ss_promo_sk", "ss_ticket_number", "ss_quantity", "ss_wholesale_cost", "ss_list_price", "ss_sales_price", "ss_ext_discount_amt", "ss_ext_sales_price", "ss_ext_wholesale_cost", "ss_ext_list_price", "ss_ext_tax", "ss_coupon_amt", "ss_net_paid", "ss_net_paid_inc_tax", "ss_net_profit") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-08:21:46 - INFO - 50000 rows loaded in the table "store_sales"
-08:21:48 - INFO - 100000 rows loaded in the table "store_sales"
-08:21:48 - INFO - commit in the table "store_sales"
-08:21:48 - INFO - 120527 rows loaded (Total) in the table "store_sales"
-08:21:48 - INFO - 1 commit(s) (Total) in the table "store_sales"
-08:21:48 - INFO - 13 batches(s) (Total) in the table "store_sales"
+The table (date_dim) exists in the target database (sqlite)
+The table (item) exists in the target database (sqlite)
+The table (customer_address) exists in the target database (sqlite)
+The table (time_dim) exists in the target database (sqlite)
+The table (customer_demographics) exists in the target database (sqlite)
+The table (income_band) exists in the target database (sqlite)
+The table (dbgen_version) exists in the target database (sqlite)
+The table (store) exists in the target database (sqlite)
+The table (promotion) exists in the target database (sqlite)
+The table (household_demographics) exists in the target database (sqlite)
+The table (customer) exists in the target database (sqlite)
+The table (store_sales) exists in the target database (sqlite)
+12:15:54 - INFO - Loading 12 Tpcds tables
+12:15:54 - INFO - Loading the table "date_dim"
+12:15:56 - INFO - 50000 rows loaded in the table "date_dim"
+12:15:58 - INFO - commit in the table "date_dim"
+12:15:58 - INFO - 73049 rows loaded (Total) in the table "date_dim"
+12:15:58 - INFO - 1 commit(s) (Total) in the table "date_dim"
+12:15:58 - INFO - 8 batches(s) (Total) in the table "date_dim"
+12:15:58 - INFO - Loading the table "item"
+12:15:58 - INFO - The driver is supporting batch update. 
+12:15:58 - INFO - The driver is supporting named parameters.
+12:15:58 - INFO - Insert Statement:INSERT INTO "item" ("i_item_sk", "i_item_id", "i_rec_start_date", "i_rec_end_date", "i_item_desc", "i_current_price", "i_wholesale_cost", "i_brand_id", "i_brand", "i_class_id", "i_class", "i_category_id", "i_category", "i_manufact_id", "i_manufact", "i_size", "i_formulation", "i_color", "i_units", "i_container", "i_manager_id", "i_product_name") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:15:58 - INFO - commit in the table "item"
+12:15:58 - INFO - 2000 rows loaded (Total) in the table "item"
+12:15:58 - INFO - 1 commit(s) (Total) in the table "item"
+12:15:58 - INFO - 1 batches(s) (Total) in the table "item"
+12:15:58 - INFO - Loading the table "customer_address"
+12:15:58 - INFO - The driver is supporting batch update. 
+12:15:58 - INFO - The driver is supporting named parameters.
+12:15:58 - INFO - Insert Statement:INSERT INTO "customer_address" ("ca_address_sk", "ca_address_id", "ca_street_number", "ca_street_name", "ca_street_type", "ca_suite_number", "ca_city", "ca_county", "ca_state", "ca_zip", "ca_country", "ca_gmt_offset", "ca_location_type") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:15:58 - INFO - commit in the table "customer_address"
+12:15:58 - INFO - 1000 rows loaded (Total) in the table "customer_address"
+12:15:58 - INFO - 1 commit(s) (Total) in the table "customer_address"
+12:15:58 - INFO - 1 batches(s) (Total) in the table "customer_address"
+12:15:58 - INFO - Loading the table "time_dim"
+12:15:58 - INFO - The driver is supporting batch update. 
+12:15:58 - INFO - The driver is supporting named parameters.
+12:15:58 - INFO - Insert Statement:INSERT INTO "time_dim" ("t_time_sk", "t_time_id", "t_time", "t_hour", "t_minute", "t_second", "t_am_pm", "t_shift", "t_sub_shift", "t_meal_time") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:15:59 - INFO - 50000 rows loaded in the table "time_dim"
+12:15:59 - INFO - commit in the table "time_dim"
+12:15:59 - INFO - 86400 rows loaded (Total) in the table "time_dim"
+12:15:59 - INFO - 1 commit(s) (Total) in the table "time_dim"
+12:15:59 - INFO - 9 batches(s) (Total) in the table "time_dim"
+12:15:59 - INFO - Loading the table "customer_demographics"
+12:15:59 - INFO - The driver is supporting batch update. 
+12:15:59 - INFO - The driver is supporting named parameters.
+12:15:59 - INFO - Insert Statement:INSERT INTO "customer_demographics" ("cd_demo_sk", "cd_gender", "cd_marital_status", "cd_education_status", "cd_purchase_estimate", "cd_credit_rating", "cd_dep_count", "cd_dep_employed_count", "cd_dep_college_count") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:16:00 - INFO - 50000 rows loaded in the table "customer_demographics"
+12:16:00 - INFO - 100000 rows loaded in the table "customer_demographics"
+12:16:00 - INFO - 150000 rows loaded in the table "customer_demographics"
+12:16:01 - INFO - 200000 rows loaded in the table "customer_demographics"
+12:16:01 - INFO - 250000 rows loaded in the table "customer_demographics"
+12:16:01 - INFO - 300000 rows loaded in the table "customer_demographics"
+12:16:02 - INFO - 350000 rows loaded in the table "customer_demographics"
+12:16:02 - INFO - 400000 rows loaded in the table "customer_demographics"
+12:16:02 - INFO - 450000 rows loaded in the table "customer_demographics"
+12:16:03 - INFO - 500000 rows loaded in the table "customer_demographics"
+12:16:03 - INFO - 550000 rows loaded in the table "customer_demographics"
+12:16:03 - INFO - 600000 rows loaded in the table "customer_demographics"
+12:16:04 - INFO - 650000 rows loaded in the table "customer_demographics"
+12:16:04 - INFO - 700000 rows loaded in the table "customer_demographics"
+12:16:04 - INFO - 750000 rows loaded in the table "customer_demographics"
+12:16:05 - INFO - 800000 rows loaded in the table "customer_demographics"
+12:16:05 - INFO - 850000 rows loaded in the table "customer_demographics"
+12:16:05 - INFO - 900000 rows loaded in the table "customer_demographics"
+12:16:06 - INFO - 950000 rows loaded in the table "customer_demographics"
+12:16:07 - INFO - commit in the table "customer_demographics"
+12:16:07 - INFO - 1000000 rows loaded in the table "customer_demographics"
+12:16:07 - INFO - 1050000 rows loaded in the table "customer_demographics"
+12:16:07 - INFO - 1100000 rows loaded in the table "customer_demographics"
+12:16:08 - INFO - 1150000 rows loaded in the table "customer_demographics"
+12:16:08 - INFO - 1200000 rows loaded in the table "customer_demographics"
+12:16:09 - INFO - 1250000 rows loaded in the table "customer_demographics"
+12:16:09 - INFO - 1300000 rows loaded in the table "customer_demographics"
+12:16:09 - INFO - 1350000 rows loaded in the table "customer_demographics"
+12:16:10 - INFO - 1400000 rows loaded in the table "customer_demographics"
+12:16:10 - INFO - 1450000 rows loaded in the table "customer_demographics"
+12:16:10 - INFO - 1500000 rows loaded in the table "customer_demographics"
+12:16:11 - INFO - 1550000 rows loaded in the table "customer_demographics"
+12:16:11 - INFO - 1600000 rows loaded in the table "customer_demographics"
+12:16:11 - INFO - 1650000 rows loaded in the table "customer_demographics"
+12:16:12 - INFO - 1700000 rows loaded in the table "customer_demographics"
+12:16:12 - INFO - 1750000 rows loaded in the table "customer_demographics"
+12:16:12 - INFO - 1800000 rows loaded in the table "customer_demographics"
+12:16:13 - INFO - 1850000 rows loaded in the table "customer_demographics"
+12:16:13 - INFO - 1900000 rows loaded in the table "customer_demographics"
+12:16:14 - INFO - commit in the table "customer_demographics"
+12:16:14 - INFO - 1920800 rows loaded (Total) in the table "customer_demographics"
+12:16:14 - INFO - 2 commit(s) (Total) in the table "customer_demographics"
+12:16:14 - INFO - 193 batches(s) (Total) in the table "customer_demographics"
+12:16:14 - INFO - Loading the table "income_band"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "income_band" ("ib_income_band_sk", "ib_lower_bound", "ib_upper_bound") VALUES (?, ?, ?)
+12:16:14 - INFO - commit in the table "income_band"
+12:16:14 - INFO - 20 rows loaded (Total) in the table "income_band"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "income_band"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "income_band"
+12:16:14 - INFO - Loading the table "dbgen_version"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "dbgen_version" ("dv_version", "dv_create_date", "dv_create_time", "dv_cmdline_args") VALUES (?, ?, ?, ?)
+12:16:14 - INFO - commit in the table "dbgen_version"
+12:16:14 - INFO - 1 rows loaded (Total) in the table "dbgen_version"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "dbgen_version"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "dbgen_version"
+12:16:14 - INFO - Loading the table "store"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "store" ("s_store_sk", "s_store_id", "s_rec_start_date", "s_rec_end_date", "s_closed_date_sk", "s_store_name", "s_number_employees", "s_floor_space", "s_hours", "s_manager", "s_market_id", "s_geography_class", "s_market_desc", "s_market_manager", "s_division_id", "s_division_name", "s_company_id", "s_company_name", "s_street_number", "s_street_name", "s_street_type", "s_suite_number", "s_city", "s_county", "s_state", "s_zip", "s_country", "s_gmt_offset", "s_tax_precentage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:16:14 - INFO - commit in the table "store"
+12:16:14 - INFO - 2 rows loaded (Total) in the table "store"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "store"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "store"
+12:16:14 - INFO - Loading the table "promotion"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "promotion" ("p_promo_sk", "p_promo_id", "p_start_date_sk", "p_end_date_sk", "p_item_sk", "p_cost", "p_response_target", "p_promo_name", "p_channel_dmail", "p_channel_email", "p_channel_catalog", "p_channel_tv", "p_channel_radio", "p_channel_press", "p_channel_event", "p_channel_demo", "p_channel_details", "p_purpose", "p_discount_active") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:16:14 - INFO - commit in the table "promotion"
+12:16:14 - INFO - 3 rows loaded (Total) in the table "promotion"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "promotion"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "promotion"
+12:16:14 - INFO - Loading the table "household_demographics"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "household_demographics" ("hd_demo_sk", "hd_income_band_sk", "hd_buy_potential", "hd_dep_count", "hd_vehicle_count") VALUES (?, ?, ?, ?, ?)
+12:16:14 - INFO - commit in the table "household_demographics"
+12:16:14 - INFO - 7200 rows loaded (Total) in the table "household_demographics"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "household_demographics"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "household_demographics"
+12:16:14 - INFO - Loading the table "customer"
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "customer" ("c_customer_sk", "c_customer_id", "c_current_cdemo_sk", "c_current_hdemo_sk", "c_current_addr_sk", "c_first_shipto_date_sk", "c_first_sales_date_sk", "c_salutation", "c_first_name", "c_last_name", "c_preferred_cust_flag", "c_birth_day", "c_birth_month", "c_birth_year", "c_birth_country", "c_login", "c_email_address", "c_last_review_date_sk") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:16:14 - INFO - commit in the table "customer"
+12:16:14 - INFO - 1000 rows loaded (Total) in the table "customer"
+12:16:14 - INFO - 1 commit(s) (Total) in the table "customer"
+12:16:14 - INFO - 1 batches(s) (Total) in the table "customer"
+12:16:14 - INFO - Loading the table "store_sales"
+12:16:14 - WARNING - The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
+12:16:14 - INFO - The driver is supporting batch update. 
+12:16:14 - INFO - The driver is supporting named parameters.
+12:16:14 - INFO - Insert Statement:INSERT INTO "store_sales" ("ss_sold_date_sk", "ss_sold_time_sk", "ss_item_sk", "ss_customer_sk", "ss_cdemo_sk", "ss_hdemo_sk", "ss_addr_sk", "ss_store_sk", "ss_promo_sk", "ss_ticket_number", "ss_quantity", "ss_wholesale_cost", "ss_list_price", "ss_sales_price", "ss_ext_discount_amt", "ss_ext_sales_price", "ss_ext_wholesale_cost", "ss_ext_list_price", "ss_ext_tax", "ss_coupon_amt", "ss_net_paid", "ss_net_paid_inc_tax", "ss_net_profit") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+12:16:16 - INFO - 50000 rows loaded in the table "store_sales"
+12:16:18 - INFO - 100000 rows loaded in the table "store_sales"
+12:16:19 - INFO - commit in the table "store_sales"
+12:16:19 - INFO - 120527 rows loaded (Total) in the table "store_sales"
+12:16:19 - INFO - 1 commit(s) (Total) in the table "store_sales"
+12:16:19 - INFO - 13 batches(s) (Total) in the table "store_sales"
 Results:
 Tables Loaded            Rows Inserted   
 ----------------------   -------------   
@@ -220,7 +220,7 @@ promotion                            3
 store                                2   
 store_sales                     120527   
 time_dim                         86400   
-08:21:49 - INFO - No errors were seen
-08:21:49 - INFO - Bye !
+12:16:19 - INFO - No errors were seen
+12:16:19 - INFO - Bye !
 </console>
 </unit>

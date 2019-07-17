@@ -7,6 +7,7 @@ import com.teradata.tpcds.TableGenerator;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.cli.Log;
@@ -22,9 +23,9 @@ public class TpcdsDgen {
     public static final Log LOGGER = Tpc.LOGGER_TPC;
 
     Options options = new Options();
-    private Database database;
     // Every 5 * 10 000 = 50 000 rows
     private Integer feedbackFrequency = 5;
+    private SchemaDef schemaDef;
 
     private TpcdsDgen() {
 
@@ -63,7 +64,7 @@ public class TpcdsDgen {
     }
 
     public TpcdsDgen setDatabase(Database database) {
-        this.database = database;
+        this.schemaDef = database.getCurrentSchema();
         return this;
     }
 
@@ -132,7 +133,7 @@ public class TpcdsDgen {
 
 
                 Thread thread;
-                if (database == null) {
+                if (schemaDef == null) {
                     LOGGER.info("Generate the chunk " + chunkNumber + " for the table (" + tableDef.getName() + ") in a file");
                     thread = new Thread(() -> {
 
@@ -144,7 +145,7 @@ public class TpcdsDgen {
                     LOGGER.fine("Loading the table (" + tableDef.getName() + ") with the " + chunkNumber + " thread");
                     //TODO: if there is an exception in the thread, it si not caucght
                     thread = new Thread(() -> {
-                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), database)
+                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), schemaDef)
                                     .setRowFeedback(feedbackFrequency)
                                     .generateTable(table);
                         if (insertStreamListener != null) {
@@ -186,4 +187,8 @@ public class TpcdsDgen {
     }
 
 
+    public TpcdsDgen setSchema(SchemaDef schemaDef) {
+        this.schemaDef = schemaDef;
+        return this;
+    }
 }
