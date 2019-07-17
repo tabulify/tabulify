@@ -15,14 +15,14 @@ public class DataUri {
      * @param parts
      * @return a path separator from an array of parts (ie @part1/part2/part3)
      */
-    public static String get(String... parts) {
+    public static DataUri get(String... parts) {
         StringBuilder stringBuilder = new StringBuilder();
         if (parts[0].charAt(0) != AT_STRING.charAt(0)){
             stringBuilder.append(AT_STRING);
 
         }
         stringBuilder.append(String.join(PATH_SEPARATOR,parts));
-        return stringBuilder.toString();
+        return new DataUri(stringBuilder.toString());
 
     }
 

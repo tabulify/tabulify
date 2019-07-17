@@ -1,7 +1,6 @@
 package net.bytle.db.engine;
 
 import net.bytle.db.DataUri;
-import net.bytle.db.DatabasesStore;
 
 public class TableDataUri extends DataUri {
 
@@ -35,9 +34,6 @@ public class TableDataUri extends DataUri {
         localSchemaName = null;
         String[] paths = this.getPathSegments();
         switch (paths.length){
-            case 0:
-                localTableName = "*";
-                break;
             case 1:
                 localTableName = paths[0];
                 break;
@@ -46,7 +42,7 @@ public class TableDataUri extends DataUri {
                 localTableName = paths[1];
                 break;
             default:
-                throw new RuntimeException("The database path has ("+ paths.length+") path elements whereas we expect maximum 2. The elements are: "+String.join(", ", paths));
+                throw new RuntimeException("The database path has ("+ paths.length+") path elements whereas we expect at minimum 1 and maximum 2. The elements are: "+String.join(", ", paths));
         }
 
         tableName = localTableName;

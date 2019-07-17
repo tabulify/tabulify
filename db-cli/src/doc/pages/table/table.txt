@@ -5,8 +5,8 @@ A ''relational table'' is a [[..resource|data resource]] located in a [[relation
 
 
 
-===== URI =====
-A [[..:data_uri|data URI]] permits to identify the table
+===== Uri =====
+A [[..:data_uri|data URI]] permits to locate one or more tables
 
 <code bash>
 @database[/schema]/table
@@ -14,5 +14,5 @@ A [[..:data_uri|data URI]] permits to identify the table
 @database/table
 </code>
 where:
-  * ''database'' is a [[database:database#name|database name]]
-  * ''schema'' is a [[schema:start#name|relational schema name]]. It defaults to the ''database current schema''
+  * ''database'' is a [[database:database#name|database name]] (or a glob pattern)
+  * ''schema'' is a [[schema:start#name|relational schema name]] (or a glob pattern). If not present, it will default to the ''database connection schema''

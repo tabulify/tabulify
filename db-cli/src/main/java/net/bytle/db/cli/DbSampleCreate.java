@@ -10,6 +10,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.SchemaDataUri;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
@@ -57,7 +58,7 @@ public class DbSampleCreate {
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        TableDataUri tableDataUri = TableDataUri.of(cliParser.getString(SCHEMA_URI));
+        SchemaDataUri tableDataUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
         Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (tableDataUri.getSchemaName()!=null){
@@ -79,8 +80,8 @@ public class DbSampleCreate {
         Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
         for (TableDef tableDef : tables) {
-            if (!Tables.exists(tableDef, database)) {
-                Tables.create(tableDef, database);
+            if (!Tables.exists(tableDef, schemaDef)) {
+                Tables.create(tableDef, schemaDef);
                 System.out.println("Table (" + tableDef.getName() + ") created.");
             } else {
                 final String msg = "Table (" + tableDef.getName() + ") already exist.";
