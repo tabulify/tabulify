@@ -12,24 +12,28 @@ The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]]
 db table fill --help 
 </code>
 <console>
-15:09:17 - INFO - (conf) word was not found
-15:09:17 - INFO - (help) word was found with the value: true
+12:47:55 - INFO - (conf) word was not found
+12:47:55 - INFO - (help) word was found with the value: true
 
 Load generated data into a table
+By default, the data would be randomly generated.
+You should use a data definition file (option data-def) to have more control the data generated
 
 Syntax:
 
-	db table fill [options|flags] <(TABLE|DataGen.yml)>
+	db table fill [options|flags] <(DatabaseUri|TableUri)>
 
 where:
 
 	Local
-		* --db.target.url <value>       No Description available
-		* --db.target.driver <value>    No Description available
-		* --rows <value>                defines the total number of rows that the table must have
+		* --store <value>             The path where the database information are stored
+
+	Local
+		* --data-def <value>          A path to a data definition file (DataDef.yml)
+		* --rows <value>              defines the total number of rows that the table must have
 
 	Args:
-		* (TABLE|DataGen.yml)           A table name or a data definition file (DataGen.yml)
+		* (DatabaseUri|TableUri)      A table Uri (@database[/schema]/table) or a database/schema URI (@database[/schema])
 </console>
 </unit>
 where:
@@ -41,8 +45,26 @@ where:
 <unit>
 <code dos>
 db sample drop --no-strict tpcds-store-sales @sqlite
+</code>
+</unit>
+<unit>
+<code dos>
 db sample create tpcds-store-sales @sqlite
 </code>
+<console>
+Table (date_dim) created.
+Table (item) created.
+Table (customer_address) created.
+Table (time_dim) created.
+Table (customer_demographics) created.
+Table (income_band) created.
+Table (dbgen_version) created.
+Table (store) created.
+Table (promotion) created.
+Table (household_demographics) created.
+Table (customer) created.
+Table (store_sales) created.
+</console>
 </unit>
   * And fill the ''date_dim'' table with 10 rows.
 <unit>
@@ -50,6 +72,10 @@ db sample create tpcds-store-sales @sqlite
 db table fill --rows 10 @sqlite/date_dim
 </code>
 <console>
+12:50:05 - INFO - Loading the table ("date_dim")
+12:50:05 - INFO - The size of the table ("date_dim") before insertion is : 0
+12:50:05 - INFO - Inserting 10.0 rows into the table ("date_dim")
+12:50:05 - INFO - The new size is: 10
 </console>
 </unit>
   * The result
@@ -58,5 +84,17 @@ db table fill --rows 10 @sqlite/date_dim
 db table show @sqlite/date_dim
 </code>
 <console>
+d_date_sk   d_date_id   d_date          d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year   
+---------   ---------   -------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------   
+        1   hello       1562882400000             0            8               8        7       1       1       8       0           7                  4               4   hello        hello            h           h           h                               2            5               8               9   h               h                h                 h                   h                
+        2   hello       1562968800000             7            2               8        5       3       8       5       0           7                  8               3   hello        hello            h           h           h                               0            0               8               9   h               h                h                 h                   h                
+        3   hello       1562709600000             3            4               4        8       0       4       6       6           8                  3               0   hello        hello            h           h           h                               7            6               4               0   h               h                h                 h                   h                
+        4   hello       1562709600000             9            2               2        6       9       8       9       3           7                  1               4   hello        hello            h           h           h                               4            8               5               7   h               h                h                 h                   h                
+        5   hello       1563141600000             3            1               3        8       5       9       0       5           6                  8               9   hello        hello            h           h           h                               2            9               8               0   h               h                h                 h                   h                
+        6   hello       1563141600000             3            5               4        4       4       8       3       5           5                  2               4   hello        hello            h           h           h                               6            3               9               8   h               h                h                 h                   h                
+        7   hello       1563141600000             3            2               0        5       6       3       0       5           8                  2               5   hello        hello            h           h           h                               6            9               3               1   h               h                h                 h                   h                
+        8   hello       1563228000000             3            9               4        1       6       1       4       9           2                  6               5   hello        hello            h           h           h                               6            3               8               3   h               h                h                 h                   h                
+        9   hello       1562882400000             6            6               7        4       4       3       9       7           2                  2               4   hello        hello            h           h           h                               8            3               8               2   h               h                h                 h                   h                
+       10   hello       1562450400000             1            6               2        7       8       2       0       3           8                  7               7   hello        hello            h           h           h                               9            3               0               8   h               h                h                 h                   h
 </console>
 </unit>

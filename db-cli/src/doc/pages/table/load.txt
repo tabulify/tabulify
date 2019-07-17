@@ -54,7 +54,7 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
 
 </file>
-  * We can load the above data using the ''load'' command and the [[:database:built-in#sqlite|sqlite built-in database]]
+  * We can load the above data using the ''load'' command and the [[database:default#sqlite|sqlite built-in database]]
 <code dos>
 db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite 
 </code>

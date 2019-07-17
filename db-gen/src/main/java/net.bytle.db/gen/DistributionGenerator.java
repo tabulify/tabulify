@@ -56,6 +56,9 @@ public class DistributionGenerator<T> implements DataGenerator {
             case Types.VARCHAR:
                 o = getString();
                 break;
+            case Types.CHAR:
+                o = getString();
+                break;
             case Types.NUMERIC:
                 range = BigDecimal.valueOf(10);
                 min = BigDecimal.valueOf(0);
