@@ -15,6 +15,7 @@ import net.bytle.db.model.TableDef;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
@@ -36,6 +37,9 @@ public class DbTableTruncate {
         cliCommand.argOf(TABLE_URIS)
                 .setDescription("one or more table URI (@database[/schema]/table).");
         cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.flagOf(Words.FORCE)
+                .setDescription("truncate also the tables that references the truncated tables")
+                .setDefaultValue(false);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
         // Database Store
@@ -43,7 +47,7 @@ public class DbTableTruncate {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
-        List<TableDef> tableDefs = new ArrayList<>();
+        List<TableDef> tablesSelectedToTruncate = new ArrayList<>();
         for (String stringTableUri : stringTablesUris) {
             TableDataUri tableUri = TableDataUri.of(stringTableUri);
             Database database = databasesStore.getDatabase(tableUri.getDatabaseName());
@@ -51,10 +55,33 @@ public class DbTableTruncate {
             if (tableUri.getSchemaName() != null) {
                 schemaDef = database.getSchema(tableUri.getSchemaName());
             }
-            tableDefs.addAll(schemaDef.getTables(tableUri.getTableName()));
+            tablesSelectedToTruncate.addAll(schemaDef.getTables(tableUri.getTableName()));
         }
 
-        for (TableDef tableDef: Dag.get(tableDefs).getDropOrderedTables()){
+        Boolean forceMode = cliParser.getBoolean(Words.FORCE);
+        // Do we have also the child/external table ?
+        List<TableDef> tablesToTruncate = new ArrayList<>(tablesSelectedToTruncate);
+        for (TableDef tableDef: tablesSelectedToTruncate){
+            List<TableDef> childTables = tableDef.getExternalForeignKeys()
+                    .stream()
+                    .map(d->d.getTableDef())
+                    .collect(Collectors.toList());
+            for (TableDef childTable: childTables){
+                if (!(tablesSelectedToTruncate.contains(childTable))){
+                    final String msg = "The table (" + childTable + ") has a foreign key into the table to truncate (" + tableDef + ") but is not selected";
+                    if (!forceMode) {
+                        LOGGER.severe(msg);
+                        LOGGER.severe("exiting");
+                        System.exit(1);
+                    } else {
+                        tablesToTruncate.add(childTable);
+                    }
+                }
+            }
+        }
+
+        // Truncating
+        for (TableDef tableDef: Dag.get(tablesToTruncate).getDropOrderedTables()){
             Tables.truncate(tableDef);
         }
         LOGGER.info("Bye !");
