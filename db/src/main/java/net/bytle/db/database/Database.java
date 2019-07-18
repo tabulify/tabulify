@@ -1,5 +1,6 @@
 package net.bytle.db.database;
 
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbDefaultValue;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.connection.URIExtended;
@@ -66,6 +67,7 @@ public class Database implements AutoCloseable, Comparable<Database> {
     private String user;
     private String postStatement;
     private String password;
+    private DatabasesStore databaseStore;
 
 
     Database(String databaseName) {
@@ -887,5 +889,14 @@ public class Database implements AutoCloseable, Comparable<Database> {
 
             return this.getDatabaseName().compareTo(o.getDatabaseName());
 
+    }
+
+    public Database setDatabaseStore(DatabasesStore databasesStore) {
+        this.databaseStore = databasesStore;
+        return this;
+    }
+
+    public DatabasesStore getDatabaseStore() {
+        return this.databaseStore;
     }
 }

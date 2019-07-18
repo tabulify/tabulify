@@ -3,8 +3,6 @@ package net.bytle.db;
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.TableDef;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -251,6 +249,7 @@ public class DatabasesStore {
                 }
                 database.setDriver(iniSection.get(DRIVER));
                 database.setStatement(iniSection.get(STATEMENT));
+                database.setDatabaseStore(this);
             }
         }
         return database;
@@ -328,5 +327,9 @@ public class DatabasesStore {
             throw new RuntimeException("The database (" + name + ") is non existent and therefore cannot be removed.");
         }
         flush();
+    }
+
+    public Path getPath() {
+        return this.path;
     }
 }
