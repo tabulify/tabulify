@@ -58,7 +58,7 @@ public class DbTableDrop {
                 .setDefaultValue(false);
 
         cliCommand.flagOf(FORCE)
-                .setDescription("if set, the table will be dropped even if referenced by a foreign constraint");
+                .setDescription("if set, the foreign keys referencing the tables to drop will be dropped");
 
         cliCommand.optionOf(STORAGE_PATH);
 
@@ -82,10 +82,10 @@ public class DbTableDrop {
             TableDataUri tableDataUri = TableDataUri.of(tableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
-            if (schemaDefs.size()==0){
+            if (schemaDefs.size() == 0) {
                 schemaDefs = Arrays.asList(database.getCurrentSchema());
             }
-            for (SchemaDef schemaDef: schemaDefs) {
+            for (SchemaDef schemaDef : schemaDefs) {
                 List<TableDef> tablesFound = schemaDef.getTables(tableDataUri.getTableName());
                 if (tablesFound.size() != 0) {
 
@@ -111,9 +111,9 @@ public class DbTableDrop {
 
         }
 
-        if (tables.size()==0){
+        if (tables.size() == 0) {
             LOGGER.warning("No tables found to drop");
-            if (notStrict){
+            if (notStrict) {
                 return;
             } else {
                 System.exit(1);
@@ -125,13 +125,22 @@ public class DbTableDrop {
         Dag dag = Dag.get(tables);
         for (TableDef tableDef : dag.getDropOrderedTables()) {
 
-            if (withForce) {
-                List<ForeignKeyDef> foreignKeys = tableDef.getExternalForeignKeys();
-                for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-                    Tables.dropForeignKey(foreignKeyDef);
-                    System.out.println("ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")");
+            List<ForeignKeyDef> foreignKeys = tableDef.getExternalForeignKeys();
+            for (ForeignKeyDef foreignKeyDef : foreignKeys) {
+                if (!tables.contains(foreignKeyDef.getTableDef())) {
+                    String msg = "ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")";
+                    if (withForce) {
+                        Tables.dropForeignKey(foreignKeyDef);
+                        LOGGER.warning(msg);
+                    } else {
+                        LOGGER.severe(msg);
+                        LOGGER.severe("To drop the foreign keys referencing the tables to drop, you can set the force flag ("+Words.FORCE+").");
+                        LOGGER.severe("Exiting");
+                        System.exit(1);
+                    }
                 }
             }
+
             Tables.drop(tableDef);
             System.out.println("Table (" + tableDef.getFullyQualifiedName() + ") was dropped.");
         }
