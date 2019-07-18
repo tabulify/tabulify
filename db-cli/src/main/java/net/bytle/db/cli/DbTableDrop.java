@@ -128,13 +128,12 @@ public class DbTableDrop {
             List<ForeignKeyDef> foreignKeys = tableDef.getExternalForeignKeys();
             for (ForeignKeyDef foreignKeyDef : foreignKeys) {
                 if (!tables.contains(foreignKeyDef.getTableDef())) {
-                    String msg = "ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")";
                     if (withForce) {
                         Tables.dropForeignKey(foreignKeyDef);
-                        LOGGER.warning(msg);
+                        LOGGER.warning("ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")");
                     } else {
-                        LOGGER.severe(msg);
-                        LOGGER.severe("To drop the foreign keys referencing the tables to drop, you can set the force flag ("+Words.FORCE+").");
+                        LOGGER.severe("The table ("+foreignKeyDef.getTableDef()+") is referencing the table ("+tableDef+") and is not in the tables to drop");
+                        LOGGER.severe("To drop the foreign keys referencing the tables to drop, you can add the force flag ("+CliParser.PREFIX_LONG_OPTION+Words.FORCE+").");
                         LOGGER.severe("Exiting");
                         System.exit(1);
                     }
