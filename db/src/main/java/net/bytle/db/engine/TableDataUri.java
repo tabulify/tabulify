@@ -17,8 +17,8 @@ public class TableDataUri extends DataUri {
     }
 
     /**
-     * It can be a glob or a name
-     * @return
+     *
+     * @return A table name or a pattern
      */
     public String getTableName() {
         return tableName;
