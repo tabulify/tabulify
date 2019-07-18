@@ -1,7 +1,6 @@
 package net.bytle.db.gen;
 
 
-
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 
@@ -32,17 +31,17 @@ public class FkDataGenerator implements DataGenerator {
         // Building the map of value
         foreignColumnDef = foreignKeyDef.getForeignPrimaryKey().getColumns().get(0);
         String statement = "select " + foreignColumnDef.getColumnName() + " from " + foreignColumnDef.getRelationDef().getFullyQualifiedName();
-        try {
+        Connection currentConnection = foreignColumnDef.getRelationDef().getDatabase().getCurrentConnection();
+        try (
+                Statement sqlStatement = currentConnection.createStatement();
+                ResultSet resultSet = sqlStatement.executeQuery(statement);
+        ) {
 
-            Connection currentConnection = foreignColumnDef.getRelationDef().getDatabase().getCurrentConnection();
-            Statement sqlStatement = currentConnection.createStatement();
-            ResultSet resultSet = sqlStatement.executeQuery(statement);
-
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 values.add(resultSet.getObject(1));
             }
 
-            if (values.size()==0){
+            if (values.size() == 0) {
                 throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getFullyQualifiedName() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
             }
 
@@ -60,7 +59,7 @@ public class FkDataGenerator implements DataGenerator {
      */
     @Override
     public Object getNewValue() {
-        int i = (int) (Math.random()*values.size());
+        int i = (int) (Math.random() * values.size());
         value = values.get(i);
         return value;
     }
@@ -92,7 +91,7 @@ public class FkDataGenerator implements DataGenerator {
     @Override
     public Object getNewValue(ColumnDef columnDef) {
 
-        if (columnDef.equals(foreignColumnDef)){
+        if (columnDef.equals(foreignColumnDef)) {
             return getNewValue();
         } else {
             throw new RuntimeException("Multiple column generator is not implemented");
@@ -109,7 +108,7 @@ public class FkDataGenerator implements DataGenerator {
     @Override
     public Object getActualValue(ColumnDef columnDef) {
 
-        if (columnDef.equals(foreignColumnDef)){
+        if (columnDef.equals(foreignColumnDef)) {
             return getActualValue();
         } else {
             throw new RuntimeException("Multiple column generator is not implemented");

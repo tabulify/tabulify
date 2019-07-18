@@ -24,14 +24,14 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     private PreparedStatement preparedStatement;
     private Connection connection;
     private String insertStatement;
-    private RelationDef dataDef;
+    private RelationDef sourceTableDef;
     private Boolean supportBatch;
     private Boolean supportNamedParameters;
     private Statement statement;
 
     private SqlInsertStream(TableDef tableDef) {
         this.tableDef = tableDef;
-
+        init();
     }
 
     public synchronized static SqlInsertStream get(TableDef tableDef) {
@@ -41,9 +41,6 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     @Override
     public InsertStream insert(List<Object> values) {
 
-        if (connection == null) {
-            init();
-        }
 
         try {
             if (this.supportNamedParameters) {
@@ -53,7 +50,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 for (int i = 0; i < values.size(); i++) {
 
                     Object sourceObject = values.get(i);
-                    final ColumnDef column = dataDef.getColumnDef(i);
+                    final ColumnDef column = sourceTableDef.getColumnDef(i);
                     int targetColumnType = column.getDataType().getTypeCode();
                     try {
                         if (sourceObject != null) {
@@ -91,7 +88,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
             } else {
 
-                insertStatement = DbDml.getInsertStatement(tableDef, dataDef, values);
+                insertStatement = DbDml.getInsertStatement(tableDef, sourceTableDef, values);
                 statement.execute(insertStatement);
                 currentRowInLogicalBatch++;
 
@@ -134,7 +131,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
         if (!Tables.exists(tableDef)) {
             if (tableDef.getColumnDefs().size() == 0) {
-                Relations.addColumns(tableDef, dataDef);
+                Relations.addColumns(tableDef, sourceTableDef);
             }
             Tables.create(tableDef);
         }
@@ -144,8 +141,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         } else {
             connection = database.getNewConnection("InsertStream Table " + tableDef.getName());
         }
-        if (dataDef == null) {
-            dataDef = tableDef;
+        if (sourceTableDef == null) {
+            sourceTableDef = tableDef;
         }
 
         try {
@@ -189,7 +186,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         try {
 
             if (this.supportNamedParameters) {
-                insertStatement = DbDml.getParameterizedInsertStatement(tableDef, dataDef);
+                insertStatement = DbDml.getParameterizedInsertStatement(tableDef, sourceTableDef);
                 LOGGER.info("Insert Statement:" + insertStatement);
                 preparedStatement = connection.prepareStatement(insertStatement);
             } else {
@@ -262,20 +259,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
      */
     public void commit() {
         try {
-            if (preparedStatement!=null) {
-                if (preparedStatement.getConnection()!=null) {
-                    preparedStatement.getConnection().commit();
-                }
-            }
 
-            // statement may be null if there is an error
-            if (statement != null){
-                if (!statement.isClosed()) {
-                    if (statement.getConnection() != null) {
-                        statement.getConnection().commit();
-                    }
-                }
-            }
+
+            connection.commit();
             insertStreamListener.incrementCommit();
             LOGGER.info("commit in the table " + tableDef.getFullyQualifiedName());
         } catch (SQLException e) {
@@ -302,8 +288,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
-            if (statement != null){
-                if (!statement.isClosed()){
+            if (statement != null) {
+                if (!statement.isClosed()) {
                     statement.close();
                 }
             }
@@ -314,8 +300,13 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
+            // This setting is locking SQLite, setting it back to true, resolve the problem
+            // SQLITE_BUSY]  The database file is locked (database is locked)
+            if (!connection.getAutoCommit()) {
+                connection.setAutoCommit(true);
+            }
 
-            LOGGER.fine(getName() + " stream closed");
+            LOGGER.info(getName() + " stream closed");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -332,7 +323,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
      * @return
      */
     public SqlInsertStream setDataDef(RelationDef dataDef) {
-        this.dataDef = dataDef;
+        this.sourceTableDef = dataDef;
         return this;
     }
 }

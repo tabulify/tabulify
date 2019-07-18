@@ -96,11 +96,16 @@ public class DbQueryDownload {
         Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
                 .setUrl(sourceURL)
                 .setDriver(sourceDriver);
-        Connection connection = database.getCurrentConnection();
-        LOGGER.info("Connection successful - Querying and Downloading the data");
 
-        QueryDef queryDef = database.getQuery(sourceFileQuery);
-        int exitStatus = Queries.download(queryDef, pathDownloadFile, clobInApartFile);
+        LOGGER.info("Connection successful - Querying and Downloading the data");
+        int exitStatus;
+        try(
+            QueryDef queryDef = database.getQuery(sourceFileQuery);
+        ) {
+             exitStatus = Queries.download(queryDef, pathDownloadFile, clobInApartFile);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         // Feedback
         cliTimer.stop();

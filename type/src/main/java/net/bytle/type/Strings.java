@@ -118,4 +118,12 @@ public class Strings {
         return s.substring(0,i+1);
     }
 
+    /**
+     *
+     * @param s
+     * @return a camel cased string
+     */
+    public static String toCamelCase(String s) {
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
 }

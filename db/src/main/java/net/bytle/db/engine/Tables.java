@@ -24,8 +24,6 @@ public class Tables {
         String statementString = "select max(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
         Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
         try (
-
-
                 Statement statement = currentConnection.createStatement();
                 ResultSet resultSet = statement.executeQuery(statementString);
         ) {
@@ -80,7 +78,6 @@ public class Tables {
         String statementString = "select min(" + columnDef.getColumnName() + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
         Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
         try (
-
                 Statement statement = currentConnection.createStatement();
                 ResultSet resultSet = statement.executeQuery(statementString);
         ) {

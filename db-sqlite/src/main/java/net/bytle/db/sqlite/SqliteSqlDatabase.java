@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 public class SqliteSqlDatabase extends SqlDatabase {
 
-    private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer,DataTypeDatabase>();
+    private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer, DataTypeDatabase>();
 
     static {
         dataTypeDatabaseSet.put(SqliteTypeText.TYPE_CODE, new SqliteTypeText());
@@ -56,6 +56,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
      * Related ?
      * {@link DatabaseMetaData#getMaxConnections()}
      * Sqlite can't have several connection
+     *
      * @return
      */
     @Override
@@ -157,16 +158,16 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         Connection connection = tableDef.getDatabase().getCurrentConnection();
         List<String> columns = new ArrayList<>();
-        try {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("PRAGMA table_info(" + tableDef.getName() + ")");
+        try (
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("PRAGMA table_info(" + tableDef.getName() + ")");
+        ) {
             while (resultSet.next()) {
                 int pk = resultSet.getInt("pk");
                 if (pk == 1) {
                     columns.add(resultSet.getString("name"));
                 }
             }
-            resultSet.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -250,11 +251,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
     }
 
     /**
-     *
      * @param path whatever/youwant/db.db
      * @return an JDBC Url from a path
      */
-    static public String getJdbcUrl(Path path){
+    static public String getJdbcUrl(Path path) {
 
         Path dirDbFile = path.getParent();
         if (!Files.exists(dirDbFile)) {

@@ -5,6 +5,7 @@ import net.bytle.db.model.*;
 import net.bytle.db.stream.SqlInsertStream;
 import net.bytle.db.stream.Streams;
 import net.bytle.cli.Log;
+import net.bytle.type.Strings;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -103,7 +104,7 @@ public class DataGenLoader {
         if (numberOfRowToInsert > 0) {
             LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + tableDef.getFullyQualifiedName() + ")");
             try (
-                SqlInsertStream inputStream = Streams.getSqlInsertStream(tableDef);
+                SqlInsertStream inputStream = Streams.getSqlInsertStream(tableDef)
             ) {
                 for (int i = 0; i < numberOfRowToInsert; i++) {
 
@@ -123,7 +124,7 @@ public class DataGenLoader {
         }
 
 
-//        LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
+        LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
         LOGGER.info("The new size is: " + Tables.getSize(tableDef));
 
 
@@ -250,7 +251,9 @@ public class DataGenLoader {
                     } else if (generator.equals("derived")) {
 
                         Class[] constructorClassType = {ColumnDef.class, DataGenerator.class, String.class};
-                        String classGeneratorName = Character.toUpperCase(generator.charAt(0)) + generator.substring(1);
+
+                        // Get DerivedGenerator Class Constructor
+                        String classGeneratorName = Strings.toCamelCase(generator);
                         Class<?> generatorClass = Class.forName(DataGenLoader.class.getPackage().getName() + "." + classGeneratorName + "Generator");
                         Constructor constructor = generatorClass.getConstructor(constructorClassType);
 
