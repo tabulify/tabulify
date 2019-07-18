@@ -8,6 +8,7 @@ import net.bytle.cli.Log;
 import net.bytle.type.Strings;
 
 import java.lang.reflect.Constructor;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,12 +122,11 @@ public class DataGenLoader {
                     inputStream.insert(values);
                 }
             }
-        }
 
+        }
 
         LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
         LOGGER.info("The new size is: " + Tables.getSize(tableDef));
-
 
     }
 

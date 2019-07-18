@@ -1,12 +1,15 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.engine.SchemaDataUri;
+import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.QueryDef;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.MemoryInsertStream;
@@ -18,12 +21,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.Words.*;
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 
 /**
  * Created by gerard on 08-12-2016.
@@ -39,12 +43,19 @@ public class DbQueryExecute {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
     private static final String ARG_NAME = "(Query|File.sql|Directory)";
+    private static final String SCHEMA_URI = "SchemaUri";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
+        cliCommand.argOf(SCHEMA_URI)
+                .setDescription("A schema Uri (@database[/schema]) to define where the execution will take place.")
+                .setMandatory(true);
         cliCommand.argOf(ARG_NAME)
-                .setDescription("The query defines as a command line argument, a query file or a directory of query files.");
+                .setDescription("The query defines as a command line argument, a query file or a directory of query files.")
+                .setMandatory(true);
+
+        cliCommand.optionOf(STORAGE_PATH);
 
         cliCommand.setDescription("Execute one or several queries. \n"+"" +
                 "For one query, the data is shown. For multiple queries, the performance result is shown.");
@@ -59,19 +70,19 @@ public class DbQueryExecute {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        List<String> argValues = cliParser.getStrings(ARG_NAME);
-        if (argValues.size() != 1) {
-            System.err.println("An argument must be given");
-            CliUsage.print(cliCommand);
-            System.exit(1);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+
+        SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
+        Database databaseDef = databasesStore.getDatabase(schemaUri.getDatabaseName());
+        SchemaDef schemaDef = databaseDef.getCurrentSchema();
+        if (schemaUri.getSchemaName()!=null){
+            schemaDef = databaseDef.getSchema(schemaUri.getSchemaName());
         }
 
-        // Database
-        String sourceURL = "";
-        String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(sourceURL)
-                .setDriver(sourceDriver);
+        List<String> argValues = cliParser.getStrings(ARG_NAME);
+
 
 
         // Arguments checks
@@ -83,7 +94,7 @@ public class DbQueryExecute {
                 final Path path = Paths.get(s);
                 String query = Fs.getFileContent(path);
                 if (Queries.isQuery(query)) {
-                    queries.add(database.getQuery(query).setName(path.getFileName().toString()));
+                    queries.add(schemaDef.getQuery(query).setName(path.getFileName().toString()));
                 } else {
                     System.err.println("The first argument is a file (" + s + ") that seems to not contain a query");
                     System.err.println("The file content is: ");
@@ -99,7 +110,7 @@ public class DbQueryExecute {
                         if (Files.isRegularFile(path) && path.toString().endsWith("sql")) {
                             String query = Fs.getFileContent(path);
                             if (Queries.isQuery(query)) {
-                                QueryDef fileQueryDef = database.getQuery(query)
+                                QueryDef fileQueryDef = schemaDef.getQuery(query)
                                         .setName(path.getFileName().toString());
                                 queries.add(fileQueryDef);
                             } else {
@@ -116,7 +127,7 @@ public class DbQueryExecute {
                     throw new RuntimeException(e);
                 }
             } else if (Queries.isQuery(s)){
-                queries.add(database.getQuery(s).setName("Inline Query "+i));
+                queries.add(schemaDef.getQuery(s).setName("Inline Query "+i));
             } else {
                 System.err.println("The value of the argument ("+i+") is not file, a directory or a query");
                 System.err.println("The argument value is: ");

@@ -216,7 +216,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             }
 
 
-            commit();
+                commit();
+
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
 
@@ -260,13 +261,14 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     public void commit() {
         try {
 
-            // If you run two stream concurrently, one stream may set the connection
-            // in autocommit mode at the end
             if (!connection.getAutoCommit()) {
                 connection.commit();
+                insertStreamListener.incrementCommit();
+                LOGGER.info("commit in the table " + tableDef.getFullyQualifiedName());
+            } else {
+                throw new RuntimeException("Don't send a commit on a autocommit session");
             }
-            insertStreamListener.incrementCommit();
-            LOGGER.info("commit in the table " + tableDef.getFullyQualifiedName());
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -309,12 +311,15 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             // When a thread finish before the other one, it's setting the autocommit back to on
             // which slow the loading so much that you are thinking that this is locked
             //
+            // Autocommit is also tricky because a select in sqlite in non-autocommit mode
+            // will lock the database until a commit is executed
+            //
             // Don't set it back to true here
-            // TODO: A unit of SqlInsertStream loading or just never ever autocommit ?
+            // TODO: A unit of SqlInsertStream loading (autocommit is needed to not have a lock after a select on sqlite)
             // SQLITE_BUSY]  The database file is locked (database is locked)
-            // if (!connection.getAutoCommit()) {
-            //     connection.setAutoCommit(true);
-            // }
+            if (!connection.getAutoCommit()) {
+                connection.setAutoCommit(true);
+            }
             //
 
             LOGGER.info(getName() + " stream closed");

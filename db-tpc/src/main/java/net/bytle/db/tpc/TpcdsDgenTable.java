@@ -53,6 +53,9 @@ public class TpcdsDgenTable {
                 throw new RuntimeException("The table (" + parentTableDef.getFullyQualifiedName() + ") does not exist");
             }
             Integer batchSize = 10000;
+
+            // TODO: Need to be able to set an option to not go back to auto-commit when closing
+            // Otherwise the second thread (the child will got in trouble)
             InsertStream parentInsertStream =
                     Tables.getTableInsertStream(parentTableDef)
                             .setFeedbackFrequency(rowFeedback)

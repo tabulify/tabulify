@@ -318,6 +318,11 @@ public class Queries {
 
         }
         selectStream.close();
+        try {
+            queryDef.close();
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
         return selectStreamListener;
 
     }

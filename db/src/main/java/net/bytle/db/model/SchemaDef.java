@@ -148,5 +148,8 @@ public class SchemaDef {
     }
 
 
-
+    public QueryDef getQuery(String query) {
+        // TODO: Not sure how to make sure that the query will run on this schema ???
+        return this.getDatabase().getQuery(query);
+    }
 }
