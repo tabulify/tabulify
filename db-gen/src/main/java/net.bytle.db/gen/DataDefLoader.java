@@ -2,13 +2,13 @@ package net.bytle.db.gen;
 
 
 import net.bytle.cli.Log;
+import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * The input of the data generation is in a yml file
@@ -26,7 +26,7 @@ public class DataDefLoader {
 
     // The data gen property by fully qualified table name
     // Its build on the object scope to not pass it around in the functions signature
-    private Map<String, DataDef> propertiesByTable = new HashMap<>();
+    private Map<String, DataDef> dataDefMap = new HashMap<>();
 
     // A cache to know which tables was loaded
     private List<TableDef> loadedTables = new ArrayList<>();
@@ -78,18 +78,21 @@ public class DataDefLoader {
 
     public List<TableDef> load(List<DataDef> dataDefs) {
 
-
+        // Create a list of table to load to be able to
+        // get the load order
+        // And create a map of data def because the load is not done via a graph but recursive
+        List<TableDef> tableDefs = new ArrayList<>();
         for (DataDef dataDef:dataDefs) {
 
             String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getTable(), schemaDef.getName());
-            propertiesByTable.put(fullyQualifiedName, dataDef);
+            dataDefMap.put(fullyQualifiedName, dataDef);
+            tableDefs.add(schemaDef.getTableOf(dataDef.getTable()));
 
         }
 
         // Load the tables
-        for (DataDef dataDef : propertiesByTable.values()) {
+        for (TableDef tableDef: Dag.get(tableDefs).getCreateOrderedTables()) {
 
-            TableDef tableDef = schemaDef.getTableOf(dataDef.getTable());
             load(tableDef);
 
         }
@@ -134,7 +137,7 @@ public class DataDefLoader {
         }
 
         // Property
-        DataDef dataDef = propertiesByTable.get(tableDef.getFullyQualifiedName());
+        DataDef dataDef = dataDefMap.get(tableDef.getFullyQualifiedName());
 
         // Rows and gen properties
         Integer rows = this.defaultRows;

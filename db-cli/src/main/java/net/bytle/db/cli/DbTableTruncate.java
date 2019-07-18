@@ -1,0 +1,66 @@
+package net.bytle.db.cli;
+
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.Clis;
+import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
+import net.bytle.db.database.Database;
+import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.engine.Tables;
+import net.bytle.db.model.SchemaDef;
+import net.bytle.db.model.TableDef;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+
+
+public class DbTableTruncate {
+
+    private static final Log LOGGER = Db.LOGGER_DB_CLI;
+    private static final String TABLE_URIS = "TableUri...";
+
+
+    public static void run(CliCommand cliCommand, String[] args) {
+
+        String description = "Truncate table(s) - ie remove all records from a table";
+
+        // Create the parser
+        cliCommand
+                .setDescription(description);
+
+        cliCommand.argOf(TABLE_URIS)
+                .setDescription("one or more table URI (@database[/schema]/table).");
+        cliCommand.optionOf(STORAGE_PATH);
+
+        CliParser cliParser = Clis.getParser(cliCommand, args);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+
+        final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
+        List<TableDef> tableDefs = new ArrayList<>();
+        for (String stringTableUri : stringTablesUris) {
+            TableDataUri tableUri = TableDataUri.of(stringTableUri);
+            Database database = databasesStore.getDatabase(tableUri.getDatabaseName());
+            SchemaDef schemaDef = database.getCurrentSchema();
+            if (tableUri.getSchemaName() != null) {
+                schemaDef = database.getSchema(tableUri.getSchemaName());
+            }
+            tableDefs.addAll(schemaDef.getTables(tableUri.getTableName()));
+        }
+
+        for (TableDef tableDef: Dag.get(tableDefs).getDropOrderedTables()){
+            Tables.truncate(tableDef);
+        }
+        LOGGER.info("Bye !");
+
+    }
+
+
+}
+

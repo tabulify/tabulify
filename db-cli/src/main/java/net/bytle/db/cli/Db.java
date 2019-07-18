@@ -26,7 +26,7 @@ public class Db {
      * * every test command
      * in order to work in the same database space
      * If the test and the command does not use the same database name
-     * the test will not succeeed as the tables will be recreated
+     * the test will not succeed as the tables will be recreated
      */
     public static final String CLI_DATABASE_NAME_TARGET = "target";
     public static final String CLI_DATABASE_NAME_SOURCE = "source";

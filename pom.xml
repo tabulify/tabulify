@@ -29,6 +29,7 @@
         <module>type</module>
         <module>os</module>
         <module>regexp</module>
+        <module>db-sample</module>
     </modules>
     <packaging>pom</packaging>
 

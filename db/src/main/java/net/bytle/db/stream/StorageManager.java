@@ -29,4 +29,8 @@ public class StorageManager {
     public static void drop(TableDef tableDef) {
         StorageManager.delete(tableDef);
     }
+
+    public static void truncate(TableDef tableDef) {
+        tableValues.put(tableDef,new ArrayList<>());
+    }
 }

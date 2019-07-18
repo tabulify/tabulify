@@ -638,4 +638,40 @@ public class Tables {
         return tables.stream().map(s -> s.getName()).collect(Collectors.toList());
 
     }
+
+    public static void truncate(TableDef tableDef) {
+        truncate(tableDef,tableDef.getSchema());
+    }
+    public static void truncate(TableDef tableDef, SchemaDef schemaDef) {
+
+        Database database = schemaDef.getDatabase();
+
+        if (database.getUrl() != null) {
+            StringBuilder truncateTableStatement = new StringBuilder().append("delete from ");
+            if (schemaDef.getName() != null) {
+                truncateTableStatement
+                        .append(schemaDef.getName())
+                        .append(".");
+            }
+            truncateTableStatement.append(tableDef.getName());
+            // The connection must not be clause, don't put it in the try clause below
+            Connection currentConnection = database.getCurrentConnection();
+            try (
+                    Statement statement = currentConnection.createStatement();
+            ) {
+
+                statement.execute(truncateTableStatement.toString());
+                LOGGER.info("Table " + tableDef.getFullyQualifiedName() + " truncated");
+
+            } catch (SQLException e) {
+                System.err.println(truncateTableStatement);
+                throw new RuntimeException(e);
+            }
+        } else {
+
+            StorageManager.truncate(tableDef);
+
+        }
+    }
 }
+

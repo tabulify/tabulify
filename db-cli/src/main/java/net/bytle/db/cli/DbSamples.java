@@ -1,14 +1,12 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.Log;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.BytleSchema;
 import net.bytle.db.tpc.TpcdsModel;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.tpc.TpcdsModel.TPCDS_SCHEMA_DWH;
 import static net.bytle.db.tpc.TpcdsModel.TPCDS_SCHEMA_STG;

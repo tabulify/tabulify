@@ -32,6 +32,8 @@ public class DbTable {
                 .setDescription("list tables");
         cliCommand.commandOf(Words.DROP_COMMAND)
                 .setDescription("drop table(s)");
+        cliCommand.commandOf(Words.TRUNCATE_COMMAND)
+                .setDescription("truncate table(s)");
         cliCommand.commandOf(Words.COUNT)
                 .setDescription("count the number of tables");
         cliCommand.commandOf(Words.DESCRIBE_COMMAND)
@@ -68,6 +70,9 @@ public class DbTable {
                         break;
                     case DROP_COMMAND:
                         DbTableDrop.run(command, args);
+                        break;
+                    case TRUNCATE_COMMAND:
+                        DbTableTruncate.run(command, args);
                         break;
                     case COUNT:
                         DbTableCount.run(command, args);
