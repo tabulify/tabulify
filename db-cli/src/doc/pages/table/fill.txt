@@ -158,7 +158,7 @@ Table (store_sales) created.
 
 <unit envBYTLE_DB_HOME=src>
   * The file
-<file yml date_dim_def.yml>
+<file yaml date_dim_def.yml>
 Id,Last Name,First Name,Birth Date,Wikipedia Page
 1,Schwarzenegger,Arnold,1947-07-30,https://en.wikipedia.org/wiki/Arnold_Schwarzenegger
 2,Norman,Don,1935-12-25,https://en.wikipedia.org/wiki/Don_Norman
@@ -169,24 +169,24 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 db table fill --data-def %BYTLE_DB_HOME%\doc\files\date_dim_def.yml @sqlite/date_dim
 </code>
 <console>
-16:30:29 - INFO - Loading the table ("date_dim")
-16:30:29 - INFO - The size of the table ("date_dim") before insertion is : 0
-16:30:29 - INFO - Inserting 10.0 rows into the table ("date_dim")
-16:30:29 - INFO - The driver is supporting batch update. 
-16:30:29 - INFO - The driver is supporting named parameters.
-16:30:29 - INFO - Insert Statement:INSERT INTO "date_dim" ("d_date_sk", "d_date_id", "d_date", "d_month_seq", "d_week_seq", "d_quarter_seq", "d_year", "d_dow", "d_moy", "d_dom", "d_qoy", "d_fy_year", "d_fy_quarter_seq", "d_fy_week_seq", "d_day_name", "d_quarter_name", "d_holiday", "d_weekend", "d_following_holiday", "d_first_dom", "d_last_dom", "d_same_day_ly", "d_same_day_lq", "d_current_day", "d_current_week", "d_current_month", "d_current_quarter", "d_current_year") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-16:30:30 - INFO - commit in the table "date_dim"
-16:30:30 - INFO - 10 rows loaded (Total) in the table "date_dim"
-16:30:30 - INFO - 1 commit(s) (Total) in the table "date_dim"
-16:30:30 - INFO - 1 batches(s) (Total) in the table "date_dim"
-16:30:30 - INFO - main stream closed
-16:30:30 - INFO - 10.0 records where inserted into the table ("date_dim")
-16:30:30 - INFO - The new size is: 10
-16:30:30 - INFO - The following tables where loaded:
-16:30:30 - INFO -   * "date_dim", Size (10)
-16:30:30 - INFO - Response Time for the loading of generated data : 0:0:1.120 (hour:minutes:seconds:milli)%n
-16:30:30 - INFO -        Ie (1120) milliseconds%n
-16:30:30 - INFO - Success ! No errors were seen.
+17:09:57 - INFO - Loading the table ("date_dim")
+17:09:57 - INFO - The size of the table ("date_dim") before insertion is : 0
+17:09:57 - INFO - Inserting 10.0 rows into the table ("date_dim")
+17:09:57 - INFO - The driver is supporting batch update. 
+17:09:57 - INFO - The driver is supporting named parameters.
+17:09:57 - INFO - Insert Statement:INSERT INTO "date_dim" ("d_date_sk", "d_date_id", "d_date", "d_month_seq", "d_week_seq", "d_quarter_seq", "d_year", "d_dow", "d_moy", "d_dom", "d_qoy", "d_fy_year", "d_fy_quarter_seq", "d_fy_week_seq", "d_day_name", "d_quarter_name", "d_holiday", "d_weekend", "d_following_holiday", "d_first_dom", "d_last_dom", "d_same_day_ly", "d_same_day_lq", "d_current_day", "d_current_week", "d_current_month", "d_current_quarter", "d_current_year") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+17:09:58 - INFO - commit in the table "date_dim"
+17:09:58 - INFO - 10 rows loaded (Total) in the table "date_dim"
+17:09:58 - INFO - 1 commit(s) (Total) in the table "date_dim"
+17:09:58 - INFO - 1 batches(s) (Total) in the table "date_dim"
+17:09:58 - INFO - main stream closed
+17:09:58 - INFO - 10.0 records where inserted into the table ("date_dim")
+17:09:58 - INFO - The new size is: 10
+17:09:58 - INFO - The following tables where loaded:
+17:09:58 - INFO -   * "date_dim", Size (10)
+17:09:58 - INFO - Response Time for the loading of generated data : 0:0:1.81 (hour:minutes:seconds:milli)%n
+17:09:58 - INFO -        Ie (1081) milliseconds%n
+17:09:58 - INFO - Success ! No errors were seen.
 </console>
 </unit>
   * The table ''date_dim'' was filled with generated data
@@ -195,17 +195,17 @@ db table fill --data-def %BYTLE_DB_HOME%\doc\files\date_dim_def.yml @sqlite/date
 db table show --limit 10 @sqlite/date_dim
 </code>
 <console>
-d_date_sk   d_date_id   d_date           d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year   
----------   ---------   --------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------   
-        1   hello       -2206231200000             1            0               7        0       5       2       5       2        1900                  3               3   Thursday     hello            h           h           h                               4            5               6               1   h               h                h                 h                   h                
-        2   hello       -2206144800000             1            0               3        0       8       2       9       4        1900                  3               9   Friday       hello            h           h           h                               0            1               0               3   h               h                h                 h                   h                
-        3   hello       -2206058400000             1            8               6        2       0       2       7       2        1900                  2               5   Saturday     hello            h           h           h                               3            0               7               5   h               h                h                 h                   h                
-        4   hello       -2205972000000             1            4               4        5       7       2       6       3        1900                  8               6   Sunday       hello            h           h           h                               9            6               5               6   h               h                h                 h                   h                
-        5   hello       -2205885600000             1            9               2        2       8       2       5       7        1900                  4               2   Monday       hello            h           h           h                               6            6               8               3   h               h                h                 h                   h                
-        6   hello       -2205799200000             1            3               3        3       4       2       0       0        1900                  4               8   Tuesday      hello            h           h           h                               3            5               7               8   h               h                h                 h                   h                
-        7   hello       -2205712800000             1            2               3        4       2       2       8       9        1900                  5               4   Wednesday    hello            h           h           h                               5            6               2               9   h               h                h                 h                   h                
-        8   hello       -2205626400000             1            7               2        5       0       2       3       0        1900                  5               4   Thursday     hello            h           h           h                               6            0               1               8   h               h                h                 h                   h                
-        9   hello       -2205540000000             1            0               9        8       3       2       2       4        1900                  3               6   Friday       hello            h           h           h                               7            4               8               7   h               h                h                 h                   h                
-       10   hello       -2205453600000             1            3               1        7       9       2       8       5        1900                  0               3   Saturday     hello            h           h           h                               6            8               4               2   h               h                h                 h                   h
+d_date_sk   d_date_id    d_date           d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year   
+---------   ----------   --------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------   
+        1   1900-02-1    -2206231200000             1            5               2        0       3       2       1       3        1900                  2               3   Thursday     hello            h           h           h                               2            8               0               5   h               h                h                 h                   h                
+        2   1900-02-2    -2206144800000             1            8               7        1       6       2       9       1        1900                  2               4   Friday       hello            h           h           h                               7            3               7               9   h               h                h                 h                   h                
+        3   1900-02-3    -2206058400000             1            0               3        2       1       2       0       7        1900                  4               6   Saturday     hello            h           h           h                               7            5               4               6   h               h                h                 h                   h                
+        4   1900-02-4    -2205972000000             1            0               4        7       6       2       3       8        1900                  0               1   Sunday       hello            h           h           h                               2            2               0               3   h               h                h                 h                   h                
+        5   1900-02-5    -2205885600000             1            9               9        1       3       2       4       6        1900                  8               7   Monday       hello            h           h           h                               6            0               4               8   h               h                h                 h                   h                
+        6   1900-02-6    -2205799200000             1            0               4        8       6       2       5       3        1900                  2               8   Tuesday      hello            h           h           h                               2            4               8               9   h               h                h                 h                   h                
+        7   1900-02-7    -2205712800000             1            1               9        6       4       2       1       3        1900                  6               3   Wednesday    hello            h           h           h                               6            8               3               2   h               h                h                 h                   h                
+        8   1900-02-8    -2205626400000             1            7               4        7       2       2       6       3        1900                  3               3   Thursday     hello            h           h           h                               8            1               3               5   h               h                h                 h                   h                
+        9   1900-02-9    -2205540000000             1            0               6        1       0       2       1       4        1900                  5               2   Friday       hello            h           h           h                               6            2               8               1   h               h                h                 h                   h                
+       10   1900-02-10   -2205453600000             1            7               7        3       0       2       1       4        1900                  9               8   Saturday     hello            h           h           h                               0            6               5               1   h               h                h                 h                   h
 </console>
 </unit>

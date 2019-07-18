@@ -260,8 +260,11 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     public void commit() {
         try {
 
-
-            connection.commit();
+            // If you run two stream concurrently, one stream may set the connection
+            // in autocommit mode at the end
+            if (!connection.getAutoCommit()) {
+                connection.commit();
+            }
             insertStreamListener.incrementCommit();
             LOGGER.info("commit in the table " + tableDef.getFullyQualifiedName());
         } catch (SQLException e) {
@@ -300,11 +303,19 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
-            // This setting is locking SQLite, setting it back to true, resolve the problem
+            // Setting this setting to true, resolve the database locked problem
+            // but introduce another problem when two streams are running concurrently
+            // for instance the child and the parent of a tpc-ds data loading (store_sales, store_returns)
+            // When a thread finish before the other one, it's setting the autocommit back to on
+            // which slow the loading so much that you are thinking that this is locked
+            //
+            // Don't set it back to true here
+            // TODO: A unit of SqlInsertStream loading or just never ever autocommit ?
             // SQLITE_BUSY]  The database file is locked (database is locked)
-            if (!connection.getAutoCommit()) {
-                connection.setAutoCommit(true);
-            }
+            // if (!connection.getAutoCommit()) {
+            //     connection.setAutoCommit(true);
+            // }
+            //
 
             LOGGER.info(getName() + " stream closed");
         } catch (SQLException e) {

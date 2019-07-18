@@ -28,11 +28,11 @@ Syntax:
 where:
 
 	Command (is one of):
-		* add                           add a database
-		* upsert                        update or add a database if it does't exist
-		* list                          list the databases
-		* info                          show database information
-		* remove                        Remove a database
+		* add                        add a database
+		* upsert                     update or add a database if it does't exist
+		* list                       list the databases
+		* info                       show database information
+		* remove                     Remove a database
 </console>
 </unit>
 

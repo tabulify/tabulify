@@ -10,9 +10,6 @@
 db fkey --help
 </code>
 <console>
-13:22:51 - INFO - (conf) word was not found
-13:22:51 - INFO - (help) word was found with the value: true
-
 operations on foreign key (ie on relation and constraints between tables)
 
 Syntax:
@@ -22,8 +19,8 @@ Syntax:
 where:
 
 	Command (is one of):
-		* list                          list the links between tables (foreign keys)
-		* count                         count the total number of links
+		* list                       list the links between tables (foreign keys)
+		* no-count                   count the total number of links
 </console>
 </unit>
 where:

@@ -11,10 +11,7 @@
 db database remove --help
 </code>
 <console>
-14:54:46 - INFO - (conf) word was not found
-14:54:46 - INFO - (help) word was found with the value: true
-
-List the databases
+Remove a database (metadata only)
 
 Syntax:
 
@@ -23,10 +20,13 @@ Syntax:
 where:
 
 	Local
-		* --store <value>               The path where the database information are stored
+		* --store <value>            The path where the database information are stored
+
+	Local
+		* --no-strict                If the removed database does not exist, the command will not exit with a failure code.
 
 	Args:
-		* name                          the database name or a glob pattern
+		* name                       the database name or a glob pattern
 </console>
 </unit>
 
@@ -43,9 +43,6 @@ db database upsert --url "jdbc:sqlite://%TMP%/db.db" "dbName"
 db database rm dbName 
 </code>
 <console>
-18:30:20 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-18:30:20 - INFO - 1 databases were found
-18:30:20 - INFO - The database (dbName) was removed
-18:30:20 - INFO - Bye !
+
 </console>
 </unit>

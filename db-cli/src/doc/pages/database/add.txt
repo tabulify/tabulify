@@ -11,8 +11,8 @@ The ''database add'' operations will add database information to a [[store|datab
 db database add --help
 </code>
 <console>
-16:28:28 - INFO - (conf) word was not found
-16:28:28 - INFO - (help) word was found with the value: true
+21:12:41 - INFO - (conf) word was not found
+21:12:41 - INFO - (help) word was found with the value: true
 
 Add a database
 
@@ -23,16 +23,16 @@ Syntax:
 where:
 
 	Database Properties
-		* -l,--login <value>            The login (ie user)
-		* -p,--password <value>         The user password
-		* -pp,--passphrase <value>      A passphrase (master password) to encrypt the password
-		* -d,--driver <value>           The jdbc driver (for a jdbc connection)
-		* --store <value>               The path where the database information are stored
-		* -s,--statement <value>        A inline statement to be executed after a connection
+		* -l,--login <value>          The login (ie user)
+		* -p,--password <value>       The user password
+		* -pp,--passphrase <value>    A passphrase (master password) to encrypt the password
+		* -d,--driver <value>         The jdbc driver (for a jdbc connection)
+		* --store <value>             The path where the database information are stored
+		* -s,--statement <value>      A inline statement to be executed after a connection
 
 	Args:
-		* name                          the database name
-		* url                           The database url
+		* name                        the database name
+		* url                         The database url
 
 Example:  To add the database information about the database `name`:
     db database add name
@@ -43,7 +43,7 @@ Example:  To add the database information about the database `name`:
 Adding a [[relation:sqlite|Sqlite database]] with the name ''sqliteDbName'':
 <unit display="none">
 <code dos>
-db database rm "sqliteDbName"
+db database rm --no-strict "sqliteDbName"
 </code>
 </unit>
 
@@ -52,9 +52,76 @@ db database rm "sqliteDbName"
 db database add "sqliteDbName" "jdbc:sqlite://%TMP%/db.db"
 </code>
 <console>
+Jul 18, 2019 9:12:42 PM oracle.jdbc.driver.OracleDriver registerMBeans
+WARNING: Error while registering Oracle JDBC Diagnosability MBean.
+java.security.AccessControlException: access denied ("javax.management.MBeanTrustPermission" "register")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:585)
+	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.checkMBeanTrustPermission(DefaultMBeanServerInterceptor.java:1848)
+	at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.registerMBean(DefaultMBeanServerInterceptor.java:322)
+	at com.sun.jmx.mbeanserver.JmxMBeanServer.registerMBean(JmxMBeanServer.java:522)
+	at oracle.jdbc.driver.OracleDriver.registerMBeans(OracleDriver.java:367)
+	at oracle.jdbc.driver.OracleDriver$1.run(OracleDriver.java:201)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at oracle.jdbc.driver.OracleDriver.<clinit>(OracleDriver.java:197)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at java.sql.DriverManager$2.run(DriverManager.java:603)
+	at java.sql.DriverManager$2.run(DriverManager.java:583)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.sql.DriverManager.loadInitialDrivers(DriverManager.java:583)
+	at java.sql.DriverManager.<clinit>(DriverManager.java:101)
+	at net.bytle.db.database.Database.getNewConnection(Database.java:501)
+	at net.bytle.db.database.Database.getCurrentConnection(Database.java:389)
+	at net.bytle.db.cli.DbDatabaseAdd.run(DbDatabaseAdd.java:133)
+	at net.bytle.db.cli.DbDatabase.run(DbDatabase.java:47)
+	at net.bytle.db.cli.Db.main(Db.java:94)
+	at javademo.run(javademo.java:3)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at net.bytle.doctest.DocTestExecutorUnit.eval(DocTestExecutorUnit.java:199)
+	at net.bytle.doctest.DocTestExecutor.execute(DocTestExecutor.java:237)
+	at net.bytle.doctest.DocTestExecutor.run(DocTestExecutor.java:108)
+	at net.bytle.db.cli.DbCliDocTest.docTest(DbCliDocTest.java:26)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:68)
+	at com.intellij.rt.execution.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:47)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:242)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:70)
+
+21:12:48 - INFO - Connected !
 Connection pinged
-19:24:35 - INFO - The database (sqliteDbName) was saved.
-19:24:35 - INFO - Bye !
+21:12:48 - INFO - The connection (jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db) was closed.
+21:12:48 - INFO - The database (sqliteDbName) was saved.
+21:12:48 - INFO - Bye !
 </console>
 </unit>
 

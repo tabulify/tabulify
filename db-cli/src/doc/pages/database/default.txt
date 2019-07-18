@@ -21,20 +21,14 @@ With the [[list|database list action]] against a [[store|store file]] (that does
 db database list
 </code>
 <console>
-10:30:06 - INFO - (conf) word was not found
-10:30:06 - INFO - (help) word was not found
-10:30:06 - INFO - (store) word was found with the value: C:\Users\BytleDb\AppData\Local\db\databases.ini
-10:30:06 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-
-Name         Login   Password   Url                                                       Driver                                         
-----------   -----   --------   -------------------------------------------------------   --------------------------------------------   
-mysql        null    null       jdbc:mysql://[host]:[port]/[database]                     com.mysql.jdbc.Driver                          
-oracle       null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]             oracle.jdbc.OracleDriver                       
-postgresql   null    null       jdbc:postgresql://host:port/test?ssl=true                 org.postgresql.Driver                          
-sqlite       null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db    org.sqlite.JDBC                                
-sqlserver    sa      xxx        jdbc:sqlserver://localhost;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver   
-
-10:30:07 - INFO - Bye !
+Name           Login   Password   Url                                                       Driver                                         
+------------   -----   --------   -------------------------------------------------------   --------------------------------------------   
+mysql          null    null       jdbc:mysql://[host]:[port]/[database]                     com.mysql.jdbc.Driver                          
+oracle         null    null       jdbc:oracle:thin:@[host]:[port]/[servicename]             oracle.jdbc.OracleDriver                       
+postgresql     null    null       jdbc:postgresql://host:port/test?ssl=true                 org.postgresql.Driver                          
+sqlite         null    null       jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db    org.sqlite.JDBC                                
+sqliteDbName   null    null       jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db    null                                           
+sqlserver      sa      xxx        jdbc:sqlserver://localhost;databaseName=AdventureWorks;   com.microsoft.sqlserver.jdbc.SQLServerDriver
 </console>
 </unit>
 

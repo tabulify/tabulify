@@ -11,9 +11,6 @@
 db database upsert --help 
 </code>
 <console>
-13:45:16 - INFO - (conf) word was not found
-13:45:16 - INFO - (help) word was found with the value: true
-
 Update or insert a database
 
 Syntax:
@@ -22,17 +19,19 @@ Syntax:
 
 where:
 
-	Database Properties
-		* -u,--url <value>              The database url (if the database doesn't exist, this options is mandatory)
-		* -l,--login <value>            The login (ie user)
-		* -p,--password <value>         The user password
-		* -pp,--passphrase <value>      A passphrase (master password) to encrypt the password
-		* -d,--driver <value>           The jdbc driver (for a jdbc connection)
-		* --store <value>               The path where the database information are stored
-		* -s,--statement <value>        A inline statement to be executed after a connection
+	Local
+		* -u,--url <value>            The database url (if the database doesn't exist, this options is mandatory)
+		* -l,--login <value>          The login (ie user)
+		* -p,--password <value>       The user password
+		* -pp,--passphrase <value>    A passphrase (master password) to encrypt the password
+		* -d,--driver <value>         The jdbc driver (for a jdbc connection)
+		* -s,--statement <value>      A inline statement to be executed after a connection
+
+	Local
+		* --store <value>             The path where the database information are stored
 
 	Args:
-		* name                          the database name
+		* name                        the database name
 
 Example:  To upsert the database information about the database `name`:
     db database upsert --url jdbc:sqlite//%TMP%/db.db name
@@ -48,14 +47,7 @@ Example:  To upsert the database information about the database `name`:
 db database upsert --url "jdbc:sqlite://%TMP%/db.db" mySqliteDB
 </code>
 <console>
-13:45:16 - INFO - Trying to make a connection
-13:45:16 - INFO - Trying to connect to the connection (jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db)
-13:45:16 - INFO - Connected !
-13:45:16 - INFO - The connection was successful.
-13:45:16 - INFO - The connection (jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db) was closed.
-13:45:16 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-13:45:16 - INFO - The database (mySqliteDB) was saved.
-13:45:16 - INFO - Bye !
+
 </console>
 </unit>
 <unit>
@@ -64,6 +56,13 @@ db database upsert --url "jdbc:sqlite://%TMP%/db.db" mySqliteDB
 db database info mySqliteDB
 </code>
 <console>
+-------------------------------
+Name: mySqliteDB
+URL: jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db
+Login: null
+Password: null
+Driver: null
+Statement: null
 -------------------------------
 </console>
 </unit>

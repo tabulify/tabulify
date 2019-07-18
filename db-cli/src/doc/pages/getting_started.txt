@@ -62,12 +62,18 @@ For each ''sub-command'', you may specify optional [[option|options]] that chang
 
 ===== Listing tables =====
 
-''db'' uses as default database a local embedded ''sqlite'' database.
+<unit display="none">
+Dropping all tables before starting
+<code dos>
+db table drop @sqlite/*
+</code>
+</unit>
 
-To list all ''tables'' in your current database schema, you need to perform the following command:
+
+The following command will list all ''tables'' in the [[database:default|default sqlite database]]
 <unit>
 <code dos>
-db table list
+db table list @sqlite/*
 </code>
 <console>
 09:48:35 - INFO - Driver org.sqlite.JDBC loaded
@@ -79,15 +85,23 @@ No tables found
 09:48:35 - INFO - Bye !
 </console>
 </unit>
+where:
+  * ''db'' is the [[client|db]]
+  * ''table'' is a [[module|module]] (ie the [[table:start|table module]]
+  * ''list'' is a action
+  * ''@sqlite/*'' is a [[table:table#uri|table uri]] that defines:
+      * ''sqlite'' the [[database:database|database]]
+      * ''*'' the tables to look for. In our case all tables because  ''*'' is the [[wp>Glob_(programming)|globbing star]]
 
-There is obviously no table in our default database. We will create some below by creating a [[sample:schema|sample database]].
+There is obviously no table in the [[database:default|sqlite default database]]. We will create some below by creating a [[sample:schema|sample schema]].
 
 ===== Creating a sample schema =====
+
 The [[sample:schema|sample module]] provides several sample database. We will create the [[sample:tpcds|tpcds]] datawarehouse part with the ''create'' command.
 
 <unit>
 <code dos>
-db sample create tpcds-dwh
+db sample create tpcds-dwh @sqlite
 </code>
 <console>
 Table (reason) created.
@@ -123,18 +137,19 @@ That's why we see at the end of the list most of the fact tables. They are creat
   * How many tables do we have ?
 <unit>
 <code dos>
-db table count
+db table count @sqlite/*
 </code>
 <console>
 0 tables
 </console>
 </unit>
+
 ===== Filling the schema with data =====
 To fill our schema with generated data, we will use the [[sample:fill|fill sub-command of the sample module]].
 
 <unit>
 <code dos>
-db sample fill tpcds-dwh
+db sample fill tpcds-dwh @sqlite
 </code>
 At the end of the process, you get a list of all tables where data were loaded and the number of row that were inserted.
 <console>
@@ -452,7 +467,7 @@ web_site                             2
 You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the ''db sample fill'' command.</wrap>
 <unit>
 <code dos>
-db table list
+db table list @sqlite/*
 </code>
 <console>
 Tables:
@@ -491,7 +506,7 @@ web_site                       2
 
 <unit>
 <code dos>
-db fkey list
+db fkey list @sqlite/*
 </code>
 <console>
 No foreign key found
@@ -530,7 +545,7 @@ with year_total as (
   * Executing the query will show us this customers.
 <unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 <code dos db_query_execute.cmd>
-db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
+db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql @sqlite
 </code> 
 <console>
 customer_id        customer_first_name   customer_last_name   customer_email_address                   
@@ -559,7 +574,7 @@ All ''Tpcds'' queries are located at ''DB_HOME\sql\tpcds\query\sqlite'' where ''
 
 <unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 <code dos>
-db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite
+db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite @sqlite
 </code>
 <console>
 Query Name     Latency (ms)   Row Count   Error   Message   

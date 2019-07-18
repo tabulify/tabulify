@@ -41,6 +41,10 @@ public class DbDatabaseRemove {
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
 
+        cliCommand.flagOf(Words.NO_STRICT)
+                .setDescription("If the removed database does not exist, the command will not exit with a failure code.")
+                .setDefaultValue(false);
+
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
@@ -48,13 +52,20 @@ public class DbDatabaseRemove {
 
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
+        final Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
         for (String name : names) {
             final List<Database> databases = databasesStore.getDatabases(name);
             if (databases.size() == 0) {
-
-                LOGGER.severe("There is no database called (" + name + ")");
+                final String msg = "There is no database called (" + name + ")";
+                if (noStrictMode){
+                    LOGGER.warning(msg);
+                } else {
+                    LOGGER.severe(msg);
+                    LOGGER.severe("If you don't want the process to continue without failure, you can set the no strict flag ("+CliParser.PREFIX_LONG_OPTION+Words.NO_STRICT+").");
+                    LOGGER.severe("Exiting");
                 System.exit(1);
+                }
             } else {
                 LOGGER.info(databases.size() + " databases were found");
             }

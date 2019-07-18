@@ -143,7 +143,7 @@ public class TpcdsDgen {
                     });
                 } else {
                     LOGGER.fine("Loading the table (" + tableDef.getName() + ") with the " + chunkNumber + " thread");
-                    //TODO: if there is an exception in the thread, it si not caucght
+                    //TODO: if there is an exception in the thread, it is not caught
                     thread = new Thread(() -> {
                         List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), schemaDef)
                                     .setRowFeedback(feedbackFrequency)

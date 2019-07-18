@@ -11,9 +11,6 @@
 db database info --help
 </code>
 <console>
-13:40:00 - INFO - (conf) word was not found
-13:40:00 - INFO - (help) word was found with the value: true
-
 Print database information in a form fashion.
 
 Syntax:
@@ -23,10 +20,10 @@ Syntax:
 where:
 
 	Local
-		* --store <value>               The path where the database information are stored
+		* --store <value>            The path where the database information are stored
 
 	Args:
-		* name|glob                     one or more database name or glob patterns
+		* name|glob                  one or more database name or glob patterns
 
 Example:
 
@@ -54,8 +51,6 @@ This command will show the information of the default ''sqlite'' database
 db database info sqlite
 </code>
 <console>
-13:40:01 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-
 -------------------------------
 Name: sqlite
 URL: jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db
@@ -64,8 +59,6 @@ Password: null
 Driver: org.sqlite.JDBC
 Statement: null
 -------------------------------
-
-13:40:01 - INFO - Bye !
 </console>
 </unit>
 ==== Selecting database with globbing ====
@@ -96,6 +89,13 @@ URL: jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db
 Login: null
 Password: null
 Driver: org.sqlite.JDBC
+Statement: null
+-------------------------------
+Name: sqliteDbName
+URL: jdbc:sqlite://C:\Users\gerard\AppData\Local\Temp/db.db
+Login: null
+Password: null
+Driver: null
 Statement: null
 -------------------------------
 Name: sqlserver

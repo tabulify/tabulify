@@ -3,6 +3,15 @@ Columns:
   d_date_sk:
     Generator: sequence
     Step: 1
+  d_date_id:
+    Generator: derived
+    Column_parent: d_date
+    Formula: "function pad(number) {
+                if (number < 10) {
+              	return '0' + number;
+                }
+                return number;
+              }; x.getFullYear()+'-'+(pad(x.getMonth()+1))+'-'+(pad(x.getDate()+1))"
   d_date:
     Generator: derived
     Column_parent: d_date_sk
