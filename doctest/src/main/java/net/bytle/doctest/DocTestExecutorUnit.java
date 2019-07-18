@@ -18,11 +18,11 @@ import java.util.*;
 /**
  * Execute a code block found in a doc
  * <p>
- * A {@link DocTestUnitExecutor} contains the environment variable and function to run a {@link DocTestUnit}
+ * A {@link DocTestExecutorUnit} contains the environment variable and function to run a {@link DocTestUnit}
  */
-public class DocTestUnitExecutor {
+public class DocTestExecutorUnit {
 
-    public static final Log LOGGER = DocTest.LOGGER_DOCTEST;
+    public static final Log LOGGER = DocTestExecutor.LOGGER_DOCTEST;
 
     /**
      * A map to hold the main class of a appHome. See {@link #addMainClass(String, Class)}
@@ -35,9 +35,9 @@ public class DocTestUnitExecutor {
     private Path outputDirClass;
 
     /**
-     * Get a {@link DocTestUnitExecutor} with the {@link #get()} function please
+     * Get a {@link DocTestExecutorUnit} with the {@link #get()} function please
      */
-    private DocTestUnitExecutor() {
+    private DocTestExecutorUnit() {
 
         outputDirClass = Paths.get(System.getProperty("java.io.tmpdir"), "docTestClass").normalize().toAbsolutePath();
 
@@ -51,8 +51,8 @@ public class DocTestUnitExecutor {
     /**
      * @return - a docTestRunner that contains the environment variable and function to run a test
      */
-    public static DocTestUnitExecutor get() {
-        return new DocTestUnitExecutor();
+    public static DocTestExecutorUnit get() {
+        return new DocTestExecutorUnit();
     }
 
 
@@ -124,7 +124,7 @@ public class DocTestUnitExecutor {
             DocTestSource docTestSource = new DocTestSource(buildClassName, code);
 
             // Verification of the presence of the compilation tool archive
-            ClassLoader classLoader = DocTestUnitExecutor.class.getClassLoader();
+            ClassLoader classLoader = DocTestExecutorUnit.class.getClassLoader();
             final String toolsJarFileName = "tools.jar";
             String javaHome = System.getProperty("java.home");
             Path toolsJarFilePath = Paths.get(javaHome, "lib", toolsJarFileName);
@@ -255,7 +255,7 @@ public class DocTestUnitExecutor {
      * @param mainClass - the main class that implements this appHome
      * @return - a docTestRunner for chaining construction
      */
-    public DocTestUnitExecutor addMainClass(String cli, Class mainClass) {
+    public DocTestExecutorUnit addMainClass(String cli, Class mainClass) {
 
         this.cliClass.put(cli, mainClass);
         return this;

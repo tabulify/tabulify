@@ -15,22 +15,27 @@ import java.util.List;
 import java.util.Map;
 
 
-public class DocTest {
+public class DocTestExecutor {
 
 
-    public static final String APP_NAME = DocTest.class.getSimpleName();
-    protected final static Log LOGGER_DOCTEST = Log.getLog(DocTest.class);
+    public static final String APP_NAME = DocTestExecutor.class.getSimpleName();
+    protected final static Log LOGGER_DOCTEST = Log.getLog(DocTestExecutor.class);
     private final String name;
 
     private boolean enableCacheExecution = false;
     Map<String, Class> commands = new HashMap<>();
 
-    public DocTest setOverwriteConsole(boolean overwriteConsole) {
-        this.overwriteConsole = overwriteConsole;
+    /**
+     * If set to true, the console and the file node will be overwritten
+     * @param overwrite
+     * @return
+     */
+    public DocTestExecutor setOverwrite(boolean overwrite) {
+        this.overwrite = overwrite;
         return this;
     }
 
-    private boolean overwriteConsole = false;
+    private boolean overwrite = false;
 
 
     /**
@@ -38,7 +43,7 @@ public class DocTest {
      *
      * @param name
      */
-    private DocTest(String name) {
+    private DocTestExecutor(String name) {
         this.name = name;
     }
 
@@ -51,9 +56,9 @@ public class DocTest {
      * @param name - The name of the run (used in the console)
      * @return
      */
-    public static DocTest of(String name) {
+    public static DocTestExecutor of(String name) {
 
-        return new DocTest(name);
+        return new DocTestExecutor(name);
     }
 
     /**
@@ -63,12 +68,13 @@ public class DocTest {
      * @param b
      * @return
      */
-    public DocTest useCacheExecution(boolean b) {
+    public DocTestExecutor useCacheExecution(boolean b) {
         this.enableCacheExecution = b;
         return this;
     }
 
     /**
+     * Execute doc test file and the child of directory defined by the paths parameter
      * @param paths
      * @return
      */
@@ -101,7 +107,7 @@ public class DocTest {
                 LOGGER_DOCTEST.info(this.name, "Executing the doc file (" + childPath + ")");
                 DocTestRunResult docTestRunResult = this.execute(childPath);
                 results.add(docTestRunResult);
-                if (overwriteConsole) {
+                if (overwrite) {
                     // Overwrite the new doc
                     Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 }
@@ -143,9 +149,9 @@ public class DocTest {
         StringBuilder newDocTestContent = new StringBuilder();
 
         // A code executor
-        DocTestUnitExecutor docTestUnitExecutor = DocTestUnitExecutor.get();
+        DocTestExecutorUnit docTestExecutorUnit = DocTestExecutorUnit.get();
         for (String commandName : commands.keySet()) {
-            docTestUnitExecutor.addMainClass(commandName, commands.get(commandName));
+            docTestExecutorUnit.addMainClass(commandName, commands.get(commandName));
         }
 
         final List<DocTestUnit> cachedDocTestUnits = DocCache.get(name).getDocTestUnits(path);
@@ -172,7 +178,7 @@ public class DocTest {
             final List<DocTestFileBlock> files = docTestUnit.getFileBlocks();
             if (files.size() != 0) {
 
-                for (int j = 0; i < files.size(); i++) {
+                for (int j = 0; j < files.size(); j++) {
 
                     DocTestFileBlock docTestFileBlock = files.get(j);
 
@@ -228,7 +234,7 @@ public class DocTest {
                 try {
                     LOGGER_DOCTEST.info(this.name, "Running the code (" + Log.onOneLine(docTestUnit.getCode()) + ") from the file (" + docTestUnit.getPath() + ")");
                     docTestRunResult.addCodeExecution();
-                    result = docTestUnitExecutor.eval(docTestUnit).trim();
+                    result = docTestExecutorUnit.eval(docTestUnit).trim();
                     oneCodeBlockHasAlreadyRun = true;
                 } catch (Exception e) {
                     docTestRunResult.addError();
@@ -274,7 +280,7 @@ public class DocTest {
     }
 
 
-    public DocTest addCommand(String command, Class mainClazz) {
+    public DocTestExecutor addCommand(String command, Class mainClazz) {
         commands.put(command, mainClazz);
         return this;
     }
@@ -285,7 +291,7 @@ public class DocTest {
      * @param path
      * @return the runnner for chaining instantiation
      */
-    public DocTest setBaseFileDirectory(Path path) {
+    public DocTestExecutor setBaseFileDirectory(Path path) {
         this.baseFileDirectory = path;
         return this;
     }

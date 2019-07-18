@@ -82,4 +82,8 @@ public class DocTestFileBlock {
         this.locationStart = locationStart;
         return this;
     }
+
+    public String getContent() {
+        return this.content;
+    }
 }

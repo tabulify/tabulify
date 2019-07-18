@@ -1,14 +1,12 @@
 package net.bytle.doctest;
 
-import net.bytle.fs.Fs;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * An example of a {@link DocTestUnitExecutor#addMainClass(String, Class)} MainClass}
+ * An example of a {@link DocTestExecutorUnit#addMainClass(String, Class)} MainClass}
  * implementing a basic del command
  * <p>
  * This class is used for testing purpose

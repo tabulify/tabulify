@@ -4,7 +4,7 @@ import java.nio.file.Path;
 
 /**
  * The result of a run executed on a file
- * via {@link DocTest#run(Path...)}
+ * via {@link DocTestExecutor#run(Path...)}
  */
 public class DocTestRunResult {
 

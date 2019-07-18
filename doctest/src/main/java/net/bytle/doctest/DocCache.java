@@ -15,7 +15,7 @@ public class DocCache {
 
     private DocCache(String name) {
 
-        cacheDirectory = Paths.get(Fs.getAppData(DocTest.APP_NAME).toString(),name);
+        cacheDirectory = Paths.get(Fs.getAppData(DocTestExecutor.APP_NAME).toString(),name);
         if (!Files.exists(cacheDirectory)){
             try {
                 Files.createDirectory(cacheDirectory);

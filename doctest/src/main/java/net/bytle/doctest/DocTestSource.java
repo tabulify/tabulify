@@ -6,7 +6,7 @@ import java.net.URI;
 
 /**
  * A file object used to represent a java source coming from a string.
- * This class is used by the {@link DocTestUnitExecutor#eval(DocTestUnit)} function
+ * This class is used by the {@link DocTestExecutorUnit#eval(DocTestUnit)} function
  * when compiling to represent the Java source code in a string in place of in a file
  * Therefore no file is created.
  */
