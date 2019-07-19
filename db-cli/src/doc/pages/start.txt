@@ -13,8 +13,8 @@ If you have no previous experience with ''Bytle-Db'', we advice you to follow th
 [[..:db|Bytle Db]] helps you operate on the following data structure or definition:
   * [[table:table|Table]] - a relational table supporting its operations through SQL.
   * [[schema:start|Schema]] - a table namespace (where the tables are stored)
-  * [[fkey:fkey|Foreign Key]] - relations between tables
-  * [[query:query|Query]] - a SQL query (ie a derived table)
+  * [[fkey:start|Foreign Key]] - relations between tables
+  * [[query:start|Query]] - a SQL query (ie a derived table)
   * [[csv:csv|Csv]] - a CSV table
   * [[excel:excel|Excel]] - a Excel table
 

@@ -2,7 +2,7 @@
 
 
 ===== About =====
-''fkey list'' is an operation of the [[fkey|foreign key]] module that list the foreign keys.
+''fkey list'' is an operation of the [[start|foreign key]] module that list the foreign keys.
 
 
 ===== Syntax =====

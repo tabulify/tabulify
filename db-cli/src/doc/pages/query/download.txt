@@ -2,7 +2,7 @@
 
 
 ===== About =====
-The ''download'' action of the [[query|query]] module permits to download the data on your local file system
+The ''download'' action of the [[start|query]] module permits to download the data on your local file system
 
 ===== Syntax =====
 

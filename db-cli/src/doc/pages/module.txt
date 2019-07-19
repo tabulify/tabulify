@@ -21,9 +21,9 @@ db module ...
   * [[table:table|table]] - operations on one or more table
   * [[schema:start|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
-  * [[query:query|query]] - operations on one or more queries
+  * [[query:start|query]] - operations on one or more queries
   * [[sample:schema|sample]] - operations on sample schema (database)
-  * [[fkey:fkey|fkey]] - operations on foreign keys (ie relationship between tables)
+  * [[fkey:start|fkey]] - operations on foreign keys (ie relationship between tables)
 
 
 To get the list of modules for your [[db|db]] version from the console, you would call the [[help|help]] on the [[db|db]] cli.
@@ -97,6 +97,6 @@ You can also get help on this site directly via this links:
   * [[table:table|table]] - operations on one or more table
   * [[schema:start|schema]] - operations on one or more schema
   * [[database|database]] - operations on a database
-  * [[query:query|query]] - operations on one or more queries
+  * [[query:start|query]] - operations on one or more queries
   * [[sample:schema|sample]] - operations on sample schema (database)
-  * [[fkey:fkey|fkey]] - operations on foreign keys (ie relationship between tables)
+  * [[fkey:start|fkey]] - operations on foreign keys (ie relationship between tables)

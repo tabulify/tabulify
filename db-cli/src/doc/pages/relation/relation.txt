@@ -4,10 +4,10 @@
 ===== About =====
 [[:db|Bytle db]] supports the management of [[wp>Relation_(database)|relational data structure]] with the help of the following [[:module|modules]]:
   * [[database:start]] - to add/create/update database connections parameters
-  * [[query:query]] - to perform operation on a SQL relational query
+  * [[query:start]] - to perform operation on a SQL relational query
   * [[table:start]] - to perform operation on a relational table
   * [[schema:start]] - to perform operation on a relational schema
-  * [[fkey:fkey]] - to manage foreign keys (ie relation between tables)
+  * [[fkey:start]] - to manage foreign keys (ie relation between tables)
 
 
 ===== Bonus =====

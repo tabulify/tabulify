@@ -55,9 +55,12 @@ db table load TABLE_NAME.csv
 </unit>
 
 [[db|db]] is a command line client that is made of the following [[module|module]]:
-  * [[table:table]]
+  * [[database:start]]
+  * [[table:start]]
   * [[schema:start]]
-  * [[query]]
+  * [[query:start]]
+  * [[sample:start]]
+  * [[fkey:start]]
 
 For each ''sub-command'', you may specify optional [[option|options]] that change the default behavior. 
 
@@ -82,7 +85,7 @@ Table Name   Rows Count
 </console>
 </unit>
 where:
-  * ''db'' is the [[client|db]]
+  * ''db'' is the [[db|db command line]]
   * ''table'' is a [[module|module]] (ie the [[table:start|table module]]
   * ''list'' is a action
   * ''@sqlite/*'' is a [[table:table#uri|table uri]] that defines:

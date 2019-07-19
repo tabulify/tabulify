@@ -2,7 +2,7 @@
 
 
 ===== About =====
-The ''query execute'' permits to execute a [[query|query]].
+The ''query execute'' permits to execute a [[start|query]].
 
 
 ===== Articles Related =====
