@@ -22,10 +22,10 @@ Syntax:
 where:
 
 	Command (is one of):
-		* execute                       execute a query
-		* download                      download a query into a file
-		* transfer                      transfer the query from one database to another
-		* diff                          diff of two query results
+		* execute                    execute a query
+		* download                   download a query into a file
+		* transfer                   transfer the query from one database to another
+		* diff                       diff of two query results
 </console>
 </unit>
 where:

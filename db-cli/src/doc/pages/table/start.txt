@@ -31,15 +31,16 @@ Syntax:
 where:
 
 	Command (is one of):
-		* load                          load data into a table from a file
-		* download                      download a table into a file
-		* transfer                      transfer a table from a database to another
-		* fill                          fill a table with generated data
-		* list                          list tables
-		* drop                          drop table(s)
-		* count                         count the number of tables
-		* describe                      show the table structures
-		* show                          show the data of the table
+		* load                       load data into a table from a file
+		* download                   download a table into a file
+		* transfer                   transfer a table from a database to another
+		* fill                       fill a table with generated data
+		* list                       list tables
+		* drop                       drop table(s)
+		* truncate                   truncate table(s)
+		* count                      count the number of tables
+		* describe                   show the table structures
+		* show                       show the data of the table
 </console>
 </unit>
 

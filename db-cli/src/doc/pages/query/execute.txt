@@ -14,6 +14,9 @@ The ''query execute'' permits to execute a [[query|query]].
 db query --help
 </code>
 <console>
+07:57:12 - INFO - (conf) word was not found
+07:57:12 - INFO - (help) word was found with the value: true
+
 operations on a query
 
 Syntax:
@@ -23,10 +26,10 @@ Syntax:
 where:
 
 	Command (is one of):
-		* execute                       execute a query
-		* download                      download a query into a file
-		* transfer                      transfer the query from one database to another
-		* diff                          diff of two query results
+		* execute                    execute a query
+		* download                   download a query into a file
+		* transfer                   transfer the query from one database to another
+		* diff                       diff of two query results
 </console>
 </unit>
 
@@ -62,16 +65,16 @@ with year_total as (
   * Creating the schema, truncating, filling it with data 
 <unit>
 <code dos>
-db sample create tpcds-dwh --ifNotExist
+db sample --no-strict create tpcds-dwh @sqlite
 ::db sample truncate tpcds-dwh
-db sample fill tpcds-dwh
+db sample fill tpcds-dwh @sqlite
 </code>
 </unit>
   * Executing the query will show us this customers.
 <unit envBYTLE_DB_HOME=..\db-tpc\src\main>
 
 <code dos db_query_execute.cmd>
-db query execute %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
+db query execute @sqlite %BYTLE_DB_HOME%\sql\tpcds\query\sqlite\query_11.sql
 </code> 
 <console>
 customer_id        customer_first_name   customer_last_name   customer_email_address                   

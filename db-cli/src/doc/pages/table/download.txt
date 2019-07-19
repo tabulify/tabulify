@@ -25,17 +25,18 @@ Syntax:
 where:
 
 	Local
-		* -o,--output <path>            defines the directory of the downloaded file (Default: currentWorkingDirectory)
+		* -o,--output <path>         defines the directory of the downloaded file (Default: currentWorkingDirectory)
+		* --sd <value>               defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
 
 	Local
-		* --cif <value>                 If present, the values of clob columns will be written in a apart file
+		* --cif <value>              If present, the values of clob columns will be written in a apart file
 
 	Args:
-		* TableName                     No Description available
+		* TableName                  No Description available
 
 
 Example:
-download --db.target.url  jdbc:oracle:thin:scott/tiger@myhost:1521:mysid -tdf downloaded.csv toDownload.sql
+download-tdf downloaded.csv toDownload.sql
 </console>
 </unit>
 

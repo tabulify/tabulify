@@ -16,23 +16,20 @@ If you want to load data from a [[..:database:|database]] to another, see the [[
 db table load --help
 </code>
 <console>
-10:03:00 - INFO - (conf) word was not found
-10:03:00 - INFO - (help) word was found with the value: true
-
 Load a local file into a database.
 
 Syntax:
 
-	db table load [options|flags] <sourceFile> <targetDataUri>
+	db table load [options|flags] <sourceFile> <targetTableDataUri>
 
 where:
 
 	Local
-		* --store <value>               The path where the database information are stored
+		* --store <value>            The path where the database information are stored
 
 	Args:
-		* sourceFile                    A local path to a CSV file
-		* targetDataUri                 A table data Uri (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.
+		* sourceFile                 A local path to a CSV file
+		* targetTableDataUri         A table data Uri (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.
 </console>
 </unit>
 where:
@@ -59,47 +56,15 @@ Id,Last Name,First Name,Birth Date,Wikipedia Page
 db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite 
 </code>
 <console>
-15:02:24 - INFO - Opening the database store (C:\Users\BytleDb\AppData\Local\db\databases.ini)
-15:02:24 - INFO - The table name was not defined. The table name (characters) was taken from the input file (characters.csv).
-15:02:24 - INFO - Driver org.sqlite.JDBC loaded
-15:02:24 - INFO - Trying to connect to the connection (jdbc:sqlite:///C:/Users/BytleDb/AppData/Local/db/db.db)
-15:02:24 - INFO - Connected !
-15:02:24 - INFO - The schema name was not defined. The database default schema was taken (sqlite.null)
-15:02:24 - INFO - bs parameter NOT found. Using default : 20000
-15:02:24 - INFO - Loading Table characters
-2019-07-16 15:02:24, 0 Commits, Producer: Thread-1
-2019-07-16 15:02:24, 0 Records, Producer: Thread-1
-2019-07-16 15:02:24, 0 Commits, Consumer: pool-1-thread-1
-2019-07-16 15:02:24, 0 Records, Consumer: pool-1-thread-1
-2019-07-16 15:02:24, Buffer Size, 0
-2019-07-16 15:02:24, Buffer MaxSize, 20000
-2019-07-16 15:02:24, Buffer Ratio, 0.0
-2019-07-16 15:02:24, 0 Commits, Producer: Thread-1
-2019-07-16 15:02:24, 0 Records, Producer: Thread-1
-2019-07-16 15:02:24, 0 Commits, Consumer: pool-1-thread-1
-2019-07-16 15:02:24, 0 Records, Consumer: pool-1-thread-1
-15:02:24 - INFO - Table "characters" created in the schema (sqlite.null)
-15:02:24 - INFO - The driver is supporting batch update. 
-15:02:24 - INFO - The driver is supporting named parameters.
-15:02:24 - INFO - Insert Statement:INSERT INTO "characters" ("Id", "Last Name", "First Name", "Birth Date", "Wikipedia Page") VALUES (?, ?, ?, ?, ?)
-15:02:24 - INFO - commit in the table "characters"
-15:02:24 - INFO - 2 rows loaded (Total) in the table "characters"
-15:02:24 - INFO - 1 commit(s) (Total) in the table "characters"
-15:02:24 - INFO - 1 batches(s) (Total) in the table "characters"
-2019-07-16 15:02:29, 0 Commits, Producer: Thread-1
-2019-07-16 15:02:29, 0 Records, Producer: Thread-1
-2019-07-16 15:02:29, 1 Commits, Consumer: pool-1-thread-1
-2019-07-16 15:02:29, 2 Records, Consumer: pool-1-thread-1
-2019-07-16 15:02:29, Buffer Size, 0
-2019-07-16 15:02:29, Buffer MaxSize, 20000
-2019-07-16 15:02:29, Buffer Ratio, 0.0
-2019-07-16 15:02:29, 0 Commits, Producer: Thread-1
-2019-07-16 15:02:29, 0 Records, Producer: Thread-1
-2019-07-16 15:02:29, 1 Commits, Consumer: pool-1-thread-1
-2019-07-16 15:02:29, 2 Records, Consumer: pool-1-thread-1
-15:02:29 - INFO - Response Time for the load of the table (characters) with (1) target workers: 0:0:5.35 (hour:minutes:seconds:milli)
-15:02:29 - INFO -        Ie (5035) milliseconds
-15:02:29 - INFO - Success ! No errors were seen.
+Exception in thread "pool-1-thread-1" java.lang.NullPointerException
+	at net.bytle.db.engine.Relations.addColumns(Relations.java:23)
+	at net.bytle.db.stream.SqlInsertStream.init(SqlInsertStream.java:134)
+	at net.bytle.db.stream.SqlInsertStream.<init>(SqlInsertStream.java:34)
+	at net.bytle.db.stream.SqlInsertStream.get(SqlInsertStream.java:38)
+	at net.bytle.db.loader.ResultSetLoaderConsumer.run(ResultSetLoaderConsumer.java:53)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
 </console>
 </unit>
 
@@ -109,13 +74,7 @@ db table load %BYTLE_DB_HOME%\doc\files\characters.csv @sqlite
 db table describe @sqlite/characters
 </code>
 <console>
-#   Colum Name       Data Type   Key   Not Null   Default   Auto Increment   Description   
--   --------------   ---------   ---   --------   -------   --------------   -----------   
-1   Id               VARCHAR                                                               
-2   Last Name        VARCHAR                                                               
-3   First Name       VARCHAR                                                               
-4   Birth Date       VARCHAR                                                               
-5   Wikipedia Page   VARCHAR
+No tables found
 </console>
 </unit>
 
@@ -125,9 +84,6 @@ db table describe @sqlite/characters
 db table show @sqlite/characters
 </code>
 <console>
-Id   Last Name        First Name   Birth Date   Wikipedia Page                                        
---   --------------   ----------   ----------   ---------------------------------------------------   
-1    Schwarzenegger   Arnold       1947-07-30   https://en.wikipedia.org/wiki/Arnold_Schwarzenegger   
-2    Norman           Don          1935-12-25   https://en.wikipedia.org/wiki/Don_Norman
+No tables found in the database (sqlite).
 </console>
 </unit>

@@ -12,9 +12,6 @@
 db sample create --help 
 </code>
 <console>
-11:06:19 - INFO - (conf) word was not found
-11:06:19 - INFO - (help) word was found with the value: true
-
 Create sample database schema.
 
 Syntax:

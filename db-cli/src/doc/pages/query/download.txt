@@ -20,13 +20,14 @@ Syntax:
 where:
 
 	Local
-		* -o,--output <path>            defines the path of the output path (Ex: output/query.csv)
+		* -o,--output <path>         defines the path of the output path (Ex: output/query.csv)
+		* --sd <value>               defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)
 
 	Local
-		* -c,--clob <value>             If present, the values of clob columns will be written in a apart file
+		* -c,--clob <value>          If present, the values of clob columns will be written in a apart file
 
 	Args:
-		* (Query|File.sql)              No Description available
+		* (Query|File.sql)           No Description available
 
 
 Example:

@@ -104,7 +104,13 @@ public class TpcdsDgenTable {
                 throw new RuntimeException(e);
 
             } finally {
-                // Close
+                // We flush first because the closing will set autocommit to true
+
+                parentInsertStream.flush();
+                if (childInsertStream != null) {
+                    childInsertStream.flush();
+                }
+
                 parentInsertStream.close();
                 if (childInsertStream != null) {
                     childInsertStream.close();

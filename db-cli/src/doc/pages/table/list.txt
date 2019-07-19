@@ -9,9 +9,6 @@
 db table list --help
 </code>
 <console>
-15:10:26 - INFO - (conf) word was not found
-15:10:26 - INFO - (help) word was found with the value: true
-
 Print a list of tables.
 
 Syntax:
@@ -22,6 +19,9 @@ where:
 
 	Local
 		* --store <value>            The path where the database information are stored
+
+	Local
+		* -c,--no-count              suppress the column showing the table count
 
 	Args:
 		* TableUri...                One or more name table uri (ie @database[/schema]/table)

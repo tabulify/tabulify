@@ -22,8 +22,8 @@ Syntax:
 where:
 
 	Command (is one of):
-		* fill                          fill a schema with generated data
-		* list                          list schemas
+		* fill                       fill a schema with generated data
+		* list                       list schemas
 </console>
 </unit>
 where the submodule are:
