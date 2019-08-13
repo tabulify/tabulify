@@ -10,7 +10,7 @@ public abstract class InsertStreamAbs implements InsertStream {
     protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);
 
     protected String name = Thread.currentThread().getName();
-    protected Integer feedbackFrequency;
+    protected Integer feedbackFrequency = 10000;
     protected Integer batchSize = 10000;
     protected Integer commitFrequency = 100;
     protected TableDef tableDef;

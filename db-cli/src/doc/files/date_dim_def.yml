@@ -1,4 +1,4 @@
-Rows: 10
+Rows: 10000
 Columns:
   d_date_sk:
     Generator: sequence

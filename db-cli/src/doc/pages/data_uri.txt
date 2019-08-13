@@ -2,7 +2,7 @@
 
 
 ===== About =====
-A data URI is a the [[wp>Uniform%20resource%20identifier|URI]] that permits to locate one or more [[resource|data resources]].
+A data URI is a [[wp>Uniform%20resource%20identifier|URI]] that permits to locate one or more [[resource|data resources]].
 
 
 
@@ -36,7 +36,7 @@ where:
 </code>
 
 ==== Globbing ====
-The data URI may also use a [[wp>Glob_(programming)|glob pattern]] to locate multiple data structure at once.
+The data URI may also use a [[wp>Glob_(programming)|glob pattern]] to locate multiple [[resource|data resources]] at once.
 
 Example:
   * for a relational database

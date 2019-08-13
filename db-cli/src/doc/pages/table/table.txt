@@ -14,6 +14,6 @@ A [[..:data_uri|data URI]] permits to locate one or more tables
 @database/table
 </code>
 where:
-  * ''database'' is a [[database:database#name|database name]] (or a [[wp>Glob_(programming)|glob pattern]])
-  * ''schema'' is a [[schema:start#name|relational schema name]] (or a [[wp>Glob_(programming)|glob pattern]]). If not present, it will default to the ''database connection schema''
-  * ''table'' is a ''table name'' (or a [[wp>Glob_(programming)|glob pattern]])
+  * ''database'' is a [[database:database#name|database name]] (or a [[..:data_uri#globbing|glob pattern]])
+  * ''schema'' is a [[schema:start#name|relational schema name]] (or a [[..:data_uri#globbing|glob pattern]]). If not present, it will default to the ''database connection schema''
+  * ''table'' is a ''table name'' (or a [[..:data_uri#globbing|glob pattern]])
