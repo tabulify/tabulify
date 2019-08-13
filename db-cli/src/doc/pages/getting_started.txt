@@ -523,7 +523,7 @@ web_site                             2
 
 ===== Listing the tables again =====
 
-You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the ''db sample fill'' command.</wrap>
+You could list information on the table with the ''list'' command. <wrap info>Note that the output must be the same than the [[#filling_the_schema_with_data|previous ''db sample fill'' command]]</wrap>
 <unit>
 <code dos>
 db table list @sqlite/*
@@ -560,6 +560,9 @@ web_site                          2
 </unit>
 
 ===== Listing the relations between tables (ie foreign key) =====
+The [[fkey:start|foreign key module]] manages the relation between tables (ie a foreign key is a relation between two [[table:table|table]].)
+
+Its [[fkey:list|list action]] permits to get a list of this [[fkey:fkey|foreign key]].
 
 <unit>
 <code dos>

@@ -140,7 +140,7 @@ public class SchemaDef {
             foreignKeys.addAll(tableDef.getForeignKeys());
             foreignKeys.addAll(tableDef.getExternalForeignKeys());
         }
-        return foreignKeys.stream().collect(Collectors.toList());
+        return new ArrayList<>(foreignKeys);
     }
 
     public List<ForeignKeyDef> getForeignKeys() {

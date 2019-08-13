@@ -33,15 +33,12 @@ public class DbTableList {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Print a list of tables.";
-
-
-        // Create the parser
         cliCommand
-                .setDescription(description);
+                .setDescription("Print a list of tables.");
+
         cliCommand.argOf(TABLE_URIS)
                 .setDescription("One or more name table uri (ie @database[/schema]/table)")
-                .setMandatory(false);
+                .setMandatory(true);
 
         cliCommand.optionOf(STORAGE_PATH);
 
