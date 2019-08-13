@@ -3,6 +3,11 @@
 ===== About =====
 ''fkey'' is a [[:module|module]] that let you perform operation on [[fkey|foreign key]] (ie to see the relation between tables)
 
+<WRAP round important>
+The action are more on relationship than on foreign key.
+
+Ie when you list the foreign key for a primary table, you get also the foreign key towards its primary key
+</WRAP>
 
 ===== Syntax =====
 <unit name="Syntax">
@@ -24,5 +29,5 @@ where:
 </console>
 </unit>
 where:
-  * [[list]]
-  * [[count]]
+  * [[list|list]]
+  * [[count|count]]

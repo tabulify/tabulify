@@ -86,9 +86,9 @@ public class DbForeignKeyList {
             // Creating a table to use the print function
             TableDef foreignKeysInfo = Tables.get("foreignKeys")
                     .addColumn("Id", Types.INTEGER)
-                    .addColumn("Child Table")
+                    .addColumn("Child/Foreign Table")
                     .addColumn("<-")
-                    .addColumn("Parent Table")
+                    .addColumn("Parent/Primary Table")
                     .addColumn("From Foreign Key");
 
             Boolean showColumns = cliParser.getBoolean(SHOW_COLUMN);

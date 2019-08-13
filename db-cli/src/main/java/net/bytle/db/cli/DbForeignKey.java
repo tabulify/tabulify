@@ -8,6 +8,9 @@ import static net.bytle.db.cli.Words.COUNT;
 import static net.bytle.db.cli.Words.NO_COUNT;
 import static net.bytle.db.cli.Words.LIST_COMMAND;
 
+/**
+ * TODO: rename to link because we are showing the foreign keys to or from a table
+ */
 public class DbForeignKey {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
