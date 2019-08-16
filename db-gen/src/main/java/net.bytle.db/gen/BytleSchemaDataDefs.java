@@ -1,5 +1,8 @@
 package net.bytle.db.gen;
 
+import net.bytle.db.model.DataDef;
+import net.bytle.db.model.DataDefs;
+
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;

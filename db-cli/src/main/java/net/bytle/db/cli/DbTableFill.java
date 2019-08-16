@@ -6,8 +6,8 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.gen.DataDef;
-import net.bytle.db.gen.DataDefs;
+import net.bytle.db.model.DataDef;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.model.SchemaDef;
@@ -96,17 +96,17 @@ public class DbTableFill {
             DataDef dataDef;
             if (dataDefs.size() == 1) {
                 dataDef = dataDefs.get(0);
-                if (dataDef.getTable() == null) {
-                    dataDef.setTable(tableDataUri.getTableName());
+                if (dataDef.getName() == null) {
+                    dataDef.setName(tableDataUri.getTableName());
                 }
-                if (!(dataDef.getTable().equals(tableDataUri.getTableName()))) {
-                    LOGGER.severe("The table in the data definition file (" + dataDef.getTable() + ") is not the same than the table in the table Uri (" + tableDataUri.getTableName() + ").");
+                if (!(dataDef.getName().equals(tableDataUri.getTableName()))) {
+                    LOGGER.severe("The table in the data definition file (" + dataDef.getName() + ") is not the same than the table in the table Uri (" + tableDataUri.getTableName() + ").");
                     System.exit(1);
                 }
             } else {
                 List<DataDef> tableDataDefs = dataDefs.stream()
-                        .filter(d -> d.getTable() != null)
-                        .filter(d -> d.getTable().equals(tableDataUri.getTableName()))
+                        .filter(d -> d.getName() != null)
+                        .filter(d -> d.getName().equals(tableDataUri.getTableName()))
                         .collect(Collectors.toList());
                 if (tableDataDefs.size() != 1) {
                     LOGGER.severe("There is more than 1 table data definition in the data definition file (" + dataDefPath + ") and there is " + tableDataDefs.size() + " that corresponds to the table to load in the table uri (" + tableDataUri + ")");

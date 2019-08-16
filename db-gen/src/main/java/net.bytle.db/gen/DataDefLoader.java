@@ -2,8 +2,10 @@ package net.bytle.db.gen;
 
 
 import net.bytle.cli.Log;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.model.DataDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -31,7 +33,7 @@ public class DataDefLoader {
     // A cache to know which tables was loaded
     private List<TableDef> loadedTables = new ArrayList<>();
 
-    private static final Log LOGGER = Gen.GEN_LOG;
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
     /**
      *
@@ -84,9 +86,9 @@ public class DataDefLoader {
         List<TableDef> tableDefs = new ArrayList<>();
         for (DataDef dataDef:dataDefs) {
 
-            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getTable(), schemaDef.getName());
+            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getName(), schemaDef.getName());
             dataDefMap.put(fullyQualifiedName, dataDef);
-            tableDefs.add(schemaDef.getTableOf(dataDef.getTable()));
+            tableDefs.add(schemaDef.getTableOf(dataDef.getName()));
 
         }
 
