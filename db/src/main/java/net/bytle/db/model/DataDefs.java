@@ -44,7 +44,9 @@ public class DataDefs {
                 for (int i = 0; i < documents.size(); i++) {
 
                     Map<String, Object> document = documents.get(i);
-                    Object o = getCaseInsensitiveKey(document,"name");
+
+                    // Create the dataDef
+                    Object o = getCaseInsensitiveKey(document, "name");
                     String name;
                     if (o == null) {
                         name = path.getFileName().toString();
@@ -53,20 +55,34 @@ public class DataDefs {
                     }
                     DataDef dataDef = DataDefs.get(name);
                     dataDefs.add(dataDef);
-                    o = getCaseInsensitiveKey(document,"columns");
-                    if (o != null) {
-                        try {
-                            Map<String, Object> columns = (Map<String, Object>) o;
-                        } catch (ClassCastException e){
-                            String message = "The columns of the data def ("+name+") must be in a map format. ";
-                            if (o.getClass().equals(java.util.ArrayList.class)){
-                                message += "They are in a list format. You should suppress the minus if they are present.";
-                            }
-                            message += "Bad Columns Values are: "+ o;
-                            throw new RuntimeException(message,e);
+
+                    // Loop through all other properties
+                    for (Map.Entry<String, Object> entry : document.entrySet()) {
+
+                        switch (entry.getKey().toLowerCase()) {
+                            case "name":
+                                continue;
+                            case "columns":
+                                Map<String, Object> columns;
+                                try {
+                                    columns = (Map<String, Object>) entry.getValue();
+                                } catch (ClassCastException e) {
+                                    String message = "The columns of the data def (" + name + ") must be in a map format. ";
+                                    if (o.getClass().equals(java.util.ArrayList.class)) {
+                                        message += "They are in a list format. You should suppress the minus if they are present.";
+                                    }
+                                    message += "Bad Columns Values are: " + o;
+                                    throw new RuntimeException(message, e);
+                                }
+                                for (Map.Entry<String, Object> column : columns.entrySet()) {
+                                    dataDef.getColumnOf(column.getKey());
+                                }
+                                break;
+                            default:
+                                dataDef.addProperty(entry.getKey().toLowerCase(),entry.getValue());
+                                break;
                         }
                     }
-
                 }
                 break;
         }
@@ -76,9 +92,9 @@ public class DataDefs {
 
     private static Object getCaseInsensitiveKey(Map<String, Object> maps, String insensitiveKey) {
         String sensitiveKeyInMap = null;
-        for (String key:maps.keySet()){
-            if (key.toLowerCase().equals(insensitiveKey.toLowerCase())){
-                sensitiveKeyInMap=key;
+        for (String key : maps.keySet()) {
+            if (key.toLowerCase().equals(insensitiveKey.toLowerCase())) {
+                sensitiveKeyInMap = key;
                 break;
             }
         }

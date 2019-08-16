@@ -53,6 +53,8 @@ public class ColumnDef implements Comparable<ColumnDef> {
     private Class clazz;
 
 
+
+
     public String getIsGeneratedColumn() {
         return isGeneratedColumn;
     }

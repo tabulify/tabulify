@@ -290,7 +290,9 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
     @Override
     public ColumnDef getColumnOf(String columnName) {
+
         return meta.getColumnOf(columnName);
+
     }
 
 

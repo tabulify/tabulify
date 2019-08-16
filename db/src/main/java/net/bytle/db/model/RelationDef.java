@@ -12,7 +12,6 @@ public interface RelationDef {
     int RELATION_TYPE_SQL = 0;
     int RELATION_TYPE_FILE = 1;
 
-
     Database getDatabase();
 
     SchemaDef getSchema();
@@ -38,7 +37,6 @@ public interface RelationDef {
     ColumnDef getColumnDef(String columnName);
 
     ColumnDef getColumnDef(Integer columnIndex);
-
 
     ColumnDef getColumnOf(String columnName);
 
