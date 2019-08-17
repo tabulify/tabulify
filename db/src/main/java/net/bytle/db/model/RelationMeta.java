@@ -1,6 +1,7 @@
 package net.bytle.db.model;
 
 import java.sql.DatabaseMetaData;
+import java.sql.Types;
 import java.util.*;
 
 public class RelationMeta {
@@ -60,15 +61,13 @@ public class RelationMeta {
 
 
     public RelationMeta addColumn(String columnName) {
-        getColumnOf(columnName);
+        addColumn(columnName, null,null,null,null,null);
         return this;
     }
 
     public RelationMeta addColumn(String columnName, int typeCode) {
 
-        getColumnOf(columnName)
-                .typeCode(typeCode);
-
+        addColumn(columnName, typeCode,null,null,null,null);
         return this;
 
     }
@@ -76,54 +75,28 @@ public class RelationMeta {
 
     public RelationMeta addColumn(String columnName, int typeCode, int precision) {
 
-        getColumnOf(columnName)
-                .typeCode(typeCode)
-                .precision(precision);
-
+        addColumn(columnName, typeCode,precision,null,null,null);
         return this;
 
     }
 
     public RelationMeta addColumn(String columnName, int typeCode, int precision, int scale) {
 
-        getColumnOf(columnName)
-                .typeCode(typeCode)
-                .precision(precision)
-                .scale(scale);
-
+        addColumn(columnName, typeCode,precision,scale,null,null);
         return this;
 
     }
 
     public RelationMeta addColumn(String columnName, int typeCode, boolean nullable) {
 
-        int columnNullable;
-        if (nullable) {
-            columnNullable = DatabaseMetaData.columnNullable;
-        } else {
-            columnNullable = DatabaseMetaData.columnNoNulls;
-        }
-        getColumnOf(columnName)
-                .typeCode(typeCode)
-                .setNullable(columnNullable);
-
+        addColumn(columnName, typeCode,null,null,nullable,null);
         return this;
 
     }
 
     public RelationMeta addColumn(String columnName, int typeCode, int precision, boolean nullable) {
 
-        int columnNullable;
-        if (nullable) {
-            columnNullable = DatabaseMetaData.columnNullable;
-        } else {
-            columnNullable = DatabaseMetaData.columnNoNulls;
-        }
-        getColumnOf(columnName)
-                .typeCode(typeCode)
-                .setNullable(columnNullable)
-                .precision(precision);
-
+        addColumn(columnName, typeCode,precision,null,nullable,null);
         return this;
 
     }
@@ -153,5 +126,21 @@ public class RelationMeta {
     @Override
     public String toString() {
         return relationDef.getFullyQualifiedName();
+    }
+
+    public RelationMeta addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
+        int columnNullable;
+        if (nullable) {
+            columnNullable = DatabaseMetaData.columnNullable;
+        } else {
+            columnNullable = DatabaseMetaData.columnNoNulls;
+        }
+        getColumnOf(columnName)
+                .typeCode(type)
+                .precision(precision)
+                .scale(scale)
+                .setNullable(columnNullable)
+                .comment(comment);
+        return this;
     }
 }

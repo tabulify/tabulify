@@ -127,4 +127,9 @@ public class DataDef implements RelationDef {
     public Object addProperty(String key, Object value) {
         return properties.put(key,value);
     }
+
+    public DataDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
+        meta.addColumn(columnName, type, precision, scale, nullable, comment);
+        return this;
+    }
 }

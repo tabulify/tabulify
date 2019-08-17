@@ -1,8 +1,8 @@
 package net.bytle.db.model;
 
 
+import net.bytle.db.engine.DataTypes;
 import org.yaml.snakeyaml.Yaml;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,9 +33,19 @@ public class DataDefs {
         // Every document is one dataDef
         List<Map<String, Object>> documents = new ArrayList<>();
         for (Object data : yaml.loadAll(input)) {
-            documents.add((Map<String, Object>) data);
+            Map<String, Object> document;
+            try {
+                document = (Map<String, Object>) data;
+            } catch (ClassCastException e) {
+                String message = "A data Def must be in a map format. ";
+                if (data.getClass().equals(java.util.ArrayList.class)) {
+                    message += "They are in a list format. You should suppress the minus if they are present.";
+                }
+                message += "The Bad Data Def Values are: " + data;
+                throw new RuntimeException(message, e);
+            }
+            documents.add(document);
         }
-
         List<DataDef> dataDefs = new ArrayList<>();
         switch (documents.size()) {
             case 0:
@@ -68,18 +78,52 @@ public class DataDefs {
                                     columns = (Map<String, Object>) entry.getValue();
                                 } catch (ClassCastException e) {
                                     String message = "The columns of the data def (" + name + ") must be in a map format. ";
-                                    if (o.getClass().equals(java.util.ArrayList.class)) {
+                                    if (entry.getValue().getClass().equals(java.util.ArrayList.class)) {
                                         message += "They are in a list format. You should suppress the minus if they are present.";
                                     }
                                     message += "Bad Columns Values are: " + o;
                                     throw new RuntimeException(message, e);
                                 }
                                 for (Map.Entry<String, Object> column : columns.entrySet()) {
-                                    dataDef.getColumnOf(column.getKey());
+
+                                    try {
+                                        Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
+                                        ColumnDef columnDef = dataDef.getColumnOf(column.getKey());
+                                        for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
+                                            switch (columnProperty.getKey().toLowerCase()) {
+                                                case "type":
+                                                    columnDef.typeCode(DataTypes.toInteger((String) columnProperty.getValue()));
+                                                    break;
+                                                case "precision":
+                                                    columnDef.precision((Integer) columnProperty.getValue());
+                                                    break;
+                                                case "scale":
+                                                    columnDef.scale((Integer) columnProperty.getValue());
+                                                    break;
+                                                case "comment":
+                                                    columnDef.comment((String) columnProperty.getValue());
+                                                    break;
+                                                case "nullable":
+                                                    columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
+                                                    break;
+                                                default:
+                                                    columnDef.addProperty(columnProperty.getKey(), columnProperty.getValue());
+                                                    break;
+                                            }
+                                        }
+
+                                    } catch (ClassCastException e) {
+                                        String message = "The columns of column (" + column.getKey() + ") from the data def (" + name + ") must be in a map format. ";
+                                        if (o.getClass().equals(java.util.ArrayList.class)) {
+                                            message += "They are in a list format. You should suppress the minus if they are present.";
+                                        }
+                                        message += "Bad Columns Properties Values are: " + o;
+                                        throw new RuntimeException(message, e);
+                                    }
                                 }
                                 break;
                             default:
-                                dataDef.addProperty(entry.getKey().toLowerCase(),entry.getValue());
+                                dataDef.addProperty(entry.getKey().toLowerCase(), entry.getValue());
                                 break;
                         }
                     }
@@ -103,7 +147,6 @@ public class DataDefs {
 
 
     private static DataDef get(String name) {
-
         return new DataDef(name);
     }
 

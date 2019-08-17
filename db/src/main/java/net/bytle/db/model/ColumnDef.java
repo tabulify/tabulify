@@ -7,6 +7,7 @@ import net.bytle.type.Strings;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,6 +22,8 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     public static final int DEFAULT_PRECISION = 50;
     private static Set<Integer> allowedNullableValues = new HashSet<>();
+
+    private HashMap<String,Object> properties = new HashMap<>();
 
     static {
         allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -51,8 +54,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     //
     private Class clazz;
-
-
+    private String comment;
 
 
     public String getIsGeneratedColumn() {
@@ -178,6 +180,14 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     }
 
+    public ColumnDef setNullable(Boolean nullable) {
+
+        assert nullable != null;
+        setNullable(nullable ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
+        return this;
+
+    }
+
     public String getFullyQualifiedName() {
         if (fullyQualifiedName == null) {
             fullyQualifiedName = relationDef.getFullyQualifiedName() + "." + columnName;
@@ -296,4 +306,16 @@ public class ColumnDef implements Comparable<ColumnDef> {
         return "";
     }
 
+    public ColumnDef comment(String comment) {
+        this.comment = comment;
+        return this;
+    }
+
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    public Object addProperty(String key, Object value) {
+        return properties.put(key,value);
+    }
 }

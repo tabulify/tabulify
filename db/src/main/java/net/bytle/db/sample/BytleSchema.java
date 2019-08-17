@@ -122,7 +122,7 @@ public class BytleSchema implements SchemaSample {
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
                 .addColumn(COLUMN_SALES_QTY, Types.DOUBLE)
-                .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE)
+                .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE, 50, 2)
                 .setPrimaryKey(COLUMN_FACT_ID)
                 .addForeignKey(timeTable.getPrimaryKey(), COLUMN_DATE_ID)
                 .addForeignKey(catTable.getPrimaryKey(), COLUMN_CATEGORY_ID)
