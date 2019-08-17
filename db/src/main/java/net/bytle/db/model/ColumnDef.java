@@ -1,6 +1,7 @@
 package net.bytle.db.model;
 
 import net.bytle.db.database.DataTypeJdbc;
+import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.type.Strings;
 
@@ -23,7 +24,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
     public static final int DEFAULT_PRECISION = 50;
     private static Set<Integer> allowedNullableValues = new HashSet<>();
 
-    private HashMap<String,Object> properties = new HashMap<>();
+    private HashMap<String, Object> properties = new HashMap<>();
 
     static {
         allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
@@ -95,7 +96,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
     // A datatype constructor
     private DataType getDataTypeOf(Integer typeCode, Class clazz) {
 
-        DataType dataType;
+        DataType dataType = null;
         DataTypeJdbc dataTypeJdbc;
 
         if (typeCode == null && clazz == null) {
@@ -116,7 +117,14 @@ public class ColumnDef implements Comparable<ColumnDef> {
         }
 
         // Trying to retrieve it from the cache
-        dataType = this.getRelationDef().getDatabase().getDataType(typeCode);
+        final Database database = this.getRelationDef().getDatabase();
+        if (database != null) {
+            dataType = database.getDataType(typeCode);
+        } else {
+            dataType = new DataType.DataTypeBuilder(typeCode)
+                    .JdbcDataType(DataTypesJdbc.of(typeCode))
+                    .build();
+        }
 
         // If the data type is not known
         if (dataType == null) {
@@ -267,7 +275,7 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     @Override
     public String toString() {
-        return columnName + " "+getDataType().getTypeName()+ '(' + precision +","+scale+") " + (nullable==DatabaseMetaData.columnNullable?"null" : "not null");
+        return columnName + " " + getDataType().getTypeName() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
     }
 
     @Override
@@ -316,6 +324,6 @@ public class ColumnDef implements Comparable<ColumnDef> {
     }
 
     public Object addProperty(String key, Object value) {
-        return properties.put(key,value);
+        return properties.put(key, value);
     }
 }
