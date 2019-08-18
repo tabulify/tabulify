@@ -130,11 +130,15 @@ public class RelationMeta {
 
     public RelationMeta addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
         int columnNullable;
-        if (nullable) {
+
+        if (nullable == null) {
+            columnNullable = DatabaseMetaData.columnNullableUnknown;
+        } else if (!nullable) {
             columnNullable = DatabaseMetaData.columnNullable;
         } else {
             columnNullable = DatabaseMetaData.columnNoNulls;
         }
+
         getColumnOf(columnName)
                 .typeCode(type)
                 .precision(precision)
