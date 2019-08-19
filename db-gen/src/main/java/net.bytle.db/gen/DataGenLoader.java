@@ -1,14 +1,13 @@
 package net.bytle.db.gen;
 
+import net.bytle.cli.Log;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.SqlInsertStream;
 import net.bytle.db.stream.Streams;
-import net.bytle.cli.Log;
 import net.bytle.type.Strings;
 
 import java.lang.reflect.Constructor;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,18 +18,19 @@ public class DataGenLoader {
 
     private static final Log LOGGER = Gen.GEN_LOG;
     private final TableDef tableDef;
-    private Map<String, Map<String, Object>> generatorDefinition = new HashMap<>();
+    private final DataGenDef dataGenDef;
+//    private Map<String, Map<String, Object>> generatorDefinition = new HashMap<>();
     private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
     private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
-    private Integer totalNumberOfRows = 100;
     private List<ColumnDef> primaryColumns = new ArrayList<>();
 
     // A structure to hold the data generator by column
     Map<ColumnDef, DataGenerator> dataGenerators = new HashMap<>();
 
-    private DataGenLoader(DataGenDef tableDef) {
+    private DataGenLoader(DataGenDef dataGenDef) {
 
-        this.tableDef = tableDef.getTableDef();
+        this.dataGenDef = dataGenDef;
+        this.tableDef = dataGenDef.getTableDef();
 
         // Self referencing foreign key check
         List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(this.tableDef);
@@ -83,15 +83,15 @@ public class DataGenLoader {
         LOGGER.info("The size of the table (" + tableDef.getFullyQualifiedName() + ") before insertion is : " + Tables.getSize(tableDef));
 
         // First pass to create the generator map
-        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+        for (DataGenDefColumnDef dataGenColumnDef : dataGenDef.getDataGenColumnDefs()) {
 
-            buildDataGeneratorForColumn(columnDef);
+            buildDataGeneratorForColumn(dataGenColumnDef);
 
         }
 
         // The number of row may be trimmed if the generator cannot generate them
         // or if there is already rows in the table
-        Double numberOfRowToInsert = getNumberOfRowToInsert(Double.valueOf(this.totalNumberOfRows));
+        Integer numberOfRowToInsert = getNumberOfRowToInsert(dataGenDef.getRows());
 
         if (numberOfRowToInsert > 0) {
             LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + tableDef.getFullyQualifiedName() + ")");
@@ -130,14 +130,14 @@ public class DataGenLoader {
      * @param rows
      * @return
      */
-    private Double getNumberOfRowToInsert(Double rows) {
+    private Integer getNumberOfRowToInsert(Integer rows) {
 
-        double numberOfRowToInsert = rows;
+        Integer numberOfRowToInsert = rows;
 
         // Precision of a sequence (Pk of unique col) make that we cannot insert the number of rows that we want
-        Double maxNumberOfRowToInsert = null;
+        Integer maxNumberOfRowToInsert = null;
         for (DataGenerator dataGenerator : dataGenerators.values()) {
-            final Double maxGeneratedValues = dataGenerator.getMaxGeneratedValues();
+            final Integer maxGeneratedValues = (dataGenerator.getMaxGeneratedValues()).intValue();
             if (maxNumberOfRowToInsert==null){
                 maxNumberOfRowToInsert=maxGeneratedValues;
             } else {
@@ -202,40 +202,32 @@ public class DataGenLoader {
      * This is also a function that can create several generator for several columns (for instance, if the column is part
      * of an unique key, one generator will be created with all columns at once).
      *
-     * @param columnDef
+     * @param dataGenColumnDef
      */
-    private void buildDataGeneratorForColumn(ColumnDef columnDef) {
+    private void buildDataGeneratorForColumn(DataGenDefColumnDef dataGenColumnDef) {
 
         // Because of the recursion, the generator has may be already be made
-        if (dataGenerators.get(columnDef) == null) {
+        if (dataGenerators.get(dataGenColumnDef) == null) {
 
-            // Property for the column made lowercase
-            Map<String, Object> inputProperties = this.generatorDefinition.get(columnDef.getColumnName());
-            Map<String, Object> propertiesWithLowercaseKey = new HashMap<>();
-            if (inputProperties != null) {
-                for (Map.Entry<String, Object> entry : inputProperties.entrySet()) {
-                    propertiesWithLowercaseKey.put(entry.getKey().toLowerCase(), entry.getValue());
-                }
-            }
-            String generator = (String) propertiesWithLowercaseKey.get("generator");
+            String generator = dataGenColumnDef.getGeneratorName();
             if (generator != null) {
                 try {
 
                     if (generator.equals("sequence") || generator.equals("unique")) {
 
-                        SequenceGenerator dataGenerator = new SequenceGenerator(columnDef);
+                        SequenceGenerator dataGenerator = new SequenceGenerator(dataGenColumnDef.getColumnDef());
 
-                        final Integer step = (Integer) propertiesWithLowercaseKey.get("step");
+                        final Integer step = (Integer) dataGenColumnDef.getProperty("step");
                         if (step != null) {
                             dataGenerator.step(step);
                         }
 
-                        final List<String> values = (List<String>) propertiesWithLowercaseKey.get("values");
+                        final List<String> values = (List<String>) dataGenColumnDef.getProperty("values");
                         if (values != null) {
                             dataGenerator.values(values);
                         }
 
-                        dataGenerators.put(columnDef, dataGenerator);
+                        dataGenerators.put(dataGenColumnDef.getColumnDef(), dataGenerator);
                         return;
 
 
@@ -250,42 +242,42 @@ public class DataGenLoader {
 
                         // Parent Generator
                         final String columnParentKeyProperty = "column_parent";
-                        String columnName = (String) propertiesWithLowercaseKey.get(columnParentKeyProperty);
+                        String columnName = (String) dataGenColumnDef.getProperty(columnParentKeyProperty);
                         if (columnName == null) {
-                            throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
+                            throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + dataGenColumnDef.getColumnDef().getFullyQualifiedName());
                         }
-                        ColumnDef columnParent = columnDef.getRelationDef().getColumnOf(columnName);
+                        ColumnDef columnParent = dataGenColumnDef.getColumnDef().getRelationDef().getColumnOf(columnName);
                         DataGenerator parentGenerator = dataGenerators.get(columnParent);
                         if (parentGenerator == null) {
-                            if (columnDef.equals(columnParent)) {
-                                throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
+                            if (dataGenColumnDef.getColumnDef().equals(columnParent)) {
+                                throw new RuntimeException("The column (" + dataGenColumnDef.getColumnDef().getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
                             }
-                            buildDataGeneratorForColumn(columnParent);
+                            buildDataGeneratorForColumn(DataGenDefColumnDef.get(columnParent));
                         }
                         parentGenerator = dataGenerators.get(columnParent);
 
                         // Formula
-                        String formula = (String) propertiesWithLowercaseKey.get("formula");
-                        Object[] constructorParamValue = {columnDef, parentGenerator, formula};
+                        String formula = (String) dataGenColumnDef.getProperty("formula");
+                        Object[] constructorParamValue = {dataGenColumnDef.getColumnDef(), parentGenerator, formula};
 
                         // New Instance
                         DataGenerator dataGenerator = (DataGenerator) constructor.newInstance(constructorParamValue);
-                        dataGenerators.put(columnDef, dataGenerator);
+                        dataGenerators.put(dataGenColumnDef.getColumnDef(), dataGenerator);
                         return;
 
 
                     } else if (generator.equals("random") || generator.equals("distribution") ) {
 
-                        final DistributionGenerator distributionGenerator = new DistributionGenerator(columnDef);
-                        dataGenerators.put(columnDef, distributionGenerator);
+                        final DistributionGenerator distributionGenerator = new DistributionGenerator(dataGenColumnDef.getColumnDef());
+                        dataGenerators.put(dataGenColumnDef.getColumnDef(), distributionGenerator);
 
-                        Map<Object,Integer> buckets = (Map<Object, Integer>) propertiesWithLowercaseKey.get("buckets");
+                        Map<Object,Integer> buckets = (Map<Object, Integer>) dataGenColumnDef.getProperty("buckets");
 
                         // DataType Check
                         if (buckets!=null) {
                             Object o = buckets.entrySet().iterator().next().getKey();
-                            if (o.getClass() != columnDef.getDataType().getClazz()) {
-                                throw new RuntimeException("The data type of the key with the the value (" + o + ") in the buckets definition of the column " + columnDef.getFullyQualifiedName() + " is not a " + columnDef.getDataType().getClazz().getSimpleName() + " but a " + o.getClass().getSimpleName() + ".");
+                            if (o.getClass() != dataGenColumnDef.getColumnDef().getDataType().getClazz()) {
+                                throw new RuntimeException("The data type of the key with the the value (" + o + ") in the buckets definition of the column " + dataGenColumnDef.getColumnDef().getFullyQualifiedName() + " is not a " + dataGenColumnDef.getColumnDef().getDataType().getClazz().getSimpleName() + " but a " + o.getClass().getSimpleName() + ".");
                             }
                             distributionGenerator.setBuckets(buckets);
                         }
@@ -294,13 +286,13 @@ public class DataGenLoader {
 
                     } else {
 
-                        throw new RuntimeException("The generator properties (" + generator + ") is unknown for the column (" + columnDef.getFullyQualifiedName() + ")");
+                        throw new RuntimeException("The generator properties (" + generator + ") is unknown for the column (" + dataGenColumnDef.getColumnDef().getFullyQualifiedName() + ")");
 
                     }
 
                 } catch (Exception e) {
 
-                    LOGGER.severe("Error for the column "+columnDef.getFullyQualifiedName());
+                    LOGGER.severe("Error for the column "+dataGenColumnDef.getColumnDef().getFullyQualifiedName());
                     throw new RuntimeException(e);
 
                 }
@@ -308,7 +300,7 @@ public class DataGenLoader {
             }
 
             // A data generator was not yet fund, we will find one with the column constraint
-            if (primaryColumns.contains(columnDef)) {
+            if (primaryColumns.contains(dataGenColumnDef.getColumnDef())) {
 
                 UniqueDataGenerator uniqueDataGenerator = new UniqueDataGenerator(primaryColumns);
                 for (ColumnDef pkColumns : primaryColumns) {
@@ -316,14 +308,14 @@ public class DataGenLoader {
                 }
                 return;
 
-            } else if (columnForeignKeyMap.keySet().contains(columnDef)) {
+            } else if (columnForeignKeyMap.keySet().contains(dataGenColumnDef.getColumnDef())) {
 
-                dataGenerators.put(columnDef, new FkDataGenerator(columnForeignKeyMap.get(columnDef)));
+                dataGenerators.put(dataGenColumnDef.getColumnDef(), new FkDataGenerator(columnForeignKeyMap.get(dataGenColumnDef.getColumnDef())));
                 return;
 
-            } else if (columnUniqueKeyMap.keySet().contains(columnDef)) {
+            } else if (columnUniqueKeyMap.keySet().contains(dataGenColumnDef.getColumnDef())) {
 
-                final List<ColumnDef> uniqueKeyColumns = columnUniqueKeyMap.get(columnDef).getColumns();
+                final List<ColumnDef> uniqueKeyColumns = columnUniqueKeyMap.get(dataGenColumnDef.getColumnDef()).getColumns();
                 UniqueDataGenerator uniqueDataGenerator = new UniqueDataGenerator(uniqueKeyColumns);
                 for (ColumnDef uniqueKeyColumn : uniqueKeyColumns) {
                     dataGenerators.put(uniqueKeyColumn, uniqueDataGenerator);
@@ -333,7 +325,7 @@ public class DataGenLoader {
             }
 
             // Else
-            dataGenerators.put(columnDef, new DistributionGenerator(columnDef));
+            dataGenerators.put(dataGenColumnDef.getColumnDef(), new DistributionGenerator(dataGenColumnDef.getColumnDef()));
 
         }
     }
@@ -342,11 +334,11 @@ public class DataGenLoader {
     /**
      * Return a dataGenLoader
      *
-     * @param tableDef
+     * @param dataGenDef
      * @return
      */
-    public static DataGenLoader get(DataGenDef tableDef) {
-        return new DataGenLoader(tableDef);
+    public static DataGenLoader get(DataGenDef dataGenDef) {
+        return new DataGenLoader(dataGenDef);
     }
 
 

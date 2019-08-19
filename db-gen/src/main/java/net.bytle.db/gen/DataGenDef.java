@@ -1,7 +1,11 @@
 package net.bytle.db.gen;
 
 import net.bytle.db.database.Database;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A data gen def is a wrapper around tableDef
@@ -39,5 +43,16 @@ public class DataGenDef {
 
     public TableDef getTableDef() {
         return this.tableDef;
+    }
+
+    public DataGenDefColumnDef getDataGenColumnDef(String columnName) {
+        return DataGenDefColumnDef.get(tableDef.getColumnDef(columnName));
+    }
+
+    public List<DataGenDefColumnDef> getDataGenColumnDefs() {
+        return tableDef.getColumnDefs()
+                .stream()
+                .map(s->DataGenDefColumnDef.get(s))
+                .collect(Collectors.toList());
     }
 }

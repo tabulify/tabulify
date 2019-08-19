@@ -301,4 +301,9 @@ public class SequenceGenerator<T> implements DataGenerator {
         }
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "SequenceGenerator";
+    }
 }
