@@ -17,9 +17,12 @@ public class DataGenLoader {
 
 
     private static final Log LOGGER = Gen.GEN_LOG;
+    /**
+     * Max records to insert if there is no total rows defined
+     */
+    private static final Integer MAX_INSERT = 10000;
     private final TableDef tableDef;
     private final DataGenDef dataGenDef;
-//    private Map<String, Map<String, Object>> generatorDefinition = new HashMap<>();
     private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
     private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
     private List<ColumnDef> primaryColumns = new ArrayList<>();
@@ -132,7 +135,6 @@ public class DataGenLoader {
      */
     private Integer getNumberOfRowToInsert(Integer rows) {
 
-        Integer numberOfRowToInsert = rows;
 
         // Precision of a sequence (Pk of unique col) make that we cannot insert the number of rows that we want
         Integer maxNumberOfRowToInsert = null;
@@ -147,9 +149,21 @@ public class DataGenLoader {
             }
         }
 
+        Integer numberOfRowToInsert = rows;
+        if (numberOfRowToInsert==null){
+            if (maxNumberOfRowToInsert<MAX_INSERT) {
+                numberOfRowToInsert = maxNumberOfRowToInsert;
+            } else {
+                final String msg = "For the table (" + tableDef.getFullyQualifiedName() + "), the total number of rows to insert is not defined and the max number of rows is " + maxNumberOfRowToInsert + " greater than the allowed max " + MAX_INSERT+". Set a number of rows to insert.";
+                LOGGER.severe(msg);
+                throw new RuntimeException(msg);
+            }
+        }
+
         if (maxNumberOfRowToInsert < numberOfRowToInsert) {
-            numberOfRowToInsert = maxNumberOfRowToInsert;
-            LOGGER.warning("For the table (" + tableDef.getFullyQualifiedName() + "), the max number of rows is " + maxNumberOfRowToInsert + " not " + rows);
+            final String msg = "For the table (" + tableDef.getFullyQualifiedName() + "), the max number of rows is " + maxNumberOfRowToInsert + " not " + rows;
+            LOGGER.severe(msg);
+            throw new RuntimeException(msg);
         }
 
         Integer numberOfRows = Tables.getSize(tableDef);
