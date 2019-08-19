@@ -241,7 +241,7 @@ public class DataGenLoader {
                         Constructor constructor = generatorClass.getConstructor(constructorClassType);
 
                         // Parent Generator
-                        final String columnParentKeyProperty = "column_parent";
+                        final String columnParentKeyProperty = "ColumnParent";
                         String columnName = (String) dataGenColumnDef.getProperty(columnParentKeyProperty);
                         if (columnName == null) {
                             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + dataGenColumnDef.getColumnDef().getFullyQualifiedName());

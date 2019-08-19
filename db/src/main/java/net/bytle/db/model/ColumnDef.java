@@ -10,6 +10,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -319,11 +320,34 @@ public class ColumnDef implements Comparable<ColumnDef> {
         return this;
     }
 
+    /**
+     *
+     * @param key - a key
+     * @return
+     */
     public Object getProperty(String key) {
-        return properties.get(key);
+        return properties.get(key.toLowerCase());
     }
 
-    public Object addProperty(String key, Object value) {
-        return properties.put(key, value);
+    /**
+     *
+     * @param key - a key is not case dependent
+     * @param value
+     * @return
+     */
+    public ColumnDef addProperty(String key, Object value) {
+        if (value instanceof Map){
+            // First map got its key lowercase
+            Map<String,Object> mapValues = (Map<String, Object>) value;
+            Map<String,Object> newMapValues = new HashMap<>();
+            for (Map.Entry<String, Object> entry :mapValues.entrySet()){
+                newMapValues.put(entry.getKey().toLowerCase(),entry.getValue());
+            }
+            properties.put(key.toLowerCase(), newMapValues);
+        } else {
+            properties.put(key.toLowerCase(), value);
+        }
+
+        return this;
     }
 }

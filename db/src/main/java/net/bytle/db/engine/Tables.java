@@ -670,5 +670,14 @@ public class Tables {
 
         }
     }
+
+    /**
+     *
+     * @param tableDef - A table Def
+     * @return
+     */
+    public static TableDef updateMeta(TableDef tableDef) {
+        return null;
+    }
 }
 

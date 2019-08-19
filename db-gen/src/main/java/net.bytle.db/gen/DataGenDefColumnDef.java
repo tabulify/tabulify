@@ -11,7 +11,7 @@ import java.util.Map;
 public class DataGenDefColumnDef {
 
 
-    public static final String GENERATOR_PROPERTY_KEY = "generator";
+    public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
     private final ColumnDef columnDef;
     final Map<String,Object> generatorProperties;
 
@@ -23,7 +23,7 @@ public class DataGenDefColumnDef {
             generatorProperties = generatorColumnProperties;
         } else {
             generatorProperties = new HashMap<>();
-            this.columnDef.addProperty("generator",generatorProperties);
+            this.columnDef.addProperty(GENERATOR_PROPERTY_KEY,generatorProperties);
         }
 
     }
@@ -42,8 +42,8 @@ public class DataGenDefColumnDef {
         return columnDef;
     }
 
-    public DataGenDefColumnDef put(String property, Object value) {
-        this.generatorProperties.put(property,value);
+    public DataGenDefColumnDef put(String key, Object value) {
+        this.generatorProperties.put(key.toLowerCase(),value);
         return this;
     }
 
@@ -52,6 +52,6 @@ public class DataGenDefColumnDef {
     }
 
     public Object getProperty(String key) {
-        return this.generatorProperties.get(key);
+        return this.generatorProperties.get(key.toLowerCase());
     }
 }
