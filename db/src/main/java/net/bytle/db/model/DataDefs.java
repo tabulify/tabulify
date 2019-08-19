@@ -2,6 +2,7 @@ package net.bytle.db.model;
 
 
 import net.bytle.db.engine.DataTypes;
+import net.bytle.db.engine.Tables;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.Map;
 public class DataDefs {
 
 
-    public static List<DataDef> load(Path path) {
+    public static List<TableDef> load(Path path) {
 
         InputStream input;
         try {
@@ -46,7 +47,7 @@ public class DataDefs {
             }
             documents.add(document);
         }
-        List<DataDef> dataDefs = new ArrayList<>();
+        List<TableDef> tableDefs = new ArrayList<>();
         switch (documents.size()) {
             case 0:
                 break;
@@ -63,8 +64,8 @@ public class DataDefs {
                     } else {
                         name = (String) o;
                     }
-                    DataDef dataDef = DataDefs.get(name);
-                    dataDefs.add(dataDef);
+                    TableDef dataDef = Tables.get(name);
+                    tableDefs.add(dataDef);
 
                     // Loop through all other properties
                     for (Map.Entry<String, Object> entry : document.entrySet()) {
@@ -130,7 +131,7 @@ public class DataDefs {
                 }
                 break;
         }
-        return dataDefs;
+        return tableDefs;
 
     }
 
@@ -145,10 +146,6 @@ public class DataDefs {
         return maps.get(sensitiveKeyInMap);
     }
 
-
-    private static DataDef get(String name) {
-        return new DataDef(name);
-    }
 
 
 }

@@ -5,7 +5,6 @@ import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.model.DataDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -28,10 +27,10 @@ public class DataDefLoader {
 
     // The data gen property by fully qualified table name
     // Its build on the object scope to not pass it around in the functions signature
-    private Map<String, DataDef> dataDefMap = new HashMap<>();
+    private Map<String, DataGenDef> dataDefMap = new HashMap<>();
 
     // A cache to know which tables was loaded
-    private List<TableDef> loadedTables = new ArrayList<>();
+    private List<DataGenDef> loadedTables = new ArrayList<>();
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
@@ -74,21 +73,21 @@ public class DataDefLoader {
         return this;
     }
 
-    public List<TableDef> load(DataDef dataDef) {
+    public List<DataGenDef> load(DataGenDef dataDef) {
         return load(Arrays.asList(dataDef));
     }
 
-    public List<TableDef> load(List<DataDef> dataDefs) {
+    public List<DataGenDef> load(List<DataGenDef> dataDefs) {
 
         // Create a list of table to load to be able to
         // get the load order
         // And create a map of data def because the load is not done via a graph but recursive
         List<TableDef> tableDefs = new ArrayList<>();
-        for (DataDef dataDef:dataDefs) {
+        for (DataGenDef dataDef:dataDefs) {
 
-            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getName(), schemaDef.getName());
+            String fullyQualifiedName = schemaDef.getDatabase().getObjectBuilder().getFullyQualifiedName(dataDef.getTableDef().getName(), schemaDef.getName());
             dataDefMap.put(fullyQualifiedName, dataDef);
-            tableDefs.add(schemaDef.getTableOf(dataDef.getName()));
+            tableDefs.add(schemaDef.getTableOf(dataDef.getTableDef().getName()));
 
         }
 
@@ -106,6 +105,7 @@ public class DataDefLoader {
     }
 
     private void load(TableDef tableDef) {
+
 
         // A load of a table may trigger the load of a foreign table
         // We check then if the table was already loaded
@@ -138,31 +138,15 @@ public class DataDefLoader {
 
         }
 
-        // Property
-        DataDef dataDef = dataDefMap.get(tableDef.getFullyQualifiedName());
-
-        // Rows and gen properties
-        Integer rows = this.defaultRows;
-        Map<String, Map<String, Object>> columnsProperties = null;
-        if (dataDef != null) {
-
-            if (dataDef.getRows() != null) {
-                rows = dataDef.getRows();
-            }
-
-            columnsProperties = dataDef.getColumns();
-        }
-
         // Load
-        DataGenLoader.get(tableDef)
-                .setRows(rows)
-                .properties(columnsProperties)
+        DataGenDef dataDef = dataDefMap.get(tableDef.getFullyQualifiedName());
+        DataGenLoader.get(dataDef)
                 .load();
 
         // Add the table in the loaded table
         // to stop the recursive calls
         // in case of cycle when a parent table need to be loaded
-        loadedTables.add(tableDef);
+        loadedTables.add(dataDef);
 
     }
 

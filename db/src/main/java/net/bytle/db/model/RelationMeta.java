@@ -4,6 +4,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.Types;
 import java.util.*;
 
+/**
+ * Relation Meta is pseudo class used to regroup
+ * all operations on columns
+ *
+ * This is to be able to create setter that return the object that have create them
+ * in order to chain the setting
+ */
 public class RelationMeta {
 
     private Map<String, ColumnDef> columnDefByName = new HashMap<>();

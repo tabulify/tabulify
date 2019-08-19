@@ -28,6 +28,11 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     private PrimaryKeyDef primaryKeyDef;
 
     /**
+     * Table Property that can be used by other type of relation
+     */
+    private HashMap<String,Object> properties = new HashMap<>();
+
+    /**
      * The identity string is for now the name of the foreign key
      * TODO ? but it would be better to implement on the column names
      * because not all foreign keys have a name (for instance Sqlite)
@@ -375,5 +380,13 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
             tableDefs.add(foreignKeyDef.getForeignPrimaryKey().getTableDef());
         }
         return tableDefs;
+    }
+
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    public Object addProperty(String key, Object value) {
+        return properties.put(key,value);
     }
 }

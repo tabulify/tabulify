@@ -28,9 +28,9 @@ public class DataGenLoader {
     // A structure to hold the data generator by column
     Map<ColumnDef, DataGenerator> dataGenerators = new HashMap<>();
 
-    private DataGenLoader(TableDef tableDef) {
+    private DataGenLoader(DataGenDef tableDef) {
 
-        this.tableDef = tableDef;
+        this.tableDef = tableDef.getTableDef();
 
         // Self referencing foreign key check
         List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(this.tableDef);
@@ -72,17 +72,8 @@ public class DataGenLoader {
 
     }
 
-    /**
-     *
-     * The total number of rows that the table must have
-     *
-     * @param rows
-     * @return
-     */
-    public DataGenLoader setRows(Integer rows) {
-        this.totalNumberOfRows = rows;
-        return this;
-    }
+
+
 
     public void load() {
 
@@ -354,14 +345,9 @@ public class DataGenLoader {
      * @param tableDef
      * @return
      */
-    public static DataGenLoader get(TableDef tableDef) {
+    public static DataGenLoader get(DataGenDef tableDef) {
         return new DataGenLoader(tableDef);
     }
 
-    public DataGenLoader properties(Map<String, Map<String, Object>> columnsProperties) {
-        if (columnsProperties != null) {
-            this.generatorDefinition = columnsProperties;
-        }
-        return this;
-    }
+
 }
