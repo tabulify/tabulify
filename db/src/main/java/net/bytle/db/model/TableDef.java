@@ -389,4 +389,8 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     public Object addProperty(String key, Object value) {
         return properties.put(key,value);
     }
+
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
 }

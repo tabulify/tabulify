@@ -5,6 +5,7 @@
   * No Cache (in memory) - Wel Persistence
   * No default value on mandatory options or argument - ie target database should be seen in the Cli Command
   * Explicit (no implicit)
+  * Don't put the functionality in the data - Example - LowerCase Key search should be in a specific get function not on the set method
   
 ## Functional
 

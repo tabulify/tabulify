@@ -5,6 +5,7 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.SqlInsertStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.type.Maps;
 import net.bytle.type.Strings;
 
 import java.lang.reflect.Constructor;
@@ -231,12 +232,12 @@ public class DataGenLoader {
 
                         SequenceGenerator dataGenerator = new SequenceGenerator(dataGenColumnDef.getColumnDef());
 
-                        final Integer step = (Integer) dataGenColumnDef.getProperty("step");
+                        final Integer step = (Integer) dataGenColumnDef.getPropertyCaseIndependent("step");
                         if (step != null) {
                             dataGenerator.step(step);
                         }
 
-                        final List<String> values = (List<String>) dataGenColumnDef.getProperty("values");
+                        final List<String> values = (List<String>) dataGenColumnDef.getPropertyCaseIndependent("values");
                         if (values != null) {
                             dataGenerator.values(values);
                         }
@@ -256,7 +257,7 @@ public class DataGenLoader {
 
                         // Parent Generator
                         final String columnParentKeyProperty = "ColumnParent";
-                        String columnName = (String) dataGenColumnDef.getProperty(columnParentKeyProperty);
+                        String columnName = (String) dataGenColumnDef.getPropertyCaseIndependent(columnParentKeyProperty);
                         if (columnName == null) {
                             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + dataGenColumnDef.getColumnDef().getFullyQualifiedName());
                         }
@@ -271,7 +272,7 @@ public class DataGenLoader {
                         parentGenerator = dataGenerators.get(columnParent);
 
                         // Formula
-                        String formula = (String) dataGenColumnDef.getProperty("formula");
+                        String formula = (String) dataGenColumnDef.getPropertyCaseIndependent("formula");
                         Object[] constructorParamValue = {dataGenColumnDef.getColumnDef(), parentGenerator, formula};
 
                         // New Instance
@@ -285,7 +286,7 @@ public class DataGenLoader {
                         final DistributionGenerator distributionGenerator = new DistributionGenerator(dataGenColumnDef.getColumnDef());
                         dataGenerators.put(dataGenColumnDef.getColumnDef(), distributionGenerator);
 
-                        Map<Object,Integer> buckets = (Map<Object, Integer>) dataGenColumnDef.getProperty("buckets");
+                        Map<Object,Integer> buckets = (Map<Object, Integer>) dataGenColumnDef.getPropertyCaseIndependent("buckets");
 
                         // DataType Check
                         if (buckets!=null) {
@@ -307,7 +308,7 @@ public class DataGenLoader {
                 } catch (Exception e) {
 
                     LOGGER.severe("Error for the column "+dataGenColumnDef.getColumnDef().getFullyQualifiedName());
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(e.getCause());
 
                 }
 

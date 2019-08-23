@@ -1,5 +1,7 @@
 package net.bytle.db.model;
 
+import net.bytle.cli.Log;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
@@ -22,6 +24,7 @@ import java.util.Set;
  */
 public class ColumnDef implements Comparable<ColumnDef> {
 
+    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
     public static final int DEFAULT_PRECISION = 50;
     private static Set<Integer> allowedNullableValues = new HashSet<>();
 
@@ -331,23 +334,18 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     /**
      *
-     * @param key - a key is not case dependent
+     * @param key
      * @param value
      * @return
      */
     public ColumnDef addProperty(String key, Object value) {
-        if (value instanceof Map){
-            // First map got its key lowercase
-            Map<String,Object> mapValues = (Map<String, Object>) value;
-            Map<String,Object> newMapValues = new HashMap<>();
-            for (Map.Entry<String, Object> entry :mapValues.entrySet()){
-                newMapValues.put(entry.getKey().toLowerCase(),entry.getValue());
-            }
-            properties.put(key.toLowerCase(), newMapValues);
-        } else {
-            properties.put(key.toLowerCase(), value);
-        }
 
+        properties.put(key, value);
         return this;
+
+    }
+
+    public Map<String, Object> getProperties() {
+        return properties;
     }
 }

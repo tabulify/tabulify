@@ -1,8 +1,7 @@
 package net.bytle.db.gen;
 
-import net.bytle.db.database.Database;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.type.Maps;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ public class DataGenDef {
      * @return The total number of rows that the table must have
      */
     public Integer getRows() {
-        return (Integer) tableDef.getProperty("rows");
+        return (Integer) Maps.getPropertyCaseIndependent(tableDef.getProperties(),"rows");
     }
 
     /**

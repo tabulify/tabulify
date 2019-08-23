@@ -57,12 +57,12 @@ public class DataDefs {
                     Map<String, Object> document = documents.get(i);
 
                     // Create the dataDef
-                    Object o = getCaseInsensitiveKey(document, "name");
+                    Object nameAsObject = getCaseInsensitiveKey(document, "name");
                     String name;
-                    if (o == null) {
+                    if (nameAsObject == null) {
                         name = path.getFileName().toString();
                     } else {
-                        name = (String) o;
+                        name = (String) nameAsObject;
                     }
                     TableDef dataDef = Tables.get(name);
                     tableDefs.add(dataDef);
@@ -82,7 +82,7 @@ public class DataDefs {
                                     if (entry.getValue().getClass().equals(java.util.ArrayList.class)) {
                                         message += "They are in a list format. You should suppress the minus if they are present.";
                                     }
-                                    message += "Bad Columns Values are: " + o;
+                                    message += "Bad Columns Values are: " + nameAsObject;
                                     throw new RuntimeException(message, e);
                                 }
                                 for (Map.Entry<String, Object> column : columns.entrySet()) {
@@ -114,11 +114,11 @@ public class DataDefs {
                                         }
 
                                     } catch (ClassCastException e) {
-                                        String message = "The columns of column (" + column.getKey() + ") from the data def (" + name + ") must be in a map format. ";
-                                        if (o.getClass().equals(java.util.ArrayList.class)) {
+                                        String message = "The properties of column (" + column.getKey() + ") from the data def (" + name + ") must be in a map format. ";
+                                        if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
                                             message += "They are in a list format. You should suppress the minus if they are present.";
                                         }
-                                        message += "Bad Columns Properties Values are: " + o;
+                                        message += "Bad Columns Properties Values are: " + column.getValue();
                                         throw new RuntimeException(message, e);
                                     }
                                 }

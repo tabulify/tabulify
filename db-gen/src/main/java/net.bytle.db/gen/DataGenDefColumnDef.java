@@ -1,6 +1,7 @@
 package net.bytle.db.gen;
 
 import net.bytle.db.model.ColumnDef;
+import net.bytle.type.Maps;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +19,7 @@ public class DataGenDefColumnDef {
     private DataGenDefColumnDef(ColumnDef columnDef) {
         this.columnDef = columnDef;
         // When read from a data definition file into the column property
-        final Map<String,Object> generatorColumnProperties = (Map<String, Object>) this.columnDef.getProperty(GENERATOR_PROPERTY_KEY);
+        final Map<String,Object> generatorColumnProperties = (Map<String, Object>) Maps.getPropertyCaseIndependent(this.columnDef.getProperties(),GENERATOR_PROPERTY_KEY);
         if (generatorColumnProperties != null){
             generatorProperties = generatorColumnProperties;
         } else {
@@ -48,10 +49,15 @@ public class DataGenDefColumnDef {
     }
 
     public String getGeneratorName() {
-        return (String) this.generatorProperties.get("name");
+        return (String) Maps.getPropertyCaseIndependent(this.generatorProperties, "name");
     }
 
-    public Object getProperty(String key) {
-        return this.generatorProperties.get(key.toLowerCase());
+
+    public Map<String,Object> getProperties() {
+        return this.generatorProperties;
+    }
+
+    public Object getPropertyCaseIndependent(String key) {
+        return Maps.getPropertyCaseIndependent(this.generatorProperties,key);
     }
 }

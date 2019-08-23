@@ -11,6 +11,7 @@ import net.bytle.cli.Log;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Tables {
@@ -678,6 +679,40 @@ public class Tables {
      */
     public static TableDef updateMeta(TableDef tableDef) {
         return null;
+    }
+
+    /**
+     * Merge the tables property {@link TableDef#getProperty(String)}
+     * and the column property {@link ColumnDef#getProperty(String)} into one.
+     *
+     * The first table has priority.
+     * If a property does exist in the first and second table, the first will kept.
+     *
+     * @param firstTable
+     * @param secondTable
+     * @return the first table object updated
+     */
+    public static TableDef mergeProperties(TableDef firstTable, TableDef secondTable) {
+
+        Map<String, Object> firstTableProp = firstTable.getProperties();
+        for (Map.Entry<String,Object> entry : secondTable.getProperties().entrySet()){
+            if (!firstTableProp.containsKey(entry.getKey())){
+                firstTableProp.put(entry.getKey(),entry.getValue());
+            }
+        }
+
+        for (ColumnDef columnDefFirstTable:firstTable.getColumnDefs()){
+            ColumnDef columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
+            if (columnSecondTable!=null){
+                Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
+                for (Map.Entry<String,Object> entry : columnSecondTable.getProperties().entrySet()){
+                    if (!columnPropertiesFirstTable.containsKey(entry.getKey())){
+                        columnPropertiesFirstTable.put(entry.getKey(),entry.getValue());
+                    }
+                }
+            }
+        }
+        return firstTable;
     }
 }
 

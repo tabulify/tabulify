@@ -1,6 +1,7 @@
 package net.bytle.db.gen;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import net.bytle.cli.Log;
 import net.bytle.db.model.ColumnDef;
 
 import javax.script.ScriptEngine;
@@ -15,6 +16,8 @@ import java.util.List;
 
 public class DerivedGenerator implements DataGenerator {
 
+
+    static final Log LOGGER = Gen.GEN_LOG;
 
     private static final ScriptEngine engine;
 
@@ -34,6 +37,9 @@ public class DerivedGenerator implements DataGenerator {
         this.columnDef = columnDef;
         this.dataGenerator = parentDataGenerator;
         this.formula = formula;
+        if (formula==null){
+            throw new RuntimeException("The formula for the column "+columnDef.getFullyQualifiedName()+" is null");
+        }
 
     }
 
@@ -60,6 +66,11 @@ public class DerivedGenerator implements DataGenerator {
 
         try {
             Object evalValue = engine.eval(evalScript);
+            if (evalValue==null){
+                final String msg = "The derived generator for the column (" + columnDef.getFullyQualifiedName() + ") has returned a NULL value and it's not expected.\nThe formula was: " + evalScript;
+                LOGGER.severe(msg);
+                throw new RuntimeException(msg);
+            }
             if (evalValue.getClass() == ScriptObjectMirror.class) {
                 ScriptObjectMirror evalValueMirror = (ScriptObjectMirror) evalValue;
                 if (evalValueMirror.getClassName().equals("Date")) {
