@@ -36,7 +36,7 @@ where:
 </unit>
 where:
   * ''target table data uri'' is a [[table#uri|table uri]]
-  * ''DataGenDef.yml'' is a [[:datadef|data definition file]] of the data to be generated.
+  * ''DataGenDef.yml'' is a [[:data_definition|data definition file]] of the data to be generated.
 ===== Example =====
 ==== Load random generated data ====
 

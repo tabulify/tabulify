@@ -6,10 +6,10 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.model.DataDef;
-import net.bytle.db.model.DataDefs;
-import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.gen.DataDefLoader;
+import net.bytle.db.gen.DataGenDef;
+import net.bytle.db.gen.DataGenLoader;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
@@ -92,36 +92,18 @@ public class DbTableFill {
                 System.exit(1);
             }
 
-            List<DataDef> dataDefs = DataDefs.load(dataDefPath);
-            DataDef dataDef;
-            if (dataDefs.size() == 1) {
-                dataDef = dataDefs.get(0);
-                if (dataDef.getName() == null) {
-                    dataDef.setName(tableDataUri.getTableName());
-                }
-                if (!(dataDef.getName().equals(tableDataUri.getTableName()))) {
-                    LOGGER.severe("The table in the data definition file (" + dataDef.getName() + ") is not the same than the table in the table Uri (" + tableDataUri.getTableName() + ").");
-                    System.exit(1);
-                }
-            } else {
-                List<DataDef> tableDataDefs = dataDefs.stream()
-                        .filter(d -> d.getName() != null)
-                        .filter(d -> d.getName().equals(tableDataUri.getTableName()))
-                        .collect(Collectors.toList());
-                if (tableDataDefs.size() != 1) {
-                    LOGGER.severe("There is more than 1 table data definition in the data definition file (" + dataDefPath + ") and there is " + tableDataDefs.size() + " that corresponds to the table to load in the table uri (" + tableDataUri + ")");
-                    System.exit(1);
-                }
-                dataDef = tableDataDefs.get(0);
-            }
+            List<DataGenDef> dataGenDefs = DataDefs.load(dataDefPath)
+                    .stream()
+                    .map(t -> DataGenDef.get(t)).collect(Collectors.toList());
 
-            List<TableDef> tables = DataDefLoader.of(schemaDef)
+
+            List<DataGenDef> loadedDataGenDefs = DataDefLoader.of(schemaDef)
                     .loadParentTable(true)
-                    .load(dataDef);
+                    .load(dataGenDefs);
 
             LOGGER.info("The following tables where loaded:");
-            for (TableDef tableDef : tables) {
-                LOGGER.info("  * " + tableDef.getFullyQualifiedName() + ", Size (" + Tables.getSize(tableDef) + ")");
+            for (DataGenDef dataGenDef : loadedDataGenDefs) {
+                LOGGER.info("  * " + dataGenDef.getTableDef().getFullyQualifiedName() + ", Size (" + Tables.getSize(dataGenDef.getTableDef()) + ")");
             }
 
         } else {
@@ -135,11 +117,10 @@ public class DbTableFill {
             }
 
             Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
-            DataGenLoader.get(tableDef)
-                    .setRows(totalNumberOfRows)
-                    .load();
 
-            //LOGGER.info("The table (" + tableDef.getFullyQualifiedName() + ") has now (" + Tables.getSize(tableDef) + ") rows");
+            DataGenDef datagenDef = DataGenDef.get(tableDef).setRows(totalNumberOfRows);
+            DataGenLoader.get(datagenDef).load();
+
         }
 
         cliTimer.stop();

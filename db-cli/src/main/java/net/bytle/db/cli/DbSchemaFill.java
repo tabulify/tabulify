@@ -2,14 +2,14 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.model.DataDef;
-import net.bytle.db.model.DataDefs;
-import net.bytle.db.gen.DataGenLoader;
-import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
+import net.bytle.db.gen.DataDefLoader;
+import net.bytle.db.gen.DataGenDef;
+import net.bytle.db.gen.DataGenLoader;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -17,6 +17,7 @@ import net.bytle.db.model.TableDef;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -75,13 +76,17 @@ public class DbSchemaFill {
         if (yamlFile != null) {
 
             LOGGER.info("Loading generated data with the file " + yamlFile);
-            List<DataDef> dataDefs = DataDefs.load(yamlFile);
-            List<TableDef> tables = DataDefLoader.of(database.getCurrentSchema())
+            List<DataGenDef> dataGenDefs = DataDefs.load(yamlFile)
+                    .stream()
+                    .map(t-> DataGenDef.get(t))
+                    .collect(Collectors.toList());
+
+            List<DataGenDef> tables = DataDefLoader.of(database.getCurrentSchema())
                     .loadParentTable(true)
-                    .load(dataDefs);
+                    .load(dataGenDefs);
 
             LOGGER.info("The following tables where loaded:");
-            for (TableDef tableDef : tables) {
+            for (TableDef tableDef : tables.stream().map(t->t.getTableDef()).collect(Collectors.toList())) {
                 LOGGER.info("  * " + tableDef.getFullyQualifiedName() + ", Size (" + Tables.getSize(tableDef) + ")");
             }
 
@@ -109,7 +114,7 @@ public class DbSchemaFill {
 
                 // Loading
                 for (TableDef tableDef : tableDefs) {
-                    DataGenLoader.get(tableDef)
+                    DataGenLoader.get(DataGenDef.get(tableDef))
                             .load();
                 }
             } else {

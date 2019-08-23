@@ -10,6 +10,7 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The input of the data generation is in a yml file
@@ -76,6 +77,7 @@ public class DataDefLoader {
     public List<DataGenDef> load(DataGenDef dataDef) {
         return load(Arrays.asList(dataDef));
     }
+
 
     public List<DataGenDef> load(List<DataGenDef> dataDefs) {
 
