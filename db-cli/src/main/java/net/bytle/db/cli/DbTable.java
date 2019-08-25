@@ -22,6 +22,8 @@ public class DbTable {
 
         cliCommand.commandOf(Words.LOAD_COMMAND)
                 .setDescription("load data into a table from a file");
+        cliCommand.commandOf(Words.CREATE_COMMAND)
+                .setDescription("create a table from a data definition file");
         cliCommand.commandOf(Words.DOWNLOAD_COMMAND)
                 .setDescription("download a table into a file");
         cliCommand.commandOf(Words.TRANSFER_COMMAND)
@@ -76,6 +78,9 @@ public class DbTable {
                         break;
                     case COUNT:
                         DbTableCount.run(command, args);
+                        break;
+                    case CREATE_COMMAND:
+                        DbTableCreate.run(command, args);
                         break;
                     default:
                         LOGGER.severe("The command (" + command + ") is unknown");

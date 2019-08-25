@@ -3,6 +3,7 @@ package net.bytle.db.model;
 
 import net.bytle.db.engine.DataTypes;
 import net.bytle.db.engine.Tables;
+import net.bytle.type.Maps;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -57,10 +58,11 @@ public class DataDefs {
                     Map<String, Object> document = documents.get(i);
 
                     // Create the dataDef
-                    Object nameAsObject = getCaseInsensitiveKey(document, "name");
+                    Object nameAsObject = Maps.getPropertyCaseIndependent(document, "name");
                     String name;
                     if (nameAsObject == null) {
-                        name = path.getFileName().toString();
+                        final String fileName = path.getFileName().toString();
+                        name = fileName.substring(0, fileName.indexOf("."));
                     } else {
                         name = (String) nameAsObject;
                     }
