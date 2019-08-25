@@ -73,7 +73,7 @@ public class PrimaryKeyDef {
     public PrimaryKeyDef addColumn(List<String> columnNames) {
 
         for (String columnName : columnNames) {
-            this.addColumn(tableDef.getColumnOf(columnName));
+            this.addColumn(tableDef.getColumnDef(columnName));
         }
         return this;
 

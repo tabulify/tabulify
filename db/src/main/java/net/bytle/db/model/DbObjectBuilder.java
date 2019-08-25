@@ -1,7 +1,9 @@
 package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.engine.Tables;
 import net.bytle.cli.Log;
 
@@ -106,7 +108,7 @@ public class DbObjectBuilder {
             Collections.sort(integers);
             for (Integer keySeq : integers) {
                 String columnName = colMap.get(keySeq);
-                ColumnDef columnDef = tableDef.getColumnOf(columnName);
+                ColumnDef columnDef = tableDef.getColumnDef(columnName);
                 primaryKeyDef.addColumn(columnDef);
             }
 
@@ -256,8 +258,11 @@ public class DbObjectBuilder {
                 int column_size = columnResultSet.getInt("COLUMN_SIZE");
 
 
-                tableDef.getColumnOf(column_name)
-                        .typeCode(columnResultSet.getInt("DATA_TYPE"))
+                final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
+
+                DataTypeJdbc dataType = DataTypesJdbc.of(sqlTypeCode);
+                tableDef.getColumnOf(column_name,dataType.getClass())
+                        .typeCode(sqlTypeCode)
                         .precision(column_size)
                         .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
                         .isAutoincrement(is_autoincrement)
@@ -410,7 +415,7 @@ public class DbObjectBuilder {
 
                 // Add the inner column that is part of the foreign key definition
                 String columnName = colProp.get(col_fkcolumn_name);
-                ColumnDef columnByName = tableDef.getColumnOf(columnName);
+                ColumnDef columnByName = tableDef.getColumnDef(columnName);
                 foreignKeyDef.addColumn(columnByName, Integer.parseInt(colProp.get(col_key_seq)));
 
             }
@@ -471,7 +476,7 @@ public class DbObjectBuilder {
             List<ColumnDef> columnDefs = new ArrayList<>();
             Collections.sort(positions);
             for (Integer pos : positions) {
-                ColumnDef columnDef = tableDef.getColumnOf(indexProperties.get(pos));
+                ColumnDef columnDef = tableDef.getColumnDef(indexProperties.get(pos));
                 columnDefs.add(columnDef);
             }
 

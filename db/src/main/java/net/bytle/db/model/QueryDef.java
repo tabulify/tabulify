@@ -44,7 +44,7 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation, AutoClosea
         if (meta == null) {
             initMeta();
         }
-        meta.getColumnOf(columnName);
+        meta.getColumnDef(columnName);
         return this;
     }
 
@@ -88,18 +88,6 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation, AutoClosea
 
     }
 
-    /**
-     * @param columnName
-     * @return the actual column or a new created column object if not found
-     */
-    public ColumnDef getColumnOf(String columnName) {
-        if (meta == null) {
-            initMeta();
-        }
-        return meta.getColumnOf(columnName);
-
-    }
-
 
 
     @Override
@@ -110,6 +98,16 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation, AutoClosea
         }
         return meta.getColumnDef(columnIndex);
 
+    }
+
+    /**
+     * @param columnName
+     * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
+     * @return a new columnDef
+     */
+    @Override
+    public ColumnDef getColumnOf(String columnName, Class clazz) {
+        return meta.getColumnOf(columnName,clazz);
     }
 
     @Override

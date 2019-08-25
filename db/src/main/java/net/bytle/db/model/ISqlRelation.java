@@ -9,7 +9,6 @@ public interface ISqlRelation extends RelationDef {
 
 
     String getQuery();
-
     ResultSet getResultSet();
 
 }

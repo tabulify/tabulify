@@ -1,6 +1,8 @@
 package net.bytle.db.model;
 
 
+import net.bytle.db.database.DataTypeJdbc;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.engine.DataTypes;
 import net.bytle.db.engine.Tables;
 import net.bytle.type.Maps;
@@ -91,11 +93,20 @@ public class DataDefs {
 
                                     try {
                                         Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
-                                        ColumnDef columnDef = dataDef.getColumnOf(column.getKey());
+
+                                        String type = "varchar";
+                                        Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
+                                        if (oType!=null){
+                                            type = (String) oType;
+                                        }
+
+                                        DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
+
+                                        ColumnDef columnDef = dataDef.getColumnOf(column.getKey(),dataTypeJdbc.getClass());
                                         for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
                                             switch (columnProperty.getKey().toLowerCase()) {
                                                 case "type":
-                                                    columnDef.typeCode(DataTypes.toInteger((String) columnProperty.getValue()));
+                                                    columnDef.typeCode(dataTypeJdbc.getTypeCode());
                                                     break;
                                                 case "precision":
                                                     columnDef.precision((Integer) columnProperty.getValue());

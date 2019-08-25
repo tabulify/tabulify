@@ -548,7 +548,7 @@ public class Tables {
         int columnCount = sourceDef.getColumnDefs().size();
         for (int i = 0; i < columnCount; i++) {
             ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName())
+            targetDef.getColumnOf(columnDef.getColumnName(),columnDef.getClass())
                     .typeCode(columnDef.getDataType().getTypeCode())
                     .precision(columnDef.getPrecision())
                     .scale(columnDef.getScale());
@@ -704,7 +704,8 @@ public class Tables {
             ColumnDef columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
             if (columnSecondTable!=null){
                 Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
-                for (Map.Entry<String,Object> entry : columnSecondTable.getProperties().entrySet()){
+                final Map<String,Object> properties = columnSecondTable.getProperties();
+                for (Map.Entry<String,Object> entry : properties.entrySet()){
                     if (!columnPropertiesFirstTable.containsKey(entry.getKey())){
                         columnPropertiesFirstTable.put(entry.getKey(),entry.getValue());
                     }

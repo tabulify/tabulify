@@ -211,8 +211,8 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     public TableDef setPrimaryKey(String columnName1, String columnName2) {
 
         this.getPrimaryKey()
-                .addColumn(meta.getColumnOf(columnName1))
-                .addColumn(meta.getColumnOf(columnName2));
+                .addColumn(meta.getColumn(columnName1))
+                .addColumn(meta.getColumn(columnName2));
 
         return this;
 
@@ -293,10 +293,15 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return getColumnDefs().get(columnIndex);
     }
 
-    @Override
-    public ColumnDef getColumnOf(String columnName) {
 
-        return meta.getColumnOf(columnName);
+    /**
+     * @param columnName - The column name
+     * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
+     * @return  a new columnDef
+     */
+    public ColumnDef getColumnOf(String columnName, Class clazz) {
+
+        return meta.getColumnOf(columnName, clazz);
 
     }
 

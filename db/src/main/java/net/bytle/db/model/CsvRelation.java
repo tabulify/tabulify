@@ -56,8 +56,8 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
     }
 
     @Override
-    public ColumnDef getColumnOf(String columnName) {
-        return relationMeta.getColumnOf(columnName);
+    public ColumnDef getColumnOf(String columnName, Class clazz) {
+        return relationMeta.getColumnOf(columnName, clazz);
     }
 
 

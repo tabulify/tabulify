@@ -5,6 +5,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.type.Maps;
 import net.bytle.type.Strings;
 
 
@@ -22,11 +23,13 @@ import java.util.Set;
  * It's generally construct form a resultSetMetadata object
  * but it can also be construct programmatically (when you want to load data after parsing a file for instance)
  */
-public class ColumnDef implements Comparable<ColumnDef> {
+public class ColumnDef<T> implements Comparable<ColumnDef> {
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+
     public static final int DEFAULT_PRECISION = 50;
     private static Set<Integer> allowedNullableValues = new HashSet<>();
+    private final Class<T> clazz;
 
     private HashMap<String, Object> properties = new HashMap<>();
 
@@ -57,8 +60,6 @@ public class ColumnDef implements Comparable<ColumnDef> {
     /* Only needed for number */
     private Integer scale;
 
-    //
-    private Class clazz;
     private String comment;
 
 
@@ -72,10 +73,11 @@ public class ColumnDef implements Comparable<ColumnDef> {
      *
      * @param relationDef
      */
-    ColumnDef(RelationDef relationDef, String columnName) {
+    ColumnDef(RelationDef relationDef, String columnName, Class<T> clazz) {
 
         this.relationDef = relationDef;
         this.columnName = columnName;
+        this.clazz = clazz;
 
     }
 
@@ -269,14 +271,6 @@ public class ColumnDef implements Comparable<ColumnDef> {
         return this;
     }
 
-    public ColumnDef clazz(Class clazz) {
-        if (clazz != null) {
-            this.clazz = clazz;
-        }
-        return this;
-    }
-
-
     @Override
     public String toString() {
         return columnName + " " + getDataType().getTypeName() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
@@ -329,7 +323,16 @@ public class ColumnDef implements Comparable<ColumnDef> {
      * @return
      */
     public Object getProperty(String key) {
-        return properties.get(key.toLowerCase());
+        return properties.get(key);
+    }
+
+    /**
+     *
+     * @param key - a key
+     * @return
+     */
+    public Object getPropertyCaseIndependently(String key) {
+        return Maps.getPropertyCaseIndependent(properties,key);
     }
 
     /**
@@ -347,5 +350,9 @@ public class ColumnDef implements Comparable<ColumnDef> {
 
     public Map<String, Object> getProperties() {
         return properties;
+    }
+
+    public String getComment() {
+        return this.comment;
     }
 }

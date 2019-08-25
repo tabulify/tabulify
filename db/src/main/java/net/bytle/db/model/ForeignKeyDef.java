@@ -114,11 +114,11 @@ public class ForeignKeyDef {
     /**
      * Alias function to add a column by name
      *
-     * @param column
+     * @param columnName
      * @return
      */
-    public ForeignKeyDef addColumn(String column) {
-        return addColumn(this.tableDef.getColumnOf(column));
+    public ForeignKeyDef addColumn(String columnName) {
+        return addColumn(this.tableDef.getColumnDef(columnName));
     }
 
     /**

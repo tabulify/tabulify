@@ -22,10 +22,11 @@ public class Relations {
         // Add the columns
         for (int i = 0; i < sourceDef.getColumnDefs().size(); i++) {
             ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName())
+            targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClass())
                     .typeCode(columnDef.getDataType().getTypeCode())
                     .precision(columnDef.getPrecision())
-                    .scale(columnDef.getScale());
+                    .scale(columnDef.getScale())
+                    .comment(columnDef.getComment());
         }
 
 

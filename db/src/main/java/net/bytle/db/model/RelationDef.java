@@ -9,8 +9,6 @@ import java.util.List;
  */
 public interface RelationDef {
 
-    int RELATION_TYPE_SQL = 0;
-    int RELATION_TYPE_FILE = 1;
 
     Database getDatabase();
 
@@ -34,11 +32,27 @@ public interface RelationDef {
 
     List<ColumnDef> getColumnDefs();
 
+    /**
+     *
+     * @param columnName
+     * @return a column def by its name
+     */
     ColumnDef getColumnDef(String columnName);
 
+    /**
+     *
+     * @param columnIndex
+     * @return a column def by its index
+     */
     ColumnDef getColumnDef(Integer columnIndex);
 
-    ColumnDef getColumnOf(String columnName);
+    /**
+     *
+     * @param columnName
+     * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
+     * @return  a new columnDef
+     */
+    ColumnDef getColumnOf(String columnName, Class clazz);
 
 
 }

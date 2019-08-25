@@ -131,6 +131,7 @@ public class DataTypesJdbc {
     }
 
     static public DataTypeJdbc of(String typeName) {
+
         return dataTypeJdbcByName.get(typeName.toUpperCase());
     }
 
