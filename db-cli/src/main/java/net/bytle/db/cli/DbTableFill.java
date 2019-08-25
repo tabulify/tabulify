@@ -2,7 +2,6 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.SchemaDataUri;
@@ -55,7 +54,7 @@ public class DbTableFill {
         cliCommand.optionOf(STORAGE_PATH);
 
         cliCommand.optionOf(DEFINITION_FILE)
-                .setDescription("A path to a data definition file (DataDef.yml)");
+                .setDescription("A path to a data definition file (DataDef.yml) or a parent directory");
 
         cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
                 .setDescription("defines the total number of rows that the table(s) must have")
@@ -105,7 +104,7 @@ public class DbTableFill {
                     .stream()
                     .map(t->t.setSchema(finalSchemaDef))
                     .map(t -> DataGenDef.get(t))
-                    .map(t->totalNumberOfRows!=null?t.setRows(totalNumberOfRows):t)
+                    .map(t->totalNumberOfRows!=null?t.setTotalRows(totalNumberOfRows):t)
                     .collect(Collectors.toList());
 
             List<DataGenDef> loadedDataGenDefs = DataDefLoader.of(schemaDef)
@@ -140,7 +139,7 @@ public class DbTableFill {
 
 
 
-            DataGenDef datagenDef = DataGenDef.get(tableDef).setRows(totalNumberOfRows);
+            DataGenDef datagenDef = DataGenDef.get(tableDef).setTotalRows(totalNumberOfRows);
             DataGenLoader.get(datagenDef).load();
 
         }

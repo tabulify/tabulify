@@ -5,7 +5,6 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.SqlInsertStream;
 import net.bytle.db.stream.Streams;
-import net.bytle.type.Maps;
 import net.bytle.type.Strings;
 
 import java.lang.reflect.Constructor;
@@ -21,7 +20,7 @@ public class DataGenLoader {
     /**
      * Max records to insert if there is no total rows defined
      */
-    private static final Integer MAX_INSERT = 10000;
+    private static final Integer MAX_INSERT = 100000;
     private final TableDef tableDef;
     private final DataGenDef dataGenDef;
     private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
@@ -95,7 +94,7 @@ public class DataGenLoader {
 
         // The number of row may be trimmed if the generator cannot generate them
         // or if there is already rows in the table
-        Integer numberOfRowToInsert = getNumberOfRowToInsert(dataGenDef.getRows());
+        Integer numberOfRowToInsert = getNumberOfRowToInsert(dataGenDef.getTotalRows());
 
         if (numberOfRowToInsert > 0) {
             LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + tableDef.getFullyQualifiedName() + ")");
@@ -237,7 +236,13 @@ public class DataGenLoader {
                             dataGenerator.step(step);
                         }
 
-                        final List<String> values = (List<String>) dataGenColumnDef.getPropertyCaseIndependent("values");
+                        List<String> values = null;
+                        final Object valuesAsObject = dataGenColumnDef.getPropertyCaseIndependent("values");
+                        try {
+                            values =   (List<String>) valuesAsObject;
+                        } catch (ClassCastException e){
+                            throw new RuntimeException("The values excepted for the column "+dataGenColumnDef.getColumnDef()+" are not list. The values are "+valuesAsObject);
+                        }
                         if (values != null) {
                             dataGenerator.values(values);
                         }
@@ -308,7 +313,7 @@ public class DataGenLoader {
                 } catch (Exception e) {
 
                     LOGGER.severe("Error for the column "+dataGenColumnDef.getColumnDef().getFullyQualifiedName());
-                    throw new RuntimeException(e.getCause());
+                    throw new RuntimeException(e);
 
                 }
 

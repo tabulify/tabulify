@@ -8,11 +8,15 @@ import java.util.stream.Collectors;
 
 /**
  * A data gen def is a wrapper around tableDef
- * that adds the {@link #getRows()} and {@link #setRows(Integer)} methods
+ * that adds the {@link #getTotalRows()} and {@link #setTotalRows(Integer)} methods
  */
 public class DataGenDef {
 
 
+    /**
+     * The total number of rows that the table should have
+     */
+    public static final String TOTAL_ROWS = "TotalRows";
     private final TableDef tableDef;
 
     public DataGenDef(TableDef tableDef) {
@@ -23,16 +27,16 @@ public class DataGenDef {
      *
      * @return The total number of rows that the table must have
      */
-    public Integer getRows() {
-        return (Integer) Maps.getPropertyCaseIndependent(tableDef.getProperties(),"rows");
+    public Integer getTotalRows() {
+        return (Integer) Maps.getPropertyCaseIndependent(tableDef.getProperties(), TOTAL_ROWS);
     }
 
     /**
      * @param rows The total number of rows that the table must have
      * @return this object
      */
-    public DataGenDef setRows(Integer rows) {
-        tableDef.addProperty("rows", rows);
+    public DataGenDef setTotalRows(Integer rows) {
+        tableDef.addProperty(TOTAL_ROWS, rows);
         return this;
     }
 

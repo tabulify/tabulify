@@ -51,7 +51,7 @@ db table drop --no-strict @sqlite/sequence_def
 
 <unit envBYTLE_DB_HOME=src>
 <code dos>
-db table create @sqlite %BYTLE_DB_HOME%\doc\files\sequence_def.yml
+db table create --data-def %BYTLE_DB_HOME%\doc\files\sequence_def.yml @sqlite/sequence_def
 </code>
 <console>
 
@@ -61,17 +61,17 @@ db table create @sqlite %BYTLE_DB_HOME%\doc\files\sequence_def.yml
   * Let's fill it with sequential data.
 <unit envBYTLE_DB_HOME=src>
 <code dos>
-db table fill --data-def %BYTLE_DB_HOME%\doc\files\sequence_def.yml @sqlite
+db table fill --data-def %BYTLE_DB_HOME%\doc\files\sequence_def.yml @sqlite/sequence_def
 </code>
 <console>
-08:48:43 - INFO - Loading the table ("sequence_def")
-08:48:43 - INFO - The size of the table ("sequence_def") before insertion is : 0
-08:48:43 - INFO - Inserting 100 rows into the table ("sequence_def")
-08:48:43 - INFO - 100 records where inserted into the table ("sequence_def")
-08:48:43 - INFO - The new size is: 100
+11:43:56 - INFO - Loading the table ("sequence_def")
+11:43:56 - INFO - The size of the table ("sequence_def") before insertion is : 0
+11:43:56 - INFO - Inserting 10000 rows into the table ("sequence_def")
+11:43:56 - INFO - 10000 records where inserted into the table ("sequence_def")
+11:43:56 - INFO - The new size is: 10000
 </console>
 </unit>
-  * The table ''sequence_def'' was filled was sequence data
+  * The table ''sequence_def'' was filled with sequence data
 <unit>
 <code dos>
 db table show --limit 10 @sqlite/sequence_def

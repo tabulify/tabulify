@@ -6,16 +6,13 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.SchemaDataUri;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.gen.DataDefLoader;
-import net.bytle.db.gen.DataGenDef;
-import net.bytle.db.gen.DataGenLoader;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.regexp.Globs;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,21 +21,22 @@ import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
 public class DbTableCreate {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    static final String SCHEMA_URI = "(DatabaseUri|SchemaUri)";
-    private static final String DATA_DEF_PATH = "DataDef.yml";
+    static final String TABLE_URIS = "TableUri...";
+    private static final String DATA_DEF_PATH = "data-def";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
 
         cliCommand
-                .setDescription("Create a table from a data definition file");
+                .setDescription("Create a table from data definition file(s)");
 
-        cliCommand.argOf(SCHEMA_URI)
-                .setDescription("A Schema Uri (@database[/schema])")
+        cliCommand.argOf(TABLE_URIS)
+                .setDescription("one or more Table Uri (@database[/schema]/table)")
                 .setMandatory(true);
 
-        cliCommand.argOf(DATA_DEF_PATH)
-                .setDescription("One or more data definition file")
+
+        cliCommand.optionOf(DATA_DEF_PATH)
+                .setDescription("A path to a data definition file (DataDef.yml) or a parent directory")
                 .setMandatory(true);
 
         cliCommand.optionOf(STORAGE_PATH);
@@ -51,46 +49,52 @@ public class DbTableCreate {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Schema
-        String arg = cliParser.getString(SCHEMA_URI);
-        SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
-        Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
-        final String schemaName = schemaDataUri.getSchemaName();
-        SchemaDef schemaDef = database.getCurrentSchema();
-        if (schemaName != null) {
-            schemaDef = database.getSchema(schemaName);
+        String arg = cliParser.getString(TABLE_URIS);
+
+
+        Path dataDefPath = cliParser.getPath(DATA_DEF_PATH);
+        if (!Files.exists(dataDefPath)) {
+            LOGGER.severe("The file/directory (" + dataDefPath.toAbsolutePath().toString() + ") does not exist");
+            System.exit(1);
         }
-        LOGGER.info("The table(s) will be created in the schema (" + schemaDef.getFullyQualifiedName() + ")");
+        List<TableDef> tables = DataDefs.load(dataDefPath);
 
-        List<String> dataDefPaths = cliParser.getStrings(DATA_DEF_PATH);
+        if (tables.size() == 0) {
+            LOGGER.warning("The data definition file location (" + dataDefPath.toAbsolutePath().toString() + ") contains no data definition.");
+        }
+
         CliTimer cliTimer = CliTimer.getTimer(arg).start();
-        LOGGER.info(dataDefPaths.size() + " data definition file was specified.");
-        for (String dataDefPathAsString : dataDefPaths) {
+        List<String> tableUris = cliParser.getStrings(TABLE_URIS);
+        for (String tableUriAsString : tableUris) {
 
+            LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
 
-            LOGGER.info("Starting the creation of tables from the data definition file (" + dataDefPathAsString + ")");
-
-            Path dataDefPath = Paths.get(dataDefPathAsString);
-            if (!Files.exists(dataDefPath)) {
-                LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + ") does not exist");
-                System.exit(1);
+            SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
+            Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
+            final String schemaName = schemaDataUri.getSchemaName();
+            SchemaDef schemaDef = database.getCurrentSchema();
+            if (schemaName != null) {
+                schemaDef = database.getSchema(schemaName);
             }
 
 
-            List<TableDef> tables = DataDefs.load(dataDefPath)
-                    .stream()
-                    .map(t -> t.setDatabase(database))
+            TableDataUri tableUri = TableDataUri.of(tableUriAsString);
+            SchemaDef finalSchemaDef = schemaDef;
+            List<TableDef> tableDefs = tables.stream()
+                    .filter(t -> Globs.matches(t.getName(),tableUri.getTableName()))
+                    .map(t->t.setSchema(finalSchemaDef))
                     .collect(Collectors.toList());
 
-            if (tables.size() == 0) {
-                LOGGER.warning("The data definition file (" + dataDefPath.toAbsolutePath().toString() + ") contains no data definition.");
+            if (tableDefs.size()==0){
+                LOGGER.severe("No tables data definition was found for the table name pattern ("+tableUri+")");
+                System.exit(1);
+            } else {
+                for (TableDef tableDef : tableDefs) {
+                    LOGGER.info("Creating the table (" + tableDef.getFullyQualifiedName() + ")");
+                    Tables.create(tableDef);
+                    LOGGER.info("Table (" + tableDef.getFullyQualifiedName() + ") created.");
+                }
             }
-
-            for (TableDef tableDef : tables) {
-                LOGGER.info("Creating the table (" + tableDef.getFullyQualifiedName() + ")");
-                Tables.create(tableDef);
-                LOGGER.info("Table ("+tableDef.getFullyQualifiedName()+") created.");
-            }
-
 
         }
 

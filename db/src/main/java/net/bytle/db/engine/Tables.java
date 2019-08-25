@@ -713,5 +713,26 @@ public class Tables {
         }
         return firstTable;
     }
+
+    public static Integer getMinIntegerValue(ColumnDef columnDef) {
+        String columnStatement = columnDef.getColumnName();
+        String statementString = "select min(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
+        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
+        try (
+                Statement statement = currentConnection.createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
+            Integer returnValue = null;
+            if (resultSet.next()) {
+                returnValue = resultSet.getInt(1);
+            }
+            return returnValue;
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(e);
+
+        }
+    }
 }
 

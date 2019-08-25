@@ -1,0 +1,16 @@
+====== Table - Drop ======
+
+
+===== About =====
+The ''drop'' [[..:action|action]] of the [[table|table module]] permits to drop a [[table|table]]
+
+===== Syntax =====
+
+
+<unit>
+<code>
+db table drop --help
+</code>
+<console>
+</console>
+</unit>

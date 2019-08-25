@@ -8,7 +8,7 @@ public class Globs {
      * pattern. The result can be used with the standard {@link java.util.regex} API to
      * recognize strings which match the glob pattern.
      * <p/>
-     *
+     * <p>
      * See also, the POSIX Shell language:
      * http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_13_01
      * https://stackoverflow.com/questions/1247772/is-there-an-equivalent-of-java-util-regex-for-glob-type-patterns
@@ -58,7 +58,7 @@ public class Globs {
                     break;
                 case '[':
                     inClass++;
-                    firstIndexInClass = i+1;
+                    firstIndexInClass = i + 1;
                     sb.append('[');
                     break;
                 case ']':
@@ -103,6 +103,12 @@ public class Globs {
             }
         }
         return sb.toString();
+    }
+
+    public static Boolean matches(String s, String globPattern) {
+        String regexpPattern = Globs.toRegexPattern(globPattern);
+        return s.matches(regexpPattern);
+
     }
 
 }
