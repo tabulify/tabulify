@@ -69,7 +69,7 @@ public class DataTypesJdbc {
         dataTypeJdbcByClass.put(Object.class, new JdbcJavaObject() );
         dataTypeJdbcByClass.put(byte[].class, new JdbcLongVarBinary() ); // No Binary of varbinary
         dataTypeJdbcByClass.put(byte.class, new JdbcTinyInt() );
-        dataTypeJdbcByClass.put(String.class, new JdbcLongVarchar() ); // No char of varchar, LongNVarchar, nchar, nvarchar
+        dataTypeJdbcByClass.put(String.class, new JdbcVarchar() ); // No char of varchar, LongNVarchar, nchar, nvarchar
         dataTypeJdbcByClass.put(Float.class, new JdbcReal() );
         dataTypeJdbcByClass.put(Short.class, new JdbcSmallInt() );
         dataTypeJdbcByClass.put(Long.class, new JdbcBigInt() );
@@ -136,7 +136,11 @@ public class DataTypesJdbc {
     }
 
     public static DataTypeJdbc ofClass(Class clazz) {
-        return dataTypeJdbcByClass.get(clazz);
+        final DataTypeJdbc dataTypeJdbc = dataTypeJdbcByClass.get(clazz);
+        if (dataTypeJdbc == null){
+            throw new RuntimeException("The jdbc data type for the class ("+clazz+") is unknown");
+        }
+        return dataTypeJdbc;
     }
 
 

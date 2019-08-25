@@ -2,7 +2,7 @@
 
 
 ===== About =====
-The ''drop'' [[..:action|action]] of the [[table|table module]] permits to drop a [[table|table]]
+The ''drop'' [[..:action|action]] of the [[start|table module]] permits to drop a [[table|table]]
 
 ===== Syntax =====
 

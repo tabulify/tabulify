@@ -266,7 +266,7 @@ public class DataGenLoader {
                         if (columnName == null) {
                             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + dataGenColumnDef.getColumnDef().getFullyQualifiedName());
                         }
-                        ColumnDef columnParent = dataGenColumnDef.getColumnDef().getRelationDef().getColumnOf(columnName);
+                        ColumnDef columnParent = dataGenColumnDef.getColumnDef().getRelationDef().getColumnDef(columnName);
                         DataGenerator parentGenerator = dataGenerators.get(columnParent);
                         if (parentGenerator == null) {
                             if (dataGenColumnDef.getColumnDef().equals(columnParent)) {

@@ -355,4 +355,8 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     public String getComment() {
         return this.comment;
     }
+
+    public Class<T> getClazz() {
+        return this.clazz;
+    }
 }

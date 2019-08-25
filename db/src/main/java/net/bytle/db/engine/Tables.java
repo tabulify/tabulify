@@ -19,29 +19,7 @@ public class Tables {
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
 
-    public static Integer getMaxIntegerValue(ColumnDef columnDef) {
 
-        String columnStatement = columnDef.getColumnName();
-        String statementString = "select max(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
-        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
-        try (
-                Statement statement = currentConnection.createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
-        ) {
-            Integer returnValue = null;
-            if (resultSet.next()) {
-                returnValue = resultSet.getInt(1);
-            }
-            return returnValue;
-
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-
-        }
-
-
-    }
 
     /**
      * Return the number of rows
@@ -75,22 +53,7 @@ public class Tables {
     }
 
 
-    public static Date getMinDateValue(ColumnDef columnDef) {
-        String statementString = "select min(" + columnDef.getColumnName() + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
-        Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
-        try (
-                Statement statement = currentConnection.createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
-        ) {
-            Date returnValue = null;
-            if (resultSet.next()) {
-                returnValue = resultSet.getDate(1);
-            }
-            return returnValue;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 
 
     public static void printRowSizeBySchema(SchemaDef schemaDef) {
@@ -158,7 +121,7 @@ public class Tables {
         return exists(tableDef, database.getCurrentSchema());
     }
 
-    public static String getMaxStringValue(ColumnDef columnDef) {
+    public static <T> T getMax(ColumnDef<T> columnDef) {
 
         String columnStatement = columnDef.getColumnName();
 
@@ -168,11 +131,11 @@ public class Tables {
                 Statement statement = currentConnection.createStatement();
                 ResultSet resultSet = statement.executeQuery(statementString);
         ) {
-            String returnValue = null;
+            Object returnValue = null;
             if (resultSet.next()) {
-                returnValue = resultSet.getString(1);
+                returnValue = resultSet.getObject(1);
             }
-            return returnValue;
+            return (T) returnValue;
 
         } catch (SQLException e) {
 
@@ -715,7 +678,7 @@ public class Tables {
         return firstTable;
     }
 
-    public static Integer getMinIntegerValue(ColumnDef columnDef) {
+    public static <T> T getMin(ColumnDef<T> columnDef) {
         String columnStatement = columnDef.getColumnName();
         String statementString = "select min(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
         Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
@@ -723,11 +686,11 @@ public class Tables {
                 Statement statement = currentConnection.createStatement();
                 ResultSet resultSet = statement.executeQuery(statementString);
         ) {
-            Integer returnValue = null;
+            Object returnValue = null;
             if (resultSet.next()) {
-                returnValue = resultSet.getInt(1);
+                returnValue = resultSet.getObject(1);
             }
-            return returnValue;
+            return (T) returnValue;
 
         } catch (SQLException e) {
 
@@ -735,5 +698,7 @@ public class Tables {
 
         }
     }
+
+
 }
 

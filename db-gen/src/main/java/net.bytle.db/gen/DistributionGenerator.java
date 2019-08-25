@@ -1,6 +1,8 @@
 package net.bytle.db.gen;
 
 
+import net.bytle.db.database.DataTypeJdbc;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 
@@ -23,7 +25,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 public class DistributionGenerator<T> implements DataGenerator {
 
     private final Class<T> clazz;
-    private final DataType dataType;
+    private final DataTypeJdbc type;
     private Object o;
     private ColumnDef columnDef;
     private Object min;
@@ -31,16 +33,14 @@ public class DistributionGenerator<T> implements DataGenerator {
     private Object range;
     private List<T> values;
 
-    public DistributionGenerator(ColumnDef columnDef) {
-
-        this.clazz = columnDef.getDataType().getClazz();
+    public DistributionGenerator(ColumnDef<T> columnDef) {
 
 
         this.columnDef = columnDef;
-        dataType = columnDef.getDataType();
-
-        switch (dataType.getTypeCode()) {
-            case Types.DOUBLE:
+        clazz = columnDef.getClazz();
+        type = DataTypesJdbc.ofClass(clazz);
+        switch (type.getTypeCode()) {
+            case (Types.DOUBLE):
                 range = 10.0;
                 min = 0.0;
                 break;
@@ -76,7 +76,7 @@ public class DistributionGenerator<T> implements DataGenerator {
                 max = Timestamp.valueOf(LocalDateTime.now());
                 break;
             default:
-                throw new RuntimeException("The data type with the type code (" + dataType.getTypeCode() + "," + dataType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
+                throw new RuntimeException("The data type with the type code (" + type.getTypeCode() + "," + clazz.getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
 
         }
 
@@ -99,7 +99,7 @@ public class DistributionGenerator<T> implements DataGenerator {
     public T getNewValue() {
 
         if (values == null) {
-            switch (dataType.getTypeCode()) {
+            switch (type.getTypeCode()) {
                 case Types.DOUBLE:
                     o = Math.random() * (Double) range;
                     if (min != null) {

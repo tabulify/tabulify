@@ -2,6 +2,7 @@ package net.bytle.db.sqlite;
 
 import net.bytle.cli.Log;
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
@@ -238,14 +239,17 @@ public class SqliteSqlDatabase extends SqlDatabase {
                 // ie INTEGER(50)
                 String dataType = resultSet.getString("type");
                 SqliteType type = SqliteType.get(dataType);
-                final String typeCodeName = type.getTypeName();
-                Integer typeCode = type.getTypeCode();
+                String typeCodeName = type.getTypeName();
                 // SQlite use class old data type
                 if (typeCodeName.equals("TEXT")) {
-                    typeCode = DataTypesJdbc.of("VARCHAR").getTypeCode();
+                    typeCodeName = "VARCHAR";
                 }
-                tableDef.getColumnOf(resultSet.getString("name"))
-                        .typeCode(typeCode)
+                // Not sure what to do with that
+                // Integer typeCode = type.getTypeCode();
+                DataTypeJdbc jdbcDataType = DataTypesJdbc.of(typeCodeName);
+
+                tableDef.getColumnOf(resultSet.getString("name"),jdbcDataType.getJavaDataType())
+                        .typeCode(jdbcDataType.getTypeCode())
                         .precision(type.getPrecision())
                         .scale(type.getScale())
                         .isAutoincrement("")

@@ -59,10 +59,10 @@ public class SequenceGenerator<T> implements DataGenerator {
     /**
      * @param columnDef
      */
-    public SequenceGenerator(ColumnDef columnDef) {
+    public SequenceGenerator(ColumnDef<T> columnDef) {
 
         this.columnDef = columnDef;
-        this.clazz = columnDef.getDataType().getClazz();
+        this.clazz = columnDef.getClazz();
 
         if (clazz == Integer.class) {
             currentValue = 0;
@@ -92,6 +92,10 @@ public class SequenceGenerator<T> implements DataGenerator {
         }
 
 
+    }
+
+    public static <T> SequenceGenerator<T> of(ColumnDef<T> columnDef) {
+        return new SequenceGenerator<>(columnDef);
     }
 
     /**

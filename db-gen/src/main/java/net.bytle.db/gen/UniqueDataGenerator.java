@@ -1,6 +1,7 @@
 package net.bytle.db.gen;
 
 
+import net.bytle.db.engine.Columns;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
@@ -33,19 +34,22 @@ public class UniqueDataGenerator implements DataGenerator {
             if (DataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 // With date, we are going in the past
-                Date minDate = Tables.getMinDateValue(columnDef);
-                dataGeneratorMap.put(columnDef,new SequenceGenerator(columnDef).start(minDate).step(-1));
+                ColumnDef<Date> dateColumn = Columns.safeCast(columnDef,Date.class);
+                Date minDate = Tables.getMin(dateColumn);
+                dataGeneratorMap.put(columnDef,SequenceGenerator.of(dateColumn).start(minDate).step(-1));
 
 
             } else if (DataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-                Integer intCounter = Tables.getMaxIntegerValue(columnDef);
-                dataGeneratorMap.put(columnDef,new SequenceGenerator(columnDef).start(intCounter).step(1));
+                ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef,Integer.class);
+                Integer intCounter = Tables.getMax(integerColumn);
+                dataGeneratorMap.put(columnDef,SequenceGenerator.of(integerColumn).start(intCounter).step(1));
 
             } else if ( DataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-                String s = Tables.getMaxStringValue(columnDef);
-                dataGeneratorMap.put(columnDef,new SequenceGenerator(columnDef).start(s));
+                ColumnDef<String> stringColumn = Columns.safeCast(columnDef,String.class);
+                String s = Tables.getMax(stringColumn);
+                dataGeneratorMap.put(columnDef,SequenceGenerator.of(stringColumn).start(s));
 
             } else {
 

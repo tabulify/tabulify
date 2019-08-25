@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class DerivedGenerator implements DataGenerator {
+public class DerivedGenerator<T> implements DataGenerator {
 
 
     static final Log LOGGER = Gen.GEN_LOG;
@@ -28,11 +28,11 @@ public class DerivedGenerator implements DataGenerator {
 
     private final DataGenerator dataGenerator;
     private final String formula;
-    private final ColumnDef columnDef;
+    private final ColumnDef<T> columnDef;
     private Object actualValue;
 
 
-    public DerivedGenerator(ColumnDef columnDef, DataGenerator parentDataGenerator, String formula) {
+    public DerivedGenerator(ColumnDef<T> columnDef, DataGenerator parentDataGenerator, String formula) {
 
         this.columnDef = columnDef;
         this.dataGenerator = parentDataGenerator;
@@ -47,7 +47,7 @@ public class DerivedGenerator implements DataGenerator {
      * @return a new generated data object every time it's called
      */
     @Override
-    public Object getNewValue() {
+    public T getNewValue() {
 
         Object derivedActualValue = dataGenerator.getActualValue();
         String value = derivedActualValue.toString();
@@ -86,7 +86,7 @@ public class DerivedGenerator implements DataGenerator {
             } else {
                 this.actualValue = evalValue;
             }
-            return this.actualValue;
+            return (T) this.actualValue;
         } catch (ScriptException e) {
             throw new RuntimeException(evalScript, e);
         }

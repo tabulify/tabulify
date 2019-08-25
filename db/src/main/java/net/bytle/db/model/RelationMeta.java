@@ -1,6 +1,7 @@
 package net.bytle.db.model;
 
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.engine.Columns;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
@@ -43,26 +44,31 @@ public class RelationMeta {
      * @param columnName
      * @return the column or null if not found
      */
-    public ColumnDef getColumnDef(String columnName) {
-        return columnDefByName.get(columnName);
+    public <T> ColumnDef<T> getColumnDef(String columnName) {
+
+        return (ColumnDef<T>) columnDefByName.get(columnName);
     }
 
     /**
      * @param columnName
      * @return the actual column or a new created column object if not found
      */
-    public ColumnDef getColumnOf(String columnName, Class clazz) {
+    public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
 
 
-        ColumnDef columnDef = getColumnDef(columnName);
-        if (columnDef == null) {
+
+        ColumnDef<T> columnDef = null;
+        ColumnDef columnDefGet = getColumnDef(columnName);
+        if (columnDefGet == null) {
 
             // This assert is to catch when object are passed
             // to string function, the length is bigger than the assertion and make it fails
             assert columnName.length() < 100;
-            columnDef = new ColumnDef(relationDef, columnName, clazz);
+            columnDef = new ColumnDef<>(relationDef, columnName, clazz);
             columnDef.setColumnPosition(columnDefByName.size() + 1);
             columnDefByName.put(columnName, columnDef);
+        } else {
+            columnDef = Columns.safeCast(columnDef,clazz);
         }
         return columnDef;
 

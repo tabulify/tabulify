@@ -37,14 +37,14 @@ public interface RelationDef {
      * @param columnName
      * @return a column def by its name
      */
-    ColumnDef getColumnDef(String columnName);
+    <T> ColumnDef<T> getColumnDef(String columnName);
 
     /**
      *
      * @param columnIndex
      * @return a column def by its index
      */
-    ColumnDef getColumnDef(Integer columnIndex);
+    <T> ColumnDef<T> getColumnDef(Integer columnIndex);
 
     /**
      *
@@ -52,7 +52,7 @@ public interface RelationDef {
      * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
      * @return  a new columnDef
      */
-    ColumnDef getColumnOf(String columnName, Class clazz);
+    <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
 
 
 }

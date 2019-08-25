@@ -62,7 +62,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
     @Override
-    public ColumnDef getColumnDef(String columnName) {
+    public <T> ColumnDef<T> getColumnDef(String columnName) {
         return meta.getColumnDef(columnName);
     }
 
@@ -299,7 +299,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
      * @return  a new columnDef
      */
-    public ColumnDef getColumnOf(String columnName, Class clazz) {
+    public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
 
         return meta.getColumnOf(columnName, clazz);
 
