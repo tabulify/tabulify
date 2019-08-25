@@ -303,7 +303,6 @@ public class Tables {
         }
         LOGGER.info("Table " + tableDef.getFullyQualifiedName() + " created in the schema (" + schemaDef + ")");
 
-        // Return it back (The schema and the name may be not the same, we return a new object)
         return schemaDef.getTableOf(tableName);
 
     }

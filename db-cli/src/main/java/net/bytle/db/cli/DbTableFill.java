@@ -2,8 +2,10 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
+import net.bytle.db.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.engine.SchemaDataUri;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.gen.DataDefLoader;
@@ -42,12 +44,12 @@ public class DbTableFill {
                 "You should use a data definition file (option " + DEFINITION_FILE + ") to have more control over the data generated";
 
 
-        final String ARG_NAME = "(DatabaseUri|TableUri)";
+        final String TABLE_OR_SCHEMA_URI = "(SchemaUri|TableUri)";
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("A table Uri (@database[/schema]/table) or a database/schema URI (@database[/schema])")
+        cliCommand.argOf(TABLE_OR_SCHEMA_URI)
+                .setDescription("A schema URI (@database[/schema]) when loading with a data definition file or a table Uri (@database[/schema]/table) without.")
                 .setMandatory(true);
 
         cliCommand.optionOf(STORAGE_PATH);
@@ -56,8 +58,8 @@ public class DbTableFill {
                 .setDescription("A path to a data definition file (DataDef.yml)");
 
         cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
-                .setDescription("defines the total number of rows that the table must have")
-                .setDefaultValue(100);
+                .setDescription("defines the total number of rows that the table(s) must have")
+                .setMandatory(false);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
@@ -66,36 +68,45 @@ public class DbTableFill {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Arg
-        String arg = cliParser.getString(ARG_NAME);
+        String dataUri = cliParser.getString(TABLE_OR_SCHEMA_URI);
         Path dataDefPath = cliParser.getPath(DEFINITION_FILE);
 
 
         if (dataDefPath == null) {
-            LOGGER.info("Loading generated data for the table " + arg);
+            LOGGER.info("Loading generated data for the table " + dataUri);
         } else {
             LOGGER.info("Loading generated data with the data definition file (" + dataDefPath + ")");
         }
 
-        TableDataUri tableDataUri = TableDataUri.of(arg);
-        Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
-        final String schemaName = tableDataUri.getSchemaName();
-        SchemaDef schemaDef = database.getCurrentSchema();
-        if (schemaName != null) {
-            schemaDef = database.getSchema(schemaName);
-        }
-        CliTimer cliTimer = CliTimer.getTimer(arg).start();
+        Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
+
+        CliTimer cliTimer = CliTimer.getTimer("Fill table").start();
 
 
         if (dataDefPath != null) {
+
+            // The data uri must be a schema URI, the name of the table is in the data def
+            SchemaDataUri schemaDataUri = SchemaDataUri.of(dataUri);
+
+            Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
+            final String schemaName = schemaDataUri.getSchemaName();
+            SchemaDef schemaDef = database.getCurrentSchema();
+            if (schemaName != null) {
+                schemaDef = database.getSchema(schemaName);
+            }
+
             if (!(Files.exists(dataDefPath))) {
                 LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + " does not exist");
                 System.exit(1);
             }
 
+            SchemaDef finalSchemaDef = schemaDef;
             List<DataGenDef> dataGenDefs = DataDefs.load(dataDefPath)
                     .stream()
-                    .map(t -> DataGenDef.get(t)).collect(Collectors.toList());
-
+                    .map(t->t.setSchema(finalSchemaDef))
+                    .map(t -> DataGenDef.get(t))
+                    .map(t->totalNumberOfRows!=null?t.setRows(totalNumberOfRows):t)
+                    .collect(Collectors.toList());
 
             List<DataGenDef> loadedDataGenDefs = DataDefLoader.of(schemaDef)
                     .loadParentTable(true)
@@ -108,6 +119,17 @@ public class DbTableFill {
 
         } else {
 
+            // No data def, it must be a data uri
+            TableDataUri tableDataUri = TableDataUri.of(dataUri);
+
+            Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+            final String schemaName = tableDataUri.getSchemaName();
+            SchemaDef schemaDef = database.getCurrentSchema();
+            if (schemaName != null) {
+                schemaDef = database.getSchema(schemaName);
+            }
+
+
             TableDef tableDef = schemaDef.getTableOf(tableDataUri.getTableName());
             if (!Tables.exists(tableDef)) {
                 LOGGER.severe("The table (" + tableDef.getFullyQualifiedName() + " doesn't exist.");
@@ -116,7 +138,7 @@ public class DbTableFill {
                 LOGGER.info("The table (" + tableDef.getFullyQualifiedName() + ") has (" + Tables.getSize(tableDef) + ") rows before loading.");
             }
 
-            Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
+
 
             DataGenDef datagenDef = DataGenDef.get(tableDef).setRows(totalNumberOfRows);
             DataGenLoader.get(datagenDef).load();

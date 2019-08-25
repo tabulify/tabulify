@@ -1,0 +1,107 @@
+====== Data Definition File (DataDef.yml) ======
+
+
+===== About =====
+A ''data definition'' file is a file that defines a [[tabular|tabular data structure]] that every [[action|action]] may used to describe the data and their properties.
+
+For instance, all [[data_generation:data_generation|data generation action]] uses this format to define the data generation parameters.
+
+
+
+
+
+===== Structure =====
+
+==== Common ====
+
+The following ''data definition'' file shows the common structure of all data definition file that defines the name of the tabular structure and its columns.
+
+
+<code yaml DataDef.yml>
+Name: TableName
+Columns:
+  COLUMN_NAME_1
+    Type: 
+    Precision:
+    Scale: 
+    Comment: 
+  COLUMN_NAME_2
+    Type: 
+    Precision:
+    Scale: 
+    Comment: 
+  .....
+</code>
+where:
+  * ''name'' is the name of the tabular structure (If the name is not defined, it defaults to the name of the file).
+  * ''columns'' defines a list of column name (mandatory)
+  * ''COLUMN_NAME_1'', ''COLUMN_NAME_2'', ... are the name of each column. 
+  * ''type'' is the data type of a column (Default: ''VARCHAR'') and is one of the following SQL data type:
+      * DATE
+      * CHAR
+      * VARCHAR
+      * DECIMAL
+      * DOUBLE
+      * FLOAT
+      * INTEGER
+      * NUMERIC
+  * ''precision'' is the precision of the data type (Default value of the data type)
+  * ''scale'' is the scale of the data type (Default value of the data type)
+  * ''comment'' is a comment on the column
+
+
+
+Example:
+<code yaml Date.yml>
+Name: Date
+Columns:
+  DATE_ID
+    Type: Date
+  MONTH_ID:
+    Type: Varchar
+    Precision: 6
+  MONTH_NUMBER:
+    Type: Integer
+  MONTH_NAME:
+    Type: Varchar
+    Precision: 20
+  MONTH_DESC:
+    Type: Varchar
+    Precision: 20
+  MONTH_DESC_SHORT:
+    Type: Varchar
+    Precision: 10
+  YEAR_NUMBER:
+    Type: Varchar
+    Precision: 4
+</code>
+==== Property ====
+
+
+Each action may need additional information about a table or a column. This information can be added at each level (table or column) as a property.
+
+<code yaml DataDefExtra.yml>
+TableProperty1: value1
+Columns:
+    COLUMN_NAME:
+        ColumnProperty1: value1
+....
+</code>
+where:
+  * ''TableProperty1'' is a table property
+  * ''ColumnProperty1'' is a column property
+
+A Property value may be:
+  * a scalar (ie single value) 
+  * a list 
+  * or a mapping 
+depending of the need of the action.
+
+The [[data_generation:data_generation#action|data generations actions]] use them to define extra properties
+<code yaml DataDefExtra.yml>
+TableProperty1: value1
+Columns:
+    COLUMN_NAME:
+        ColumnProperty1: value1
+....
+</code>

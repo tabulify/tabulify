@@ -1,5 +1,6 @@
 package net.bytle.db.sqlite;
 
+import net.bytle.cli.Log;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.SqlDatabase;
@@ -18,6 +19,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SqliteSqlDatabase extends SqlDatabase {
+
+    private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer, DataTypeDatabase>();
 
@@ -158,9 +161,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         Connection connection = tableDef.getDatabase().getCurrentConnection();
         List<String> columns = new ArrayList<>();
+        final String sql = "PRAGMA table_info('" + tableDef.getName() + "')";
         try (
                 Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("PRAGMA table_info(" + tableDef.getName() + ")");
+                ResultSet resultSet = statement.executeQuery(sql)
         ) {
             while (resultSet.next()) {
                 int pk = resultSet.getInt("pk");
@@ -169,6 +173,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
                 }
             }
         } catch (SQLException e) {
+            LOGGER.severe("Sql problem with the following sql ("+sql+")");
             throw new RuntimeException(e);
         }
         if (columns.size() > 0) {
@@ -183,9 +188,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         Connection connection = tableDef.getDatabase().getCurrentConnection();
         Map<Integer, List<String>> foreignKeys = new HashMap<>();
+        final String sql = "PRAGMA foreign_key_list('" + tableDef.getName() + "')";
         try (
                 Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("PRAGMA foreign_key_list(" + tableDef.getName() + ")");
+                ResultSet resultSet = statement.executeQuery(sql);
         ) {
             while (resultSet.next()) {
                 String parentTable = resultSet.getString("table");
@@ -195,6 +201,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
             }
         } catch (SQLException e) {
             if (!e.getMessage().equals("query does not return ResultSet")) {
+                LOGGER.severe("An error was seen while running this SQL statement: "+sql);
                 throw new RuntimeException(e);
             }
 
@@ -202,9 +209,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         // Sqlite seems to preserve the order of the foreign keys but descendant
         // Hack to get it right
-        for (int i = foreignKeys.size() - 1; i >= 0; i--) {
-            tableDef.addForeignKey(tableDef.getSchema().getTableOf(foreignKeys.get(i).get(0)), foreignKeys.get(i).get(1));
-        }
+        // TODO: this is making the build recursive. It should'nt
+        // for (int i = foreignKeys.size() - 1; i >= 0; i--) {
+        //     tableDef.addForeignKey(tableDef.getSchema().getTableOf(foreignKeys.get(i).get(0)), foreignKeys.get(i).get(1));
+        // }
 
 
         return true;

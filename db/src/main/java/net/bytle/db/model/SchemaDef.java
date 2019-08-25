@@ -152,4 +152,8 @@ public class SchemaDef {
         // TODO: Not sure how to make sure that the query will run on this schema ???
         return this.getDatabase().getQuery(query);
     }
+
+    public String getFullyQualifiedName() {
+        return this.database.getDatabaseName()+"."+this.name;
+    }
 }
