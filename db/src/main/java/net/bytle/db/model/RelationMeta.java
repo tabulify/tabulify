@@ -55,8 +55,6 @@ public class RelationMeta {
      */
     public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
 
-
-
         ColumnDef<T> columnDef = null;
         ColumnDef columnDefGet = getColumnDef(columnName);
         if (columnDefGet == null) {
@@ -68,7 +66,7 @@ public class RelationMeta {
             columnDef.setColumnPosition(columnDefByName.size() + 1);
             columnDefByName.put(columnName, columnDef);
         } else {
-            columnDef = Columns.safeCast(columnDef,clazz);
+            columnDef = Columns.safeCast(columnDefGet,clazz);
         }
         return columnDef;
 

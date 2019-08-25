@@ -6,6 +6,7 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.*;
 
@@ -41,9 +42,15 @@ public class UniqueDataGenerator implements DataGenerator {
 
             } else if (DataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-                ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef,Integer.class);
-                Integer intCounter = Tables.getMax(integerColumn);
-                dataGeneratorMap.put(columnDef,SequenceGenerator.of(integerColumn).start(intCounter).step(1));
+                if (columnDef.getClazz()== BigDecimal.class){
+                    ColumnDef<BigDecimal> bigDecimalColumnDef = Columns.safeCast(columnDef, BigDecimal.class);
+                    BigDecimal intCounter = Tables.getMax(bigDecimalColumnDef);
+                    dataGeneratorMap.put(columnDef, SequenceGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
+                } else {
+                    ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef, Integer.class);
+                    Integer intCounter = Tables.getMax(integerColumn);
+                    dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter).step(1));
+                }
 
             } else if ( DataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
