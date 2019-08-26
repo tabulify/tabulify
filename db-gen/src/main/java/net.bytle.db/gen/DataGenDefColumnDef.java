@@ -3,61 +3,88 @@ package net.bytle.db.gen;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 
-import java.util.HashMap;
+
 import java.util.Map;
 
 /**
- * A wrapper around a columnDef with set/get of the data generation property
+ * A wrapper around a columnDef that will build and link the data generator
  */
-public class DataGenDefColumnDef {
+public class DataGenDefColumnDef<T> {
 
+    private final ColumnDef<T> columnDef;
 
+    /**
+     * The properties key in a DataDefinition file
+     */
     public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
-    private final ColumnDef columnDef;
-    final Map<String,Object> generatorProperties;
 
-    private DataGenDefColumnDef(ColumnDef columnDef) {
+    /**
+     * The data generator
+     */
+    private DataGenerator dataGenerator;
+
+    /**
+     *
+     *
+     * @param columnDef
+     */
+    private DataGenDefColumnDef(DataGenDef dataGenDef, ColumnDef<T> columnDef) {
+
         this.columnDef = columnDef;
+
         // When read from a data definition file into the column property
-        final Map<String,Object> generatorColumnProperties = (Map<String, Object>) Maps.getPropertyCaseIndependent(this.columnDef.getProperties(),GENERATOR_PROPERTY_KEY);
-        if (generatorColumnProperties != null){
-            generatorProperties = generatorColumnProperties;
-        } else {
-            generatorProperties = new HashMap<>();
-            this.columnDef.addProperty(GENERATOR_PROPERTY_KEY,generatorProperties);
+        final Object generatorProperty = Maps.getPropertyCaseIndependent(columnDef.getProperties(), GENERATOR_PROPERTY_KEY);
+        if (generatorProperty != null) {
+
+            final Map<String, Object> generatorColumnProperties;
+            try {
+                generatorColumnProperties = (Map<String, Object>) generatorProperty;
+            } catch (ClassCastException e) {
+                throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.getFullyQualifiedName() + ") should be a map value. Bad values:" + generatorProperty);
+            }
+
+            final String nameProperty = (String) Maps.getPropertyCaseIndependent(generatorColumnProperties, "name");
+            if (nameProperty == null) {
+                throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.getFullyQualifiedName() + ".");
+            }
+            String name = nameProperty.toLowerCase();
+            switch (name) {
+                case "sequence":
+                    dataGenerator = SequenceGenerator.of(columnDef);
+                case "unique":
+                    dataGenerator = SequenceGenerator.of(columnDef);
+                case "derived":
+//                    dataGenerator = DerivedGenerator.of(columnDef, generatorColumnProperties, dataGeneration);
+                case "random":
+                    dataGenerator = DistributionGenerator.of(columnDef, generatorColumnProperties);
+                case "distribution":
+                    dataGenerator = DistributionGenerator.of(columnDef, generatorColumnProperties);
+                default:
+                    throw new RuntimeException("The generator (" + name + ") defined for the column (" + columnDef.getFullyQualifiedName() + ") is unknown");
+            }
+
         }
 
     }
 
-    public static DataGenDefColumnDef get(ColumnDef columnDef) {
-        return new DataGenDefColumnDef(columnDef);
+    public static <T> DataGenDefColumnDef<T> of(DataGenDef dataGenDef, ColumnDef<T> columnDef) {
+        return new DataGenDefColumnDef<>(dataGenDef, columnDef);
     }
 
 
-    public DataGenDefColumnDef setGeneratorType(String generatorType) {
-        this.generatorProperties.put("name",generatorType);
-        return this;
-    }
 
-    public ColumnDef getColumnDef() {
+
+    public ColumnDef<T> getColumnDef() {
         return columnDef;
     }
 
-    public DataGenDefColumnDef put(String key, Object value) {
-        this.generatorProperties.put(key.toLowerCase(),value);
+
+    public DataGenDefColumnDef setGenerator(DataGenerator dataGenerator) {
+        this.dataGenerator = dataGenerator;
         return this;
     }
 
-    public String getGeneratorName() {
-        return (String) Maps.getPropertyCaseIndependent(this.generatorProperties, "name");
-    }
-
-
-    public Map<String,Object> getProperties() {
-        return this.generatorProperties;
-    }
-
-    public Object getPropertyCaseIndependent(String key) {
-        return Maps.getPropertyCaseIndependent(this.generatorProperties,key);
+    public DataGenerator getDataGenerator() {
+        return dataGenerator;
     }
 }

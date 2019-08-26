@@ -2,12 +2,14 @@ package net.bytle.db.gen;
 
 
 import net.bytle.db.model.ColumnDef;
+import net.bytle.type.Maps;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -30,10 +32,10 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * * values in case of a list of data (may be null)
  */
 
-public class SequenceGenerator<T> implements DataGenerator {
+public class SequenceGenerator<T> implements DataGenerator<T> {
 
 
-    private final ColumnDef columnDef;
+    private final ColumnDef<T> columnDef;
     private final Class<T> clazz;
 
 
@@ -94,8 +96,41 @@ public class SequenceGenerator<T> implements DataGenerator {
 
     }
 
+    /**
+     * The properties of a generator from a data definition file
+     * @param columnDef
+     * @param <T>
+     * @return
+     */
     public static <T> SequenceGenerator<T> of(ColumnDef<T> columnDef) {
-        return new SequenceGenerator<>(columnDef);
+
+        SequenceGenerator<T> sequenceGenerator = new SequenceGenerator<>(columnDef);
+
+        Map<String, Object> properties = DataGeneration.getProperties(columnDef);
+        if (properties!=null) {
+            final Object stepObj = Maps.getPropertyCaseIndependent(properties, "step");
+            final Integer step;
+            try {
+                step = (Integer) stepObj;
+            } catch (ClassCastException e) {
+                throw new RuntimeException("The step property for the data generator of the column (" + columnDef.getFullyQualifiedName() + ") is not an integer (Value: " + stepObj + ")");
+            }
+            if (step != null) {
+                sequenceGenerator.step = step;
+            }
+
+            List<Object> values;
+            final Object valuesAsObject = Maps.getPropertyCaseIndependent(properties, "values");
+            try {
+                values = (List<Object>) valuesAsObject;
+            } catch (ClassCastException e) {
+                throw new RuntimeException("The values excepted for the column " + columnDef + " are not a list. The values are " + valuesAsObject);
+            }
+            if (values != null) {
+                sequenceGenerator.values = values;
+            }
+        }
+        return sequenceGenerator;
     }
 
     /**
@@ -163,7 +198,7 @@ public class SequenceGenerator<T> implements DataGenerator {
      * @return the column attached to this generator
      */
     @Override
-    public ColumnDef getColumn() {
+    public ColumnDef<T> getColumn() {
         return columnDef;
     }
 
@@ -248,7 +283,7 @@ public class SequenceGenerator<T> implements DataGenerator {
         return this;
     }
 
-    public SequenceGenerator step(Integer step) {
+    public SequenceGenerator<T> step(Integer step) {
 
         this.step = step;
         return this;
@@ -287,6 +322,8 @@ public class SequenceGenerator<T> implements DataGenerator {
         return maxGeneratedValues;
 
     }
+
+
 
 
     /**

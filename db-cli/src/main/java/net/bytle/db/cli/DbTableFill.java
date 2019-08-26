@@ -9,7 +9,7 @@ import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.gen.DataGenDef;
-import net.bytle.db.gen.DataGenLoader;
+import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -140,7 +140,7 @@ public class DbTableFill {
 
 
             DataGenDef datagenDef = DataGenDef.get(tableDef).setTotalRows(totalNumberOfRows);
-            DataGenLoader.get(datagenDef).load();
+            DataGeneration.get(datagenDef).load();
 
         }
 

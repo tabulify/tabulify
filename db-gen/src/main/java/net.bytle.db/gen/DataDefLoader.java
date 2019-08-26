@@ -10,7 +10,6 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The input of the data generation is in a yml file
@@ -119,31 +118,11 @@ public class DataDefLoader {
 
         LOGGER.fine("Loading the table " + tableDef.getFullyQualifiedName() + ")");
 
-        // Parent ?
-        // If yes, load the parent first
-        if (tableDef.getForeignKeys().size() != 0) {
-            for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
-                TableDef parentTableDef = foreignKeyDef.getForeignPrimaryKey().getTableDef();
-                if (!loadedTables.contains(parentTableDef)) {
-
-                    Integer rows = Tables.getSize(parentTableDef);
-                    if (rows == 0) {
-                        if (this.loadParent) {
-                            load(parentTableDef);
-                        } else {
-                            throw new RuntimeException("The table (" + tableDef.getFullyQualifiedName() + ") has a foreign key to the parent table (" + parentTableDef.getFullyQualifiedName() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + tableDef.getFullyQualifiedName() + ")");
-                        }
-                    }
-
-                }
-            }
-
-        }
 
         // Load
         DataGenDef dataDef = dataDefMap.get(tableDef.getFullyQualifiedName());
-        DataGenLoader.get(dataDef)
-                .load();
+//        DataGeneration.get(dataDef)
+//                .load();
 
         // Add the table in the loaded table
         // to stop the recursive calls

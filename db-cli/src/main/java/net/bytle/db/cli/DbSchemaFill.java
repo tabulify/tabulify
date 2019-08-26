@@ -8,7 +8,7 @@ import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.gen.DataDefLoader;
 import net.bytle.db.gen.DataGenDef;
-import net.bytle.db.gen.DataGenLoader;
+import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
@@ -114,7 +114,7 @@ public class DbSchemaFill {
 
                 // Loading
                 for (TableDef tableDef : tableDefs) {
-                    DataGenLoader.get(DataGenDef.get(tableDef))
+                    DataGeneration.get(DataGenDef.get(tableDef))
                             .load();
                 }
             } else {

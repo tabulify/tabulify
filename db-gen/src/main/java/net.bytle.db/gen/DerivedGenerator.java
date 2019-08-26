@@ -3,6 +3,7 @@ package net.bytle.db.gen;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.cli.Log;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.type.Maps;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -12,9 +13,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
-public class DerivedGenerator<T> implements DataGenerator {
+public class DerivedGenerator<T> implements DataGenerator<T> {
 
 
     static final Log LOGGER = Gen.GEN_LOG;
@@ -42,6 +44,7 @@ public class DerivedGenerator<T> implements DataGenerator {
         }
 
     }
+
 
     /**
      * @return a new generated data object every time it's called
@@ -97,8 +100,8 @@ public class DerivedGenerator<T> implements DataGenerator {
      * @return a generated value (used in case of derived data
      */
     @Override
-    public Object getActualValue() {
-        return actualValue;
+    public T getActualValue() {
+        return (T) actualValue;
     }
 
     /**
@@ -116,7 +119,7 @@ public class DerivedGenerator<T> implements DataGenerator {
      * @return a new generated data object every time it's called
      */
     @Override
-    public Object getNewValue(ColumnDef columnDef) {
+    public T getNewValue(ColumnDef columnDef) {
 
         if (columnDef.equals(this.columnDef)) {
             return getNewValue();
@@ -133,7 +136,7 @@ public class DerivedGenerator<T> implements DataGenerator {
      * @return a generated value (used in case of derived data
      */
     @Override
-    public Object getActualValue(ColumnDef columnDef) {
+    public T getActualValue(ColumnDef columnDef) {
 
         if (columnDef.equals(this.columnDef)) {
             return getActualValue();
@@ -156,6 +159,42 @@ public class DerivedGenerator<T> implements DataGenerator {
     @Override
     public Double getMaxGeneratedValues() {
         return dataGenerator.getMaxGeneratedValues();
+    }
+
+    /**
+     *
+     * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
+     * @param dataGeneration - The context object (giving access to the build method and other context method)
+     * @return a data generator for chaining
+     */
+    static public <T> DerivedGenerator<T> of(ColumnDef<T> columnDef, DataGeneration dataGeneration) {
+
+        Map<String, Object> properties = DataGeneration.getProperties(columnDef);
+        // Parent Generator
+        final String columnParentKeyProperty = "ColumnParent";
+        String columnName = (String) Maps.getPropertyCaseIndependent(properties,columnParentKeyProperty);
+        if (columnName == null) {
+            throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
+        }
+        ColumnDef columnParent = columnDef.getRelationDef().getColumnDef(columnName);
+        DataGenerator parentGenerator = dataGeneration.getDataGenerator(columnParent);
+        if (parentGenerator == null) {
+            if (columnDef.equals(columnParent)) {
+                throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
+            }
+            // Build it
+            dataGeneration.buildDefaultDataGeneratorForColumn(columnParent);
+        }
+        parentGenerator = dataGeneration.getDataGenerator(columnParent);
+
+        // Formula
+        String formula = (String) Maps.getPropertyCaseIndependent(properties,"formula");
+        if (formula==null){
+            throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column ("+columnDef.getFullyQualifiedName()+")");
+        }
+
+        // New Instance
+        return new DerivedGenerator<>(columnDef,parentGenerator,formula);
     }
 
 

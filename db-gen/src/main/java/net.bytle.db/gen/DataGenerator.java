@@ -4,6 +4,7 @@ package net.bytle.db.gen;
 import net.bytle.db.model.ColumnDef;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -14,7 +15,7 @@ import java.util.List;
  *
  * @param <T>
  */
-public interface DataGenerator<T extends Object> {
+public interface DataGenerator<T> {
 
 
     /**
@@ -45,7 +46,7 @@ public interface DataGenerator<T extends Object> {
      * when asking a value for a column, we may need to ask the value for another column before
      * If the generator is a multi-column generator, it will throw an errors
      */
-    ColumnDef getColumn();
+    ColumnDef<T> getColumn();
 
     /**
      * get a new value for a column
@@ -73,5 +74,6 @@ public interface DataGenerator<T extends Object> {
      * @return the maxValue number of times the function {@link #getNewValue(ColumnDef)} can be called
      */
     Double getMaxGeneratedValues();
+
 
 }

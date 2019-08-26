@@ -359,4 +359,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     public Class<T> getClazz() {
         return this.clazz;
     }
+
+
 }

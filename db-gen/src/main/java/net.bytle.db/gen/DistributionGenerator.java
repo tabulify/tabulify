@@ -5,6 +5,7 @@ import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
+import net.bytle.type.Maps;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -34,7 +35,6 @@ public class DistributionGenerator<T> implements DataGenerator {
     private List<T> values;
 
     public DistributionGenerator(ColumnDef<T> columnDef) {
-
 
         this.columnDef = columnDef;
         clazz = columnDef.getClazz();
@@ -80,6 +80,29 @@ public class DistributionGenerator<T> implements DataGenerator {
 
         }
 
+    }
+
+    public static <T> DistributionGenerator<T> of(ColumnDef<T> columnDef, Map<String, Object> generatorColumnProperties) {
+
+        final DistributionGenerator<T> distributionGenerator = new DistributionGenerator<>(columnDef);
+
+        final Object bucketsObject = Maps.getPropertyCaseIndependent(generatorColumnProperties, "buckets");
+        Map<T, Integer> buckets;
+        try {
+            buckets = (Map<T, Integer>) bucketsObject;
+        } catch (ClassCastException e){
+            throw new RuntimeException("The buckets definition of the column ("+columnDef.getFullyQualifiedName()+") are not in the map format <Object,Integer>. The values are: "+bucketsObject);
+        }
+
+        // DataType Check
+        if (buckets != null) {
+            Object o = buckets.entrySet().iterator().next().getKey();
+            if (o.getClass() != columnDef.getDataType().getClazz()) {
+                throw new RuntimeException("The data type of the key with the the value (" + o + ") in the buckets definition of the column " + columnDef.getFullyQualifiedName() + " is not a " + columnDef.getDataType().getClazz().getSimpleName() + " but a " + o.getClass().getSimpleName() + ".");
+            }
+            distributionGenerator.setBuckets(buckets);
+        }
+        return distributionGenerator;
     }
 
 

@@ -1,6 +1,14 @@
 # Data Generation
 
 
+## Model
+
+  * A [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) contains one or more [DataGenTableDef](./src/main/java/net.bytle.db/gen/DataGenDef.java) 
+  * A [DataGenTableDef](./src/main/java/net.bytle.db/gen/DataGenDef.java) contains one or more [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java)
+  * A [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java) contains one [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java)
+  * A [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java) contains one [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java)
+  * A [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java) contains one or more [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java)  
+
 
 ## Documentation
 

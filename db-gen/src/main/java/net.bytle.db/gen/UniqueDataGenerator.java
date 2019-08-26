@@ -174,4 +174,6 @@ public class UniqueDataGenerator implements DataGenerator {
         // Hack
         return Double.valueOf(Integer.MAX_VALUE);
     }
+
+
 }
