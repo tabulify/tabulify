@@ -303,4 +303,10 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
 
         }
     }
+
+    @Override
+    public String toString() {
+        return "DistributionGenerator{" + columnDef + '}';
+    }
+
 }

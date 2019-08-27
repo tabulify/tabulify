@@ -95,7 +95,7 @@ public class DataGeneration {
         PrimaryKeyDef primaryKeyDef = tableDef.getPrimaryKey();
         // Extract the primary column
         if (primaryKeyDef != null) {
-            primaryColumns = primaryKeyDef.getColumns();
+            primaryColumns.addAll(primaryKeyDef.getColumns());
         }
 
         // Foreign Key with only one column are supported
@@ -193,8 +193,9 @@ public class DataGeneration {
         // A data generator was not yet fund, we will find one with the column constraint
         if (primaryColumns.contains(columnDef)) {
 
-            UniqueDataGenerator uniqueDataGenerator = new UniqueDataGenerator(primaryColumns);
-            for (ColumnDef pkColumns : primaryColumns) {
+            final List<ColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getRelationDef().equals(columnDef.getRelationDef())).collect(Collectors.toList());
+            UniqueDataGenerator uniqueDataGenerator = new UniqueDataGenerator(primaryColumnsForColumnDefTable);
+            for (ColumnDef pkColumns : primaryColumnsForColumnDefTable) {
                 dataGenerators.put(pkColumns, uniqueDataGenerator);
             }
             return;

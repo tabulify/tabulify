@@ -2,7 +2,7 @@ package net.bytle.db.engine;
 
 import net.bytle.db.model.ColumnDef;
 
-import java.math.BigDecimal;
+
 
 
 public class Columns {

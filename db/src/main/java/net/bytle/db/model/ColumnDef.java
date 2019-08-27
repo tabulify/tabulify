@@ -273,7 +273,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
     @Override
     public String toString() {
-        return columnName + " " + getDataType().getTypeName() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
+        return getFullyQualifiedName() + " " + getDataType().getTypeName() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
     }
 
     @Override

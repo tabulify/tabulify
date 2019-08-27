@@ -175,5 +175,8 @@ public class UniqueDataGenerator implements DataGenerator {
         return Double.valueOf(Integer.MAX_VALUE);
     }
 
-
+    @Override
+    public String toString() {
+        return "UniqueDataGenerator{" + dataGeneratorMap + '}';
+    }
 }

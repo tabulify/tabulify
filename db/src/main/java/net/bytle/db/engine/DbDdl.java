@@ -66,7 +66,8 @@ public class DbDdl {
 
         } catch (Exception e) {
 
-            LOGGER.warning("The getCreateTableStatements of the databaseDefault provider " + tableDef.getDatabase().getDatabaseProductName() + " returns the following error: " + e.getMessage());
+            LOGGER.severe("The getCreateTableStatements of the database provider " + tableDef.getDatabase().getDatabaseProductName() + " returns an error.");
+            throw new RuntimeException(e);
 
         }
 

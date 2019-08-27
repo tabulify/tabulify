@@ -94,7 +94,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         // Pk
         final PrimaryKeyDef primaryKey = tableDef.getPrimaryKey();
-        if (tableDef.getPrimaryKey().getColumns().size() != 0) {
+        if (tableDef.getPrimaryKey() != null) {
             statement.append(",\nPRIMARY KEY (");
             for (int i = 0; i < primaryKey.getColumns().size(); i++) {
                 ColumnDef columnDef = primaryKey.getColumns().get(i);
