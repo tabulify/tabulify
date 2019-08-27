@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Retrieve a list of Data Def
+ * Retrieve a list of TableDef through a Data Definition file
  */
 public class DataDefs {
 

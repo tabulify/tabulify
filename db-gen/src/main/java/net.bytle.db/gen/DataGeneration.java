@@ -22,16 +22,17 @@ import java.util.stream.Collectors;
 public class DataGeneration {
 
     /**
-     * The total number of rows that the table should have
+     * The {@link TableDef#getProperty(String)} key giving the total number of rows that the table should have
      */
-    public static final String TOTAL_ROWS = "TotalRows";
+    public static final String TOTAL_ROWS_PROPERTY_KEY = "TotalRows";
+
+    /**
+     * The {@link TableDef#getProperty(String)} key giving the data generator data
+     */
+    public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
 
     private static final Log LOGGER = Gen.GEN_LOG;
 
-    /**
-     * The properties key in a DataDefinition file
-     */
-    public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
 
     /**
      * Max records to insert if there is no total rows defined
@@ -68,7 +69,7 @@ public class DataGeneration {
     public DataGeneration addTable(TableDef tableDef, Integer totalRows) {
 
         if (totalRows==null){
-            final Object totalRowsObject = Maps.getPropertyCaseIndependent(tableDef.getProperties(), TOTAL_ROWS);
+            final Object totalRowsObject = Maps.getPropertyCaseIndependent(tableDef.getProperties(), TOTAL_ROWS_PROPERTY_KEY);
             try {
                 totalRows = (Integer) totalRowsObject;
             } catch (ClassCastException e){
@@ -147,7 +148,46 @@ public class DataGeneration {
         DataGenerator generator = dataGenerators.get(columnDef);
         if (generator == null) {
 
-            // TODO: Create the generator from the columnDef properties if they exist
+            // When read from a data definition file into the column property
+            final Object generatorProperty = Maps.getPropertyCaseIndependent(columnDef.getProperties(), GENERATOR_PROPERTY_KEY);
+            if (generatorProperty != null) {
+
+                final Map<String, Object> generatorColumnProperties;
+                try {
+                    generatorColumnProperties = (Map<String, Object>) generatorProperty;
+                } catch (ClassCastException e) {
+                    throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.getFullyQualifiedName() + ") should be a map value. Bad values:" + generatorProperty);
+                }
+
+                final String nameProperty = (String) Maps.getPropertyCaseIndependent(generatorColumnProperties, "name");
+                if (nameProperty == null) {
+                    throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.getFullyQualifiedName() + ".");
+                }
+                DataGenerator<T> dataGenerator;
+                String name = nameProperty.toLowerCase();
+                switch (name) {
+                    case "sequence":
+                        dataGenerator = SequenceGenerator.of(columnDef);
+                        break;
+                    case "unique":
+                        dataGenerator = SequenceGenerator.of(columnDef);
+                        break;
+                    case "derived":
+                        dataGenerator = DerivedGenerator.of(columnDef, this);
+                        break;
+                    case "random":
+                        dataGenerator = DistributionGenerator.of(columnDef);
+                        break;
+                    case "distribution":
+                        dataGenerator = DistributionGenerator.of(columnDef);
+                        break;
+                    default:
+                        throw new RuntimeException("The generator (" + name + ") defined for the column (" + columnDef.getFullyQualifiedName() + ") is unknown");
+                }
+                dataGenerators.put(columnDef,dataGenerator);
+                return;
+
+            }
         }
 
         // A data generator was not yet fund, we will find one with the column constraint

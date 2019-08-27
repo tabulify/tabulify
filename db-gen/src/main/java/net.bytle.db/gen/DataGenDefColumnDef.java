@@ -13,10 +13,7 @@ public class DataGenDefColumnDef<T> {
 
     private final ColumnDef<T> columnDef;
 
-    /**
-     * The properties key in a DataDefinition file
-     */
-    public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
+
 
     /**
      * The data generator
@@ -32,38 +29,7 @@ public class DataGenDefColumnDef<T> {
 
         this.columnDef = columnDef;
 
-        // When read from a data definition file into the column property
-        final Object generatorProperty = Maps.getPropertyCaseIndependent(columnDef.getProperties(), GENERATOR_PROPERTY_KEY);
-        if (generatorProperty != null) {
 
-            final Map<String, Object> generatorColumnProperties;
-            try {
-                generatorColumnProperties = (Map<String, Object>) generatorProperty;
-            } catch (ClassCastException e) {
-                throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.getFullyQualifiedName() + ") should be a map value. Bad values:" + generatorProperty);
-            }
-
-            final String nameProperty = (String) Maps.getPropertyCaseIndependent(generatorColumnProperties, "name");
-            if (nameProperty == null) {
-                throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.getFullyQualifiedName() + ".");
-            }
-            String name = nameProperty.toLowerCase();
-            switch (name) {
-                case "sequence":
-                    dataGenerator = SequenceGenerator.of(columnDef);
-                case "unique":
-                    dataGenerator = SequenceGenerator.of(columnDef);
-                case "derived":
-//                    dataGenerator = DerivedGenerator.of(columnDef, generatorColumnProperties, dataGeneration);
-                case "random":
-                    dataGenerator = DistributionGenerator.of(columnDef, generatorColumnProperties);
-                case "distribution":
-                    dataGenerator = DistributionGenerator.of(columnDef, generatorColumnProperties);
-                default:
-                    throw new RuntimeException("The generator (" + name + ") defined for the column (" + columnDef.getFullyQualifiedName() + ") is unknown");
-            }
-
-        }
 
     }
 

@@ -23,7 +23,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 /**
  * Distribution Generator by default: random
  */
-public class DistributionGenerator<T> implements DataGenerator {
+public class DistributionGenerator<T> implements DataGenerator<T> {
 
     private final Class<T> clazz;
     private final DataTypeJdbc type;
@@ -82,10 +82,11 @@ public class DistributionGenerator<T> implements DataGenerator {
 
     }
 
-    public static <T> DistributionGenerator<T> of(ColumnDef<T> columnDef, Map<String, Object> generatorColumnProperties) {
+    public static <T> DistributionGenerator<T> of(ColumnDef<T> columnDef) {
 
         final DistributionGenerator<T> distributionGenerator = new DistributionGenerator<>(columnDef);
 
+        Map<String, Object> generatorColumnProperties = DataGeneration.getProperties(columnDef);
         final Object bucketsObject = Maps.getPropertyCaseIndependent(generatorColumnProperties, "buckets");
         Map<T, Integer> buckets;
         try {

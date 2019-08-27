@@ -10,6 +10,10 @@ public class PrimaryKeyDef {
     private String name;
     private List<ColumnDef> columnDefs = new ArrayList<>();
 
+    public static PrimaryKeyDef of(TableDef tableDef) {
+        return new PrimaryKeyDef(tableDef);
+    }
+
     public String getName() {
         return name;
     }

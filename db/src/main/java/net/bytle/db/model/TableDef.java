@@ -74,10 +74,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
 
     public PrimaryKeyDef getPrimaryKey() {
-        if (primaryKeyDef == null) {
-            primaryKeyDef = new PrimaryKeyDef(this);
-            this.addPrimaryKey(primaryKeyDef);
-        }
         return primaryKeyDef;
     }
 
@@ -146,7 +142,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      * @return tableDef for chaining init
      */
     public TableDef setPrimaryKey(String... columnNames) {
-        this.getPrimaryKey().addColumn(getColumns(columnNames));
+        this.primaryKeyDef = PrimaryKeyDef.of(this).addColumn(getColumns(columnNames));
         return this;
     }
 
@@ -279,7 +275,13 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
 
     public TableDef addPrimaryKey(List<String> primaryKeyColumns) {
-        this.getPrimaryKey().addColumn(primaryKeyColumns);
+        this.primaryKeyDef = PrimaryKeyDef.of(this).addColumn(primaryKeyColumns);
+        return this;
+    }
+
+    public TableDef addPrimaryKey(ColumnDef... columnDefs) {
+        this.primaryKeyDef = PrimaryKeyDef.of(this)
+                .addColumn(columnDefs);
         return this;
     }
 
@@ -387,14 +389,30 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return tableDefs;
     }
 
+    /**
+     * Property value are generally given via a {@link DataDefs data definition file}
+     * @param key
+     * @return the property value of this table def
+     */
     public Object getProperty(String key) {
         return properties.get(key);
     }
 
-    public Object addProperty(String key, Object value) {
-        return properties.put(key,value);
+    /**
+     * Add a property for this table def
+     * @param key
+     * @param value
+     * @return the tableDef for initialization chaining
+     */
+    public TableDef addProperty(String key, Object value) {
+        properties.put(key,value);
+        return this;
     }
 
+    /**
+     * Property value are generally given via a {@link DataDefs data definition file}
+     * @return the properties value of this table def
+     */
     public Map<String, Object> getProperties() {
         return properties;
     }

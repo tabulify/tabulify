@@ -174,7 +174,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.severe("Sql problem with the following sql ("+sql+")");
+            LOGGER.severe("Sql problem with the following sql (" + sql + ")");
             throw new RuntimeException(e);
         }
         if (columns.size() > 0) {
@@ -202,7 +202,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
             }
         } catch (SQLException e) {
             if (!e.getMessage().equals("query does not return ResultSet")) {
-                LOGGER.severe("An error was seen while running this SQL statement: "+sql);
+                LOGGER.severe("An error was seen while running this SQL statement: " + sql);
                 throw new RuntimeException(e);
             }
 
@@ -210,10 +210,15 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
         // Sqlite seems to preserve the order of the foreign keys but descendant
         // Hack to get it right
-        // TODO: this is making the build recursive. It should'nt
-        // for (int i = foreignKeys.size() - 1; i >= 0; i--) {
-        //     tableDef.addForeignKey(tableDef.getSchema().getTableOf(foreignKeys.get(i).get(0)), foreignKeys.get(i).get(1));
-        // }
+        for (int i = foreignKeys.size() - 1; i >= 0; i--) {
+            final List<String> foreignKey = foreignKeys.get(i);
+            final String foreignTableName = foreignKey.get(0);
+            final String nativeTableColumn = foreignKey.get(1);
+            tableDef.addForeignKey(
+                    tableDef.getSchema().getTableOf(foreignTableName),
+                    nativeTableColumn
+            );
+        }
 
 
         return true;
@@ -248,7 +253,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
                 // Integer typeCode = type.getTypeCode();
                 DataTypeJdbc jdbcDataType = DataTypesJdbc.of(typeCodeName);
 
-                tableDef.getColumnOf(resultSet.getString("name"),jdbcDataType.getJavaDataType())
+                tableDef.getColumnOf(resultSet.getString("name"), jdbcDataType.getJavaDataType())
                         .typeCode(jdbcDataType.getTypeCode())
                         .precision(type.getPrecision())
                         .scale(type.getScale())

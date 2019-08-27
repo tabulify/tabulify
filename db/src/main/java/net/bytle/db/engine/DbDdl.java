@@ -87,10 +87,13 @@ public class DbDdl {
         statements.add(createTableStatement.toString());
 
         // Primary Key
-        if (tableDef.getPrimaryKey().getColumns().size() != 0) {
-            String createPrimaryKeyStatement = getAlterTablePrimaryKeyStatement(tableDef.getPrimaryKey(), schemaDef);
-            if (createPrimaryKeyStatement != null) {
-                statements.add(createPrimaryKeyStatement);
+        final PrimaryKeyDef primaryKey = tableDef.getPrimaryKey();
+        if (primaryKey!=null) {
+            if (primaryKey.getColumns().size() != 0) {
+                String createPrimaryKeyStatement = getAlterTablePrimaryKeyStatement(primaryKey, schemaDef);
+                if (createPrimaryKeyStatement != null) {
+                    statements.add(createPrimaryKeyStatement);
+                }
             }
         }
 
