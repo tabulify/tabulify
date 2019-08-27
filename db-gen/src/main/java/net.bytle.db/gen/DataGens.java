@@ -1,5 +1,6 @@
 package net.bytle.db.gen;
 
+import net.bytle.cli.Log;
 import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -8,14 +9,13 @@ import net.bytle.db.model.TableDef;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Static Utility
  */
 public class DataGens {
 
-    private static final Logger LOGGER = Logger.getLogger(Thread.currentThread().getStackTrace()[0].getClassName());
+    private static final Log LOGGER = DataGeneration.GEN_LOG;
 
     public static void suppressSelfReferencingForeignKeys(SchemaDef schemaDef) {
 

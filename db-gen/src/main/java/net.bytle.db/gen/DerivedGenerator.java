@@ -19,7 +19,7 @@ import java.util.Map;
 public class DerivedGenerator<T> implements DataGenerator<T> {
 
 
-    static final Log LOGGER = Gen.GEN_LOG;
+    static final Log LOGGER = DataGeneration.GEN_LOG;
 
     private static final ScriptEngine engine;
 

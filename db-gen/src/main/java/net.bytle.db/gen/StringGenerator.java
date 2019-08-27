@@ -9,7 +9,7 @@ import java.util.Map;
  * where the string representation has no number to avoid sort order problem
  * when asking for the max value (ie the order of 1 may be below A in one character set and above in another one)
  */
-public class StringGen {
+public class StringGenerator {
 
     /**
      * All possible chars for representing a number as a String

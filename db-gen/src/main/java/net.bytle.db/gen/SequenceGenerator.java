@@ -168,7 +168,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
                 }
                 returnValue = values.get((Integer) currentValue);
             } else {
-                returnValue = StringGen.toString((Integer) currentValue, StringGen.MAX_RADIX, columnDef.getPrecision());
+                returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, columnDef.getPrecision());
             }
         }
 
@@ -188,7 +188,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
             returnValue = Date.valueOf((LocalDate) currentValue);
         }
         if (clazz == String.class) {
-            returnValue = StringGen.toString((Integer) currentValue, StringGen.MAX_RADIX, columnDef.getPrecision());
+            returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, columnDef.getPrecision());
         }
         return clazz.cast(returnValue);
 
@@ -262,7 +262,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
                     this.currentValue = new Double((Integer) start);
                 } else if (clazz == String.class && start.getClass() == Integer.class) {
                     // The integer representation of a string
-                    // that may be obtains via the {@link StringGen.toInt)
+                    // that may be obtains via the {@link StringGenerator.toInt)
                     this.currentValue = start;
                 } else {
                     throw new RuntimeException("The expected class for this generator is not (" + start.getClass() + ") but " + clazz);
@@ -271,7 +271,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
             } else {
 
                 if (start.getClass() == String.class) {
-                    this.currentValue = StringGen.toInt((String) start, StringGen.MAX_RADIX);
+                    this.currentValue = StringGenerator.toInt((String) start, StringGenerator.MAX_RADIX);
                 } else if (start.getClass() == Date.class) {
                     this.currentValue = ((Date) start).toLocalDate();
                 } else {
@@ -312,7 +312,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
             if (clazz == Integer.class || clazz == BigDecimal.class) {
                 maxGeneratedValues = Math.pow(10, columnDef.getPrecision());
             } else if (clazz == String.class) {
-                maxGeneratedValues = Math.pow(StringGen.MAX_RADIX, columnDef.getPrecision());
+                maxGeneratedValues = Math.pow(StringGenerator.MAX_RADIX, columnDef.getPrecision());
             } else if (clazz == Date.class) {
                 maxGeneratedValues = (double) DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
             } else {

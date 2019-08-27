@@ -3,13 +3,29 @@
 
 ## Model
 
-  * A [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) contains one or more [DataGenTableDef](./src/main/java/net.bytle.db/gen/DataGenDef.java) 
-  * A [DataGenTableDef](./src/main/java/net.bytle.db/gen/DataGenDef.java) contains one or more [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java)
-  * A [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java) contains one [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java)
-  * A [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java) contains one [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java)
-  * A [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java) contains one or more [DataGenColumnDef](./src/main/java/net.bytle.db/gen/DataGenDefColumnDef.java)  
+The [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) class is the main entry point of data generation where you will:
 
+  * set up all data needed to create a generation.ie:
+    * the tables to load with their total number of rows
+    * the [DataGenerator](./src/main/java/net.bytle.db/gen/DataGenerator.java) which define the data generation for one or more columns
+    * the load or not of a parent table (if a table has a parent table that is not included, the parent will be or not included)
+  * start the load:
+    * the load will then build default data generators for columns where the generator was not specified
+    * and insert the rows
+  
+## Metadata
 
+The data generation metadata may be given when:
+  * building the data generator
+  * or adding a table to the [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java)
+   
+Furthermore, the [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) will try to find any missing information
+in the property of the tables and columns (which is the case when the tableDef is created from a DataDefinition file).
+
+## Example
+
+The [testForeignKeyDataGenerationTest test](./src/test/java/net.bytle.db/gen/DataGenerationCodeTest.java) gives a good example on how to generate data.
+ 
 ## Documentation
 
   * https://en.wikipedia.org/wiki/Test_data_generation

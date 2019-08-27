@@ -31,7 +31,8 @@ public class DataGeneration {
      */
     public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
 
-    private static final Log LOGGER = Gen.GEN_LOG;
+    static final Log GEN_LOG = Log.getLog(DataGeneration.class);
+    private static final Log LOGGER = GEN_LOG;
 
 
     /**
