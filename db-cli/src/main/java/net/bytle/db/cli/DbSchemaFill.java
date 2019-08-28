@@ -6,8 +6,6 @@ import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.gen.DataDefLoader;
-import net.bytle.db.gen.DataGenDef;
 import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;

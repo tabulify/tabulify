@@ -12,6 +12,7 @@ The [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) class
   * start the load:
     * the load will then build default data generators for columns where the generator was not specified
     * and insert the rows
+
   
 ## Metadata
 
@@ -25,6 +26,18 @@ in the property of the tables and columns (which is the case when the tableDef i
 ## Example
 
 The [testForeignKeyDataGenerationTest test](./src/test/java/net.bytle.db/gen/DataGenerationCodeTest.java) gives a good example on how to generate data.
+
+```java
+Integer totalRows = 3 * 365;
+DataGeneration.of()
+        .addTable(dimTable, totalRows)
+        .addTable(factTable, totalRows)
+        .addTable(dimCatTable)
+        .addGenerator(dateIdGenerator)
+        .addGenerator(monthNumberGemerator)
+        .addGenerator(monthNameGenerator)
+        .load();
+```
  
 ## Documentation
 

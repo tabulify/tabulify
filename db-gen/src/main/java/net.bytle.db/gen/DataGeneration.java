@@ -227,15 +227,16 @@ public class DataGeneration {
 
     /**
      * This function starts the data generation and data insertion for all tables specified
+     * @return the tables loaded which could be more that the tables asked if the parent loading option is on
      */
-    public void load() {
+    public List<TableDef> load() {
 
-        final List<TableDef> tables = new ArrayList<>(tablesToLoad.keySet());
+        final List<TableDef> tablesLoaded = new ArrayList<>(tablesToLoad.keySet());
 
         // Parent check
         // Parent not in the table set to load ?
-        // If yes, load the parent
-        for (TableDef tableDef:tables) {
+        // If yes, add the parent to the tables to loaded
+        for (TableDef tableDef:tablesLoaded) {
             if (tableDef.getForeignKeys().size() != 0) {
                 for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
                     TableDef parentTableDef = foreignKeyDef.getForeignPrimaryKey().getTableDef();
@@ -245,7 +246,7 @@ public class DataGeneration {
                         if (rows == 0) {
                             if (this.loadParent) {
                                 LOGGER.info("The table (" + parentTableDef.getFullyQualifiedName() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
-                                tables.add(parentTableDef);
+                                tablesLoaded.add(parentTableDef);
                             } else {
                                 throw new RuntimeException("The table (" + tableDef.getFullyQualifiedName() + ") has a foreign key to the parent table (" + parentTableDef.getFullyQualifiedName() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + tableDef.getFullyQualifiedName() + ")");
                             }
@@ -257,7 +258,7 @@ public class DataGeneration {
         }
 
         // Load
-        for (TableDef tableDef: Dag.get(tables).getCreateOrderedTables()) {
+        for (TableDef tableDef: Dag.get(tablesLoaded).getCreateOrderedTables()) {
 
 
             // The load
@@ -304,6 +305,7 @@ public class DataGeneration {
             LOGGER.info("The new size is: " + Tables.getSize(tableDef));
 
         }
+        return tablesLoaded;
 
     }
 
@@ -437,6 +439,19 @@ public class DataGeneration {
     public DataGeneration addTables(List<TableDef> tableDefs) {
         for (TableDef tableDef:tableDefs){
             addTable(tableDef);
+        }
+        return this;
+    }
+
+    /**
+     *
+     * @param tableDefs
+     * @param totalRows - the totalRows
+     * @return
+     */
+    public DataGeneration addTables(List<TableDef> tableDefs, Integer totalRows) {
+        for (TableDef tableDef:tableDefs){
+            addTable(tableDef,totalRows);
         }
         return this;
     }

@@ -42,7 +42,7 @@ public class TableDataUri extends DataUri {
                 localTableName = paths[1];
                 break;
             default:
-                throw new RuntimeException("The database path has ("+ paths.length+") path elements whereas we expect at minimum 1 and maximum 2. The elements are: "+String.join(", ", paths));
+                throw new RuntimeException("In the data uri ("+uri+"), the database path has ("+ paths.length+") path elements whereas we expect at minimum 1 and at maximum 2. The elements are: "+String.join(", ", paths));
         }
 
         tableName = localTableName;

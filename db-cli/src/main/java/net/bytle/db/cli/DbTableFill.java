@@ -7,8 +7,6 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.SchemaDataUri;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.gen.DataDefLoader;
-import net.bytle.db.gen.DataGenDef;
 import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
@@ -16,7 +14,8 @@ import net.bytle.db.model.TableDef;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
@@ -33,28 +32,35 @@ public class DbTableFill {
 
 
     static final String NUMBER_OF_ROWS_OPTION = "rows";
+    static final String LOAD_PARENT = "load-parent";
     static String DEFINITION_FILE = "data-def";
+    private static Set<TableDef> tablesToLoad = new TreeSet<>();
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Load generated data into a table\n\n" +
+        String description = "Load generated data into one or more tables\n\n" +
                 "By default, the data would be randomly generated.\n" +
-                "You should use a data definition file (option " + DEFINITION_FILE + ") to have more control over the data generated";
+                "You should use the data definition file option (" + DEFINITION_FILE + ") to define the data generation behaviors.";
 
 
-        final String TABLE_OR_SCHEMA_URI = "(SchemaUri|TableUri)";
+        final String TABLE_URIS = "TableUri...";
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(TABLE_OR_SCHEMA_URI)
-                .setDescription("A schema URI (@database[/schema]) when loading with a data definition file or a table Uri (@database[/schema]/table) without.")
+        cliCommand.argOf(TABLE_URIS)
+                .setDescription("One or more table URI (@database[/schema]/table) from the same schema.")
                 .setMandatory(true);
 
         cliCommand.optionOf(STORAGE_PATH);
 
+        cliCommand.flagOf(LOAD_PARENT)
+                .setDescription("If this flag is present, the foreign table(s) will not be loaded if not present in the table Uri selection.")
+                .setDefaultValue(true);
+
+
         cliCommand.optionOf(DEFINITION_FILE)
-                .setDescription("A path to a data definition file (DataDef.yml) or a parent directory");
+                .setDescription("A path to a data definition file (DataDef.yml) or a parent directory containing several data definition file.");
 
         cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
                 .setDescription("defines the total number of rows that the table(s) must have")
@@ -66,82 +72,92 @@ public class DbTableFill {
         final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        // Arg
-        String dataUri = cliParser.getString(TABLE_OR_SCHEMA_URI);
+
+        // Data Definition
         Path dataDefPath = cliParser.getPath(DEFINITION_FILE);
-
-
         if (dataDefPath == null) {
-            LOGGER.info("Loading generated data for the table " + dataUri);
+            LOGGER.info("Loading generated data without data definition file");
         } else {
-            LOGGER.info("Loading generated data with the data definition file (" + dataDefPath + ")");
+            LOGGER.info("Loading generated data with the data definition file option (" + dataDefPath + ")");
+        }
+        if (!(Files.exists(dataDefPath))) {
+            LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + " does not exist");
+            System.exit(1);
         }
 
         Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
 
+
         CliTimer cliTimer = CliTimer.getTimer("Fill table").start();
 
 
-        if (dataDefPath != null) {
+        // Arg
+        List<String> dataUris = cliParser.getStrings(TABLE_URIS);
+        Database database = null;
+        SchemaDef schemaDef = null;
+        for (String tableDataUriString : dataUris) {
 
-            // The data uri must be a schema URI, the name of the table is in the data def
-            SchemaDataUri schemaDataUri = SchemaDataUri.of(dataUri);
-
-            Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
-            final String schemaName = schemaDataUri.getSchemaName();
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (schemaName != null) {
-                schemaDef = database.getSchema(schemaName);
-            }
-
-            if (!(Files.exists(dataDefPath))) {
-                LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + " does not exist");
-                System.exit(1);
-            }
-
-            SchemaDef finalSchemaDef = schemaDef;
-            List<DataGenDef> dataGenDefs = DataDefs.load(dataDefPath)
-                    .stream()
-                    .map(t->t.setSchema(finalSchemaDef))
-                    .map(t -> DataGenDef.get(t))
-                    .map(t->totalNumberOfRows!=null?t.setTotalRows(totalNumberOfRows):t)
-                    .collect(Collectors.toList());
-
-            List<DataGenDef> loadedDataGenDefs = DataDefLoader.of(schemaDef)
-                    .loadParentTable(true)
-                    .load(dataGenDefs);
-
-            LOGGER.info("The following tables where loaded:");
-            for (DataGenDef dataGenDef : loadedDataGenDefs) {
-                LOGGER.info("  * " + dataGenDef.getTableDef().getFullyQualifiedName() + ", Size (" + Tables.getSize(dataGenDef.getTableDef()) + ")");
-            }
-
-        } else {
-
-            // No data def, it must be a data uri
-            TableDataUri tableDataUri = TableDataUri.of(dataUri);
-
-            Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
-            final String schemaName = tableDataUri.getSchemaName();
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (schemaName != null) {
-                schemaDef = database.getSchema(schemaName);
-            }
-
-
-            TableDef tableDef = schemaDef.getTableOf(tableDataUri.getTableName());
-            if (!Tables.exists(tableDef)) {
-                LOGGER.severe("The table (" + tableDef.getFullyQualifiedName() + " doesn't exist.");
-                System.exit(1);
+            TableDataUri tableDataUri = TableDataUri.of(tableDataUriString);
+            final Database databaseinUri = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+            if (database == null) {
+                database = databaseinUri;
             } else {
-                LOGGER.info("The table (" + tableDef.getFullyQualifiedName() + ") has (" + Tables.getSize(tableDef) + ") rows before loading.");
+
+                if (!database.equals(databaseinUri)) {
+                    LOGGER.severe("The table uri's should define the same database");
+                    LOGGER.severe("We have found that the database ("+database+") and the database ("+databaseinUri+") are not the same.");
+                    System.exit(1);
+                }
+            }
+            final String schemaName = tableDataUri.getSchemaName();
+            if (schemaName != null) {
+                final SchemaDef schemaInUri = database.getSchema(schemaName);
+                if (schemaDef==null) {
+                    schemaDef = schemaInUri;
+                } else {
+                    if (!schemaDef.equals(schemaInUri)){
+                        LOGGER.severe("The table uri's should define in the same schema");
+                        LOGGER.severe("We have found that the schema ("+schemaDef.getFullyQualifiedName()+") and the schema ("+schemaInUri.getFullyQualifiedName()+") are not the same.");
+                        System.exit(1);
+                    }
+                }
+            } else {
+                schemaDef = database.getCurrentSchema();
             }
 
+            LOGGER.info("Searching the table for the table Uri (" + tableDataUriString + ")");
+            List<TableDef> tableDefs = schemaDef.getTables(tableDataUri.getTableName());
+            if (tableDefs.size() == 0) {
+                LOGGER.severe("No table(s) were found with the table Uri (" + tableDataUri + ")");
+                System.exit(1);
+            }
 
+            // Get the tables to load for a certain database
+            for (TableDef tableDef : tableDefs) {
+                tablesToLoad.add(tableDef);
+                LOGGER.info("The table (" + tableDef.getFullyQualifiedName() + ") has been added to the table to be loaded.");
+            }
 
-            DataGenDef datagenDef = DataGenDef.get(tableDef).setTotalRows(totalNumberOfRows);
-            DataGeneration.get(datagenDef).load();
+        }
 
+        // Merge the properties
+        // Create a map of the dataDef use in the merge
+        Map<String, TableDef> dataDefTableDefs = DataDefs.load(dataDefPath)
+                .stream()
+                .collect(Collectors.toMap(TableDef::getName, Function.identity()));
+        // Merge
+        tablesToLoad = tablesToLoad.stream()
+                .map(s -> dataDefTableDefs.containsKey(s.getName()) ? Tables.mergeProperties(s, dataDefTableDefs.get(s.getName())):s)
+                .collect(Collectors.toSet());
+
+        List<TableDef> tablesLoaded = DataGeneration.of()
+                .addTables(new ArrayList<>(tablesToLoad), totalNumberOfRows)
+                .loadParentTable(true)
+                .load();
+
+        LOGGER.info("The following tables where loaded:");
+        for (TableDef tableDef : tablesLoaded) {
+            LOGGER.info("  * " + tableDef.getFullyQualifiedName() + ", Size (" + Tables.getSize(tableDef) + ")");
         }
 
         cliTimer.stop();
