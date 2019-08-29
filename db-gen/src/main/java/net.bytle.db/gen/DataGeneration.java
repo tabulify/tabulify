@@ -123,6 +123,10 @@ public class DataGeneration {
         return this;
     }
 
+    /**
+     *
+     * @return a data generation process
+     */
     public static DataGeneration of() {
         return new DataGeneration();
     }

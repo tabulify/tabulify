@@ -312,4 +312,36 @@ public class Fs {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     *
+     * @param path - a regular file or a directory
+     * @param basePath - a base directory
+     * @return a list of name between the path and the base path
+     *
+     * Example
+     *   * basePath = /tmp
+     *   * path = /tmp/foo/bar/blue
+     * You will get { 'foo', 'bar'}
+     */
+    public static List<String> getDirectoryNamesInBetween(Path path, Path basePath) {
+
+        if (basePath.getNameCount()>path.getNameCount()){
+            throw new RuntimeException("The base path should have less levels than the path");
+        }
+        List<String> names = new ArrayList<>();
+        // -1 in the end limit because the last name if the file name, we don't return it
+        for (int i=0;i<path.getNameCount()-1;i++){
+            String name = path.getName(i).toString();
+            if (i<=basePath.getNameCount()-1){
+                String baseName = basePath.getName(i).toString();
+                if (!baseName.equals(name)){
+                    throw new RuntimeException("The path doesn't share a common branch with the base path. At the level ("+(i+1)+", the name is different. We got ("+name+") for the path and ("+baseName+") for the base path");
+                }
+            } else {
+                names.add(name);
+            }
+        }
+        return names;
+    }
 }

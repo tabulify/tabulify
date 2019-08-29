@@ -74,17 +74,15 @@ public class DbSchemaFill {
         if (yamlFile != null) {
 
             LOGGER.info("Loading generated data with the file " + yamlFile);
-            List<DataGenDef> dataGenDefs = DataDefs.load(yamlFile)
-                    .stream()
-                    .map(t-> DataGenDef.get(t))
-                    .collect(Collectors.toList());
+            List<TableDef> dataGenDefs = DataDefs.load(yamlFile);
 
-            List<DataGenDef> tables = DataDefLoader.of(database.getCurrentSchema())
+            List<TableDef> tables = DataGeneration.of()
+                    .addTables(dataGenDefs)
                     .loadParentTable(true)
-                    .load(dataGenDefs);
+                    .load();
 
             LOGGER.info("The following tables where loaded:");
-            for (TableDef tableDef : tables.stream().map(t->t.getTableDef()).collect(Collectors.toList())) {
+            for (TableDef tableDef : tables) {
                 LOGGER.info("  * " + tableDef.getFullyQualifiedName() + ", Size (" + Tables.getSize(tableDef) + ")");
             }
 
@@ -112,7 +110,8 @@ public class DbSchemaFill {
 
                 // Loading
                 for (TableDef tableDef : tableDefs) {
-                    DataGeneration.get(DataGenDef.get(tableDef))
+                    DataGeneration.of()
+                            .addTable(tableDef)
                             .load();
                 }
             } else {

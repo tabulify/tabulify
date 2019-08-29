@@ -3,8 +3,8 @@ package net.bytle.db.model;
 
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.engine.DataTypes;
 import net.bytle.db.engine.Tables;
+import net.bytle.fs.Fs;
 import net.bytle.type.Maps;
 import org.yaml.snakeyaml.Yaml;
 
@@ -18,11 +18,47 @@ import java.util.Map;
 
 /**
  * Retrieve a list of TableDef through a Data Definition file
+ * TODO: The package is surely not the good one here
  */
 public class DataDefs {
 
 
+    /**
+     * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of TableDef
+     *
+     * The schema and database are set accordingly to this rule:
+     *   * one child directory: the directory is the schema name
+     *   * two child directories: the first directory is the database name, the second the schema name
+     *
+     * @param path
+     * @return
+     */
     public static List<TableDef> load(Path path) {
+        if (!Files.exists(path)){
+            throw new RuntimeException("The data definition file path ("+path.toAbsolutePath().toString()+" does not exist");
+        }
+
+        List<Path> fileDiscovered = new ArrayList<>();
+        // if it's a file
+        if (Files.isRegularFile(path)){
+            fileDiscovered.add(path);
+        } else {
+            fileDiscovered.addAll(Fs.getChildFiles(path));
+        }
+
+        List<TableDef> tableDefs = new ArrayList<>();
+        for (Path filePath : fileDiscovered){
+            Fs.getDirectoryNamesInBetween(path);
+        }
+
+    }
+
+    /**
+     * Transform a data definition file into one or more data definition file
+     * @param path
+     * @return a list of tableDef
+     */
+    private static List<TableDef> readFile(Path path) {
 
         InputStream input;
         try {
