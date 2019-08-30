@@ -665,7 +665,7 @@ public class Database implements AutoCloseable, Comparable<Database> {
     /**
      * This function return a tableDef from the database
      * <p>
-     * If the schemaName is null, it will default to the connection schema
+     * If the schemaNameTest is null, it will default to the connection schema
      *
      * @param tableName
      * @param schemaName

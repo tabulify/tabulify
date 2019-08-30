@@ -71,7 +71,7 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
 
     /**
      * Ie
-     * databaseName+schemaName+tableName
+     * databaseName+schemaNameTest+tableName
      *
      * @return The unique table ID identifier
      */
