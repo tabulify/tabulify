@@ -15,7 +15,6 @@ import net.bytle.db.model.TableDef;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 /**
@@ -26,10 +25,9 @@ import java.util.stream.Collectors;
 public class DbSchemaFill {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    protected final static String ARG = "(Schema|DataGen.yml)";
+    protected final static String SCHEMA_URI = "SchemaUri";
 
-    private static final Integer LOAD_CURRENT_SCHEMA = 1;
-    private static final Integer LOAD_WITH_YAML = 2;
+
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -39,14 +37,19 @@ public class DbSchemaFill {
         // Create the command
         cliCommand
                 .setDescription(description);
-        cliCommand.argOf(ARG)
-                .setDescription("A schema or a data definition file (Default: the current schema)");
+        cliCommand.argOf(SCHEMA_URI)
+                .setDescription("A schema Uri (ie @database[/schema]");
+
+
+        cliCommand.optionOf(Words.DEFINITION_FILE)
+                .setDescription("A path to a data definition file (DataDef.yml) or a directory containing several data definition file.");
+
 
         // Parser
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Yaml file
-        final Path yamlFile = cliParser.getPath(ARG);
+        final Path yamlFile = cliParser.getPath(SCHEMA_URI);
         if (yamlFile != null) {
 
             String fileSource = yamlFile.toString();
@@ -73,8 +76,8 @@ public class DbSchemaFill {
 
         if (yamlFile != null) {
 
-            LOGGER.info("Loading generated data with the file " + yamlFile);
-            List<TableDef> dataGenDefs = DataDefs.load(yamlFile);
+            LOGGER.info("Loading generated data from the path (" + yamlFile+")");
+            List<TableDef> dataGenDefs = DataDefs.of().load(yamlFile);
 
             List<TableDef> tables = DataGeneration.of()
                     .addTables(dataGenDefs)

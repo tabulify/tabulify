@@ -65,6 +65,7 @@ public class Words {
     static final String HELP = "help";
 
     // Options
+    public static final String DEFINITION_FILE = "data-def";
     public static final String NO_STRICT = "no-strict";
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
@@ -166,6 +167,11 @@ public class Words {
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
+
+        cliCommand.globalWordOf(Words.DEFINITION_FILE)
+                .setTypeAsOption()
+                .setDescription("A path to a data definition file (DataDef.yml) or a directory containing multiple data definition files.")
+                .setEnvName("BYTLE_DB_DATA_DEF");
 
     }
 

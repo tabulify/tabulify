@@ -23,7 +23,7 @@ public class BytleSchemaDataDefs {
         try {
             URL url = BytleSchemaDataDefs.class.getResource("/DataDef/BytleSchemaDataDef.yml");
             Path dataDef = Paths.get(url.toURI());
-            return DataDefs.load(dataDef);
+            return DataDefs.of().load(dataDef);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

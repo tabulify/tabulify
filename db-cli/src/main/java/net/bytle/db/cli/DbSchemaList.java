@@ -19,7 +19,7 @@ import java.util.Map;
 public class DbSchemaList {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "schemaName|pattern...";
+    private static final String ARG_NAME = "schemaNameTest|pattern...";
 
 
     public static void run(CliCommand cliCommand, String[] args) {

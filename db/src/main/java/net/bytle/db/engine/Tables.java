@@ -322,13 +322,14 @@ public class Tables {
         Database database = schemaDef.getDatabase();
 
         if (database.getUrl() != null) {
-            StringBuilder dropTableStatement = new StringBuilder().append("drop table ");
+            StringBuilder dropTableStatement = new StringBuilder().append("drop table '");
             if (schemaDef.getName() != null) {
                 dropTableStatement
                         .append(schemaDef.getName())
                         .append(".");
             }
-            dropTableStatement.append(tableDef.getName());
+            dropTableStatement.append(tableDef.getName())
+                    .append("'");
             // The connection must not be clause, don't put it in the try clause below
             Connection currentConnection = database.getCurrentConnection();
             try (

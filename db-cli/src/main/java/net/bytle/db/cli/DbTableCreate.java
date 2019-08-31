@@ -57,7 +57,7 @@ public class DbTableCreate {
             LOGGER.severe("The file/directory (" + dataDefPath.toAbsolutePath().toString() + ") does not exist");
             System.exit(1);
         }
-        List<TableDef> tables = DataDefs.load(dataDefPath);
+        List<TableDef> tables = DataDefs.of().load(dataDefPath);
 
         if (tables.size() == 0) {
             LOGGER.warning("The data definition file location (" + dataDefPath.toAbsolutePath().toString() + ") contains no data definition.");
