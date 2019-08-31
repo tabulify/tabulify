@@ -101,7 +101,7 @@ public class DbObjectBuilder {
 
             PrimaryKeyDef primaryKeyDef = new PrimaryKeyDef(tableDef)
                     .name(pkName);
-            tableDef.addPrimaryKey(primaryKeyDef);
+            tableDef.setPrimaryKey(primaryKeyDef);
 
             Map<Integer, String> colMap = pkMap.get(pkName);
             List<Integer> integers = new ArrayList<>(colMap.keySet());

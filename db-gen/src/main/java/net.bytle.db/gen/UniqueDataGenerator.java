@@ -39,7 +39,6 @@ public class UniqueDataGenerator implements DataGenerator {
                 Date minDate = Tables.getMin(dateColumn);
                 dataGeneratorMap.put(columnDef,SequenceGenerator.of(dateColumn).start(minDate).step(-1));
 
-
             } else if (DataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 if (columnDef.getClazz()== BigDecimal.class){

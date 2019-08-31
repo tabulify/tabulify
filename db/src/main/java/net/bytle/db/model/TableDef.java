@@ -70,7 +70,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-    public TableDef addPrimaryKey(PrimaryKeyDef primaryKeyDef) {
+    public TableDef setPrimaryKey(PrimaryKeyDef primaryKeyDef) {
         this.primaryKeyDef = primaryKeyDef;
         return this;
     }
@@ -99,9 +99,12 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     private ForeignKeyDef getForeignKeyOf(PrimaryKeyDef primaryKeyDef, List<ColumnDef> columnDefs) {
 
         for (ForeignKeyDef foreignKeyDef : getForeignKeys()) {
-            if (foreignKeyDef.getForeignPrimaryKey().equals(primaryKeyDef)) {
-                if (foreignKeyDef.getChildColumns().equals(columnDefs)) {
-                    return foreignKeyDef;
+            final PrimaryKeyDef foreignPrimaryKey = foreignKeyDef.getForeignPrimaryKey();
+            if (foreignPrimaryKey!=null) {
+                if (foreignPrimaryKey.equals(primaryKeyDef)) {
+                    if (foreignKeyDef.getChildColumns().equals(columnDefs)) {
+                        return foreignKeyDef;
+                    }
                 }
             }
         }
@@ -209,7 +212,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      */
     public TableDef setPrimaryKey(String columnName1, String columnName2) {
 
-        this.getPrimaryKey()
+        PrimaryKeyDef.of(this)
                 .addColumn(meta.getColumn(columnName1))
                 .addColumn(meta.getColumn(columnName2));
 
@@ -219,7 +222,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
     public TableDef setPrimaryKey(String columnName1, String columnName2, String columnName3) {
 
-        this.getPrimaryKey()
+        PrimaryKeyDef.of(this)
                 .addColumn(this.getColumnDef(columnName1))
                 .addColumn(this.getColumnDef(columnName2))
                 .addColumn(this.getColumnDef(columnName3));
@@ -277,12 +280,12 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-    public TableDef addPrimaryKey(List<String> primaryKeyColumns) {
+    public TableDef setPrimaryKey(List<String> primaryKeyColumns) {
         this.primaryKeyDef = PrimaryKeyDef.of(this).addColumn(primaryKeyColumns);
         return this;
     }
 
-    public TableDef addPrimaryKey(ColumnDef... columnDefs) {
+    public TableDef setPrimaryKey(ColumnDef... columnDefs) {
         this.primaryKeyDef = PrimaryKeyDef.of(this)
                 .addColumn(columnDefs);
         return this;

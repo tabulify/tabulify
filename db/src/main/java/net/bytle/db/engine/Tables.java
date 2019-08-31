@@ -678,8 +678,8 @@ public class Tables {
         }
         return firstTable;
     }
-
     public static <T> T getMin(ColumnDef<T> columnDef) {
+
         String columnStatement = columnDef.getColumnName();
         String statementString = "select min(" + columnStatement + ") from " + columnDef.getRelationDef().getFullyQualifiedName();
         Connection currentConnection = columnDef.getRelationDef().getDatabase().getCurrentConnection();
@@ -688,10 +688,24 @@ public class Tables {
                 ResultSet resultSet = statement.executeQuery(statementString);
         ) {
             Object returnValue = null;
+
             if (resultSet.next()) {
-                returnValue = resultSet.getObject(1);
+                switch (columnDef.getDataType().getTypeCode()) {
+                    case Types.DATE:
+                        // In sqllite, getting a date object returns a long
+                        returnValue = resultSet.getDate(1);
+                        break;
+                    default:
+                        returnValue = resultSet.getObject(1);
+                        break;
+                }
+
             }
-            return (T) returnValue;
+            if (returnValue!=null) {
+                return (T) returnValue;
+            } else {
+                return null;
+            }
 
         } catch (SQLException e) {
 

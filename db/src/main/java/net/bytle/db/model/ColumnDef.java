@@ -356,7 +356,13 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
         return this.comment;
     }
 
-    public Class<T> getClazz() {
+    /**
+     * Don't generify this function because we are making some call into generic function in order to handle type
+     * and it will generate errors
+     *
+     * @return the class of the data
+     */
+    public Class getClazz() {
         return this.clazz;
     }
 
