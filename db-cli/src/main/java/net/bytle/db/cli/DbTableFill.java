@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 /**
@@ -33,7 +33,6 @@ public class DbTableFill {
     static final String NUMBER_OF_ROWS_OPTION = "rows";
     static final String LOAD_PARENT = "load-parent";
 
-    private static Set<TableDef> tablesToLoad = new TreeSet<>();
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -51,7 +50,7 @@ public class DbTableFill {
                 .setDescription("One or more table URI (@database[/schema]/table) from the same schema.")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
         cliCommand.optionOf(Words.FORCE)
             .setDescription("The FORCE mode will not emit an error if a table is not found for a Table URI");
 
@@ -73,7 +72,7 @@ public class DbTableFill {
         Boolean loadParent = cliParser.getBoolean(LOAD_PARENT);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
 
@@ -99,7 +98,10 @@ public class DbTableFill {
         CliTimer cliTimer = CliTimer.getTimer("Fill table").start();
 
 
-        // Data Uri (same schema)
+        // Data Uri (same schema) to table to load
+        // The tables to load
+        Set<TableDef> tablesToLoad = new TreeSet<>();
+        // The data URI
         List<String> dataUris = cliParser.getStrings(TABLE_URIS);
         Database database = null;
         SchemaDef schemaDef = null;

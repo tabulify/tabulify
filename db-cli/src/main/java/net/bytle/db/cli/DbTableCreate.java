@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 public class DbTableCreate {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
@@ -39,13 +39,13 @@ public class DbTableCreate {
                 .setDescription("A path to a data definition file (DataDef.yml) or a parent directory")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Schema

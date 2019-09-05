@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static java.lang.System.exit;
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.FORCE;
 import static net.bytle.db.cli.Words.NO_STRICT;
 
@@ -60,12 +60,12 @@ public class DbTableDrop {
         cliCommand.flagOf(FORCE)
                 .setDescription("if set, the foreign keys referencing the tables to drop will be dropped");
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
 

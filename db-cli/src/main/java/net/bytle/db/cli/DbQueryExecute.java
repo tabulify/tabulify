@@ -6,7 +6,6 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.engine.SchemaDataUri;
-import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
@@ -21,13 +20,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 /**
  * Created by gerard on 08-12-2016.
@@ -55,7 +53,7 @@ public class DbQueryExecute {
                 .setDescription("The query defines as a command line argument, a query file or a directory of query files.")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         cliCommand.setDescription("Execute one or several queries. \n"+"" +
                 "For one query, the data is shown. For multiple queries, the performance result is shown.");
@@ -71,7 +69,7 @@ public class DbQueryExecute {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));

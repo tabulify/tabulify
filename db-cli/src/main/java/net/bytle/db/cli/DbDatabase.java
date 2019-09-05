@@ -16,8 +16,6 @@ public class DbDatabase {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    // Options used in all sub actions
-    static final String STORAGE_PATH = "store";
     static final String BYTLE_DB_DATABASES_STORE = "BYTLE_DB_DATABASES_STORE";
     static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"databases.ini");
 

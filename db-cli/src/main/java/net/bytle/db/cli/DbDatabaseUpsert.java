@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.UPSERT_COMMAND;
 
 
@@ -73,7 +73,7 @@ public class DbDatabaseUpsert {
                 .setShortName("d")
                 .setDescription("The jdbc driver (for a jdbc connection)");
 
-        cliCommand.optionOf(STORAGE_PATH)
+        cliCommand.optionOf(DATABASE_STORE)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
@@ -90,7 +90,7 @@ public class DbDatabaseUpsert {
                 .addWordOf(DRIVER)
                 .addWordOf(PASSPHRASE)
                 .addWordOf(STATEMENT)
-                .addWordOf(STORAGE_PATH);
+                .addWordOf(DATABASE_STORE);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
@@ -102,7 +102,7 @@ public class DbDatabaseUpsert {
         final String userValue = cliParser.getString(LOGIN);
         final String pwdValue = cliParser.getString(PASSWORD);
         final String statementValue = cliParser.getString(STATEMENT);
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         final String passphrase = cliParser.getString(PASSPHRASE);
 
         if (pwdValue != null && passphrase == null) {

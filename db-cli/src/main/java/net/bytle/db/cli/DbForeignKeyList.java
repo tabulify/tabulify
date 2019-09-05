@@ -6,7 +6,6 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
@@ -23,7 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 public class DbForeignKeyList {
@@ -45,7 +44,7 @@ public class DbForeignKeyList {
                 .setDescription("One or more name table uri (ie @database[/schema]/table)")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         cliCommand.flagOf(SHOW_COLUMN)
                 .setDescription("Show also the columns if present");
@@ -53,7 +52,7 @@ public class DbForeignKeyList {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         List<String> stringTableUris = cliParser.getStrings(TABLE_URIS);

@@ -65,4 +65,17 @@ public class Oss {
             return 0;
         }
     }
+
+
+
+    /**
+     * A wrapper around {@link System#getenv(String)}
+     *
+     * @param name the name of the environment variable
+     * @return the string value of the variable, or <code>null</code>
+     *     if the variable is not defined in the system environment
+     */
+    public static String getEnv(String name) {
+        return System.getenv(name);
+    }
 }

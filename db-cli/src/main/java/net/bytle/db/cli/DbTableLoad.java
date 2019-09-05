@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.*;
 
 
@@ -40,7 +40,7 @@ public class DbTableLoad {
         cliCommand
                 .setDescription("Load a local file into a database.");
 
-        cliCommand.optionOf(DbDatabase.STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         cliCommand.getGroup("Load option")
                 .setLevel(2)
@@ -85,7 +85,7 @@ public class DbTableLoad {
         }
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Is there a path

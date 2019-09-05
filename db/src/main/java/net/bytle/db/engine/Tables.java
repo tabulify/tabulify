@@ -296,7 +296,7 @@ public class Tables {
      *
      * @param tableDefs
      */
-    public static void dropIfExist(List<TableDef> tableDefs) {
+    public static void dropIfExists(List<TableDef> tableDefs) {
 
         for (TableDef tableDef : Dag.get(tableDefs).getDropOrderedTables()) {
             if (exists(tableDef)) {
@@ -399,13 +399,13 @@ public class Tables {
 
     }
 
-    public static void dropIfExist(TableDef... tableDefs) {
+    public static void dropIfExists(TableDef... tableDefs) {
 
-        Tables.dropIfExist(Arrays.asList(tableDefs));
+        Tables.dropIfExists(Arrays.asList(tableDefs));
 
     }
 
-    public static void dropIfExist(TableDef tableDef, SchemaDef schemaDef) {
+    public static void dropIfExists(TableDef tableDef, SchemaDef schemaDef) {
 
 
         if (exists(tableDef, schemaDef)) {

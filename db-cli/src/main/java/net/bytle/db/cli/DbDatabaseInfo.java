@@ -5,13 +5,15 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.engine.DatabaseUri;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.INFO_COMMAND;
 
 
@@ -22,7 +24,7 @@ import static net.bytle.db.cli.Words.INFO_COMMAND;
 public class DbDatabaseInfo {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String NAME_OR_GLOB = "name|glob";
+    private static final String DATABASE_URIS = "@databaseUri...";
     public static final String HORIZONTAL_LINE = "-------------------------------";
 
 
@@ -32,35 +34,48 @@ public class DbDatabaseInfo {
 
         String footer = "Example:\n\n"+
                 "\tTo output information about the database `name`:\n" +
-                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " name\n\n"+
+                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " @name\n\n"+
                 "\tTo output information about all the databases with `sql` in their name:\n"+
-                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " *sql*\n";
+                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " *@sql*\n";
 
         // Create the parser
         cliCommand
                 .setDescription(description)
                 .setFooter(footer);
 
-        cliCommand.argOf(NAME_OR_GLOB)
-                .setDescription("one or more database name or glob patterns")
-                .setDefaultValue("*");
+        cliCommand.argOf(DATABASE_URIS)
+                .setDescription("one or more database URIs")
+                .setDefaultValue("@*");
 
-        cliCommand.optionOf(DbDatabase.STORAGE_PATH)
-                .setDescription("The path where the database information are stored")
-                .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_STORE);
+        cliCommand.optionOf(Words.DATABASE_STORE);
 
+        cliCommand.optionOf(Words.FORCE)
+                .setDescription("If there is no database found, no errors will be emitted");
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Retrieve
-        List<String> names = cliParser.getStrings(NAME_OR_GLOB);
-        final List<Database> databases = databasesStore.getDatabases(names);
+        List<String> databaseUris = cliParser.getStrings(DATABASE_URIS);
+        List<String> databaseNames = databaseUris.stream()
+                .map(s-> DatabaseUri.of(s).getDatabaseName())
+                .collect(Collectors.toList());
+        final List<Database> databases = databasesStore.getDatabases(databaseNames);
 
+        Boolean force = cliParser.getBoolean(Words.FORCE);
+
+        if (databases.size()==0){
+            if (force){
+                LOGGER.warning("No database was found with the name ("+databaseNames+")");
+                return;
+            } else {
+                LOGGER.severe("No database was found with the name (" + databaseNames + ")");
+                System.exit(1);
+            }
+        }
         //Print
         DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
         System.out.println();

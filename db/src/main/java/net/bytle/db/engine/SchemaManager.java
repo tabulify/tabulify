@@ -36,6 +36,6 @@ public class SchemaManager {
 
     public static void dropAllTables(SchemaDef schemaDef) {
         List<TableDef> tables = schemaDef.getTables();
-        Tables.dropIfExist(tables);
+        Tables.dropIfExists(tables);
     }
 }

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 public class DbTableTruncate {
@@ -36,7 +36,7 @@ public class DbTableTruncate {
 
         cliCommand.argOf(TABLE_URIS)
                 .setDescription("one or more table URI (@database[/schema]/table).");
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
         cliCommand.flagOf(Words.FORCE)
                 .setDescription("truncate also the tables that references the truncated tables")
                 .setDefaultValue(false);
@@ -46,7 +46,7 @@ public class DbTableTruncate {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);

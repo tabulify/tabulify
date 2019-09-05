@@ -28,31 +28,36 @@ public class DbQueryTransfer {
 
 
         String footer = "\nExample:\n " + CliUsage.getFullChainOfCommand(command) + " " +
-                "-su \"jdbc:oracle:thin:scott/tiger@host:1521:sid\" " +
-                "-tu \"jdbc:sap://host:30015/?user=login&password=pwd\" " +
-                "-tt TableName";
+                "query.sql" +
+                "@sqlite " +
+                "@sqlserver ";
 
 
         command
-                .setDescription("transfer the result of query")
+                .setDescription("Transfer the result of query from one source database to a target database")
                 .setFooter(footer);
-        final String ARG = "query.sql";
-        command.argOf(ARG)
-                .setDescription("A file containing a query")
-                .setMandatory(true);
 
-        command.optionOf(JDBC_URL_SOURCE_OPTION);
+
         command.optionOf(SOURCE_FETCH_SIZE_OPTION);
-        command.optionOf(JDBC_DRIVER_SOURCE_OPTION);
         command.optionOf(SOURCE_QUERY_OPTION);
-        command.optionOf(TARGET_TABLE_OPTION)
-                .setDescription("Define the table name (Default to the name of the file");
-        command.optionOf(TARGET_WORKER_OPTION);
+
+        final String QUERY_FILE = "query.sql";
+
+
         command.optionOf(BUFFER_SIZE_OPTION);
+
+        command.optionOf(TARGET_WORKER_OPTION);
         command.optionOf(COMMIT_FREQUENCY_OPTION);
         command.optionOf(TARGET_BATCH_SIZE_OPTION);
         command.optionOf(METRICS_PATH_OPTION);
 
+        command.argOf(QUERY_FILE)
+                .setDescription("The path to a sql file containing a query (Example: query.sql)")
+                .setMandatory(true);
+
+        command.argOf(TARGET_DATA_URI)
+                .setDescription("A table Uri (@database[/schema]/tableName) or a schema Uri (@database[/schema]) (in this case, the target table name will be the name of the query file)")
+                .setMandatory(true);
 
         // create the parser
         CliParser cliParser = Clis.getParser(command, args);
@@ -61,7 +66,7 @@ public class DbQueryTransfer {
         // Target Table
         String targetTableName = cliParser.getString(TARGET_TABLE_OPTION);
         if (targetTableName == null) {
-            String fileName = cliParser.getPath(ARG).getFileName().toString();
+            String fileName = cliParser.getPath(QUERY_FILE).getFileName().toString();
             targetTableName = fileName.substring(0, fileName.lastIndexOf("."));
         }
 
@@ -73,7 +78,7 @@ public class DbQueryTransfer {
                 .setUrl(sourceUrl)
                 .setDriver(sourceDriver);
         // Source Query
-        String query = cliParser.getFileContent(ARG);
+        String query = cliParser.getFileContent(QUERY_FILE);
         // Query
         QueryDef sourceQueryDef = sourceDatabase.getQuery(query);
 

@@ -18,7 +18,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 /**
@@ -40,7 +40,7 @@ public class DbTableList {
                 .setDescription("One or more name table uri (ie @database[/schema]/table)")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         cliCommand.flagOf(Words.NO_COUNT)
                 .setDescription("suppress the column showing the table count")
@@ -49,7 +49,7 @@ public class DbTableList {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         List<String> stringTableUris = cliParser.getStrings(TABLE_URIS);

@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 /**
@@ -36,7 +36,7 @@ public class DbDatabaseRemove {
                 .setDescription("the database name or a glob pattern")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DbDatabase.STORAGE_PATH)
+        cliCommand.optionOf(Words.DATABASE_STORE)
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
@@ -47,7 +47,7 @@ public class DbDatabaseRemove {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
 
 
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);

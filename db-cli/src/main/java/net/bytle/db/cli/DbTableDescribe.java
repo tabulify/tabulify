@@ -5,7 +5,6 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
-import net.bytle.db.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.TableDataUri;
@@ -16,7 +15,7 @@ import net.bytle.db.model.TableDef;
 import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 public class DbTableDescribe {
@@ -36,12 +35,12 @@ public class DbTableDescribe {
         cliCommand.argOf(DATABASE_PATH)
                 .setDescription("One ore more table data uri (@database[/schema]/table")
                 .setMandatory(true);
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         //

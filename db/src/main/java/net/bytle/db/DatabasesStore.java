@@ -50,18 +50,6 @@ public class DatabasesStore {
      */
     private Ini ini;
 
-    /**
-     * Cache :(
-     * TODO: Clean the connection after each call of a db cli action ?
-     * A run of a db cli does not terminate with a de-connection
-     * This is cache Hack to get back the same object to not create a new connection
-     * because database such as sqlite does not permit more than two connections at the same time
-     * sqlite says that the database is locked out
-     */
-    private static Map<Path, DatabasesStore> stores = new HashMap<>();
-    private Map<String, Database> databases = new HashMap<>();
-
-
     private DatabasesStore(Path path) {
 
         if (path != null) {
@@ -73,15 +61,7 @@ public class DatabasesStore {
     }
 
     public static DatabasesStore of(Path path) {
-
-        DatabasesStore databasesStore;
-        if (stores.get(path) != null) {
-            databasesStore = stores.get(path);
-        } else {
-            databasesStore = new DatabasesStore(path);
-            stores.put(path,databasesStore);
-        }
-        return databasesStore;
+        return new DatabasesStore(path);
     }
 
     public static DatabasesStore of() {
@@ -163,7 +143,8 @@ public class DatabasesStore {
         for (String globPattern : globPatterns) {
             String regexpPattern = Globs.toRegexPattern(globPattern);
             for (Profile.Section section : ini.values()) {
-                if (section.getName().matches(regexpPattern)) {
+                final String sectionDatabaseName = section.getName();
+                if (sectionDatabaseName.matches(regexpPattern)) {
                     Profile.Section deletedSection = ini.remove(section);
                     databases.add(deletedSection.getName());
                 }
@@ -213,45 +194,43 @@ public class DatabasesStore {
         return getDatabases(globPatterns.toArray(new String[0]));
     }
 
+    /**
+     *
+     * @param name
+     * @return a database by its name or NULL
+     */
     public Database getDatabase(String name) {
 
-        Database database;
-        if (databases.get(name) != null) {
 
-            database = databases.get(name);
-
-        } else {
-
+        Database database = null;
+        Wini.Section iniSection = getIniFile().get(name);
+        if (iniSection != null) {
             database = Databases.of(name);
-            databases.put(name, database);
-
-            Wini.Section iniSection = getIniFile().get(name);
-            if (iniSection != null) {
-                database.setUrl(iniSection.get(URL));
-                database.setUser(iniSection.get(USER));
-                if (iniSection.get(PASSWORD) != null) {
-                    String localPassphrase;
-                    if (this.passphrase != null) {
-                        localPassphrase = this.passphrase;
-                    } else {
-                        final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-                        if (s != null) {
-                            if (s.equals("true")) {
-                                localPassphrase = INTERNAL_PASSPHRASE;
-                            } else {
-                                throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
-                            }
+            database.setUrl(iniSection.get(URL));
+            database.setUser(iniSection.get(USER));
+            if (iniSection.get(PASSWORD) != null) {
+                String localPassphrase;
+                if (this.passphrase != null) {
+                    localPassphrase = this.passphrase;
+                } else {
+                    final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+                    if (s != null) {
+                        if (s.equals("true")) {
+                            localPassphrase = INTERNAL_PASSPHRASE;
                         } else {
-                            throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                            throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
                         }
+                    } else {
+                        throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
                     }
-                    database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
                 }
-                database.setDriver(iniSection.get(DRIVER));
-                database.setStatement(iniSection.get(STATEMENT));
-                database.setDatabaseStore(this);
+                database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
             }
+            database.setDriver(iniSection.get(DRIVER));
+            database.setStatement(iniSection.get(STATEMENT));
+            database.setDatabaseStore(this);
         }
+
         return database;
 
     }
@@ -331,5 +310,30 @@ public class DatabasesStore {
 
     public Path getPath() {
         return this.path;
+    }
+
+    public void removeDatabaseIfExists(String name) {
+        if (exists(name)) {
+            removeDatabase(name);
+        }
+    }
+
+    /**
+     * The difference between a {@link #getDatabase(String)} that returns NULL if it doesn't exist
+     * and this function is that the {@link #getDatabase(String)} needs a good {@link #setPassphrase(String)}
+     * to tell you that when the database exists to be able to decreypt and gives you the passpword.
+     *
+     * This function doesn't need a store with a genuine passphrase to tell you if a connection exists.
+     *
+     * @param name
+     * @return boolean
+     */
+    boolean exists(String name) {
+        Wini.Section iniSection = getIniFile().get(name);
+        if (iniSection != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

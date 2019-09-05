@@ -70,7 +70,7 @@ public class Words {
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
 
-    static final String TARGET_TABLE_OPTION = "target.table";
+
     static final String TARGET_SCHEMA_OPTION = "ts";
     static final String SOURCE_SCHEMA_OPTION = "ss";
 
@@ -88,6 +88,11 @@ public class Words {
 
     static final String OUTPUT_FILE_PATH = "output";
     static final String FILE_FORMAT = "format";
+    // Options used in all sub actions
+    static final String DATABASE_STORE = "database-store";
+
+
+    public static String TARGET_DATA_URI = "target-data-uri";
 
     static void initGlobalOptions(CliCommand cliCommand) {
 
@@ -162,7 +167,7 @@ public class Words {
                 .setValueName("path")
                 .setDescription("defines the path of the output file");
 
-        cliCommand.globalWordOf(DbDatabase.STORAGE_PATH)
+        cliCommand.globalWordOf(DATABASE_STORE)
                 .setTypeAsOption()
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)

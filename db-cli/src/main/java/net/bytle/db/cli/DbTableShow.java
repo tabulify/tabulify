@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.DbDatabase.STORAGE_PATH;
+import static net.bytle.db.cli.Words.DATABASE_STORE;
 
 
 public class DbTableShow {
@@ -38,7 +38,7 @@ public class DbTableShow {
                 .setDescription("A table URI (@database[/schema]/table")
                 .setMandatory(true);
 
-        cliCommand.optionOf(STORAGE_PATH);
+        cliCommand.optionOf(DATABASE_STORE);
         cliCommand.optionOf(LIMIT)
                 .setDescription("Limit the number of rows returned");
 
@@ -46,7 +46,7 @@ public class DbTableShow {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(STORAGE_PATH);
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Timer
