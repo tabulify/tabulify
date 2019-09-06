@@ -1,30 +1,14 @@
-package net.bytle.db;
+package net.bytle.db.uri;
 
 import java.util.Arrays;
 
-public class DataUri {
+public  abstract class DataUri implements IDataUri {
 
     public static final String PATH_SEPARATOR = "/";
     public static final String AT_STRING = "@";
     private final String databaseName;
 
-    String[] pathSegments;
-
-    /**
-     *
-     * @param parts
-     * @return a path separator from an array of parts (ie @part1/part2/part3)
-     */
-    public static DataUri get(String... parts) {
-        StringBuilder stringBuilder = new StringBuilder();
-        if (parts[0].charAt(0) != AT_STRING.charAt(0)){
-            stringBuilder.append(AT_STRING);
-
-        }
-        stringBuilder.append(String.join(PATH_SEPARATOR,parts));
-        return new DataUri(stringBuilder.toString());
-
-    }
+    private String[] pathSegments;
 
 
     public DataUri(String dataUri) {
@@ -46,14 +30,31 @@ public class DataUri {
 
     }
 
-    public static DataUri of(String databasePath) {
-        return new DataUri(databasePath);
+
+
+    public DataUri(String... dataUri) {
+
+
+        if (dataUri==null){
+            throw new RuntimeException("A data uri cannot be null");
+        }
+        if (dataUri.length ==0){
+            throw new RuntimeException("A data uri cannot be an empty array");
+        }
+
+        this.pathSegments = Arrays.copyOfRange(dataUri,1,dataUri.length);
+        this.databaseName = dataUri[0];
+
     }
 
+
+
+    @Override
     public String[] getPathSegments() {
         return this.pathSegments;
     }
 
+    @Override
     public String getDatabaseName(){
         return this.databaseName;
     }

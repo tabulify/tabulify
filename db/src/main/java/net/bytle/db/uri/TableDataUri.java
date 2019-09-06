@@ -1,20 +1,24 @@
-package net.bytle.db.engine;
-
-import net.bytle.db.DataUri;
+package net.bytle.db.uri;
 
 public class TableDataUri extends DataUri {
 
-    private final String schemaName;
-    private final String tableName;
+    private String schemaName;
+    private String tableName;
 
-    public static TableDataUri of(DataUri dataUri) {
-        return new TableDataUri(dataUri.toString());
+    public TableDataUri(String[] names) {
+        super(names);
+    }
+
+    public static TableDataUri ofParts(String... names) {
+
+        return new TableDataUri(names);
+    }
+
+    public static TableDataUri ofUri(String uri) {
+        return new TableDataUri(uri);
     }
 
 
-    public String getSchemaName() {
-        return schemaName;
-    }
 
     /**
      *
@@ -27,7 +31,11 @@ public class TableDataUri extends DataUri {
     public TableDataUri(String uri) {
 
         super(uri);
+        init();
 
+    }
+
+    private void init() {
         String localTableName;
         String localSchemaName;
 
@@ -42,15 +50,15 @@ public class TableDataUri extends DataUri {
                 localTableName = paths[1];
                 break;
             default:
-                throw new RuntimeException("In the data uri ("+uri+"), the database path has ("+ paths.length+") path elements whereas we expect at minimum 1 and at maximum 2. The elements are: "+String.join(", ", paths));
+                throw new RuntimeException("In the data uri ("+super.toString()+"), the database path has ("+ paths.length+") path elements whereas we expect at minimum 1 and at maximum 2. The elements are: "+String.join(", ", paths));
         }
 
         tableName = localTableName;
         schemaName = localSchemaName;
     }
 
-    public static TableDataUri of(String uri) {
-        return new TableDataUri(uri);
+    public String getSchemaName() {
+        return schemaName;
     }
 
 
