@@ -6,7 +6,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 
 import net.bytle.db.engine.Queries;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -59,7 +59,7 @@ public class DbTableShow {
         // Start
         List<String> tableURIs = cliParser.getStrings(TABLE_URI);
         for (String tableUri: tableURIs) {
-            TableDataUri tableDataUri = TableDataUri.of(tableUri);
+            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
             List<Database> databases = databasesStore.getDatabases(tableDataUri.getDatabaseName());
             for (Database database: databases) {
                 //TODO: The schema name may be a pattern

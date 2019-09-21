@@ -99,7 +99,7 @@ public class DbObjectBuilder {
         // Build the primary key (only one by table)
         for (String pkName : pkMap.keySet()) {
 
-            PrimaryKeyDef primaryKeyDef = new PrimaryKeyDef(tableDef)
+            PrimaryKeyDef primaryKeyDef = PrimaryKeyDef.of(tableDef)
                     .name(pkName);
             tableDef.setPrimaryKey(primaryKeyDef);
 

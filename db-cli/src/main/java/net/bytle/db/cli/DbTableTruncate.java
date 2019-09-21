@@ -7,7 +7,7 @@ import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -53,7 +53,7 @@ public class DbTableTruncate {
         final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tablesSelectedToTruncate = new ArrayList<>();
         for (String stringTableUri : stringTablesUris) {
-            TableDataUri tableUri = TableDataUri.of(stringTableUri);
+            TableDataUri tableUri = TableDataUri.ofUri(stringTableUri);
             Database database = databasesStore.getDatabase(tableUri.getDatabaseName());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableUri.getSchemaName() != null) {

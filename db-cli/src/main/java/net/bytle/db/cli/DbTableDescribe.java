@@ -7,7 +7,7 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -46,7 +46,7 @@ public class DbTableDescribe {
         //
         List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
         for (String databasePathString :databasePaths){
-            TableDataUri databasePath = TableDataUri.of(databasePathString);
+            TableDataUri databasePath = TableDataUri.ofUri(databasePathString);
             Database database = databasesStore.getDatabase(databasePath.getDatabaseName());
 
             SchemaDef schemaDef;

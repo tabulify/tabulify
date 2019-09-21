@@ -7,6 +7,7 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
 import net.bytle.cli.Log;
+import net.bytle.type.Typess;
 
 import java.sql.*;
 import java.util.Arrays;
@@ -24,8 +25,8 @@ public class Tables {
     /**
      * Return the number of rows
      *
-     * @param tableDef
-     * @return
+     * @param tableDef - A tableDef
+     * @return - the number of rows for this table
      */
     public static Integer getSize(TableDef tableDef) {
 
@@ -664,8 +665,8 @@ public class Tables {
             }
         }
 
-        for (ColumnDef columnDefFirstTable:firstTable.getColumnDefs()){
-            ColumnDef columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
+        for (ColumnDef<?> columnDefFirstTable:firstTable.getColumnDefs()){
+            ColumnDef<?> columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
             if (columnSecondTable!=null){
                 Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
                 final Map<String,Object> properties = columnSecondTable.getProperties();
@@ -678,6 +679,8 @@ public class Tables {
         }
         return firstTable;
     }
+
+
     public static <T> T getMin(ColumnDef<T> columnDef) {
 
         String columnStatement = columnDef.getColumnName();
@@ -702,7 +705,9 @@ public class Tables {
 
             }
             if (returnValue!=null) {
-                return (T) returnValue;
+
+                return Typess.safeCast(returnValue,columnDef.getClazz());
+
             } else {
                 return null;
             }

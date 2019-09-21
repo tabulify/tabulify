@@ -1,5 +1,18 @@
 # Dev environment
 
+## Cli
+
+After the first build:
+  * create a `bin` directory
+```
+C:\Users\userName\bin
+```
+  * add it to your path
+  * create a symlink of the following file in it
+```
+ROOT_DIR\db-cli\target\btyle-db-cli-1.1.0-SNAPSHOT\db.bat"
+```
+  * then when you call `db` you will get the last build library
 
 ## Idea
 

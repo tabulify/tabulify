@@ -348,6 +348,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
     }
 
+
     public Map<String, Object> getProperties() {
         return properties;
     }
@@ -357,12 +358,13 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     }
 
     /**
-     * Don't generify this function because we are making some call into generic function in order to handle type
-     * and it will generate errors
+     *
+     * If you got unchecked error when using this function,
+     * use the function {@link net.bytle.type.Typess#safeCast(Object, Class)}
      *
      * @return the class of the data
      */
-    public Class getClazz() {
+    public Class<T> getClazz() {
         return this.clazz;
     }
 

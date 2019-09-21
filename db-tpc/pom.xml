@@ -11,6 +11,7 @@
 
     <artifactId>bytle-db-tpc</artifactId>
     <name>Tpc</name>
+    <description>Tpc</description>
 
     <dependencies>
         <dependency>

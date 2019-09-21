@@ -2,16 +2,17 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DataUri;
+import net.bytle.db.uri.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.uri.IDataUri;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,15 +90,15 @@ public class DbTableLoad {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Is there a path
-        final DataUri dataUri = DataUri.of(cliParser.getString(TABLE_DATA_URI));
+        final IDataUri IDataUri = DataUri.of(cliParser.getString(TABLE_DATA_URI));
         final TableDataUri tableDataUri;
-        if (dataUri.getPathSegments().length > 0){
-            tableDataUri = TableDataUri.of(dataUri);
+        if (IDataUri.getPathSegments().length > 0){
+            tableDataUri = TableDataUri.of(IDataUri);
         } else {
             Path fileName = inputFilePath.getFileName();
             String targetTableName = fileName.toString().substring(0, fileName.toString().lastIndexOf("."));
             LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
-            tableDataUri = TableDataUri.of(DataUri.get(dataUri.toString(),targetTableName));
+            tableDataUri = TableDataUri.of(IDataUri.get(IDataUri.toString(),targetTableName));
         }
         Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDatabaseName());
 

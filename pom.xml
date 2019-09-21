@@ -29,7 +29,8 @@
         <module>type</module>
         <module>os</module>
         <module>regexp</module>
-        <module>db-sample</module>
+        <module>website</module>
+        <module>db-uri</module>
     </modules>
     <packaging>pom</packaging>
 

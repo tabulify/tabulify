@@ -9,7 +9,7 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.SchemaDataUri;
+import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -58,7 +58,7 @@ public class DbSampleDrop {
         final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
+        SchemaDataUri schemaUri = SchemaDataUri.ofUri(cliParser.getString(SCHEMA_URI));
         Database database = databasesStore.getDatabase(schemaUri.getDatabaseName());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (schemaUri.getSchemaName()!=null){

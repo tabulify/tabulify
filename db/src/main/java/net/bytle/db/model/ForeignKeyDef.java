@@ -1,5 +1,7 @@
 package net.bytle.db.model;
 
+import net.bytle.db.DbLoggers;
+
 import java.util.*;
 
 /**
@@ -9,6 +11,7 @@ public class ForeignKeyDef {
 
     private final TableDef tableDef;
     private Map<Integer, ColumnDef> foreignKeyColumnDefs = new HashMap<>();
+
     private PrimaryKeyDef foreignPrimaryKey;
 
     // May be null via JBDC
@@ -79,6 +82,9 @@ public class ForeignKeyDef {
     }
 
     public PrimaryKeyDef getForeignPrimaryKey() {
+        if (foreignPrimaryKey==null){
+            DbLoggers.LOGGER_DB_ENGINE.warning("The foreign primary key is null for the foreign key ("+this+")");
+        }
         return foreignPrimaryKey;
     }
 

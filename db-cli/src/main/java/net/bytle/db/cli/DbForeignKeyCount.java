@@ -6,7 +6,7 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 
@@ -45,7 +45,7 @@ public class DbForeignKeyCount {
         List<ForeignKeyDef> foreignKeys = new ArrayList<>();
 
         for (String stringTableUri : stringTableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
+            TableDataUri tableDataUri = TableDataUri.ofUri(stringTableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableDataUri.getSchemaName()!=null) {

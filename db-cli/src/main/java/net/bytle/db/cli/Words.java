@@ -71,8 +71,7 @@ public class Words {
     static final String NO_COUNT = "no-count";
 
 
-    static final String TARGET_SCHEMA_OPTION = "ts";
-    static final String SOURCE_SCHEMA_OPTION = "ss";
+
 
     static final String TARGET_WORKER_OPTION = "tw";
     static final String BUFFER_SIZE_OPTION = "bs";
@@ -93,6 +92,7 @@ public class Words {
 
 
     public static String TARGET_DATA_URI = "target-data-uri";
+    public static String SOURCE_DATA_URI = "source-data-uri";
 
     static void initGlobalOptions(CliCommand cliCommand) {
 

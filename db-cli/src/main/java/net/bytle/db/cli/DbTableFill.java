@@ -4,7 +4,7 @@ package net.bytle.db.cli;
 import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
@@ -107,7 +107,7 @@ public class DbTableFill {
         SchemaDef schemaDef = null;
         for (String tableDataUriString : dataUris) {
 
-            TableDataUri tableDataUri = TableDataUri.of(tableDataUriString);
+            TableDataUri tableDataUri = TableDataUri.ofUri(tableDataUriString);
             final Database databaseinUri = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             if (database == null) {
                 database = databaseinUri;

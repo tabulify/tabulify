@@ -1,21 +1,7 @@
 # Db Test
 
 
-## About
 
-The core module (db) creates a test jar to share the test code
-
-You add the test dependency by adding the below xml in the POM.
-
-```xml
-<dependency>
-    <groupId>net.bytle</groupId>
-    <artifactId>bytle-db</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
-    <scope>test</scope>
-    <type>test-jar</type>
-</dependency>
-```
 
 ## Reactor
 

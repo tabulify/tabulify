@@ -11,6 +11,7 @@
 
     <artifactId>bytle-db-loader</artifactId>
     <name>Db Loader</name>
+    <description>Db Loader</description>
 
     <dependencies>
         <dependency>

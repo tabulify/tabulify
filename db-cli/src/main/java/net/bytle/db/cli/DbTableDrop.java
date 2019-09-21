@@ -6,7 +6,7 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
@@ -79,7 +79,7 @@ public class DbTableDrop {
         List<String> tableUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tables = new ArrayList<>();
         for (String tableUri : tableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(tableUri);
+            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
             if (schemaDefs.size() == 0) {

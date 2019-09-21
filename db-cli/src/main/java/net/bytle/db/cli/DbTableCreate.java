@@ -3,8 +3,8 @@ package net.bytle.db.cli;
 import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.SchemaDataUri;
-import net.bytle.db.engine.TableDataUri;
+import net.bytle.db.uri.SchemaDataUri;
+import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
@@ -69,7 +69,7 @@ public class DbTableCreate {
 
             LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
 
-            SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
+            SchemaDataUri schemaDataUri = SchemaDataUri.ofUri(arg);
             Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
             final String schemaName = schemaDataUri.getSchemaName();
             SchemaDef schemaDef = database.getCurrentSchema();
@@ -78,7 +78,7 @@ public class DbTableCreate {
             }
 
 
-            TableDataUri tableUri = TableDataUri.of(tableUriAsString);
+            TableDataUri tableUri = TableDataUri.ofUri(tableUriAsString);
             SchemaDef finalSchemaDef = schemaDef;
             List<TableDef> tableDefs = tables.stream()
                     .filter(t -> Globs.matches(t.getName(),tableUri.getTableName()))

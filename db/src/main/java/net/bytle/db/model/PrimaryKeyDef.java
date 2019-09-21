@@ -23,10 +23,10 @@ public class PrimaryKeyDef {
      */
     PrimaryKeyDef(){
 
-        tableDef = null;
+        throw new RuntimeException("Don't use this");
     }
 
-    PrimaryKeyDef(TableDef tableDef) {
+    private PrimaryKeyDef(TableDef tableDef) {
         this.tableDef = tableDef;
     }
 
