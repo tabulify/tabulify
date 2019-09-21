@@ -429,7 +429,7 @@ public class Tables {
          * because Sqlite does not support alter table drop foreig keys
          */
         if (!foreignKeyDef.getTableDef().getDatabase().getDatabaseProductName().equals(Database.DB_SQLITE)) {
-            final TableDef tableDef = foreignKeyDef.getTableDef();
+            final RelationDef tableDef = foreignKeyDef.getTableDef();
             final Database database = tableDef.getDatabase();
             String dropStatement = "alter table " + tableDef.getFullyQualifiedName() + " drop constraint " + foreignKeyDef.getName();
             try {

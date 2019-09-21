@@ -7,6 +7,7 @@ import net.bytle.db.engine.Queries;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by gerard on 01-02-2016.
@@ -70,12 +71,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-    public TableDef setPrimaryKey(PrimaryKeyDef primaryKeyDef) {
-        this.primaryKeyDef = primaryKeyDef;
-        return this;
-    }
-
-
     public PrimaryKeyDef getPrimaryKey() {
         return primaryKeyDef;
     }
@@ -92,17 +87,21 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      * Return the foreign Key for this primary key and this set of columns
      * If the key is already defined
      *
-     * @param columnDefs    the foreign columns on the table
+     * @param columnNames    the columns on the table
      * @param primaryKeyDef the foreign primary key
-     * @return
+     * @return the foreignKeyDef
      */
-    private ForeignKeyDef getForeignKeyOf(PrimaryKeyDef primaryKeyDef, List<ColumnDef> columnDefs) {
+    public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKeyDef, String... columnNames) {
 
+        assert primaryKeyDef!=null;
+        assert columnNames.length>0;
+
+        // if the foreign key exist already, return it
         for (ForeignKeyDef foreignKeyDef : getForeignKeys()) {
             final PrimaryKeyDef foreignPrimaryKey = foreignKeyDef.getForeignPrimaryKey();
             if (foreignPrimaryKey!=null) {
                 if (foreignPrimaryKey.equals(primaryKeyDef)) {
-                    if (foreignKeyDef.getChildColumns().equals(columnDefs)) {
+                    if (foreignKeyDef.getChildColumns().equals(Arrays.asList(columnNames))) {
                         return foreignKeyDef;
                     }
                 }
@@ -110,10 +109,12 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         }
 
         final String fkName = this.getName() + "_fk" + foreignKeys.size();
-        ForeignKeyDef foreignKeyDef = new ForeignKeyDef(this)
-                .setName(fkName)
-                .setForeignPrimaryKey(primaryKeyDef)
-                .addColumns(columnDefs);
+        List<ColumnDef> columnDefs = Arrays.asList(columnNames).stream()
+                .map(this::getColumnDef)
+                .collect(Collectors.toList());
+
+        ForeignKeyDef foreignKeyDef = ForeignKeyDef.of(primaryKeyDef,columnDefs)
+                .setName(fkName);
 
         this.foreignKeys.put(fkName, foreignKeyDef);
         return foreignKeyDef;
@@ -141,25 +142,11 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-    /**
-     * Shortcut function to create a primary key from a column name
-     *
-     * @param columnNames - the primary key column name(s)
-     * @return tableDef for chaining init
-     */
-    public TableDef setPrimaryKey(String... columnNames) {
-        this.primaryKeyDef = PrimaryKeyDef.of(this).addColumn(getColumns(columnNames));
-        return this;
-    }
 
     public List<UniqueKeyDef> getUniqueKeys() {
         return new ArrayList(uniqueKeys);
     }
 
-    public TableDef addForeignKey(ForeignKeyDef foreignKeyDef) {
-        this.foreignKeys.put(foreignKeyDef.getName(), foreignKeyDef);
-        return this;
-    }
 
 
     /**
@@ -206,29 +193,16 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     /**
      * Shortcut to add two columns as primary key
      *
-     * @param columnName1 - The first column name of the primary key
-     * @param columnName2 - The second column name of the primary key
+     * @param columnNames - The column name of the primary key
      * @return - the table Def for a chaining initialization
      */
-    public TableDef setPrimaryKey(String columnName1, String columnName2) {
+    public TableDef setPrimaryKey(String... columnNames) {
 
-        PrimaryKeyDef.of(this)
-                .addColumn(meta.getColumn(columnName1))
-                .addColumn(meta.getColumn(columnName2));
-
+        this.primaryKeyOf(columnNames);
         return this;
 
     }
 
-    public TableDef setPrimaryKey(String columnName1, String columnName2, String columnName3) {
-
-        PrimaryKeyDef.of(this)
-                .addColumn(this.getColumnDef(columnName1))
-                .addColumn(this.getColumnDef(columnName2))
-                .addColumn(this.getColumnDef(columnName3));
-
-        return this;
-    }
 
     /**
      * Add a unique key
@@ -252,6 +226,16 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
     /**
+     * @param columnNames
+     * @return an array of columns
+     * The columns must exist otherwise you get a exception
+     */
+    private ColumnDef[] getColumns(List<String> columnNames) {
+
+        return meta.getColumns(columnNames.toArray(new String[0]));
+    }
+
+    /**
      * Add a foreign key
      *
      * @param primaryKeyDef
@@ -260,7 +244,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
      */
     public TableDef addForeignKey(PrimaryKeyDef primaryKeyDef, String... columnNames) {
         try {
-            getForeignKeyOf(primaryKeyDef, Arrays.asList(getColumns(columnNames)));
+            foreignKeyOf(primaryKeyDef, columnNames);
         } catch (Exception e) {
             throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getTableDef() + "). See the message below.", e);
         }
@@ -268,28 +252,38 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
     /**
-     * A short cut of @{link {@link #addForeignKey(ForeignKeyDef)}}
-     * that add for you the foreign key
+     * Add a foreign key
      *
-     * @param table
+     * @param primaryKeyDef
      * @param columnNames
+     * @return the table for initialization chaining
+     */
+    public TableDef addForeignKey(PrimaryKeyDef primaryKeyDef, List<String> columnNames) {
+        try {
+            foreignKeyOf(primaryKeyDef, columnNames.toArray(new String[0]));
+        } catch (Exception e) {
+            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getTableDef() + "). See the message below.", e);
+        }
+        return this;
+    }
+
+    /**
+     *
+     * @param tableDef - the foreign primary table
+     * @param columnNames - the column names of this tables
      * @return the tableDef for chaining initialization
      */
-    public TableDef addForeignKey(TableDef table, String... columnNames) {
-        return addForeignKey(table.getPrimaryKey(), columnNames);
-    }
-
-
-    public TableDef setPrimaryKey(List<String> primaryKeyColumns) {
-        this.primaryKeyDef = PrimaryKeyDef.of(this).addColumn(primaryKeyColumns);
+    public TableDef addForeignKey(TableDef tableDef, String... columnNames) {
+        this.foreignKeyOf(tableDef.getPrimaryKey(), columnNames);
         return this;
     }
 
-    public TableDef setPrimaryKey(ColumnDef... columnDefs) {
-        this.primaryKeyDef = PrimaryKeyDef.of(this)
-                .addColumn(columnDefs);
+
+    public TableDef setPrimaryKey(List<String> columnNames) {
+        primaryKeyOf(columnNames.toArray(new String[0]));
         return this;
     }
+
 
 
     /**
@@ -424,5 +418,15 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
+    public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKey, List<String> columns) {
 
+        return null;
+    }
+
+    public PrimaryKeyDef primaryKeyOf(String... columnNames) {
+        assert columnNames.length > 0;
+
+        this.primaryKeyDef = PrimaryKeyDef.of(this,columnNames);
+        return this.primaryKeyDef;
+    }
 }

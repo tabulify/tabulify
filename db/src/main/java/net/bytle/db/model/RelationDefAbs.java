@@ -4,6 +4,7 @@ import net.bytle.db.database.Database;
 
 import javax.xml.validation.Schema;
 import java.sql.DatabaseMetaData;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -78,7 +79,6 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
     public String getId() {
         return schema.getDatabase().getObjectBuilder().getId(getName(), getSchema().getName());
     }
-
 
 
 

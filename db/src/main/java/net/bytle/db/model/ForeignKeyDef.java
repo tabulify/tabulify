@@ -3,26 +3,67 @@ package net.bytle.db.model;
 import net.bytle.db.DbLoggers;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
+ * A foreign key is a constraint definition
+ * but it's basically the definition of relation between two tables
+ *   * from a column(s)
+ *   * and the columns of the (foreign) primary key
+ * This object should then not be created with the pair of columns that creates this relations ie
+ *   * the intern columns
+ *   * the (foreign) primary key
  */
 public class ForeignKeyDef {
 
-    private final TableDef tableDef;
-    private Map<Integer, ColumnDef> foreignKeyColumnDefs = new HashMap<>();
-
-    private PrimaryKeyDef foreignPrimaryKey;
+    // The list of column
+    // Order is important
+    private final List<ColumnDef> columnDefs;
+    // The foreign primary key
+    private final PrimaryKeyDef foreignPrimaryKey;
 
     // May be null via JBDC
     // See description
     // https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getImportedKeys(java.lang.String,%20java.lang.String,%20java.lang.String)
     private String name;
 
-    public ForeignKeyDef(TableDef tableDef) {
+    private ForeignKeyDef(PrimaryKeyDef primaryKeyDef, List<ColumnDef> columnDefs) {
 
-        this.tableDef = tableDef;
+        // null check
+        if (primaryKeyDef==null){
+            final String msg = "The foreign primary key can not be null when creating a foreign key";
+            DbLoggers.LOGGER_DB_ENGINE.severe(msg);
+            throw new RuntimeException(msg);
+        }
+        if (columnDefs==null){
+            throw new RuntimeException("columnDefs should not be null for the primary key ("+primaryKeyDef+")");
+        }
+        // Size check
+        if (primaryKeyDef.getColumns().size()!=columnDefs.size()){
+            final String msg = "The foreign primary key ("+primaryKeyDef+") has (" + primaryKeyDef.getColumns().size() + ") columns and we got only ("+columnDefs.size()+") columns for the definition ("+columnDefs+").";
+            DbLoggers.LOGGER_DB_ENGINE.severe(msg);
+            throw new RuntimeException(msg);
+        }
+        // Columns Table check
+        List<RelationDef> relationDefs = columnDefs.stream().map(ColumnDef::getRelationDef).distinct().collect(Collectors.toList());
+        if (relationDefs.size()!=1){
+            final String msg = "The columns ("+columnDefs+") has no table or different tables ("+relationDefs+") and this is not possible for a foreign key definition.";
+            DbLoggers.LOGGER_DB_ENGINE.severe(msg);
+            throw new RuntimeException(msg);
+        }
+        // Finally
+        this.foreignPrimaryKey = primaryKeyDef;
+        this.columnDefs = columnDefs;
 
+    }
+
+    public static ForeignKeyDef of(PrimaryKeyDef primaryKeyDef, ColumnDef... columnDefs) {
+        return of(primaryKeyDef,Arrays.asList(columnDefs));
+    }
+
+    public static ForeignKeyDef of(PrimaryKeyDef primaryKeyDef, List<ColumnDef> columnDefs) {
+        return new ForeignKeyDef(primaryKeyDef,columnDefs);
     }
 
     /**
@@ -36,55 +77,44 @@ public class ForeignKeyDef {
         return name;
     }
 
-    /**
-     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
-     * The sequence is the next one in the list
-     * @param columnDef
-     * @return the foreignKey
-     */
-    public ForeignKeyDef addColumn(ColumnDef columnDef) {
+//    /**
+//     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
+//     * The sequence is the next one in the list
+//     * @param columnDef
+//     * @return the foreignKey
+//     */
+//    public ForeignKeyDef addColumn(ColumnDef columnDef) {
+//
+//        this.foreignKeyColumnDefs.put(foreignKeyColumnDefs.size(),columnDef);
+//        return this;
+//
+//    }
+//
+//    /**
+//     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
+//     * @param columnDef - the column
+//     * @param colSeq - the sequence (given by the JDBC database metadata)
+//     * @return the foreignKey
+//     */
+//    public ForeignKeyDef addColumn(ColumnDef columnDef, int colSeq) {
+//
+//        this.foreignKeyColumnDefs.put(colSeq, columnDef);
+//        return this;
+//
+//    }
+//
+//    public ForeignKeyDef setForeignPrimaryKey(PrimaryKeyDef foreignPrimaryKey) {
+//        this.foreignPrimaryKey = foreignPrimaryKey;
+//        return this;
+//    }
 
-        this.foreignKeyColumnDefs.put(foreignKeyColumnDefs.size(),columnDef);
-        return this;
-
-    }
-
-    /**
-     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
-     * @param columnDef - the column
-     * @param colSeq - the sequence (given by the JDBC database metadata)
-     * @return the foreignKey
-     */
-    public ForeignKeyDef addColumn(ColumnDef columnDef, int colSeq) {
-
-        this.foreignKeyColumnDefs.put(colSeq, columnDef);
-        return this;
-
-    }
-
-    public ForeignKeyDef setForeignPrimaryKey(PrimaryKeyDef foreignPrimaryKey) {
-        this.foreignPrimaryKey = foreignPrimaryKey;
-        return this;
-    }
-
-    public TableDef getTableDef() {
-        return tableDef;
-    }
 
     public List<ColumnDef> getChildColumns() {
-        List<Integer> keys = new ArrayList(foreignKeyColumnDefs.keySet());
-        Collections.sort(keys);
-        List<ColumnDef> columnDefs = new ArrayList<>();
-        for (Integer key:keys){
-            columnDefs.add(foreignKeyColumnDefs.get(key));
-        }
         return columnDefs;
     }
 
     public PrimaryKeyDef getForeignPrimaryKey() {
-        if (foreignPrimaryKey==null){
-            DbLoggers.LOGGER_DB_ENGINE.warning("The foreign primary key is null for the foreign key ("+this+")");
-        }
+
         return foreignPrimaryKey;
     }
 
@@ -94,52 +124,57 @@ public class ForeignKeyDef {
     }
 
 
-    public ForeignKeyDef addColumns(List<ColumnDef> columnDefs) {
-        for (ColumnDef columnDef:columnDefs){
-            addColumn(columnDef);
-        }
-        return this;
-    }
+//    public ForeignKeyDef addColumns(List<ColumnDef> columnDefs) {
+//        for (ColumnDef columnDef:columnDefs){
+//            addColumn(columnDef);
+//        }
+//        return this;
+//    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ForeignKeyDef that = (ForeignKeyDef) o;
-        return Objects.equals(tableDef, that.tableDef) &&
-                Objects.equals(foreignPrimaryKey.getTableDef(), that.foreignPrimaryKey.getTableDef());
+        return Objects.equals(foreignPrimaryKey.getTableDef(), that.foreignPrimaryKey.getTableDef());
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(tableDef, foreignPrimaryKey.getTableDef());
+        return Objects.hash(foreignPrimaryKey.getTableDef());
 
     }
 
-    /**
-     * Alias function to add a column by name
-     *
-     * @param columnName
-     * @return
-     */
-    public ForeignKeyDef addColumn(String columnName) {
-        return addColumn(this.tableDef.getColumnDef(columnName));
-    }
+//    /**
+//     * Alias function to add a column by name
+//     *
+//     * @param columnName
+//     * @return
+//     */
+//    public ForeignKeyDef addColumn(String columnName) {
+//        return addColumn(this.tableDef.getColumnDef(columnName));
+//    }
 
-    /**
-     * Alias function to set the foreign key via table name
-     * The table must be in the same schema
-     *
-     * @param tableName
-     * @return the foreignKey for chaining init
-     */
-    public ForeignKeyDef setForeignPrimaryKey(String tableName) {
-        return setForeignPrimaryKey(this.tableDef.getSchema().getTableOf(tableName).getPrimaryKey());
-    }
+//    /**
+//     * Alias function to set the foreign key via table name
+//     * The table must be in the same schema
+//     *
+//     * @param tableName
+//     * @return the foreignKey for chaining init
+//     */
+//    public ForeignKeyDef setForeignPrimaryKey(String tableName) {
+//        return setForeignPrimaryKey(this.tableDef.getSchema().getTableOf(tableName).getPrimaryKey());
+//    }
 
     @Override
     public String toString() {
+        final PrimaryKeyDef foreignPrimaryKey = this.foreignPrimaryKey;
         return "Fk to " + foreignPrimaryKey.getTableDef().getName();
+    }
+
+    public RelationDef getTableDef() {
+        return columnDefs.get(1).getRelationDef();
+
     }
 }

@@ -11,6 +11,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -77,43 +78,39 @@ public class DbObjectBuilder {
             return;
         }
 
+        final String column_name = "COLUMN_NAME";
+        final String pk_name = "PK_NAME";
+        final String key_seq = "KEY_SEQ";
+        List<String> pkProp = new ArrayList<>();
+        pkProp.add(column_name);
+        pkProp.add(pk_name);
+        pkProp.add(key_seq);
 
         // Primary Key building
         ResultSet pkResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getPrimaryKeys(null, tableDef.getSchema().getName(), tableDef.getName());
         // Collect all the data because we don't known if they will be in order
         // and because in a recursive call, the result set may be closed
-        Map<String, Map<Integer, String>> pkMap = new HashMap<>();
+        List<Map<String, String>> pkColumns = new ArrayList<>();
+        String pkName = "";
         while (pkResultSet.next()) {
-            Integer keySeq = pkResultSet.getInt("KEY_SEQ");
-            String pkName = pkResultSet.getString("PK_NAME");
-            String columnName = pkResultSet.getString("COLUMN_NAME");
-            Map<Integer, String> pkCols = pkMap.get(pkName);
-            if (pkCols == null) {
-                pkCols = new HashMap<>();
-                pkMap.put(pkName, pkCols);
+            Map<String, String> pkProps = new HashMap<>();
+            pkColumns.add(pkProps);
+            for (String prop : pkProp) {
+                pkProps.put(prop, pkResultSet.getString(prop));
             }
-            pkCols.put(keySeq, columnName);
+            pkName = pkResultSet.getString(pk_name);
         }
         pkResultSet.close();
 
-        // Build the primary key (only one by table)
-        for (String pkName : pkMap.keySet()) {
+        List<String> columns = pkColumns
+                .stream()
+                .sorted(Comparator.comparing(o -> Integer.valueOf(o.get(key_seq))))
+                .map(s -> s.get(pk_name))
+                .collect(Collectors.toList());
 
-            PrimaryKeyDef primaryKeyDef = PrimaryKeyDef.of(tableDef)
-                    .name(pkName);
-            tableDef.setPrimaryKey(primaryKeyDef);
+        tableDef.primaryKeyOf(columns.toArray(new String[0]))
+                .setName(pkName);
 
-            Map<Integer, String> colMap = pkMap.get(pkName);
-            List<Integer> integers = new ArrayList<>(colMap.keySet());
-            Collections.sort(integers);
-            for (Integer keySeq : integers) {
-                String columnName = colMap.get(keySeq);
-                ColumnDef columnDef = tableDef.getColumnDef(columnName);
-                primaryKeyDef.addColumn(columnDef);
-            }
-
-
-        }
 
     }
 
@@ -261,7 +258,7 @@ public class DbObjectBuilder {
                 final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
                 DataTypeJdbc dataType = DataTypesJdbc.of(sqlTypeCode);
-                tableDef.getColumnOf(column_name,dataType.getClass())
+                tableDef.getColumnOf(column_name, dataType.getClass())
                         .typeCode(sqlTypeCode)
                         .precision(column_size)
                         .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
@@ -344,8 +341,10 @@ public class DbObjectBuilder {
         // Collect the data before processing it
         // because of the recursion the data need first to be collected
         // processing the data and calling recursively the creation of an other table
-        // with foreign key result in a "result set is closed" exception within the Ms Sql Driveer
-        Map<String, List<Map<String, String>>> fkData = new HashMap<>();
+        // with foreign key result in a "result set is closed" exception within the Ms Sql Driver
+
+        // Just to hold the data a list of all fk columns values
+        List<Map<String, String>> fkDatas = new ArrayList<>();
 
         try (
                 // ImportedKey = the primary keys imported by a table
@@ -354,27 +353,17 @@ public class DbObjectBuilder {
 
             while (fkResultSet.next()) {
 
-                // Put the properties for the fk
-                String foreignKeyId = fkResultSet.getString(col_fk_name);
-                if (foreignKeyId == null) {
-                    // The foreign key name may be null
-                    // It means that there is only one column
-                    // The id is then the column name
-                    foreignKeyId = fkResultSet.getString(col_fkcolumn_name);
-                }
-
-                Map<String, String> fkProperties = new HashMap<>();
-                for (String colName : resultSetColumnNames) {
-                    fkProperties.put(colName, fkResultSet.getString(colName));
-                }
-
-                // Two columns in the fk or more
-                List<Map<String, String>> colProp = fkData.get(foreignKeyId);
-                if (colProp == null) {
-                    colProp = new ArrayList<>();
-                    fkData.put(foreignKeyId, colProp);
-                }
-                colProp.add(fkProperties);
+                // The foreign key name may be null
+                Map<String, String> fkProperties = resultSetColumnNames
+                        .stream()
+                        .collect(Collectors.toMap(s -> s, s -> {
+                            try {
+                                return fkResultSet.getString(s);
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }));
+                fkDatas.add(fkProperties);
 
             }
 
@@ -385,41 +374,34 @@ public class DbObjectBuilder {
             throw new RuntimeException(e);
         }
 
-        for (Map.Entry<String, List<Map<String, String>>> entry : fkData.entrySet()) {
+        // How much foreign key (ie how much foreign key tables)
+        List<String> foreignTableNames = fkDatas.stream()
+                .map(s -> s.get(col_pktable_name))
+                .collect(Collectors.toList());
 
-            String foreignKeyId = entry.getKey();
-            List<Map<String, String>> cols = entry.getValue();
 
-            for (Map<String, String> colProp : cols) {
-                // Process the data
-
-                // Get the foreign key (only needed if there is two columns
-                ForeignKeyDef foreignKeyDef = fkMap.get(foreignKeyId);
-                if (foreignKeyDef == null) {
-                    foreignKeyDef = new ForeignKeyDef(tableDef)
-                            .setName(foreignKeyId);
-                    tableDef.addForeignKey(foreignKeyDef);
-                    fkMap.put(foreignKeyId, foreignKeyDef);
+        for (String fkTable : foreignTableNames) {
+            Map<Integer, String> cols = new HashMap<>();
+            String fk_name = "";
+            for (Map<String, String> fkData : fkDatas) {
+                if (fkData.get(col_pktable_name).equals(fkTable)) {
+                    cols.put(Integer.valueOf(fkData.get(col_key_seq)), fkData.get(col_fkcolumn_name));
+                    fk_name = fkData.get(col_fk_name);
                 }
-
-                // Add the foreign primary key
-                if (foreignKeyDef.getForeignPrimaryKey() == null) {
-
-                    TableDef foreignTable = getTableDef(colProp.get(col_pktable_name), colProp.get(col_pktable_schem));
-                    if (tableDef.equals(foreignTable)) {
-                        throw new RuntimeException("The foreign key " + foreignKeyDef.getName() + " on the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ") references itself and it's not supported.");
-                    }
-                    foreignKeyDef.setForeignPrimaryKey(foreignTable.getPrimaryKey());
-
-                }
-
-                // Add the inner column that is part of the foreign key definition
-                String columnName = colProp.get(col_fkcolumn_name);
-                ColumnDef columnByName = tableDef.getColumnDef(columnName);
-                foreignKeyDef.addColumn(columnByName, Integer.parseInt(colProp.get(col_key_seq)));
-
             }
+            List<String> columns = cols.keySet().stream()
+                    .sorted()
+                    .map(s -> cols.get(s))
+                    .collect(Collectors.toList());
 
+            TableDef foreignTable = tableDef.getSchema().getTableOf(fkTable);
+            final PrimaryKeyDef primaryKey = foreignTable.getPrimaryKey();
+            if (primaryKey == null) {
+                throw new RuntimeException("The foreign table (" + foreignTable + ") has no primary key");
+            }
+            tableDef
+                    .foreignKeyOf(primaryKey, columns)
+                    .setName(fk_name);
         }
 
     }
@@ -439,8 +421,8 @@ public class DbObjectBuilder {
         final String ordinal_position_alias = "ORDINAL_POSITION";
         final String column_name_alias = "COLUMN_NAME";
         try (
-            // Oracle need to have the approximate argument to true, otherwise we get a ORA-01031: insufficient privileges
-            ResultSet indexResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getIndexInfo(null, tableDef.getSchema().getName(), tableDef.getName(), true, true);
+                // Oracle need to have the approximate argument to true, otherwise we get a ORA-01031: insufficient privileges
+                ResultSet indexResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getIndexInfo(null, tableDef.getSchema().getName(), tableDef.getName(), true, true);
         ) {
             while (indexResultSet.next()) {
 
