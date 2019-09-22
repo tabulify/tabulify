@@ -77,37 +77,6 @@ public class ForeignKeyDef {
         return name;
     }
 
-//    /**
-//     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
-//     * The sequence is the next one in the list
-//     * @param columnDef
-//     * @return the foreignKey
-//     */
-//    public ForeignKeyDef addColumn(ColumnDef columnDef) {
-//
-//        this.foreignKeyColumnDefs.put(foreignKeyColumnDefs.size(),columnDef);
-//        return this;
-//
-//    }
-//
-//    /**
-//     * Add a foreign key column (ie a column of the table) that references a (foreign) primary key
-//     * @param columnDef - the column
-//     * @param colSeq - the sequence (given by the JDBC database metadata)
-//     * @return the foreignKey
-//     */
-//    public ForeignKeyDef addColumn(ColumnDef columnDef, int colSeq) {
-//
-//        this.foreignKeyColumnDefs.put(colSeq, columnDef);
-//        return this;
-//
-//    }
-//
-//    public ForeignKeyDef setForeignPrimaryKey(PrimaryKeyDef foreignPrimaryKey) {
-//        this.foreignPrimaryKey = foreignPrimaryKey;
-//        return this;
-//    }
-
 
     public List<ColumnDef> getChildColumns() {
         return columnDefs;
@@ -124,12 +93,6 @@ public class ForeignKeyDef {
     }
 
 
-//    public ForeignKeyDef addColumns(List<ColumnDef> columnDefs) {
-//        for (ColumnDef columnDef:columnDefs){
-//            addColumn(columnDef);
-//        }
-//        return this;
-//    }
 
     @Override
     public boolean equals(Object o) {
@@ -141,40 +104,20 @@ public class ForeignKeyDef {
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(foreignPrimaryKey.getTableDef());
-
+        return Objects.hash(columnDefs, foreignPrimaryKey);
     }
 
-//    /**
-//     * Alias function to add a column by name
-//     *
-//     * @param columnName
-//     * @return
-//     */
-//    public ForeignKeyDef addColumn(String columnName) {
-//        return addColumn(this.tableDef.getColumnDef(columnName));
-//    }
 
-//    /**
-//     * Alias function to set the foreign key via table name
-//     * The table must be in the same schema
-//     *
-//     * @param tableName
-//     * @return the foreignKey for chaining init
-//     */
-//    public ForeignKeyDef setForeignPrimaryKey(String tableName) {
-//        return setForeignPrimaryKey(this.tableDef.getSchema().getTableOf(tableName).getPrimaryKey());
-//    }
 
     @Override
     public String toString() {
         final PrimaryKeyDef foreignPrimaryKey = this.foreignPrimaryKey;
-        return "Fk to " + foreignPrimaryKey.getTableDef().getName();
+        final List<String> childColumns = getChildColumns().stream().map(s->s.getColumnName()).collect(Collectors.toList());
+        return "Fk from "+getTableDef().getName()+childColumns +" to " + foreignPrimaryKey.getTableDef().getName();
     }
 
     public RelationDef getTableDef() {
-        return columnDefs.get(1).getRelationDef();
+        return columnDefs.get(0).getRelationDef();
 
     }
 }

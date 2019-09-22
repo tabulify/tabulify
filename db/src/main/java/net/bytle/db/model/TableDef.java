@@ -47,8 +47,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     // on the setter
     private String tableType;
 
-    // The schema name (used mainly when we read a data definition file)
-    private String schemaName;
 
 
     public TableDef(Database database, String tableName) {

@@ -131,14 +131,21 @@ public class SchemaDef {
     /**
      * Retrieve the relationship (ie foreigns key and external key) of tables
      *
-     * @param pattern - the name of a table or a pattern
+     * @param pattern - the name of a table or a glob pattern
      * @return
      */
     public List<ForeignKeyDef> getForeignKeys(String pattern) {
         Set<ForeignKeyDef> foreignKeys = new HashSet<>();
-        for (TableDef tableDef : this.getTables(pattern)) {
-            foreignKeys.addAll(tableDef.getForeignKeys());
-            foreignKeys.addAll(tableDef.getExternalForeignKeys());
+        String regexpPattern = Globs.toRegexPattern(pattern);
+        for (TableDef tableDef : this.getTables()) {
+            if (tableDef.getName().matches(regexpPattern)) {
+                foreignKeys.addAll(tableDef.getForeignKeys());
+            }
+            for (ForeignKeyDef foreignKeyDef: tableDef.getForeignKeys()){
+                if (foreignKeyDef.getForeignPrimaryKey().getTableDef().getName().matches(regexpPattern)){
+                    foreignKeys.add(foreignKeyDef);
+                }
+            }
         }
         return new ArrayList<>(foreignKeys);
     }
