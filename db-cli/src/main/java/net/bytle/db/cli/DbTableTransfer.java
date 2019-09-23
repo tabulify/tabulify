@@ -5,13 +5,19 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.loader.ResultSetLoader;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.uri.SchemaDataUri;
+import net.bytle.db.uri.TableDataUri;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -22,14 +28,14 @@ import static net.bytle.db.cli.Words.*;
 /**
  * Created by gerard on 08-12-2016.
  * <p>
- * load data in a db
+ * transfer a table into a db
  */
 public class DbTableTransfer {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    private static final String SOURCE_TABLE_NAME_ARG = "SourceTableName";
-    private static final String TARGET_TABLE_NAME_ARG = "TargetTableName";
+    private static final String SOURCE_TABLE_URIS = "Source TableUri...";
+    private static final String TARGET_SCHEMA_URI = "Target TableUri|SchemaUri";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -40,23 +46,23 @@ public class DbTableTransfer {
         cliCommand
                 .setDescription(description);
 
-        cliCommand.argOf(SOURCE_TABLE_NAME_ARG)
-                .setDescription("The table name of the source")
-                .setMandatory(true);
-        cliCommand.argOf(TARGET_TABLE_NAME_ARG)
-                .setDescription("The table name of the target. The default value is the name of the source table")
+        cliCommand.argOf(TARGET_SCHEMA_URI)
+                .setDescription("A schema URI that defines the destination")
                 .setMandatory(false);
 
-
-        cliCommand.optionOf(JDBC_URL_SOURCE_OPTION)
+        cliCommand.argOf(SOURCE_TABLE_URIS)
+                .setDescription("One or more table URIs that define the table to transfer")
                 .setMandatory(true);
 
-        cliCommand.optionOf(JDBC_DRIVER_SOURCE_OPTION);
 
+        cliCommand.flagOf(NO_STRICT)
+                .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
+                .setDefaultValue(false);
+
+        cliCommand.optionOf(DATABASE_STORE);
+
+        // Load options
         cliCommand.optionOf(TARGET_WORKER_OPTION);
-        cliCommand.optionOf(TARGET_TABLE_OPTION);
-        cliCommand.optionOf(TARGET_SCHEMA_OPTION);
-        cliCommand.optionOf(SOURCE_SCHEMA_OPTION);
         cliCommand.optionOf(BUFFER_SIZE_OPTION);
         cliCommand.optionOf(COMMIT_FREQUENCY_OPTION);
         cliCommand.optionOf(TARGET_BATCH_SIZE_OPTION);
@@ -66,21 +72,18 @@ public class DbTableTransfer {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Target Table
-        String sourceTableName = cliParser.getString(SOURCE_TABLE_NAME_ARG);
-        String sourceSchemaName = cliParser.getString(SOURCE_SCHEMA_OPTION);
+        String sourceTableName = cliParser.getString(SOURCE_TABLE_URIS);
 
-        String targetTableName = cliParser.getString(TARGET_TABLE_NAME_ARG);
+
+        String targetTableName = cliParser.getString(TARGET_SCHEMA_URI);
         if (targetTableName == null) {
             targetTableName = sourceTableName;
         }
-        String targetSchemaName = cliParser.getString(TARGET_SCHEMA_OPTION);
 
 
-        // Metrics
+        // Load options
         String metricsFilePath = cliParser.getString(METRICS_PATH_OPTION);
-
         Integer targetWorkerCount = cliParser.getInteger(TARGET_WORKER_OPTION);
-
         String bufferSizeString = cliParser.getString(BUFFER_SIZE_OPTION);
         Integer bufferSize = 2 * targetWorkerCount * 10000;
         if (bufferSizeString != null) {
@@ -88,31 +91,58 @@ public class DbTableTransfer {
         } else {
             LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
         }
-
         Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
         Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
 
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        // Source Connection
-        String sourceUrl = cliParser.getString(JDBC_URL_SOURCE_OPTION);
-        String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database sourceDatabase = Databases.of(Db.CLI_DATABASE_NAME_SOURCE)
-                .setUrl(sourceUrl)
-                .setDriver(sourceDriver);
+        // Command option
+        final Boolean notStrict = cliParser.getBoolean(NO_STRICT);
 
-        TableDef sourceTableDef = sourceDatabase.getTable(sourceTableName, sourceSchemaName);
-        if (!Tables.exists(sourceTableDef)) {
-            sourceDatabase.close();
-            String msg = "The table (" + sourceTableDef.getFullyQualifiedName() + ") doesn't exist in the database !!!!";
-            LOGGER.severe(msg);
-            System.err.println(msg);
-            exit(1);
+        // Get the tables to transfer
+        List<String> tableUris = cliParser.getStrings(SOURCE_TABLE_URIS);
+        List<TableDef> tablesToTransfer = new ArrayList<>();
+        for (String tableUri : tableUris) {
+            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
+            Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+            List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
+            if (schemaDefs.size() == 0) {
+                schemaDefs = Arrays.asList(database.getCurrentSchema());
+            }
+            for (SchemaDef schemaDef : schemaDefs) {
+                List<TableDef> tablesFound = schemaDef.getTables(tableDataUri.getTableName());
+                if (tablesFound.size() != 0) {
+
+                    tablesToTransfer.addAll(tablesFound);
+
+                } else {
+
+                    final String msg = "No tables found with the name/pattern (" + tableUri + ")";
+                    if (notStrict) {
+
+                        LOGGER.warning(msg);
+
+                    } else {
+
+                        LOGGER.severe(msg);
+                        exit(1);
+
+                    }
+
+                }
+            }
         }
 
-        // Target object building
-
-        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
-        TableDef targetTableDef = targetDatabase.getTable(targetTableName, targetSchemaName);
+        // Target
+        String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
+        SchemaDataUri tableDataUri = SchemaDataUri.ofUri(targetTableUriOpt);
+        Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+        SchemaDef schemaDef = targetDatabase.getCurrentSchema();
+        if (tableDataUri.getSchemaName() != null) {
+            schemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());
+        }
 
 
         // Starting the load
@@ -163,11 +193,8 @@ public class DbTableTransfer {
         System.out.printf("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: %d:%d:%d.%d (hour:minutes:seconds:milli)%n", elapsedHours, elapsedMinutes, elapsedSeconds, elapsedMilliSeconds);
         System.out.printf("       Ie (%d) milliseconds%n", totalDiff);
 
-        // Close Resources
-        targetDatabase.close();
-        sourceDatabase.close();
 
-        int exitStatus = streamListeners.stream().mapToInt(s -> s.getExitStatus()).sum();
+        int exitStatus = streamListeners.stream().mapToInt(InsertStreamListener::getExitStatus).sum();
         if (exitStatus != 0) {
             System.err.println("Error ! (" + exitStatus + ") errors were seen.");
             System.out.println("Error ! (" + exitStatus + ") errors were seen.");

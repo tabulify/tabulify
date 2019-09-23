@@ -53,12 +53,12 @@ public class DbTableDrop {
                 .setDescription("One or more table URI")
                 .setMandatory(true);
 
+        cliCommand.flagOf(FORCE)
+                .setDescription("if set, the foreign keys referencing the tables to drop will be dropped");
+
         cliCommand.flagOf(NO_STRICT)
                 .setDescription("if set, it will not throw an error if a table is not found")
                 .setDefaultValue(false);
-
-        cliCommand.flagOf(FORCE)
-                .setDescription("if set, the foreign keys referencing the tables to drop will be dropped");
 
         cliCommand.optionOf(DATABASE_STORE);
 

@@ -118,6 +118,5 @@ public class ForeignKeyDef {
 
     public RelationDef getTableDef() {
         return columnDefs.get(0).getRelationDef();
-
     }
 }

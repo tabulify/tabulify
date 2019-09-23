@@ -1,13 +1,19 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
+import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.uri.SchemaDataUri;
+import net.bytle.db.uri.TableDataUri;
 
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.*;
@@ -23,6 +29,7 @@ public class DbQueryTransfer {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
+    private static final String FILE_URI = "query.sql";
 
     public static void run(CliCommand command, String[] args) {
 
@@ -37,15 +44,10 @@ public class DbQueryTransfer {
                 .setDescription("Transfer the result of query from one source database to a target database")
                 .setFooter(footer);
 
-
+        command.optionOf(DATABASE_STORE);
         command.optionOf(SOURCE_FETCH_SIZE_OPTION);
         command.optionOf(SOURCE_QUERY_OPTION);
-
-        final String FILE_URI = "query.sql";
-
-
         command.optionOf(BUFFER_SIZE_OPTION);
-
         command.optionOf(TARGET_WORKER_OPTION);
         command.optionOf(COMMIT_FREQUENCY_OPTION);
         command.optionOf(TARGET_BATCH_SIZE_OPTION);
@@ -67,25 +69,28 @@ public class DbQueryTransfer {
         // create the parser
         CliParser cliParser = Clis.getParser(command, args);
 
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Target Table
-        String targetTableName = cliParser.getString(TARGET_TABLE_OPTION);
+        String targetTableName = cliParser.getString(TARGET_DATA_URI);
         if (targetTableName == null) {
             String fileName = cliParser.getPath(FILE_URI).getFileName().toString();
             targetTableName = fileName.substring(0, fileName.lastIndexOf("."));
         }
 
-        // Source Data
-        // Source Database
-        String sourceUrl = cliParser.getString(JDBC_URL_SOURCE_OPTION);
-        String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Database sourceDatabase = Databases.of(Db.CLI_DATABASE_NAME_SOURCE)
-                .setUrl(sourceUrl)
-                .setDriver(sourceDriver);
+        SchemaDataUri sourceSchemaDataUri = SchemaDataUri.ofUri(SOURCE_DATA_URI);
+        Database sourceDatabase = databasesStore.getDatabase(sourceSchemaDataUri.getDatabaseName());
+        SchemaDef sourceSchemaDef = sourceDatabase.getCurrentSchema();
+        if (sourceSchemaDataUri.getSchemaName()!=null){
+            sourceSchemaDef = sourceDatabase.getSchema(sourceSchemaDataUri.getSchemaName());
+        }
+
         // Source Query
         String query = cliParser.getFileContent(FILE_URI);
         // Query
-        QueryDef sourceQueryDef = sourceDatabase.getQuery(query);
+        QueryDef sourceQueryDef = sourceSchemaDef.getQuery(query);
 
 
         Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET);

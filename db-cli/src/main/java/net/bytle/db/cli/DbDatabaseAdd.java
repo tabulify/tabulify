@@ -37,7 +37,7 @@ public class DbDatabaseAdd {
 
         String description = "Add a database";
 
-        String footer = "Example:  To add the database information about the database `name`:\n" +
+        String footer = "Example: To add the database information about the database `name`:\n" +
                 "    db " + Words.DATABASE_COMMAND + " " + ADD_COMMAND + " name";
 
         // Create the parser

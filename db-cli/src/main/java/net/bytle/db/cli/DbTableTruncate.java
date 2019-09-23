@@ -7,6 +7,7 @@ import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
@@ -66,7 +67,7 @@ public class DbTableTruncate {
                     LOGGER.warning(msg);
                 } else {
                     LOGGER.severe(msg);
-                    LOGGER.severe("If you don't want to exit when a table is not found, you can use the no-strict flag ("+Words.NO_STRICT+")");
+                    LOGGER.severe("If you don't want to exit when a table is not found, you can use the no-strict flag (" + Words.NO_STRICT + ")");
                     LOGGER.severe("Exiting");
                     System.exit(1);
                 }
@@ -80,11 +81,11 @@ public class DbTableTruncate {
         List<TableDef> tablesToTruncate = new ArrayList<>(tablesSelectedToTruncate);
         for (
                 TableDef tableDef : tablesSelectedToTruncate) {
-            List<TableDef> childTables = tableDef.getExternalForeignKeys()
+            List<RelationDef> childTables = tableDef.getExternalForeignKeys()
                     .stream()
                     .map(d -> d.getTableDef())
                     .collect(Collectors.toList());
-            for (TableDef childTable : childTables) {
+            for (RelationDef childTable : childTables) {
                 if (!(tablesSelectedToTruncate.contains(childTable))) {
                     final String msg = "The table (" + childTable + ") has a foreign key into the table to truncate (" + tableDef + ") but is not selected";
                     if (!forceMode) {
@@ -102,10 +103,7 @@ public class DbTableTruncate {
         }
 
         // Truncating
-        for (
-                TableDef tableDef : Dag.get(tablesToTruncate).
-
-                getDropOrderedTables()) {
+        for (TableDef tableDef : Dag.get(tablesToTruncate).getDropOrderedTables()) {
             Tables.truncate(tableDef);
         }
         LOGGER.info("Bye !");

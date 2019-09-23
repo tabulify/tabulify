@@ -30,8 +30,8 @@ import static net.bytle.db.cli.Words.*;
 public class DbTableLoad {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String FILE = "sourceFile";
-    private static final String TABLE_DATA_URI = "targetTableDataUri";
+    private static final String FILE_URI = "FILE_URI...";
+    private static final String TABLE_DATA_URI = "SCHEMA_URI|TABLE_URI...";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -39,7 +39,7 @@ public class DbTableLoad {
 
         // Create the parser
         cliCommand
-                .setDescription("Load a local file into a database.");
+                .setDescription("Load one ore more files into a database.");
 
         cliCommand.optionOf(DATABASE_STORE);
 
@@ -55,19 +55,19 @@ public class DbTableLoad {
                 .addWordOf(METRICS_PATH_OPTION);
 
 
-        cliCommand.argOf(FILE)
-                .setDescription("A local path to a CSV file")
+        cliCommand.argOf(FILE_URI)
+                .setDescription("A file URI that define one or more CSV file(s)")
                 .setMandatory(true);
 
         cliCommand.argOf(TABLE_DATA_URI)
-                .setDescription("A table data Uri (Example: @databaseName[/schema/table]). The database name is the only mandatory property. The default schema is the default schema of the database. The default table name is the name of the file.")
+                .setDescription("A table data Uri (Example: @databaseName[/schema/table]). If the table name is not present, the name will be taken from the file name.")
                 .setMandatory(true);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Source
         Path inputFilePath = null;
-        String fileSourcePathArg = cliParser.getString(FILE);
+        String fileSourcePathArg = cliParser.getString(FILE_URI);
         int postPoint = fileSourcePathArg.lastIndexOf(".");
         if (postPoint == -1) {
             LOGGER.severe("The file must have an extension.");

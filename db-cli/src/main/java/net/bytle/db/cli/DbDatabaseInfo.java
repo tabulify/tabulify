@@ -1,18 +1,19 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.Clis;
+import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.DatabaseUri;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.INFO_COMMAND;
 
@@ -24,8 +25,8 @@ import static net.bytle.db.cli.Words.INFO_COMMAND;
 public class DbDatabaseInfo {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String DATABASE_URIS = "@databaseUri...";
-    public static final String HORIZONTAL_LINE = "-------------------------------";
+    private static final String DATABASE_NAMES = "@databaseUri...";
+    private static final String HORIZONTAL_LINE = "-------------------------------";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -36,16 +37,16 @@ public class DbDatabaseInfo {
                 "\tTo output information about the database `name`:\n" +
                 "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " @name\n\n"+
                 "\tTo output information about all the databases with `sql` in their name:\n"+
-                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " *@sql*\n";
+                "\t\tdb " + Words.DATABASE_COMMAND + " " + INFO_COMMAND + " sql*\n";
 
         // Create the parser
         cliCommand
                 .setDescription(description)
                 .setFooter(footer);
 
-        cliCommand.argOf(DATABASE_URIS)
-                .setDescription("one or more database URIs")
-                .setDefaultValue("@*");
+        cliCommand.argOf(DATABASE_NAMES)
+                .setDescription("one or more database name")
+                .setDefaultValue("*");
 
         cliCommand.optionOf(Words.DATABASE_STORE);
 
@@ -59,10 +60,7 @@ public class DbDatabaseInfo {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Retrieve
-        List<String> databaseUris = cliParser.getStrings(DATABASE_URIS);
-        List<String> databaseNames = databaseUris.stream()
-                .map(s-> DatabaseUri.of(s).getDatabaseName())
-                .collect(Collectors.toList());
+        List<String> databaseNames = cliParser.getStrings(DATABASE_NAMES);
         final List<Database> databases = databasesStore.getDatabases(databaseNames);
 
         Boolean force = cliParser.getBoolean(Words.FORCE);
