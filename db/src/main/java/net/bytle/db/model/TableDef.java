@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 public class TableDef extends RelationDefAbs implements ISqlRelation {
 
 
-    private final RelationMeta meta;
     private PrimaryKeyDef primaryKeyDef;
 
     /**
@@ -53,20 +52,11 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
         this.name = tableName;
         this.schema = database.getCurrentSchema();
-        meta = new RelationMeta(this);
 
     }
 
 
-    @Override
-    public List<ColumnDef> getColumnDefs() {
-        return meta.getColumnDefs();
-    }
 
-    @Override
-    public <T> ColumnDef<T> getColumnDef(String columnName) {
-        return meta.getColumnDef(columnName);
-    }
 
 
     public PrimaryKeyDef getPrimaryKey() {
@@ -213,25 +203,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return this;
     }
 
-    /**
-     * @param columnNames
-     * @return an array of columns
-     * The columns must exist otherwise you get a exception
-     */
-    private ColumnDef[] getColumns(String... columnNames) {
 
-        return meta.getColumns(columnNames);
-    }
-
-    /**
-     * @param columnNames
-     * @return an array of columns
-     * The columns must exist otherwise you get a exception
-     */
-    private ColumnDef[] getColumns(List<String> columnNames) {
-
-        return meta.getColumns(columnNames.toArray(new String[0]));
-    }
 
     /**
      * Add a foreign key
@@ -283,27 +255,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     }
 
 
-
-    /**
-     * @param columnIndex
-     * @return a columnDef by index starting at 0
-     */
-    public ColumnDef getColumnDef(Integer columnIndex) {
-
-        return getColumnDefs().get(columnIndex);
-    }
-
-
-    /**
-     * @param columnName - The column name
-     * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
-     * @return  a new columnDef
-     */
-    public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
-
-        return meta.getColumnOf(columnName, clazz);
-
-    }
 
 
     /**

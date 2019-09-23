@@ -6,6 +6,9 @@ import java.util.List;
 
 /**
  * No setter because of chaining initialization please
+ *
+ *   * A query
+ *   * A table
  */
 public interface RelationDef {
 

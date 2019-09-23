@@ -17,11 +17,12 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation, AutoClosea
 
 
     private final String query;
-    private RelationMeta meta;
     private ResultSet resultSet;
 
 
     protected QueryDef(Database database, String query, String queryName) {
+
+        super();
 
         if (queryName == null) {
             this.name = query;

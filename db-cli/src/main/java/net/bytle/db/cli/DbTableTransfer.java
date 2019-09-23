@@ -1,25 +1,30 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.cli.Clis;
-import net.bytle.cli.Log;
+import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.engine.Queries;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.loader.ResultSetLoader;
+import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MemoryInsertStream;
+import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
 
 import java.nio.file.Path;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 
 import static java.lang.System.exit;
 import static net.bytle.db.cli.Words.*;
@@ -35,7 +40,8 @@ public class DbTableTransfer {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
     private static final String SOURCE_TABLE_URIS = "Source TableUri...";
-    private static final String TARGET_SCHEMA_URI = "Target TableUri|SchemaUri";
+    private static final String TARGET_SCHEMA_URI = "Target SchemaUri";
+    private static final String TARGET_TABLE_NAMES = "TableName...";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -51,8 +57,12 @@ public class DbTableTransfer {
                 .setMandatory(false);
 
         cliCommand.argOf(SOURCE_TABLE_URIS)
-                .setDescription("One or more table URIs that define the table to transfer")
+                .setDescription("One or more table URIs that define the table(s) to transfer")
                 .setMandatory(true);
+
+        cliCommand.optionOf(TARGET_TABLE_NAMES)
+                .setDescription("One or more table names separated by a comma (The target table name default to the source table name)")
+                .setMandatory(false);
 
 
         cliCommand.flagOf(NO_STRICT)
@@ -70,15 +80,6 @@ public class DbTableTransfer {
         cliCommand.optionOf(METRICS_PATH_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
-
-        // Target Table
-        String sourceTableName = cliParser.getString(SOURCE_TABLE_URIS);
-
-
-        String targetTableName = cliParser.getString(TARGET_SCHEMA_URI);
-        if (targetTableName == null) {
-            targetTableName = sourceTableName;
-        }
 
 
         // Load options
@@ -139,70 +140,85 @@ public class DbTableTransfer {
         String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
         SchemaDataUri tableDataUri = SchemaDataUri.ofUri(targetTableUriOpt);
         Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDatabaseName());
-        SchemaDef schemaDef = targetDatabase.getCurrentSchema();
+        SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
         if (tableDataUri.getSchemaName() != null) {
-            schemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());
+            targetSchemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());
         }
 
 
-        // Starting the load
-        Date startTime = new Date();
-        System.out.println("Copying the table " + sourceTableDef.getFullyQualifiedName() + " into the following table " + targetTableDef.getFullyQualifiedName());
+        CliTimer totalCliTimer = CliTimer.getTimer("total").start();
 
 
-        // Check if we have a table otherwise we will create it
-        LOGGER.info("Checking if we have a target table " + targetTableDef.getFullyQualifiedName());
-        if (!Tables.exists(targetTableDef)) {
-            LOGGER.info("Target table does not exist, creating it");
-            // Creating the table with the result set metadata
-            targetTableDef = targetDatabase.getTable(targetTableDef.getName(), sourceTableDef, targetTableDef.getSchema().getName());
-            Tables.create(targetTableDef);
-            LOGGER.info("Target table created");
-        } else {
-            LOGGER.info("Target table already exists");
+        LOGGER.info("Processing the request");
+
+        TableDef executionTable = Tables.get("executions");
+        executionTable
+                .addColumn("Source Table Name", Types.VARCHAR)
+                .addColumn("Target Table Name", Types.VARCHAR)
+                .addColumn("Latency (ms)", Types.INTEGER)
+                .addColumn("Row Count", Types.INTEGER)
+                .addColumn("Error", Types.VARCHAR)
+                .addColumn("Message", Types.VARCHAR);
+        InsertStream exeInput = MemoryInsertStream.get(executionTable);
+
+        int errorCounter = 0;
+        for (TableDef tableDef : tablesToTransfer) {
+
+            CliTimer cliTimer = CliTimer.getTimer(tableDef.getFullyQualifiedName()).start();
+            Integer rowCount = null;
+            String status = "";
+            String message = "";
+            TableDef targetTableDef = targetSchemaDef.getTableOf(tableDef.getName());
+            try {
+
+                QueryDef queryDef = targetSchemaDef.getQuery("select * from " + tableDef.getFullyQualifiedName());
+
+                List<InsertStreamListener> streamListeners = new ResultSetLoader(targetTableDef, queryDef)
+                        .targetWorkerCount(targetWorkerCount)
+                        .bufferSize(bufferSize)
+                        .batchSize(batchSize)
+                        .commitFrequency(commitFrequency)
+                        .metricsFilePath(metricsFilePath)
+                        .load();
+
+
+                int exitStatus = streamListeners.stream().mapToInt(InsertStreamListener::getExitStatus).sum();
+                errorCounter += exitStatus;
+                if (exitStatus != 0) {
+                    status = "Err";
+                }
+
+                rowCount = streamListeners.stream().mapToInt(InsertStreamListener::getRowCount).sum();
+            } catch (Exception e) {
+                errorCounter++;
+                status = "Err";
+                message = Log.onOneLine(e.getMessage());
+                LOGGER.severe(e.getMessage());
+            }
+
+            cliTimer.stop();
+            exeInput.insert(
+                    tableDef.getFullyQualifiedName(),
+                    targetTableDef.getFullyQualifiedName(),
+                    cliTimer.getResponseTimeInMilliSeconds(),
+                    rowCount,
+                    status,
+                    message);
+
         }
+        exeInput.close();
+        System.out.println();
+        Tables.print(executionTable);
+        System.out.println();
 
-        // The load
-        List<InsertStreamListener> streamListeners = new ResultSetLoader(targetTableDef, sourceTableDef)
-                .targetWorkerCount(targetWorkerCount)
-                .bufferSize(bufferSize)
-                .batchSize(batchSize)
-                .commitFrequency(commitFrequency)
-                .metricsFilePath(metricsFilePath)
-                .load();
+        totalCliTimer.stop();
+        LOGGER.info("Response Time to query the data: " + totalCliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+        LOGGER.info("       Ie (" + totalCliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
 
-
-        Date endTime = new Date();
-        long totalDiff = endTime.getTime() - startTime.getTime();
-
-        long secondsInMilli = 1000;
-        long minutesInMilli = 1000 * 60;
-        long hoursInMilli = 1000 * 60 * 60;
-
-        long elapsedHours = totalDiff / hoursInMilli;
-
-        long diff = totalDiff % hoursInMilli;
-        long elapsedMinutes = diff / minutesInMilli;
-
-        diff = diff % minutesInMilli;
-        long elapsedSeconds = diff / secondsInMilli;
-
-        diff = diff % secondsInMilli;
-        long elapsedMilliSeconds = diff;
-
-        System.out.printf("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: %d:%d:%d.%d (hour:minutes:seconds:milli)%n", elapsedHours, elapsedMinutes, elapsedSeconds, elapsedMilliSeconds);
-        System.out.printf("       Ie (%d) milliseconds%n", totalDiff);
-
-
-        int exitStatus = streamListeners.stream().mapToInt(InsertStreamListener::getExitStatus).sum();
-        if (exitStatus != 0) {
-            System.err.println("Error ! (" + exitStatus + ") errors were seen.");
-            System.out.println("Error ! (" + exitStatus + ") errors were seen.");
-            System.exit(exitStatus);
-        } else {
-            System.out.println("Success ! No errors were seen.");
+        if (errorCounter > 0) {
+            System.err.println(errorCounter + " Errors during table transfer executions were seen");
+            System.exit(1);
         }
-
 
     }
 

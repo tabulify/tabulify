@@ -81,11 +81,11 @@ public class DbTableTruncate {
         List<TableDef> tablesToTruncate = new ArrayList<>(tablesSelectedToTruncate);
         for (
                 TableDef tableDef : tablesSelectedToTruncate) {
-            List<RelationDef> childTables = tableDef.getExternalForeignKeys()
+            List<TableDef> childTables = tableDef.getExternalForeignKeys()
                     .stream()
                     .map(d -> d.getTableDef())
                     .collect(Collectors.toList());
-            for (RelationDef childTable : childTables) {
+            for (TableDef childTable : childTables) {
                 if (!(tablesSelectedToTruncate.contains(childTable))) {
                     final String msg = "The table (" + childTable + ") has a foreign key into the table to truncate (" + tableDef + ") but is not selected";
                     if (!forceMode) {

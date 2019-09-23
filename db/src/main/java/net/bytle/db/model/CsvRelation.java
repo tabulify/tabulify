@@ -15,9 +15,10 @@ import java.util.List;
 public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     private final Path path;
-    private final RelationMeta relationMeta;
+
 
     public CsvRelation(Path path) {
+        super();
         this.path = path;
         this.schema = Databases.of().getCurrentSchema();
         this.name = path.getFileName().toString();
@@ -28,9 +29,9 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
             Reader in = new FileReader(path.toFile());
             Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
             CSVRecord headerRecord = recordIterator.next();
-            relationMeta = new RelationMeta(this);
+            this.meta = new RelationMeta(this);
             for (int i = 0; i < headerRecord.size(); i++) {
-                relationMeta.addColumn(headerRecord.get(i));
+                meta.addColumn(headerRecord.get(i));
             }
             in.close();
 
@@ -42,22 +43,22 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     @Override
     public List<ColumnDef> getColumnDefs() {
-        return relationMeta.getColumnDefs();
+        return meta.getColumnDefs();
     }
 
     @Override
     public ColumnDef getColumnDef(String columnName) {
-        return relationMeta.getColumnDef(columnName);
+        return meta.getColumnDef(columnName);
     }
 
     @Override
     public ColumnDef getColumnDef(Integer columnIndex) {
-        return relationMeta.getColumnDef(columnIndex);
+        return meta.getColumnDef(columnIndex);
     }
 
     @Override
     public ColumnDef getColumnOf(String columnName, Class clazz) {
-        return relationMeta.getColumnOf(columnName, clazz);
+        return meta.getColumnOf(columnName, clazz);
     }
 
 

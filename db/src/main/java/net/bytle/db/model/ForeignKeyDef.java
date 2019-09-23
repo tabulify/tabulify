@@ -116,7 +116,8 @@ public class ForeignKeyDef {
         return "Fk from "+getTableDef().getName()+childColumns +" to " + foreignPrimaryKey.getTableDef().getName();
     }
 
-    public RelationDef getTableDef() {
-        return columnDefs.get(0).getRelationDef();
+    public TableDef getTableDef() {
+        // Bad cast but yeah ...
+        return (TableDef) columnDefs.get(0).getRelationDef();
     }
 }
