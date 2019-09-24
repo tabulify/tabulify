@@ -64,7 +64,7 @@ public class DbSampleFill {
         final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        SchemaDataUri schemaUri = SchemaDataUri.ofUri(cliParser.getString(SCHEMA_URI));
+        SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
         Database database = databasesStore.getDatabase(schemaUri.getDatabaseName());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (schemaUri.getSchemaName()!=null){

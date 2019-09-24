@@ -69,7 +69,7 @@ public class DbTableCreate {
 
             LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
 
-            SchemaDataUri schemaDataUri = SchemaDataUri.ofUri(arg);
+            SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
             Database database = databasesStore.getDatabase(schemaDataUri.getDatabaseName());
             final String schemaName = schemaDataUri.getSchemaName();
             SchemaDef schemaDef = database.getCurrentSchema();
@@ -78,7 +78,7 @@ public class DbTableCreate {
             }
 
 
-            TableDataUri tableUri = TableDataUri.ofUri(tableUriAsString);
+            TableDataUri tableUri = TableDataUri.of(tableUriAsString);
             SchemaDef finalSchemaDef = schemaDef;
             List<TableDef> tableDefs = tables.stream()
                     .filter(t -> Globs.matches(t.getName(),tableUri.getTableName()))

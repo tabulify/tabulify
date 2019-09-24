@@ -18,18 +18,15 @@ public class FileUri extends DataUri implements IDataUri {
      */
     public static final String DATABASE_FILE_NAME = "file";
 
-    public FileUri(String uri) {
-        super(uri);
-    }
 
-    public FileUri(String[] parts) {
-        super(parts);
+    public FileUri(String uri, String... parts) {
+        super(uri, parts);
     }
 
     /**
      *
-     * @param part - an non-empty string (a file URI or a part)
-     * @param parts - other URI part
+     * @param part - a local path or a connection
+     * @param parts - the path in the connection
      * @return a fileUri from a data Uri string or from data Uri parts
      */
     public static FileUri of(String part, String... parts) {
@@ -46,13 +43,16 @@ public class FileUri extends DataUri implements IDataUri {
 
         } else {
 
-            List<String> partsToPass = new ArrayList<>();
-            if (part.equals(".") || part.equals("..") ){
-                partsToPass.add(FileUri.DATABASE_FILE_NAME);
+            List<String> partsToPass = Arrays.asList(parts);
+            String databaseName = part;
+            // Not sure what to do here
+            if (part.equals(".") || part.equals("..")){
+                databaseName = FileUri.DATABASE_FILE_NAME;
+                partsToPass = new ArrayList<>();
+                partsToPass.add(part);
+                partsToPass.addAll(Arrays.asList(parts));
             }
-            partsToPass.add(part);
-            partsToPass.addAll(Arrays.asList(parts));
-            return new FileUri(partsToPass.toArray(new String[0]));
+            return new FileUri(databaseName, partsToPass.toArray(new String[0]));
         }
     }
 

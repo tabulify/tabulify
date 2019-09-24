@@ -41,7 +41,7 @@ public class DbTableCount {
         final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
         Integer count = 0;
         for (String stringTableUri : stringTablesUris) {
-            TableDataUri tableUri = TableDataUri.ofUri(stringTableUri);
+            TableDataUri tableUri = TableDataUri.of(stringTableUri);
             Database database = databasesStore.getDatabase(tableUri.getDatabaseName());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableUri.getSchemaName() != null) {

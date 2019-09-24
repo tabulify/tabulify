@@ -107,7 +107,7 @@ public class DbTableFill {
         SchemaDef schemaDef = null;
         for (String tableDataUriString : dataUris) {
 
-            TableDataUri tableDataUri = TableDataUri.ofUri(tableDataUriString);
+            TableDataUri tableDataUri = TableDataUri.of(tableDataUriString);
             final Database databaseinUri = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             if (database == null) {
                 database = databaseinUri;

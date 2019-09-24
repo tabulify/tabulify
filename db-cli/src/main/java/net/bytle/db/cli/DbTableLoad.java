@@ -2,10 +2,10 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.uri.DataUri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
+import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
@@ -30,9 +30,9 @@ import static net.bytle.db.cli.Words.*;
 public class DbTableLoad {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String FILE_URI = "FILE_URI...";
-    private static final String TABLE_DATA_URI = "SCHEMA_URI|TABLE_URI...";
-
+    private static final String FILE_URI = "FILE_URIS";
+    private static final String SCHEMA_URI = "SCHEMA_URI";
+    private static final String TARGET_TABLE_NAMES = "TargetTableNames";
 
     public static void run(CliCommand cliCommand, String[] args) {
 
@@ -55,12 +55,20 @@ public class DbTableLoad {
                 .addWordOf(METRICS_PATH_OPTION);
 
 
-        cliCommand.argOf(FILE_URI)
-                .setDescription("A file URI that define one or more CSV file(s)")
+        cliCommand.flagOf(NO_STRICT)
+                .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
+                .setDefaultValue(false);
+
+        cliCommand.optionOf(TARGET_TABLE_NAMES)
+                .setDescription("One or more table names separated by a comma (The target table name default to the source table name)")
+                .setMandatory(false);
+
+        cliCommand.argOf(SCHEMA_URI)
+                .setDescription("A schema Uri that define (Example: @databaseName[/schema]).")
                 .setMandatory(true);
 
-        cliCommand.argOf(TABLE_DATA_URI)
-                .setDescription("A table data Uri (Example: @databaseName[/schema/table]). If the table name is not present, the name will be taken from the file name.")
+        cliCommand.argOf(FILE_URI)
+                .setDescription("A file URI that define one or more CSV file(s)")
                 .setMandatory(true);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -90,7 +98,7 @@ public class DbTableLoad {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Is there a path
-        final IDataUri IDataUri = DataUri.of(cliParser.getString(TABLE_DATA_URI));
+        final IDataUri IDataUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
         final TableDataUri tableDataUri;
         if (IDataUri.getPathSegments().length > 0){
             tableDataUri = TableDataUri.of(IDataUri);

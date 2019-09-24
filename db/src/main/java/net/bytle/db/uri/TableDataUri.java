@@ -5,17 +5,16 @@ public class TableDataUri extends DataUri {
     private String schemaName;
     private String tableName;
 
-    public TableDataUri(String[] names) {
-        super(names);
+    private TableDataUri(String part, String... parts) {
+        super(part, parts);
+        init();
     }
 
-    public static TableDataUri ofParts(String... names) {
 
-        return new TableDataUri(names);
-    }
+    public static TableDataUri of(String part, String... parts) {
 
-    public static TableDataUri ofUri(String uri) {
-        return new TableDataUri(uri);
+        return new TableDataUri(part, parts);
+
     }
 
 
@@ -28,12 +27,6 @@ public class TableDataUri extends DataUri {
         return tableName;
     }
 
-    public TableDataUri(String uri) {
-
-        super(uri);
-        init();
-
-    }
 
     private void init() {
         String localTableName;

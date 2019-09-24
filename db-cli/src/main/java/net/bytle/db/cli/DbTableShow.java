@@ -59,7 +59,7 @@ public class DbTableShow {
         // Start
         List<String> tableURIs = cliParser.getStrings(TABLE_URI);
         for (String tableUri: tableURIs) {
-            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
+            TableDataUri tableDataUri = TableDataUri.of(tableUri);
             List<Database> databases = databasesStore.getDatabases(tableDataUri.getDatabaseName());
             for (Database database: databases) {
                 //TODO: The schema name may be a pattern

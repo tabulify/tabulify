@@ -79,7 +79,7 @@ public class DbTableDrop {
         List<String> tableUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tables = new ArrayList<>();
         for (String tableUri : tableUris) {
-            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
+            TableDataUri tableDataUri = TableDataUri.of(tableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
             if (schemaDefs.size() == 0) {

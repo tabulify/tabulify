@@ -56,7 +56,7 @@ public class DbSampleCreate {
         final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        SchemaDataUri tableDataUri = SchemaDataUri.ofUri(cliParser.getString(SCHEMA_URI));
+        SchemaDataUri tableDataUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
         Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (tableDataUri.getSchemaName()!=null){

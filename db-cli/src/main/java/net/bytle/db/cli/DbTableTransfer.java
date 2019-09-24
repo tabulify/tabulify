@@ -3,9 +3,7 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.Queries;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.loader.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
@@ -14,7 +12,6 @@ import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.MemoryInsertStream;
-import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
 
@@ -22,9 +19,7 @@ import java.nio.file.Path;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 
 import static java.lang.System.exit;
 import static net.bytle.db.cli.Words.*;
@@ -39,9 +34,9 @@ public class DbTableTransfer {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    private static final String SOURCE_TABLE_URIS = "Source TableUri...";
-    private static final String TARGET_SCHEMA_URI = "Target SchemaUri";
-    private static final String TARGET_TABLE_NAMES = "TableName...";
+    private static final String SOURCE_TABLE_URIS = "SOURCE_TABLE_URIS";
+    private static final String TARGET_SCHEMA_URI = "TARGET_SCHEMA_URI";
+    private static final String TARGET_TABLE_NAMES = "TargetTableNames";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -106,7 +101,7 @@ public class DbTableTransfer {
         List<String> tableUris = cliParser.getStrings(SOURCE_TABLE_URIS);
         List<TableDef> tablesToTransfer = new ArrayList<>();
         for (String tableUri : tableUris) {
-            TableDataUri tableDataUri = TableDataUri.ofUri(tableUri);
+            TableDataUri tableDataUri = TableDataUri.of(tableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
             if (schemaDefs.size() == 0) {
@@ -138,7 +133,7 @@ public class DbTableTransfer {
 
         // Target
         String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
-        SchemaDataUri tableDataUri = SchemaDataUri.ofUri(targetTableUriOpt);
+        SchemaDataUri tableDataUri = SchemaDataUri.of(targetTableUriOpt);
         Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDatabaseName());
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
         if (tableDataUri.getSchemaName() != null) {

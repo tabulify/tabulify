@@ -45,7 +45,7 @@ public class DbForeignKeyCount {
         List<ForeignKeyDef> foreignKeys = new ArrayList<>();
 
         for (String stringTableUri : stringTableUris) {
-            TableDataUri tableDataUri = TableDataUri.ofUri(stringTableUri);
+            TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
             Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableDataUri.getSchemaName()!=null) {

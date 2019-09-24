@@ -11,39 +11,35 @@ public  abstract class DataUri implements IDataUri {
     private String[] pathSegments;
 
 
-    public DataUri(String dataUri) {
+
+
+
+
+
+
+
+
+    public DataUri(String dataUri, String... parts) {
 
 
         if (dataUri==null){
-            throw new RuntimeException("A data uri cannot be null");
+            throw new RuntimeException("The first part of a data uri cannot be null");
         }
-        if (dataUri.length()<=0){
-            throw new RuntimeException("A data uri cannot be an empty string");
+        // This is given in a URI form
+        if (parts.length==0) {
+
+            final char firstCharacter = dataUri.charAt(0);
+            if (firstCharacter != AT_STRING.charAt(0)) {
+                throw new RuntimeException("A data uri start with an at sign. Not with (" + firstCharacter + ").");
+            }
+            String[] pathsParsed = dataUri.substring(1).split(PATH_SEPARATOR);
+            this.pathSegments = Arrays.copyOfRange(pathsParsed, 1, pathsParsed.length);
+            this.databaseName = pathsParsed[0];
+
+        } else {
+            this.pathSegments = parts;
+            this.databaseName = dataUri;
         }
-        final char firstCharacter = dataUri.charAt(0);
-        if (firstCharacter != AT_STRING.charAt(0)){
-            throw new RuntimeException("A data uri start with an at sign. Not with ("+ firstCharacter +").");
-        }
-        String[] pathsParsed = dataUri.substring(1).split(PATH_SEPARATOR);
-        this.pathSegments = Arrays.copyOfRange(pathsParsed,1,pathsParsed.length);
-        this.databaseName = pathsParsed[0];
-
-    }
-
-
-
-    public DataUri(String... dataUri) {
-
-
-        if (dataUri==null){
-            throw new RuntimeException("A data uri cannot be null");
-        }
-        if (dataUri.length ==0){
-            throw new RuntimeException("A data uri cannot be an empty array");
-        }
-
-        this.pathSegments = Arrays.copyOfRange(dataUri,1,dataUri.length);
-        this.databaseName = dataUri[0];
 
     }
 

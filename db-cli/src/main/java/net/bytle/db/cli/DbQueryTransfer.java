@@ -10,10 +10,8 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.uri.SchemaDataUri;
-import net.bytle.db.uri.TableDataUri;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.*;
@@ -80,7 +78,7 @@ public class DbQueryTransfer {
             targetTableName = fileName.substring(0, fileName.lastIndexOf("."));
         }
 
-        SchemaDataUri sourceSchemaDataUri = SchemaDataUri.ofUri(SOURCE_DATA_URI);
+        SchemaDataUri sourceSchemaDataUri = SchemaDataUri.of(SOURCE_DATA_URI);
         Database sourceDatabase = databasesStore.getDatabase(sourceSchemaDataUri.getDatabaseName());
         SchemaDef sourceSchemaDef = sourceDatabase.getCurrentSchema();
         if (sourceSchemaDataUri.getSchemaName()!=null){

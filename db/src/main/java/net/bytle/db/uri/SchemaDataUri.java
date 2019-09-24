@@ -4,34 +4,23 @@ public class SchemaDataUri extends DataUri {
 
     private String schemaName;
 
-    public SchemaDataUri(String[] parts) {
-        super(parts);
+    public SchemaDataUri(String part, String... parts) {
+        super(part, parts);
         init();
     }
 
-    public static SchemaDataUri ofUri(String uri) {
+    public static SchemaDataUri of(String part, String... parts) {
 
-        return new SchemaDataUri(uri);
+        return new SchemaDataUri(part, parts);
     }
 
 
-    public static SchemaDataUri ofParts(String... parts) {
-
-        return new SchemaDataUri(parts);
-
-    }
 
     public String getSchemaName() {
         return schemaName;
     }
 
 
-    public SchemaDataUri(String uri) {
-
-        super(uri);
-        init();
-
-    }
 
     private void init() {
         String localSchemaName;
