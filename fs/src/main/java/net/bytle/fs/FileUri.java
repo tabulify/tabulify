@@ -16,16 +16,16 @@ public class FileUri extends DataUri implements IDataUri {
      * The local file database name as also stated
      * by the {@link Path#getFileSystem()}
      */
-    public static final String DATABASE_FILE_NAME = "file";
+    public static final String LOCAL_FILE_SYSTEM = "file";
 
 
-    public FileUri(String uri, String... parts) {
+    private FileUri(String uri, String... parts) {
         super(uri, parts);
     }
 
     /**
      *
-     * @param part - a local path or a connection
+     * @param part - if the first part does not start with the @sign it's considered to be a local file system
      * @param parts - the path in the connection
      * @return a fileUri from a data Uri string or from data Uri parts
      */
@@ -33,27 +33,18 @@ public class FileUri extends DataUri implements IDataUri {
         if (part == null){
             throw new RuntimeException("The first part cannot be null");
         }
-        if (parts.length==0){
-            // This is an URI
-            String uri = part;
-            if (!part.substring(0, 1).equals(DataUri.AT_STRING)) {
-                uri = "@" + FileUri.DATABASE_FILE_NAME + DataUri.PATH_SEPARATOR + part;
-            }
-            return new FileUri(uri);
+        if (!part.substring(0, 1).equals(DataUri.AT_STRING)) {
 
-        } else {
+            List<String> names = new ArrayList<>();
+            names.addAll(Arrays.asList(part.split(PATH_SEPARATOR)));
+            names.addAll(Arrays.asList(parts));
+            parts = names.toArray(new String[0]);
 
-            List<String> partsToPass = Arrays.asList(parts);
-            String databaseName = part;
-            // Not sure what to do here
-            if (part.equals(".") || part.equals("..")){
-                databaseName = FileUri.DATABASE_FILE_NAME;
-                partsToPass = new ArrayList<>();
-                partsToPass.add(part);
-                partsToPass.addAll(Arrays.asList(parts));
-            }
-            return new FileUri(databaseName, partsToPass.toArray(new String[0]));
+            part = "@" + FileUri.LOCAL_FILE_SYSTEM;
+
         }
+        return new FileUri(part,parts);
+
     }
 
 

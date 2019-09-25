@@ -37,8 +37,10 @@ public  abstract class DataUri implements IDataUri {
             this.databaseName = pathsParsed[0];
 
         } else {
+
             this.pathSegments = parts;
-            this.databaseName = dataUri;
+            this.databaseName = dataUri.substring(1);
+
         }
 
     }

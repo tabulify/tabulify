@@ -344,4 +344,30 @@ public class Fs {
         }
         return names;
     }
+
+
+    /**
+     * path.isAbsolute just tell you that the object path is absolute, not the path
+     *
+     * This method check if there is a root
+     * If this is the case, the path is absolute otherwise not.
+     *
+     * @param path
+     * @return true if the path has a root (is absolute)
+     */
+    public static boolean isAbsolute(Path path) {
+        if (path.getRoot()!=null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static List<Path> get(FileUri fileUri) {
+        if (!fileUri.getDatabaseName().equals(FileUri.LOCAL_FILE_SYSTEM)){
+            throw new RuntimeException("Only a file uri from the local file system is implemented");
+        }
+
+        return new ArrayList<>();
+    }
 }
