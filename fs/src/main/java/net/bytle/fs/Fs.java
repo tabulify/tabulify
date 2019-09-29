@@ -1,19 +1,21 @@
 package net.bytle.fs;
 
 
-import java.io.*;
+import net.bytle.os.Oss;
+import net.bytle.type.Arrayss;
+import net.bytle.regexp.Globs;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-
-import net.bytle.os.Oss;
-
-
-import javax.xml.bind.DatatypeConverter;
 
 import static net.bytle.os.Oss.LINUX;
 import static net.bytle.os.Oss.WIN;
@@ -86,10 +88,12 @@ public class Fs {
     }
 
     /**
+     * Same as Files.walk(Paths.get(path))
+     *
      * @param path - the start path to scan
-     * @return - the childs of a directory or the file if it's a file
+     * @return - the children of a directory or the file if it's a file
      */
-    public static List<Path> getChildFiles(Path path) {
+    public static List<Path> getDescendantFiles(Path path) {
 
         // Path to return
         List<Path> pathsCollector = new ArrayList<>();
@@ -115,7 +119,7 @@ public class Fs {
     }
 
     /**
-     * Recursive function usd by {@link #getChildFiles(Path)}
+     * Recursive function usd by {@link #getDescendantFiles(Path)}
      *
      * @param path
      * @param pathsCollector
@@ -124,9 +128,9 @@ public class Fs {
 
         if (Files.isDirectory(path)) {
 
-            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
+            try (DirectoryStream<Path> childrenFiles = Files.newDirectoryStream(path)) {
 
-                for (Path childPath : dirStream) {
+                for (Path childPath : childrenFiles) {
                     if (Files.isRegularFile(childPath)) {
                         pathsCollector.add(childPath);
                     } else {
@@ -363,11 +367,72 @@ public class Fs {
         }
     }
 
+    /**
+     *
+     * @param fileUri
+     * @return a list of file that matches the uri segements
+     *
+     * ex: the following file uri
+     *   /tmp/*.md
+     * will return all md file in the tmp directory
+     *
+     */
     public static List<Path> get(FileUri fileUri) {
+
         if (!fileUri.getDatabaseName().equals(FileUri.LOCAL_FILE_SYSTEM)){
-            throw new RuntimeException("Only a file uri from the local file system is implemented");
+            throw new RuntimeException("Only a file uri from the local file system is implemented from now");
         }
 
-        return new ArrayList<>();
+        final String[] pathSegments = fileUri.getPathSegments();
+
+        // Start
+        Path startPath = Paths.get(".");
+        List<Path> currentMatchesPaths = new ArrayList<>();
+        currentMatchesPaths.add(startPath);
+
+        for (String s: pathSegments){
+
+            // Glob to regex Pattern
+            String pattern = Globs.toRegexPattern(s);
+
+            // The list where the actual matches path will be stored
+            List<Path> matchesPath = new ArrayList<>();
+            for (Path currentPath: currentMatchesPaths) {
+                List<Path> paths = Fs.getChildrenFiles(currentPath);
+                for (Path childrenPath : paths) {
+                    if (childrenPath.getFileName().toString().matches(pattern)) {
+                        matchesPath.add(childrenPath);
+                    }
+                }
+            }
+
+            if (matchesPath.size()==0){
+                return matchesPath;
+            } else {
+                // Recursion
+                currentMatchesPaths = matchesPath;
+            }
+
+        }
+
+        return currentMatchesPaths;
+    }
+
+    /**
+     *
+     * @param path
+     * @return the children path of a directory
+     */
+    private static List<Path> getChildrenFiles(Path path) {
+
+        try {
+            List<Path> childrenPaths = new ArrayList<>();
+            for (Path childPath: Files.newDirectoryStream(path)){
+                childrenPaths.add(childPath);
+            }
+            return childrenPaths;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

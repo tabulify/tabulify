@@ -51,7 +51,7 @@ public class DataDefs {
         if (Files.isRegularFile(path)) {
             fileDiscovered.add(path);
         } else {
-            fileDiscovered.addAll(Fs.getChildFiles(path));
+            fileDiscovered.addAll(Fs.getDescendantFiles(path));
         }
 
         Set<TableDef> tableDefsToReturn = new TreeSet<>();

@@ -66,4 +66,11 @@ public class Arrayss {
         return result;
     }
 
+    /**
+     * Print an array of string
+     * @param strings
+     */
+    public static void print(String[] strings) {
+        System.out.println(String.join(",",strings));
+    }
 }

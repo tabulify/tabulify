@@ -89,7 +89,7 @@ public class DocTestExecutor {
                 System.exit(1);
             }
 
-            List<Path> childPaths = Fs.getChildFiles(path);
+            List<Path> childPaths = Fs.getDescendantFiles(path);
 
 
             for (Path childPath : childPaths) {
