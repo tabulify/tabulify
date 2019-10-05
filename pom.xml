@@ -32,6 +32,7 @@
         <module>website</module>
         <module>db-uri</module>
         <module>email</module>
+        <module>db-csv</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -160,12 +161,7 @@
                 <artifactId>commons-collections4</artifactId>
                 <version>4.0</version>
             </dependency>
-            <!-- Csv, Excel, ... -->
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-csv</artifactId>
-                <version>1.4</version>
-            </dependency>
+
             <!-- ??? -->
             <dependency>
                 <groupId>commons-codec</groupId>

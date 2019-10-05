@@ -1,7 +1,11 @@
-package net.bytle.db.model;
+package net.bytle.db.csv;
 
 
 import net.bytle.db.database.Databases;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.FileRelation;
+import net.bytle.db.model.RelationDefAbs;
+import net.bytle.db.model.RelationMeta;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -16,14 +20,17 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     private final Path path;
 
+    static CsvRelation of(Path path){
+        return new CsvRelation(path);
+    }
 
-    public CsvRelation(Path path) {
+    private CsvRelation(Path path) {
         super();
+
         this.path = path;
         this.schema = Databases.of().getCurrentSchema();
-        this.name = path.getFileName().toString();
 
-        // ResultSet csvResultSet = new CsvResultSet(inputFilePath);
+
         try {
 
             Reader in = new FileReader(path.toFile());
@@ -42,28 +49,12 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
 
     @Override
-    public List<ColumnDef> getColumnDefs() {
-        return meta.getColumnDefs();
-    }
-
-    @Override
-    public ColumnDef getColumnDef(String columnName) {
-        return meta.getColumnDef(columnName);
-    }
-
-    @Override
-    public ColumnDef getColumnDef(Integer columnIndex) {
-        return meta.getColumnDef(columnIndex);
-    }
-
-    @Override
-    public ColumnDef getColumnOf(String columnName, Class clazz) {
-        return meta.getColumnOf(columnName, clazz);
-    }
-
-
-    @Override
     public Path getPath() {
         return this.path;
+    }
+
+    @Override
+    public String getName() {
+        return path.getFileName().toString();
     }
 }

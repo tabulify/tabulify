@@ -1,9 +1,12 @@
 package net.bytle.db.stream;
 
+import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
-import net.bytle.db.model.*;
-import net.bytle.cli.Log;
+import net.bytle.db.model.ISqlRelation;
+import net.bytle.db.model.QueryDef;
+import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.TableDef;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -131,11 +134,7 @@ public class Streams {
         if (Arrays.asList(sourceDef.getClass().getInterfaces()).contains(ISqlRelation.class)) {
             return getSqlSelectStream((ISqlRelation) sourceDef);
         } else {
-            return getCsvStream((FileRelation) sourceDef);
+            throw new RuntimeException("Not yet implemented");
         }
-    }
-
-    private static CsvStream getCsvStream(FileRelation sourceDef) {
-        return CsvStream.get(sourceDef);
     }
 }

@@ -1,7 +1,7 @@
-package net.bytle.db.stream;
+package net.bytle.db.csv;
 
-import net.bytle.db.model.FileRelation;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.stream.SelectStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -14,30 +14,23 @@ import java.util.NoSuchElementException;
 public class CsvStream implements SelectStream {
 
 
-    private final RelationDef sourceDef;
-    private final Iterator<CSVRecord> recordIterator;
-    private final FileReader in;
+    private final CsvRelation sourceDef;
+    private Iterator<CSVRecord> recordIterator;
+    private FileReader in;
     private CSVRecord currentRecord;
     private int rowNum;
 
-    CsvStream(FileRelation sourceDef) {
-        this.sourceDef = sourceDef;
+    CsvStream(CsvRelation csvRelation) {
+        this.sourceDef = csvRelation;
 
-        try {
-            in = new FileReader(sourceDef.getPath().toFile());
+        beforeFirst();
 
-            recordIterator = CSVFormat.RFC4180.parse(in).iterator();
-            // Pass the header
-            recordIterator.next();
-            rowNum = 0;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    public static CsvStream get(FileRelation sourceDef) {
-        return new CsvStream(sourceDef);
+    public static CsvStream of(CsvRelation csvRelation) {
+
+        return new CsvStream(csvRelation);
+
     }
 
     @Override
@@ -67,12 +60,21 @@ public class CsvStream implements SelectStream {
 
     @Override
     public void beforeFirst() {
-        throw new RuntimeException("Not Yet implemented");
+        try {
+            in = new FileReader(this.sourceDef.getPath().toFile());
+            recordIterator = CSVFormat.RFC4180.parse(in).iterator();
+            // Pass the header
+            recordIterator.next();
+            rowNum = 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public boolean first() {
-        throw new RuntimeException("Not Yet implemented");
+        beforeFirst();
+        return next();
     }
 
     @Override
@@ -109,4 +111,6 @@ public class CsvStream implements SelectStream {
     public Clob getClob(int columnIndex) {
         throw new RuntimeException("Not Yet implemented");
     }
+
+
 }

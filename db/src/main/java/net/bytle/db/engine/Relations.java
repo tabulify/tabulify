@@ -1,11 +1,8 @@
 package net.bytle.db.engine;
 
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.CsvRelation;
-import net.bytle.db.model.FileRelation;
 import net.bytle.db.model.RelationDef;
 
-import java.nio.file.Path;
 import java.sql.ResultSet;
 
 public class Relations {
@@ -32,7 +29,4 @@ public class Relations {
 
     }
 
-    public static FileRelation get(Path path) {
-        return new CsvRelation(path);
-    }
 }

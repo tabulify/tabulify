@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public class Email {
 
-    public static final String AT_SIGN = "@";
+    private static final String AT_SIGN = "@";
     private final String email;
     private final String domain;
     private final String local_part;
@@ -18,6 +18,9 @@ public class Email {
     private Email(String email) {
         this.email = email;
         final String[] split = email.split(AT_SIGN);
+        if (split.length!=2){
+            throw new RuntimeException("("+email+") is not a valid email");
+        }
         this.domain = split[1];
         this.local_part = split[0];
     }
@@ -58,5 +61,9 @@ public class Email {
 
     public Integer getLocalPartDigitCount() {
         return Strings.getDigitCount(local_part);
+    }
+
+    public String getEmail() {
+        return email;
     }
 }
