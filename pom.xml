@@ -33,6 +33,7 @@
         <module>db-uri</module>
         <module>email</module>
         <module>db-csv</module>
+        <module>db-memory</module>
     </modules>
     <packaging>pom</packaging>
 

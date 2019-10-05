@@ -15,6 +15,10 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
 
     protected RelationMeta meta = new RelationMeta(this);
 
+    public RelationDefAbs(String name) {
+        this.name = name;
+    }
+
     /**
      * {@link DatabaseMetaData#getMaxTableNameLength()}
      */
@@ -57,19 +61,16 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
 
     @Override
     public boolean equals(Object o) {
-
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RelationDef tableDef = (RelationDef) o;
-        return Objects.equals(getId(), tableDef.getId());
-
+        RelationDefAbs that = (RelationDefAbs) o;
+        return Objects.equals(name, that.name) &&
+                Objects.equals(schema, that.schema);
     }
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(getId());
-
+        return Objects.hash(name, schema);
     }
 
     /**
@@ -79,7 +80,9 @@ public abstract class RelationDefAbs implements RelationDef, Comparable<Relation
      * @return The unique table ID identifier
      */
     public String getId() {
+
         return schema.getDatabase().getObjectBuilder().getId(getName(), getSchema().getName());
+
     }
 
 

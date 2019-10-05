@@ -20,7 +20,7 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
 
     private final Path path;
 
-    static CsvRelation of(Path path){
+    public static CsvRelation of(Path path){
         return new CsvRelation(path);
     }
 

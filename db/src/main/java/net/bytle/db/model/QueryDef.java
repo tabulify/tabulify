@@ -22,7 +22,7 @@ public class QueryDef extends RelationDefAbs implements ISqlRelation, AutoClosea
 
     protected QueryDef(Database database, String query, String queryName) {
 
-        super();
+        super(queryName);
 
         if (queryName == null) {
             this.name = query;

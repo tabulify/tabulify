@@ -1,6 +1,6 @@
-package net.bytle.db.stream;
+package net.bytle.db.memory;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.stream.SelectStream;
 
 import java.sql.Clob;
 import java.util.List;
@@ -8,19 +8,19 @@ import java.util.List;
 /**
  * Select stream of a table saved as List<List<Object>>
  */
-public class MemorySelectStream implements SelectStream {
+public class ListSelectStream implements SelectStream {
 
     private final List<List<Object>> values;
-    private final TableDef tableDef;
+    private final MemoryTable memoryTable;
     private int index = -1;
 
-    private MemorySelectStream(TableDef tableDef) {
-        this.tableDef = tableDef;
-        this.values = StorageManager.get(tableDef);
+    private ListSelectStream(MemoryTable memoryTable) {
+        this.memoryTable = memoryTable;
+        this.values = Memories.get(memoryTable);
     }
 
-    public static MemorySelectStream get(TableDef tableDef) {
-        return new MemorySelectStream(tableDef);
+    public static ListSelectStream of(MemoryTable memoryTable) {
+        return new ListSelectStream(memoryTable);
     }
 
 
@@ -108,8 +108,8 @@ public class MemorySelectStream implements SelectStream {
     }
 
     @Override
-    public TableDef getRelationDef() {
-        return tableDef;
+    public MemoryTable getRelationDef() {
+        return memoryTable;
     }
 
     @Override

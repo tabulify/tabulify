@@ -49,8 +49,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
 
     public TableDef(Database database, String tableName) {
-
-        this.name = tableName;
+        super(tableName);
         this.schema = database.getCurrentSchema();
 
     }

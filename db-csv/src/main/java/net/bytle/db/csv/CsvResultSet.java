@@ -1,4 +1,4 @@
-package net.bytle.db.fileResultSet.csv;
+package net.bytle.db.csv;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;

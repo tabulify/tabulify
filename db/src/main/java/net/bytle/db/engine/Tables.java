@@ -4,6 +4,9 @@ package net.bytle.db.engine;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
+import net.bytle.db.memory.ListInsertStream;
+import net.bytle.db.memory.Memories;
+import net.bytle.db.memory.MemoryTable;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
 import net.bytle.cli.Log;
@@ -346,7 +349,7 @@ public class Tables {
             }
         } else {
 
-            StorageManager.drop(tableDef);
+            throw new RuntimeException("Non Sql Data Source - Not implemented");
 
         }
     }
@@ -395,7 +398,7 @@ public class Tables {
                 throw new RuntimeException(e);
             }
         } else {
-            StorageManager.delete(tableDef);
+            throw new RuntimeException("Non Sql Data Source - Not implemented");
         }
 
     }
@@ -478,27 +481,14 @@ public class Tables {
     public static InsertStream getTableInsertStream(TableDef tableDef) {
 
         if (tableDef.getDatabase().getUrl() == null) {
-            return MemoryInsertStream.get(tableDef);
+            throw new RuntimeException("Not implemented - Only Sql");
         } else {
             return SqlInsertStream.get(tableDef);
         }
 
     }
 
-    public static MemorySelectStream getTableOutputStream(TableDef tableDef) {
-        return MemorySelectStream.get(tableDef);
-    }
 
-    /**
-     * Print the data of a table
-     *
-     * @param tableDef
-     */
-    public static void print(TableDef tableDef) {
-        MemorySelectStream tableOutputStream = Tables.getTableOutputStream(tableDef);
-        Streams.print(tableOutputStream);
-        tableOutputStream.close();
-    }
 
 
     /**
@@ -523,7 +513,8 @@ public class Tables {
 
 
     public static void printColumns(TableDef tableDef) {
-        TableDef tableStructure = Tables.get("structure")
+
+        MemoryTable tableStructure = MemoryTable.of("structure")
                 .addColumn("#")
                 .addColumn("Colum Name")
                 .addColumn("Data Type")
@@ -533,7 +524,7 @@ public class Tables {
                 .addColumn("Auto Increment")
                 .addColumn("Description");
 
-        InsertStream insertStream = Tables.getTableInsertStream(tableStructure);
+        InsertStream insertStream = ListInsertStream.of(tableStructure);
         int i = 0;
         for (ColumnDef columnDef : tableDef.getColumnDefs()) {
             i++;
@@ -551,8 +542,8 @@ public class Tables {
         }
         insertStream.close();
 
-        Tables.print(tableStructure);
-        Tables.drop(tableStructure);
+        Memories.print(tableStructure);
+        Memories.drop(tableStructure);
     }
 
 
@@ -631,7 +622,7 @@ public class Tables {
             }
         } else {
 
-            StorageManager.truncate(tableDef);
+            throw new RuntimeException("Non Sql Data Source - Not implemented");
 
         }
     }
