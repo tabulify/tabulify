@@ -14,7 +14,10 @@ In such a scenario, Maven will not resolve the test JAR from the output of the r
 but from the local/remote repository. 
 ```
 
-
+## Parameters
+  * Just pass a parameter dommert !
+  * [Junit - parameterized-suite](https://github.com/PeterWippermann/parameterized-suite)
+  * [TestMG - Passing parameters to the whole test](https://www.seleniumeasy.com/testng-tutorials/parameterization-in-testng)
 ## Doc
 
   * http://maven.apache.org/guides/mini/guide-attached-tests.html

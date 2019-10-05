@@ -14,6 +14,5 @@ public class Loaders {
     }
 
     static final Log LOGGER_DB_LOADER = Log.getLog(Loaders.class);
-                    ;
 
 }

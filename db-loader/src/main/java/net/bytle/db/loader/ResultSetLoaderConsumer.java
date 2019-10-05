@@ -28,14 +28,14 @@ public class ResultSetLoaderConsumer implements Runnable {
     private final RelationDef sourceDef;
 
     public ResultSetLoaderConsumer(
-
             TableDef tableDef,
             RelationDef source,
             BlockingQueue<List<Object>> queue,
             Integer batchSize,
             Integer commitFrequency,
             AtomicBoolean producerWorkIsDone,
-            List<InsertStreamListener> listeners) {
+            List<InsertStreamListener> listeners)
+    {
         this.tableDef = tableDef;
         this.sourceDef = source;
         this.queue = queue;

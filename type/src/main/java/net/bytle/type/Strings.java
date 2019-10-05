@@ -5,15 +5,15 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 
 public class Strings {
 
 
-    public static Integer numberOfOccurences(String s, String regexp) {
+    public static Integer numberOfOccurrences(String s, String regexp) {
 
         Pattern pattern = Pattern.compile(regexp, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(s);
@@ -27,6 +27,7 @@ public class Strings {
 
     /**
      * Function used before a text comparison to normalize the text
+     *
      * @param string
      * @return a compact string that is written on one line, has no double space and is trimmed
      */
@@ -76,6 +77,7 @@ public class Strings {
     /**
      * Left Trim
      * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     *
      * @param s
      * @return
      */
@@ -91,39 +93,48 @@ public class Strings {
     /**
      * Right Trim
      * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     *
      * @param s
      * @return
      */
     public static String rtrim(String s) {
-        int i = s.length()-1;
+        int i = s.length() - 1;
         while (i >= 0 && Character.isWhitespace(s.charAt(i))) {
             i--;
         }
-        return s.substring(0,i+1);
+        return s.substring(0, i + 1);
     }
 
     /**
      * Right Trim only end of line
      * Credits: https://stackoverflow.com/questions/15567010/what-is-a-good-alternative-of-ltrim-and-rtrim-in-java
+     *
      * @param s
      * @return
      */
     public static String rtrimEol(String s) {
-        char[] eofChar = {"\n".charAt(0),"\r".charAt(0)};
+        char[] eofChar = {"\n".charAt(0), "\r".charAt(0)};
 
-        int i = s.length()-1;
-        while (i >= 0 && Arrayss.in(eofChar,s.charAt(i))) {
+        int i = s.length() - 1;
+        while (i >= 0 && Arrayss.in(eofChar, s.charAt(i))) {
             i--;
         }
-        return s.substring(0,i+1);
+        return s.substring(0, i + 1);
     }
 
     /**
-     *
      * @param s
      * @return a camel cased string
      */
     public static String toCamelCase(String s) {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    public static Integer getDigitCount(String s) {
+
+        return  Math.toIntExact(s.chars()
+                .filter(i->Character.isDigit((char) i))
+                .count());
+
     }
 }

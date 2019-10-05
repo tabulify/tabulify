@@ -136,7 +136,7 @@ public class DocTestParser {
 
 
         // Test that all nodes are closed
-        final Integer numberOfUnitTestNode = Strings.numberOfOccurences(s, "<" + unitTestNode);
+        final Integer numberOfUnitTestNode = Strings.numberOfOccurrences(s, "<" + unitTestNode);
         if (docTestUnits.size() != numberOfUnitTestNode) {
             throw new RuntimeException("A " + unitTestNode + " node seems not to be closed in the file (" + path + "). There is " + numberOfUnitTestNode + " unit test node with the name (" + unitTestNode + ") but we returns only " + docTestUnits.size() + " doc unit test code.");
         }
