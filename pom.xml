@@ -34,6 +34,7 @@
         <module>email</module>
         <module>db-csv</module>
         <module>xml</module>
+        <module>sftp</module>
     </modules>
     <packaging>pom</packaging>
 
