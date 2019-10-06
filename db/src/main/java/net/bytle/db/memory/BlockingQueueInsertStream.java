@@ -14,16 +14,16 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-    private final BlockingQueue<List<Object>> queue;
+    private BlockingQueue<List<Object>> queue;
     private int currentRowInBatch = 0;
     private int batchExecutionCount = 0;
 
-    public BlockingQueueInsertStream(BlockingQueue<List<Object>> queue) {
-        this.queue = queue;
+    public BlockingQueueInsertStream(MemoryTable memoryTable) {
+        super(memoryTable);
     }
 
-    public static InsertStream get(BlockingQueue<List<Object>> queue) {
-        return new BlockingQueueInsertStream(queue);
+    public static InsertStream get(MemoryTable memoryTable) {
+        return new BlockingQueueInsertStream(memoryTable);
     }
 
     @Override

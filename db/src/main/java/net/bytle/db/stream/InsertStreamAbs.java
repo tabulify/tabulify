@@ -1,11 +1,12 @@
 package net.bytle.db.stream;
 
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class InsertStreamAbs implements InsertStream {
+public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
 
     protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);
 
@@ -13,9 +14,12 @@ public abstract class InsertStreamAbs implements InsertStream {
     protected Integer feedbackFrequency = 10000;
     protected Integer batchSize = 10000;
     protected Integer commitFrequency = 100;
-    protected TableDef tableDef;
+    protected RelationDef relationDef;
     protected int currentRowInLogicalBatch = 0;
 
+    public InsertStreamAbs(RelationDef relationDef) {
+
+    }
 
     @Override
     public InsertStream setName(String name) {
@@ -64,8 +68,8 @@ public abstract class InsertStreamAbs implements InsertStream {
     }
 
     @Override
-    public TableDef getTableDef() {
-        return tableDef;
+    public RelationDef getRelationDef() {
+        return relationDef;
     }
 
 

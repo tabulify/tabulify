@@ -28,14 +28,18 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     private Boolean supportBatch;
     private Boolean supportNamedParameters;
     private Statement statement;
+    private TableDef tableDef;
 
     private SqlInsertStream(TableDef tableDef) {
+        super(tableDef);
         this.tableDef = tableDef;
         init();
     }
 
     public synchronized static SqlInsertStream get(TableDef tableDef) {
+
         return new SqlInsertStream(tableDef);
+
     }
 
     @Override
@@ -88,7 +92,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
             } else {
 
-                insertStatement = DbDml.getInsertStatement(tableDef, sourceTableDef, values);
+                insertStatement = DbDml.getInsertStatement((TableDef) relationDef, sourceTableDef, values);
                 statement.execute(insertStatement);
                 currentRowInLogicalBatch++;
 
@@ -97,7 +101,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         } catch (SQLException e) {
 
             resourceClose();
-            throw new RuntimeException("Table: " + tableDef.getFullyQualifiedName(), e);
+            throw new RuntimeException("Table: " + relationDef.getFullyQualifiedName(), e);
 
         }
 
@@ -116,7 +120,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
             if (Math.floorMod(insertStreamListener.getBatchCount(), feedbackFrequency) == 0) {
-                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + tableDef.getFullyQualifiedName());
+                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + relationDef.getFullyQualifiedName());
             }
             currentRowInLogicalBatch = 0;
         }
@@ -127,11 +131,10 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
     private void init() {
 
-        final Database database = tableDef.getDatabase();
-
+        final Database database = relationDef.getDatabase();
         if (!Tables.exists(tableDef)) {
-            if (tableDef.getColumnDefs().size() == 0) {
-                Relations.addColumns(tableDef, sourceTableDef);
+            if (relationDef.getColumnDefs().size() == 0) {
+                Relations.addColumns(relationDef, sourceTableDef);
             }
             Tables.create(tableDef);
         }
@@ -139,10 +142,10 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         if (database.getMaxWriterConnection() == 1) {
             connection = database.getCurrentConnection();
         } else {
-            connection = database.getNewConnection("InsertStream Table " + tableDef.getName());
+            connection = database.getNewConnection("InsertStream Table " + relationDef.getName());
         }
         if (sourceTableDef == null) {
-            sourceTableDef = tableDef;
+            sourceTableDef = relationDef;
         }
 
         try {
@@ -221,9 +224,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
 
-            LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + tableDef.getFullyQualifiedName());
-            LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + tableDef.getFullyQualifiedName());
-            LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + tableDef.getFullyQualifiedName());
+            LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + relationDef.getFullyQualifiedName());
+            LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + relationDef.getFullyQualifiedName());
+            LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + relationDef.getFullyQualifiedName());
 
             resourceClose();
 
@@ -264,7 +267,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             if (!connection.getAutoCommit()) {
                 connection.commit();
                 insertStreamListener.incrementCommit();
-                LOGGER.info("commit in the table " + tableDef.getFullyQualifiedName());
+                LOGGER.info("commit in the table " + relationDef.getFullyQualifiedName());
             } else {
                 throw new RuntimeException("Don't send a commit on a autocommit session");
             }
@@ -299,7 +302,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
-            if (tableDef.getDatabase().getMaxWriterConnection() > 1) {
+            if (relationDef.getDatabase().getMaxWriterConnection() > 1) {
                 if (connection != null) {
                     connection.close();
                 }

@@ -12,7 +12,6 @@ import net.bytle.db.database.Database;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATABASE_STORE;
 import static net.bytle.db.cli.Words.INFO_COMMAND;

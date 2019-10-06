@@ -69,13 +69,17 @@ public class SchemaDef {
         SchemaDef schemaDef = (SchemaDef) o;
 
         if (!database.equals(schemaDef.database)) return false;
-        return name.equals(schemaDef.name);
+        if (name == null){
+            return schemaDef.name == null;
+        } else {
+            return name.equals(schemaDef.name);
+        }
     }
 
     @Override
     public int hashCode() {
         int result = database.hashCode();
-        result = 31 * result + name.hashCode();
+        result = 31 * result + (name!=null ? name.hashCode():0);
         return result;
     }
 

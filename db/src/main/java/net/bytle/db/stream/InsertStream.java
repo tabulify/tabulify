@@ -1,5 +1,6 @@
 package net.bytle.db.stream;
 
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 
 import java.util.List;
@@ -76,7 +77,7 @@ public interface InsertStream {
     /**
      * @return the tableDef Definition
      */
-    TableDef getTableDef();
+    RelationDef getRelationDef();
 
     /**
      * Does the next insert will send a batch

@@ -17,4 +17,11 @@ Example:
 mvn clean install -rf "db-loader" 
 ```
 
+## Until
 
+```bash
+mvn install --also-make --projects "db-csv" 
+```
+where:
+  * -pl, --projects: Build specified reactor projects instead of all projects
+  * -am, --also-make: If project list is specified, also build projects required by the list

@@ -10,7 +10,7 @@ public class MemoryTable extends RelationDefAbs implements RelationDef {
 
     public MemoryTable(String name) {
         super(name);
-        super.schema = Databases.of().getCurrentSchema();
+        super.schema = Databases.of("memory").getCurrentSchema();
     }
 
     public static MemoryTable of(String name) {

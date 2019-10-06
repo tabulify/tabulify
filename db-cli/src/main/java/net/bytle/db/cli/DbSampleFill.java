@@ -106,7 +106,7 @@ public class DbSampleFill {
         // Sort by table name
         insertStreamListeners = insertStreamListeners
                 .stream()
-                .sorted((s1, s2) -> (s1.getInsertStream().getTableDef().getName().compareTo(s2.getInsertStream().getTableDef().getName())))
+                .sorted((s1, s2) -> (s1.getInsertStream().getRelationDef().getName().compareTo(s2.getInsertStream().getRelationDef().getName())))
                 .collect(Collectors.toList());
 
         // Feedback
@@ -117,7 +117,7 @@ public class DbSampleFill {
         InsertStream printTableInsertStream = Tables.getTableInsertStream(printTable);
         for (InsertStreamListener insertStreamListener : insertStreamListeners) {
             printTableInsertStream.insert(
-                    insertStreamListener.getInsertStream().getTableDef().getName()
+                    insertStreamListener.getInsertStream().getRelationDef().getName()
                     , insertStreamListener.getRowCount()
             );
         }

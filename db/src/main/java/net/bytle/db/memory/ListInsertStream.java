@@ -12,6 +12,7 @@ public class ListInsertStream extends InsertStreamAbs implements InsertStream {
     private List<List<Object>> tableValues;
 
     private ListInsertStream(MemoryTable memoryTable) {
+        super(memoryTable);
         this.memoryTable = memoryTable;
         tableValues = MemoryStore.get(memoryTable);
     }

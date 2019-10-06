@@ -2,8 +2,6 @@ package net.bytle.db;
 
 import net.bytle.cli.Log;
 
-import java.util.logging.Logger;
-
 
 public class DbLoggers {
 

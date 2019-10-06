@@ -2,10 +2,8 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DbLoggers;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import static net.bytle.db.cli.Words.CREATE_COMMAND;
 import static net.bytle.db.cli.Words.DROP_COMMAND;

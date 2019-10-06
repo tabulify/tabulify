@@ -14,15 +14,14 @@ import java.util.NoSuchElementException;
 public class CsvSelectStream implements SelectStream {
 
 
-    private final CsvRelation sourceDef;
+    private final CsvRelation csvRelation;
     private Iterator<CSVRecord> recordIterator;
     private FileReader in;
     private CSVRecord currentRecord;
     private int rowNum;
 
     CsvSelectStream(CsvRelation csvRelation) {
-        this.sourceDef = csvRelation;
-
+        this.csvRelation = csvRelation;
         beforeFirst();
 
     }
@@ -61,7 +60,7 @@ public class CsvSelectStream implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
-            in = new FileReader(this.sourceDef.getPath().toFile());
+            in = new FileReader(this.csvRelation.getPath().toFile());
             recordIterator = CSVFormat.RFC4180.parse(in).iterator();
             // Pass the header
             recordIterator.next();
@@ -99,7 +98,7 @@ public class CsvSelectStream implements SelectStream {
 
     @Override
     public RelationDef getRelationDef() {
-        return sourceDef;
+        return csvRelation;
     }
 
     @Override
