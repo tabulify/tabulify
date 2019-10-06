@@ -13,7 +13,7 @@ public class ListInsertStream extends InsertStreamAbs implements InsertStream {
 
     private ListInsertStream(MemoryTable memoryTable) {
         this.memoryTable = memoryTable;
-        tableValues = Memories.get(memoryTable);
+        tableValues = MemoryStore.get(memoryTable);
     }
 
     public static InsertStream of(MemoryTable memoryTable) {

@@ -14,7 +14,7 @@ import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 public class Words {
 
 
-
+    public static final String XPATH = "xpath";
     // CliName Bytle Db bdb
     static final String CLI_NAME = "db";
 
@@ -44,6 +44,8 @@ public class Words {
     static final String EXECUTE_COMMAND = "execute";
     static final String COUNT = "count";
 
+
+
     // Delete command
     static final String DROP_COMMAND = "drop";
     static final String TRUNCATE_COMMAND = "truncate";
@@ -61,6 +63,14 @@ public class Words {
     static final String DESCRIBE_COMMAND = "describe";
     // Table UI -
     static final String LIST_COMMAND = "list";
+
+    // First created for the xml cli
+    public static final String EXTRACT = "extract";
+    public static final String PRINT = "print";
+    public static final String CHECK = "check";
+    public static final String UPDATE = "update";
+    public static final String GET = "get";
+    public static final String STRUCTURE = "structure";
 
     static final String HELP = "help";
 

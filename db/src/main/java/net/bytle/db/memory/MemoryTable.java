@@ -3,8 +3,7 @@ package net.bytle.db.memory;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.RelationDefAbs;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+
 
 public class MemoryTable extends RelationDefAbs implements RelationDef {
 
@@ -14,7 +13,7 @@ public class MemoryTable extends RelationDefAbs implements RelationDef {
         super.schema = Databases.of().getCurrentSchema();
     }
 
-    public static MemoryTable of(String name){
+    public static MemoryTable of(String name) {
         return new MemoryTable(name);
     }
 
@@ -24,7 +23,7 @@ public class MemoryTable extends RelationDefAbs implements RelationDef {
     }
 
     public MemoryTable addColumn(String name, int typeCode) {
-        super.meta.addColumn(name,typeCode);
+        super.meta.addColumn(name, typeCode);
         return this;
     }
 }

@@ -5,7 +5,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.memory.ListInsertStream;
-import net.bytle.db.memory.Memories;
+import net.bytle.db.memory.MemoryStore;
 import net.bytle.db.memory.MemoryTable;
 import net.bytle.db.model.*;
 import net.bytle.db.stream.*;
@@ -542,8 +542,9 @@ public class Tables {
         }
         insertStream.close();
 
-        Memories.print(tableStructure);
-        Memories.drop(tableStructure);
+
+        MemoryStore.of().print(tableStructure);
+        MemoryStore.of().drop(tableStructure);
     }
 
 

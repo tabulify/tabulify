@@ -31,7 +31,7 @@ public class DbTableList {
     private static final String TABLE_URIS = "TableUri...";
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+        public static void run(CliCommand cliCommand, String[] args) {
 
         cliCommand
                 .setDescription("Print a list of tables.");

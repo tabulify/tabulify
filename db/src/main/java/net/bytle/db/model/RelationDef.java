@@ -12,11 +12,13 @@ import java.util.List;
  */
 public interface RelationDef {
 
-
+    // The system
     Database getDatabase();
 
+    // The namespace
     SchemaDef getSchema();
 
+    // The name
     String getName();
 
     /**

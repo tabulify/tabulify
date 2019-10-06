@@ -16,7 +16,7 @@ public class ListSelectStream implements SelectStream {
 
     private ListSelectStream(MemoryTable memoryTable) {
         this.memoryTable = memoryTable;
-        this.values = Memories.get(memoryTable);
+        this.values = MemoryStore.get(memoryTable);
     }
 
     public static ListSelectStream of(MemoryTable memoryTable) {

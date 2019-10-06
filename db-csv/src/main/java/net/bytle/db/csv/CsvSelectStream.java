@@ -11,7 +11,7 @@ import java.sql.Clob;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class CsvStream implements SelectStream {
+public class CsvSelectStream implements SelectStream {
 
 
     private final CsvRelation sourceDef;
@@ -20,16 +20,16 @@ public class CsvStream implements SelectStream {
     private CSVRecord currentRecord;
     private int rowNum;
 
-    CsvStream(CsvRelation csvRelation) {
+    CsvSelectStream(CsvRelation csvRelation) {
         this.sourceDef = csvRelation;
 
         beforeFirst();
 
     }
 
-    public static CsvStream of(CsvRelation csvRelation) {
+    public static CsvSelectStream of(CsvRelation csvRelation) {
 
-        return new CsvStream(csvRelation);
+        return new CsvSelectStream(csvRelation);
 
     }
 

@@ -25,7 +25,7 @@ public class CsvRelation extends RelationDefAbs implements FileRelation {
     }
 
     private CsvRelation(Path path) {
-        super();
+        super(path.toString());
 
         this.path = path;
         this.schema = Databases.of().getCurrentSchema();
