@@ -1,5 +1,7 @@
+package net.bytle.db.spi;
 
-package net.bytle.db.database;
+
+import net.bytle.db.database.SqlDatabase;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -20,7 +22,7 @@ import java.util.*;
  * <p/>
  * A factory method class defines how providers are located
  * and loaded.
- * The first invocation of a method (such as installedProviders)
+ * The first invocation of a method (such as installedTableSystemProviders)
  * locates and loads all installed file system providers.
  * Installed providers are loaded using the service-provider loading facility defined by the ServiceLoader class.
  * Installed providers are loaded using the system class loader.
@@ -36,26 +38,25 @@ import java.util.*;
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
-
-public abstract class SqlDatabaseProvider {
+public abstract class TableSystemProvider {
 
     // lock using when loading providers
     private static final Object lock = new Object();
 
     // installed providers
-    private static volatile List<SqlDatabaseProvider> installedProviders;
+    private static volatile List<TableSystemProvider> installedTableSystemProviders;
 
-    // used to avoid recursive loading of installed providers
+    // Used to avoid recursive loading of installed providers
     private static boolean loadingProviders = false;
 
     private static Void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
-            sm.checkPermission(new RuntimePermission("fileSystemProvider"));
+            sm.checkPermission(new RuntimePermission("TableSystemProvider"));
         return null;
     }
 
-    private SqlDatabaseProvider(Void ignore) {
+    private TableSystemProvider(Void ignore) {
     }
 
     /**
@@ -69,23 +70,23 @@ public abstract class SqlDatabaseProvider {
      * @throws SecurityException If a security manager has been installed and it denies
      *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
      */
-    protected SqlDatabaseProvider() {
+    protected TableSystemProvider() {
         this(checkPermission());
     }
 
     // loads all installed providers
-    private static List<SqlDatabaseProvider> loadInstalledProviders() {
-        List<SqlDatabaseProvider> list = new ArrayList<SqlDatabaseProvider>();
+    private static List<TableSystemProvider> loadInstalledProviders() {
+        List<TableSystemProvider> list = new ArrayList<>();
 
-        ServiceLoader<SqlDatabaseProvider> sl = ServiceLoader
-                .load(SqlDatabaseProvider.class, ClassLoader.getSystemClassLoader());
+        ServiceLoader<TableSystemProvider> sl = ServiceLoader
+                .load(TableSystemProvider.class, ClassLoader.getSystemClassLoader());
 
         // ServiceConfigurationError may be throw here
-        for (SqlDatabaseProvider provider : sl) {
+        for (TableSystemProvider provider : sl) {
             String scheme = provider.getServer();
 
             boolean found = false;
-            for (SqlDatabaseProvider p : list) {
+            for (TableSystemProvider p : list) {
                 if (p.getServer().equalsIgnoreCase(scheme)) {
                     found = true;
                     break;
@@ -108,29 +109,24 @@ public abstract class SqlDatabaseProvider {
      * @return An unmodifiable list of the installed service providers.
      * @throws ServiceConfigurationError When an error occurs while loading a service provider
      */
-    public static List<SqlDatabaseProvider> installedProviders() {
-        if (installedProviders == null) {
+    public static List<TableSystemProvider> installedProviders() {
+        if (installedTableSystemProviders == null) {
 
             synchronized (lock) {
-                if (installedProviders == null) {
+                if (installedTableSystemProviders == null) {
                     if (loadingProviders) {
                         throw new Error("Circular loading of installed providers detected");
                     }
                     loadingProviders = true;
 
-                    List<SqlDatabaseProvider> list = AccessController
-                            .doPrivileged(new PrivilegedAction<List<SqlDatabaseProvider>>() {
-                                @Override
-                                public List<SqlDatabaseProvider> run() {
-                                    return loadInstalledProviders();
-                                }
-                            });
+                    List<TableSystemProvider> list = AccessController
+                            .doPrivileged((PrivilegedAction<List<TableSystemProvider>>) () -> loadInstalledProviders());
 
-                    installedProviders = Collections.unmodifiableList(list);
+                    installedTableSystemProviders = Collections.unmodifiableList(list);
                 }
             }
         }
-        return installedProviders;
+        return installedTableSystemProviders;
     }
 
     /**
@@ -142,7 +138,7 @@ public abstract class SqlDatabaseProvider {
 
     /**
      * Constructs a new {@code Work} object identified by a URI. This
-     * method is invoked by the {@link #getSqlDatabase(String, Map)}
+     * method is invoked by the {@link #getTableSystem(String, Map)}
      * method to open a new work identified by a URI.
      * <p/>
      * <p> The {@code uri} parameter is an absolute, hierarchical URI, with a
@@ -160,13 +156,13 @@ public abstract class SqlDatabaseProvider {
      *            may be empty
      * @return A new work
      */
-    public abstract SqlDatabase getSqlDatabase(String uri, Map<String, ?> env);
+    public abstract TableSystem getTableSystem(String uri, Map<String, ?> env);
 
     /**
      * Returns an existing {@code work} created by this provider.
      * <p/>
      * <p> This method returns a reference to a {@code work} that was
-     * created by invoking the {@link #getSqlDatabase(String, Map)}
+     * created by invoking the {@link #getTableSystem(String, Map)}
      * method.
      * The work is identified by its {@code URI}. Its exact form
      * is highly provider dependent.
@@ -180,7 +176,7 @@ public abstract class SqlDatabaseProvider {
      * @throws SecurityException           If a security manager is installed and it denies an unspecified
      *                                     permission.
      */
-    public abstract SqlDatabase getSqlDatabase(String uri);
+    public abstract TableSystem getTableSystem(String uri);
 
 
     /**
