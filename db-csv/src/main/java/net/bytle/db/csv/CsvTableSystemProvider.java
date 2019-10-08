@@ -15,7 +15,7 @@ public class CsvTableSystemProvider extends TableSystemProvider {
      * @return The URI scheme
      */
     @Override
-    public String getServer() {
+    public String getScheme() {
         return "csv";
     }
 

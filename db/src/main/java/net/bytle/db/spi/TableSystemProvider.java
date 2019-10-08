@@ -1,8 +1,6 @@
 package net.bytle.db.spi;
 
 
-import net.bytle.db.database.SqlDatabase;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -18,7 +16,7 @@ import java.util.*;
  * A service provider is a concrete implementation of this class that
  * implements the abstract methods defined by this class.
  * <p/>
- * A provider is identified by a {@code URI} {@link #getServer() scheme}.
+ * A provider is identified by a {@code URI} {@link #getScheme() scheme}.
  * <p/>
  * A factory method class defines how providers are located
  * and loaded.
@@ -34,7 +32,7 @@ import java.util.*;
  * <p/>
  * A provider is a factory for one or more (service) object instances.
  * Each service is identified by a {@code URI} where the URI's scheme matches
- * the provider's {@link #getServer scheme}.
+ * the provider's {@link #getScheme scheme}.
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
@@ -76,28 +74,31 @@ public abstract class TableSystemProvider {
 
     // loads all installed providers
     private static List<TableSystemProvider> loadInstalledProviders() {
-        List<TableSystemProvider> list = new ArrayList<>();
 
-        ServiceLoader<TableSystemProvider> sl = ServiceLoader
+        List<TableSystemProvider> tableSystemProviders = new ArrayList<>();
+
+        ServiceLoader<TableSystemProvider> loadedTableSystemProviders = ServiceLoader
                 .load(TableSystemProvider.class, ClassLoader.getSystemClassLoader());
 
         // ServiceConfigurationError may be throw here
-        for (TableSystemProvider provider : sl) {
-            String scheme = provider.getServer();
+        for (TableSystemProvider provider : loadedTableSystemProviders) {
 
+            String scheme = provider.getScheme();
+
+            // Be sure to load only one driver that handle the scheme
             boolean found = false;
-            for (TableSystemProvider p : list) {
-                if (p.getServer().equalsIgnoreCase(scheme)) {
+            for (TableSystemProvider p : tableSystemProviders) {
+                if (p.getScheme().equalsIgnoreCase(scheme)) {
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                list.add(provider);
+                tableSystemProviders.add(provider);
             }
 
         }
-        return list;
+        return tableSystemProviders;
     }
 
     /**
@@ -134,7 +135,7 @@ public abstract class TableSystemProvider {
      *
      * @return The URI scheme
      */
-    public abstract String getServer();
+    public abstract String getScheme();
 
     /**
      * Constructs a new {@code Work} object identified by a URI. This
