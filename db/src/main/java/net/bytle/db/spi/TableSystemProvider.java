@@ -80,24 +80,15 @@ public abstract class TableSystemProvider {
         ServiceLoader<TableSystemProvider> loadedTableSystemProviders = ServiceLoader
                 .load(TableSystemProvider.class, ClassLoader.getSystemClassLoader());
 
+        // TODO: validate the provider ?
         // ServiceConfigurationError may be throw here
-        for (TableSystemProvider provider : loadedTableSystemProviders) {
+        //        for (TableSystemProvider provider : loadedTableSystemProviders) {
+        //
+        //            // Validate the provider ?
+        //            // List<String> schemes = provider.getSchemes();
+        //
+        //        }
 
-            String scheme = provider.getScheme();
-
-            // Be sure to load only one driver that handle the scheme
-            boolean found = false;
-            for (TableSystemProvider p : tableSystemProviders) {
-                if (p.getScheme().equalsIgnoreCase(scheme)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                tableSystemProviders.add(provider);
-            }
-
-        }
         return tableSystemProviders;
     }
 
@@ -135,7 +126,7 @@ public abstract class TableSystemProvider {
      *
      * @return The URI scheme
      */
-    public abstract String getScheme();
+    public abstract List<String> getSchemes();
 
     /**
      * Constructs a new {@code Work} object identified by a URI. This

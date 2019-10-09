@@ -12,13 +12,6 @@ public  abstract class DataUri implements IDataUri {
 
 
 
-
-
-
-
-
-
-
     public DataUri(String dataUri, String... parts) {
 
 

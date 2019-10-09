@@ -35,6 +35,7 @@
         <module>db-csv</module>
         <module>xml</module>
         <module>sftp</module>
+        <module>bytle-db-fs</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -47,10 +47,10 @@ public class FileUri extends DataUri implements IDataUri {
 
     }
 
-
-
-
     public String getFileName() {
+
         return super.getPathSegments()[super.getPathSegments().length-1];
+
     }
+
 }

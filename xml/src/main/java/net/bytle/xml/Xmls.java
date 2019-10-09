@@ -1,6 +1,6 @@
 package net.bytle.xml;
 
-import net.bytle.db.csv.CsvRelation;
+import net.bytle.db.csv.CsvTable;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.stream.SelectStream;
 import org.apache.commons.csv.CSVFormat;
@@ -40,8 +40,8 @@ public class Xmls {
             // CSV
             LOGGER.info("Batch check mode");
 
-            CsvRelation csvRelation = CsvRelation.of(csvPath);
-            SelectStream selectStream = CsvSelectStream.of(csvRelation);
+            CsvTable csvTable = CsvTable.of(csvPath);
+            SelectStream selectStream = CsvSelectStream.of(csvTable);
             while (selectStream.next()) {
                 String csvXpath = selectStream.getString(0);
                 String csvValue = selectStream.getString(1);

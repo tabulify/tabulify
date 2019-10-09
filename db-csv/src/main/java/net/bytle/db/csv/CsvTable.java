@@ -12,17 +12,16 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.List;
 
-public class CsvRelation extends RelationDefAbs implements RelationDef {
+public class CsvTable extends RelationDefAbs implements RelationDef {
 
     private final Path path;
 
-    public static CsvRelation of(Path path){
-        return new CsvRelation(path);
+    public static CsvTable of(Path path){
+        return new CsvTable(path);
     }
 
-    private CsvRelation(Path path) {
+    private CsvTable(Path path) {
         super(path.toString());
 
         this.path = path;
@@ -57,7 +56,7 @@ public class CsvRelation extends RelationDefAbs implements RelationDef {
     }
 
 
-    public CsvRelation addColumn(String name){
+    public CsvTable addColumn(String name){
         super.meta.addColumn(name);
         return this;
     }

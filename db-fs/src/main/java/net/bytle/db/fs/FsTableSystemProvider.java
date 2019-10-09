@@ -1,12 +1,13 @@
-package net.bytle.db.csv;
+package net.bytle.db.fs;
 
-import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
-public class CsvTableSystemProvider extends TableSystemProvider {
+public class FsTableSystemProvider extends TableSystemProvider {
 
 
     /**
@@ -15,8 +16,8 @@ public class CsvTableSystemProvider extends TableSystemProvider {
      * @return The URI scheme
      */
     @Override
-    public String getScheme() {
-        return "csv";
+    public List<String> getSchemes() {
+        return Arrays.asList("file","sftp");
     }
 
     /**
@@ -41,7 +42,7 @@ public class CsvTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public TableSystem getTableSystem(String uri, Map<String, ?> env) {
-       return new CsvTableSystem();
+       return new FsTableSystem();
     }
 
     /**
