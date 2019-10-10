@@ -7,6 +7,7 @@ import net.bytle.db.model.RelationDef;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -44,7 +45,13 @@ public class Tabulars {
 
         for (TableSystemProvider tableSystemProvider : installedProviders) {
             if (tableSystemProvider.getSchemes().contains(scheme)) {
-                return tableSystemProvider.getTableSystem(url).getRelationDef(dataUri);
+                final TableSystem tableSystem = tableSystemProvider.getTableSystem(url);
+                if (tableSystem==null){
+                    String message = "The table system is null for the provider ("+tableSystemProvider.getClass().toString()+")";
+                    DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                    throw new RuntimeException(message);
+                }
+                return tableSystem.getRelationDef(dataUri);
             }
         }
         final String message = "No provider was found for the scheme (" + scheme + ") from the Url (" + url + ")";
@@ -60,6 +67,8 @@ public class Tabulars {
     }
 
     public static Boolean exists(RelationDef relationDef) {
+        Files.exists()
         return null;
+
     }
 }

@@ -42,7 +42,9 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public TableSystem getTableSystem(String uri, Map<String, ?> env) {
-       return new FsTableSystem();
+
+        return FsTableSystem.of(uri,env);
+
     }
 
     /**
@@ -65,7 +67,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public TableSystem getTableSystem(String uri) {
-        return null;
+        return FsTableSystem.of(uri);
     }
 
 
