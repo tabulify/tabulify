@@ -17,7 +17,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public List<String> getSchemes() {
-        return Arrays.asList("file","sftp");
+        return Arrays.asList("file");
     }
 
     /**

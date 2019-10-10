@@ -15,6 +15,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static net.bytle.os.Oss.LINUX;
@@ -434,5 +435,15 @@ public class Fs {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     *
+     * @param segments
+     * @return a local pah from an array string
+     */
+    public static Path getPath(String[] segments) {
+        String[] more = Arrays.copyOfRange(segments, 1, segments.length);
+        return Paths.get(segments[0],more);
     }
 }

@@ -82,12 +82,13 @@ public abstract class TableSystemProvider {
 
         // TODO: validate the provider ?
         // ServiceConfigurationError may be throw here
-        //        for (TableSystemProvider provider : loadedTableSystemProviders) {
-        //
-        //            // Validate the provider ?
-        //            // List<String> schemes = provider.getSchemes();
-        //
-        //        }
+        for (TableSystemProvider provider : loadedTableSystemProviders) {
+
+            // Validate the provider ?
+            // List<String> schemes = provider.getSchemes();
+            tableSystemProviders.add(provider);
+
+        }
 
         return tableSystemProviders;
     }
