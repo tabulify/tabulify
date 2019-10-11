@@ -3,6 +3,7 @@ package net.bytle.db.spi;
 import com.sun.jndi.toolkit.url.Uri;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class Tabulars {
     }
 
     public static DataUri of(String part, String... parts) {
-        // FileSystems.getDefault().getDataUri(first, more);
+        // FileSystems.getSqliteDefault().getDataUri(first, more);
         return null;
 
     }
@@ -48,5 +49,9 @@ public class Tabulars {
 
         return dataPath.getDataSystem().exists(dataPath);
 
+    }
+
+    public static SelectStream getSelectStream(DataPath dataPath) {
+        return dataPath.getDataSystem().getSelectStream(dataPath);
     }
 }

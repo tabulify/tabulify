@@ -1,5 +1,6 @@
 package net.bytle.db.memory;
 
+import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
 import java.sql.Clob;
@@ -8,7 +9,7 @@ import java.util.List;
 /**
  * Select stream of a table saved as List<List<Object>>
  */
-public class ListSelectStream implements SelectStream {
+public class ListSelectStream extends SelectStreamAbs implements SelectStream {
 
     private final List<List<Object>> values;
     private final MemoryTable memoryTable;

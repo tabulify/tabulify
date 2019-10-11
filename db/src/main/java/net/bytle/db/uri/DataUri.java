@@ -2,6 +2,7 @@ package net.bytle.db.uri;
 
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,6 +18,13 @@ public class DataUri {
 
 
 
+    private DataUri(Database dataStore, String... more) {
+
+        this.dataStore = dataStore;
+        this.pathSegments = new ArrayList<>();
+        this.pathSegments.addAll(Arrays.asList(more));
+
+    }
 
     private DataUri(DatabasesStore dataStorePath, String first, String... more) {
 
@@ -65,16 +73,20 @@ public class DataUri {
 
     }
 
+
+    /**
+     *
+     * @param first
+     * @param more
+     * @return a data uri from the default datastore
+     */
     public static DataUri of(String first, String... more) {
         return new DataUri(DatabasesStore.of(),first, more);
     }
 
-    public static DataUri of(DatabasesStore databasesStore, String first, String... more) {
-        return new DataUri(databasesStore,first, more);
-    }
 
-    public static DataUri of(Path dataStorePath, String first, String... more) {
-        return new DataUri(DatabasesStore.of(dataStorePath),first, more);
+    public static DataUri of(Path dataStorePath, String dataStoreName, String... more) {
+        return new DataUri(DatabasesStore.of(dataStorePath).getDatabase(dataStoreName), more);
     }
 
 

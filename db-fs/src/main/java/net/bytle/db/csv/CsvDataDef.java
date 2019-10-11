@@ -2,6 +2,7 @@ package net.bytle.db.csv;
 
 
 import net.bytle.db.database.Databases;
+import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.model.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -13,24 +14,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-public class CsvTable extends RelationDefAbs implements RelationDef {
+public class CsvDataDef extends RelationDefAbs implements RelationDef {
 
-    private final Path path;
+    private final FsDataPath fsDataPath;
 
-    public static CsvTable of(Path path){
-        return new CsvTable(path);
+    public static CsvDataDef of(FsDataPath fsDataPath){
+        return new CsvDataDef(fsDataPath);
     }
 
-    private CsvTable(Path path) {
-        super(path.toString());
+    private CsvDataDef(FsDataPath fsDataPath) {
 
-        this.path = path;
+        super(fsDataPath.toString());
+
+        this.fsDataPath = fsDataPath;
         this.schema = Databases.of().getCurrentSchema();
 
-        if (Files.exists(path)) {
+        if (Files.exists(this.fsDataPath.getPath())) {
             try {
 
-                Reader in = new FileReader(path.toFile());
+                Reader in = new FileReader(this.fsDataPath.getPath().toFile());
                 Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
                 CSVRecord headerRecord = recordIterator.next();
                 this.meta = new RelationMeta(this);
@@ -43,20 +45,21 @@ public class CsvTable extends RelationDefAbs implements RelationDef {
                 throw new RuntimeException(e);
             }
         }
+
     }
 
 
-    public Path getPath() {
-        return this.path;
+    public FsDataPath getFsDataPath() {
+        return this.fsDataPath;
     }
 
     @Override
     public String getName() {
-        return path.getFileName().toString();
+        return fsDataPath.getName();
     }
 
 
-    public CsvTable addColumn(String name){
+    public CsvDataDef addColumn(String name){
         super.meta.addColumn(name);
         return this;
     }

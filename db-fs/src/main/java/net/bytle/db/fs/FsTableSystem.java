@@ -1,9 +1,12 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.DatabasesStore;
+import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
+import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
@@ -29,6 +32,9 @@ public class FsTableSystem extends TableSystem {
         return new FsTableSystem(database);
     }
 
+    public static FsTableSystem of() {
+        return new FsTableSystem(Databases.of("FsDefault"));
+    }
 
 
     /**
@@ -97,5 +103,11 @@ public class FsTableSystem extends TableSystem {
         final FsDataPath fsDataPath = (FsDataPath) dataPath;
         return Files.exists(fsDataPath.getPath());
 
+    }
+
+    @Override
+    public SelectStream getSelectStream(DataPath dataPath) {
+        final FsDataPath fsDataPath = (FsDataPath) dataPath;
+        return CsvSelectStream.of(fsDataPath);
     }
 }

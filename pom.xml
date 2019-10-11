@@ -30,12 +30,10 @@
         <module>os</module>
         <module>regexp</module>
         <module>website</module>
-        <module>db-uri</module>
         <module>email</module>
-        <module>db-csv</module>
         <module>xml</module>
         <module>sftp</module>
-        <module>bytle-db-fs</module>
+        <module>db-fs</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -36,7 +36,7 @@ public class Databases {
     }
 
 
-    public static Database getDefault() {
+    public static Database getSqliteDefault() {
         /**
          * %TEMP% is the same than %LocalAppData%/Temp
          * is used for user-specific items that should not roam with the user,
@@ -60,6 +60,7 @@ public class Databases {
         String url = "jdbc:sqlite:" + rootWindows + pathDb.toString().replace("\\", "\\\\");
 
         return of(BYTLE_LOCAL_SQLITE_DB_NAME).setUrl(url);
+
     }
 
 

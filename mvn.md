@@ -20,7 +20,7 @@ mvn clean install -rf "db-loader"
 ## Until
 
 ```bash
-mvn install --also-make --projects "db-csv" 
+mvn install --also-make --projects "csv" 
 ```
 where:
   * -pl, --projects: Build specified reactor projects instead of all projects

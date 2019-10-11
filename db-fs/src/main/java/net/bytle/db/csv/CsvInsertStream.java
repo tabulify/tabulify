@@ -13,17 +13,17 @@ import java.util.stream.Collectors;
 
 public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
-    private final CsvTable csvTable;
+    private final CsvDataDef csvDataDef;
     final CSVPrinter printer;
 
-    public CsvInsertStream(CsvTable csvTable) {
-        super(csvTable);
-        this.csvTable = csvTable;
-        final String headers = csvTable.getColumnDefs().stream()
+    public CsvInsertStream(CsvDataDef csvDataDef) {
+        super(csvDataDef);
+        this.csvDataDef = csvDataDef;
+        final String headers = csvDataDef.getColumnDefs().stream()
                 .map(s->s.getColumnName())
                 .collect(Collectors.joining(","));
         try {
-            BufferedWriter writer = Files.newBufferedWriter(csvTable.getPath());
+            BufferedWriter writer = Files.newBufferedWriter(csvDataDef.getFsDataPath().getPath());
             printer = CSVFormat
                     .DEFAULT
                     .withHeader(headers)
@@ -34,9 +34,9 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
     }
 
-    public static CsvInsertStream of(CsvTable csvTable) {
+    public static CsvInsertStream of(CsvDataDef csvDataDef) {
 
-        return new CsvInsertStream(csvTable);
+        return new CsvInsertStream(csvDataDef);
 
     }
 

@@ -367,7 +367,7 @@ public class TableLoader implements AutoCloseable {
 
         public TableLoader build() {
             if (this.database == null) {
-                this.database = net.bytle.db.database.Databases.getDefault(); // The default one
+                this.database = net.bytle.db.database.Databases.getSqliteDefault(); // The default one
             }
             return new TableLoader(this);
         }

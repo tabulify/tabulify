@@ -2,12 +2,13 @@ package net.bytle.db.stream;
 
 import net.bytle.db.model.ISqlRelation;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.SelectStreamAbs;
 
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SqlSelectStream implements SelectStream {
+public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
     private final ISqlRelation relationDef;

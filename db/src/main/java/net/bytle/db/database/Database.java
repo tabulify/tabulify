@@ -909,7 +909,7 @@ public class Database implements AutoCloseable, Comparable<Database> {
      *
      */
     public String getScheme() {
-        if(getDatabaseName().equals(DatabasesStore.LOCAL_FILE_SYSTEM)){
+        if(url==null){
             return DatabasesStore.LOCAL_FILE_SYSTEM;
         } else {
             return getUrl().substring(0,getUrl().indexOf(":"));

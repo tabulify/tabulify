@@ -1,6 +1,9 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -11,24 +14,24 @@ import java.sql.Clob;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class CsvSelectStream implements SelectStream {
+public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-    private final CsvTable csvTable;
+    private final FsDataPath fsDataPath;
     private Iterator<CSVRecord> recordIterator;
     private FileReader in;
     private CSVRecord currentRecord;
     private int rowNum;
 
-    CsvSelectStream(CsvTable csvTable) {
-        this.csvTable = csvTable;
+    CsvSelectStream(FsDataPath fsDataPath) {
+        this.fsDataPath = fsDataPath;
         beforeFirst();
 
     }
 
-    public static CsvSelectStream of(CsvTable csvTable) {
+    public static CsvSelectStream of(FsDataPath fsDataPath) {
 
-        return new CsvSelectStream(csvTable);
+        return new CsvSelectStream(fsDataPath);
 
     }
 
@@ -60,7 +63,7 @@ public class CsvSelectStream implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
-            in = new FileReader(this.csvTable.getPath().toFile());
+            in = new FileReader(this.fsDataPath.getPath().toFile());
             recordIterator = CSVFormat.RFC4180.parse(in).iterator();
             // Pass the header
             recordIterator.next();
@@ -98,7 +101,12 @@ public class CsvSelectStream implements SelectStream {
 
     @Override
     public RelationDef getRelationDef() {
-        return csvTable;
+        return fsDataPath.getDataDef();
+    }
+
+    @Override
+    public DataPath getDataPath() {
+        return fsDataPath;
     }
 
     @Override
