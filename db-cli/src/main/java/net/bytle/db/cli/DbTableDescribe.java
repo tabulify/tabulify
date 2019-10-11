@@ -47,7 +47,7 @@ public class DbTableDescribe {
         List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
         for (String databasePathString :databasePaths){
             TableDataUri databasePath = TableDataUri.of(databasePathString);
-            Database database = databasesStore.getDatabase(databasePath.getDatabaseName());
+            Database database = databasesStore.getDatabase(databasePath.getDataStore());
 
             SchemaDef schemaDef;
             if (databasePath.getSchemaName()!=null) {

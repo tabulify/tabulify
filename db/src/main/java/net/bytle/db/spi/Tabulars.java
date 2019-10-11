@@ -1,5 +1,6 @@
 package net.bytle.db.spi;
 
+import com.sun.jndi.toolkit.url.Uri;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
@@ -7,20 +8,21 @@ import net.bytle.db.model.RelationDef;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 
-import java.nio.file.Files;
+
 import java.nio.file.Path;
 import java.util.List;
 
 
 public class Tabulars {
 
-    public static RelationDef get(DataUri dataUri, Path dbStorePath) {
+    public static RelationDef get(String uri, Path dbStorePath) {
 
-        final String databaseName = dataUri.getDatabaseName();
+        DataUri dataUri = DataUri.of(dbStorePath,uri);
+        final String databaseName = dataUri.getDataStore().getDatabaseName();
         String url;
         String scheme;
         if (databaseName.equals("file")) {
-            url = Fs.getPath(dataUri.getPathSegments()).toUri().toString();
+            url = Fs.getPath(dataUri.getPathSegments().toArray(new String[0])).toUri().toString();
             scheme = "file";
         } else {
             DatabasesStore databaseStore = DatabasesStore.of(dbStorePath);
@@ -60,14 +62,20 @@ public class Tabulars {
 
     }
 
-    public static RelationDef get(DataUri dataUri) {
-
-        return get(dataUri, DatabasesStore.DEFAULT_STORAGE_FILE);
+    public static DataUri of(String part, String... parts ) {
+        // FileSystems.getDefault().getDataUri(first, more);
+        return null;
 
     }
 
-    public static Boolean exists(RelationDef relationDef) {
-        Files.exists()
+    public static DataUri of(Uri uri) {
+
+        return null;
+
+    }
+
+    public static Boolean exists(DataUri dataUri) {
+        //Files.exists()
         return null;
 
     }

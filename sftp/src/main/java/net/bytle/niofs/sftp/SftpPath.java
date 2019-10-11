@@ -55,7 +55,7 @@ class SftpPath implements Path {
     /**
      * Create a path
      *
-     * @param sftpFileSystem:         The File Syste,
+     * @param sftpFileSystem:         The File System,
      * @param stringPath:             A string path
      * @param relativeDirectoryNames; The relative directory to stringPath if any (Intern parameters)
      */

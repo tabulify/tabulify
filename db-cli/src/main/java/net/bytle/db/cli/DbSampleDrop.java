@@ -59,7 +59,7 @@ public class DbSampleDrop {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
-        Database database = databasesStore.getDatabase(schemaUri.getDatabaseName());
+        Database database = databasesStore.getDatabase(schemaUri.getDataStore());
         SchemaDef schemaDef = database.getCurrentSchema();
         if (schemaUri.getSchemaName()!=null){
             schemaDef = database.getSchema(schemaUri.getSchemaName());

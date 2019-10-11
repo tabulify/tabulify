@@ -79,7 +79,7 @@ public class DbQueryTransfer {
         }
 
         SchemaDataUri sourceSchemaDataUri = SchemaDataUri.of(SOURCE_DATA_URI);
-        Database sourceDatabase = databasesStore.getDatabase(sourceSchemaDataUri.getDatabaseName());
+        Database sourceDatabase = databasesStore.getDatabase(sourceSchemaDataUri.getDataStore());
         SchemaDef sourceSchemaDef = sourceDatabase.getCurrentSchema();
         if (sourceSchemaDataUri.getSchemaName()!=null){
             sourceSchemaDef = sourceDatabase.getSchema(sourceSchemaDataUri.getSchemaName());

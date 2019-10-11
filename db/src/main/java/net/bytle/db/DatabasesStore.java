@@ -25,6 +25,12 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
 public class DatabasesStore {
 
     /**
+     * The local file database name as also stated
+     * by the {@link Path#getFileSystem()}
+     */
+    public static final String LOCAL_FILE_SYSTEM = "file";
+
+    /**
      * This is a passphrase used to encrypt the sample database password
      * Don't change this value
      */
@@ -335,5 +341,9 @@ public class DatabasesStore {
         } else {
             return false;
         }
+    }
+
+    public Database getDefaultDatabase() {
+        return Databases.of(LOCAL_FILE_SYSTEM);
     }
 }

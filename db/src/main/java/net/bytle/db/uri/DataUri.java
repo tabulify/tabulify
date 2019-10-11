@@ -1,0 +1,97 @@
+package net.bytle.db.uri;
+
+import net.bytle.db.DatabasesStore;
+import net.bytle.db.database.Database;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class DataUri {
+
+    public static final String PATH_SEPARATOR = "/";
+    public static final String AT_STRING = "@";
+    private final Database dataStore;
+    private List<String> pathSegments;
+
+
+
+
+    private DataUri(DatabasesStore dataStorePath, String dataUri, String... parts) {
+
+
+        if (dataUri == null) {
+            throw new RuntimeException("The first part of a data uri cannot be null");
+        }
+        // This is given in a URI form
+        if (parts.length == 0) {
+
+            final char firstCharacter = dataUri.charAt(0);
+            if (firstCharacter != AT_STRING.charAt(0)) {
+
+                this.pathSegments = new ArrayList<>();
+                this.pathSegments.addAll(Arrays.asList(dataUri.split(PATH_SEPARATOR)));
+                this.pathSegments.addAll(Arrays.asList(parts));
+                this.dataStore = dataStorePath.getDefaultDatabase();
+
+
+            } else {
+
+                String[] pathsParsed = dataUri.substring(1).split(PATH_SEPARATOR);
+                this.pathSegments = Arrays.asList(Arrays.copyOfRange(pathsParsed, 1, pathsParsed.length));
+                this.dataStore = dataStorePath.getDatabase(pathsParsed[0]);
+
+            }
+
+        } else {
+
+            this.pathSegments = Arrays.asList(parts);
+            this.dataStore = dataStorePath.getDatabase(dataUri.substring(1));
+
+        }
+
+    }
+
+    public static DataUri of(String first, String... more) {
+        return new DataUri(DatabasesStore.of(),first, more);
+    }
+
+    public static DataUri of(DatabasesStore databasesStore, String first, String... more) {
+        return new DataUri(databasesStore,first, more);
+    }
+
+    public static DataUri of(Path dataStorePath, String first, String... more) {
+        return new DataUri(DatabasesStore.of(dataStorePath),first, more);
+    }
+
+
+    public List<String> getPathSegments() {
+        return this.pathSegments;
+    }
+
+    public Database getDataStore() {
+        return this.dataStore;
+    }
+
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("@").append(dataStore);
+        if (getPathSegments().size() > 0) {
+            stringBuilder
+                    .append("/")
+                    .append(String.join("/", pathSegments));
+        }
+        return stringBuilder.toString();
+    }
+
+
+    public String getDataName() {
+        return this.pathSegments.get(this.pathSegments.size()-1);
+    }
+
+
+    public String getPathSegment(int i) {
+        return this.pathSegments.get(i);
+    }
+}

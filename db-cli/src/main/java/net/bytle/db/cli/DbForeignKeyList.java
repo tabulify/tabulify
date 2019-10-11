@@ -60,7 +60,7 @@ public class DbForeignKeyList {
 
         for (String stringTableUri : stringTableUris) {
             TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
-            Database database = databasesStore.getDatabase(tableDataUri.getDatabaseName());
+            Database database = databasesStore.getDatabase(tableDataUri.getDataStore());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableDataUri.getSchemaName()!=null) {
                 schemaDef = database.getSchema(tableDataUri.getSchemaName());

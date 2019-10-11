@@ -2,7 +2,6 @@ package net.bytle.fs;
 
 
 import net.bytle.os.Oss;
-import net.bytle.type.Arrayss;
 import net.bytle.regexp.Globs;
 
 import javax.xml.bind.DatatypeConverter;
@@ -368,63 +367,13 @@ public class Fs {
         }
     }
 
-    /**
-     *
-     * @param fileUri
-     * @return a list of file that matches the uri segements
-     *
-     * ex: the following file uri
-     *   /tmp/*.md
-     * will return all md file in the tmp directory
-     *
-     */
-    public static List<Path> get(FileUri fileUri) {
-
-        if (!fileUri.getDatabaseName().equals(FileUri.LOCAL_FILE_SYSTEM)){
-            throw new RuntimeException("Only a file uri from the local file system is implemented from now");
-        }
-
-        final String[] pathSegments = fileUri.getPathSegments();
-
-        // Start
-        Path startPath = Paths.get(".");
-        List<Path> currentMatchesPaths = new ArrayList<>();
-        currentMatchesPaths.add(startPath);
-
-        for (String s: pathSegments){
-
-            // Glob to regex Pattern
-            String pattern = Globs.toRegexPattern(s);
-
-            // The list where the actual matches path will be stored
-            List<Path> matchesPath = new ArrayList<>();
-            for (Path currentPath: currentMatchesPaths) {
-                List<Path> paths = Fs.getChildrenFiles(currentPath);
-                for (Path childrenPath : paths) {
-                    if (childrenPath.getFileName().toString().matches(pattern)) {
-                        matchesPath.add(childrenPath);
-                    }
-                }
-            }
-
-            if (matchesPath.size()==0){
-                return matchesPath;
-            } else {
-                // Recursion
-                currentMatchesPaths = matchesPath;
-            }
-
-        }
-
-        return currentMatchesPaths;
-    }
 
     /**
      *
      * @param path
      * @return the children path of a directory
      */
-    private static List<Path> getChildrenFiles(Path path) {
+    public static List<Path> getChildrenFiles(Path path) {
 
         try {
             List<Path> childrenPaths = new ArrayList<>();

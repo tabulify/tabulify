@@ -73,7 +73,7 @@ public class DbQueryExecute {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         SchemaDataUri schemaUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
-        Database databaseDef = databasesStore.getDatabase(schemaUri.getDatabaseName());
+        Database databaseDef = databasesStore.getDatabase(schemaUri.getDataStore());
         SchemaDef schemaDef = databaseDef.getCurrentSchema();
         if (schemaUri.getSchemaName()!=null){
             schemaDef = databaseDef.getSchema(schemaUri.getSchemaName());
