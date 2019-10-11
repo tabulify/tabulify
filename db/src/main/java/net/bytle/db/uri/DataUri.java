@@ -18,27 +18,27 @@ public class DataUri {
 
 
 
-    private DataUri(DatabasesStore dataStorePath, String dataUri, String... parts) {
+    private DataUri(DatabasesStore dataStorePath, String first, String... more) {
 
 
-        if (dataUri == null) {
+        if (first == null) {
             throw new RuntimeException("The first part of a data uri cannot be null");
         }
-        // This is given in a URI form
-        if (parts.length == 0) {
 
-            final char firstCharacter = dataUri.charAt(0);
+        if (more.length == 0) {
+
+            final char firstCharacter = first.charAt(0);
             if (firstCharacter != AT_STRING.charAt(0)) {
 
                 this.pathSegments = new ArrayList<>();
-                this.pathSegments.addAll(Arrays.asList(dataUri.split(PATH_SEPARATOR)));
-                this.pathSegments.addAll(Arrays.asList(parts));
+                this.pathSegments.addAll(Arrays.asList(first.split(PATH_SEPARATOR)));
+                this.pathSegments.addAll(Arrays.asList(more));
                 this.dataStore = dataStorePath.getDefaultDatabase();
 
 
             } else {
 
-                String[] pathsParsed = dataUri.substring(1).split(PATH_SEPARATOR);
+                String[] pathsParsed = first.substring(1).split(PATH_SEPARATOR);
                 this.pathSegments = Arrays.asList(Arrays.copyOfRange(pathsParsed, 1, pathsParsed.length));
                 this.dataStore = dataStorePath.getDatabase(pathsParsed[0]);
 
@@ -46,8 +46,20 @@ public class DataUri {
 
         } else {
 
-            this.pathSegments = Arrays.asList(parts);
-            this.dataStore = dataStorePath.getDatabase(dataUri.substring(1));
+            final char firstCharacter = first.charAt(0);
+            if (firstCharacter != AT_STRING.charAt(0)) {
+
+                this.pathSegments = new ArrayList<>();
+                this.pathSegments.add(first);
+                this.pathSegments.addAll(Arrays.asList(more));
+                this.dataStore = dataStorePath.getDefaultDatabase();
+
+            } else {
+
+                this.pathSegments = Arrays.asList(more);
+                this.dataStore = dataStorePath.getDatabase(first.substring(1));
+
+            }
 
         }
 

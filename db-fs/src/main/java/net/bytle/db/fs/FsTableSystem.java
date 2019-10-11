@@ -1,52 +1,39 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.csv.CsvTable;
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.DatabasesStore;
+import net.bytle.db.database.Database;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FsTableSystem extends TableSystem {
 
 
-    private final String uri;
-    private final Map<String, ?> env;
+    private final Database database;
 
-    private FsTableSystem(String uri, Map<String, ?> env) {
-        assert uri!=null;
-        if (env==null){
-            env = new HashMap<>();
-        }
-        this.uri = uri;
-        this.env = env;
+    private FsTableSystem(Database database) {
+        assert database!=null;
+        this.database = database;
     }
 
-    protected static TableSystem of(String uri) {
-        Map<String,?> env = new HashMap<>();
-        return new FsTableSystem(uri, env);
+    protected static TableSystem of(Database database) {
+        return new FsTableSystem(database);
     }
 
-    public static TableSystem of(String uri, Map<String, ?> env) {
-        return new FsTableSystem(uri,env);
-    }
 
-    @Override
-    public RelationDef getRelationDef(DataUri dataUri) {
-        Path path = Fs.getPath(dataUri.getPathSegments());
-        return CsvTable.of(path);
-    }
 
     /**
      *
-     * @param fileUri
+     * @param dataUri
      * @return a list of file that matches the uri segments
      *
      * ex: the following file uri
@@ -54,13 +41,13 @@ public class FsTableSystem extends TableSystem {
      * will return all md file in the tmp directory
      *
      */
-    public static List<Path> get(FileUri fileUri) {
+    public List<DataPath> getDataPaths(DataUri dataUri) {
 
-        if (!fileUri.getDataStore().equals(FileUri.LOCAL_FILE_SYSTEM)){
+        if (!dataUri.getDataStore().getScheme().equals(DatabasesStore.LOCAL_FILE_SYSTEM)){
             throw new RuntimeException("Only a file uri from the local file system is implemented from now");
         }
 
-        final String[] pathSegments = fileUri.getPathSegments();
+        final List<String> pathSegments = dataUri.getPathSegments();
 
         // Start
         Path startPath = Paths.get(".");
@@ -84,7 +71,7 @@ public class FsTableSystem extends TableSystem {
             }
 
             if (matchesPath.size()==0){
-                return matchesPath;
+                break;
             } else {
                 // Recursion
                 currentMatchesPaths = matchesPath;
@@ -92,7 +79,23 @@ public class FsTableSystem extends TableSystem {
 
         }
 
-        return currentMatchesPaths;
+
+        return currentMatchesPaths.stream()
+                .map(s->FsDataPath.of(this,s))
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public DataPath getDataPath(DataUri dataUri) {
+        final Path path = Fs.getPath(dataUri.getPathSegments().toArray(new String[0]));
+        return FsDataPath.of(this, path);
+    }
+
+    @Override
+    public Boolean exists(DataPath dataPath) {
+
+        final FsDataPath fsDataPath = (FsDataPath) dataPath;
+        return Files.exists(fsDataPath.getPath());
+
+    }
 }

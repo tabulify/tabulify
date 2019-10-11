@@ -901,4 +901,19 @@ public class Database implements AutoCloseable, Comparable<Database> {
     }
 
 
+    /**
+     *
+     * @return the scheme of the data store
+     *   * file
+     *   * ...
+     *
+     */
+    public String getScheme() {
+        if(getDatabaseName().equals(DatabasesStore.LOCAL_FILE_SYSTEM)){
+            return DatabasesStore.LOCAL_FILE_SYSTEM;
+        } else {
+            return getUrl().substring(0,getUrl().indexOf(":"));
+        }
+    }
+
 }
