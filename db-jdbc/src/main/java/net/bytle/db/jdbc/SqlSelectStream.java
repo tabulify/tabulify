@@ -1,8 +1,8 @@
-package net.bytle.db.stream;
+package net.bytle.db.jdbc;
 
-import net.bytle.db.model.ISqlRelation;
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
+import net.bytle.db.stream.SelectStream;
 
 import java.sql.Clob;
 import java.sql.ResultSet;
@@ -11,18 +11,16 @@ import java.sql.SQLException;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-    private final ISqlRelation relationDef;
     private ResultSet resultSet;
 
-    public SqlSelectStream(ISqlRelation relationDef) {
+    public SqlSelectStream(JdbcDataPath jdbcDataPath) {
 
-        this.relationDef = relationDef;
-        this.resultSet = relationDef.getResultSet();
+        super(jdbcDataPath);
 
     }
 
-    public static SqlSelectStream get(ISqlRelation relationDef) {
-        return new SqlSelectStream(relationDef);
+    public static SqlSelectStream of(JdbcDataPath jdbcDataPath) {
+        return new SqlSelectStream(jdbcDataPath);
     }
 
 
@@ -39,7 +37,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void close() {
         try {
-            resultSet.close();
+            getResultSet().close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -48,7 +46,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public String getString(int columnIndex) {
         try {
-            return resultSet.getString(columnIndex + 1);
+            return getResultSet().getString(columnIndex + 1);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -57,15 +55,26 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
-            if (resultSet.getType() == ResultSet.TYPE_FORWARD_ONLY) {
-                resultSet.close();
-                resultSet = relationDef.getResultSet();
+            if (getResultSet().getType() == ResultSet.TYPE_FORWARD_ONLY) {
+                getResultSet().close();
+                initResultSet();
             } else {
-                resultSet.beforeFirst();
+                getResultSet().beforeFirst();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void initResultSet() {
+
+    }
+
+    private ResultSet getResultSet() {
+        if (resultSet==null){
+            initResultSet();
+        }
+        return resultSet;
     }
 
     @Override
@@ -81,7 +90,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public int getRow() {
         try {
-            return resultSet.getRow();
+            return getResultSet().getRow();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -90,7 +99,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public boolean previous() {
         try {
-            return resultSet.previous();
+            return getResultSet().previous();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -99,21 +108,17 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public Object getObject(int columnIndex) {
         try {
-            return resultSet.getObject(columnIndex + 1);
+            return getResultSet().getObject(columnIndex + 1);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public RelationDef getRelationDef() {
-        return relationDef;
-    }
 
     @Override
     public double getDouble(int columnIndex) {
         try {
-            return resultSet.getDouble(columnIndex + 1);
+            return getResultSet().getDouble(columnIndex + 1);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -122,9 +127,14 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public Clob getClob(int columnIndex) {
         try {
-            return resultSet.getClob(columnIndex + 1);
+            return getResultSet().getClob(columnIndex + 1);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public JdbcDataPath getDataPath() {
+        return (JdbcDataPath) super.getDataPath();
     }
 }

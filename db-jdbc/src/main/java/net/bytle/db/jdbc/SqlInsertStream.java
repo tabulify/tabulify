@@ -1,4 +1,4 @@
-package net.bytle.db.stream;
+package net.bytle.db.jdbc;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
@@ -8,8 +8,11 @@ import net.bytle.db.engine.Relations;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
 import net.bytle.cli.Log;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.InsertStreamAbs;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,6 +23,8 @@ import java.util.List;
 public class SqlInsertStream extends InsertStreamAbs implements InsertStream, AutoCloseable {
 
     public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private final TableDef relationDef;
+    private final JdbcDataPath jdbcDataPath;
 
     private PreparedStatement preparedStatement;
     private Connection connection;
@@ -28,17 +33,17 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     private Boolean supportBatch;
     private Boolean supportNamedParameters;
     private Statement statement;
-    private TableDef tableDef;
 
-    private SqlInsertStream(TableDef tableDef) {
-        super(tableDef);
-        this.tableDef = tableDef;
+    private SqlInsertStream(JdbcDataPath jdbcDataPath) {
+        super(jdbcDataPath);
+        this.jdbcDataPath = jdbcDataPath;
+        this.relationDef = jdbcDataPath.getDataDef();
         init();
     }
 
-    public synchronized static SqlInsertStream get(TableDef tableDef) {
+    public synchronized static SqlInsertStream of(JdbcDataPath jdbcDataPath) {
 
-        return new SqlInsertStream(tableDef);
+        return new SqlInsertStream(jdbcDataPath);
 
     }
 
@@ -92,7 +97,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
             } else {
 
-                insertStatement = DbDml.getInsertStatement((TableDef) relationDef, sourceTableDef, values);
+                insertStatement = DbDml.getInsertStatement(relationDef, sourceTableDef, values);
                 statement.execute(insertStatement);
                 currentRowInLogicalBatch++;
 
@@ -101,7 +106,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         } catch (SQLException e) {
 
             resourceClose();
-            throw new RuntimeException("Table: " + relationDef.getFullyQualifiedName(), e);
+            throw new RuntimeException("Table: " + relationDef.getDataPath(), e);
 
         }
 
@@ -120,7 +125,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
             if (Math.floorMod(insertStreamListener.getBatchCount(), feedbackFrequency) == 0) {
-                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + relationDef.getFullyQualifiedName());
+                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + relationDef.getDataPath());
             }
             currentRowInLogicalBatch = 0;
         }
@@ -129,14 +134,19 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
     }
 
+    @Override
+    public JdbcDataPath getDataPath() {
+        return (JdbcDataPath) super.getDataPath();
+    }
+
     private void init() {
 
-        final Database database = relationDef.getDatabase();
-        if (!Tables.exists(tableDef)) {
-            if (relationDef.getColumnDefs().size() == 0) {
+        final Database database = getDataPath().getDataSystem().getDatabase();
+        if (!Tabulars.exists(jdbcDataPath)) {
+            if (jdbcDataPath.getDataDef().getColumnDefs().size() == 0) {
                 Relations.addColumns(relationDef, sourceTableDef);
             }
-            Tables.create(tableDef);
+            Tabulars.create(jdbcDataPath);
         }
 
         if (database.getMaxWriterConnection() == 1) {

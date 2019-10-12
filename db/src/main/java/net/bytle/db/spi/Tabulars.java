@@ -54,4 +54,9 @@ public class Tabulars {
     public static SelectStream getSelectStream(DataPath dataPath) {
         return dataPath.getDataSystem().getSelectStream(dataPath);
     }
+
+    public static DataPath create(DataPath dataPath) {
+
+        return null;
+    }
 }

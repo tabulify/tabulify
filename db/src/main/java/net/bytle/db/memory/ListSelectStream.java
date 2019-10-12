@@ -109,7 +109,7 @@ public class ListSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     @Override
-    public MemoryTable getRelationDef() {
+    public MemoryTable getJdbcDataPath() {
         return memoryTable;
     }
 

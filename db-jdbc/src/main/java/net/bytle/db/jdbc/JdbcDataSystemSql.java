@@ -5,29 +5,48 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ *
+ * Schema implementation
+ *
+ * See also:
+ * {@link DatabaseMetaData#supportsSchemasInDataManipulation()}
+ * {@link DatabaseMetaData#supportsSchemasInIndexDefinitions()}
+ * {@link DatabaseMetaData#supportsSchemasInPrivilegeDefinitions()}
+ * {@link DatabaseMetaData#supportsSchemasInProcedureCalls()}
+ * {@link DatabaseMetaData#supportsSchemasInTableDefinitions()}
+ *
+ * {@link DatabaseMetaData#supportsCatalogsInDataManipulation()}
+ * {@link DatabaseMetaData#supportsCatalogsInIndexDefinitions()}
+ * {@link DatabaseMetaData#supportsCatalogsInPrivilegeDefinitions()}
+ * {@link DatabaseMetaData#supportsCatalogsInProcedureCalls()}
+ * {@link DatabaseMetaData#supportsCatalogsInTableDefinitions()}
+ *
+ */
+
 public class JdbcDataSystemSql {
 
-    JdbcDataSystem jdbcDataSystem;
 
     /**
      * TODO: Move that in a SQL manager
      * The databaseName of a table in a SQL statement
      */
-    public String getStatementTableName(JdbcDataPath jdbcDataPath) {
+    public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
 
         String identifierQuoteString = "\"";
+        final JdbcDataSystem dataSystem = jdbcDataPath.getDataSystem();
         try {
-            final Connection currentConnection = jdbcDataPath.getDataSystem().getCurrentConnection();
+            final Connection currentConnection = dataSystem.getCurrentConnection();
             if (currentConnection!=null) {
                 identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
             }
         } catch (SQLException e) {
-            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+this+" throw an error when retrieving the quoted string identifier."+e.getMessage());
+            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getDatabase()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
         }
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
-        if (jdbcDataSystem.getSqlDatabase() != null) {
-            String objectNameExtension = jdbcDataSystem.getSqlDatabase().getNormativeSchemaObjectName(tableName);
+        if (dataSystem.getSqlDatabase() != null) {
+            String objectNameExtension = dataSystem.getSqlDatabase().getNormativeSchemaObjectName(tableName);
             if (objectNameExtension != null) {
                 normativeObjectName = objectNameExtension;
             }
@@ -89,7 +108,7 @@ public class JdbcDataSystemSql {
      * @param jdbcDataPath
      * @return
      */
-    public String getFullyQualifiedSqlName(JdbcDataPath jdbcDataPath) {
+    public static String getFullyQualifiedSqlName(JdbcDataPath jdbcDataPath) {
 
 
         final String statementTableName = getStatementTableName(jdbcDataPath);

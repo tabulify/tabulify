@@ -1,24 +1,24 @@
 package net.bytle.db.stream;
 
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 
 import java.util.Arrays;
 import java.util.List;
 
 public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
 
+    private final DataPath dataPath;
     protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);
 
     protected String name = Thread.currentThread().getName();
     protected Integer feedbackFrequency = 10000;
     protected Integer batchSize = 10000;
     protected Integer commitFrequency = 100;
-    protected RelationDef relationDef;
     protected int currentRowInLogicalBatch = 0;
 
-    public InsertStreamAbs(RelationDef relationDef) {
-
+    public InsertStreamAbs(DataPath dataPath) {
+        this.dataPath = dataPath;
     }
 
     @Override
@@ -68,8 +68,8 @@ public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
     }
 
     @Override
-    public RelationDef getRelationDef() {
-        return relationDef;
+    public DataPath getDataPath() {
+        return dataPath;
     }
 
 

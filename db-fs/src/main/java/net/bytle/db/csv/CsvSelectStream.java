@@ -100,7 +100,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     @Override
-    public RelationDef getRelationDef() {
+    public RelationDef getJdbcDataPath() {
         return fsDataPath.getDataDef();
     }
 

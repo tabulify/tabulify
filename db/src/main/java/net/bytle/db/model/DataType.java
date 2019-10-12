@@ -1,7 +1,6 @@
 package net.bytle.db.model;
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.database.DataTypeDriver;
 import net.bytle.db.database.DataTypeJdbc;
 
 import java.sql.Types;
@@ -9,15 +8,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
  * The data type of a column.
- *
+ * <p>
  * DataType composition with the following order:
  * <p>
  * * dataTypeDatabase from the database definition
  * * dataTypeJdbc form the Jdbc Standard
- * * dataTypeDriver from the driver (Info)
- *
+ * <p>
  * Created by gerard on 28-11-2015.
  */
 public class DataType {
@@ -50,7 +47,6 @@ public class DataType {
 
     private final int typeCode;
 
-    private final DataTypeDriver dataTypeDriver;
     private final DataTypeDatabase dataTypeDatabase;
     private final DataTypeJdbc dataTypeJdbc;
 
@@ -64,7 +60,6 @@ public class DataType {
 
         // The data type info of each source
         this.dataTypeJdbc = dataTypeInfoBuilder.jdbcDataType;
-        this.dataTypeDriver = dataTypeInfoBuilder.dataTypeDriver;
         this.dataTypeDatabase = dataTypeInfoBuilder.dataTypeDatabase;
     }
 
@@ -104,12 +99,7 @@ public class DataType {
                 return typeName;
             }
         }
-        if (this.dataTypeDriver != null) {
-            typeName = dataTypeDriver.getTypeName();
-            if (typeName != null) {
-                return typeName;
-            }
-        }
+
         return dataTypeJdbc.getTypeName();
 
     }
@@ -126,9 +116,6 @@ public class DataType {
     public Integer getMaxPrecision() {
 
 
-        if (this.dataTypeDriver != null) {
-            return dataTypeDriver.getMaxPrecision();
-        }
         // A character must have always a precision
         // but not a number
         // TODO: This may cause a problem if the driver returns null as maxPrecision ...
@@ -141,7 +128,7 @@ public class DataType {
      */
     public String getLiteralPrefix() {
 
-        return this.dataTypeDriver.getLiteralPrefix();
+        return null;
 
     }
 
@@ -151,11 +138,9 @@ public class DataType {
      */
     public String getLiteralSuffix() {
 
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getLiteralPrefix();
-        } else {
-            return null;
-        }
+
+        return null;
+
 
     }
 
@@ -163,99 +148,81 @@ public class DataType {
      * @return parameters used in creating the type (may be null)
      */
     public String getCreateParams() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getCreateParams();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return can you use null for this type
      */
     public Short getNullable() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getNullable();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return is it case sensitive
      */
     public Boolean getCaseSensitive() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getCaseSensitive();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return can you use "WHERE" based on this type:
      */
     public Short getSearchable() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getSearchable();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return is it unsigned
      */
     public Boolean getUnsignedAttribute() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getUnsignedAttribute();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return can it be a money value.
      */
     public Boolean getFixedPrecScale() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getFixedPrecScale();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return can it be used for an auto-increment value.
      */
     public Boolean getAutoIncrement() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getAutoIncrement();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return localized version of type name (may be null)
      */
     public String getLocalTypeName() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getLocalTypeName();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
      * @return minimum scale supported
      */
     public Integer getMinimumScale() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getMinimumScale();
-        } else {
-            return null;
-        }
+
+        return null;
+
     }
 
     /**
@@ -263,16 +230,11 @@ public class DataType {
      * 0 if unknown
      */
     public Integer getMaximumScale() {
-        if (this.dataTypeDriver != null) {
-            return this.dataTypeDriver.getMaximumScale();
-        } else {
-            return 0;
-        }
+
+        return 0;
+
     }
 
-    public DataTypeDriver getDataTypeDriver() {
-        return dataTypeDriver;
-    }
 
 
     public static class DataTypeBuilder {
@@ -280,7 +242,6 @@ public class DataType {
         private final int dataType;
         private DataTypeDatabase dataTypeDatabase;
         private DataTypeJdbc jdbcDataType;
-        private DataTypeDriver dataTypeDriver;
 
 
         public DataTypeBuilder(int dataType) {
@@ -292,10 +253,6 @@ public class DataType {
             return this;
         }
 
-        public DataTypeBuilder DriverDataType(DataTypeDriver dataTypeDriver) {
-            this.dataTypeDriver = dataTypeDriver;
-            return this;
-        }
 
         public DataTypeBuilder DatabaseDataType(DataTypeDatabase dataTypeDatabase) {
             this.dataTypeDatabase = dataTypeDatabase;
@@ -304,7 +261,7 @@ public class DataType {
 
 
         public DataType build() {
-            if (dataTypeDatabase != null || dataTypeDriver != null || jdbcDataType != null) {
+            if (dataTypeDatabase != null || jdbcDataType != null) {
                 return new DataType(this);
             } else {
                 return null;
@@ -315,7 +272,7 @@ public class DataType {
 
     @Override
     public String toString() {
-        return "DataTypeDriver{" +
+        return "DataType{" +
                 "typeName='" + getTypeName() + '\'' +
                 ", typeCode=" + typeCode +
                 '}';

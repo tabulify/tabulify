@@ -20,8 +20,7 @@ import java.util.Set;
  * Created by gerard on 01-02-2016.
  * A class that contains a column data structure definition
  * <p>
- * It's generally construct form a resultSetMetadata object
- * but it can also be construct programmatically (when you want to load data after parsing a file for instance)
+ *
  */
 public class ColumnDef<T> implements Comparable<ColumnDef> {
 

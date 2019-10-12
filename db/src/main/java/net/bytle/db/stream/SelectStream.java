@@ -25,7 +25,6 @@ public interface SelectStream extends AutoCloseable {
 
     Object getObject(int columnIndex);
 
-    RelationDef getRelationDef();
 
     DataPath getDataPath();
 

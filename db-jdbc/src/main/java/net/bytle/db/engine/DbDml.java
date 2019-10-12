@@ -1,12 +1,13 @@
 package net.bytle.db.engine;
 
+import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.JdbcDataSystem;
+import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
 
 import java.util.List;
 
-import static net.bytle.db.database.Database.DB_HIVE;
 import static net.bytle.db.engine.DataTypes.isNumeric;
 
 public class DbDml {
@@ -16,19 +17,19 @@ public class DbDml {
     /**
      * Return an insert statement where the AutoIncrement Column are not added
      *
-     * @param tableDef
+     * @param relationDef
      * @return
      */
-    public static String getParameterizedInsertStatement(RelationDef tableDef) {
+    public static String getParameterizedInsertStatement(RelationDef relationDef) {
 
-        if (tableDef.getColumnDefs().size() == 0) {
-            throw new RuntimeException("The table (" + tableDef.getFullyQualifiedName() + ") has no columns. We can not create an insert statement.");
+        if (relationDef.getColumnDefs().size() == 0) {
+            throw new RuntimeException("The table (" + relationDef.getDataPath() + ") has no columns. We can not create an insert statement.");
         }
-        String insertStatement = "INSERT INTO " + tableDef.getFullyQualifiedName() + " (";
+        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName((JdbcDataPath) relationDef.getDataPath()) + " (";
         String insertStatementBindVariable = "";
 
         // Loop to create the statement
-        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+        for (ColumnDef columnDef : relationDef.getColumnDefs()) {
             if (!columnDef.getIsAutoincrement().equals("YES")) {
                 insertStatement += "\"" + columnDef.getColumnName() + "\", ";
                 insertStatementBindVariable += "?, ";
@@ -52,7 +53,7 @@ public class DbDml {
      * @param source
      * @return
      */
-    public static String getParameterizedInsertStatement(TableDef target, RelationDef source) {
+    public static String getParameterizedInsertStatement(RelationDef target, RelationDef source) {
 
 
         return getInsertStatement(target,source,null);
@@ -67,9 +68,10 @@ public class DbDml {
      * @return
      *
      */
-    public static String getInsertStatement(TableDef target, RelationDef source, List<Object> values) {
+    public static String getInsertStatement(RelationDef target, RelationDef source, List<Object> values) {
 
-        String insertStatement = "INSERT INTO " + target.getFullyQualifiedName() + " (";
+        final JdbcDataPath dataPath = (JdbcDataPath) target.getDataPath();
+        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName((JdbcDataPath) dataPath) + " (";
         String insertStatementBindVariable = "";
 
         try {
@@ -78,7 +80,7 @@ public class DbDml {
                 ColumnDef columnDef = target.getColumnDef(colName);
                 if (!columnDef.getIsAutoincrement().equals("YES")) {
                     String fieldQuote = "\"";
-                    if (target.getDatabase().getDatabaseProductName().equals(DB_HIVE)){
+                    if (dataPath.getDataSystem().getCurrentConnection().getMetaData().getDatabaseProductName().equals(JdbcDataSystem.DB_HIVE)){
                         fieldQuote = "`";
                     }
                     insertStatement += fieldQuote + columnDef.getColumnName() + fieldQuote + ", ";

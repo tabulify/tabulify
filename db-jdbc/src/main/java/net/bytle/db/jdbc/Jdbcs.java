@@ -1,14 +1,17 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.regexp.Globs;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Static method
+ *
+ * Note for later:
+ * String regexpPattern = Globs.toRegexPattern(globPattern);
  */
 public class Jdbcs {
 
@@ -46,7 +49,7 @@ public class Jdbcs {
             throw new RuntimeException(e);
         }
 
-
+        Collections.sort(jdbcDataPaths);
         return jdbcDataPaths;
 
     }
@@ -93,6 +96,27 @@ public class Jdbcs {
     }
 
 
+    /**
+     * Retrieve the relationship (ie foreigns key and external key) of tables
+     *
+     * @param jdbcDataPath - the name of a table or a glob pattern
+     * @return
+     */
+    public List<ForeignKeyDef> getForeignKeys(JdbcDataPath jdbcDataPath) {
+        Set<ForeignKeyDef> foreignKeys = new HashSet<>();
+        String regexpPattern = Globs.toRegexPattern(jdbcDataPath.getName());
+        for (JdbcDataPath dataPath : getTables(jdbcDataPath.getSchema())) {
+            if (dataPath.getName().matches(regexpPattern)) {
+                foreignKeys.addAll(dataPath.getDataDef().getForeignKeys());
+            }
+            for (ForeignKeyDef foreignKeyDef: dataPath.getDataDef().getForeignKeys()){
+                if (foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath().getName().matches(regexpPattern)){
+                    foreignKeys.add(foreignKeyDef);
+                }
+            }
+        }
+        return new ArrayList<>(foreignKeys);
+    }
 
 
 }

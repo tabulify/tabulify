@@ -4,7 +4,6 @@ import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
 import net.bytle.db.model.ISqlRelation;
-import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 
@@ -16,17 +15,7 @@ public class Streams {
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-    public static SqlSelectStream getSqlSelectStream(TableDef tableDef) {
 
-        return new SqlSelectStream(tableDef);
-
-    }
-
-    public static SqlSelectStream getSqlSelectStream(QueryDef queryDef) {
-
-        return new SqlSelectStream(queryDef);
-
-    }
 
     /**
      * Print the table outpustream
@@ -38,7 +27,7 @@ public class Streams {
 
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final RelationDef tableDef = tableOutputStream.getRelationDef();
+        final RelationDef tableDef = tableOutputStream.getJdbcDataPath();
         while (tableOutputStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
                 String string = tableOutputStream.getString(i);
@@ -113,7 +102,7 @@ public class Streams {
     }
 
     private static Object[] getObjects(SelectStream selectStream) {
-        int size = selectStream.getRelationDef().getColumnDefs().size();
+        int size = selectStream.getJdbcDataPath().getColumnDefs().size();
         Object[] os = new Object[size];
 
         for (int i = 0; i < size; i++) {

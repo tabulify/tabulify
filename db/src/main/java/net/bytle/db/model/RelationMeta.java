@@ -138,7 +138,7 @@ public class RelationMeta {
 
     @Override
     public String toString() {
-        return relationDef.getFullyQualifiedName();
+        return relationDef.getDataPath().toString();
     }
 
     public RelationMeta addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
@@ -173,4 +173,5 @@ public class RelationMeta {
     public ColumnDef getColumn(String columnName) {
         return columnDefByName.get(columnName);
     }
+
 }

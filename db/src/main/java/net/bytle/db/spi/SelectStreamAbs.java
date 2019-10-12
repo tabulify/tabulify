@@ -2,11 +2,15 @@ package net.bytle.db.spi;
 
 public abstract class SelectStreamAbs {
 
+    private final DataPath dataPath;
 
-    // TODO: Hack to not break the code everywhere
-    // delete after data path implementation
+    public SelectStreamAbs(DataPath dataPath) {
+        this.dataPath = dataPath;
+    }
+
+
     public DataPath getDataPath() {
-        return null;
+        return dataPath;
     }
 
 

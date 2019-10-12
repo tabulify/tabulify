@@ -1,7 +1,6 @@
 package net.bytle.db.stream;
 
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
@@ -75,9 +74,9 @@ public interface InsertStream {
     InsertStream setBatchSize(Integer batchSize);
 
     /**
-     * @return the tableDef Definition
+     * @return the data path Definition
      */
-    RelationDef getRelationDef();
+    DataPath getDataPath();
 
     /**
      * Does the next insert will send a batch

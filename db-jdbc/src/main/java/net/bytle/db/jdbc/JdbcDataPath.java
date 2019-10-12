@@ -41,6 +41,9 @@ public class JdbcDataPath extends DataPath  {
 
     }
 
+    /**
+    * {@link DatabaseMetaData#getMaxSchemaNameLength()}
+     */
     public JdbcDataPath getSchema() {
 
        return JdbcDataPath.of(jdbcDataSystem,catalog,schema,null);
