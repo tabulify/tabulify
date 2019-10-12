@@ -4,7 +4,6 @@ package net.bytle.db.gen;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataType;
 import net.bytle.type.Maps;
 
 import java.math.BigDecimal;

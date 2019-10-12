@@ -161,7 +161,7 @@ public class DataTypeDriver implements DataTypeInterface {
     }
 
 
-    static class DataTypeInfoBuilder {
+    public static class DataTypeInfoBuilder {
 
         private final int dataType;
         private String typeName;

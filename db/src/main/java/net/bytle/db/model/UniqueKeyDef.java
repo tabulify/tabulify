@@ -4,29 +4,30 @@ import java.util.*;
 
 public class UniqueKeyDef {
 
-    private final TableDef tableDef;
+    private final RelationDef relationDef;
     private String name;
     private Map<Integer, ColumnDef> columnDefs = new HashMap<>();
+
+    public static UniqueKeyDef of(RelationDef relationDef) {
+        return new UniqueKeyDef(relationDef);
+    }
 
     public String getName() {
         return name;
     }
 
-    /**
-     * Use {@link TableDef#getOrCreateUniqueKey(ColumnDef)}
-     *
-     */
+
     private UniqueKeyDef(){
 
-        tableDef = null;
+        relationDef = null;
     }
 
-    UniqueKeyDef(TableDef tableDef) {
-        this.tableDef = tableDef;
+    UniqueKeyDef(RelationDef relationDef) {
+        this.relationDef = relationDef;
     }
 
-    public TableDef getTableDef() {
-        return tableDef;
+    public RelationDef getRelationDef() {
+        return relationDef;
     }
 
     public UniqueKeyDef name(String name) {

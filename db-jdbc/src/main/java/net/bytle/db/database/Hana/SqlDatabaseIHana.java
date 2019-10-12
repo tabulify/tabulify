@@ -1,12 +1,12 @@
 package net.bytle.db.database.Hana;
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.database.Database;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
+import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.jdbc.TableDef;
 import net.bytle.db.model.UniqueKeyDef;
 
 import java.util.ArrayList;
@@ -26,8 +26,8 @@ public class SqlDatabaseIHana extends SqlDatabase {
         dataTypeDatabaseSet.put(HanaDbVarcharType.TYPE_CODE, new HanaDbVarcharType());
     }
 
-    public SqlDatabaseIHana(Database database) {
-            super(database);
+    public SqlDatabaseIHana(JdbcDataSystem jdbcDataSystem) {
+            super(jdbcDataSystem);
     }
 
 

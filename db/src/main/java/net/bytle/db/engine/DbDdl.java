@@ -295,7 +295,7 @@ public class DbDdl {
      */
     public static String getAlterTableUniqueKeyStatement(UniqueKeyDef uniqueKeyDef, SchemaDef schemaDef) {
 
-        String statement = "ALTER TABLE " + schemaDef.getName() + "." + uniqueKeyDef.getTableDef().getName() + " ADD ";
+        String statement = "ALTER TABLE " + schemaDef.getName() + "." + uniqueKeyDef.getRelationDef().getName() + " ADD ";
 
         // The serie of columns definitions (col1, col2,...)
         final List<ColumnDef> columns = uniqueKeyDef.getColumns();

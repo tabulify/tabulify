@@ -1,10 +1,10 @@
-package net.bytle.db.model;
+package net.bytle.db.jdbc;
 
 
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.model.*;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * * or through the metadata of the driver
  * * or through the metadata of a result set
  */
-public class TableDef extends RelationDefAbs implements ISqlRelation {
+public class TableDef extends RelationDefAbs  {
 
 
     private PrimaryKeyDef primaryKeyDef;
@@ -46,14 +46,14 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
     // on the setter
     private String tableType;
 
-
-
-    public TableDef(Database database, String tableName) {
-        super(tableName);
-        this.schema = database.getCurrentSchema();
-
+    public TableDef(JdbcDataPath jdbcDataPath) {
+        super(jdbcDataPath);
     }
 
+
+    public static TableDef of(JdbcDataPath jdbcDataPath){
+        return new TableDef(jdbcDataPath);
+    }
 
 
 
@@ -95,7 +95,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
             }
         }
 
-        final String fkName = this.getName() + "_fk" + foreignKeys.size();
+        final String fkName = this.getDataPath().getName() + "_fk" + foreignKeys.size();
         List<ColumnDef> columnDefs = Arrays.asList(columnNames).stream()
                 .map(this::getColumnDef)
                 .collect(Collectors.toList());
@@ -108,25 +108,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
     }
 
-
-    /**
-     * @return the foreign key that reference this table
-     */
-    public List<ForeignKeyDef> getExternalForeignKeys() {
-
-        List<ForeignKeyDef> externalForeignKey = new ArrayList<>();
-        for (TableDef tableDef : schema.getTables()) {
-            if (tableDef.equals(this)) {
-                continue;
-            }
-            for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
-                if (foreignKeyDef.getForeignPrimaryKey().getTableDef().equals(this)) {
-                    externalForeignKey.add(foreignKeyDef);
-                }
-            }
-        }
-        return externalForeignKey;
-    }
 
 
 
@@ -168,7 +149,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
         }
         if (uniqueKeyDefToReturn == null) {
-            uniqueKeyDefToReturn = new UniqueKeyDef(this)
+            uniqueKeyDefToReturn = UniqueKeyDef.of(this)
                     .addColumns(Arrays.asList(columnDefs));
             uniqueKeys.add(uniqueKeyDefToReturn);
         }
@@ -215,7 +196,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         try {
             foreignKeyOf(primaryKeyDef, columnNames);
         } catch (Exception e) {
-            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getTableDef() + "). See the message below.", e);
+            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getRelationDef().getDataPath() + "). See the message below.", e);
         }
         return this;
     }
@@ -231,7 +212,7 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         try {
             foreignKeyOf(primaryKeyDef, columnNames.toArray(new String[0]));
         } catch (Exception e) {
-            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getTableDef() + "). See the message below.", e);
+            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getRelationDef().getDataPath() + "). See the message below.", e);
         }
         return this;
     }
@@ -255,26 +236,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
 
 
-
-    /**
-     * TODO: TableDef should only have metadata, move this
-     * The generation of a SQL must not be inside
-     *
-     * @return
-     */
-    @Override
-    public String getQuery() {
-        /**
-         * {@link DatabaseMetaData#getIdentifierQuoteString()}
-         */
-        return "select * from " + getFullyQualifiedName();
-    }
-
-
-    public TableDef setSchema(SchemaDef schemaDef) {
-        this.schema = schemaDef;
-        return this;
-    }
 
     public TableDef addColumn(String columnName) {
         meta.addColumn(columnName);
@@ -306,18 +267,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
         return this;
     }
 
-    @Override
-    public ResultSet getResultSet() {
-
-        return Queries.getResultSet(this);
-
-    }
-
-
-    public TableDef setDatabase(Database database) {
-        this.schema = database.getCurrentSchema();
-        return this;
-    }
 
     public void deleteForeignKey(ForeignKeyDef foreignKeyDef) {
 
@@ -329,13 +278,6 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
     }
 
-    public List<TableDef> getForeignTables() {
-        List<TableDef> tableDefs = new ArrayList<>();
-        for (ForeignKeyDef foreignKeyDef:getForeignKeys()){
-            tableDefs.add(foreignKeyDef.getForeignPrimaryKey().getTableDef());
-        }
-        return tableDefs;
-    }
 
     /**
      * Property value are generally given via a {@link DataDefs data definition file}
@@ -376,5 +318,9 @@ public class TableDef extends RelationDefAbs implements ISqlRelation {
 
         this.primaryKeyDef = PrimaryKeyDef.of(this,columnNames);
         return this.primaryKeyDef;
+    }
+
+    public JdbcDataPath getDataPath() {
+        return (JdbcDataPath) this.dataPath;
     }
 }

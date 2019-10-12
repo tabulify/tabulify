@@ -18,8 +18,6 @@ import java.util.*;
  * A service provider is a concrete implementation of this class that
  * implements the abstract methods defined by this class.
  * <p/>
- * A provider is identified by a {@code URI} {@link #getScheme() scheme}.
- * <p/>
  * A factory method class defines how providers are located
  * and loaded.
  * The first invocation of a method (such as installedTableSystemProviders)
@@ -32,9 +30,6 @@ import java.util.*;
  * <p/>
  * All providers have generally zero argument constructor that initializes the provider.
  * <p/>
- * A provider is a factory for one or more (service) object instances.
- * Each service is identified by a {@code URI} where the URI's scheme matches
- * the provider's {@link #getScheme scheme}.
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */

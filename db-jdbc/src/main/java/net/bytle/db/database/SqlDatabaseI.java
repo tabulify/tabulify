@@ -1,6 +1,6 @@
 package net.bytle.db.database;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.jdbc.TableDef;
 
 import java.util.List;
 

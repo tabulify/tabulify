@@ -21,7 +21,7 @@ The data generation metadata may be given when:
   * or adding a table to the [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java)
    
 Furthermore, the [DataGeneration](./src/main/java/net.bytle.db/gen/DataGeneration.java) will try to find any missing information
-in the property of the tables and columns (which is the case when the tableDef is created from a DataDefinition file).
+in the property of the tables and columns (which is the case when the relationDef is created from a DataDefinition file).
 
 ## Example
 

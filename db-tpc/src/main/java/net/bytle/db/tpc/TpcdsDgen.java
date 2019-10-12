@@ -5,7 +5,6 @@ import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
 import com.teradata.tpcds.TableGenerator;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;

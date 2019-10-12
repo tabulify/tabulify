@@ -1,6 +1,7 @@
 package net.bytle.db.sample;
 
-import net.bytle.db.model.TableDef;
+
+import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ public interface SchemaSample {
     /**
      * @return all tables
      */
-    List<TableDef> getTables();
+    List<DataPath> getTables();
 
     /**
      * @param tableName
@@ -18,8 +19,9 @@ public interface SchemaSample {
      * The table name must be public constant in each class
      * to allow getting one table
      */
-    TableDef getTable(String tableName);
+    DataPath getTable(String tableName);
 
 
-    List<TableDef> getTables(String... tableNames);
+    List<DataPath> getTables(String... tableNames);
+
 }

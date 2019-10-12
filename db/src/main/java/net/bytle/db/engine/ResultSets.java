@@ -3,7 +3,6 @@ package net.bytle.db.engine;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.model.DataType;
 import net.bytle.db.model.RelationDef;
 
 import java.sql.ResultSet;

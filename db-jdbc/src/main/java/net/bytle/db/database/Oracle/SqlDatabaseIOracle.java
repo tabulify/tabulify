@@ -3,6 +3,7 @@ package net.bytle.db.database.Oracle;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.SqlDatabase;
+import net.bytle.db.jdbc.JdbcDataSystem;
 import oracle.jdbc.OracleTypes;
 
 import java.util.HashMap;
@@ -26,8 +27,8 @@ public class SqlDatabaseIOracle extends SqlDatabase {
         dataTypeDatabaseSet.put(OraDbLongRawType.TYPE_CODE, new OraDbLongRawType());
     }
 
-    public SqlDatabaseIOracle(Database database) {
-        super(database);
+    public SqlDatabaseIOracle(JdbcDataSystem jdbcDataSystem) {
+        super(jdbcDataSystem);
     }
 
 

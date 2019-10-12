@@ -1,39 +1,16 @@
 package net.bytle.db.model;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
 /**
- * No setter because of chaining initialization please
  *
- *   * A query
- *   * A table
+ * The structure of the data
+ *
  */
 public interface RelationDef {
 
-    // The system
-    Database getDatabase();
-
-    // The namespace
-    SchemaDef getSchema();
-
-    // The name
-    String getName();
-
-    /**
-     * Fully Qualified name in Bytle Db (ie with the database Name)
-     *
-     * @return
-     */
-    String getId();
-
-    /**
-     * Full qualified name inside the database scope (ie in a sql)
-     *
-     * @return
-     */
-    String getFullyQualifiedName();
 
     List<ColumnDef> getColumnDefs();
 
@@ -59,5 +36,5 @@ public interface RelationDef {
      */
     <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
 
-
+    DataPath getDataPath();
 }

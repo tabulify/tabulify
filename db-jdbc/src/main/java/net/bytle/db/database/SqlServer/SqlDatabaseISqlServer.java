@@ -3,6 +3,7 @@ package net.bytle.db.database.SqlServer;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.SqlDatabase;
+import net.bytle.db.jdbc.JdbcDataSystem;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +29,8 @@ public class SqlDatabaseISqlServer extends SqlDatabase {
         dataTypeDatabaseSet.put(SlqServerDbSmallIntType.TYPE_CODE, new SlqServerDbSmallIntType());
     }
 
-    public SqlDatabaseISqlServer(Database database) {
-        super(database);
+    public SqlDatabaseISqlServer(JdbcDataSystem jdbcDataSystem) {
+        super(jdbcDataSystem);
     }
 
 

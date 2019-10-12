@@ -1,7 +1,8 @@
 package net.bytle.db.database;
 
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.jdbc.JdbcDataSystem;
+import net.bytle.db.jdbc.TableDef;
 
 import java.util.List;
 
@@ -19,8 +20,8 @@ public abstract class SqlDatabase implements SqlDatabaseI {
     private  Database database = null;
     private  SqlDatabaseProvider sqlDatabaseProvider = null;
 
-    public SqlDatabase(Database database) {
-        this.database = database;
+    public SqlDatabase(JdbcDataSystem jdbcDataSystem) {
+        this.database = jdbcDataSystem.getDatabase();
     }
 
     public SqlDatabase(SqlDatabaseProvider databaseProvider) {

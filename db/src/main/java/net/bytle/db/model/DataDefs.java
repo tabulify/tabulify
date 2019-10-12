@@ -40,7 +40,7 @@ public class DataDefs {
      * @param path
      * @return
      */
-    public List<TableDef> load(Path path) {
+    public List<RelationDef> load(Path path) {
 
         if (!Files.exists(path)) {
             throw new RuntimeException("The data definition file path (" + path.toAbsolutePath().toString() + " does not exist");
@@ -54,10 +54,10 @@ public class DataDefs {
             fileDiscovered.addAll(Fs.getDescendantFiles(path));
         }
 
-        Set<TableDef> tableDefsToReturn = new TreeSet<>();
+        Set<RelationDef> tableDefsToReturn = new TreeSet<>();
         for (Path filePath : fileDiscovered) {
 
-            List<TableDef> tableDefsFromDataFile = readFile(filePath);
+            List<RelationDef> tableDefsFromDataFile = readFile(filePath);
             List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
 
             switch (names.size()) {
@@ -113,7 +113,7 @@ public class DataDefs {
      * @param path
      * @return a list of tableDef
      */
-    private static List<TableDef> readFile(Path path) {
+    private static List<RelationDef> readFile(Path path) {
 
         InputStream input;
         try {
@@ -141,7 +141,7 @@ public class DataDefs {
             }
             documents.add(document);
         }
-        List<TableDef> tableDefs = new ArrayList<>();
+        List<RelationDef> tableDefs = new ArrayList<>();
         switch (documents.size()) {
             case 0:
                 break;
@@ -159,7 +159,7 @@ public class DataDefs {
                     } else {
                         name = (String) nameAsObject;
                     }
-                    TableDef dataDef = Tables.get(name);
+                    RelationDef dataDef = Tables.get(name);
                     tableDefs.add(dataDef);
 
                     // Loop through all other properties

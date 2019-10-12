@@ -1,13 +1,15 @@
-package net.bytle.db.model;
+package net.bytle.db.jdbc;
 
+import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.engine.Tables;
-import net.bytle.cli.Log;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.PrimaryKeyDef;
+import net.bytle.db.model.UniqueKeyDef;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -73,7 +75,7 @@ public class DbObjectBuilder {
 
         // Bug in SQLite Driver - Hack
         // that doesn't return the good primary ley
-        Boolean done = tableDef.getDatabase().getSqlDatabase().addPrimaryKey(tableDef);
+        Boolean done = tableDef.getDataPath().getDataSystem().getSqlDatabase().addPrimaryKey(tableDef);
         if (done == null || done) {
             return;
         }
@@ -87,7 +89,7 @@ public class DbObjectBuilder {
         pkProp.add(key_seq);
 
         // Primary Key building
-        ResultSet pkResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getPrimaryKeys(null, tableDef.getSchema().getName(), tableDef.getName());
+        ResultSet pkResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName());
         // Collect all the data because we don't known if they will be in order
         // and because in a recursive call, the result set may be closed
         List<Map<String, String>> pkColumns = new ArrayList<>();
@@ -114,124 +116,72 @@ public class DbObjectBuilder {
 
     }
 
-    /**
-     * The fully qualified name is the name with its schema
-     * that can be used in SQL Statement
-     * TODO: Move that in a SQL manager
-     *
-     * @param tableName
-     * @param schemaName
-     * @return
-     */
-    public String getFullyQualifiedName(String tableName, String schemaName) {
-        if (schemaName == null) {
-            schemaName = database.getCurrentSchema().getName();
-        }
-        final String statementTableName = database.getStatementTableName(tableName);
-
-        // No schema functionality (Sqlite has a schema on database level)
-        if (schemaName == null) {
-            return statementTableName;
-        } else {
-            /**
-             * Only for catalog
-             * {@link DatabaseMetaData#getCatalogSeparator()}
-             */
-            return schemaName + "." + statementTableName;
-        }
-
-
+    public static DbObjectBuilder of(Database database) {
+        return new DbObjectBuilder(database);
     }
+
 
     /**
      * Build a table from a database
      * if no table is found, return null
      * The table get a schema but the whole schema will not be build
      *
-     * @param tableName
+     * @param jdbcDataPath
      * @return null if no table is found
      */
-    public TableDef getTableDef(String tableName, String schemaName) {
-
-        // Table already build and in the cache ?
-        String id = getId(tableName, schemaName);
-        SchemaDef schemaDef = database.getSchema(schemaName);
-        TableDef tableDef = new TableDef(database, tableName).setSchema(schemaDef);
+    public TableDef getTableDef(JdbcDataPath jdbcDataPath) {
 
 
-        if (database.getCurrentConnection() == null) {
+        try {
 
-            return tableDef;
+            LOGGER.fine("Building the table structure for the data path (" + jdbcDataPath +")");
 
-        } else {
+            String[] types = {"TABLE"};
+            String schema = jdbcDataPath.getSchema().getName();
+            String catalog = jdbcDataPath.getCatalog();
+            String tableName = jdbcDataPath.getName();
 
-            try {
+            ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
+            boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
+            TableDef tableDef = TableDef.of(jdbcDataPath);
+            if (!tableExist) {
 
-                LOGGER.fine("Building the table (or view)" + id);
-                String[] types = {"TABLE"};
-                String schemaPattern = schemaName;
-                if (schemaPattern == null) {
-                    schemaPattern = database.getCurrentConnection().getSchema();
-                }
+                tableResultSet.close();
+                return tableDef;
 
-                ResultSet tableResultSet = database.getCurrentConnection().getMetaData().getTables(null, schemaPattern, tableName, types);
-                boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-                if (!tableExist) {
+            } else {
 
-                    tableResultSet.close();
-                    return tableDef;
+                tableDef.JdbcType(tableResultSet.getString("TABLE_TYPE"));
+                tableResultSet.close();
 
-                } else {
+                // Columns building
+                buildTableColumns(tableDef);
+                // Pk Building
+                buildPrimaryKey(tableDef);
+                // Foreign Key building
+                buildForeignKey(tableDef);
+                // Unique Key
+                buildUniqueKey(tableDef);
 
-                    tableDef.JdbcType(tableResultSet.getString("TABLE_TYPE"));
-                    tableResultSet.close();
+                // Return the table
+                return tableDef;
 
-                    // Columns building
-                    buildTableColumns(tableDef);
-                    // Pk Building
-                    buildPrimaryKey(tableDef);
-                    // Foreign Key building
-                    buildForeignKey(tableDef);
-                    // Unique Key
-                    buildUniqueKey(tableDef);
-
-                    // Return the table
-                    return tableDef;
-
-                }
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
 
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
-    }
-
-
-    /**
-     * Id is build at the beginning from the name
-     * and not from the object
-     * <p>
-     * It's used in the cache
-     *
-     * @param tableName
-     * @param schemaName
-     * @return
-     */
-    String getId(String tableName, String schemaName) {
-
-        return database.getDatabaseName() + "." + getFullyQualifiedName(tableName, schemaName);
 
     }
 
 
     private static void buildTableColumns(TableDef tableDef) throws SQLException {
 
-        Boolean added = tableDef.getDatabase().getSqlDatabase().addColumns(tableDef);
+        Boolean added = tableDef.getDataPath().getDataSystem().getSqlDatabase().addColumns(tableDef);
         if (!added) {
 
-            ResultSet columnResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getColumns(null, tableDef.getSchema().getName(), tableDef.getName(), null);
+            ResultSet columnResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getColumns(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName(), null);
 
             while (columnResultSet.next()) {
 
@@ -273,20 +223,6 @@ public class DbObjectBuilder {
 
     }
 
-    /**
-     * @param tableName
-     * @param relationDef
-     * @return a table def from a result set metadata
-     * @throws SQLException
-     */
-    public TableDef getTableDef(RelationDef relationDef, String tableName, String schemaName) {
-
-        // Table
-        TableDef tableDef = database.getTable(tableName, schemaName);
-        Tables.addColumns(tableDef, relationDef);
-
-        return tableDef;
-    }
 
     /**
      * Build Foreign Key based on
@@ -304,12 +240,12 @@ public class DbObjectBuilder {
 
         // SQLite Driver doesn't return a empty string as key name
         // for all foreigns key
-        Boolean done = tableDef.getDatabase().getSqlDatabase().addForeignKey(tableDef);
+        Boolean done = tableDef.getDataPath().getDataSystem().getSqlDatabase().addForeignKey(tableDef);
         if (done == null || done) {
             return;
         }
 
-        Database database = tableDef.getDatabase();
+        Database database = tableDef.getDataPath().getDataSystem().getDatabase();
         // Collect all fk data
         Map<String, ForeignKeyDef> fkMap = new HashMap<>();
 
@@ -317,11 +253,13 @@ public class DbObjectBuilder {
         String col_fk_name = "FK_NAME";
         String col_fkcolumn_name = "FKCOLUMN_NAME";
         String col_fktable_schem = "FKTABLE_SCHEM";
+        String col_fktable_cat = "FKTABLE_CAT";
         String col_fktable_name = "FKTABLE_NAME";
         //  --- Pk referenced
         String col_pkcolumn_name = "PKCOLUMN_NAME";
         String col_pktable_name = "PKTABLE_NAME";
         String col_pktable_schem = "PKTABLE_SCHEM";
+        String col_pktable_cat = "PKTABLE_CAT";
         String col_pk_name = "PK_NAME";
         //  ---- Column seq for FK and PK
         String col_key_seq = "KEY_SEQ";
@@ -331,10 +269,12 @@ public class DbObjectBuilder {
         resultSetColumnNames.add(col_fk_name);
         resultSetColumnNames.add(col_fkcolumn_name);
         resultSetColumnNames.add(col_fktable_schem);
+        resultSetColumnNames.add(col_fktable_cat);
         resultSetColumnNames.add(col_fktable_name);
         resultSetColumnNames.add(col_pkcolumn_name);
         resultSetColumnNames.add(col_pktable_name);
         resultSetColumnNames.add(col_pktable_schem);
+        resultSetColumnNames.add(col_pktable_cat);
         resultSetColumnNames.add(col_pk_name);
         resultSetColumnNames.add(col_key_seq);
 
@@ -348,7 +288,7 @@ public class DbObjectBuilder {
 
         try (
                 // ImportedKey = the primary keys imported by a table
-                ResultSet fkResultSet = database.getCurrentConnection().getMetaData().getImportedKeys(null, tableDef.getSchema().getName(), tableDef.getName());
+                ResultSet fkResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName());
         ) {
 
             while (fkResultSet.next()) {
@@ -368,23 +308,23 @@ public class DbObjectBuilder {
             }
 
         } catch (Exception e) {
-            String s = "Error when building Foreign Key (ie imported keys) for the table " + tableDef.getFullyQualifiedName();
+            String s = "Error when building Foreign Key (ie imported keys) for the table " + tableDef.getDataPath();
             LOGGER.severe(s);
             System.err.println(s);
             throw new RuntimeException(e);
         }
 
         // How much foreign key (ie how much foreign key tables)
-        List<String> foreignTableNames = fkDatas.stream()
-                .map(s -> s.get(col_pktable_name))
+        List<JdbcDataPath> foreignTableNames = fkDatas.stream()
+                .map(s -> JdbcDataPath.of(tableDef.getDataPath().getDataSystem(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
                 .collect(Collectors.toList());
 
 
-        for (String fkTable : foreignTableNames) {
+        for (JdbcDataPath foreignTable : foreignTableNames) {
             Map<Integer, String> cols = new HashMap<>();
             String fk_name = "";
             for (Map<String, String> fkData : fkDatas) {
-                if (fkData.get(col_pktable_name).equals(fkTable)) {
+                if (fkData.get(col_pktable_name).equals(foreignTable)) {
                     cols.put(Integer.valueOf(fkData.get(col_key_seq)), fkData.get(col_fkcolumn_name));
                     fk_name = fkData.get(col_fk_name);
                 }
@@ -394,8 +334,7 @@ public class DbObjectBuilder {
                     .map(s -> cols.get(s))
                     .collect(Collectors.toList());
 
-            TableDef foreignTable = tableDef.getSchema().getTableOf(fkTable);
-            final PrimaryKeyDef primaryKey = foreignTable.getPrimaryKey();
+            final PrimaryKeyDef primaryKey = foreignTable.getDataDef().getPrimaryKey();
             if (primaryKey == null) {
                 throw new RuntimeException("The foreign table (" + foreignTable + ") has no primary key");
             }
@@ -411,9 +350,9 @@ public class DbObjectBuilder {
      * because the getIndex function of JDBC returns also the unique index of the primary
      * key. We need then the primary key information in order to exclude it from the building
      *
-     * @param tableDef
+     * @param metaDataDef
      */
-    private void buildUniqueKey(TableDef tableDef) {
+    private void buildUniqueKey(TableDef metaDataDef) {
 
         // Collect all data first because we need all columns that make a unique key before
         // building the object
@@ -422,7 +361,7 @@ public class DbObjectBuilder {
         final String column_name_alias = "COLUMN_NAME";
         try (
                 // Oracle need to have the approximate argument to true, otherwise we get a ORA-01031: insufficient privileges
-                ResultSet indexResultSet = tableDef.getDatabase().getCurrentConnection().getMetaData().getIndexInfo(null, tableDef.getSchema().getName(), tableDef.getName(), true, true);
+                ResultSet indexResultSet = metaDataDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(metaDataDef.getDataPath().getCatalog(), metaDataDef.getDataPath().getSchema().getName(), metaDataDef.getDataPath().getName(), true, true);
         ) {
             while (indexResultSet.next()) {
 
@@ -443,7 +382,7 @@ public class DbObjectBuilder {
             }
 
         } catch (SQLException e) {
-            String s = "Error when building the unique key (ie indexinfo) of the table (" + tableDef.getFullyQualifiedName() + ")";
+            String s = "Error when building the unique key (ie indexinfo) of the table (" + metaDataDef.getDataPath() + ")";
             LOGGER.severe(s);
             System.err.println(s);
             throw new RuntimeException(e);
@@ -458,18 +397,18 @@ public class DbObjectBuilder {
             List<ColumnDef> columnDefs = new ArrayList<>();
             Collections.sort(positions);
             for (Integer pos : positions) {
-                ColumnDef columnDef = tableDef.getColumnDef(indexProperties.get(pos));
+                ColumnDef columnDef = metaDataDef.getColumnDef(indexProperties.get(pos));
                 columnDefs.add(columnDef);
             }
 
             // We don't want the unique index of the primary key
-            PrimaryKeyDef primaryKeyDef = tableDef.getPrimaryKey();
+            PrimaryKeyDef primaryKeyDef = metaDataDef.getPrimaryKey();
             if (primaryKeyDef.getColumns().equals(columnDefs)) {
                 continue;
             }
 
             // Construct the unique key
-            UniqueKeyDef uniqueKey = tableDef.getOrCreateUniqueKey(columnDefs.toArray(new ColumnDef[columnDefs.size()]));
+            UniqueKeyDef uniqueKey = metaDataDef.getOrCreateUniqueKey(columnDefs.toArray(new ColumnDef[columnDefs.size()]));
             uniqueKey.name(indexName);
 
         }
@@ -477,96 +416,8 @@ public class DbObjectBuilder {
 
     }
 
-    /**
-     * When this method is called, it's because the schema was not yet built
-     *
-     * @param schemaDef
-     * @return
-     */
-    public List<TableDef> buildSchema(SchemaDef schemaDef) {
-
-        List<TableDef> tableDefs = new ArrayList<>();
-        if (schemaDef.getDatabase().getCurrentConnection() != null) {
-
-            String[] types = {"TABLE"};
-
-            try {
-                ResultSet tableResultSet = schemaDef.getDatabase().getCurrentConnection().getMetaData().getTables(null, schemaDef.getName(), null, types);
-                List<String> tableNames = new ArrayList<>();
-                while (tableResultSet.next()) {
-
-                    tableNames.add(tableResultSet.getString("TABLE_NAME"));
-
-                }
-                tableResultSet.close();
-
-                // getTableDef make also used of the getTables
-                // and it seems that there is a cache because the result was closed
-                // We do then a second loop
-                for (String tableName : tableNames) {
-                    TableDef tableDef = getTableDef(tableName, schemaDef.getName());
-                    tableDefs.add(tableDef);
-                }
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-        return tableDefs;
-
-    }
 
 
-    /**
-     * @param database
-     * @return the list of schema for this database
-     */
-    public List<SchemaDef> buildSchemas(Database database) {
 
-        List<SchemaDef> schemaDefList = new ArrayList<>();
-        if (database.getCurrentConnection() != null) {
-
-            try {
-
-                // Always NULL
-                // because otherwise it's not a pattern but
-                // it must match the schema name
-                // We build all schemas then
-                final String schemaPattern = null;
-                ResultSet schemaResultSet = database.getCurrentConnection().getMetaData().getSchemas(null, schemaPattern);
-
-                // Sqlite Driver return a NULL resultSet
-                // because SQLite does not support schema ?
-                if (schemaResultSet != null) {
-                    while (schemaResultSet.next()) {
-
-                        SchemaDef schema = database.getSchema(schemaResultSet.getString("TABLE_SCHEM"));
-                        schemaDefList.add(schema);
-
-                    }
-                    schemaResultSet.close();
-                }
-
-            } catch (java.sql.SQLFeatureNotSupportedException e) {
-
-                LOGGER.warning("Schemas are not supported on this database.");
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-        return schemaDefList;
-    }
-
-
-    /**
-     * @param query
-     * @return a query def
-     */
-    public QueryDef getQueryDef(String query) {
-        return new QueryDef(database, query);
-    }
 
 }
