@@ -25,8 +25,8 @@ public class DbXml {
 
 
         // A client command example
-        String example = "To get the text value of the node defined by an Xpath expression, you would type:\n" +
-                CliUsage.getFullChainOfCommand(cliCommand) + " get --xpath \"//Repository/DECLARE/Database[@name=\\\"databaseName\\\"]/\" -in inputFile.xml \n";
+        String example = "To of the text value of the node defined by an Xpath expression, you would type:\n" +
+                CliUsage.getFullChainOfCommand(cliCommand) + " of --xpath \"//Repository/DECLARE/Database[@name=\\\"databaseName\\\"]/\" -in inputFile.xml \n";
 
 
         cliCommand.commandOf(Words.EXTRACT)

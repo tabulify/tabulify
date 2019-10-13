@@ -71,7 +71,7 @@ public class ResultSetLoaderConsumer implements Runnable {
                 // with the take method.
                 objects = queue.poll(1, TimeUnit.SECONDS);
                 if (objects == null) {
-                    LOGGER.warning("The timeout to get a element in the queue was reached."
+                    LOGGER.warning("The timeout to of a element in the queue was reached."
                             + " As it may be the end of the queue, we continue.)");
                     continue;
                 }

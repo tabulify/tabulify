@@ -5,11 +5,10 @@ import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.DbDml;
 import net.bytle.db.engine.Relations;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.cli.Log;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
@@ -23,13 +22,13 @@ import java.util.List;
 public class SqlInsertStream extends InsertStreamAbs implements InsertStream, AutoCloseable {
 
     public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
-    private final TableDef relationDef;
+    private final TableDef targetMetaDef;
     private final JdbcDataPath jdbcDataPath;
 
     private PreparedStatement preparedStatement;
     private Connection connection;
     private String insertStatement;
-    private RelationDef sourceTableDef;
+    private RelationDef sourceMetaDef;
     private Boolean supportBatch;
     private Boolean supportNamedParameters;
     private Statement statement;
@@ -37,7 +36,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     private SqlInsertStream(JdbcDataPath jdbcDataPath) {
         super(jdbcDataPath);
         this.jdbcDataPath = jdbcDataPath;
-        this.relationDef = jdbcDataPath.getDataDef();
+        this.targetMetaDef = jdbcDataPath.getDataDef();
         init();
     }
 
@@ -59,7 +58,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 for (int i = 0; i < values.size(); i++) {
 
                     Object sourceObject = values.get(i);
-                    final ColumnDef column = sourceTableDef.getColumnDef(i);
+                    final ColumnDef column = sourceMetaDef.getColumnDef(i);
                     int targetColumnType = column.getDataType().getTypeCode();
                     try {
                         if (sourceObject != null) {
@@ -97,7 +96,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
             } else {
 
-                insertStatement = DbDml.getInsertStatement(relationDef, sourceTableDef, values);
+                insertStatement = DbDml.getInsertStatement(targetMetaDef, sourceMetaDef, values);
                 statement.execute(insertStatement);
                 currentRowInLogicalBatch++;
 
@@ -106,7 +105,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         } catch (SQLException e) {
 
             resourceClose();
-            throw new RuntimeException("Table: " + relationDef.getDataPath(), e);
+            throw new RuntimeException("Table: " + targetMetaDef.getDataPath(), e);
 
         }
 
@@ -125,7 +124,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
             if (Math.floorMod(insertStreamListener.getBatchCount(), feedbackFrequency) == 0) {
-                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + relationDef.getDataPath());
+                LOGGER.info(insertStreamListener.getRowCount() + " rows loaded in the table " + targetMetaDef.getDataPath());
             }
             currentRowInLogicalBatch = 0;
         }
@@ -144,18 +143,18 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         final Database database = getDataPath().getDataSystem().getDatabase();
         if (!Tabulars.exists(jdbcDataPath)) {
             if (jdbcDataPath.getDataDef().getColumnDefs().size() == 0) {
-                Relations.addColumns(relationDef, sourceTableDef);
+                Relations.addColumns(targetMetaDef, sourceMetaDef);
             }
             Tabulars.create(jdbcDataPath);
         }
 
-        if (database.getMaxWriterConnection() == 1) {
-            connection = database.getCurrentConnection();
+        if (jdbcDataPath.getDataSystem().getMaxWriterConnection() == 1) {
+            connection = jdbcDataPath.getDataSystem().getCurrentConnection();
         } else {
-            connection = database.getNewConnection("InsertStream Table " + relationDef.getName());
+            connection = jdbcDataPath.getDataSystem().getNewConnection("InsertStream Table " + jdbcDataPath);
         }
-        if (sourceTableDef == null) {
-            sourceTableDef = relationDef;
+        if (sourceMetaDef == null) {
+            sourceMetaDef = targetMetaDef;
         }
 
         try {
@@ -170,7 +169,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 // turn off autocommit for the batch update
                 // By default, it's ON
                 // See https://docs.oracle.com/javase/7/docs/api/java/sql/Connection.html
-                // If the setAutocommit comes after the sourceResultSet, with LONG Oracle you get a stream errors
+                // If the setAutocommit comes after the sourceResultSet, with LONG Oracle you of a stream errors
                 // Auto-commit mode indicates to the database whether to issue an automatic COMMIT operation
                 // after every SQL operation.
                 connection.setAutoCommit(false);
@@ -199,7 +198,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         try {
 
             if (this.supportNamedParameters) {
-                insertStatement = DbDml.getParameterizedInsertStatement(tableDef, sourceTableDef);
+                insertStatement = DbDml.getParameterizedInsertStatement(targetMetaDef, sourceMetaDef);
                 LOGGER.info("Insert Statement:" + insertStatement);
                 preparedStatement = connection.prepareStatement(insertStatement);
             } else {
@@ -234,9 +233,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             insertStreamListener.addRows(currentRowInLogicalBatch);
 
 
-            LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + relationDef.getFullyQualifiedName());
-            LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + relationDef.getFullyQualifiedName());
-            LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + relationDef.getFullyQualifiedName());
+            LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + jdbcDataPath);
+            LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + jdbcDataPath);
+            LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + jdbcDataPath);
 
             resourceClose();
 
@@ -277,7 +276,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             if (!connection.getAutoCommit()) {
                 connection.commit();
                 insertStreamListener.incrementCommit();
-                LOGGER.info("commit in the table " + relationDef.getFullyQualifiedName());
+                LOGGER.info("commit in the table " + jdbcDataPath);
             } else {
                 throw new RuntimeException("Don't send a commit on a autocommit session");
             }
@@ -312,7 +311,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
-            if (relationDef.getDatabase().getMaxWriterConnection() > 1) {
+            if (targetMetaDef.getDataPath().getDataSystem().getMaxWriterConnection() > 1) {
                 if (connection != null) {
                     connection.close();
                 }
@@ -352,7 +351,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
      * @return
      */
     public SqlInsertStream setDataDef(RelationDef dataDef) {
-        this.sourceTableDef = dataDef;
+        this.sourceMetaDef = dataDef;
         return this;
     }
 }

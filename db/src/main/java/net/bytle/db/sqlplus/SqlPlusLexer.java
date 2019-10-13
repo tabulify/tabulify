@@ -369,7 +369,7 @@ final public class SqlPlusLexer implements AutoCloseable {
 
 
         /**
-         * @param path: This is possible to get the stream from a path object
+         * @param path: This is possible to of the stream from a path object
          * @return
          */
         public Builder path(Path path) {

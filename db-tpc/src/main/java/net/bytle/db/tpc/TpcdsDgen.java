@@ -127,7 +127,7 @@ public class TpcdsDgen {
 //                            .stream()
 //                            .filter(s -> s.getName().toLowerCase().equals(tableDef.getName().toLowerCase()))
 //                            .collect(Collectors.toList())
-//                            .get(0);
+//                            .of(0);
                 }
 
 

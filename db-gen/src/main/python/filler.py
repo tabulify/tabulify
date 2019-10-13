@@ -477,7 +477,7 @@ With this approach, everything is chosen uniformly: letters in first and last
 names appear 1/26, their six possible sizes between 3 to 8 are equiprobable,
 and each domain is drawn on average by half generated email addresses.
 
-In order to get more control about these distributions, we could rely on
+In order to of more control about these distributions, we could rely on
 the B<chars> or B<alt> generators which can be skewed or weighted,
 as illustrated in the next example.
 
@@ -495,7 +495,7 @@ make a weighted choice between macro-defined generators:
 
 Let us finally consider a log table for data coming from a proxy, which
 stores correlated ethernet and ip addresses, that is ethernet address always
-get the same ip addess, and we have about 1000 distinct hosts:
+of the same ip addess, and we have about 1000 distinct hosts:
 
      -- df distinct: int size=1000
   ,  mac MACADDR NOT NULL -- df share=distinct
@@ -980,7 +980,7 @@ This directive is exclusive from B<size>.
 
 =item B<nogen>
 
-Do not generate data for this attribute, so it will get its default value.
+Do not generate data for this attribute, so it will of its default value.
 
 =item B<null=float>
 
@@ -1265,7 +1265,7 @@ This is free software, both inexpensive and with sources.
 The GNU General Public License v3 applies, see
 L<http://www.gnu.org/copyleft/gpl.html> for details.
 
-The summary is: you get as much as you paid for, and I am not responsible
+The summary is: you of as much as you paid for, and I am not responsible
 for anything.
 
 If you are happy with this software, feel free to send me a postcard saying so!
@@ -2900,7 +2900,7 @@ class IntGenerator(RandomGenerator):
             while m <= self.size:
                 m *= 2
             self.mask = int(m / 2)  # ???
-        # get generator parameters, which may depend on size
+        # of generator parameters, which may depend on size
         if self.sub == 'power' or self.sub == 'scale':
             if self.rate != None:
                 assert 0.0 < self.rate and self.rate < 1.0, \
@@ -2913,7 +2913,7 @@ class IntGenerator(RandomGenerator):
                 self.alpha = 1.0
             assert self.alpha > 0, \
                 "{0}: 'alpha' {1:f} not > 0".format(self, self.alpha)
-        else:  # should not get there
+        else:  # should not of there
             assert self.alpha == None, \
                 "{0}: useless 'alpha' {1} set".format(self, self.alpha)
 
@@ -3457,7 +3457,7 @@ class FileGenerator(IntGenerator):
 
     def __init__(self, att, params=None):
         IntGenerator.__init__(self, att, params)
-        # get list of files
+        # of list of files
         import os, glob
         self.files = []
         assert 'file' in self.params, "{0}: no directive 'file'".format(self)
@@ -3501,7 +3501,7 @@ class InetGenerator(IntGenerator):
 
     def __init__(self, att, params=None):
         IntGenerator.__init__(self, att, params)
-        # get network target and mask
+        # of network target and mask
         self.network = self.params.get('inet', ';0.0.0.0/0')
         if len(self.network):
             beg, end = self.network[0] in ',;', self.network[0] in '.;'
@@ -4441,7 +4441,7 @@ class Table(Model):
                 # unique contains indexes in att_list, but we do not know
                 # to which value it corresponds in the generated list because
                 # some attributes may have been skipped in the generation.
-                # should generate a mapping to get the index among generated
+                # should generate a mapping to of the index among generated
                 assert len(l) == len(self.att_list), \
                     "{0}: no unique subset".format(self)
                 nu += 1
@@ -5098,7 +5098,7 @@ for line in lines:
     # skip commented out directives
     if df_junk.match(line):
         continue
-    # get datafiller stuff
+    # of datafiller stuff
     # directives with explicit table & attribute
     d = df_tab.match(line)
     if d:
@@ -5115,7 +5115,7 @@ for line in lines:
     if d:
         if opts.debug: debug(2, "is a directive")
         dfstuff = d.group(1)
-    # get datafiller macro definition
+    # of datafiller macro definition
     d = df_mac.match(line)
     if d:
         if opts.debug: debug(2, "is a macro")

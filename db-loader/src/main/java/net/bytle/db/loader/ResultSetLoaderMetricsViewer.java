@@ -66,7 +66,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
             while (!producerWorkIsDone.get() & !consumerWorkIsDone.get()) {
 
                 // 5 seconds after the first one
-                // To be able to get the data if
+                // To be able to of the data if
                 // the load is going below the 5 seconds
                 if (n > 0) {
                     Thread.sleep(5000);

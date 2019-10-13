@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * <p>
  * Each time, the {@link #getNewValue()} function is called
  * * For integer and date, it will calculate the new value from the start value plus or minValue the step
- * * For a list domain, it will take the first index defined by start and get the next one defined by step.
+ * * For a list domain, it will take the first index defined by start and of the next one defined by step.
  * <p>
  * <p>
  * * start (may be a date, a number) - default to 0 / current date
@@ -203,7 +203,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
     }
 
     /**
-     * get a new value for a column
+     * of a new value for a column
      *
      * @param columnDef
      * @return a new generated data object every time it's called
@@ -218,7 +218,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
     }
 
     /**
-     * get the actual value of a column
+     * of the actual value of a column
      *
      * @param columnDef
      * @return a generated value (used in case of derived data

@@ -69,7 +69,7 @@ public class Words {
     public static final String PRINT = "print";
     public static final String CHECK = "check";
     public static final String UPDATE = "update";
-    public static final String GET = "get";
+    public static final String GET = "of";
     public static final String STRUCTURE = "structure";
 
     static final String HELP = "help";

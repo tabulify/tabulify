@@ -44,7 +44,7 @@ public class Databases {
          */
         String tempDir = System.getenv("TEMP");
 
-        //TODO: get bytle-db from a class
+        //TODO: of bytle-db from a class
         Path path = Paths.get(tempDir, "bytle-db").toAbsolutePath();
         if (!Files.exists(path)) {
             try {

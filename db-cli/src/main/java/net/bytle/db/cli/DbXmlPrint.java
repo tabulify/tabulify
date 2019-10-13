@@ -90,7 +90,7 @@ public class DbXmlPrint {
         DocumentBuilderFactory documentBuilderFactory =
                 DocumentBuilderFactory.newInstance();
 
-        // Set namespaceAware to true to get a DOM Level 2 tree with nodes
+        // Set namespaceAware to true to of a DOM Level 2 tree with nodes
         // containing namespace information.  This is necessary because the
         // default value from JAXP 1.0 was defined to be false.
         documentBuilderFactory.setNamespaceAware(true);

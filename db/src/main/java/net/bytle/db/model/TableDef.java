@@ -1,26 +1,26 @@
-package net.bytle.db.jdbc;
+package net.bytle.db.model;
 
 
-import net.bytle.db.database.Database;
-import net.bytle.db.engine.Queries;
-import net.bytle.db.model.*;
+import net.bytle.db.spi.DataPath;
 
-import java.sql.ResultSet;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by gerard on 01-02-2016.
- * A class that contains a table data structure definition
+ * A class that contains the data structure definition
  * <p>
  * A table can be:
- * * "TABLE",
- * * "VIEW"
+ * * "SQL TABLE",
+ * * "SQL VIEW"
+ * * "CSV"
+ *
  * <p>
  * A table definition may be created:
  * * manually
- * * or through the metadata of the driver
- * * or through the metadata of a result set
+ * * or through the metadata of the driver of a result set (in a sql database)
+ * * or through a data def file
+ * * or manually via code
  */
 public class TableDef extends RelationDefAbs  {
 
@@ -46,13 +46,13 @@ public class TableDef extends RelationDefAbs  {
     // on the setter
     private String tableType;
 
-    public TableDef(JdbcDataPath jdbcDataPath) {
-        super(jdbcDataPath);
+    public TableDef(DataPath dataPath) {
+        super(dataPath);
     }
 
 
-    public static TableDef of(JdbcDataPath jdbcDataPath){
-        return new TableDef(jdbcDataPath);
+    public static TableDef of(DataPath dataPath){
+        return new TableDef(dataPath);
     }
 
 
@@ -95,7 +95,7 @@ public class TableDef extends RelationDefAbs  {
             }
         }
 
-        final String fkName = this.getDataPath().getName() + "_fk" + foreignKeys.size();
+        final String fkName = dataPath.getName() + "_fk" + foreignKeys.size();
         List<ColumnDef> columnDefs = Arrays.asList(columnNames).stream()
                 .map(this::getColumnDef)
                 .collect(Collectors.toList());
@@ -235,8 +235,6 @@ public class TableDef extends RelationDefAbs  {
     }
 
 
-
-
     public TableDef addColumn(String columnName) {
         meta.addColumn(columnName);
         return this;
@@ -320,7 +318,8 @@ public class TableDef extends RelationDefAbs  {
         return this.primaryKeyDef;
     }
 
-    public JdbcDataPath getDataPath() {
-        return (JdbcDataPath) this.dataPath;
+    public DataPath getDataPath() {
+        return this.dataPath;
     }
+
 }

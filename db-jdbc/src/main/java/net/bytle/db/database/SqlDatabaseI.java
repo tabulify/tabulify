@@ -1,6 +1,6 @@
 package net.bytle.db.database;
 
-import net.bytle.db.jdbc.TableDef;
+import net.bytle.db.model.TableDef;
 
 import java.util.List;
 
@@ -69,7 +69,7 @@ public interface SqlDatabaseI {
 
     /**
      * SQLite JDBC seems to not have a name for each foreign keys
-     * You get an empty string
+     * You of an empty string
      * This is not a problem for SQLite
      * but the name is mandatory inside Bytle
      * This hack lets extension implements their own logic

@@ -6,6 +6,7 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.SchemaSample;
+import net.bytle.db.spi.Tabulars;
 
 import java.sql.Types;
 import java.util.*;
@@ -150,7 +151,7 @@ public class TpcdsModel implements SchemaSample {
 
     /**
      * Use {@link #get(Database)} functions
-     * to get a Tpcds object
+     * to of a Tpcds object
      */
     private TpcdsModel(SchemaDef schemaDef) {
 
@@ -1193,7 +1194,7 @@ public class TpcdsModel implements SchemaSample {
                         .filter(s -> stagingTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STORE_SALES:
-                return Tables.atomic(getTables().stream()
+                return Tabulars.atomic(getTables().stream()
                         .filter(s -> storeSalesTables.contains(s.getName()))
                         .collect(Collectors.toList())
                 );

@@ -40,7 +40,7 @@ public interface InsertStream {
     InsertStream setFeedbackFrequency(Integer feedbackFrequency);
 
     /**
-     * To get feedback and to retrieve the exception if the input stream
+     * To of feedback and to retrieve the exception if the input stream
      * is wrappeds in a thread
      * @return insertStreamListener or null if not implemented
      */

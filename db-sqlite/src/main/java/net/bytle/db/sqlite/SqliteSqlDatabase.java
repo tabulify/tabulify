@@ -208,7 +208,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
         }
 
         // Sqlite seems to preserve the order of the foreign keys but descendant
-        // Hack to get it right
+        // Hack to of it right
         for (int i = foreignKeys.size() - 1; i >= 0; i--) {
             final List<String> foreignKey = foreignKeys.get(i);
             final String foreignTableName = foreignKey.get(0);

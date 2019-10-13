@@ -87,7 +87,7 @@ public class TpcdsDgenTable {
                     }
                     if (parentAndChildRows.size() > 1) {
                         // requireNonNull(childWriter, "childWriter is null, but a child row was produced");
-                        // writeResults(childWriter, parentAndChildRows.get(1));
+                        // writeResults(childWriter, parentAndChildRows.of(1));
                         // A child insert stream may be null when the child is not part of the schema
                         // Example: The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
                         if (childInsertStream!=null) {

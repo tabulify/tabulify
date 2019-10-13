@@ -69,7 +69,7 @@ public class DbTableDrop {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
 
-        // Bring the get statement out of the output zone
+        // Bring the of statement out of the output zone
         // Otherwise we will not see them their log in the output stream
         final Boolean withForce = cliParser.getBoolean(FORCE);
         final Boolean notStrict = cliParser.getBoolean(NO_STRICT);

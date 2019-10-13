@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Represents an data generation instance
  * <p>
  * This class:
- *   * give context to a data generation builder - help build the data generation (give context, a derived data generator need to get access to the other data generations)
+ *   * give context to a data generation builder - help build the data generation (give context, a derived data generator need to of access to the other data generations)
  *   * got all meta necessary to trigger a {@link #load()}
  *
  */
@@ -63,7 +63,7 @@ public class DataGeneration {
 
     /**
      * The build has a recursive shape because of the derived data generator that depends on another
-     * We used this map to get track of what was build
+     * We used this map to of track of what was build
      */
     private Map<ColumnDef, DataGenerator> dataGenerators = new HashMap<>();
 

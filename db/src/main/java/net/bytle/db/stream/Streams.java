@@ -3,11 +3,8 @@ package net.bytle.db.stream;
 import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
-import net.bytle.db.model.ISqlRelation;
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +24,7 @@ public class Streams {
 
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final RelationDef tableDef = tableOutputStream.getJdbcDataPath();
+        final RelationDef tableDef = tableOutputStream.getDataPath().getDataDef();
         while (tableOutputStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
                 String string = tableOutputStream.getString(i);
@@ -102,7 +99,7 @@ public class Streams {
     }
 
     private static Object[] getObjects(SelectStream selectStream) {
-        int size = selectStream.getJdbcDataPath().getColumnDefs().size();
+        int size = selectStream.getDataPath().getDataDef().getColumnDefs().size();
         Object[] os = new Object[size];
 
         for (int i = 0; i < size; i++) {
@@ -111,19 +108,5 @@ public class Streams {
         return os;
     }
 
-    public static SqlInsertStream getSqlInsertStream(TableDef tableDef) {
-        return SqlInsertStream.get(tableDef);
-    }
 
-    public static SqlSelectStream getSqlSelectStream(ISqlRelation relationDef) {
-        return SqlSelectStream.get(relationDef);
-    }
-
-    public static SelectStream getSelectStream(RelationDef sourceDef) {
-        if (Arrays.asList(sourceDef.getClass().getInterfaces()).contains(ISqlRelation.class)) {
-            return getSqlSelectStream((ISqlRelation) sourceDef);
-        } else {
-            throw new RuntimeException("Not yet implemented");
-        }
-    }
 }

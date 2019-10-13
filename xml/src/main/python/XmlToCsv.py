@@ -25,7 +25,7 @@ fileInputPath = "../resources/SoapSpec.xml"
 fileOutputPath = "SoapSpec.tsv"
 fileInputStructure= "OneXml"
 
-# tag return also the namespace and there is no function to get only the name
+# tag return also the namespace and there is no function to of only the name
 # See https://bugs.python.org/issue18304
 def get_tag_name(tag):
     return tag.split('}', 1)[1]

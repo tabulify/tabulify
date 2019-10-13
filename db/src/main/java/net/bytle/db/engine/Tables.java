@@ -25,36 +25,6 @@ public class Tables {
 
 
 
-    /**
-     * Return the number of rows
-     *
-     * @param tableDef - A tableDef
-     * @return - the number of rows for this table
-     */
-    public static Integer getSize(TableDef tableDef) {
-
-
-        Connection currentConnection = tableDef.getDatabase().getCurrentConnection();
-        if (currentConnection == null) {
-            throw new RuntimeException("The database " + tableDef.getDatabase() + " seems to have no connections (Is this a relational database supporting JDBC ?)");
-        }
-
-        Integer returnValue = 0;
-        String statementString = "select count(1) from " + tableDef.getFullyQualifiedName();
-
-        try (
-                ResultSet resultSet = currentConnection.createStatement().executeQuery(statementString);
-        ) {
-            while (resultSet.next()) {
-                returnValue += resultSet.getInt(1);
-            }
-        } catch (SQLException e) {
-            System.err.println(statementString);
-            throw new RuntimeException(e);
-        }
-        return returnValue;
-
-    }
 
 
 
@@ -456,135 +426,16 @@ public class Tables {
     }
 
 
-    /**
-     * @param tableName - the name of the table
-     * @return An alias for the function {{@link #getTable(String)}}
-     */
-    public static TableDef get(String tableName) {
-
-        return getTable(tableName);
-
-    }
-
-    /**
-     * The table will be created in the database of the tableDef
-     * If you want to create the table in another database
-     * use the function @{link {@link #create(TableDef, Database)}}
-     *
-     * @param tableDef - a tableDef definition
-     */
-    public static void create(TableDef tableDef) {
-        create(tableDef, tableDef.getDatabase());
-    }
-
-
-    public static InsertStream getTableInsertStream(TableDef tableDef) {
-
-        if (tableDef.getDatabase().getUrl() == null) {
-            throw new RuntimeException("Not implemented - Only Sql");
-        } else {
-            return SqlInsertStream.get(tableDef);
-        }
-
-    }
-
-
-
-
-    /**
-     * Add the columns to the targetDef from the sourceDef
-     *
-     * @param targetDef
-     * @param sourceDef
-     */
-    public static void addColumns(TableDef targetDef, RelationDef sourceDef) {
-
-        // Add the columns
-        int columnCount = sourceDef.getColumnDefs().size();
-        for (int i = 0; i < columnCount; i++) {
-            ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName(),columnDef.getClass())
-                    .typeCode(columnDef.getDataType().getTypeCode())
-                    .precision(columnDef.getPrecision())
-                    .scale(columnDef.getScale());
-        }
-
-    }
-
-
-    public static void printColumns(TableDef tableDef) {
-
-        MemoryTable tableStructure = MemoryTable.of("structure")
-                .addColumn("#")
-                .addColumn("Colum Name")
-                .addColumn("Data Type")
-                .addColumn("Key")
-                .addColumn("Not Null")
-                .addColumn("Default")
-                .addColumn("Auto Increment")
-                .addColumn("Description");
-
-        InsertStream insertStream = ListInsertStream.of(tableStructure);
-        int i = 0;
-        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
-            i++;
-            insertStream.insert(
-                    i,
-                    columnDef.getColumnName(),
-                    columnDef.getDataType().getTypeName(),
-                    (tableDef.getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
-                    (columnDef.getNullable() == 0 ? "x" : ""),
-                    columnDef.getDefault(),
-                    columnDef.getIsAutoincrement(),
-                    columnDef.getDescription()
-
-            );
-        }
-        insertStream.close();
-
-
-        MemoryStore.of().print(tableStructure);
-        MemoryStore.of().drop(tableStructure);
-    }
-
-
     public static void createIfNotExist(TableDef tableDef, Database database) {
         if (!exists(tableDef, database)) {
             create(tableDef, database);
         }
     }
 
-    /**
-     * @param tableName
-     * @return a table with the default database
-     */
-    public static TableDef getTable(String tableName) {
 
-        return Databases.of().getTable(tableName);
-
-    }
 
     public static void drop(TableDef tableDef, Database database) {
         drop(tableDef, database.getCurrentSchema());
-    }
-
-    /**
-     * Will return a set of tables independent of foreign table
-     * (ie delete the foreign keys of a table if the foreign table is not part of the set)
-     *
-     * @param tableDefs
-     * @return
-     */
-    public static List<TableDef> atomic(List<TableDef> tableDefs) {
-        for (TableDef table : tableDefs) {
-            List<ForeignKeyDef> foreignKeys = table.getForeignKeys();
-            for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-                if (!(tableDefs.contains(foreignKeyDef.getForeignPrimaryKey().getTableDef()))) {
-                    table.deleteForeignKey(foreignKeyDef);
-                }
-            }
-        }
-        return tableDefs;
     }
 
     public static List<String> getNames(List<TableDef> tables) {

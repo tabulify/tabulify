@@ -83,7 +83,7 @@ public class FkDataGenerator implements DataGenerator {
     }
 
     /**
-     * get a new value for a column
+     * of a new value for a column
      *
      * @param columnDef
      * @return a new generated data object every time it's called
@@ -100,7 +100,7 @@ public class FkDataGenerator implements DataGenerator {
     }
 
     /**
-     * get the actual value of a column
+     * of the actual value of a column
      *
      * @param columnDef
      * @return a generated value (used in case of derived data

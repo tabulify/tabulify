@@ -106,7 +106,7 @@ public class TableLoader implements AutoCloseable {
         try {
             /**
              * Not every database can make a lot of connection
-             * We get the last connection object for single connection database such as sqlite.
+             * We of the last connection object for single connection database such as sqlite.
              *
              * Example:
              *     * their is already a connection through a select for instance

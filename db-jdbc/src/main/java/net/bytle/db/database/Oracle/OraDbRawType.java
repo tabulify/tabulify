@@ -30,7 +30,7 @@ class OraDbRawType extends DataTypeDatabaseAbs {
     public String getCreateStatement(int precision, int scale) {
         // Bug in a Oracle driver where precision is null in a resultSet
         if (precision == 0) {
-            return "RAW(2000)"; //TODO: get the max of the data type
+            return "RAW(2000)"; //TODO: of the max of the data type
         } else {
             return null;
         }

@@ -6,7 +6,7 @@ import net.bytle.db.engine.DbDdl;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.jdbc.TableDef;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.model.UniqueKeyDef;
 
 import java.util.ArrayList;

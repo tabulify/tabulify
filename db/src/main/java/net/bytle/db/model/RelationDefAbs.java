@@ -58,7 +58,7 @@ public abstract class RelationDefAbs implements RelationDef {
     /**
      * @param columnNames
      * @return an array of columns
-     * The columns must exist otherwise you get a exception
+     * The columns must exist otherwise you of a exception
      */
     protected ColumnDef[] getColumns(String... columnNames) {
 
@@ -68,7 +68,7 @@ public abstract class RelationDefAbs implements RelationDef {
     /**
      * @param columnNames
      * @return an array of columns
-     * The columns must exist otherwise you get a exception
+     * The columns must exist otherwise you of a exception
      */
     protected ColumnDef[] getColumns(List<String> columnNames) {
 

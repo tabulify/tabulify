@@ -117,7 +117,7 @@ public class RelationMeta {
     /**
      * @param columnNames
      * @return an array of columns
-     * The columns must exist otherwise you get a exception
+     * The columns must exist otherwise you of a exception
      */
     ColumnDef[] getColumns(String... columnNames) {
         List<ColumnDef> columnDefs = new ArrayList<>();

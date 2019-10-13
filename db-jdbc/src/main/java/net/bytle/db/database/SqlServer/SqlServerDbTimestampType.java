@@ -21,7 +21,7 @@ public class SqlServerDbTimestampType extends DataTypeDatabaseAbs {
      *
      * The SQL Server driver gives a smalltime but we want a datetime2.
      *
-     * Otherwise when going from an Oracle date to a datetime Sql Server we get the following error
+     * Otherwise when going from an Oracle date to a datetime Sql Server we of the following error
      * because the data range is smaller in a smalldatetime than in a datetime2 (ie Oracle Date)
      *
      * Error:

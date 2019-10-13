@@ -5,10 +5,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.model.UniqueKeyDef;
+import net.bytle.db.model.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,7 +50,7 @@ public class DbObjectBuilder {
 //        List<ColumnDef> cleanColumnDefs = new ArrayList<>();
 //
 //        for (int i = 0; i < columnDefs.size(); i++) {
-//            ColumnDef columnDef = columnDefs.get(i);
+//            ColumnDef columnDef = columnDefs.of(i);
 //            DataType dataType = getDataTypeOf(columnDef);
 //            ColumnDef cleanColumnDef = new ColumnDef.Builder(cleanTableDef)
 //                    .columnName(columnDef.getColumnName())
@@ -124,7 +121,7 @@ public class DbObjectBuilder {
     /**
      * Build a table from a database
      * if no table is found, return null
-     * The table get a schema but the whole schema will not be build
+     * The table of a schema but the whole schema will not be build
      *
      * @param jdbcDataPath
      * @return null if no table is found
@@ -360,14 +357,14 @@ public class DbObjectBuilder {
         final String ordinal_position_alias = "ORDINAL_POSITION";
         final String column_name_alias = "COLUMN_NAME";
         try (
-                // Oracle need to have the approximate argument to true, otherwise we get a ORA-01031: insufficient privileges
+                // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges
                 ResultSet indexResultSet = metaDataDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(metaDataDef.getDataPath().getCatalog(), metaDataDef.getDataPath().getSchema().getName(), metaDataDef.getDataPath().getName(), true, true);
         ) {
             while (indexResultSet.next()) {
 
                 String index_name = indexResultSet.getString("INDEX_NAME");
 
-                // With SQL Server we may get a line with only null values
+                // With SQL Server we may of a line with only null values
                 if (index_name == null) {
                     continue;
                 }

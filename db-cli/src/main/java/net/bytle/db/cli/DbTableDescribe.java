@@ -7,8 +7,8 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.spi.DataDefs;
 import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
@@ -62,14 +62,14 @@ public class DbTableDescribe {
 
                 switch (tableDefList.size()) {
                     case 1:
-                        Tables.printColumns(tableDefList.get(0));
+                        DataDefs.printColumns(tableDefList.get(0));
                         break;
                     default:
 
                         for (TableDef tableDef : tableDefList) {
                             System.out.println();
                             System.out.println("  * " + tableDef.getName() + " columns:");
-                            Tables.printColumns(tableDef);
+                            DataDefs.printColumns(tableDef);
                         }
 
 

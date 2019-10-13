@@ -2,6 +2,7 @@ package net.bytle.db.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -126,6 +127,35 @@ public class JdbcDataSystemSql {
 
 
     }
+
+    /**
+     * Return the number of rows
+     *
+     * @param jdbcDataPath - A tableDef
+     * @return - the number of rows for this table
+     */
+    public static Integer getSize(JdbcDataPath jdbcDataPath) {
+
+
+
+        Integer returnValue = 0;
+        String statementString = "select count(1) from " + getFullyQualifiedSqlName(jdbcDataPath);
+
+        try (
+                ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().createStatement().executeQuery(statementString);
+        ) {
+            while (resultSet.next()) {
+                returnValue += resultSet.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println(statementString);
+            throw new RuntimeException(e);
+        }
+        return returnValue;
+
+    }
+
+
 
 
 }

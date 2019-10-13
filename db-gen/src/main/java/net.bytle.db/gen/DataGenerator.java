@@ -49,13 +49,13 @@ public interface DataGenerator<T> {
     ColumnDef<T> getColumn();
 
     /**
-     * get a new value for a column
+     * of a new value for a column
      * @return a new generated data object every time it's called
      */
     <T> T getNewValue(ColumnDef columnDef);
 
     /**
-     * get the actual value of a column
+     * of the actual value of a column
      * @return a generated value (used in case of derived data
      */
     T getActualValue(ColumnDef columnDef);

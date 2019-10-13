@@ -147,7 +147,7 @@ public class UniqueDataGenerator implements DataGenerator {
     }
 
     /**
-     * get the actual value of a column
+     * of the actual value of a column
      *
      * @param columnDef
      * @return a generated value (used in case of derived data

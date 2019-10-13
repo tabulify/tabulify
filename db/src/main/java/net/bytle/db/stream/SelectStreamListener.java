@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Created by gerard on 12-01-2017.
- * An object listener to get informations from the select stream
+ * An object listener to of informations from the select stream
  * <p>
  * Example:
  * - exception and errors

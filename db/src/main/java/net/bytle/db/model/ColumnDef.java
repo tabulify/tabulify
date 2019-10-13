@@ -20,7 +20,6 @@ import java.util.Set;
  * Created by gerard on 01-02-2016.
  * A class that contains a column data structure definition
  * <p>
- *
  */
 public class ColumnDef<T> implements Comparable<ColumnDef> {
 
@@ -48,7 +47,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     private int nullable = DatabaseMetaData.columnNullable;
     private String isAutoincrement;
     private String isGeneratedColumn;
-    private RelationDef relationDef;
+    private TableDef relationDef;
     private int columnPosition;
     private String fullyQualifiedName;
 
@@ -67,14 +66,14 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     }
 
     /**
-     * Only called by the function get of a TableDef
-     * To construct a column use TableDef.get
+     * Only called by the function of of a TableDef
+     * To construct a column use TableDef.of
      *
-     * @param relationDef
+     * @param tableDef
      */
-    ColumnDef(RelationDef relationDef, String columnName, Class<T> clazz) {
+    ColumnDef(TableDef tableDef, String columnName, Class<T> clazz) {
 
-        this.relationDef = relationDef;
+        this.relationDef = tableDef;
         this.columnName = columnName;
         this.clazz = clazz;
 
@@ -122,14 +121,11 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
         }
 
         // Trying to retrieve it from the cache
-        final Database database = this.getRelationDef().getDatabase();
-        if (database != null) {
-            dataType = database.getDataType(typeCode);
-        } else {
-            dataType = new DataType.DataTypeBuilder(typeCode)
-                    .JdbcDataType(DataTypesJdbc.of(typeCode))
-                    .build();
-        }
+
+        dataType = new DataType.DataTypeBuilder(typeCode)
+                .JdbcDataType(DataTypesJdbc.of(typeCode))
+                .build();
+
 
         // If the data type is not known
         if (dataType == null) {
@@ -162,7 +158,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
         }
     }
 
-    public RelationDef getRelationDef() {
+    public TableDef getRelationDef() {
         return relationDef;
     }
 
@@ -203,7 +199,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
     public String getFullyQualifiedName() {
         if (fullyQualifiedName == null) {
-            fullyQualifiedName = relationDef.getFullyQualifiedName() + "." + columnName;
+            fullyQualifiedName = relationDef.getDataPath() + "." + columnName;
         }
         return fullyQualifiedName;
     }
@@ -317,7 +313,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     }
 
     /**
-     *
      * @param key - a key
      * @return
      */
@@ -326,16 +321,14 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     }
 
     /**
-     *
      * @param key - a key
      * @return
      */
     public Object getPropertyCaseIndependently(String key) {
-        return Maps.getPropertyCaseIndependent(properties,key);
+        return Maps.getPropertyCaseIndependent(properties, key);
     }
 
     /**
-     *
      * @param key
      * @param value
      * @return
@@ -357,7 +350,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     }
 
     /**
-     *
      * If you got unchecked error when using this function,
      * use the function {@link net.bytle.type.Typess#safeCast(Object, Class)}
      *
@@ -366,8 +358,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     public Class<T> getClazz() {
         return this.clazz;
     }
-
-
 
 
 }

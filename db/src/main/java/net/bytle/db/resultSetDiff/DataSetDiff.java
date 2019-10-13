@@ -136,7 +136,7 @@ public class DataSetDiff {
                 targetDataSet.beforeFirst();
             }
 
-            // Should we get the next row for the source or the target
+            // Should we of the next row for the source or the target
             Boolean sourceNext = true;
             Boolean targetNext = true;
 

@@ -1,13 +1,10 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.uri.DataUri;
 
 import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class JdbcDataPath extends DataPath  {

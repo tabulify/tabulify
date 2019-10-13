@@ -184,7 +184,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
     }
 
     /**
-     * get a new value for a column
+     * of a new value for a column
      *
      * @param columnDef
      * @return a new generated data object every time it's called
@@ -199,7 +199,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
     }
 
     /**
-     * get the actual value of a column
+     * of the actual value of a column
      *
      * @param columnDef
      * @return a generated value (used in case of derived data
@@ -235,7 +235,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
      * * The discrete variable are in the first Object variable
      * * The ratios are in the second Integer variable
      * <p>
-     * Example with the following, you will get 2 times much Red than Blue and Green
+     * Example with the following, you will of 2 times much Red than Blue and Green
      * Blue: 1
      * Red: 2
      * Green: 1

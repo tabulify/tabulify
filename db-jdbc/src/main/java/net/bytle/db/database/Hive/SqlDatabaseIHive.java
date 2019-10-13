@@ -3,7 +3,7 @@ package net.bytle.db.database.Hive;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.jdbc.JdbcDataSystem;
-import net.bytle.db.jdbc.TableDef;
+import net.bytle.db.model.TableDef;
 
 import java.util.HashMap;
 import java.util.List;

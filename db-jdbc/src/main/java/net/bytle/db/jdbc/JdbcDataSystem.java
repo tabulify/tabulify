@@ -327,7 +327,6 @@ public class JdbcDataSystem extends TableSystem {
 
             dataType = new DataType.DataTypeBuilder(typeCode)
                     .DatabaseDataType(dataTypeDatabase)
-                    .DriverDataType(dataTypeDriver)
                     .JdbcDataType(dataTypeJdbc)
                     .build();
 
@@ -595,5 +594,6 @@ public class JdbcDataSystem extends TableSystem {
             throw new RuntimeException(e);
         }
     }
+
 
 }
