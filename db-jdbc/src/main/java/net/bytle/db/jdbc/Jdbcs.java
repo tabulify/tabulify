@@ -1,8 +1,14 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.connection.URIExtended;
+import net.bytle.db.database.DataTypeDriver;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.regexp.Globs;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -144,6 +150,180 @@ public class Jdbcs {
             throw new RuntimeException(e);
         }
 
+    }
+
+    /**
+     * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
+     */
+    public static  void printDatabaseInformation(JdbcDataSystem jdbcDataSystem) {
+
+        System.out.println("Information about the database (" + jdbcDataSystem.getDatabase().getDatabaseName() + "):");
+
+        System.out.println();
+        System.out.println("Driver Information:");
+        DatabaseMetaData databaseMetadata = null;
+        final Connection currentConnection = jdbcDataSystem.getCurrentConnection();
+        try {
+
+            databaseMetadata = currentConnection.getMetaData();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            System.out.println("getDatabaseProductVersion: " + databaseMetadata.getDatabaseProductVersion());
+
+            System.out.println("getDatabaseProductName: " + databaseMetadata.getDatabaseProductName());
+            System.out.println("getDatabaseMajorVersion: " + databaseMetadata.getDatabaseMajorVersion());
+            System.out.println("getDatabaseMinorVersion: " + databaseMetadata.getDatabaseMinorVersion());
+            System.out.println("getMaxConnections: " + databaseMetadata.getMaxConnections());
+            System.out.println("getJDBCMajorVersion: " + databaseMetadata.getJDBCMajorVersion());
+            System.out.println("getJDBCMinorVersion: " + databaseMetadata.getJDBCMinorVersion());
+            System.out.println("getURL: " + databaseMetadata.getURL());
+            System.out.println("Driver Version: " + databaseMetadata.getDriverVersion());
+            System.out.println("Driver Name: " + databaseMetadata.getDriverName());
+            System.out.println("getUserName: " + databaseMetadata.getUserName());
+            System.out.println("supportsNamedParameters: " + databaseMetadata.supportsNamedParameters());
+            System.out.println("supportsBatchUpdates: " + databaseMetadata.supportsBatchUpdates());
+            System.out.println();
+            System.out.println("Connection");
+            System.out.println("Catalog: " + currentConnection.getCatalog());
+            String schema;
+            if (databaseMetadata.getJDBCMajorVersion() >= 7) {
+                schema = currentConnection.getSchema();
+            } else {
+                schema = "The JDBC Driver doesn't have this information.";
+            }
+            System.out.println("Schema: " + schema);
+            System.out.println("Schema Current Connection: " + currentConnection.getSchema());
+            System.out.println("Client Info");
+            Properties clientInfos = currentConnection.getClientInfo();
+            if (clientInfos != null && clientInfos.size() != 0) {
+                for (String key : clientInfos.stringPropertyNames()) {
+                    System.out.println("  * (" + key + ") = (" + clientInfos.getProperty(key) + ")");
+                }
+            } else {
+                System.out.println("   * No client infos");
+            }
+
+            System.out.println();
+            URI url;
+            try {
+                url = new URI(jdbcDataSystem.getDatabase().getUrl());
+                URIExtended uriExtended = new URIExtended(url);
+                System.out.println("URL (" + url + ")");
+                System.out.println("Authority: " + url.getAuthority());
+                System.out.println("Scheme: " + url.getScheme());
+                System.out.println("Scheme Specific Part: " + url.getSchemeSpecificPart());
+                System.out.println("Fragment: " + url.getFragment());
+                System.out.println("Host: " + url.getHost());
+                System.out.println("Path: " + url.getPath());
+                System.out.println("Query: " + url.getQuery());
+                System.out.println("Raw Query: " + url.getRawQuery());
+                System.out.println("Raw Authority: " + url.getRawAuthority());
+                System.out.println("Raw Fragment: " + url.getRawFragment());
+                System.out.println("Raw Path: " + url.getRawPath());
+                System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
+                System.out.println("Driver: " + uriExtended.getDriver());
+                System.out.println("Server: " + uriExtended.getServer());
+            } catch (URISyntaxException e) {
+                System.out.println("Error while reading the URI information. Message:" + e.getMessage());
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Print data type given by the driver
+     */
+    public void printDataTypeInformation(Connection connection) {
+
+        List<DataTypeDriver> dataTypeDrivers = new ArrayList<>(getDataTypeDriver(connection).values());
+
+        // Headers
+        System.out.println("Data Type\t" +
+                "Type Name\t" +
+                "Precision\t" +
+                "literalPrefix\t" +
+                "literalSuffix\t" +
+                "createParams\t" +
+                "nullable\t" +
+                "caseSensitive\t" +
+                "searchable\t" +
+                "unsignedAttribute\t" +
+                "fixedPrecScale\t" +
+                "localTypeName\t" +
+                "minimumScale\t" +
+                "maximumScale"
+        );
+
+        for (DataTypeDriver typeInfo : dataTypeDrivers) {
+            System.out.println(
+                    typeInfo.getTypeCode() + "\t" +
+                            typeInfo.getTypeName() + "\t" +
+                            typeInfo.getMaxPrecision() + "\t" +
+                            typeInfo.getLiteralPrefix() + "\t" +
+                            typeInfo.getLiteralSuffix() + "\t" +
+                            typeInfo.getCreateParams() + "\t" +
+                            typeInfo.getNullable() + "+\t" +
+                            typeInfo.getCaseSensitive() + "\t" +
+                            typeInfo.getSearchable() + "\t" +
+                            typeInfo.getUnsignedAttribute() + "\t" +
+                            typeInfo.getFixedPrecScale() + "\t" +
+                            typeInfo.getLocalTypeName() + "\t" +
+                            typeInfo.getMinimumScale() + "\t" +
+                            typeInfo.getMaximumScale()
+            );
+
+        }
+
+
+    }
+
+    public static Map<Integer, DataTypeDriver> getDataTypeDriver(Connection connection){
+
+        Map<Integer, DataTypeDriver> dataTypeInfoMap = new HashMap<>();
+        ResultSet typeInfoResultSet;
+        try {
+            typeInfoResultSet = connection.getMetaData().getTypeInfo();
+            while (typeInfoResultSet.next()) {
+                DataTypeDriver.DataTypeInfoBuilder typeInfoBuilder = new DataTypeDriver.DataTypeInfoBuilder(typeInfoResultSet.getInt("DATA_TYPE"));
+                String typeName = typeInfoResultSet.getString("TYPE_NAME");
+                typeInfoBuilder.typeName(typeName);
+                int precision = typeInfoResultSet.getInt("PRECISION");
+                typeInfoBuilder.maxPrecision(precision);
+                String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
+                typeInfoBuilder.literalPrefix(literalPrefix);
+                String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
+                typeInfoBuilder.literalSuffix(literalSuffix);
+                String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
+                typeInfoBuilder.createParams(createParams);
+                Short nullable = typeInfoResultSet.getShort("NULLABLE");
+                typeInfoBuilder.nullable(nullable);
+                Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
+                typeInfoBuilder.caseSensitive(caseSensitive);
+                Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
+                typeInfoBuilder.searchable(searchable);
+                Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
+                typeInfoBuilder.unsignedAttribute(unsignedAttribute);
+                Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
+                typeInfoBuilder.fixedPrecScale(fixedPrecScale);
+                Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
+                typeInfoBuilder.autoIncrement(autoIncrement);
+                String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
+                typeInfoBuilder.localTypeName(localTypeName);
+                Integer minimumScale = Integer.valueOf(typeInfoResultSet.getShort("MINIMUM_SCALE"));
+                typeInfoBuilder.minimumScale(minimumScale);
+                Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
+                typeInfoBuilder.maximumScale(maximumScale);
+                DataTypeDriver dataTypeDriver = typeInfoBuilder.build();
+                dataTypeInfoMap.put(dataTypeDriver.getTypeCode(), dataTypeDriver);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return dataTypeInfoMap;
     }
 
 

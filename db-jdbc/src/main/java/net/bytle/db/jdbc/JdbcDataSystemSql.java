@@ -31,7 +31,7 @@ public class JdbcDataSystemSql {
 
 
     /**
-     * TODO: Move that in a SQL manager
+     *
      * The databaseName of a table in a SQL statement
      */
     public static String getStatementTableName(JdbcDataPath jdbcDataPath) {

@@ -1,6 +1,8 @@
 package net.bytle.db.database;
 
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
@@ -25,10 +27,10 @@ public interface SqlDatabaseI {
 
     /**
      * Returns statement to create the table
-     * @param tableDef
+     * @param dataPath
      * @return
      */
-    List<String> getCreateTableStatements(TableDef tableDef, String name);
+    List<String> getCreateTableStatements(JdbcDataPath dataPath);
 
 
     /**

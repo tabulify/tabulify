@@ -8,22 +8,18 @@ import net.bytle.db.database.Hive.SqlDatabaseIHive;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
 import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
+import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.io.Closeable;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.*;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class JdbcDataSystem extends TableSystem {
 
@@ -45,7 +41,7 @@ public class JdbcDataSystem extends TableSystem {
     private final Database database;
 
 
-    protected SqlDatabaseI getSqlDatabase() {
+    public SqlDatabaseI getSqlDatabase() {
 
         if (sqlDatabaseI == null) {
 
@@ -360,12 +356,62 @@ public class JdbcDataSystem extends TableSystem {
 
     }
 
+    @Override
+    public boolean isContainer(DataPath dataPath) {
+        return false;
+    }
+
+    @Override
+    public DataPath create(DataPath dataPath) {
+
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+
+        // Check that the foreign tables exist
+        for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+            DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
+            if (!exists(foreignDataPath)) {
+                throw new RuntimeException("The foreign table (" + foreignDataPath.toString() + ") does not exist");
+            }
+        }
+
+        // Standard SQL
+        List<String> createTableStatements = DbDdl.getCreateTableStatements(dataPath);
+        for (String createTableStatement : createTableStatements) {
+            try {
+
+
+                Statement statement = getCurrentConnection().createStatement();
+                statement.execute(createTableStatement);
+                statement.close();
+
+            } catch (SQLException e) {
+                System.err.println(createTableStatement);
+                throw new RuntimeException(e);
+            }
+        }
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + jdbcDataPath.getSchema().getName() + ")");
+
+        return dataPath;
+
+
+    }
+
+    @Override
+    public String getProductName() {
+        try {
+            return getCurrentConnection().getMetaData().getDatabaseProductName();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     /**
      * Return a data type by JDBC Type code
      *
      * @param typeCode
      */
+    @Override
     public DataType getDataType(Integer typeCode) {
 
         DataType dataType = dataTypeMap.get(typeCode);
@@ -394,6 +440,46 @@ public class JdbcDataSystem extends TableSystem {
 
     }
 
+    @Override
+    public void drop(DataPath dataPath) {
+
+        StringBuilder dropTableStatement = new StringBuilder().append("drop table '");
+        dropTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath))
+                .append("'");
+        try (
+                Statement statement = getCurrentConnection().createStatement()
+        ) {
+
+            statement.execute(dropTableStatement.toString());
+            JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table " + dataPath.toString() + " dropped");
+
+        } catch (SQLException e) {
+            System.err.println(dropTableStatement);
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public void delete(DataPath dataPath) {
+
+
+        String deleteStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
+
+        try (
+            Statement statement = getCurrentConnection().createStatement();
+        ) {
+            statement.execute(deleteStatement);
+            // Without commit, the database is locked for sqlite (if the connection is no more in autocommit mode)
+            getCurrentConnection().commit();
+            JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table " + dataPath.getDataSystem() + " deleted");
+        } catch (SQLException e) {
+
+            throw new RuntimeException(e);
+        }
+
+    }
+
     // The map that will contain the driver data type
     private Map<Integer, DataTypeDriver> dataTypeInfoMap;
 
@@ -405,48 +491,8 @@ public class JdbcDataSystem extends TableSystem {
      */
     private DataTypeDriver getDataTypeDriver(Integer typeCode) {
 
-
         if (dataTypeInfoMap == null) {
-            dataTypeInfoMap = new HashMap<>();
-            ResultSet typeInfoResultSet;
-            try {
-                typeInfoResultSet = connection.getMetaData().getTypeInfo();
-                while (typeInfoResultSet.next()) {
-                    DataTypeDriver.DataTypeInfoBuilder typeInfoBuilder = new DataTypeDriver.DataTypeInfoBuilder(typeInfoResultSet.getInt("DATA_TYPE"));
-                    String typeName = typeInfoResultSet.getString("TYPE_NAME");
-                    typeInfoBuilder.typeName(typeName);
-                    int precision = typeInfoResultSet.getInt("PRECISION");
-                    typeInfoBuilder.maxPrecision(precision);
-                    String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
-                    typeInfoBuilder.literalPrefix(literalPrefix);
-                    String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
-                    typeInfoBuilder.literalSuffix(literalSuffix);
-                    String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
-                    typeInfoBuilder.createParams(createParams);
-                    Short nullable = typeInfoResultSet.getShort("NULLABLE");
-                    typeInfoBuilder.nullable(nullable);
-                    Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
-                    typeInfoBuilder.caseSensitive(caseSensitive);
-                    Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
-                    typeInfoBuilder.searchable(searchable);
-                    Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
-                    typeInfoBuilder.unsignedAttribute(unsignedAttribute);
-                    Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
-                    typeInfoBuilder.fixedPrecScale(fixedPrecScale);
-                    Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
-                    typeInfoBuilder.autoIncrement(autoIncrement);
-                    String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
-                    typeInfoBuilder.localTypeName(localTypeName);
-                    Integer minimumScale = Integer.valueOf(typeInfoResultSet.getShort("MINIMUM_SCALE"));
-                    typeInfoBuilder.minimumScale(minimumScale);
-                    Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
-                    typeInfoBuilder.maximumScale(maximumScale);
-                    DataTypeDriver dataTypeDriver = typeInfoBuilder.build();
-                    dataTypeInfoMap.put(dataTypeDriver.getTypeCode(), dataTypeDriver);
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            dataTypeInfoMap = Jdbcs.getDataTypeDriver(getCurrentConnection());
         }
         return dataTypeInfoMap.get(typeCode);
 
@@ -463,134 +509,6 @@ public class JdbcDataSystem extends TableSystem {
         return dataTypeDriverMap.values();
     }
 
-    /**
-     * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
-     */
-    public void printDatabaseInformation() {
-
-        System.out.println("Information about the database (" + database.getDatabaseName() + "):");
-
-        System.out.println();
-        System.out.println("Driver Information:");
-        DatabaseMetaData databaseMetadata = null;
-        try {
-            databaseMetadata = connection.getMetaData();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            System.out.println("getDatabaseProductVersion: " + databaseMetadata.getDatabaseProductVersion());
-
-            System.out.println("getDatabaseProductName: " + databaseMetadata.getDatabaseProductName());
-            System.out.println("getDatabaseMajorVersion: " + databaseMetadata.getDatabaseMajorVersion());
-            System.out.println("getDatabaseMinorVersion: " + databaseMetadata.getDatabaseMinorVersion());
-            System.out.println("getMaxConnections: " + databaseMetadata.getMaxConnections());
-            System.out.println("getJDBCMajorVersion: " + databaseMetadata.getJDBCMajorVersion());
-            System.out.println("getJDBCMinorVersion: " + databaseMetadata.getJDBCMinorVersion());
-            System.out.println("getURL: " + databaseMetadata.getURL());
-            System.out.println("Driver Version: " + databaseMetadata.getDriverVersion());
-            System.out.println("Driver Name: " + databaseMetadata.getDriverName());
-            System.out.println("getUserName: " + databaseMetadata.getUserName());
-            System.out.println("supportsNamedParameters: " + databaseMetadata.supportsNamedParameters());
-            System.out.println("supportsBatchUpdates: " + databaseMetadata.supportsBatchUpdates());
-            System.out.println();
-            System.out.println("Connection");
-            System.out.println("Catalog: " + this.connection.getCatalog());
-            String schema;
-            if (databaseMetadata.getJDBCMajorVersion() >= 7) {
-                schema = this.connection.getSchema();
-            } else {
-                schema = "The JDBC Driver doesn't have this information.";
-            }
-            System.out.println("Schema: " + schema);
-            System.out.println("Schema Current Connection: " + this.connection.getSchema());
-            System.out.println("Client Info");
-            Properties clientInfos = this.connection.getClientInfo();
-            if (clientInfos != null && clientInfos.size() != 0) {
-                for (String key : clientInfos.stringPropertyNames()) {
-                    System.out.println("  * (" + key + ") = (" + clientInfos.getProperty(key) + ")");
-                }
-            } else {
-                System.out.println("   * No client infos");
-            }
-
-            System.out.println();
-            URI url;
-            try {
-                url = new URI(database.getUrl());
-                URIExtended uriExtended = new URIExtended(url);
-                System.out.println("URL (" + url + ")");
-                System.out.println("Authority: " + url.getAuthority());
-                System.out.println("Scheme: " + url.getScheme());
-                System.out.println("Scheme Specific Part: " + url.getSchemeSpecificPart());
-                System.out.println("Fragment: " + url.getFragment());
-                System.out.println("Host: " + url.getHost());
-                System.out.println("Path: " + url.getPath());
-                System.out.println("Query: " + url.getQuery());
-                System.out.println("Raw Query: " + url.getRawQuery());
-                System.out.println("Raw Authority: " + url.getRawAuthority());
-                System.out.println("Raw Fragment: " + url.getRawFragment());
-                System.out.println("Raw Path: " + url.getRawPath());
-                System.out.println("Raw Schema Specific Part: " + url.getRawSchemeSpecificPart());
-                System.out.println("Driver: " + uriExtended.getDriver());
-                System.out.println("Server: " + uriExtended.getServer());
-            } catch (URISyntaxException e) {
-                System.out.println("Error while reading the URI information. Message:" + e.getMessage());
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Print data type given by the driver
-     */
-    public void printDataTypeInformation() {
-
-
-        // Headers
-        System.out.println("Data Type\t" +
-                "Type Name\t" +
-                "Precision\t" +
-                "literalPrefix\t" +
-                "literalSuffix\t" +
-                "createParams\t" +
-                "nullable\t" +
-                "caseSensitive\t" +
-                "searchable\t" +
-                "unsignedAttribute\t" +
-                "fixedPrecScale\t" +
-                "localTypeName\t" +
-                "minimumScale\t" +
-                "maximumScale"
-        );
-
-        // Data Type Info
-        Collection<DataTypeDriver> dataTypeDrivers = this.getDataTypeInfos();
-
-        for (DataTypeDriver typeInfo : dataTypeDrivers) {
-            System.out.println(
-                    typeInfo.getTypeCode() + "\t" +
-                            typeInfo.getTypeName() + "\t" +
-                            typeInfo.getMaxPrecision() + "\t" +
-                            typeInfo.getLiteralPrefix() + "\t" +
-                            typeInfo.getLiteralSuffix() + "\t" +
-                            typeInfo.getCreateParams() + "\t" +
-                            typeInfo.getNullable() + "+\t" +
-                            typeInfo.getCaseSensitive() + "\t" +
-                            typeInfo.getSearchable() + "\t" +
-                            typeInfo.getUnsignedAttribute() + "\t" +
-                            typeInfo.getFixedPrecScale() + "\t" +
-                            typeInfo.getLocalTypeName() + "\t" +
-                            typeInfo.getMinimumScale() + "\t" +
-                            typeInfo.getMaximumScale()
-            );
-
-        }
-
-
-    }
 
     /**
      * Return an object to be set in a prepared statement (for instance)
