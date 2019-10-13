@@ -8,7 +8,9 @@ import net.bytle.db.database.Hive.SqlDatabaseIHive;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
 import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.SelectStream;
@@ -41,7 +43,6 @@ public class JdbcDataSystem extends TableSystem {
 
     private Connection connection;
     private final Database database;
-
 
 
     protected SqlDatabaseI getSqlDatabase() {
@@ -89,7 +90,7 @@ public class JdbcDataSystem extends TableSystem {
     public DataPath getDataPath(DataUri dataUri) {
 
         if (dataUri.getPathSegments().size() > 3) {
-            throw new RuntimeException("This URI ("+dataUri+") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
+            throw new RuntimeException("This URI (" + dataUri + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
         }
 
         String catalog;
@@ -110,12 +111,43 @@ public class JdbcDataSystem extends TableSystem {
             schema = this.getCurrentSchema();
         }
 
-        return JdbcDataPath.of(this, catalog,schema,dataUri.getDataName());
+        return JdbcDataPath.of(this, catalog, schema, dataUri.getDataName());
     }
 
     @Override
-    public Boolean exists(DataPath dataPath) {
+    public DataPath getDataPath(DataPath dataPath, String... name) {
         return null;
+    }
+
+    /**
+     * @param dataPath
+     * @return if the table exist in the underlying database (actually the letter case is important)
+     * <p>
+     */
+
+    @Override
+    public Boolean exists(DataPath dataPath) {
+
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+        boolean tableExist;
+        String[] types = {"TABLE"};
+
+        try (
+                ResultSet tableResultSet = getCurrentConnection()
+                        .getMetaData()
+                        .getTables(
+                                jdbcDataPath.getCatalog(),
+                                jdbcDataPath.getSchema().getName(),
+                                jdbcDataPath.getName(),
+                                types)
+        ) {
+            tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return tableExist;
+
     }
 
     @Override
@@ -303,6 +335,31 @@ public class JdbcDataSystem extends TableSystem {
     public Database getDatabase() {
         return database;
     }
+
+    @Override
+    public <T> T getMax(ColumnDef<T> columnDef) {
+
+        String columnStatement = columnDef.getColumnName();
+
+        String statementString = "select max(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
+        try (
+                Statement statement = getCurrentConnection().createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
+            Object returnValue = null;
+            if (resultSet.next()) {
+                returnValue = resultSet.getObject(1);
+            }
+            return (T) returnValue;
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(e);
+
+        }
+
+    }
+
 
     /**
      * Return a data type by JDBC Type code

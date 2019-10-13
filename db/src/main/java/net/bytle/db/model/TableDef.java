@@ -196,7 +196,7 @@ public class TableDef extends RelationDefAbs  {
         try {
             foreignKeyOf(primaryKeyDef, columnNames);
         } catch (Exception e) {
-            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getRelationDef().getDataPath() + "). See the message below.", e);
+            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getDataDef().getDataPath() + "). See the message below.", e);
         }
         return this;
     }
@@ -212,7 +212,7 @@ public class TableDef extends RelationDefAbs  {
         try {
             foreignKeyOf(primaryKeyDef, columnNames.toArray(new String[0]));
         } catch (Exception e) {
-            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getRelationDef().getDataPath() + "). See the message below.", e);
+            throw new RuntimeException("A problem occurs when trying to add a foreign to the table (" + this + ") towards the table (" + primaryKeyDef.getDataDef().getDataPath() + "). See the message below.", e);
         }
         return this;
     }

@@ -99,7 +99,7 @@ public class ForeignKeyDef {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ForeignKeyDef that = (ForeignKeyDef) o;
-        return Objects.equals(foreignPrimaryKey.getRelationDef().getDataPath(), that.foreignPrimaryKey.getRelationDef().getDataPath());
+        return Objects.equals(foreignPrimaryKey.getDataDef().getDataPath(), that.foreignPrimaryKey.getDataDef().getDataPath());
     }
 
     @Override
@@ -113,7 +113,7 @@ public class ForeignKeyDef {
     public String toString() {
         final PrimaryKeyDef foreignPrimaryKey = this.foreignPrimaryKey;
         final List<String> childColumns = getChildColumns().stream().map(s->s.getColumnName()).collect(Collectors.toList());
-        return "Fk from "+getTableDef().getDataPath()+childColumns +" to " + foreignPrimaryKey.getRelationDef().getDataPath();
+        return "Fk from "+getTableDef().getDataPath()+childColumns +" to " + foreignPrimaryKey.getDataDef().getDataPath();
     }
 
     public TableDef getTableDef() {

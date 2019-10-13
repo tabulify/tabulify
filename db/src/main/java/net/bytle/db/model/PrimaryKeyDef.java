@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 
 public class PrimaryKeyDef {
 
-    private final RelationDef relationDef;
+    private final TableDef tableDef;
     private String name;
     private String[] columnNames;
 
-    public static PrimaryKeyDef of(RelationDef tableDef, String... columnNames) {
+    public static PrimaryKeyDef of(TableDef tableDef, String... columnNames) {
         assert tableDef != null;
         assert columnNames.length > 0;
 
@@ -22,19 +22,19 @@ public class PrimaryKeyDef {
     }
 
     /**
-     * Use {@link #PrimaryKeyDef(RelationDef, String...)}
+     * Use {@link #PrimaryKeyDef(TableDef, String...)}
      */
     PrimaryKeyDef(){
         throw new RuntimeException("Don't use this");
     }
 
-    private PrimaryKeyDef(RelationDef relationDef, String... columnNames) {
+    private PrimaryKeyDef(TableDef tableDef, String... columnNames) {
         this.columnNames = columnNames;
-        this.relationDef = relationDef;
+        this.tableDef = tableDef;
     }
 
-    public RelationDef getRelationDef() {
-        return relationDef;
+    public TableDef getDataDef() {
+        return tableDef;
     }
 
     public PrimaryKeyDef setName(String name) {
@@ -45,7 +45,7 @@ public class PrimaryKeyDef {
 
     public List<ColumnDef> getColumns() {
         return Arrays.stream(columnNames)
-                .map(relationDef::getColumnDef)
+                .map(tableDef::getColumnDef)
                 .collect(Collectors.toList());
     }
 

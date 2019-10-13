@@ -13,7 +13,7 @@ The core module containing:
 
 The top object is:
   * in the model: the database object and have no parent, all other object have a parent that lead to the top object (ie the database object)
-  * in the stream model: the relationDef
+  * in the stream model: the tableDef
 
 ## Object Hierarchy
 
@@ -23,9 +23,9 @@ RelationDef is the base object:
   * ...
 
 ## Model
-  * A relationDef object is the entry point of the whole model.
+  * A tableDef object is the entry point of the whole model.
 
-A relationDef may have:
+A tableDef may have:
 
   * A database object is a wrapper around a connection and has a relation one to many schemas
   * A schemaDef object is created from a database object and has a relation one to many tables
@@ -42,8 +42,8 @@ Precision and scale are attributes of the column object.
 
 ### Stream
 
-  * A stream is an table operation (Created from a relationDef ?)
-  * A stream is always against a relationDef  
+  * A stream is an table operation (Created from a tableDef ?)
+  * A stream is always against a tableDef  
 
 
 

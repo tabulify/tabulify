@@ -110,12 +110,40 @@ public class Jdbcs {
                 foreignKeys.addAll(dataPath.getDataDef().getForeignKeys());
             }
             for (ForeignKeyDef foreignKeyDef: dataPath.getDataDef().getForeignKeys()){
-                if (foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath().getName().matches(regexpPattern)){
+                if (foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath().getName().matches(regexpPattern)){
                     foreignKeys.add(foreignKeyDef);
                 }
             }
         }
         return new ArrayList<>(foreignKeys);
+    }
+
+    public void printPrimaryKey(JdbcDataPath jdbcDataPath) {
+
+        try (
+                ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(jdbcDataPath.getCatalog(),jdbcDataPath.getSchema().getName() ,jdbcDataPath.getName())
+        ) {
+            while (resultSet.next()) {
+                System.out.println("Primary Key Column: " + resultSet.getString("COLUMN_NAME"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void printUniqueKey(JdbcDataPath jdbcDataPath) {
+
+        try (
+                ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(jdbcDataPath.getCatalog(),jdbcDataPath.getSchema().getName() ,jdbcDataPath.getName(), true, false)
+        ) {
+            while (resultSet.next()) {
+                System.out.println("Unique Key Column: " + resultSet.getString("COLUMN_NAME"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 

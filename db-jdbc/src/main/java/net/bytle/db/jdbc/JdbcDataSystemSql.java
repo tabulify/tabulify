@@ -1,5 +1,7 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.spi.DataPath;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -106,11 +108,12 @@ public class JdbcDataSystemSql {
      * The fully qualified name is the name with its schema
      * that can be used in SQL Statement
      *
-     * @param jdbcDataPath
+     * @param dataPath
      * @return
      */
-    public static String getFullyQualifiedSqlName(JdbcDataPath jdbcDataPath) {
+    public static String getFullyQualifiedSqlName(DataPath dataPath) {
 
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
 
         final String statementTableName = getStatementTableName(jdbcDataPath);
 

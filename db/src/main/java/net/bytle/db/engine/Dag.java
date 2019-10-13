@@ -3,8 +3,9 @@ package net.bytle.db.engine;
 
 import com.google.common.collect.Lists;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -18,12 +19,13 @@ import java.util.Set;
 
 public class Dag {
 
+
     /**
      * The tables to start building the graph with
      */
-    private List<TableDef> tableDefList = new ArrayList<>();
+    private List<DataPath> dataPathList = new ArrayList<>();
 
-    DefaultDirectedGraph<TableDef, DefaultEdge> g = null;
+    DefaultDirectedGraph<DataPath, DefaultEdge> g = null;
 
     /**
      * If set to true, the dag will add the foreign tables
@@ -31,16 +33,16 @@ public class Dag {
     private Boolean withForeignTable = false;
 
     /**
-     * Use the {@link #get(List)} or {@link #get(SchemaDef)}
+     * Use the {@link #get(List)}
      */
     private Dag() {
     }
 
-    public static Dag get(List<TableDef> tables) {
+    public static Dag get(List<DataPath> dataPaths) {
 
         Dag dag = Dag.get();
-        for (TableDef tableDef : tables) {
-            dag.addTable(tableDef);
+        for (DataPath dataPath : dataPaths) {
+            dag.addTable(dataPath);
         }
         return dag;
 
@@ -54,33 +56,33 @@ public class Dag {
         // Building the graph
         g = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        for (TableDef tableDef : tableDefList) {
-            addTableToVertex(tableDef);
+        for (DataPath dataPath : dataPathList) {
+            addTableToVertex(dataPath);
         }
 
-        CycleDetector<TableDef, DefaultEdge> cycleDetector = new CycleDetector<>(g);
+        CycleDetector<DataPath, DefaultEdge> cycleDetector = new CycleDetector<>(g);
         if (cycleDetector.detectCycles()) {
 
             System.out.println("Cycles detected.");
 
             // Get all vertices involved in cycles.
-            Set<TableDef> cycleVertices = cycleDetector.findCycles();
+            Set<DataPath> cycleVertices = cycleDetector.findCycles();
 
             // Loop through vertices trying to find disjoint cycles.
             while (!cycleVertices.isEmpty()) {
                 System.out.println("Cycle:");
 
                 // Get a vertex involved in a cycle.
-                Iterator<TableDef> iterator = cycleVertices.iterator();
-                TableDef cycle = iterator.next();
+                Iterator<DataPath> iterator = cycleVertices.iterator();
+                DataPath cycle = iterator.next();
 
                 // Get all vertices involved with this vertex.
-                Set<TableDef> subCycle = cycleDetector.findCyclesContainingVertex(cycle);
-                for (TableDef sub : subCycle) {
+                Set<DataPath> subCycle = cycleDetector.findCyclesContainingVertex(cycle);
+                for (DataPath subDataPath : subCycle) {
                     // The Remove vertex that this cycle is not encountered again is not necessary as we throw an exception
                     // but I let it for information
                     // cycleVertices.remove(sub);
-                    throw new RuntimeException("A cycle was deteced with the following table " + sub.getFullyQualifiedName());
+                    throw new RuntimeException("A cycle was detected with the following data  " + subDataPath.toString());
                 }
             }
         }
@@ -89,31 +91,31 @@ public class Dag {
     /**
      * Add one table to the vertex
      *
-     * @param tableDef recursive function
+     * @param dataPath recursive function
      */
-    private void addTableToVertex(TableDef tableDef) {
+    private void addTableToVertex(DataPath dataPath) {
 
         // Add the vertex
-        if (!g.containsVertex(tableDef)) {
-            g.addVertex(tableDef);
+        if (!g.containsVertex(dataPath)) {
+            g.addVertex(dataPath);
         }
 
         // Add the edges
-        List<ForeignKeyDef> foreignKeys = tableDef.getForeignKeys();
+        List<ForeignKeyDef> foreignKeys = dataPath.getDataDef().getForeignKeys();
         if (foreignKeys.size() > 0) {
 
             for (ForeignKeyDef foreignKeyDef : foreignKeys) {
 
-                TableDef foreignTable = foreignKeyDef.getForeignPrimaryKey().getTableDef();
+                DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
 
                 // Only if the table is in the list
                 // or we take also the parent
-                if (tableDefList.contains(foreignTable) || withForeignTable) {
+                if (dataPathList.contains(foreignDataPath) || withForeignTable) {
 
-                    addTableToVertex(foreignTable);
+                    addTableToVertex(foreignDataPath);
 
                     // Add Edge
-                    g.addEdge(foreignTable, tableDef);
+                    g.addEdge(foreignDataPath, dataPath);
 
                 }
 
@@ -130,13 +132,15 @@ public class Dag {
         return new Dag();
     }
 
-    public static Dag get(TableDef tableDef) {
-        return new Dag().addTable(tableDef);
+    public static Dag get(DataPath dataPath) {
+        if (Tabulars.isContainer(dataPath)) {
+            return get(Tabulars.getChildrenDataPath(dataPath));
+        } else {
+            return new Dag().addTable(dataPath);
+        }
     }
 
-    public static Dag get(SchemaDef schema) {
-        return get(schema.getTables());
-    }
+
 
     /**
      * If set to true, the dag will add the parent table
@@ -150,9 +154,9 @@ public class Dag {
         return this;
     }
 
-    private Dag addTable(TableDef tableDef) {
-        if (!this.tableDefList.contains(tableDef)) {
-            this.tableDefList.add(tableDef);
+    private Dag addTable(DataPath dataPath) {
+        if (!this.dataPathList.contains(dataPath)) {
+            this.dataPathList.add(dataPath);
         }
         return this;
     }
@@ -162,39 +166,39 @@ public class Dag {
      *
      * @return
      */
-    public List<TableDef> getCreateOrderedTables() {
+    public List<DataPath> getCreateOrderedTables() {
 
         if (g == null) {
             build();
         }
 
-        TableDef currentTableDef = null;
-        TableDef previousTableDef = null;
-        List<TableDef> tableDefs = new ArrayList<>();
-        TopologicalOrderIterator<TableDef, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(g);
+        DataPath currentDataPath = null;
+        DataPath previousDataPath = null;
+        List<DataPath> dataPaths = new ArrayList<>();
+        TopologicalOrderIterator<DataPath, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(g);
 
         // Because of the algorithm, we may have a table with a parent between table without parent
         // Little trick with on slot
         while (orderIterator.hasNext()) {
-            currentTableDef = orderIterator.next();
+            currentDataPath = orderIterator.next();
 
-            if (currentTableDef.getForeignKeys().size() == 0) {
-                tableDefs.add(currentTableDef);
+            if (currentDataPath.getDataDef().getForeignKeys().size() == 0) {
+                dataPaths.add(currentDataPath);
             } else {
-                if (previousTableDef != null) {
-                    tableDefs.add(previousTableDef);
-                    tableDefs.add(currentTableDef);
-                    previousTableDef = null;
+                if (previousDataPath != null) {
+                    dataPaths.add(previousDataPath);
+                    dataPaths.add(currentDataPath);
+                    previousDataPath = null;
                 } else {
-                    previousTableDef = currentTableDef;
+                    previousDataPath = currentDataPath;
                 }
             }
         }
         // Add the last one
-        if (previousTableDef != null) {
-            tableDefs.add(currentTableDef);
+        if (previousDataPath != null) {
+            dataPaths.add(currentDataPath);
         }
-        return tableDefs;
+        return dataPaths;
     }
 
     /**
@@ -202,10 +206,11 @@ public class Dag {
      *
      * @return
      */
-    public List<TableDef> getDropOrderedTables() {
+    public List<DataPath> getDropOrderedTables() {
 
-        List<TableDef> tables = getCreateOrderedTables();
-        return Lists.reverse(tables);
+        List<DataPath> dataPath = getCreateOrderedTables();
+        return Lists.reverse(dataPath);
+
     }
 
 }

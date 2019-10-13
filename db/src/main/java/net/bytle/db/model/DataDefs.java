@@ -27,10 +27,6 @@ import java.util.stream.Collectors;
  */
 public class DataDefs {
 
-    static Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
-
-    private DatabasesStore databasesStore;
-    private Database database;
 
     /**
      * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of TableDef
@@ -42,7 +38,7 @@ public class DataDefs {
      * @param path
      * @return
      */
-    public List<DataPath> load(Path path) {
+    public static List<DataPath> load(Database database, Path path) {
 
         if (!Files.exists(path)) {
             throw new RuntimeException("The data definition file path (" + path.toAbsolutePath().toString() + " does not exist");
@@ -172,7 +168,7 @@ public class DataDefs {
                                     }
 
                                 } catch (ClassCastException e) {
-                                    String message = "The properties of column (" + column.getKey() + ") from the data def (" + name + ") must be in a map format. ";
+                                    String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataPath.toString() + ") must be in a map format. ";
                                     if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
                                         message += "They are in a list format. You should suppress the minus if they are present.";
                                     }
@@ -195,27 +191,42 @@ public class DataDefs {
     }
 
 
-    public static DataDefs of() {
-        return new DataDefs();
-    }
-
-    public DataDefs setDatabasesStore(DatabasesStore databasesStore) {
-
-        this.databasesStore = databasesStore;
-        return this;
-
-    }
 
     /**
-     * *
+     * Merge the tables property {@link TableDef#getProperty(String)}
+     * and the column property {@link ColumnDef#getProperty(String)} into one.
      *
-     * @param database
-     * @return
+     * The first table has priority.
+     * If a property does exist in the first and second table, the first will kept.
+     *
+     * @param firstTable
+     * @param secondTable
+     * @return the first table object updated
      */
-    public DataDefs setDatabase(Database database) {
-        this.database = database;
-        return this;
+    public static TableDef mergeProperties(TableDef firstTable, TableDef secondTable) {
+
+        Map<String, Object> firstTableProp = firstTable.getProperties();
+        for (Map.Entry<String,Object> entry : secondTable.getProperties().entrySet()){
+            if (!firstTableProp.containsKey(entry.getKey())){
+                firstTableProp.put(entry.getKey(),entry.getValue());
+            }
+        }
+
+        for (ColumnDef<?> columnDefFirstTable:firstTable.getColumnDefs()){
+            ColumnDef<?> columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
+            if (columnSecondTable!=null){
+                Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
+                final Map<String,Object> properties = columnSecondTable.getProperties();
+                for (Map.Entry<String,Object> entry : properties.entrySet()){
+                    if (!columnPropertiesFirstTable.containsKey(entry.getKey())){
+                        columnPropertiesFirstTable.put(entry.getKey(),entry.getValue());
+                    }
+                }
+            }
+        }
+        return firstTable;
     }
+
 
 
 }
