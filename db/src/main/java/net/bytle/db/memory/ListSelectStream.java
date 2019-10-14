@@ -1,5 +1,7 @@
 package net.bytle.db.memory;
 
+import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
@@ -12,15 +14,15 @@ import java.util.List;
 public class ListSelectStream extends SelectStreamAbs implements SelectStream {
 
     private final List<List<Object>> values;
-    private final MemoryTable memoryTable;
+    private final DataPath memoryTable;
     private int index = -1;
 
-    private ListSelectStream(MemoryTable memoryTable) {
+    private ListSelectStream(DataPath memoryTable) {
         this.memoryTable = memoryTable;
         this.values = MemoryStore.get(memoryTable);
     }
 
-    public static ListSelectStream of(MemoryTable memoryTable) {
+    public static ListSelectStream of(DataPath memoryTable) {
         return new ListSelectStream(memoryTable);
     }
 
@@ -109,9 +111,10 @@ public class ListSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     @Override
-    public MemoryTable getJdbcDataPath() {
-        return memoryTable;
+    public TableDef getDataDef() {
+        return memoryTable.getDataDef();
     }
+
 
     @Override
     public double getDouble(int columnIndex) {

@@ -32,6 +32,10 @@ public class Tabulars {
         return dataPath.getDataSystem().getSelectStream(dataPath);
     }
 
+    public static SelectStream getSelectStream(DataPath dataPath, String query) {
+        return dataPath.getDataSystem().getSelectStream(query);
+    }
+
     public static DataPath create(DataPath dataPath) {
 
         return dataPath.getDataSystem().create(dataPath);
@@ -64,10 +68,6 @@ public class Tabulars {
     public static DataPath getChildrenDataPath(DataPath dataPath) {
 
         return null;
-    }
-
-    public static <T> T getMax(ColumnDef<T> columnDef) {
-        return columnDef.getRelationDef().getDataPath().getDataSystem().getMax(columnDef);
     }
 
     /**
@@ -166,6 +166,10 @@ public class Tabulars {
             }
         }
 
+    }
+
+    public static void truncate(DataPath dataPath){
+        dataPath.getDataSystem().truncate(dataPath);
     }
 
 

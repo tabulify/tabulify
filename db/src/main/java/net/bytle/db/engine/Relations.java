@@ -1,9 +1,14 @@
 package net.bytle.db.engine;
 
+import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.RelationDef;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Relations {
 
@@ -28,5 +33,19 @@ public class Relations {
 
 
     }
+
+    /**
+     * Dropping a foreign key
+     *
+     * @param foreignKeyDef
+     */
+    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+
+        foreignKeyDef.getTableDef().getDataPath().getDataSystem().dropForeignKey(foreignKeyDef);
+
+
+    }
+
+
 
 }

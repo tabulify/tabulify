@@ -22,7 +22,10 @@ import java.util.stream.Collectors;
  * * or through a data def file
  * * or manually via code
  */
-public class TableDef extends RelationDefAbs  {
+public class TableDef implements RelationDef  {
+
+    protected final DataPath dataPath;
+    protected RelationMeta meta = new RelationMeta(this);
 
 
     private PrimaryKeyDef primaryKeyDef;
@@ -47,15 +50,17 @@ public class TableDef extends RelationDefAbs  {
     private String tableType;
 
     public TableDef(DataPath dataPath) {
-        super(dataPath);
+        this.dataPath = dataPath;
     }
 
-
+    /**
+     *
+     * @param dataPath - the data path creating this object. It can be a table but it can also be just a database (for instance for a query)
+     * @return a tableDef
+     */
     public static TableDef of(DataPath dataPath){
         return new TableDef(dataPath);
     }
-
-
 
 
     public PrimaryKeyDef getPrimaryKey() {
@@ -318,8 +323,62 @@ public class TableDef extends RelationDefAbs  {
         return this.primaryKeyDef;
     }
 
+
+
+
     public DataPath getDataPath() {
-        return this.dataPath;
+        return dataPath;
+    }
+
+
+    public List<ColumnDef> getColumnDefs() {
+        return meta.getColumnDefs();
+    }
+
+
+    public <T> ColumnDef<T> getColumnDef(String columnName) {
+        return meta.getColumnDef(columnName);
+    }
+
+    /**
+     * @param columnIndex
+     * @return a columnDef by index starting at 0
+     */
+    public ColumnDef getColumnDef(Integer columnIndex) {
+
+        return getColumnDefs().get(columnIndex);
+    }
+
+
+    /**
+     * @param columnName - The column name
+     * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
+     * @return  a new columnDef
+     */
+    public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
+
+        return meta.getColumnOf(columnName, clazz);
+
+    }
+
+    /**
+     * @param columnNames
+     * @return an array of columns
+     * The columns must exist otherwise you of a exception
+     */
+    protected ColumnDef[] getColumns(String... columnNames) {
+
+        return meta.getColumns(columnNames);
+    }
+
+    /**
+     * @param columnNames
+     * @return an array of columns
+     * The columns must exist otherwise you of a exception
+     */
+    protected ColumnDef[] getColumns(List<String> columnNames) {
+
+        return meta.getColumns(columnNames.toArray(new String[0]));
     }
 
 }

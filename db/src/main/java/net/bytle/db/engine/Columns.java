@@ -3,9 +3,12 @@ package net.bytle.db.engine;
 import net.bytle.db.model.ColumnDef;
 
 
-
+/**
+ * Static utility function for columns
+ */
 
 public class Columns {
+
 
     @SuppressWarnings("unchecked")
     public static <T> ColumnDef<T> safeCast(ColumnDef columnDef, Class<T> clazz) {
@@ -14,6 +17,14 @@ public class Columns {
         } else {
             throw new RuntimeException("The class of the column is " + columnDef.getClazz() + " and not" + clazz);
         }
+    }
+
+    public static <T> T getMin(ColumnDef<T> columnDef){
+        return columnDef.getRelationDef().getDataPath().getDataSystem().getMin(columnDef);
+    }
+
+    public static <T> T getMax(ColumnDef<T> columnDef) {
+        return columnDef.getRelationDef().getDataPath().getDataSystem().getMax(columnDef);
     }
 
 }

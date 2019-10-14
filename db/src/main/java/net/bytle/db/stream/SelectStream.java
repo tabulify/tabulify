@@ -1,7 +1,6 @@
 package net.bytle.db.stream;
 
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.model.TableDef;
 
 import java.sql.Clob;
 
@@ -26,9 +25,10 @@ public interface SelectStream extends AutoCloseable {
     Object getObject(int columnIndex);
 
 
-    DataPath getDataPath();
+    TableDef getDataDef();
 
     double getDouble(int columnIndex);
 
     Clob getClob(int columnIndex);
+
 }

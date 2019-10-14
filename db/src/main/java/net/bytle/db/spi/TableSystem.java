@@ -3,6 +3,7 @@ package net.bytle.db.spi;
 import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
+import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
@@ -32,4 +33,13 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract void drop(DataPath dataPath);
 
     public abstract void delete(DataPath dataPath);
+
+    public abstract void truncate(DataPath dataPath);
+
+    public abstract <T> T getMin(ColumnDef<T> columnDef);
+
+    public abstract void dropForeignKey(ForeignKeyDef foreignKeyDef);
+
+    public abstract SelectStream getSelectStream(String query);
+
 }

@@ -2,6 +2,7 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.cli.Log;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
@@ -16,10 +17,10 @@ public class MemoryStore  {
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-    static private Map<MemoryTable, List<List<Object>> > tableValues = new HashMap<>();
+    static private Map<DataPath, List<List<Object>> > tableValues = new HashMap<>();
     private static MemoryStore staticMemoryStore;
 
-    public static List<List<Object>>  get(MemoryTable memoryTable) {
+    public static List<List<Object>>  get(DataPath memoryTable) {
         return tableValues.computeIfAbsent(memoryTable, k -> new ArrayList<>());
     }
 
@@ -30,18 +31,18 @@ public class MemoryStore  {
         return staticMemoryStore;
     }
 
-    public void delete(MemoryTable memoryTable) {
+    public void delete(DataPath memoryTable) {
         Object values = tableValues.remove(memoryTable);
         if (values == null) {
             LOGGER.warning("The table (" + memoryTable + ") had no values. Nothing removed.");
         }
     }
 
-    public void drop(MemoryTable memoryTable) {
+    public void drop(DataPath memoryTable) {
         delete(memoryTable);
     }
 
-    public  void truncate(MemoryTable memoryTable) {
+    public  void truncate(DataPath memoryTable) {
         tableValues.put(memoryTable,new ArrayList<>());
     }
 
@@ -50,17 +51,17 @@ public class MemoryStore  {
      *
      * @param memoryTable
      */
-    public void print(MemoryTable memoryTable) {
+    public void print(DataPath memoryTable) {
         ListSelectStream tableOutputStream = ListSelectStream.of(memoryTable);
         Streams.print(tableOutputStream);
         tableOutputStream.close();
     }
 
-    public InsertStream getInsertStream(MemoryTable memoryTable) {
+    public InsertStream getInsertStream(DataPath memoryTable) {
         return ListInsertStream.of(memoryTable);
     }
 
-    public SelectStream getSelectStream(MemoryTable memoryTable) {
+    public SelectStream getSelectStream(DataPath memoryTable) {
         return ListSelectStream.of(memoryTable);
     }
 }

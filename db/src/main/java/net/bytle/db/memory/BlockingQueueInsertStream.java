@@ -2,6 +2,7 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.cli.Log;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
@@ -18,11 +19,11 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
     private int currentRowInBatch = 0;
     private int batchExecutionCount = 0;
 
-    public BlockingQueueInsertStream(MemoryTable memoryTable) {
+    public BlockingQueueInsertStream(DataPath memoryTable) {
         super(memoryTable);
     }
 
-    public static InsertStream get(MemoryTable memoryTable) {
+    public static InsertStream get(DataPath memoryTable) {
         return new BlockingQueueInsertStream(memoryTable);
     }
 

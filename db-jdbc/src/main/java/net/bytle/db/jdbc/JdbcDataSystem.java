@@ -12,10 +12,12 @@ import net.bytle.db.engine.DbDdl;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
+import net.bytle.type.Typess;
 
 import java.io.Closeable;
 import java.sql.*;
@@ -467,7 +469,7 @@ public class JdbcDataSystem extends TableSystem {
         String deleteStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
 
         try (
-            Statement statement = getCurrentConnection().createStatement();
+                Statement statement = getCurrentConnection().createStatement();
         ) {
             statement.execute(deleteStatement);
             // Without commit, the database is locked for sqlite (if the connection is no more in autocommit mode)
@@ -478,6 +480,99 @@ public class JdbcDataSystem extends TableSystem {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Override
+    public void truncate(DataPath dataPath) {
+
+
+        StringBuilder truncateTableStatement = new StringBuilder().append("truncate from ");
+        truncateTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+
+        try (
+                Statement statement = getCurrentConnection().createStatement();
+        ) {
+
+            statement.execute(truncateTableStatement.toString());
+            JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") truncated");
+
+        } catch (SQLException e) {
+            System.err.println(truncateTableStatement);
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public <T> T getMin(ColumnDef<T> columnDef) {
+
+        String columnStatement = columnDef.getColumnName();
+        String statementString = "select min(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
+
+        try (
+                Statement statement = getCurrentConnection().createStatement();
+                ResultSet resultSet = statement.executeQuery(statementString);
+        ) {
+            Object returnValue = null;
+
+            if (resultSet.next()) {
+                switch (columnDef.getDataType().getTypeCode()) {
+                    case Types.DATE:
+                        // In sqllite, getting a date object returns a long
+                        returnValue = resultSet.getDate(1);
+                        break;
+                    default:
+                        returnValue = resultSet.getObject(1);
+                        break;
+                }
+
+            }
+            if (returnValue != null) {
+
+                return Typess.safeCast(returnValue, columnDef.getClazz());
+
+            } else {
+                return null;
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(e);
+
+        }
+
+    }
+
+    @Override
+    public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+        /**
+         * TODO: move that outside of the core
+         * for now a hack
+         * because Sqlite does not support alter table drop foreign keys
+         */
+        if (!this.getProductName().equals(DB_SQLITE)) {
+            JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
+            String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
+            try {
+
+                Statement statement = getCurrentConnection().createStatement();
+                statement.execute(dropStatement);
+                statement.close();
+
+                JdbcDataSystemLog.LOGGER_DB_JDBC.info("Foreign Key (" + foreignKeyDef.getName() + ") deleted from the table (" + jdbcDataPath.toString() + ")");
+
+            } catch (SQLException e) {
+
+                System.err.println(dropStatement);
+                throw new RuntimeException(e);
+
+            }
+        }
+    }
+
+    @Override
+    public SelectStream getSelectStream(String query) {
+        return null;
     }
 
     // The map that will contain the driver data type

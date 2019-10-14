@@ -18,10 +18,10 @@ public class RelationMeta {
 
     private Map<String, ColumnDef> columnDefByName = new HashMap<>();
 
-    private RelationDef relationDef;
+    private TableDef dataDef;
 
-    public RelationMeta(RelationDef relationDef) {
-        this.relationDef = relationDef;
+    public RelationMeta(TableDef dataDef) {
+        this.dataDef = dataDef;
     }
 
     /**
@@ -62,7 +62,7 @@ public class RelationMeta {
             // This assert is to catch when object are passed
             // to string function, the length is bigger than the assertion and make it fails
             assert columnName.length() < 100;
-            columnDef = new ColumnDef<>(relationDef, columnName, clazz);
+            columnDef = new ColumnDef<>(dataDef, columnName, clazz);
             columnDef.setColumnPosition(columnDefByName.size() + 1);
             columnDefByName.put(columnName, columnDef);
         } else {
@@ -138,7 +138,7 @@ public class RelationMeta {
 
     @Override
     public String toString() {
-        return relationDef.getDataPath().toString();
+        return dataDef.getDataPath().toString();
     }
 
     public RelationMeta addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {

@@ -1,5 +1,6 @@
 package net.bytle.db.memory;
 
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
@@ -7,26 +8,26 @@ import java.util.List;
 
 public class ListInsertStream extends InsertStreamAbs implements InsertStream {
 
-    private final MemoryTable memoryTable;
+    private final DataPath memoryTable;
 
     private List<List<Object>> tableValues;
 
-    private ListInsertStream(MemoryTable memoryTable) {
+    private ListInsertStream(DataPath memoryTable) {
         super(memoryTable);
         this.memoryTable = memoryTable;
         tableValues = MemoryStore.get(memoryTable);
     }
 
-    public static InsertStream of(MemoryTable memoryTable) {
+    public static InsertStream of(DataPath memoryTable) {
         return new ListInsertStream(memoryTable);
     }
 
     @Override
     public ListInsertStream insert(List<Object> values) {
 
-        if (memoryTable.getColumnDefs().size() < values.size()) {
-            while (memoryTable.getColumnDefs().size() < values.size()) {
-                memoryTable.addColumn(String.valueOf(memoryTable.getColumnDefs().size()));
+        if (memoryTable.getDataDef().getColumnDefs().size() < values.size()) {
+            while (memoryTable.getDataDef().getColumnDefs().size() < values.size()) {
+                memoryTable.getDataDef().addColumn(String.valueOf(memoryTable.getDataDef().getColumnDefs().size()));
             }
         }
         tableValues.add(values);

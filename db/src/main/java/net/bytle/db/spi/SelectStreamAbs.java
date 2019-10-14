@@ -1,17 +1,13 @@
 package net.bytle.db.spi;
 
-public abstract class SelectStreamAbs {
+import net.bytle.db.stream.SelectStream;
 
-    private final DataPath dataPath;
-
-    public SelectStreamAbs(DataPath dataPath) {
-        this.dataPath = dataPath;
-    }
+public abstract class SelectStreamAbs implements SelectStream {
 
 
-    public DataPath getDataPath() {
-        return dataPath;
-    }
+
+
+
 
 
 }

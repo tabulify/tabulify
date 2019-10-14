@@ -24,7 +24,7 @@ public class Streams {
 
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final RelationDef tableDef = tableOutputStream.getDataPath().getDataDef();
+        final RelationDef tableDef = tableOutputStream.getDataDef();
         while (tableOutputStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
                 String string = tableOutputStream.getString(i);
@@ -99,7 +99,7 @@ public class Streams {
     }
 
     private static Object[] getObjects(SelectStream selectStream) {
-        int size = selectStream.getDataPath().getDataDef().getColumnDefs().size();
+        int size = selectStream.getDataDef().getColumnDefs().size();
         Object[] os = new Object[size];
 
         for (int i = 0; i < size; i++) {
