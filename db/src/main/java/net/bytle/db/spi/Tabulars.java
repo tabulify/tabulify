@@ -6,7 +6,9 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.stream.Streams;
 
 import javax.xml.crypto.Data;
 import java.sql.Connection;
@@ -173,7 +175,20 @@ public class Tabulars {
     }
 
 
+    /**
+     * Print the data of a table
+     *
+     * @param dataPath
+     */
+    public static void print(DataPath dataPath) {
 
+        SelectStream tableOutputStream = getSelectStream(dataPath);
+        Streams.print(tableOutputStream);
+        tableOutputStream.close();
 
+    }
 
+    public static InsertStream getInsertStream(DataPath dataPath) {
+        return dataPath.getDataSystem().getInsertStream(dataPath);
+    }
 }

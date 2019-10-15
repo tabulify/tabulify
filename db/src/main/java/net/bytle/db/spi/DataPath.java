@@ -1,5 +1,6 @@
 package net.bytle.db.spi;
 
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.TableDef;
 
 import java.util.List;
@@ -12,10 +13,10 @@ import java.util.List;
  */
 public abstract class DataPath implements Comparable<DataPath> {
 
+    private TableDef dataDef;
 
     public abstract TableSystem getDataSystem();
 
-    public abstract TableDef getDataDef();
 
     public abstract String getName();
 
@@ -32,6 +33,14 @@ public abstract class DataPath implements Comparable<DataPath> {
     @Override
     public String toString() {
         return getId();
+    }
+
+
+    public TableDef getDataDef() {
+        if (this.dataDef == null){
+            this.dataDef = DataDefs.of(this);
+        }
+        return dataDef;
     }
 
 

@@ -41,7 +41,7 @@ public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
             valuesToInsert = (List<Object>) values[0];
         }
 
-        return insert(valuesToInsert);
+        return this.insert(valuesToInsert);
     }
 
     @Override

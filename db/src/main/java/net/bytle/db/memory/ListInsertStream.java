@@ -8,13 +8,13 @@ import java.util.List;
 
 public class ListInsertStream extends InsertStreamAbs implements InsertStream {
 
-    private final DataPath memoryTable;
+    private final MemoryDataPath memoryTable;
 
     private List<List<Object>> tableValues;
 
     private ListInsertStream(DataPath memoryTable) {
         super(memoryTable);
-        this.memoryTable = memoryTable;
+        this.memoryTable = (MemoryDataPath) memoryTable;
         tableValues = MemoryStore.get(memoryTable);
     }
 

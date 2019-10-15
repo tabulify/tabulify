@@ -3,8 +3,13 @@ package net.bytle.db.spi;
 import com.sun.jndi.toolkit.url.Uri;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.memory.ListSelectStream;
+import net.bytle.db.stream.SelectStream;
+import net.bytle.db.stream.Streams;
 import net.bytle.db.uri.DataUri;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DataPaths {
@@ -32,29 +37,28 @@ public class DataPaths {
 
     }
 
-    public static DataPath of(String part, String... parts) {
+    public static DataPath of(String... parts) {
         // FileSystems.getSqliteDefault().getDataUri(first, more);
-        return null;
+        return TableSystems.getDefault().getDataPath(parts);
 
     }
 
-    public static DataPath of(Uri uri) {
-
-        return null;
-
-    }
 
     /**
      *
      * @param dataPath
-     * @param name
+     * @param names
      * @return
      */
     public static DataPath of(DataPath dataPath, String... names) {
-        return dataPath.getDataSystem().getDataPath(dataPath, names);
+        List<String> pathSegments = new ArrayList<>();
+        pathSegments.addAll(dataPath.getPathSegments());
+        pathSegments.addAll(Arrays.asList(names));
+        return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
     public static DataPath of(Database database, String... names) {
         return null;
     }
+
 }

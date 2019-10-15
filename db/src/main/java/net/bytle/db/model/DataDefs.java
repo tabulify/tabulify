@@ -12,6 +12,7 @@ import net.bytle.db.memory.ListInsertStream;
 import net.bytle.db.memory.MemoryStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
@@ -289,7 +290,7 @@ public class DataDefs {
         insertStream.close();
 
 
-        MemoryStore.of().print(tableStructure);
-        MemoryStore.of().drop(tableStructure);
+        Tabulars.print(tableStructure);
+        Tabulars.drop(tableStructure);
     }
 }
