@@ -224,12 +224,12 @@ public class TableDef implements RelationDef  {
 
     /**
      *
-     * @param tableDef - the foreign primary table
+     * @param dataPath - the foreign primary table
      * @param columnNames - the column names of this tables
      * @return the tableDef for chaining initialization
      */
-    public TableDef addForeignKey(TableDef tableDef, String... columnNames) {
-        this.foreignKeyOf(tableDef.getPrimaryKey(), columnNames);
+    public TableDef addForeignKey(DataPath dataPath, String... columnNames) {
+        this.foreignKeyOf(dataPath.getDataDef().getPrimaryKey(), columnNames);
         return this;
     }
 

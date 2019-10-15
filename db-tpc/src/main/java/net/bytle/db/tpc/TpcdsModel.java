@@ -1219,7 +1219,7 @@ public class TpcdsModel implements SchemaSample {
      * @param tableName - one of the static constant field that represents a table name
      * @return - the definition of this table
      */
-    public TableDef getTable(String tableName) {
+    public TableDef getDataPath(String tableName) {
         return tables.get(tableName);
     }
 

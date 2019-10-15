@@ -19,7 +19,7 @@ public interface SchemaSample {
      * The table name must be public constant in each class
      * to allow getting one table
      */
-    DataPath getTable(String tableName);
+    DataPath getDataPath(String tableName);
 
 
     List<DataPath> getTables(String... tableNames);

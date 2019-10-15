@@ -7,7 +7,7 @@ import net.bytle.cli.Clis;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.spi.DataDefs;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -62,7 +62,7 @@ public class DbTableDescribe {
 
                 switch (tableDefList.size()) {
                     case 1:
-                        DataDefs.printColumns(tableDefList.get(0));
+                        net.bytle.db.model.DataDefs.printColumns(tableDefList.get(0));
                         break;
                     default:
 

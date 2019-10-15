@@ -46,34 +46,22 @@ public class BytleSchema implements SchemaSample {
             , TABLE_TIME_NAME
     );
 
-    /**
-     * The schema where the table will be stored
-     */
-    private final DataPath schemaPath;
     private Map<String, DataPath> bytleTables = new HashMap<>();
 
-    /**
-     * @param currentSchema
-     */
-    BytleSchema(DataPath currentSchema) {
-        this.schemaPath = currentSchema;
+
+    BytleSchema() {
         buildTables();
     }
 
-
-    /**
-     * @param schemaDef
-     * @return @return a Bytle Sample Schema object in the schema def
-     */
-    public static BytleSchema get(DataPath schemaDef) {
-        return new BytleSchema(schemaDef);
+    public static BytleSchema of() {
+        return new BytleSchema();
     }
 
 
     void buildTables() {
 
         // Dim Cat Table
-        final DataPath catTable = DataPaths.of(schemaPath, TABLE_CATEGORY_NAME);
+        final DataPath catTable = DataPaths.of(TABLE_CATEGORY_NAME);
         bytleTables.put(TABLE_CATEGORY_NAME, catTable);
         catTable.getDataDef()
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -84,7 +72,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Dim timeTable
-        final DataPath timeTable = DataPaths.of(schemaPath, TABLE_TIME_NAME);
+        final DataPath timeTable = DataPaths.of(TABLE_TIME_NAME);
         bytleTables.put(TABLE_TIME_NAME, timeTable);
         timeTable.getDataDef()
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
@@ -98,7 +86,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Fact Table
-        final DataPath factTable = DataPaths.of(schemaPath, TABLE_TIME_NAME);
+        final DataPath factTable = DataPaths.of(TABLE_TIME_NAME);
         bytleTables.put(TABLE_FACT_NAME, factTable);
         factTable.getDataDef()
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)
@@ -120,7 +108,7 @@ public class BytleSchema implements SchemaSample {
     }
 
     @Override
-    public DataPath getTable(String tableName) {
+    public DataPath getDataPath(String tableName) {
         return bytleTables.get(tableName);
     }
 
