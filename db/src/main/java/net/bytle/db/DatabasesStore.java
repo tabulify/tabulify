@@ -3,6 +3,7 @@ package net.bytle.db;
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
+import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -28,7 +29,7 @@ public class DatabasesStore {
      * The local file database name as also stated
      * by the {@link Path#getFileSystem()}
      */
-    public static final String LOCAL_FILE_SYSTEM = "file";
+    public static final String DEFAULT_DATABASE = MemorySystemProvider.SCHEME;
 
     /**
      * This is a passphrase used to encrypt the sample database password
@@ -344,6 +345,6 @@ public class DatabasesStore {
     }
 
     public Database getDefaultDatabase() {
-        return Databases.of(LOCAL_FILE_SYSTEM);
+        return Databases.of(DEFAULT_DATABASE);
     }
 }

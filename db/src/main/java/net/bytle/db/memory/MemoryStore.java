@@ -28,6 +28,7 @@ public class MemoryStore extends TableSystem {
     static private Map<DataPath, List<List<Object>> > tableValues = new HashMap<>();
     private static MemoryStore staticMemoryStore;
     private final MemorySystemProvider memoryStoreProvider;
+    private Database database;
 
     public MemoryStore(MemorySystemProvider memorySystemProvider) {
         this.memoryStoreProvider = memorySystemProvider;
@@ -61,17 +62,21 @@ public class MemoryStore extends TableSystem {
 
     @Override
     public <T> T getMin(ColumnDef<T> columnDef) {
-        return null;
+
+        throw new RuntimeException("Not Implemented");
+
     }
 
     @Override
     public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-
+        // Nothing to do
     }
 
     @Override
     public SelectStream getSelectStream(String query) {
-        return null;
+
+        throw new RuntimeException("Getting a stream from a query is not supported");
+
     }
 
     @Override
@@ -86,7 +91,8 @@ public class MemoryStore extends TableSystem {
 
     @Override
     public DataPath getDataPath(DataUri dataUri) {
-        return null;
+        this.database = dataUri.getDataStore();
+        return getDataPath(dataUri.getPathSegments().toArray(new String[0]));
     }
 
     @Override
@@ -96,7 +102,7 @@ public class MemoryStore extends TableSystem {
 
     @Override
     public Boolean exists(DataPath dataPath) {
-        return null;
+        return tableValues.containsKey(dataPath);
     }
 
     public SelectStream getSelectStream(DataPath memoryTable) {
@@ -105,27 +111,33 @@ public class MemoryStore extends TableSystem {
 
     @Override
     public Database getDatabase() {
-        return null;
+        return database;
     }
 
     @Override
     public <T> T getMax(ColumnDef<T> columnDef) {
-        return null;
+
+        throw new RuntimeException("Not implemented");
+
     }
 
     @Override
     public boolean isContainer(DataPath dataPath) {
+
         return false;
+
     }
 
     @Override
     public DataPath create(DataPath dataPath) {
-        return null;
+        List<List<Object>> memoryTabularData = new ArrayList<>();
+        tableValues.put(dataPath,memoryTabularData);
+        return dataPath;
     }
 
     @Override
     public String getProductName() {
-        return null;
+        return "memory";
     }
 
     @Override
@@ -179,7 +191,7 @@ public class MemoryStore extends TableSystem {
      * @throws Exception if this resource cannot be closed
      */
     @Override
-    public void close() throws Exception {
+    public void close()  {
 
     }
 }

@@ -61,7 +61,7 @@ public class DataDefs {
         for (Path filePath : fileDiscovered) {
 
             List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
-            DataUri dataUri = DataUri.of(String.join("/",names));
+            DataUri dataUri = DataUri.of(String.join("/",names),Fs.getFileName(path).replace("--datadef",""));
             DataPath dataPath = DataPaths.of(dataUri);
             dataPath = readFile(dataPath, filePath);
             dataPaths.add(dataPath);
@@ -234,7 +234,8 @@ public class DataDefs {
 
 
     public static TableDef of(DataPath dataPath) {
-        return TableDef.of(dataPath);
+
+        return dataPath.getDataDef();
     }
 
     /**

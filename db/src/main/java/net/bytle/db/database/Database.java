@@ -3,12 +3,8 @@ package net.bytle.db.database;
 import net.bytle.cli.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.model.*;
-import net.bytle.regexp.Globs;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * An object with all meta information about a data store
@@ -185,7 +181,7 @@ public class Database implements Comparable<Database> {
      */
     public String getScheme() {
         if(url==null){
-            return DatabasesStore.LOCAL_FILE_SYSTEM;
+            return DatabasesStore.DEFAULT_DATABASE;
         } else {
             return getUrl().substring(0,getUrl().indexOf(":"));
         }

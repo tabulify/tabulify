@@ -9,6 +9,7 @@ import java.util.List;
 
 public class MemorySystemProvider extends TableSystemProvider {
 
+    public static final String SCHEME = "mem";
     static MemorySystemProvider memorySystemProvider;
     public static MemorySystemProvider of() {
         if (memorySystemProvider==null){
@@ -24,7 +25,7 @@ public class MemorySystemProvider extends TableSystemProvider {
      */
     @Override
     public List<String> getSchemes() {
-        return Arrays.asList("memory");
+        return Arrays.asList(SCHEME);
     }
 
     /**

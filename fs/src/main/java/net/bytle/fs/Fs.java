@@ -395,4 +395,19 @@ public class Fs {
         String[] more = Arrays.copyOfRange(segments, 1, segments.length);
         return Paths.get(segments[0],more);
     }
+
+    /**
+     *
+     * @param path
+     * @return the file name without the extension
+     */
+    public static String getFileName(Path path) {
+        final String fileName = path.getFileName().toString();
+        final int endIndex = fileName.indexOf(".");
+        if (endIndex==-1){
+            return fileName;
+        } else {
+            return fileName.substring(0, endIndex);
+        }
+    }
 }

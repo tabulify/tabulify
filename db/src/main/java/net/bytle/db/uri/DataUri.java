@@ -80,7 +80,15 @@ public class DataUri implements Comparable<DataUri> {
      * @return a data uri from the default datastore
      */
     public static DataUri of(String first, String... more) {
-        return new DataUri(DatabasesStore.of(),first, more);
+        if (first.equals("")){
+            if (more.length>0) {
+                return new DataUri(DatabasesStore.of(), more[0], Arrays.copyOfRange(more, 1, more.length));
+            } else {
+                throw new RuntimeException("A data URI can not be build from an empty string and/of a empty array");
+            }
+        } else {
+            return new DataUri(DatabasesStore.of(), first, more);
+        }
     }
 
 

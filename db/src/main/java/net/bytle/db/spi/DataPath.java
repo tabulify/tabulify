@@ -38,7 +38,7 @@ public abstract class DataPath implements Comparable<DataPath> {
 
     public TableDef getDataDef() {
         if (this.dataDef == null){
-            this.dataDef = DataDefs.of(this);
+            this.dataDef = TableDef.of(this);
         }
         return dataDef;
     }

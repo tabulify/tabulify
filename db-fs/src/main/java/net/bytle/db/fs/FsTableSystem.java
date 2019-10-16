@@ -12,7 +12,6 @@ import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,7 +50,7 @@ public class FsTableSystem extends TableSystem {
      */
     public List<DataPath> getDataPaths(DataUri dataUri) {
 
-        if (!dataUri.getDataStore().getScheme().equals(DatabasesStore.LOCAL_FILE_SYSTEM)){
+        if (!dataUri.getDataStore().getScheme().equals(DatabasesStore.DEFAULT_DATABASE)){
             throw new RuntimeException("Only a file uri from the local file system is implemented from now");
         }
 

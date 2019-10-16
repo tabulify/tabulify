@@ -53,12 +53,7 @@ public class TableDef implements RelationDef  {
         this.dataPath = dataPath;
     }
 
-    /**
-     *
-     * @param dataPath - the data path creating this object. It can be a table but it can also be just a database (for instance for a query)
-     * @return a tableDef
-     */
-    public static TableDef of(DataPath dataPath){
+    public static TableDef of(DataPath dataPath) {
         return new TableDef(dataPath);
     }
 
