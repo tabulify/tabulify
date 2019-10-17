@@ -14,7 +14,7 @@ public class DataUri implements Comparable<DataUri> {
     public static final String AT_STRING = "@";
     private final Database dataStore;
     private List<String> pathSegments;
-
+    private String databaseName;
 
 
     private DataUri(Database dataStore, String... more) {
@@ -32,6 +32,7 @@ public class DataUri implements Comparable<DataUri> {
             throw new RuntimeException("The first part of a data uri cannot be null");
         }
 
+
         if (more.length == 0) {
 
             final char firstCharacter = first.charAt(0);
@@ -47,7 +48,8 @@ public class DataUri implements Comparable<DataUri> {
 
                 String[] pathsParsed = first.substring(1).split(PATH_SEPARATOR);
                 this.pathSegments = Arrays.asList(Arrays.copyOfRange(pathsParsed, 1, pathsParsed.length));
-                this.dataStore = dataStorePath.getDatabase(pathsParsed[0]);
+                this.databaseName = pathsParsed[0];
+                this.dataStore = dataStorePath.getDatabase(databaseName);
 
             }
 
@@ -64,7 +66,8 @@ public class DataUri implements Comparable<DataUri> {
             } else {
 
                 this.pathSegments = Arrays.asList(more);
-                this.dataStore = dataStorePath.getDatabase(first.substring(1));
+                this.databaseName = first.substring(1);
+                this.dataStore = dataStorePath.getDatabase(databaseName);
 
             }
 
@@ -167,5 +170,18 @@ public class DataUri implements Comparable<DataUri> {
     @Override
     public int compareTo(DataUri o) {
         return this.toString().compareTo(o.toString());
+    }
+
+    /**
+     * The database may not be in the store
+     * This get function return the name to test the parse of the uri
+     * @return
+     */
+    public String getDatabaseName() {
+        if (this.dataStore!=null) {
+            return this.dataStore.getDatabaseName();
+        } else {
+            return this.databaseName;
+        }
     }
 }
