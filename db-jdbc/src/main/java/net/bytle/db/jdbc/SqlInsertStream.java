@@ -9,6 +9,7 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.cli.Log;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
@@ -311,7 +312,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                 }
             }
 
-            if (targetMetaDef.getDataPath().getDataSystem().getMaxWriterConnection() > 1) {
+            final JdbcDataPath dataPath = (JdbcDataPath) targetMetaDef.getDataPath();
+            if (dataPath.getDataSystem().getMaxWriterConnection() > 1) {
                 if (connection != null) {
                     connection.close();
                 }

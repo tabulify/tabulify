@@ -15,6 +15,8 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystemProvider;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.type.Typess;
@@ -80,20 +82,25 @@ public class JdbcDataSystem extends TableSystem {
         this.connection = null;
     }
 
-    public static TableSystem of(Database database) {
+    public static JdbcDataSystem of(Database database) {
         return new JdbcDataSystem(database);
     }
 
     @Override
-    public DataPath getDataPath(DataUri dataUri) {
+    public JdbcDataPath getDataPath(DataUri dataUri) {
 
-        if (dataUri.getPathSegments().size() > 3) {
-            throw new RuntimeException("This URI (" + dataUri + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
+        return getPrivatelyJdbcPath(dataUri.getPathSegments());
+
+    }
+
+    private JdbcDataPath getPrivatelyJdbcPath(List<String> pathSegments) {
+        if (pathSegments.size() > 3) {
+            throw new RuntimeException("This jdbc path (" + String.join("/", pathSegments) + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
         }
 
         String catalog;
-        if (dataUri.getPathSegments().size() > 2) {
-            catalog = dataUri.getPathSegment(dataUri.getPathSegments().size() - 3);
+        if (pathSegments.size() > 2) {
+            catalog = pathSegments.get(pathSegments.size() - 3);
         } else {
             try {
                 catalog = this.getCurrentConnection().getCatalog();
@@ -103,19 +110,23 @@ public class JdbcDataSystem extends TableSystem {
         }
 
         String schema;
-        if (dataUri.getPathSegments().size() > 1) {
-            schema = dataUri.getPathSegment(dataUri.getPathSegments().size() - 2);
+        if (pathSegments.size() > 1) {
+            schema = pathSegments.get(pathSegments.size() - 2);
         } else {
             schema = this.getCurrentSchema();
         }
 
-        return JdbcDataPath.of(this, catalog, schema, dataUri.getDataName());
+        return JdbcDataPath.of(this, catalog, schema, pathSegments.get(pathSegments.size() - 1));
+
     }
 
     @Override
-    public DataPath getDataPath(DataPath dataPath, String... name) {
-        return null;
+    public JdbcDataPath getDataPath(String... names) {
+
+        return getPrivatelyJdbcPath(Arrays.asList(names));
+
     }
+
 
     /**
      * @param dataPath
@@ -573,6 +584,29 @@ public class JdbcDataSystem extends TableSystem {
     @Override
     public SelectStream getSelectStream(String query) {
         return null;
+    }
+
+    @Override
+    public TableSystemProvider getProvider() {
+        return null;
+    }
+
+    @Override
+    public InsertStream getInsertStream(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public List<DataPath> getChildrenDataPath(DataPath dataPath) {
+
+
+        return DbObjectBuilder.getChildrenDataPath((JdbcDataPath) dataPath);
+
+    }
+
+    @Override
+    public DataPath move(DataPath source, DataPath target) {
+        throw new RuntimeException("Not yet implemented");
     }
 
     // The map that will contain the driver data type

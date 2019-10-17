@@ -10,7 +10,7 @@ public interface SchemaSample {
     /**
      * @return all tables
      */
-    List<DataPath> getTables();
+    List<DataPath> getDataPaths();
 
     /**
      * @param tableName
@@ -22,6 +22,6 @@ public interface SchemaSample {
     DataPath getDataPath(String tableName);
 
 
-    List<DataPath> getTables(String... tableNames);
+    List<DataPath> getDataPaths(String... tableNames);
 
 }

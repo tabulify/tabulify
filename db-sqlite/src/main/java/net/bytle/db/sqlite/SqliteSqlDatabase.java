@@ -6,6 +6,8 @@ import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
+import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
@@ -73,19 +75,19 @@ public class SqliteSqlDatabase extends SqlDatabase {
      * The primary key shoud be in the create statement.
      * See https://sqlite.org/faq.html#q11
      *
-     * @param tableDef
+     * @param dataPath
      * @return a create statement https://www.sqlite.org/lang_createtable.html
      */
     @Override
-    public List<String> getCreateTableStatements(TableDef tableDef, String name) {
+    public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
 
         List<String> statements = new ArrayList<>();
         StringBuilder statement = new StringBuilder();
-        statement.append("CREATE TABLE " + getNormativeSchemaObjectName(name) + " (\n");
-
+        statement.append("CREATE TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (\n");
+        TableDef tableDef = dataPath.getDataDef();
         for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
             ColumnDef columnDef = tableDef.getColumnDefs().get(i);
-            statement.append(DbDdl.getColumnStatementForCreateTable(columnDef, columnDef.getRelationDef().getSchema()));
+            statement.append(DbDdl.getColumnStatementForCreateTable(columnDef));
             if (i != tableDef.getColumnDefs().size() - 1) {
                 statement.append(",\n");
             }
@@ -128,7 +130,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
             statement.append(String.join(",", childColumns));
 
             statement.append(") REFERENCES ");
-            statement.append(foreignKeyDef.getForeignPrimaryKey().getTableDef().getName());
+            statement.append(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath().getName());
             statement.append("(");
 
             // Foreign / Parent  columns
@@ -159,9 +161,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
      */
     public Boolean addPrimaryKey(TableDef tableDef) {
 
-        Connection connection = tableDef.getDatabase().getCurrentConnection();
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        Connection connection = dataPath.getDataSystem().getCurrentConnection();
         List<String> columns = new ArrayList<>();
-        final String sql = "PRAGMA table_info('" + tableDef.getName() + "')";
+        final String sql = "PRAGMA table_info('" + dataPath.getName() + "')";
         try (
                 Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery(sql)
@@ -186,9 +189,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
 
     public Boolean addForeignKey(TableDef tableDef) {
 
-        Connection connection = tableDef.getDatabase().getCurrentConnection();
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        Connection connection = dataPath.getDataSystem().getCurrentConnection();
         Map<Integer, List<String>> foreignKeys = new HashMap<>();
-        final String sql = "PRAGMA foreign_key_list('" + tableDef.getName() + "')";
+        final String sql = "PRAGMA foreign_key_list('" + dataPath.getName() + "')";
         try (
                 Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery(sql);
@@ -208,13 +212,14 @@ public class SqliteSqlDatabase extends SqlDatabase {
         }
 
         // Sqlite seems to preserve the order of the foreign keys but descendant
-        // Hack to of it right
+        // Hack to get it right
         for (int i = foreignKeys.size() - 1; i >= 0; i--) {
             final List<String> foreignKey = foreignKeys.get(i);
             final String foreignTableName = foreignKey.get(0);
+            JdbcDataPath foreignDataPath = dataPath.getDataSystem().getDataPath(foreignTableName);
             final String nativeTableColumn = foreignKey.get(1);
             tableDef.addForeignKey(
-                    tableDef.getSchema().getTableOf(foreignTableName),
+                    foreignDataPath,
                     nativeTableColumn
             );
         }
@@ -236,8 +241,10 @@ public class SqliteSqlDatabase extends SqlDatabase {
     public boolean addColumns(TableDef tableDef) {
 
         // Because the driver returns 20000000 and no data type name
-        try (Statement statement = tableDef.getDatabase().getCurrentConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + tableDef.getName() + "')");
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        try (
+                Statement statement = dataPath.getDataSystem().getCurrentConnection().createStatement();
+                ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + dataPath.getName() + "')");
         ) {
             while (resultSet.next()) {
                 // ie INTEGER(50)

@@ -19,7 +19,7 @@ public class Relations {
 
     }
 
-    public static void addColumns(RelationDef targetDef, RelationDef sourceDef) {
+    public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
 
         // Add the columns
         for (int i = 0; i < sourceDef.getColumnDefs().size(); i++) {

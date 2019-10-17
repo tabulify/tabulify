@@ -3,6 +3,7 @@ package net.bytle.db.database.Hana;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.SqlDatabase;
 import net.bytle.db.engine.DbDdl;
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
@@ -37,13 +38,14 @@ public class SqlDatabaseIHana extends SqlDatabase {
     }
 
     /**
-     * See http://help.sap.com/saphelp_hanaplatform/helpdata/en/20/d58a5f75191014b2fe92141b7df228/content.htm
-     * for the complete statement
-     * @param tableDef
-     * @return a create table statement with primary key, foreign and unique
+     * Returns statement to create the table
+     *
+     * @param jdbcDataPath
+     * @return
      */
     @Override
-    public List<String> getCreateTableStatements(TableDef tableDef, String name) {
+    public List<String> getCreateTableStatements(JdbcDataPath jdbcDataPath) {
+
 
         List<String> statements = new ArrayList<>();
 
@@ -53,22 +55,22 @@ public class SqlDatabaseIHana extends SqlDatabase {
         //        if (tableType != null){
         //            statement += tableType;
         //        }
-        statement += " table " + name + " (\n"
-                + DbDdl.getCreateTableStatementColumnsDefinition(tableDef.getColumnDefs(), tableDef.getSchema())
+        statement += " table " + jdbcDataPath.getName() + " (\n"
+                + DbDdl.getCreateTableStatementColumnsDefinition(jdbcDataPath)
                 + "\n)";
 
         statements.add(statement);
-        final PrimaryKeyDef primaryKey = tableDef.getPrimaryKey();
+        final PrimaryKeyDef primaryKey = jdbcDataPath.getDataDef().getPrimaryKey();
         if (primaryKey!=null) {
-            statements.add(DbDdl.getAlterTablePrimaryKeyStatement(primaryKey, tableDef.getSchema()));
+            statements.add(DbDdl.getAlterTablePrimaryKeyStatement(jdbcDataPath));
         }
 
-        for (ForeignKeyDef foreignKeyDef:tableDef.getForeignKeys()){
-            statements.add(DbDdl.getAlterTableForeignKeyStatement(foreignKeyDef, tableDef.getSchema()));
+        for (ForeignKeyDef foreignKeyDef:jdbcDataPath.getDataDef().getForeignKeys()){
+            statements.add(DbDdl.getAlterTableForeignKeyStatement(foreignKeyDef));
         }
 
-        for (UniqueKeyDef uniqueKeyDef:tableDef.getUniqueKeys()){
-            statements.add(DbDdl.getAlterTableUniqueKeyStatement(uniqueKeyDef, tableDef.getSchema()));
+        for (UniqueKeyDef uniqueKeyDef:jdbcDataPath.getDataDef().getUniqueKeys()){
+            statements.add(DbDdl.getAlterTableUniqueKeyStatement(uniqueKeyDef));
         }
 
         return statements;

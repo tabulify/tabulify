@@ -3,10 +3,12 @@ package net.bytle.db.database.Oracle;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.SqlDatabase;
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import oracle.jdbc.OracleTypes;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +37,17 @@ public class SqlDatabaseIOracle extends SqlDatabase {
     @Override
     public DataTypeDatabase dataTypeOf(Integer typeCode) {
         return dataTypeDatabaseSet.get(typeCode);
+    }
+
+    /**
+     * Returns statement to create the table
+     *
+     * @param dataPath
+     * @return
+     */
+    @Override
+    public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
+        return null;
     }
 
 

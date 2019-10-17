@@ -90,6 +90,16 @@ public class MemoryStore extends TableSystem {
     }
 
     @Override
+    public List<DataPath> getChildrenDataPath(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public DataPath move(DataPath source, DataPath target) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
     public DataPath getDataPath(DataUri dataUri) {
         this.database = dataUri.getDataStore();
         return getDataPath(dataUri.getPathSegments().toArray(new String[0]));

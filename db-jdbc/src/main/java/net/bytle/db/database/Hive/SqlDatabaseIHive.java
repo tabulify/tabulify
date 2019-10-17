@@ -2,6 +2,7 @@ package net.bytle.db.database.Hive;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.SqlDatabase;
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.TableDef;
 
@@ -36,10 +37,6 @@ public class SqlDatabaseIHive extends SqlDatabase {
         return dataTypeDatabaseSet.get(typeCode);
     }
 
-    @Override
-    public List<String> getCreateTableStatements(TableDef tableDef, String name) {
-        return null;
-    }
 
 
     @Override

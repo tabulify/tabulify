@@ -2,6 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.Relations;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -9,12 +10,11 @@ import net.bytle.db.stream.Streams;
 
 import java.util.Arrays;
 import java.util.List;
-
-
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class Tabulars {
-
 
 
     public synchronized static Boolean exists(DataPath dataPath) {
@@ -37,10 +37,9 @@ public class Tabulars {
     }
 
     /**
-     *
      * @param dataPaths - a list of data path
      * @return return a independent set of data path (ie independent of foreign key outside of the set)
-     *
+     * <p>
      * (ie delete the foreign keys of a table if the foreign table is not part of the set)
      */
     public static List<DataPath> atomic(List<DataPath> dataPaths) {
@@ -56,13 +55,13 @@ public class Tabulars {
     }
 
     /**
-     *
      * @param dataPath - a data path container (a directory, a schema or a catalog)
      * @return the children data paths representing sql tables, schema or files
      */
-    public static DataPath getChildrenDataPath(DataPath dataPath) {
+    public static List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
-        return null;
+        return dataPath.getDataSystem().getChildrenDataPath(dataPath);
+
     }
 
     /**
@@ -105,10 +104,10 @@ public class Tabulars {
 
     }
 
-    public static void drop(DataPath... dataPaths){
+    public static void drop(DataPath... dataPaths) {
 
         Dag dag = Dag.get(Arrays.asList(dataPaths));
-        for (DataPath dataPath:dag.getDropOrderedTables()) {
+        for (DataPath dataPath : dag.getDropOrderedTables()) {
             dataPath.getDataSystem().drop(dataPath);
         }
 
@@ -163,7 +162,7 @@ public class Tabulars {
 
     }
 
-    public static void truncate(DataPath dataPath){
+    public static void truncate(DataPath dataPath) {
         dataPath.getDataSystem().truncate(dataPath);
     }
 
@@ -184,4 +183,35 @@ public class Tabulars {
     public static InsertStream getInsertStream(DataPath dataPath) {
         return dataPath.getDataSystem().getInsertStream(dataPath);
     }
+
+    public static DataPath move(DataPath source, DataPath target) {
+
+        if (source.getDataSystem() == target.getDataSystem()) {
+            // same provider
+            source.getDataSystem().move(source, target);
+        } else {
+            // different providers
+            if (!Tabulars.exists(target)) {
+                if (target.getDataDef() == null) {
+                    Relations.addColumns(source.getDataDef(), target.getDataDefOf());
+                }
+                Tabulars.create(target);
+            }
+            try (
+                    SelectStream sourceSelectStream = Tabulars.getSelectStream(source);
+                    InsertStream targetInsertStream = Tabulars.getInsertStream(target)
+            ) {
+                while (sourceSelectStream.next()) {
+                    List<Object> objects = IntStream.of(sourceSelectStream.getDataDef().getColumnDefs().size())
+                            .mapToObj(sourceSelectStream::getObject)
+                            .collect(Collectors.toList());
+                    targetInsertStream.insert(objects);
+                }
+            }
+        }
+        return target;
+
+    }
+
+
 }

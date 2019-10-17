@@ -13,6 +13,7 @@
     <modules>
         <module>cli</module>
         <module>db</module>
+        <module>db-jdbc</module>
         <module>db-cli</module>
         <module>db-loader</module>
         <module>db-tpc</module>

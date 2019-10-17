@@ -6,6 +6,7 @@ import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.*;
+import net.bytle.db.spi.DataPath;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,13 +20,6 @@ import java.util.stream.Collectors;
 public class DbObjectBuilder {
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
-
-    private final Database database;
-
-
-    public DbObjectBuilder(Database database) {
-        this.database = database;
-    }
 
 
     /**
@@ -72,7 +66,8 @@ public class DbObjectBuilder {
 
         // Bug in SQLite Driver - Hack
         // that doesn't return the good primary ley
-        Boolean done = tableDef.getDataPath().getDataSystem().getSqlDatabase().addPrimaryKey(tableDef);
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        Boolean done = dataPath.getDataSystem().getSqlDatabase().addPrimaryKey(tableDef);
         if (done == null || done) {
             return;
         }
@@ -86,7 +81,7 @@ public class DbObjectBuilder {
         pkProp.add(key_seq);
 
         // Primary Key building
-        ResultSet pkResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName());
+        ResultSet pkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName());
         // Collect all the data because we don't known if they will be in order
         // and because in a recursive call, the result set may be closed
         List<Map<String, String>> pkColumns = new ArrayList<>();
@@ -113,10 +108,6 @@ public class DbObjectBuilder {
 
     }
 
-    public static DbObjectBuilder of(Database database) {
-        return new DbObjectBuilder(database);
-    }
-
 
     /**
      * Build a table from a database
@@ -126,12 +117,12 @@ public class DbObjectBuilder {
      * @param jdbcDataPath
      * @return null if no table is found
      */
-    public TableDef getTableDef(JdbcDataPath jdbcDataPath) {
+    public static TableDef getTableDef(JdbcDataPath jdbcDataPath) {
 
 
         try {
 
-            LOGGER.fine("Building the table structure for the data path (" + jdbcDataPath +")");
+            LOGGER.fine("Building the table structure for the data path (" + jdbcDataPath + ")");
 
             String[] types = {"TABLE"};
             String schema = jdbcDataPath.getSchema().getName();
@@ -140,7 +131,7 @@ public class DbObjectBuilder {
 
             ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
             boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-            TableDef tableDef = TableDef.of(jdbcDataPath);
+            TableDef tableDef = jdbcDataPath.getDataDef();
             if (!tableExist) {
 
                 tableResultSet.close();
@@ -175,10 +166,11 @@ public class DbObjectBuilder {
 
     private static void buildTableColumns(TableDef tableDef) throws SQLException {
 
-        Boolean added = tableDef.getDataPath().getDataSystem().getSqlDatabase().addColumns(tableDef);
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        Boolean added = dataPath.getDataSystem().getSqlDatabase().addColumns(tableDef);
         if (!added) {
 
-            ResultSet columnResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getColumns(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName(), null);
+            ResultSet columnResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName(), null);
 
             while (columnResultSet.next()) {
 
@@ -233,16 +225,17 @@ public class DbObjectBuilder {
      *
      * @param tableDef
      */
-    private void buildForeignKey(TableDef tableDef) {
+    private static void buildForeignKey(TableDef tableDef) {
 
         // SQLite Driver doesn't return a empty string as key name
         // for all foreigns key
-        Boolean done = tableDef.getDataPath().getDataSystem().getSqlDatabase().addForeignKey(tableDef);
+        final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+        Boolean done = dataPath.getDataSystem().getSqlDatabase().addForeignKey(tableDef);
         if (done == null || done) {
             return;
         }
 
-        Database database = tableDef.getDataPath().getDataSystem().getDatabase();
+        Database database = dataPath.getDataSystem().getDatabase();
         // Collect all fk data
         Map<String, ForeignKeyDef> fkMap = new HashMap<>();
 
@@ -285,7 +278,7 @@ public class DbObjectBuilder {
 
         try (
                 // ImportedKey = the primary keys imported by a table
-                ResultSet fkResultSet = tableDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(tableDef.getDataPath().getCatalog(), tableDef.getDataPath().getSchema().getName(), tableDef.getDataPath().getName());
+                ResultSet fkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName());
         ) {
 
             while (fkResultSet.next()) {
@@ -305,7 +298,7 @@ public class DbObjectBuilder {
             }
 
         } catch (Exception e) {
-            String s = "Error when building Foreign Key (ie imported keys) for the table " + tableDef.getDataPath();
+            String s = "Error when building Foreign Key (ie imported keys) for the table " + dataPath;
             LOGGER.severe(s);
             System.err.println(s);
             throw new RuntimeException(e);
@@ -313,7 +306,7 @@ public class DbObjectBuilder {
 
         // How much foreign key (ie how much foreign key tables)
         List<JdbcDataPath> foreignTableNames = fkDatas.stream()
-                .map(s -> JdbcDataPath.of(tableDef.getDataPath().getDataSystem(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
+                .map(s -> JdbcDataPath.of(dataPath.getDataSystem(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
                 .collect(Collectors.toList());
 
 
@@ -349,16 +342,17 @@ public class DbObjectBuilder {
      *
      * @param metaDataDef
      */
-    private void buildUniqueKey(TableDef metaDataDef) {
+    private static void buildUniqueKey(TableDef metaDataDef) {
 
         // Collect all data first because we need all columns that make a unique key before
         // building the object
         Map<String, Map<Integer, String>> indexData = new HashMap<>();
         final String ordinal_position_alias = "ORDINAL_POSITION";
         final String column_name_alias = "COLUMN_NAME";
+        final JdbcDataPath dataPath = (JdbcDataPath) metaDataDef.getDataPath();
         try (
                 // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges
-                ResultSet indexResultSet = metaDataDef.getDataPath().getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(metaDataDef.getDataPath().getCatalog(), metaDataDef.getDataPath().getSchema().getName(), metaDataDef.getDataPath().getName(), true, true);
+                ResultSet indexResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName(), true, true);
         ) {
             while (indexResultSet.next()) {
 
@@ -379,7 +373,7 @@ public class DbObjectBuilder {
             }
 
         } catch (SQLException e) {
-            String s = "Error when building the unique key (ie indexinfo) of the table (" + metaDataDef.getDataPath() + ")";
+            String s = "Error when building the unique key (ie indexinfo) of the table (" + dataPath + ")";
             LOGGER.severe(s);
             System.err.println(s);
             throw new RuntimeException(e);
@@ -414,7 +408,28 @@ public class DbObjectBuilder {
     }
 
 
+    public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath) {
+
+        List<DataPath> jdbcDataPaths = new ArrayList<>();
+        try {
+
+            String[] types = {"TABLE"};
+            String schema = jdbcDataPath.getSchema().getName();
+            String catalog = jdbcDataPath.getCatalog();
+            String tableName = jdbcDataPath.getName();
+
+            ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
+            while (tableResultSet.next()) {
+                JdbcDataPath childDataPath = jdbcDataPath.getDataSystem().getDataPath(catalog, schema, tableResultSet.getString("TABLE_NAME"));
+                jdbcDataPaths.add(childDataPath);
+            }
 
 
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return jdbcDataPaths;
+
+    }
 
 }

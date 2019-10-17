@@ -61,4 +61,7 @@ public class DataPaths {
         return null;
     }
 
+    public static DataPath of(TableSystem dataSystem, List<String> pathSegments) {
+        return dataSystem.getDataPath(pathSegments.toArray(new String[0]));
+    }
 }

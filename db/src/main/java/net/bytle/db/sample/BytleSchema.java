@@ -103,7 +103,7 @@ public class BytleSchema implements SchemaSample {
 
 
     @Override
-    public List<DataPath> getTables() {
+    public List<DataPath> getDataPaths() {
         return new ArrayList<>(bytleTables.values());
     }
 
@@ -113,7 +113,7 @@ public class BytleSchema implements SchemaSample {
     }
 
     @Override
-    public List<DataPath> getTables(String... tableNames) {
+    public List<DataPath> getDataPaths(String... tableNames) {
         return Arrays.stream(tableNames).map(name -> bytleTables.get(name)).collect(Collectors.toList());
     }
 

@@ -33,8 +33,7 @@ public class JdbcDataPath extends DataPath  {
     @Override
     public TableDef getDataDef() {
 
-        return DbObjectBuilder.of(jdbcDataSystem.getDatabase())
-                .getTableDef(this);
+        return DbObjectBuilder.getTableDef(this);
 
     }
 

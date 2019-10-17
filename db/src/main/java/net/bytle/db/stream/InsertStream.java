@@ -4,7 +4,7 @@ import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
-public interface InsertStream {
+public interface InsertStream extends AutoCloseable {
 
 
     /**

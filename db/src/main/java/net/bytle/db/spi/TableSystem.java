@@ -8,6 +8,8 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
+import java.util.List;
+
 public abstract class TableSystem implements AutoCloseable {
 
     public abstract DataPath getDataPath(DataUri dataUri);
@@ -47,4 +49,7 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract InsertStream getInsertStream(DataPath dataPath);
 
+    public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
+
+    public abstract DataPath move(DataPath source, DataPath target);
 }

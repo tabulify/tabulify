@@ -44,7 +44,7 @@ public class Jdbcs {
             }
             tableResultSet.close();
 
-            // getRelationDef make also used of the getTables
+            // getRelationDef make also used of the getDataPaths
             // and it seems that there is a cache because the result was closed
             // We do then a second loop
             for (String objectName : objectNames) {
@@ -237,7 +237,7 @@ public class Jdbcs {
     /**
      * Print data type given by the driver
      */
-    public void printDataTypeInformation(Connection connection) {
+    public static void printDataTypeInformation(Connection connection) {
 
         List<DataTypeDriver> dataTypeDrivers = new ArrayList<>(getDataTypeDriver(connection).values());
 

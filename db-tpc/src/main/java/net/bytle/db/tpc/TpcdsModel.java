@@ -1184,17 +1184,17 @@ public class TpcdsModel implements SchemaSample {
 
         switch (schemaName) {
             case TPCDS_SCHEMA:
-                return getTables();
+                return getDataPaths();
             case TPCDS_SCHEMA_DWH:
-                return getTables().stream()
+                return getDataPaths().stream()
                         .filter(s -> dwhTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STG:
-                return getTables().stream()
+                return getDataPaths().stream()
                         .filter(s -> stagingTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STORE_SALES:
-                return Tabulars.atomic(getTables().stream()
+                return Tabulars.atomic(getDataPaths().stream()
                         .filter(s -> storeSalesTables.contains(s.getName()))
                         .collect(Collectors.toList())
                 );
@@ -1208,7 +1208,7 @@ public class TpcdsModel implements SchemaSample {
     /**
      * @return all tables
      */
-    public List<TableDef> getTables() {
+    public List<TableDef> getDataPaths() {
 
         return new ArrayList<>(tables.values());
 
@@ -1224,7 +1224,7 @@ public class TpcdsModel implements SchemaSample {
     }
 
     @Override
-    public List<TableDef> getTables(String... tableNames) {
+    public List<TableDef> getDataPaths(String... tableNames) {
 
         return Arrays.stream(tableNames).map(name -> tables.get(name)).collect(Collectors.toList());
 

@@ -3,9 +3,11 @@ package net.bytle.db.database.SqlServer;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.SqlDatabase;
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,6 +39,17 @@ public class SqlDatabaseISqlServer extends SqlDatabase {
     @Override
     public DataTypeDatabase dataTypeOf(Integer typeCode) {
         return dataTypeDatabaseSet.get(typeCode);
+    }
+
+    /**
+     * Returns statement to create the table
+     *
+     * @param dataPath
+     * @return
+     */
+    @Override
+    public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
+        return null;
     }
 
 

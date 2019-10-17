@@ -1,6 +1,7 @@
 package net.bytle.db.database;
 
 
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.TableDef;
 
@@ -48,16 +49,6 @@ public abstract class SqlDatabase implements SqlDatabaseI {
         return null;
     }
 
-    /**
-     * Create a "CREATE TABLE" statement for the resultSet with the tableAttributes
-     *
-     * @param tableDef
-     * @return
-     */
-    @Override
-    public List<String> getCreateTableStatements(TableDef tableDef, String name) {
-        return null;
-    }
 
     /**
      * Return a java object ready to be loaded into the target driver
@@ -133,4 +124,16 @@ public abstract class SqlDatabase implements SqlDatabaseI {
     public boolean addColumns(TableDef tableDef) {
         return false;
     }
+
+    /**
+     * Returns statement to create the table
+     *
+     * @param dataPath
+     * @return
+     */
+    @Override
+    public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
+        return null;
+    }
+
 }
