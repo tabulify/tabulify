@@ -23,7 +23,6 @@
         <module>crypto</module>
         <module>db-sqlserver</module>
         <module>command</module>
-        <module>db-ansi</module>
         <module>doctest</module>
         <module>fs</module>
         <module>type</module>

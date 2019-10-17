@@ -1,23 +1,16 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 
-import javax.xml.crypto.Data;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
+
 
 
 public class Tabulars {
@@ -106,7 +99,7 @@ public class Tabulars {
 
         } else {
 
-            LOGGER.fine("The data object (" + dataPath.toString() + ") already exist.");
+            DbLoggers.LOGGER_DB_ENGINE.fine("The data object (" + dataPath.toString() + ") already exist.");
 
         }
 
