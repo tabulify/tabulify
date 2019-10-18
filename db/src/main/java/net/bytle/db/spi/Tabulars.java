@@ -208,7 +208,7 @@ public class Tabulars {
             // different providers
             final Boolean exists = Tabulars.exists(target);
             if (!exists) {
-                if (target.getDataDef() == null) {
+                if (target.getDataDef().getColumnDefs().size()==0) {
                     Relations.addColumns(source.getDataDef(), target.getDataDef());
                 }
                 Tabulars.create(target);

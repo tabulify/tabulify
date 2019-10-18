@@ -86,7 +86,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Fact Table
-        final DataPath factTable = DataPaths.of(TABLE_TIME_NAME);
+        final DataPath factTable = DataPaths.of(TABLE_FACT_NAME);
         bytleTables.put(TABLE_FACT_NAME, factTable);
         factTable.getDataDef()
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)

@@ -405,7 +405,8 @@ public class JdbcDataSystem extends TableSystem {
                 throw new RuntimeException(e);
             }
         }
-        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + jdbcDataPath.getSchema().getName() + ")");
+        final String name = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : "null";
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
 
         return dataPath;
 
