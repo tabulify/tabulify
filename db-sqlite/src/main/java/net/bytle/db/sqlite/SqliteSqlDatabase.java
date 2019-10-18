@@ -85,6 +85,9 @@ public class SqliteSqlDatabase extends SqlDatabase {
         StringBuilder statement = new StringBuilder();
         statement.append("CREATE TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (\n");
         TableDef tableDef = dataPath.getDataDef();
+        if (tableDef==null){
+            throw new RuntimeException("The dataPath ("+dataPath.toString()+") has no columns definitions. We can't create a table from then");
+        }
         for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
             ColumnDef columnDef = tableDef.getColumnDefs().get(i);
             statement.append(DbDdl.getColumnStatementForCreateTable(columnDef));

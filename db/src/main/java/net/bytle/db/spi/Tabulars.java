@@ -3,6 +3,7 @@ package net.bytle.db.spi;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.Relations;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -205,11 +206,22 @@ public class Tabulars {
             source.getDataSystem().move(source, target);
         } else {
             // different providers
-            if (!Tabulars.exists(target)) {
+            final Boolean exists = Tabulars.exists(target);
+            if (!exists) {
                 if (target.getDataDef() == null) {
-                    Relations.addColumns(source.getDataDef(), target.getDataDefOf());
+                    Relations.addColumns(source.getDataDef(), target.getDataDef());
                 }
                 Tabulars.create(target);
+            } else {
+                for (ColumnDef columnDef: source.getDataDef().getColumnDefs()){
+                    ColumnDef targetColumnDef =  target.getDataDef().getColumnDef(columnDef.getColumnName());
+                    if (targetColumnDef==null){
+                        String message = "Unable to move the data unit ("+source.toString()+") because it exists already in the target location ("+target.toString()+") with a different structure" +
+                                " (The source column ("+columnDef.getColumnName()+") was not found in the target data unit)";
+                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                        throw new RuntimeException(message);
+                    }
+                }
             }
             try (
                     SelectStream sourceSelectStream = Tabulars.getSelectStream(source);

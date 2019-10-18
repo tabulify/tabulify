@@ -32,10 +32,12 @@ public class JdbcDataPath extends DataPath  {
     }
 
     @Override
-    public TableDef getDataDefOf() {
+    public TableDef getDataDef() {
 
-
-        return DbObjectBuilder.getTableDef(super.getDataDefOf());
+        if (super.getDataDef().getColumnDefs().size()==0){
+            DbObjectBuilder.getTableDef(super.getDataDef());
+        }
+        return super.getDataDef();
 
     }
 

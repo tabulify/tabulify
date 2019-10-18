@@ -3,6 +3,7 @@ package net.bytle.db.memory;
 import net.bytle.db.DbLoggers;
 import net.bytle.cli.Log;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
@@ -28,7 +29,7 @@ public class MemoryStore extends TableSystem {
     static private Map<DataPath, List<List<Object>> > tableValues = new HashMap<>();
     private static MemoryStore staticMemoryStore;
     private final MemorySystemProvider memoryStoreProvider;
-    private Database database;
+    private Database database = Databases.of("memory");
 
     public MemoryStore(MemorySystemProvider memorySystemProvider) {
         this.memoryStoreProvider = memorySystemProvider;

@@ -4,6 +4,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPath;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -45,7 +46,6 @@ public class Relations {
 
 
     }
-
 
 
 }

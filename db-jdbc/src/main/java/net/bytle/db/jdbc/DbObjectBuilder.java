@@ -420,7 +420,7 @@ public class DbObjectBuilder {
         try {
 
             String[] types = {"TABLE"};
-            String schema = jdbcDataPath.getSchema().getName();
+            String schema = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName():null;
             String catalog = jdbcDataPath.getCatalog();
             String tableName = jdbcDataPath.getName();
 
