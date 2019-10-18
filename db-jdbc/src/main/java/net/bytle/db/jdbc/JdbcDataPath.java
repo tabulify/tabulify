@@ -14,6 +14,7 @@ public class JdbcDataPath extends DataPath  {
     private final String schema;
     private final String catalog;
 
+
     public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
         this.jdbcDataSystem = jdbcDataSystem;
         this.catalog = catalog;
@@ -31,9 +32,10 @@ public class JdbcDataPath extends DataPath  {
     }
 
     @Override
-    public TableDef getDataDef() {
+    public TableDef getDataDefOf() {
 
-        return DbObjectBuilder.getTableDef(this);
+
+        return DbObjectBuilder.getTableDef(super.getDataDefOf());
 
     }
 
@@ -42,7 +44,11 @@ public class JdbcDataPath extends DataPath  {
      */
     public JdbcDataPath getSchema() {
 
-       return JdbcDataPath.of(jdbcDataSystem,catalog,schema,null);
+        if (schema==null){
+            return null;
+        } else {
+            return JdbcDataPath.of(jdbcDataSystem, catalog, schema, null);
+        }
 
     }
 

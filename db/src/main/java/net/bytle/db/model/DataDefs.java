@@ -236,6 +236,7 @@ public class DataDefs {
     public static TableDef of(DataPath dataPath) {
 
         return dataPath.getDataDef();
+
     }
 
     /**

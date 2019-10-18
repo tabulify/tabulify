@@ -114,24 +114,29 @@ public class DbObjectBuilder {
      * if no table is found, return null
      * The table of a schema but the whole schema will not be build
      *
-     * @param jdbcDataPath
+     * @param tableDef
      * @return null if no table is found
      */
-    public static TableDef getTableDef(JdbcDataPath jdbcDataPath) {
+    public static TableDef getTableDef(TableDef tableDef) {
 
 
         try {
-
+            JdbcDataPath jdbcDataPath = (JdbcDataPath) tableDef.getDataPath();
             LOGGER.fine("Building the table structure for the data path (" + jdbcDataPath + ")");
 
             String[] types = {"TABLE"};
-            String schema = jdbcDataPath.getSchema().getName();
+
+            final JdbcDataPath schemaPath = jdbcDataPath.getSchema();
+            String schema = null;
+            if (schemaPath!=null) {
+                schema = schemaPath.getName();
+            }
             String catalog = jdbcDataPath.getCatalog();
             String tableName = jdbcDataPath.getName();
 
             ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
             boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-            TableDef tableDef = jdbcDataPath.getDataDef();
+
             if (!tableExist) {
 
                 tableResultSet.close();
@@ -350,9 +355,10 @@ public class DbObjectBuilder {
         final String ordinal_position_alias = "ORDINAL_POSITION";
         final String column_name_alias = "COLUMN_NAME";
         final JdbcDataPath dataPath = (JdbcDataPath) metaDataDef.getDataPath();
+        final String schema = dataPath.getSchema() != null ? dataPath.getSchema().getName() : null;
         try (
                 // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges
-                ResultSet indexResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName(), true, true);
+                ResultSet indexResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(dataPath.getCatalog(), schema, dataPath.getName(), true, true);
         ) {
             while (indexResultSet.next()) {
 

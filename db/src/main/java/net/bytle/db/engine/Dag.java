@@ -101,7 +101,7 @@ public class Dag {
         }
 
         // Add the edges
-        List<ForeignKeyDef> foreignKeys = dataPath.getDataDef().getForeignKeys();
+        List<ForeignKeyDef> foreignKeys = dataPath.getDataDef() != null ? dataPath.getDataDef().getForeignKeys() : new ArrayList<>();
         if (foreignKeys.size() > 0) {
 
             for (ForeignKeyDef foreignKeyDef : foreignKeys) {
@@ -182,7 +182,8 @@ public class Dag {
         while (orderIterator.hasNext()) {
             currentDataPath = orderIterator.next();
 
-            if (currentDataPath.getDataDef().getForeignKeys().size() == 0) {
+            final List<ForeignKeyDef> foreignKeys = currentDataPath.getDataDef() !=null ? currentDataPath.getDataDef().getForeignKeys() : new ArrayList<>();
+            if (foreignKeys.size() == 0) {
                 dataPaths.add(currentDataPath);
             } else {
                 if (previousDataPath != null) {

@@ -141,12 +141,13 @@ public class JdbcDataSystem extends TableSystem {
         boolean tableExist;
         String[] types = {"TABLE"};
 
+        final String schemaPattern = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : null;
         try (
                 ResultSet tableResultSet = getCurrentConnection()
                         .getMetaData()
                         .getTables(
                                 jdbcDataPath.getCatalog(),
-                                jdbcDataPath.getSchema().getName(),
+                                schemaPattern,
                                 jdbcDataPath.getName(),
                                 types)
         ) {
@@ -265,11 +266,13 @@ public class JdbcDataSystem extends TableSystem {
         URIExtended uriExtended = new URIExtended(this.database.getUrl());
         String driver = uriExtended.getDriver();
 
-        try {
-            Class.forName(driver);
-            JdbcDataSystemLog.LOGGER_DB_JDBC.info("Driver " + driver + " loaded");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("The driver Class (" + driver + ") for the database (" + database + ")  could not be loaded. An error occurs: " + e.getMessage() + ". May be that the driver is not on the path ?", e);
+        if (driver != null) {
+            try {
+                Class.forName(driver);
+                JdbcDataSystemLog.LOGGER_DB_JDBC.info("Driver " + driver + " loaded");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("The driver Class (" + driver + ") for the database (" + database + ")  could not be loaded. An error occurs: " + e.getMessage() + ". May be that the driver is not on the path ?", e);
+            }
         }
 
 
@@ -456,9 +459,9 @@ public class JdbcDataSystem extends TableSystem {
     @Override
     public void drop(DataPath dataPath) {
 
-        StringBuilder dropTableStatement = new StringBuilder().append("drop table '");
-        dropTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath))
-                .append("'");
+        StringBuilder dropTableStatement = new StringBuilder();
+        dropTableStatement.append("drop table ")
+                .append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         try (
                 Statement statement = getCurrentConnection().createStatement()
         ) {
