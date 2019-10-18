@@ -8,6 +8,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -182,6 +183,19 @@ public class Tabulars {
 
     public static InsertStream getInsertStream(DataPath dataPath) {
         return dataPath.getDataSystem().getInsertStream(dataPath);
+    }
+
+    public static List<DataPath> move(List<DataPath> sources, DataPath target) {
+
+        List<DataPath> targetDataPaths = new ArrayList<>();
+        for(DataPath sourceDataPath :Dag.get(sources).getCreateOrderedTables()){
+            DataPath targetDataPath = target.getDataSystem().getDataPath(sourceDataPath.getName());
+            Tabulars.move(sourceDataPath,targetDataPath);
+            targetDataPaths.add(targetDataPath);
+        }
+
+        return targetDataPaths;
+
     }
 
     public static DataPath move(DataPath source, DataPath target) {

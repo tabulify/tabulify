@@ -57,11 +57,13 @@ public class DataPaths {
         return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
-    public static DataPath of(Database database, String... names) {
-        return null;
-    }
+
 
     public static DataPath of(TableSystem dataSystem, List<String> pathSegments) {
         return dataSystem.getDataPath(pathSegments.toArray(new String[0]));
+    }
+
+    public static List<DataPath> get(DataPath targetDataPath, String pattern) {
+        return null;
     }
 }
