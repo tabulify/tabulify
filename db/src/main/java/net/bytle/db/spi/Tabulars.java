@@ -108,10 +108,13 @@ public class Tabulars {
 
     public static void drop(DataPath... dataPaths) {
 
+
+        // A dag will build the data def and we may not want want it when dropping only one table
         Dag dag = Dag.get(Arrays.asList(dataPaths));
         for (DataPath dataPath : dag.getDropOrderedTables()) {
             dataPath.getDataSystem().drop(dataPath);
         }
+
 
     }
 
@@ -156,9 +159,18 @@ public class Tabulars {
      */
     public static void dropIfExists(List<DataPath> dataPaths) {
 
-        for (DataPath dataPath : Dag.get(dataPaths).getDropOrderedTables()) {
-            if (exists(dataPath)) {
-                drop(dataPath);
+        // A hack to avoid building the data def
+        // Because there is for now no drop options, the getDropOrderedTables
+        // will build the dependency
+        if (dataPaths.size()==1){
+            if (exists(dataPaths.get(0))) {
+                drop(dataPaths.get(0));
+            }
+        } else {
+            for (DataPath dataPath : Dag.get(dataPaths).getDropOrderedTables()) {
+                if (exists(dataPath)) {
+                    drop(dataPath);
+                }
             }
         }
 
@@ -189,9 +201,9 @@ public class Tabulars {
     public static List<DataPath> move(List<DataPath> sources, DataPath target) {
 
         List<DataPath> targetDataPaths = new ArrayList<>();
-        for(DataPath sourceDataPath :Dag.get(sources).getCreateOrderedTables()){
+        for (DataPath sourceDataPath : Dag.get(sources).getCreateOrderedTables()) {
             DataPath targetDataPath = target.getDataSystem().getDataPath(sourceDataPath.getName());
-            Tabulars.move(sourceDataPath,targetDataPath);
+            Tabulars.move(sourceDataPath, targetDataPath);
             targetDataPaths.add(targetDataPath);
         }
 
@@ -208,16 +220,14 @@ public class Tabulars {
             // different providers
             final Boolean exists = Tabulars.exists(target);
             if (!exists) {
-                if (target.getDataDef().getColumnDefs().size()==0) {
-                    Relations.addColumns(source.getDataDef(), target.getDataDef());
-                }
+                Relations.copy(source, target);
                 Tabulars.create(target);
             } else {
-                for (ColumnDef columnDef: source.getDataDef().getColumnDefs()){
-                    ColumnDef targetColumnDef =  target.getDataDef().getColumnDef(columnDef.getColumnName());
-                    if (targetColumnDef==null){
-                        String message = "Unable to move the data unit ("+source.toString()+") because it exists already in the target location ("+target.toString()+") with a different structure" +
-                                " (The source column ("+columnDef.getColumnName()+") was not found in the target data unit)";
+                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
+                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+                    if (targetColumnDef == null) {
+                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
                         DbLoggers.LOGGER_DB_ENGINE.severe(message);
                         throw new RuntimeException(message);
                     }

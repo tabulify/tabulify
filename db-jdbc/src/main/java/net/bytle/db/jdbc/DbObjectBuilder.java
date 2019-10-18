@@ -422,7 +422,7 @@ public class DbObjectBuilder {
             String[] types = {"TABLE"};
             String schema = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName():null;
             String catalog = jdbcDataPath.getCatalog();
-            String tableName = jdbcDataPath.getName();
+            String tableName = "%";
 
             ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
             while (tableResultSet.next()) {
