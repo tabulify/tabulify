@@ -1,12 +1,13 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.cli.Log;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -19,13 +20,18 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
     private int currentRowInBatch = 0;
     private int batchExecutionCount = 0;
 
-    public BlockingQueueInsertStream(DataPath memoryTable) {
+    public BlockingQueueInsertStream(MemoryDataPath memoryTable) {
         super(memoryTable);
+        final MemoryStore memoryStore = memoryTable.getDataSystem().getMemoryStore();
+        Collection collection = memoryStore.getValues(memoryTable);
+        if (collection==null){
+            this.queue = new ArrayBlockingQueue<>(1000);
+            memoryStore.put(memoryTable,queue);
+        } else {
+            queue = (BlockingQueue<List<Object>>) collection;
+        }
     }
 
-    public static InsertStream get(DataPath memoryTable) {
-        return new BlockingQueueInsertStream(memoryTable);
-    }
 
     @Override
     public InsertStream insert(List<Object> objects) {

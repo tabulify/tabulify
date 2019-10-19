@@ -1,15 +1,9 @@
 package net.bytle.db.model;
 
 
-import net.bytle.cli.Log;
-import net.bytle.db.DatabasesStore;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.memory.ListInsertStream;
-import net.bytle.db.memory.MemoryStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
@@ -24,7 +18,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Retrieve a list of TableDef through a Data Definition file
@@ -273,7 +266,7 @@ public class DataDefs {
                 .addColumn("Auto Increment")
                 .addColumn("Description");
 
-        InsertStream insertStream = ListInsertStream.of(tableStructure);
+        InsertStream insertStream = Tabulars.getInsertStream(tableStructure);
         int i = 0;
         for (ColumnDef columnDef : tableDef.getColumnDefs()) {
             i++;

@@ -9,6 +9,7 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public abstract class TableSystem implements AutoCloseable {
 
@@ -52,4 +53,23 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
     public abstract DataPath move(DataPath source, DataPath target);
+
+    /**
+     *
+     * @return The number of thread that can be created against the data system
+     */
+    public abstract Integer getMaxWriterConnection();
+
+    public abstract Boolean isEmpty(DataPath queue);
+
+    /**
+     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
+     * @param dataPath
+     * @param i
+     * @param timeUnit
+     * @return
+     */
+    public abstract List<Object> poll(DataPath dataPath, int i, TimeUnit timeUnit);
+
+    public abstract Integer size(DataPath dataPath);
 }

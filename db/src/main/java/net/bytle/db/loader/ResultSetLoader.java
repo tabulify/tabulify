@@ -3,6 +3,7 @@ package net.bytle.db.loader;
 
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStreamListener;
 
 import java.sql.Types;
@@ -28,7 +29,7 @@ public class ResultSetLoader {
             Types.CLOB,
             Types.BIT
     ));
-    private final RelationDef sourceDef;
+    private final DataPath sourceDef;
     public Properties tableAttributes = new Properties();
     private int batchSize = 10000;
 
@@ -39,14 +40,14 @@ public class ResultSetLoader {
     private Integer commitFrequency = 10000;
 
     private String metricsFilePath;
-    private TableDef targetTableDef;
+    private DataPath targetTableDef;
 
 
     /**
      * @param targetTableDef
      * @param source The data source implementing
      */
-    public ResultSetLoader(TableDef targetTableDef, RelationDef source) {
+    public ResultSetLoader(DataPath source, DataPath targetTableDef) {
         this.targetTableDef = targetTableDef;
         this.sourceDef = source;
     }
@@ -129,8 +130,10 @@ public class ResultSetLoader {
             if (bufferSize == null) {
                 bufferSize = targetWorkerCount * batchSize * 2;
             }
-            BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
 
+            //TODO
+            // BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
+            DataPath queue = null;
             // The listener to be able to see when exceptions occurs in the thread
 
             ResultSetLoaderProducer resultSetLoaderProducer = new ResultSetLoaderProducer(sourceDef, queue, streamListeners, 100000);

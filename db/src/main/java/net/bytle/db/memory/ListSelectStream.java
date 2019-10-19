@@ -5,26 +5,36 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.sql.Clob;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Select stream of a table saved as List<List<Object>>
+ * List implementation
  */
 public class ListSelectStream extends SelectStreamAbs implements SelectStream {
 
-    private final List<List<Object>> values;
+    private List<List<Object>> values;
     private final DataPath memoryTable;
     private int index = -1;
 
-    private ListSelectStream(DataPath memoryTable) {
+    ListSelectStream(MemoryDataPath memoryTable) {
         this.memoryTable = memoryTable;
-        this.values = MemoryStore.get(memoryTable);
+        MemoryStore memoryStore = memoryTable.getDataSystem().getMemoryStore();
+        Collection collection = memoryStore.getValues(memoryTable);
+        if (collection==null) {
+            this.values = new ArrayList<>();
+            memoryStore.put(memoryTable,this.values);
+        } else {
+            this.values = (List<List<Object>>) collection;
+        }
     }
 
-    public static ListSelectStream of(DataPath memoryTable) {
-        return new ListSelectStream(memoryTable);
-    }
+
 
 
     @Override
@@ -49,7 +59,7 @@ public class ListSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public String getString(int columnIndex) {
-        final List<Object> row = values.get(index);
+        List<Object> row = values.get(index);
         final int index = columnIndex;
         if (index < row.size()) {
             final Object o = row.get(index);

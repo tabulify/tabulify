@@ -12,6 +12,7 @@ import net.bytle.db.stream.Streams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -250,4 +251,15 @@ public class Tabulars {
     }
 
 
+    public static boolean isEmpty(DataPath queue) {
+        return queue.getDataSystem().isEmpty(queue);
+    }
+
+    public static List<Object> poll(DataPath dataPath, int i, TimeUnit timeUnit) {
+        return dataPath.getDataSystem().poll(dataPath, i, timeUnit);
+    }
+
+    public static int size(DataPath dataPath) {
+        return dataPath.getDataSystem().size(dataPath);
+    }
 }

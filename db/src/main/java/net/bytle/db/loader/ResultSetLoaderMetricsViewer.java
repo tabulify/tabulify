@@ -1,5 +1,7 @@
 package net.bytle.db.loader;
 
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStreamListener;
 
 import java.io.*;
@@ -18,7 +20,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ResultSetLoaderMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
 
 
-    private final BlockingQueue<List<Object>> queue;
+    private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
     private final Integer maxBufferSize;
     private final List<InsertStreamListener> insertStreamListeners;
@@ -29,7 +31,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
 
     public ResultSetLoaderMetricsViewer(
 
-            BlockingQueue<List<Object>> queue,
+            DataPath queue,
             Integer maxBufferSize,
             List<InsertStreamListener> insertStreamListeners,
             String metricsFilePath,
@@ -75,7 +77,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
 
                 String timeMillis = getCurrentTimeStamp();
 
-                int size = this.queue.size();
+                int size = Tabulars.size(queue);
                 String bufferSizeCsv = timeMillis + ", Buffer Size, " + size;
                 outputStream.write(bufferSizeCsv);
                 outputStream.newLine();

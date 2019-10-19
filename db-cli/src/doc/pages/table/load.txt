@@ -61,7 +61,7 @@ Exception in thread "pool-1-thread-1" java.lang.NullPointerException
 	at net.bytle.db.stream.SqlInsertStream.init(SqlInsertStream.java:134)
 	at net.bytle.db.stream.SqlInsertStream.<init>(SqlInsertStream.java:34)
 	at net.bytle.db.stream.SqlInsertStream.get(SqlInsertStream.java:38)
-	at net.bytle.db.loader.ResultSetLoaderConsumer.run(ResultSetLoaderConsumer.java:53)
+	at ResultSetLoaderConsumer.run(ResultSetLoaderConsumer.java:53)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
 	at java.lang.Thread.run(Thread.java:748)

@@ -12,7 +12,11 @@ import java.util.List;
  */
 public abstract class DataPath implements Comparable<DataPath> {
 
+
+
+
     private TableDef dataDef;
+
 
     public abstract TableSystem getDataSystem();
 
@@ -41,6 +45,7 @@ public abstract class DataPath implements Comparable<DataPath> {
         }
         return dataDef;
     }
+
 
 
 }

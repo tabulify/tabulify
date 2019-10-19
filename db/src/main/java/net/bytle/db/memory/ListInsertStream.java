@@ -1,9 +1,10 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ListInsertStream extends InsertStreamAbs implements InsertStream {
@@ -12,15 +13,19 @@ public class ListInsertStream extends InsertStreamAbs implements InsertStream {
 
     private List<List<Object>> tableValues;
 
-    private ListInsertStream(DataPath memoryTable) {
-        super(memoryTable);
-        this.memoryTable = (MemoryDataPath) memoryTable;
-        tableValues = MemoryStore.get(memoryTable);
+    ListInsertStream(MemoryDataPath memoryDataPath) {
+        super(memoryDataPath);
+        this.memoryTable = memoryDataPath;
+        final MemoryStore memoryStore = memoryDataPath.getDataSystem().getMemoryStore();
+        Collection collection = memoryStore.getValues(memoryDataPath);
+        if (collection==null){
+            tableValues = new ArrayList<>();
+            memoryStore.put(memoryTable,tableValues);
+        } else {
+            this.tableValues = (List<List<Object>>) collection;
+        }
     }
 
-    public static InsertStream of(DataPath memoryTable) {
-        return new ListInsertStream(memoryTable);
-    }
 
     @Override
     public ListInsertStream insert(List<Object> values) {
@@ -52,8 +57,6 @@ public class ListInsertStream extends InsertStreamAbs implements InsertStream {
     public void flush() {
 
     }
-
-
 
 
 }

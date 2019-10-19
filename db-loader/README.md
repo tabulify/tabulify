@@ -1,8 +1,8 @@
-# Loader (SQL DML)
+# Cross Loader Test
 
 ## About
 
-The module about DML (insert, update, merge)
+The module test cross data system loading (insert, update, merge)
 
-The SQL DML generation should be into the [Ansi module](../db-ansi/README.md)
+
 
