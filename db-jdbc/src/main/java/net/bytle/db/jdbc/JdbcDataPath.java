@@ -74,7 +74,8 @@ public class JdbcDataPath extends DataPath  {
         if (catalog!=null){
             return catalog;
         }
-        throw new RuntimeException("All JDBC data path name are null (catalog, schema and name)");
+        JdbcDataSystemLog.LOGGER_DB_JDBC.warning("All JDBC data path name are null (catalog, schema and name)");
+        return null;
     }
 
     @Override

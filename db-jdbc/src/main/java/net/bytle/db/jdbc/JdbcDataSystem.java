@@ -447,7 +447,7 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public boolean isContainer(DataPath dataPath) {
-        return false;
+        return !isDataUnit(dataPath);
     }
 
     @Override
