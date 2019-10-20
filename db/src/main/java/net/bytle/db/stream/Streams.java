@@ -18,16 +18,16 @@ public class Streams {
      * Print the table outpustream
      * align to the left
      *
-     * @param tableOutputStream
+     * @param selectStream
      */
-    public static void print(SelectStream tableOutputStream) {
+    public static void print(SelectStream selectStream) {
 
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final RelationDef tableDef = tableOutputStream.getDataDef();
-        while (tableOutputStream.next()) {
+        final RelationDef tableDef = selectStream.getDataDef();
+        while (selectStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
-                String string = tableOutputStream.getString(i);
+                String string = selectStream.getString(i);
                 if (string == null) {
                     string = "";
                 }
@@ -89,12 +89,12 @@ public class Streams {
         System.out.println(line);
 
         // Print the data
-        tableOutputStream.beforeFirst();
-        while (tableOutputStream.next()) {
-            System.out.println(String.format(formatString.toString(), getObjects(tableOutputStream)));
+        selectStream.beforeFirst();
+        while (selectStream.next()) {
+            System.out.println(String.format(formatString.toString(), getObjects(selectStream)));
         }
 
-        tableOutputStream.close();
+        selectStream.close();
 
     }
 

@@ -9,9 +9,9 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public abstract class TableSystem implements AutoCloseable {
+
 
     public abstract DataPath getDataPath(DataUri dataUri);
 
@@ -64,4 +64,5 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract Integer size(DataPath dataPath);
 
+    public abstract boolean isDataUnit(DataPath dataPath);
 }

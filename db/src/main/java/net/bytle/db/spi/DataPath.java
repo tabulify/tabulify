@@ -3,6 +3,7 @@ package net.bytle.db.spi;
 import net.bytle.db.model.TableDef;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -46,6 +47,16 @@ public abstract class DataPath implements Comparable<DataPath> {
         return dataDef;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DataPath dataPath = (DataPath) o;
+        return getId().equals(dataPath.getId());
+    }
 
-
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
+    }
 }

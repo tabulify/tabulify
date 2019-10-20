@@ -39,7 +39,7 @@ public class DataPaths {
 
     public static DataPath of(String... parts) {
         // FileSystems.getSqliteDefault().getDataUri(first, more);
-        return TableSystems.getDefault().getDataPath(parts);
+            return TableSystems.getDefault().getDataPath(parts);
 
     }
 
@@ -63,7 +63,11 @@ public class DataPaths {
         return dataSystem.getDataPath(pathSegments.toArray(new String[0]));
     }
 
-    public static List<DataPath> get(DataPath targetDataPath, String pattern) {
+    public static List<DataPath> get(DataPath dataPath, String pattern) {
         return null;
+    }
+
+    public static DataPath of(TableSystem tableSystem, String... names) {
+        return tableSystem.getDataPath(names);
     }
 }

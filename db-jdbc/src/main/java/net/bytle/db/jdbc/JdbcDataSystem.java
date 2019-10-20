@@ -94,31 +94,78 @@ public class JdbcDataSystem extends TableSystem {
     }
 
     private JdbcDataPath getPrivatelyJdbcPath(List<String> pathSegments) {
-        if (pathSegments.size() > 3) {
-            throw new RuntimeException("This jdbc path (" + String.join("/", pathSegments) + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
-        }
 
-        String catalog;
-        if (pathSegments.size() > 2) {
-            catalog = pathSegments.get(pathSegments.size() - 3);
-        } else {
-            try {
-                catalog = this.getCurrentConnection().getCatalog();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+        String currentCatalog;
+        try {
+            currentCatalog = this.getCurrentConnection().getCatalog();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        String currentSchema = this.getCurrentSchema();
+
+
+        if (pathSegments.size() >= 1) {
+            String first = pathSegments.get(0);
+            switch (first) {
+                case ".":
+                    switch (pathSegments.size()) {
+                        case 1:
+                            return JdbcDataPath.of(this, currentCatalog, currentSchema, null);
+                        case 2:
+                            return JdbcDataPath.of(this, currentCatalog, currentSchema, pathSegments.get(pathSegments.size() - 1));
+                        default:
+                            throw new RuntimeException("The working context is the schema and have no children, it's then not possible to have following path (" + String.join("/", pathSegments) + ")");
+                    }
+                case "..":
+                    switch (pathSegments.size()) {
+                        case 1:
+                            // Catalog
+                            return JdbcDataPath.of(this, currentCatalog, null, null);
+                        case 2:
+                            switch (pathSegments.get(1)) {
+                                case "..":
+                                    return JdbcDataPath.of(this, null, null, null);
+                                case ".":
+                                    return JdbcDataPath.of(this, currentCatalog, null, null);
+                                default:
+                                    return JdbcDataPath.of(this, currentCatalog, pathSegments.get(1), null);
+                            }
+                        case 3:
+                            return JdbcDataPath.of(this, currentCatalog, pathSegments.get(1), pathSegments.get(2));
+
+                        default:
+                            throw new RuntimeException("A Jdbc path knows max only three parts (catalog, schema, name). This path is then not possible (" + String.join("/", pathSegments) + ")");
+                    }
+
+                default:
+
+                    if (pathSegments.size() > 3) {
+                        throw new RuntimeException("This jdbc path (" + String.join("/", pathSegments) + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
+                    }
+
+                    String catalog;
+                    if (pathSegments.size() > 2) {
+                        catalog = pathSegments.get(pathSegments.size() - 3);
+                    } else {
+                        catalog = currentCatalog;
+                    }
+
+                    String schema;
+                    if (pathSegments.size() > 1) {
+                        schema = pathSegments.get(pathSegments.size() - 2);
+                    } else {
+                        schema = currentSchema;
+                    }
+
+                    return JdbcDataPath.of(this, catalog, schema, pathSegments.get(pathSegments.size() - 1));
+
             }
-        }
-
-        String schema;
-        if (pathSegments.size() > 1) {
-            schema = pathSegments.get(pathSegments.size() - 2);
         } else {
-            schema = this.getCurrentSchema();
+            throw new RuntimeException("Empty path is not allowed");
         }
-
-        return JdbcDataPath.of(this, catalog, schema, pathSegments.get(pathSegments.size() - 1));
-
     }
+
 
     @Override
     public JdbcDataPath getDataPath(String... names) {
@@ -351,16 +398,22 @@ public class JdbcDataSystem extends TableSystem {
     @Override
     public Integer size(DataPath dataPath) {
 
-        Integer size  = 0;
+        Integer size = 0;
         try (
                 SelectStream selectStream = getSelectStream("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath))
         ) {
             Boolean next = selectStream.next();
-            if (next){
+            if (next) {
                 size = selectStream.getInteger(1);
             }
         }
         return size;
+    }
+
+    @Override
+    public boolean isDataUnit(DataPath dataPath) {
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+        return jdbcDataPath.isDataUnit();
     }
 
 
@@ -607,7 +660,7 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public SelectStream getSelectStream(String query) {
-        return null;
+        return SqlSelectStream.of(this, query);
     }
 
     @Override

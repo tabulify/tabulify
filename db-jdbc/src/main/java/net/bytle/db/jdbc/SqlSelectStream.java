@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
+    private final JdbcDataSystem jdbcDataSystem;
     // A SqlSelectStream comes from a query or
     // from a dataPath representing a data object
     private String query;
@@ -22,21 +23,19 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     // The cursor
     private ResultSet resultSet;
 
-    // The DataDef (It comes from the data path or from the result set of a query)
-    private TableDef dataDef;
 
     public SqlSelectStream(JdbcDataPath jdbcDataPath) {
 
         this.jdbcDataPath = jdbcDataPath;
-        this.dataDef = jdbcDataPath.getDataDef();
+        this.jdbcDataSystem = jdbcDataPath.getDataSystem();
+
 
     }
 
-    public SqlSelectStream(JdbcDataPath jdbcDataPath, String query) {
-        if (!jdbcDataPath.getDataSystem().isContainer(jdbcDataPath)){
-            throw new RuntimeException("The data path of a query cannot be a table");
-        }
-        this.jdbcDataPath = jdbcDataPath;
+    public SqlSelectStream(JdbcDataSystem jdbcDataSystem, String query) {
+
+        this.jdbcDataSystem = jdbcDataSystem;
+        this.jdbcDataPath = jdbcDataSystem.getDataPath("");
         this.query = query;
     }
 
@@ -44,8 +43,8 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         return new SqlSelectStream(jdbcDataPath);
     }
 
-    public static SqlSelectStream of(JdbcDataPath jdbcDataPath, String query) {
-        return new SqlSelectStream(jdbcDataPath, query);
+    public static SqlSelectStream of(JdbcDataSystem jdbcDataSystem, String query) {
+        return new SqlSelectStream(jdbcDataSystem, query);
     }
 
 
@@ -97,11 +96,11 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
             query = "select * from "+JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
         }
         try {
-            this.resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().createStatement().executeQuery(query);
+            this.resultSet = jdbcDataSystem.getCurrentConnection().createStatement().executeQuery(query);
 
-            if (this.dataDef ==null) {
+            if (this.query!=null) {
                 ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
-                this.dataDef = TableDef.of(jdbcDataPath);
+                TableDef dataDef = jdbcDataPath.getDataDef();
                 for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
                     dataDef.addColumn(
                             resultSetMetaData.getColumnName(i),
@@ -169,10 +168,10 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public TableDef getDataDef() {
-        if (this.dataDef==null){
+        if (resultSet==null){
             init();
         }
-        return this.dataDef;
+        return this.jdbcDataPath.getDataDef();
     }
 
 

@@ -2,6 +2,8 @@ package net.bytle.db.sample;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystems;
 
 import java.sql.Types;
 import java.util.*;
@@ -49,19 +51,25 @@ public class BytleSchema implements SchemaSample {
     private Map<String, DataPath> bytleTables = new HashMap<>();
 
 
-    BytleSchema() {
-        buildTables();
+    BytleSchema(TableSystem tableSystem) {
+
+        buildTables(tableSystem);
+
     }
 
     public static BytleSchema of() {
-        return new BytleSchema();
+        return new BytleSchema(TableSystems.getDefault());
+    }
+
+    public static SchemaSample of(TableSystem tableSystem) {
+        return new BytleSchema(tableSystem);
     }
 
 
-    void buildTables() {
+    void buildTables(TableSystem tableSystem) {
 
         // Dim Cat Table
-        final DataPath catTable = DataPaths.of(TABLE_CATEGORY_NAME);
+        final DataPath catTable = DataPaths.of(tableSystem, TABLE_CATEGORY_NAME);
         bytleTables.put(TABLE_CATEGORY_NAME, catTable);
         catTable.getDataDef()
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -72,7 +80,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Dim timeTable
-        final DataPath timeTable = DataPaths.of(TABLE_TIME_NAME);
+        final DataPath timeTable = DataPaths.of(tableSystem, TABLE_TIME_NAME);
         bytleTables.put(TABLE_TIME_NAME, timeTable);
         timeTable.getDataDef()
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
@@ -86,7 +94,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Fact Table
-        final DataPath factTable = DataPaths.of(TABLE_FACT_NAME);
+        final DataPath factTable = DataPaths.of(tableSystem, TABLE_FACT_NAME);
         bytleTables.put(TABLE_FACT_NAME, factTable);
         factTable.getDataDef()
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)

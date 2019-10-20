@@ -18,7 +18,6 @@ import java.io.Closeable;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 
 public class MemoryDataSystem extends TableSystem {
@@ -127,6 +126,11 @@ public class MemoryDataSystem extends TableSystem {
     @Override
     public Integer size(DataPath dataPath) {
         return null;
+    }
+
+    @Override
+    public boolean isDataUnit(DataPath dataPath) {
+        throw new RuntimeException("Not implemented");
     }
 
     @Override

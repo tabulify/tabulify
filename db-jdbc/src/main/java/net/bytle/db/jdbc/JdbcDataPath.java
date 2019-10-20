@@ -7,6 +7,12 @@ import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A jdbc data path knows only three parts
+ *   * catalog
+ *   * schema
+ *   * and name
+ */
 public class JdbcDataPath extends DataPath  {
 
     private final JdbcDataSystem jdbcDataSystem;
@@ -92,4 +98,7 @@ public class JdbcDataPath extends DataPath  {
     }
 
 
+    public boolean isDataUnit() {
+        return name != null;
+    }
 }

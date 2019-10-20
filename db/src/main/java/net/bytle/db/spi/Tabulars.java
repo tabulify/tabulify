@@ -259,4 +259,8 @@ public class Tabulars {
     public static int size(DataPath dataPath) {
         return dataPath.getDataSystem().size(dataPath);
     }
+
+    public static boolean isDataUnit(DataPath dataPath) {
+        return dataPath.getDataSystem().isDataUnit(dataPath);
+    }
 }

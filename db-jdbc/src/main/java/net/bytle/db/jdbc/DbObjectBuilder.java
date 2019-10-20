@@ -16,6 +16,11 @@ import java.util.stream.Collectors;
 
 /**
  * The data structure builder and parser
+ *
+ * Within a pattern String:
+ *   * "%" means match any substring of 0 or more characters
+ *   * "_" means match any one character.
+ * If a search pattern argument is set to null, that argument's criterion will be dropped from the search.
  */
 public class DbObjectBuilder {
 
@@ -422,7 +427,7 @@ public class DbObjectBuilder {
             String[] types = {"TABLE"};
             String schema = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName():null;
             String catalog = jdbcDataPath.getCatalog();
-            String tableName = "%";
+            String tableName = null;
 
             ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
             while (tableResultSet.next()) {

@@ -88,7 +88,10 @@ public class TableDef implements RelationDef  {
             final PrimaryKeyDef foreignPrimaryKey = foreignKeyDef.getForeignPrimaryKey();
             if (foreignPrimaryKey!=null) {
                 if (foreignPrimaryKey.equals(primaryKeyDef)) {
-                    if (foreignKeyDef.getChildColumns().equals(Arrays.asList(columnNames))) {
+                    final List<String> childColumns = foreignKeyDef.getChildColumns().stream()
+                            .map(s->s.getColumnName())
+                            .collect(Collectors.toList());
+                    if (childColumns.equals(Arrays.asList(columnNames))) {
                         return foreignKeyDef;
                     }
                 }
