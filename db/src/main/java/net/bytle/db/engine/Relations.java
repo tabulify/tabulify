@@ -28,7 +28,7 @@ public class Relations {
         // Add the columns
         for (int i = 0; i < sourceDef.getColumnDefs().size(); i++) {
             ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClass())
+            targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClazz())
                     .typeCode(columnDef.getDataType().getTypeCode())
                     .precision(columnDef.getPrecision())
                     .scale(columnDef.getScale())

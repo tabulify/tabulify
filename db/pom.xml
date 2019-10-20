@@ -13,7 +13,7 @@
     </parent>
 
     <artifactId>bytle-db</artifactId>
-    <name>Db Core</name>
+    <name>Db</name>
 
 
 

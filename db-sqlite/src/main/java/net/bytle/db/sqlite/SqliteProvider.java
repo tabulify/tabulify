@@ -1,9 +1,8 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.database.SqlDatabase;
-import net.bytle.db.database.SqlDatabaseProvider;
+import net.bytle.db.jdbc.spi.SqlDatabase;
+import net.bytle.db.jdbc.spi.SqlDatabaseProvider;
 
-import java.net.URI;
 import java.util.Map;
 
 /**

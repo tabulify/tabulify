@@ -62,14 +62,6 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract Boolean isEmpty(DataPath queue);
 
-    /**
-     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
-     * @param dataPath
-     * @param i
-     * @param timeUnit
-     * @return
-     */
-    public abstract List<Object> poll(DataPath dataPath, int i, TimeUnit timeUnit);
-
     public abstract Integer size(DataPath dataPath);
+
 }

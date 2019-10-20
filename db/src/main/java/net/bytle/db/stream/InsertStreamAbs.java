@@ -1,6 +1,5 @@
 package net.bytle.db.stream;
 
-import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 
 import java.util.Arrays;

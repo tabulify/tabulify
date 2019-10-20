@@ -1,10 +1,14 @@
-# Ansi 
+# Db Jdbc 
 
 ## About
 
-A SQL Database that will implement the SQL ANSI grammar.
+A data system implementation based on Jdbc.
 
-The [loader module](../db-loader/README.md) uses the SQL statement.
+If a database driver implements ANSI, it should work without a SQL database implementation
+but as this is never the case, jdbc database should implement the SQL Database interface.
+
+The reference implementation is the Sqlite one. The tests are there.
+
 
 ## Note
 

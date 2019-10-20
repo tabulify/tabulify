@@ -255,9 +255,6 @@ public class Tabulars {
         return queue.getDataSystem().isEmpty(queue);
     }
 
-    public static List<Object> poll(DataPath dataPath, int i, TimeUnit timeUnit) {
-        return dataPath.getDataSystem().poll(dataPath, i, timeUnit);
-    }
 
     public static int size(DataPath dataPath) {
         return dataPath.getDataSystem().size(dataPath);

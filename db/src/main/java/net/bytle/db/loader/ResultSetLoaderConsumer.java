@@ -6,6 +6,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.SelectStream;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class ResultSetLoaderConsumer implements Runnable {
         InsertStreamListener listener = insertStream.getInsertStreamListener();
         // Collect the listener
         this.listeners.add(listener);
-
+        SelectStream selectStream = Tabulars.getSelectStream(queue);
         try {
 
 
@@ -67,7 +68,7 @@ public class ResultSetLoaderConsumer implements Runnable {
                 // The poll method to prevent waiting indefinitely
                 // if the queue is empty and that the producerWorkIsDone
                 // with the take method.
-                objects = Tabulars.poll(queue, 1, TimeUnit.SECONDS);
+                objects = selectStream.poll(1, TimeUnit.SECONDS);
                 if (objects == null) {
                     LOGGER.warning("The timeout to of a element in the queue was reached."
                             + " As it may be the end of the queue, we continue.)");

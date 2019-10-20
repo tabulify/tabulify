@@ -123,18 +123,6 @@ public class MemoryDataSystem extends TableSystem {
         return null;
     }
 
-    /**
-     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
-     *
-     * @param dataPath
-     * @param i
-     * @param timeUnit
-     * @return
-     */
-    @Override
-    public List<Object> poll(DataPath dataPath, int i, TimeUnit timeUnit) {
-        return null;
-    }
 
     @Override
     public Integer size(DataPath dataPath) {

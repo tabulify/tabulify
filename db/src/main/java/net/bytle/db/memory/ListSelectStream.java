@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * List implementation
@@ -136,4 +137,20 @@ public class ListSelectStream extends SelectStreamAbs implements SelectStream {
         throw new RuntimeException("Not Yet Implemented");
     }
 
+    /**
+     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
+     *
+     * @param i
+     * @param timeUnit
+     * @return
+     */
+    @Override
+    public List<Object> poll(int i, TimeUnit timeUnit) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public Integer getInteger(int columnIndex) {
+        return (Integer) getObject(columnIndex);
+    }
 }

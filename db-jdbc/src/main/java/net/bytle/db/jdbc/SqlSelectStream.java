@@ -8,6 +8,8 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
@@ -193,4 +195,24 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
 
+    /**
+     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
+     *
+     * @param i
+     * @param timeUnit
+     * @return
+     */
+    @Override
+    public List<Object> poll(int i, TimeUnit timeUnit) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public Integer getInteger(int columnIndex) {
+        try {
+            return getResultSet().getInt(columnIndex + 1);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

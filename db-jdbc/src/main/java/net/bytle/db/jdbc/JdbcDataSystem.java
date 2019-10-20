@@ -3,16 +3,17 @@ package net.bytle.db.jdbc;
 import net.bytle.db.DbDefaultValue;
 import net.bytle.db.connection.URIExtended;
 import net.bytle.db.database.*;
-import net.bytle.db.database.Hana.SqlDatabaseIHana;
-import net.bytle.db.database.Hive.SqlDatabaseIHive;
+import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
+import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.database.Oracle.SqlDatabaseIOracle;
-import net.bytle.db.database.SqlServer.SqlDatabaseISqlServer;
-import net.bytle.db.engine.DbDdl;
+import net.bytle.db.jdbc.Oracle.SqlDatabaseIOracle;
+import net.bytle.db.jdbc.SqlServer.SqlDatabaseISqlServer;
+import net.bytle.db.jdbc.spi.DataTypeDriver;
+import net.bytle.db.jdbc.spi.SqlDatabaseI;
+import net.bytle.db.jdbc.spi.SqlDatabases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
@@ -32,7 +33,6 @@ public class JdbcDataSystem extends TableSystem {
     public static final String DB_SQL_SERVER = "Microsoft SQL Server";
     public static final String DB_SQLITE = "SQLite";
     public static final String DB_HIVE = "Apache Hive";
-    public static final String DB_ANSI = "Ansi";
 
     private SqlDatabaseI sqlDatabaseI;
 
@@ -341,6 +341,26 @@ public class JdbcDataSystem extends TableSystem {
             }
         }
 
+    }
+
+    @Override
+    public Boolean isEmpty(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public Integer size(DataPath dataPath) {
+
+        Integer size  = 0;
+        try (
+                SelectStream selectStream = getSelectStream("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath))
+        ) {
+            Boolean next = selectStream.next();
+            if (next){
+                size = selectStream.getInteger(1);
+            }
+        }
+        return size;
     }
 
 
