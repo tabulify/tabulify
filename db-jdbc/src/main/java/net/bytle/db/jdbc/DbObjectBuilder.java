@@ -424,14 +424,18 @@ public class DbObjectBuilder {
         List<DataPath> jdbcDataPaths = new ArrayList<>();
         try {
 
-            String[] types = {"TABLE"};
             String schema = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName():null;
             String catalog = jdbcDataPath.getCatalog();
             String tableName = null;
 
-            ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
+            ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, null);
             while (tableResultSet.next()) {
-                JdbcDataPath childDataPath = jdbcDataPath.getDataSystem().getDataPath(catalog, schema, tableResultSet.getString("TABLE_NAME"));
+                final String table_name = tableResultSet.getString("TABLE_NAME");
+                final String schema_name = tableResultSet.getString("TABLE_SCHEM");
+                final String cat_name = tableResultSet.getString("TABLE_CAT");
+                final String type_name = tableResultSet.getString("TABLE_TYPE");
+                JdbcDataPath childDataPath = JdbcDataPath.of(jdbcDataPath.getDataSystem(),cat_name, schema_name, table_name)
+                        .setType(type_name);
                 jdbcDataPaths.add(childDataPath);
             }
 

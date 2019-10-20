@@ -27,7 +27,7 @@ public abstract class DataPath implements Comparable<DataPath> {
     public abstract List<String> getPathSegments();
 
     private String getId(){
-        return "@/"+getDataSystem().getDatabase().getDatabaseName()+"/"+String.join("/",getPathSegments());
+        return String.join(".",getPathSegments())+"@"+getDataSystem().getDatabase().getDatabaseName();
     }
 
     public int compareTo(DataPath o) {

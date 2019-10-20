@@ -15,10 +15,19 @@ import java.util.List;
  */
 public class JdbcDataPath extends DataPath  {
 
+
     private final JdbcDataSystem jdbcDataSystem;
     private final String name;
     private final String schema;
     private final String catalog;
+
+    /**
+     * TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
+     *
+     */
+    private String type = TABLE_TYPE;
+    public static final String TABLE_TYPE = "TABLE";
+    public static final String VIEW_TYPE = "VIEW";
 
 
     public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
@@ -101,5 +110,14 @@ public class JdbcDataPath extends DataPath  {
 
     public boolean isDataUnit() {
         return name != null;
+    }
+
+    public JdbcDataPath setType(String type) {
+        this.type = type;
+        return this;
+    }
+
+    public String getType() {
+        return this.type;
     }
 }

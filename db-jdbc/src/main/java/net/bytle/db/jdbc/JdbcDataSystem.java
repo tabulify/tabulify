@@ -209,7 +209,8 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public SelectStream getSelectStream(DataPath dataPath) {
-        return null;
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+        return SqlSelectStream.of(jdbcDataPath);
     }
 
     /**
@@ -533,9 +534,20 @@ public class JdbcDataSystem extends TableSystem {
     @Override
     public void drop(DataPath dataPath) {
 
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         StringBuilder dropTableStatement = new StringBuilder();
-        dropTableStatement.append("drop table ")
-                .append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        dropTableStatement.append("drop ");
+        switch (jdbcDataPath.getType()){
+            case JdbcDataPath.TABLE_TYPE:
+                dropTableStatement.append("table ");
+                break;
+            case JdbcDataPath.VIEW_TYPE:
+                dropTableStatement.append("view ");
+                break;
+            default:
+                throw new RuntimeException("The drop of the table type ("+jdbcDataPath.getType()+") is not implemented");
+        }
+        dropTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         try (
                 Statement statement = getCurrentConnection().createStatement()
         ) {

@@ -3,7 +3,7 @@ package net.bytle.db.stream;
 import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.TableDef;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,9 +22,10 @@ public class Streams {
      */
     public static void print(SelectStream selectStream) {
 
+        assert selectStream != null : "Select Stream is null";
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final RelationDef tableDef = selectStream.getDataDef();
+        final TableDef tableDef = selectStream.getDataDef();
         while (selectStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
                 String string = selectStream.getString(i);

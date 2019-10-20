@@ -1,17 +1,17 @@
 package net.bytle.db.spi;
 
-import com.sun.jndi.toolkit.url.Uri;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.memory.ListSelectStream;
-import net.bytle.db.stream.SelectStream;
-import net.bytle.db.stream.Streams;
 import net.bytle.db.uri.DataUri;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This is a class with static utility to get data path
+ * If you want any other operations on a data path, go to the {@link Tabulars} class
+ */
 public class DataPaths {
 
 
@@ -31,21 +31,20 @@ public class DataPaths {
                 return tableSystem.getDataPath(dataUri);
             }
         }
-        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url ("+dataStore.getUrl()+")";
+        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";
         DbLoggers.LOGGER_DB_ENGINE.severe(message);
         throw new RuntimeException(message);
 
     }
 
     public static DataPath of(String... parts) {
-        // FileSystems.getSqliteDefault().getDataUri(first, more);
-            return TableSystems.getDefault().getDataPath(parts);
+
+        return TableSystems.getDefault().getDataPath(parts);
 
     }
 
 
     /**
-     *
      * @param dataPath
      * @param names
      * @return
@@ -58,14 +57,10 @@ public class DataPaths {
     }
 
 
-
     public static DataPath of(TableSystem dataSystem, List<String> pathSegments) {
         return dataSystem.getDataPath(pathSegments.toArray(new String[0]));
     }
 
-    public static List<DataPath> get(DataPath dataPath, String pattern) {
-        return null;
-    }
 
     public static DataPath of(TableSystem tableSystem, String... names) {
         return tableSystem.getDataPath(names);

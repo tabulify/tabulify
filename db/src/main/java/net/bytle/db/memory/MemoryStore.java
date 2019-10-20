@@ -22,6 +22,6 @@ public class MemoryStore<T extends Collection<? extends List>> {
     }
 
     public Boolean containsKey(DataPath dataPath) {
-        return tableValues.containsValue(dataPath);
+        return tableValues.containsKey(dataPath);
     }
 }

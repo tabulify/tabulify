@@ -8,6 +8,7 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +28,11 @@ public class Tabulars {
     }
 
     public static SelectStream getSelectStream(DataPath dataPath) {
-        return dataPath.getDataSystem().getSelectStream(dataPath);
+        if (Tabulars.exists(dataPath)) {
+            return dataPath.getDataSystem().getSelectStream(dataPath);
+        } else {
+            throw new RuntimeException("The data unit ("+dataPath.toString()+") does not exist. You can't therefore ask for a select stream.");
+        }
     }
 
     public static SelectStream getSelectStream(DataPath dataPath, String query) {
@@ -63,6 +68,9 @@ public class Tabulars {
      */
     public static List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
+        if (Tabulars.isDataUnit(dataPath)){
+            throw new RuntimeException("This is a data unit, it has therefore no children");
+        }
         return dataPath.getDataSystem().getChildrenDataPath(dataPath);
 
     }
@@ -262,5 +270,27 @@ public class Tabulars {
 
     public static boolean isDataUnit(DataPath dataPath) {
         return dataPath.getDataSystem().isDataUnit(dataPath);
+    }
+
+    public static void create(List<DataPath> dataPaths) {
+        Dag dag = Dag.get(dataPaths);
+        dataPaths = dag.getCreateOrderedTables();
+        for (DataPath dataPath : dataPaths) {
+            create(dataPath);
+        }
+    }
+
+    /**
+     *
+     * @param dataPath - a parent dataPath
+     * @param pattern -  a glob pattern
+     * @return the children data path of the parent that matches the glob pattern
+     */
+    public static List<DataPath> getChildrenDataPath(DataPath dataPath, String pattern) {
+        final String regex = Globs.toRegexPattern(pattern);
+        return getChildrenDataPath(dataPath)
+                .stream()
+                .filter(s -> s.getName().matches(regex))
+                .collect(Collectors.toList());
     }
 }
