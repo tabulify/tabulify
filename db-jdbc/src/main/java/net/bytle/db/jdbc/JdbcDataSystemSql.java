@@ -1,5 +1,6 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
 
 import java.sql.Connection;
@@ -36,16 +37,9 @@ public class JdbcDataSystemSql {
      */
     public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
 
-        String identifierQuoteString = "\"";
+
         final JdbcDataSystem dataSystem = jdbcDataPath.getDataSystem();
-        try {
-            final Connection currentConnection = dataSystem.getCurrentConnection();
-            if (currentConnection!=null) {
-                identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
-            }
-        } catch (SQLException e) {
-            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getDatabase()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
-        }
+        String identifierQuoteString = getIdentifierQuote(dataSystem);
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
         if (dataSystem.getSqlDatabase() != null) {
@@ -57,6 +51,25 @@ public class JdbcDataSystemSql {
         return normativeObjectName;
 
 
+    }
+
+    private static String getIdentifierQuote(JdbcDataSystem dataSystem) {
+        String identifierQuoteString = "\"";
+        try {
+            final Connection currentConnection = dataSystem.getCurrentConnection();
+            if (currentConnection!=null) {
+                identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
+            }
+        } catch (SQLException e) {
+            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getDatabase()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
+        }
+        return identifierQuoteString;
+    }
+
+    public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
+        final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getRelationDef().getDataPath();
+        String identifier = getIdentifierQuote(dataPath.getDataSystem());
+        return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }
 
     /**

@@ -417,6 +417,28 @@ public class JdbcDataSystem extends TableSystem {
         return jdbcDataPath.isDataUnit();
     }
 
+    @Override
+    public SelectStream getSelectStream(ColumnDef[] columnDefs) {
+        // Only from the same data path test
+        assert columnDefs.length >= 1: "The number of columns given must be at minimal one if you want a data stream";
+        final DataPath dataPath = columnDefs[0].getRelationDef().getDataPath();
+        StringBuilder query = new StringBuilder();
+        query.append("select ");
+        for (int i = 0; i<columnDefs.length;i++){
+            ColumnDef columnDef = columnDefs[i];
+            if (!columnDef.getRelationDef().getDataPath().equals(dataPath)){
+                throw new RuntimeException("Only a stream of columns of the same data path is for now supported.");
+            }
+            query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef));
+            if (i<columnDefs.length-1) {
+                query.append(", ");
+            }
+        }
+        query.append(" from ");
+        query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        return getSelectStream(query.toString());
+    }
+
 
     public Database getDatabase() {
         return database;

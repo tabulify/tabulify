@@ -264,7 +264,7 @@ public class Tabulars {
     }
 
 
-    public static int size(DataPath dataPath) {
+    public static int getSize(DataPath dataPath) {
         return dataPath.getDataSystem().size(dataPath);
     }
 
@@ -292,5 +292,14 @@ public class Tabulars {
                 .stream()
                 .filter(s -> s.getName().matches(regex))
                 .collect(Collectors.toList());
+    }
+
+    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+        throw new RuntimeException("not yet implemented");
+    }
+
+    public static SelectStream getSelectStream(ColumnDef... columnDefs) {
+        assert columnDefs.length >=1 : "The number of columns may not be null when requesting a stream of columns";
+        return columnDefs[0].getRelationDef().getDataPath().getDataSystem().getSelectStream(columnDefs);
     }
 }

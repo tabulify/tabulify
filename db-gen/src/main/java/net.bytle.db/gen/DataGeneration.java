@@ -2,13 +2,16 @@ package net.bytle.db.gen;
 
 import net.bytle.cli.Log;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.*;
-import net.bytle.db.stream.SqlInsertStream;
-import net.bytle.db.stream.Streams;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.type.Maps;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +46,7 @@ public class DataGeneration {
     /**
      * The table to load with the total number of rows
      */
-    private final Map<TableDef, Integer> tablesToLoad = new HashMap<>();
+    private final Map<DataPath, Integer> tablesToLoad = new HashMap<>();
     private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
     private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
     private List<ColumnDef> primaryColumns = new ArrayList<>();
@@ -67,40 +70,40 @@ public class DataGeneration {
      */
     private Map<ColumnDef, DataGenerator> dataGenerators = new HashMap<>();
 
-    public DataGeneration addTable(TableDef tableDef, Integer totalRows) {
+    public DataGeneration addTable(DataPath dataPath, Integer totalRows) {
 
         if (totalRows==null){
-            final Object totalRowsObject = Maps.getPropertyCaseIndependent(tableDef.getProperties(), TOTAL_ROWS_PROPERTY_KEY);
+            final Object totalRowsObject = Maps.getPropertyCaseIndependent(dataPath.getDataDef().getProperties(), TOTAL_ROWS_PROPERTY_KEY);
             try {
                 totalRows = (Integer) totalRowsObject;
             } catch (ClassCastException e){
-                throw new RuntimeException("The total rows property of the table ("+tableDef.getFullyQualifiedName()+") is not an integer. Its value is: "+totalRowsObject);
+                throw new RuntimeException("The total rows property of the table ("+dataPath.toString()+") is not an integer. Its value is: "+totalRowsObject);
             }
         }
         // Adding the table into the list of tables to load
-        tablesToLoad.put(tableDef, totalRows);
+        tablesToLoad.put(dataPath, totalRows);
 
         // Building the foreign, primary and unique keys
 
         // Self referencing foreign key check
-        List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(tableDef);
+        List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(dataPath);
         if (selfReferencingForeignKeys.size() > 0) {
             for (ForeignKeyDef foreignKeyDef : selfReferencingForeignKeys) {
-                LOGGER.severe("The foreign key " + foreignKeyDef.getName() + " on the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ") references itself and it's not supported.");
+                LOGGER.severe("The foreign key " + foreignKeyDef.getName() + " on the table (" + foreignKeyDef.getTableDef().getDataPath().toString() + ") references itself and it's not supported.");
             }
-            throw new RuntimeException("Self referencing foreign key found int he table " + tableDef.getFullyQualifiedName());
+            throw new RuntimeException("Self referencing foreign key found in the table " + dataPath.toString());
         }
 
 
         // Primary Key with only one column are supported
-        PrimaryKeyDef primaryKeyDef = tableDef.getPrimaryKey();
+        PrimaryKeyDef primaryKeyDef = dataPath.getDataDef().getPrimaryKey();
         // Extract the primary column
         if (primaryKeyDef != null) {
             primaryColumns.addAll(primaryKeyDef.getColumns());
         }
 
         // Foreign Key with only one column are supported
-        List<ForeignKeyDef> foreignKeys = tableDef.getForeignKeys();
+        List<ForeignKeyDef> foreignKeys = dataPath.getDataDef().getForeignKeys();
         for (ForeignKeyDef foreignKeyDef : foreignKeys) {
             int size = foreignKeyDef.getChildColumns().size();
             if (size > 1) {
@@ -108,13 +111,13 @@ public class DataGeneration {
             }
             ColumnDef foreignKeyColumn = foreignKeyDef.getChildColumns().get(0);
             if (this.columnForeignKeyMap.get(foreignKeyColumn) != null) {
-                throw new RuntimeException("Two foreign keys on the same column are not supported. The column (" + foreignKeyColumn.getFullyQualifiedName() + ") has more than one foreign key.");
+                throw new RuntimeException("Two foreign keys on the same column are not supported. The column (" + foreignKeyColumn.toString() + ") has more than one foreign key.");
             }
             this.columnForeignKeyMap.put(foreignKeyColumn, foreignKeyDef);
         }
 
         // Unique Keys
-        for (UniqueKeyDef uniqueKeyDef : tableDef.getUniqueKeys()) {
+        for (UniqueKeyDef uniqueKeyDef : dataPath.getDataDef().getUniqueKeys()) {
             for (ColumnDef columnDef : uniqueKeyDef.getColumns()) {
                 this.columnUniqueKeyMap.put(columnDef, uniqueKeyDef);
             }
@@ -161,12 +164,12 @@ public class DataGeneration {
                 try {
                     generatorColumnProperties = (Map<String, Object>) generatorProperty;
                 } catch (ClassCastException e) {
-                    throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.getFullyQualifiedName() + ") should be a map value. Bad values:" + generatorProperty);
+                    throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
                 }
 
                 final String nameProperty = (String) Maps.getPropertyCaseIndependent(generatorColumnProperties, "name");
                 if (nameProperty == null) {
-                    throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.getFullyQualifiedName() + ".");
+                    throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.toString() + ".");
                 }
                 DataGenerator<T> dataGenerator;
                 String name = nameProperty.toLowerCase();
@@ -187,7 +190,7 @@ public class DataGeneration {
                         dataGenerator = DistributionGenerator.of(columnDef);
                         break;
                     default:
-                        throw new RuntimeException("The generator (" + name + ") defined for the column (" + columnDef.getFullyQualifiedName() + ") is unknown");
+                        throw new RuntimeException("The generator (" + name + ") defined for the column (" + columnDef.toString() + ") is unknown");
                 }
                 dataGenerators.put(columnDef,dataGenerator);
                 return;
@@ -233,26 +236,26 @@ public class DataGeneration {
      * This function starts the data generation and data insertion for all tables specified
      * @return the tables loaded which could be more that the tables asked if the parent loading option is on
      */
-    public List<TableDef> load() {
+    public List<DataPath> load() {
 
-        final List<TableDef> tablesLoaded = new ArrayList<>(tablesToLoad.keySet());
+        final List<DataPath> tablesLoaded = new ArrayList<>(tablesToLoad.keySet());
 
         // Parent check
         // Parent not in the table set to load ?
         // If yes, add the parent to the tables to loaded
-        for (TableDef tableDef:tablesLoaded) {
-            if (tableDef.getForeignKeys().size() != 0) {
-                for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
-                    TableDef parentTableDef = foreignKeyDef.getForeignPrimaryKey().getTableDef();
-                    if (!tablesToLoad.keySet().contains(parentTableDef)) {
+        for (DataPath dataPath : tablesLoaded) {
+            if (dataPath.getDataDef().getForeignKeys().size() != 0) {
+                for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+                    DataPath parentDataUnit = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
+                    if (!tablesToLoad.keySet().contains(parentDataUnit)) {
 
-                        Integer rows = Tables.getSize(parentTableDef);
+                        Integer rows = Tabulars.getSize(parentDataUnit);
                         if (rows == 0) {
                             if (this.loadParent) {
-                                LOGGER.info("The table (" + parentTableDef.getFullyQualifiedName() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
-                                tablesLoaded.add(parentTableDef);
+                                LOGGER.info("The table (" + parentDataUnit.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
+                                tablesLoaded.add(parentDataUnit);
                             } else {
-                                throw new RuntimeException("The table (" + tableDef.getFullyQualifiedName() + ") has a foreign key to the parent table (" + parentTableDef.getFullyQualifiedName() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + tableDef.getFullyQualifiedName() + ")");
+                                throw new RuntimeException("The table (" + dataPath.toString() + ") has a foreign key to the parent table (" + parentDataUnit.toString() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + dataPath.toString() + ")");
                             }
                         }
 
@@ -262,15 +265,15 @@ public class DataGeneration {
         }
 
         // Load
-        for (TableDef tableDef: Dag.get(tablesLoaded).getCreateOrderedTables()) {
+        for (DataPath dataPath: Dag.get(tablesLoaded).getCreateOrderedTables()) {
 
 
             // The load
-            LOGGER.info("Loading the table (" + tableDef.getFullyQualifiedName() + ")");
-            LOGGER.info("The size of the table (" + tableDef.getFullyQualifiedName() + ") before insertion is : " + Tables.getSize(tableDef));
+            LOGGER.info("Loading the table (" + dataPath.toString() + ")");
+            LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
             // First pass to create a default generator if they are not specified
-            for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+            for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
 
                 if (dataGenerators.get(columnDef) == null) {
                     buildDefaultDataGeneratorForColumn(columnDef);
@@ -280,22 +283,22 @@ public class DataGeneration {
 
             // The number of row may be trimmed if the generator cannot generate them
             // or if there is already rows in the table
-            Integer numberOfRowToInsert = getNumberOfRowToInsert(tableDef);
+            Integer numberOfRowToInsert = getNumberOfRowToInsert(dataPath);
 
             if (numberOfRowToInsert > 0) {
-                LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + tableDef.getFullyQualifiedName() + ")");
+                LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
                 try (
-                        SqlInsertStream inputStream = Streams.getSqlInsertStream(tableDef)
+                        InsertStream inputStream = Tabulars.getInsertStream(dataPath)
                 ) {
                     for (int i = 0; i < numberOfRowToInsert; i++) {
 
                         Map<ColumnDef, Object> columnValues = new HashMap<>();
-                        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+                        for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
                             populateColumnValues(columnValues, columnDef);
                         }
 
                         List<Object> values = new ArrayList<>();
-                        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+                        for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
                             // We need also a recursion here to create the value
                             values.add(columnValues.get(columnDef));
                         }
@@ -305,8 +308,8 @@ public class DataGeneration {
 
             }
 
-            LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + tableDef.getFullyQualifiedName() + ")");
-            LOGGER.info("The new size is: " + Tables.getSize(tableDef));
+            LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + dataPath.toString() + ")");
+            LOGGER.info("The new size is: " + Tabulars.getSize(dataPath));
 
         }
         return tablesLoaded;
@@ -319,25 +322,26 @@ public class DataGeneration {
      * * The generator has a max value of generated data
      * * and the table may have already data
      *
-     * @param tableDef
+     * @param dataPath
      * @return
      */
-    private Integer getNumberOfRowToInsert(TableDef tableDef) {
+    private Integer getNumberOfRowToInsert(DataPath dataPath) {
 
 
         // Precision of a sequence (Pk of unique col) make that we cannot insert the number of rows that we want
-        Integer maxNumberOfRowToInsert = null;
+        Integer maxNumberOfRowToInsert = 0;
 
         // Select the data generators only for this table
         final List<DataGenerator> dataGeneratorsForTable =
                 dataGenerators
                         .values()
                         .stream()
-                        .filter(t -> t.getColumn().getRelationDef().equals(tableDef))
+                        .filter(t -> t.getColumn().getRelationDef().getDataPath().equals(dataPath))
                         .collect(Collectors.toList());
+        
         for (DataGenerator dataGenerator : dataGeneratorsForTable) {
             final Integer maxGeneratedValues = (dataGenerator.getMaxGeneratedValues()).intValue();
-            if (maxNumberOfRowToInsert == null) {
+            if (maxNumberOfRowToInsert == 0) {
                 maxNumberOfRowToInsert = maxGeneratedValues;
             } else {
                 if (maxNumberOfRowToInsert > maxGeneratedValues) {
@@ -346,29 +350,29 @@ public class DataGeneration {
             }
         }
 
-        final Integer totalRows = tablesToLoad.get(tableDef);
+        final Integer totalRows = tablesToLoad.get(dataPath);
         Integer numberOfRowToInsert = totalRows;
         if (numberOfRowToInsert == null) {
             if (maxNumberOfRowToInsert < MAX_INSERT) {
                 numberOfRowToInsert = maxNumberOfRowToInsert;
             } else {
-                final String msg = "For the table (" + tableDef.getFullyQualifiedName() + "), the total number of rows to insert is not defined and the max number of rows is " + maxNumberOfRowToInsert + " greater than the allowed max " + MAX_INSERT + ". Set a number of rows to insert.";
+                final String msg = "For the table (" + dataPath.toString() + "), the total number of rows to insert is not defined and the max number of rows is " + maxNumberOfRowToInsert + " greater than the allowed max " + MAX_INSERT + ". Set a number of rows to insert.";
                 LOGGER.severe(msg);
                 throw new RuntimeException(msg);
             }
         }
 
         if (maxNumberOfRowToInsert < numberOfRowToInsert) {
-            final String msg = "For the table (" + tableDef.getFullyQualifiedName() + "), the max number of rows is " + maxNumberOfRowToInsert + " not " + totalRows;
+            final String msg = "For the table (" + dataPath.toString() + "), the max number of rows is " + maxNumberOfRowToInsert + " not " + totalRows;
             LOGGER.severe(msg);
             throw new RuntimeException(msg);
         }
 
-        Integer numberOfRows = Tables.getSize(tableDef);
+        Integer numberOfRows = Tabulars.getSize(dataPath);
         if (numberOfRows != 0) {
             numberOfRowToInsert = numberOfRowToInsert - numberOfRows;
             if (numberOfRowToInsert <= 0) {
-                LOGGER.warning("The table (" + tableDef.getFullyQualifiedName() + ") can not accept any more rows");
+                LOGGER.warning("The table (" + dataPath.toString() + ") can not accept any more rows");
                 numberOfRowToInsert = 0;
             }
         }
@@ -430,32 +434,32 @@ public class DataGeneration {
             try {
                 generatorColumnProperties = (Map<String, Object>) generatorProperty;
             } catch (ClassCastException e) {
-                throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.getFullyQualifiedName() + ") should be a map value. Bad values:" + generatorProperty);
+                throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
             }
         }
         return generatorColumnProperties;
     }
 
-    public DataGeneration addTable(TableDef tableDef) {
-        return addTable(tableDef,null);
+    public DataGeneration addTable(DataPath dataPath) {
+        return addTable(dataPath,null);
     }
 
-    public DataGeneration addTables(List<TableDef> tableDefs) {
-        for (TableDef tableDef:tableDefs){
-            addTable(tableDef);
+    public DataGeneration addTables(List<DataPath> dataPaths) {
+        for (DataPath dataPath:dataPaths){
+            addTable(dataPath);
         }
         return this;
     }
 
     /**
      *
-     * @param tableDefs
+     * @param dataPaths
      * @param totalRows - the totalRows
      * @return
      */
-    public DataGeneration addTables(List<TableDef> tableDefs, Integer totalRows) {
-        for (TableDef tableDef:tableDefs){
-            addTable(tableDef,totalRows);
+    public DataGeneration addTables(List<DataPath> dataPaths, Integer totalRows) {
+        for (DataPath dataPath:dataPaths){
+            addTable(dataPath,totalRows);
         }
         return this;
     }

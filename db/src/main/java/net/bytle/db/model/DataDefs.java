@@ -27,11 +27,7 @@ public class DataDefs {
 
 
     /**
-     * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of TableDef
-     * <p>
-     * The schema and database are set accordingly to this rule:
-     * * one child directory: the directory is the schema name
-     * * two child directories: the first directory is the database name, the second the schema name
+     * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of data path
      *
      * @param path
      * @return
@@ -65,6 +61,7 @@ public class DataDefs {
         final ArrayList<DataPath> dataPathsList = new ArrayList<>(dataPaths);
         Collections.sort(dataPathsList);
         return dataPathsList;
+
     }
 
 
@@ -201,7 +198,7 @@ public class DataDefs {
      * @param secondTable
      * @return the first table object updated
      */
-    public static TableDef mergeProperties(TableDef firstTable, TableDef secondTable) {
+    public static void mergeProperties(TableDef firstTable, TableDef secondTable) {
 
         Map<String, Object> firstTableProp = firstTable.getProperties();
         for (Map.Entry<String,Object> entry : secondTable.getProperties().entrySet()){
@@ -222,7 +219,7 @@ public class DataDefs {
                 }
             }
         }
-        return firstTable;
+
     }
 
 

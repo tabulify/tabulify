@@ -1,11 +1,11 @@
 package net.bytle.db.gen;
 
 import net.bytle.cli.Log;
-import net.bytle.db.engine.DbDdl;
+
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,12 +17,12 @@ public class DataGens {
 
     private static final Log LOGGER = DataGeneration.GEN_LOG;
 
-    public static void suppressSelfReferencingForeignKeys(SchemaDef schemaDef) {
+    public static void suppressSelfReferencingForeignKeys(DataPath schemaDef) {
 
         int counter = 0;
         for (ForeignKeyDef foreignKeyDef : getSelfReferencingForeignKeys(schemaDef)) {
             counter++;
-            DbDdl.dropForeignKey(foreignKeyDef);
+            Tabulars.dropForeignKey(foreignKeyDef);
         }
         if (counter==0){
             LOGGER.info("No self referencing foreign keys was found.");
@@ -32,58 +32,47 @@ public class DataGens {
 
     }
 
-    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(SchemaDef schemaDef) {
+    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath schemaDef) {
 
         List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (TableDef tableDef : schemaDef.getTables()) {
-            foreignKeyDefs.addAll(getSelfReferencingForeignKeys(tableDef));
-        }
-        return foreignKeyDefs;
-
-    }
-
-    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(TableDef tableDef) {
-        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
-            if (tableDef.equals(foreignKeyDef.getForeignPrimaryKey().getTableDef())) {
-                foreignKeyDefs.add(foreignKeyDef);
-            }
-        }
-        return foreignKeyDefs;
-    }
-
-
-    public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(SchemaDef schemaDef) {
-
-        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (TableDef tableDef : schemaDef.getTables()) {
-            foreignKeyDefs.addAll(getSecondForeignKeysOnTheSameColumn(tableDef));
-        }
-        return foreignKeyDefs;
-
-    }
-
-    public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(TableDef tableDef) {
-        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        List<ColumnDef> columnDefs = new ArrayList<>();
-        for (ForeignKeyDef foreignKeyDef : tableDef.getForeignKeys()) {
-            for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
-                if (columnDefs.contains(columnDef)){
+        for (DataPath dataPath : Tabulars.getChildrenDataPath(schemaDef)) {
+            for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+                if (dataPath.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
                     foreignKeyDefs.add(foreignKeyDef);
-                } else {
-                    columnDefs.add(columnDef);
                 }
             }
         }
         return foreignKeyDefs;
+
     }
 
-    public static void suppressSecondForeignKeysOnTheSameColumn(SchemaDef schemaDef) {
+
+    public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath schemaPath) {
+
+        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
+        for (DataPath dataPath : Tabulars.getChildrenDataPath(schemaPath)) {
+            List<ColumnDef> columnDefs = new ArrayList<>();
+            for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+                for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
+                    if (columnDefs.contains(columnDef)){
+                        foreignKeyDefs.add(foreignKeyDef);
+                    } else {
+                        columnDefs.add(columnDef);
+                    }
+                }
+            }
+        }
+        return foreignKeyDefs;
+
+    }
+
+
+    public static void suppressSecondForeignKeysOnTheSameColumn(DataPath schemaDef) {
 
         int counter = 0;
         for (ForeignKeyDef foreignKeyDef : getSecondForeignKeysOnTheSameColumn(schemaDef)) {
             counter++;
-            DbDdl.dropForeignKey(foreignKeyDef);
+            Tabulars.dropForeignKey(foreignKeyDef);
         }
         if (counter==0){
             LOGGER.info("No more than one foreign key on the same column was found.");

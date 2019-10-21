@@ -65,4 +65,6 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract Integer size(DataPath dataPath);
 
     public abstract boolean isDataUnit(DataPath dataPath);
+
+    public abstract SelectStream getSelectStream(ColumnDef[] columnDefs);
 }

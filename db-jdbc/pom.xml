@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-jdbc</artifactId>
-    <name>Jdbc</name>
+    <name>db-jdbc</name>
 
     <dependencies>
         <dependency>

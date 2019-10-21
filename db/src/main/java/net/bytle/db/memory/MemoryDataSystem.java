@@ -134,6 +134,11 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
+    public SelectStream getSelectStream(ColumnDef[] columnDefs) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
     public DataPath getDataPath(DataUri dataUri) {
         this.database = dataUri.getDataStore();
         return getDataPath(dataUri.getPathSegments().toArray(new String[0]));

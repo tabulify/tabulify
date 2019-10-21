@@ -3,6 +3,8 @@ package net.bytle.db.gen;
 
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.SelectStream;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,27 +32,17 @@ public class FkDataGenerator implements DataGenerator {
 
         // Building the map of value
         foreignColumnDef = foreignKeyDef.getForeignPrimaryKey().getColumns().get(0);
-        String statement = "select " + foreignColumnDef.getColumnName() + " from " + foreignColumnDef.getRelationDef().getFullyQualifiedName();
-        Connection currentConnection = foreignColumnDef.getRelationDef().getDatabase().getCurrentConnection();
         try (
-                Statement sqlStatement = currentConnection.createStatement();
-                ResultSet resultSet = sqlStatement.executeQuery(statement);
+                SelectStream selectStream = Tabulars.getSelectStream(foreignColumnDef)
         ) {
 
-            while (resultSet.next()) {
-                values.add(resultSet.getObject(1));
+            while (selectStream.next()) {
+                values.add(selectStream.getObject(1));
             }
-
             if (values.size() == 0) {
-                throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getFullyQualifiedName() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
+                throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
             }
-
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-
         }
-
 
     }
 

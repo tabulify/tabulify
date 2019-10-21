@@ -2869,7 +2869,7 @@ class IntGenerator(RandomGenerator):
         self.mask = 0
         # set size if explicit, other will have to be set later.
         if 'size' in self.params:
-            self.setSize(self.params['size'])
+            self.setSize(self.params['getSize'])
         elif att != None and att.size != None:
             self.setSize(att.size)  # possibly computed from table & mult
         else:  # later? when??
@@ -3310,8 +3310,8 @@ class WordGenerator(IntGenerator):
 
     def __init__(self, att, params=None, words=None):
         # keep explicit size for later
-        self.__size = params['size'] if params and 'size' in params else \
-            att.params['size'] if att and 'size' in att.params else \
+        self.__size = params['getSize'] if params and 'size' in params else \
+            att.params['getSize'] if att and 'size' in att.params else \
                 None
         # NOT att.size: this is computed and does not supersede len(words)
         self.words = None  # temporary
@@ -4050,7 +4050,7 @@ class SharedGenerator(WithPersistent, IntGenerator):
 
     def __init__(self, name, params):
         assert name != None and params != None, "mandatory parameters"
-        size = params['size'] if 'size' in params else None
+        size = params['getSize'] if 'size' in params else None
         mult = params['mult'] if 'mult' in params else None
         IntGenerator.__init__(self, None, params)
         self.nullp = 0.0
@@ -5358,7 +5358,7 @@ for t in tables:
                     a.params[d] = v
         elif 'size' in a.params:
             # the directive is not removed now, it should be done later?
-            a.size = a.params['size']
+            a.size = a.params['getSize']
         elif a.size == None:
             a.size = int(t.size * a.params.pop('mult', 1.0))
 

@@ -5,6 +5,7 @@ import net.bytle.db.engine.Columns;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
+import net.bytle.db.spi.Tabulars;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -36,25 +37,25 @@ public class UniqueDataGenerator implements DataGenerator {
 
                 // With date, we are going in the past
                 ColumnDef<Date> dateColumn = Columns.safeCast(columnDef,Date.class);
-                Date minDate = Tables.getMin(dateColumn);
+                Date minDate = Columns.getMin(dateColumn);
                 dataGeneratorMap.put(columnDef,SequenceGenerator.of(dateColumn).start(minDate).step(-1));
 
             } else if (DataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 if (columnDef.getClazz()== BigDecimal.class){
                     ColumnDef<BigDecimal> bigDecimalColumnDef = Columns.safeCast(columnDef, BigDecimal.class);
-                    BigDecimal intCounter = Tables.getMax(bigDecimalColumnDef);
+                    BigDecimal intCounter = Columns.getMax(bigDecimalColumnDef);
                     dataGeneratorMap.put(columnDef, SequenceGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
                 } else {
                     ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef, Integer.class);
-                    Integer intCounter = Tables.getMax(integerColumn);
+                    Integer intCounter = Columns.getMax(integerColumn);
                     dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter).step(1));
                 }
 
             } else if ( DataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 ColumnDef<String> stringColumn = Columns.safeCast(columnDef,String.class);
-                String s = Tables.getMax(stringColumn);
+                String s = Columns.getMax(stringColumn);
                 dataGeneratorMap.put(columnDef,SequenceGenerator.of(stringColumn).start(s));
 
             } else {

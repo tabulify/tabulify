@@ -8,7 +8,6 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -77,7 +76,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
 
                 String timeMillis = getCurrentTimeStamp();
 
-                int size = Tabulars.size(queue);
+                int size = Tabulars.getSize(queue);
                 String bufferSizeCsv = timeMillis + ", Buffer Size, " + size;
                 outputStream.write(bufferSizeCsv);
                 outputStream.newLine();

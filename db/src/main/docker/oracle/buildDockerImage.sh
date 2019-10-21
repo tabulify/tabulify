@@ -111,7 +111,7 @@ elif [ $EXPRESS -eq 1 ] && [ "$VERSION" != "11.2.0.2" ]; then
   exit 1;
 else
   EDITION="xe";
-  DOCKEROPS="--shm-size=1G $DOCKEROPS";
+  DOCKEROPS="--shm-getSize=1G $DOCKEROPS";
 fi
 
 # Oracle Database Image Name

@@ -2,6 +2,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,12 +19,12 @@ import java.util.List;
 public class BytleSchemaDataDefs {
 
 
-    public static List<TableDef> getDataDefs(){
+    public static List<DataPath> getDataDefs(){
 
         try {
             URL url = BytleSchemaDataDefs.class.getResource("/DataDef/BytleSchemaDataDef.yml");
             Path dataDef = Paths.get(url.toURI());
-            return DataDefs.of().load(dataDef);
+            return DataDefs.load(dataDef);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
