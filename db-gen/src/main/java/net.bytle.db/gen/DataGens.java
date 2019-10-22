@@ -32,12 +32,20 @@ public class DataGens {
 
     }
 
-    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath schemaDef) {
+    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath dataPath) {
+
 
         List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (DataPath dataPath : Tabulars.getChildrenDataPath(schemaDef)) {
-            for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
-                if (dataPath.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
+        List<DataPath> dataPathToChecks = new ArrayList<>();
+        if (Tabulars.isContainer(dataPath)) {
+            dataPathToChecks.addAll(Tabulars.getChildrenDataPath(dataPath));
+        } else {
+            dataPathToChecks.add(dataPath);
+        }
+
+        for (DataPath dataPathToCheck : dataPathToChecks) {
+            for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getDataDef().getForeignKeys()) {
+                if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
                     foreignKeyDefs.add(foreignKeyDef);
                 }
             }

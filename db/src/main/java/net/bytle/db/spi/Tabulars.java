@@ -69,7 +69,7 @@ public class Tabulars {
     public static List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
         if (Tabulars.isDataUnit(dataPath)){
-            throw new RuntimeException("This is a data unit, it has therefore no children");
+            throw new RuntimeException("The data path ("+dataPath+") is a data unit, it has therefore no children");
         }
         return dataPath.getDataSystem().getChildrenDataPath(dataPath);
 

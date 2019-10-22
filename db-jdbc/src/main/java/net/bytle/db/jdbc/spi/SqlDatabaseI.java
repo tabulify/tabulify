@@ -92,4 +92,7 @@ public interface SqlDatabaseI {
      * @return true if the columns were added to the table
      */
     boolean addColumns(TableDef tableDef);
+
+    String getTruncateStatement(DataPath dataPath);
+
 }

@@ -1,9 +1,11 @@
 package net.bytle.db.jdbc.Oracle;
 
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.jdbc.spi.SqlDatabase;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
+import net.bytle.db.spi.DataPath;
 import oracle.jdbc.OracleTypes;
 
 import java.util.HashMap;
@@ -66,6 +68,13 @@ public class SqlDatabaseIOracle extends SqlDatabase {
     @Override
     public Integer getMaxWriterConnection() {
         return 100;
+    }
+
+    @Override
+    public String getTruncateStatement(DataPath dataPath) {
+        StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
+        truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        return truncateStatementBuilder.toString();
     }
 
 

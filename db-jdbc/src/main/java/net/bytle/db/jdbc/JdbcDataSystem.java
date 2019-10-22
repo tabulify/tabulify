@@ -34,7 +34,7 @@ public class JdbcDataSystem extends TableSystem {
     public static final String DB_SQLITE = "SQLite";
     public static final String DB_HIVE = "Apache Hive";
 
-    private SqlDatabaseI sqlDatabaseI;
+    private SqlDatabaseI sqlDatabase;
 
     // A cache object
     // integer is data type id
@@ -47,7 +47,7 @@ public class JdbcDataSystem extends TableSystem {
 
     public SqlDatabaseI getSqlDatabase() {
 
-        if (sqlDatabaseI == null) {
+        if (sqlDatabase == null) {
 
             String name;
             try {
@@ -57,24 +57,24 @@ public class JdbcDataSystem extends TableSystem {
             }
             switch (name) {
                 case DB_ORACLE:
-                    sqlDatabaseI = new SqlDatabaseIOracle(this);
+                    sqlDatabase = new SqlDatabaseIOracle(this);
                     break;
                 case DB_HANA:
-                    sqlDatabaseI = new SqlDatabaseIHana(this);
+                    sqlDatabase = new SqlDatabaseIHana(this);
                     break;
                 case DB_SQL_SERVER:
-                    sqlDatabaseI = new SqlDatabaseISqlServer(this);
+                    sqlDatabase = new SqlDatabaseISqlServer(this);
                     break;
                 case DB_SQLITE:
-                    sqlDatabaseI = SqlDatabases.getSqlDatabase(database.getUrl());
+                    sqlDatabase = SqlDatabases.getSqlDatabase(database.getUrl());
                     break;
                 case DB_HIVE:
-                    sqlDatabaseI = new SqlDatabaseIHive(this);
+                    sqlDatabase = new SqlDatabaseIHive(this);
                     break;
             }
 
         }
-        return sqlDatabaseI;
+        return sqlDatabase;
     }
 
     public JdbcDataSystem(Database database) {
@@ -405,7 +405,7 @@ public class JdbcDataSystem extends TableSystem {
         ) {
             Boolean next = selectStream.next();
             if (next) {
-                size = selectStream.getInteger(1);
+                size = selectStream.getInteger(0);
             }
         }
         return size;
@@ -607,19 +607,25 @@ public class JdbcDataSystem extends TableSystem {
     @Override
     public void truncate(DataPath dataPath) {
 
-
-        StringBuilder truncateTableStatement = new StringBuilder().append("truncate from ");
-        truncateTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        final SqlDatabaseI sqlDatabase = getSqlDatabase();
+        String truncateStatement;
+        if (sqlDatabase !=null){
+            truncateStatement = sqlDatabase.getTruncateStatement(dataPath);
+        } else {
+            StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
+            truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+            truncateStatement = truncateStatementBuilder.toString();
+        }
 
         try (
                 Statement statement = getCurrentConnection().createStatement();
         ) {
 
-            statement.execute(truncateTableStatement.toString());
+            statement.execute(truncateStatement);
             JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") truncated");
 
         } catch (SQLException e) {
-            System.err.println(truncateTableStatement);
+            System.err.println(truncateStatement);
             throw new RuntimeException(e);
         }
 
@@ -704,7 +710,8 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public InsertStream getInsertStream(DataPath dataPath) {
-        return null;
+        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+        return SqlInsertStream.of(jdbcDataPath);
     }
 
     @Override

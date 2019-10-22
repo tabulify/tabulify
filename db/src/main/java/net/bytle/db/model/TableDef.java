@@ -80,7 +80,7 @@ public class TableDef implements RelationDef  {
      */
     public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKeyDef, String... columnNames) {
 
-        assert primaryKeyDef!=null;
+        assert primaryKeyDef!=null:"To add a foreign key, the primary key should not be null";
         assert columnNames.length>0;
 
         // if the foreign key exist already, return it

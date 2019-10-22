@@ -37,7 +37,7 @@ public class FkDataGenerator implements DataGenerator {
         ) {
 
             while (selectStream.next()) {
-                values.add(selectStream.getObject(1));
+                values.add(selectStream.getObject(0));
             }
             if (values.size() == 0) {
                 throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");

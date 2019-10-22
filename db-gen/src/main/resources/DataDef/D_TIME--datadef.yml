@@ -1,64 +1,48 @@
-Name: D_TIME
-Rows: 900
+TotalRows: 900
 Columns:
   DATE_ID:
+    Type: Date
     DataGenerator:
-      name: sequence
+      Name: sequence
       Step: 1
   MONTH_ID:
+    Type: Varchar
+    Precision: 6
     DataGenerator:
-      name: derived
+      Name: derived
       ColumnParent: DATE_ID
       Formula: "function pad(number) {if (number < 10) { return '0' + number; } return number; }; x.getFullYear()+''+(pad(x.getMonth()+1))"
   MONTH_NUMBER:
+    Type: Integer
     DataGenerator:
-      name: derived
+      Name: derived
       ColumnParent: DATE_ID
       Formula: "x.getMonth()+1"
   MONTH_NAME:
-    Generator:
-      name: derived
+    Type: Varchar
+    Precision: 20
+    DataGenerator:
+      Name: derived
       ColumnParent: DATE_ID
       Formula: "var monthNames = ['January', 'February', 'March', 'April', 'May', 'June','July', 'August', 'September', 'October', 'November', 'December']; monthNames[x.getMonth()]"
   MONTH_DESC:
-    Generator:
-      name: derived
+    Type: Varchar
+    Precision: 20
+    DataGenerator:
+      Name: derived
       ColumnParent: DATE_ID
       Formula: "function pad(number) {if (number < 10) { return '0' + number; } return number; }; x.getFullYear()+''+(pad(x.getMonth()+1))+''+x.getDate()"
   MONTH_DESC_SHORT:
+    Type: Varchar
+    Precision: 10
     DataGenerator:
-      name: derived
+      Name: derived
       ColumnParent: DATE_ID
       Formula: "var monthNames = ['Jan', 'Feb', 'Maa', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']; monthNames[x.getMonth()]"
   YEAR_NUMBER:
+    Type: Varchar
+    Precision: 4
     DataGenerator:
-      name: derived
-      Column_parent: DATE_ID
+      Name: derived
+      ColumnParent: DATE_ID
       Formula: "x.getFullYear()"
----
-Name: F_SALES
-Columns:
-  SALES_PRICE:
-    DataGenerator:
-      name: random
-      Min: 1
-      Max: 30
-  SALES_QTY:
-    DataGenerator:
-      name: distribution
-      Buckets:
-        1.0: 2
-        2.0: 3
-        3.0: 1
-        5.0: 4
----
-name: D_CATEGORY
-Columns:
-  CAT_DESC:
-    Generator:
-      name: unique
-      Values:
-        - Blue
-        - Green
-        - Yellow
-

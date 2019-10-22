@@ -12,6 +12,7 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -274,6 +275,13 @@ public class SqliteSqlDatabase extends SqlDatabase {
             throw new RuntimeException(e);
         }
         return true;
+    }
+
+    @Override
+    public String getTruncateStatement(DataPath dataPath) {
+        StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
+        truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        return truncateStatementBuilder.toString();
     }
 
     /**

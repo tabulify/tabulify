@@ -1,0 +1,9 @@
+---
+Columns:
+  CAT_DESC:
+    DataGenerator:
+      name: unique
+      Values:
+      - Blue
+      - Green
+      - Yellow

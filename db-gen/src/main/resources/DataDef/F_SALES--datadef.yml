@@ -1,0 +1,17 @@
+---
+TotalRows: 10000
+Name: F_SALES
+Columns:
+  SALES_PRICE:
+    DataGenerator:
+      Name: random
+      Min: 1
+      Max: 30
+  SALES_QTY:
+    DataGenerator:
+      Name: distribution
+      Buckets:
+        1.0: 2
+        2.0: 3
+        3.0: 1
+        5.0: 4

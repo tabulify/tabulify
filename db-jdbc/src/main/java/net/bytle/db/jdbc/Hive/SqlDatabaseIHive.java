@@ -1,8 +1,10 @@
 package net.bytle.db.jdbc.Hive;
 
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.jdbc.spi.SqlDatabase;
 import net.bytle.db.jdbc.JdbcDataSystem;
+import net.bytle.db.spi.DataPath;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,13 @@ public class SqlDatabaseIHive extends SqlDatabase {
     public Integer getMaxWriterConnection() {
         // The JDBCMetadata().getMaxConnections() method returns a Method Not Supported exception
         return 5;
+    }
+
+    @Override
+    public String getTruncateStatement(DataPath dataPath) {
+        StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
+        truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        return truncateStatementBuilder.toString();
     }
 
 }
