@@ -80,7 +80,7 @@ public class TableDef implements RelationDef  {
      */
     public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKeyDef, String... columnNames) {
 
-        assert primaryKeyDef!=null:"To add a foreign key, the primary key should not be null";
+        assert primaryKeyDef!=null:"To add a foreign key to ("+this.getDataPath().toString()+"), the primary key should not be null";
         assert columnNames.length>0;
 
         // if the foreign key exist already, return it
@@ -227,7 +227,11 @@ public class TableDef implements RelationDef  {
      * @return the tableDef for chaining initialization
      */
     public TableDef addForeignKey(DataPath dataPath, String... columnNames) {
-        this.foreignKeyOf(dataPath.getDataDef().getPrimaryKey(), columnNames);
+        final PrimaryKeyDef primaryKey = dataPath.getDataDef().getPrimaryKey();
+        if (primaryKey==null){
+            throw new RuntimeException("The data unit ("+dataPath+") can't be added as foreign table for the table ("+this.getDataPath()+") and its columns ("+String.join(",",columnNames)+") because it has no primary key defined.");
+        }
+        this.foreignKeyOf(primaryKey, columnNames);
         return this;
     }
 

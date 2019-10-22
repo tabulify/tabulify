@@ -13,6 +13,7 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -220,12 +221,17 @@ public class SqliteSqlDatabase extends SqlDatabase {
         for (int i = foreignKeys.size() - 1; i >= 0; i--) {
             final List<String> foreignKey = foreignKeys.get(i);
             final String foreignTableName = foreignKey.get(0);
-            JdbcDataPath foreignDataPath = dataPath.getDataSystem().getDataPath(foreignTableName);
             final String nativeTableColumn = foreignKey.get(1);
-            tableDef.addForeignKey(
-                    foreignDataPath,
-                    nativeTableColumn
-            );
+            JdbcDataPath foreignDataPath = dataPath.getDataSystem().getDataPath(foreignTableName);
+
+            // This is possible in Sqlite to have foreign key on table that does not exist
+            if (Tabulars.exists(foreignDataPath)){
+                tableDef.addForeignKey(
+                        foreignDataPath,
+                        nativeTableColumn
+                );
+            }
+
         }
 
 

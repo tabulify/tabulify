@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class Dag {
@@ -111,6 +112,18 @@ public class Dag {
                 // Only if the table is in the list
                 // or we take also the parent
                 if (dataPathList.contains(foreignDataPath) || withForeignTable) {
+
+                    // Because we don't have any cache the object in the dataPathList
+                    // may not be the same than foreignDataPath (ie the properties for instance may differ)
+                    // Hack to get the object from the list
+                    if (dataPathList.contains(foreignDataPath)){
+                        for (DataPath dataPathInList: dataPathList){
+                            if (dataPathInList.equals(foreignDataPath)){
+                                foreignDataPath = dataPathInList;
+                                break;
+                            }
+                        }
+                    }
 
                     addTableToVertex(foreignDataPath);
 

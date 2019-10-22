@@ -265,7 +265,8 @@ public class DataGeneration {
         }
 
         // Load
-        for (DataPath dataPath: Dag.get(tablesLoaded).getCreateOrderedTables()) {
+        final List<DataPath> createOrderedTables = Dag.get(tablesLoaded).getCreateOrderedTables();
+        for (DataPath dataPath: createOrderedTables) {
 
 
             // The load
