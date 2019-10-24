@@ -45,9 +45,7 @@ public class TableDef implements RelationDef  {
 
     private Set<UniqueKeyDef> uniqueKeys = new HashSet<>();
 
-    // Not used but we keep it because there is some doc
-    // on the setter
-    private String tableType;
+    private String query;
 
     public TableDef(DataPath dataPath) {
         this.dataPath = dataPath;
@@ -119,21 +117,6 @@ public class TableDef implements RelationDef  {
     }
 
 
-
-    /**
-     * The JDBC table type
-     * <p>
-     * "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"
-     * <p>
-     * Constant are also available inside this class
-     *
-     * @param tableType
-     * @return
-     */
-    public TableDef JdbcType(String tableType) {
-        this.tableType = tableType;
-        return this;
-    }
 
     /**
      * Get and Create function
@@ -383,4 +366,12 @@ public class TableDef implements RelationDef  {
         return meta.getColumns(columnNames.toArray(new String[0]));
     }
 
+    public TableDef setQuery(String query) {
+        this.query = query;
+        return this;
+    }
+
+    public String getQuery() {
+        return this.query;
+    }
 }

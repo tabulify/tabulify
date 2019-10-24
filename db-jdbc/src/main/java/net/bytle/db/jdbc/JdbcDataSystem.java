@@ -400,8 +400,9 @@ public class JdbcDataSystem extends TableSystem {
     public Integer size(DataPath dataPath) {
 
         Integer size = 0;
+        DataPath queryDataPath = dataPath.getDataSystem().getQuery("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         try (
-                SelectStream selectStream = getSelectStream("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath))
+                SelectStream selectStream = getSelectStream(queryDataPath)
         ) {
             Boolean next = selectStream.next();
             if (next) {
@@ -418,25 +419,8 @@ public class JdbcDataSystem extends TableSystem {
     }
 
     @Override
-    public SelectStream getSelectStream(ColumnDef[] columnDefs) {
-        // Only from the same data path test
-        assert columnDefs.length >= 1: "The number of columns given must be at minimal one if you want a data stream";
-        final DataPath dataPath = columnDefs[0].getRelationDef().getDataPath();
-        StringBuilder query = new StringBuilder();
-        query.append("select ");
-        for (int i = 0; i<columnDefs.length;i++){
-            ColumnDef columnDef = columnDefs[i];
-            if (!columnDef.getRelationDef().getDataPath().equals(dataPath)){
-                throw new RuntimeException("Only a stream of columns of the same data path is for now supported.");
-            }
-            query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef));
-            if (i<columnDefs.length-1) {
-                query.append(", ");
-            }
-        }
-        query.append(" from ");
-        query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-        return getSelectStream(query.toString());
+    public DataPath getQuery(String query) {
+        return JdbcDataPath.ofQuery(this, query);
     }
 
 
@@ -559,7 +543,7 @@ public class JdbcDataSystem extends TableSystem {
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         StringBuilder dropTableStatement = new StringBuilder();
         dropTableStatement.append("drop ");
-        switch (jdbcDataPath.getType()){
+        switch (jdbcDataPath.getType()) {
             case JdbcDataPath.TABLE_TYPE:
                 dropTableStatement.append("table ");
                 break;
@@ -567,7 +551,7 @@ public class JdbcDataSystem extends TableSystem {
                 dropTableStatement.append("view ");
                 break;
             default:
-                throw new RuntimeException("The drop of the table type ("+jdbcDataPath.getType()+") is not implemented");
+                throw new RuntimeException("The drop of the table type (" + jdbcDataPath.getType() + ") is not implemented");
         }
         dropTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         try (
@@ -609,7 +593,7 @@ public class JdbcDataSystem extends TableSystem {
 
         final SqlDatabaseI sqlDatabase = getSqlDatabase();
         String truncateStatement;
-        if (sqlDatabase !=null){
+        if (sqlDatabase != null) {
             truncateStatement = sqlDatabase.getTruncateStatement(dataPath);
         } else {
             StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
@@ -698,10 +682,6 @@ public class JdbcDataSystem extends TableSystem {
         }
     }
 
-    @Override
-    public SelectStream getSelectStream(String query) {
-        return SqlSelectStream.of(this, query);
-    }
 
     @Override
     public TableSystemProvider getProvider() {
@@ -818,4 +798,13 @@ public class JdbcDataSystem extends TableSystem {
     }
 
 
+    public String getCurrentCatalog() {
+        try {
+
+            return this.getCurrentConnection().getCatalog();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

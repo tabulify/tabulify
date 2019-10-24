@@ -1,4 +1,4 @@
-package net.bytle.db.loader;
+package net.bytle.db.move;
 
 import net.bytle.cli.Log;
 import net.bytle.db.DbLoggers;

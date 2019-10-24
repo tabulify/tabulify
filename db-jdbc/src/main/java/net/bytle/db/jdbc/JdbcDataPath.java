@@ -28,6 +28,7 @@ public class JdbcDataPath extends DataPath  {
     private String type = TABLE_TYPE;
     public static final String TABLE_TYPE = "TABLE";
     public static final String VIEW_TYPE = "VIEW";
+    public static final String QUERY_TYPE = "QUERY";
 
 
     public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
@@ -37,8 +38,21 @@ public class JdbcDataPath extends DataPath  {
         this.name = name;
     }
 
+    public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String query) {
+        this.jdbcDataSystem = jdbcDataSystem;
+        this.setType(QUERY_TYPE);
+        this.getDataDef().setQuery(query);
+        this.name = null;
+        this.schema = jdbcDataSystem.getCurrentSchema();
+        this.catalog = jdbcDataSystem.getCurrentCatalog();
+    }
+
     public static JdbcDataPath of(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
         return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
+    }
+
+    public static JdbcDataPath ofQuery(JdbcDataSystem jdbcDataSystem, String query) {
+        return new JdbcDataPath(jdbcDataSystem, query);
     }
 
     @Override
@@ -49,7 +63,8 @@ public class JdbcDataPath extends DataPath  {
     @Override
     public TableDef getDataDef() {
 
-        if (super.getDataDef().getColumnDefs().size()==0){
+        // The data def of query is build at runtime
+        if (super.getDataDef().getColumnDefs().size()==0 && (!type.equals(QUERY_TYPE))){
             DbObjectBuilder.getTableDef(super.getDataDef());
         }
         return super.getDataDef();

@@ -7,7 +7,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.loader.ResultSetLoader;
+import net.bytle.db.move.ResultSetLoader;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;

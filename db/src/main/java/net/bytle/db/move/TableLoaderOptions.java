@@ -1,4 +1,4 @@
-package net.bytle.db.loader;
+package net.bytle.db.move;
 
 /**
  * Created by gerard on 27-11-2015.

@@ -71,12 +71,6 @@ public class MemoryDataSystem extends TableSystem {
         // Nothing to do
     }
 
-    @Override
-    public SelectStream getSelectStream(String query) {
-
-        throw new RuntimeException("Getting a stream from a query is not supported");
-
-    }
 
     @Override
     public TableSystemProvider getProvider() {
@@ -114,18 +108,23 @@ public class MemoryDataSystem extends TableSystem {
      */
     @Override
     public Integer getMaxWriterConnection() {
-        return null;
+
+        throw new RuntimeException("Not yet implemented");
+
     }
 
     @Override
     public Boolean isEmpty(DataPath queue) {
-        return null;
+
+        throw new RuntimeException("Not yet implemented");
+
     }
 
 
     @Override
     public Integer size(DataPath dataPath) {
-        return null;
+
+        throw new RuntimeException("Not yet implemented");
     }
 
     @Override
@@ -133,10 +132,12 @@ public class MemoryDataSystem extends TableSystem {
         throw new RuntimeException("Not implemented");
     }
 
+
     @Override
-    public SelectStream getSelectStream(ColumnDef[] columnDefs) {
+    public DataPath getQuery(String query) {
         throw new RuntimeException("Not yet implemented");
     }
+
 
     @Override
     public DataPath getDataPath(DataUri dataUri) {

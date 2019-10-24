@@ -5,7 +5,7 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.loader.ResultSetLoader;
+import net.bytle.db.move.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;

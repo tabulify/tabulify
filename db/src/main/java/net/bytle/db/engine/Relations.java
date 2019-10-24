@@ -1,10 +1,7 @@
 package net.bytle.db.engine;
 
 import net.bytle.db.database.Database;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 
 import java.sql.Connection;
@@ -51,14 +48,14 @@ public class Relations {
     }
 
 
-    public static void copy(DataPath source, DataPath target) {
-        addColumns(source.getDataDef(), target.getDataDef());
-        final PrimaryKeyDef sourcePrimaryKey = source.getDataDef().getPrimaryKey();
+    public static void copy(TableDef source, TableDef target) {
+        addColumns(source, target);
+        final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
         if (sourcePrimaryKey!=null) {
             final List<String> columns = sourcePrimaryKey.getColumns().stream()
                     .map(s->s.getColumnName())
                     .collect(Collectors.toList());
-            target.getDataDef().setPrimaryKey(columns);
+            target.setPrimaryKey(columns);
         }
     }
 }

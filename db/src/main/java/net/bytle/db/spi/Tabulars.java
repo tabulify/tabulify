@@ -35,9 +35,6 @@ public class Tabulars {
         }
     }
 
-    public static SelectStream getSelectStream(DataPath dataPath, String query) {
-        return dataPath.getDataSystem().getSelectStream(query);
-    }
 
     public static DataPath create(DataPath dataPath) {
 
@@ -220,16 +217,18 @@ public class Tabulars {
 
     }
 
-    public static DataPath move(DataPath source, DataPath target) {
 
-        if (source.getDataSystem() == target.getDataSystem()) {
+    public static void move(DataPath source, DataPath target) {
+
+        final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
+        if (sourceDataSystem == target.getDataSystem()) {
             // same provider
-            source.getDataSystem().move(source, target);
+            sourceDataSystem.move(source, target);
         } else {
             // different providers
             final Boolean exists = Tabulars.exists(target);
             if (!exists) {
-                Relations.copy(source, target);
+                Relations.copy(source.getDataDef(), target.getDataDef());
                 Tabulars.create(target);
             } else {
                 for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
@@ -254,7 +253,6 @@ public class Tabulars {
                 }
             }
         }
-        return target;
 
     }
 
@@ -298,8 +296,5 @@ public class Tabulars {
         throw new RuntimeException("not yet implemented");
     }
 
-    public static SelectStream getSelectStream(ColumnDef... columnDefs) {
-        assert columnDefs.length >=1 : "The number of columns may not be null when requesting a stream of columns";
-        return columnDefs[0].getRelationDef().getDataPath().getDataSystem().getSelectStream(columnDefs);
-    }
+
 }

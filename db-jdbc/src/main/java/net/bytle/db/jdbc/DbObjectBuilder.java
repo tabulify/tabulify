@@ -149,7 +149,7 @@ public class DbObjectBuilder {
 
             } else {
 
-                tableDef.JdbcType(tableResultSet.getString("TABLE_TYPE"));
+                jdbcDataPath.setType(tableResultSet.getString("TABLE_TYPE"));
                 tableResultSet.close();
 
                 // Columns building

@@ -2,6 +2,8 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.util.ArrayList;
@@ -65,4 +67,26 @@ public class DataPaths {
     public static DataPath of(TableSystem tableSystem, String... names) {
         return tableSystem.getDataPath(names);
     }
+
+//    public static DataPath of(ColumnDef[] columnDefs) {
+//            // Only from the same data path test
+//            assert columnDefs.length >= 1: "The number of columns given must be at minimal one if you want a data stream";
+//            final DataPath dataPath = columnDefs[0].getRelationDef().getDataPath();
+//            StringBuilder query = new StringBuilder();
+//            query.append("select ");
+//            for (int i = 0; i<columnDefs.length;i++){
+//                ColumnDef columnDef = columnDefs[i];
+//                if (!columnDef.getRelationDef().getDataPath().equals(dataPath)){
+//                    throw new RuntimeException("Only a stream of columns of the same data path is for now supported.");
+//                }
+//                query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef));
+//                if (i<columnDefs.length-1) {
+//                    query.append(", ");
+//                }
+//            }
+//            query.append(" from ");
+//            query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+//            return getSelectStream(query.toString());
+//
+//    }
 }

@@ -44,7 +44,6 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract void dropForeignKey(ForeignKeyDef foreignKeyDef);
 
-    public abstract SelectStream getSelectStream(String query);
 
     public abstract TableSystemProvider getProvider();
 
@@ -66,5 +65,6 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract boolean isDataUnit(DataPath dataPath);
 
-    public abstract SelectStream getSelectStream(ColumnDef[] columnDefs);
+    public abstract DataPath getQuery(String query);
+
 }
