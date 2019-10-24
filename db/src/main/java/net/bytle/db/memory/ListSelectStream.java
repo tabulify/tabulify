@@ -153,4 +153,9 @@ public class ListSelectStream extends SelectStreamAbs implements SelectStream {
     public Integer getInteger(int columnIndex) {
         return (Integer) getObject(columnIndex);
     }
+
+    @Override
+    public Object getObject(String columnName) {
+        throw new RuntimeException("Not yet implemented");
+    }
 }

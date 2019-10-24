@@ -33,11 +33,11 @@ public class FkDataGenerator implements DataGenerator {
         // Building the map of value
         foreignColumnDef = foreignKeyDef.getForeignPrimaryKey().getColumns().get(0);
         try (
-                SelectStream selectStream = Tabulars.getSelectStream(foreignColumnDef)
+                SelectStream selectStream = Tabulars.getSelectStream(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())
         ) {
 
             while (selectStream.next()) {
-                values.add(selectStream.getObject(0));
+                values.add(selectStream.getObject(foreignColumnDef.getColumnName()));
             }
             if (values.size() == 0) {
                 throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");

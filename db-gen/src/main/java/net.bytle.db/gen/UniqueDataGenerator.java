@@ -2,10 +2,8 @@ package net.bytle.db.gen;
 
 
 import net.bytle.db.engine.Columns;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
-import net.bytle.db.spi.Tabulars;
 
 import java.math.BigDecimal;
 import java.sql.Date;

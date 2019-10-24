@@ -44,4 +44,6 @@ public interface SelectStream extends AutoCloseable {
 
     Integer getInteger(int columnIndex);
 
+    Object getObject(String columnName);
+
 }

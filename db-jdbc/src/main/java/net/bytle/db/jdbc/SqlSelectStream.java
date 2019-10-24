@@ -210,4 +210,13 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public Object getObject(String columnName) {
+        try {
+            return getResultSet().getObject(columnName);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
