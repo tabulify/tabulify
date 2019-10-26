@@ -4,8 +4,13 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataType;
+import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystemProvider;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
@@ -99,6 +104,11 @@ public class FsTableSystem extends TableSystem {
     }
 
     @Override
+    public DataPath getDataPath(String... name) {
+        return null;
+    }
+
+    @Override
     public Boolean exists(DataPath dataPath) {
 
         final FsDataPath fsDataPath = (FsDataPath) dataPath;
@@ -110,6 +120,109 @@ public class FsTableSystem extends TableSystem {
     public SelectStream getSelectStream(DataPath dataPath) {
         final FsDataPath fsDataPath = (FsDataPath) dataPath;
         return CsvSelectStream.of(fsDataPath);
+    }
+
+    @Override
+    public Database getDatabase() {
+        return null;
+    }
+
+    @Override
+    public <T> T getMax(ColumnDef<T> columnDef) {
+        return null;
+    }
+
+    @Override
+    public boolean isContainer(DataPath dataPath) {
+        return false;
+    }
+
+    @Override
+    public DataPath create(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public String getProductName() {
+        return null;
+    }
+
+    @Override
+    public DataType getDataType(Integer typeCode) {
+        return null;
+    }
+
+    @Override
+    public void drop(DataPath dataPath) {
+
+    }
+
+    @Override
+    public void delete(DataPath dataPath) {
+
+    }
+
+    @Override
+    public void truncate(DataPath dataPath) {
+
+    }
+
+    @Override
+    public <T> T getMin(ColumnDef<T> columnDef) {
+        return null;
+    }
+
+    @Override
+    public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+
+    }
+
+    @Override
+    public TableSystemProvider getProvider() {
+        return null;
+    }
+
+    @Override
+    public InsertStream getInsertStream(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public List<DataPath> getChildrenDataPath(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public DataPath move(DataPath source, DataPath target) {
+        return null;
+    }
+
+    /**
+     * @return The number of thread that can be created against the data system
+     */
+    @Override
+    public Integer getMaxWriterConnection() {
+        return null;
+    }
+
+    @Override
+    public Boolean isEmpty(DataPath queue) {
+        return null;
+    }
+
+    @Override
+    public Integer size(DataPath dataPath) {
+        return null;
+    }
+
+    @Override
+    public boolean isDataUnit(DataPath dataPath) {
+        return false;
+    }
+
+    @Override
+    public DataPath getQuery(String query) {
+        return null;
     }
 
 

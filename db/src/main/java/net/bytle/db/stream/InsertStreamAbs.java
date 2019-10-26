@@ -17,6 +17,7 @@ public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
     protected int currentRowInLogicalBatch = 0;
 
     public InsertStreamAbs(DataPath dataPath) {
+
         this.dataPath = dataPath;
     }
 

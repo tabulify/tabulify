@@ -1,5 +1,7 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 import org.apache.commons.csv.CSVFormat;
@@ -13,17 +15,21 @@ import java.util.stream.Collectors;
 
 public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
-    private final CsvDataDef csvDataDef;
+    private final TableDef csvDataDef;
     final CSVPrinter printer;
+    private final FsDataPath csvDataPath;
 
-    public CsvInsertStream(CsvDataDef csvDataDef) {
-        super(csvDataDef);
-        this.csvDataDef = csvDataDef;
+    public CsvInsertStream(FsDataPath fsDataPath) {
+
+        super(fsDataPath);
+
+        this.csvDataDef = fsDataPath.getDataDef();
+        this.csvDataPath = fsDataPath;
         final String headers = csvDataDef.getColumnDefs().stream()
                 .map(s->s.getColumnName())
                 .collect(Collectors.joining(","));
         try {
-            BufferedWriter writer = Files.newBufferedWriter(csvDataDef.getFsDataPath().getPath());
+            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getPath());
             printer = CSVFormat
                     .DEFAULT
                     .withHeader(headers)
@@ -34,9 +40,9 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
     }
 
-    public static CsvInsertStream of(CsvDataDef csvDataDef) {
+    public static CsvInsertStream of(FsDataPath fsDataPath) {
 
-        return new CsvInsertStream(csvDataDef);
+        return new CsvInsertStream(fsDataPath);
 
     }
 

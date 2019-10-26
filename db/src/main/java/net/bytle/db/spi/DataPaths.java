@@ -1,11 +1,15 @@
 package net.bytle.db.spi;
 
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
+import javax.xml.crypto.Data;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +24,10 @@ public class DataPaths {
     public static DataPath of(DataUri dataUri) {
 
         List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
-        final Database dataStore = dataUri.getDataStore();
+        Database dataStore = dataUri.getDataStore();
+        if (dataStore==null) {
+           dataStore = Databases.getDefault();
+        }
         String scheme = dataStore.getScheme();
         for (TableSystemProvider tableSystemProvider : installedProviders) {
             if (tableSystemProvider.getSchemes().contains(scheme)) {
@@ -39,6 +46,11 @@ public class DataPaths {
 
     }
 
+    /**
+     *
+     * @param parts
+     * @return a data path created with the default tabular system (ie memory)
+     */
     public static DataPath of(String... parts) {
 
         return TableSystems.getDefault().getDataPath(parts);
@@ -66,6 +78,11 @@ public class DataPaths {
 
     public static DataPath of(TableSystem tableSystem, String... names) {
         return tableSystem.getDataPath(names);
+    }
+
+    public static DataPath of(Path path) {
+        DataUri dataUri = DataUri.of("file",path.toAbsolutePath().toString());
+        return of(dataUri);
     }
 
 //    public static DataPath of(ColumnDef[] columnDefs) {

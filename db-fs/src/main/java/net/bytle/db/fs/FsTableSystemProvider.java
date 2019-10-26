@@ -10,6 +10,8 @@ import java.util.List;
 public class FsTableSystemProvider extends TableSystemProvider {
 
 
+    public static final String LOCAL_FILE_SCHEME = "file";
+
     /**
      * Returns the URI scheme that identifies this provider.
      *
@@ -17,7 +19,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public List<String> getSchemes() {
-        return Arrays.asList("file");
+        return Arrays.asList(LOCAL_FILE_SCHEME);
     }
 
 

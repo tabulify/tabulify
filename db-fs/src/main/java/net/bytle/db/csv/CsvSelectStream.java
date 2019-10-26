@@ -1,8 +1,7 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 import org.apache.commons.csv.CSVFormat;
@@ -12,7 +11,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Clob;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
@@ -100,18 +101,17 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     @Override
-    public RelationDef getJdbcDataPath() {
+    public TableDef getDataDef() {
         return fsDataPath.getDataDef();
     }
 
-    @Override
-    public DataPath getDataPath() {
-        return fsDataPath;
-    }
+
 
     @Override
     public double getDouble(int columnIndex) {
+
         return Double.parseDouble(currentRecord.get(columnIndex));
+
     }
 
     @Override
@@ -120,4 +120,25 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
 
+    /**
+     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
+     *
+     * @param i
+     * @param timeUnit
+     * @return
+     */
+    @Override
+    public List<Object> poll(int i, TimeUnit timeUnit) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public Integer getInteger(int columnIndex) {
+        return Integer.parseInt(currentRecord.get(columnIndex));
+    }
+
+    @Override
+    public Object getObject(String columnName) {
+        return currentRecord.get(columnName);
+    }
 }

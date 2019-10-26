@@ -29,7 +29,13 @@ public class DatabasesStore {
      * The local file database name as also stated
      * by the {@link Path#getFileSystem()}
      */
+    public static final String LOCAL_FILE_DATABASE = "file";
+
+    /**
+     * The default database is the memory one
+     */
     public static final String DEFAULT_DATABASE = MemorySystemProvider.SCHEME;
+
 
     /**
      * This is a passphrase used to encrypt the sample database password
@@ -202,42 +208,47 @@ public class DatabasesStore {
     }
 
     /**
-     *
      * @param name
      * @return a database by its name or NULL
      */
     public Database getDatabase(String name) {
-
+        assert name != null : "The name of the database cannot be null";
 
         Database database = null;
-        Wini.Section iniSection = getIniFile().get(name);
-        if (iniSection != null) {
-            database = Databases.of(name);
-            database.setUrl(iniSection.get(URL));
-            database.setUser(iniSection.get(USER));
-            if (iniSection.get(PASSWORD) != null) {
-                String localPassphrase;
-                if (this.passphrase != null) {
-                    localPassphrase = this.passphrase;
-                } else {
-                    final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-                    if (s != null) {
-                        if (s.equals("true")) {
-                            localPassphrase = INTERNAL_PASSPHRASE;
+        switch (name) {
+            case LOCAL_FILE_DATABASE:
+                database = Databases.of(name);
+                database.setUrl(LOCAL_FILE_DATABASE +":"+Paths.get(".").toAbsolutePath()+toString());
+                break;
+            default:
+                Wini.Section iniSection = getIniFile().get(name);
+                if (iniSection != null) {
+                    database = Databases.of(name);
+                    database.setUrl(iniSection.get(URL));
+                    database.setUser(iniSection.get(USER));
+                    if (iniSection.get(PASSWORD) != null) {
+                        String localPassphrase;
+                        if (this.passphrase != null) {
+                            localPassphrase = this.passphrase;
                         } else {
-                            throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                            final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+                            if (s != null) {
+                                if (s.equals("true")) {
+                                    localPassphrase = INTERNAL_PASSPHRASE;
+                                } else {
+                                    throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                                }
+                            } else {
+                                throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                            }
                         }
-                    } else {
-                        throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+                        database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
                     }
+                    database.setDriver(iniSection.get(DRIVER));
+                    database.setStatement(iniSection.get(STATEMENT));
+                    database.setDatabaseStore(this);
                 }
-                database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
-            }
-            database.setDriver(iniSection.get(DRIVER));
-            database.setStatement(iniSection.get(STATEMENT));
-            database.setDatabaseStore(this);
         }
-
         return database;
 
     }
@@ -329,7 +340,7 @@ public class DatabasesStore {
      * The difference between a {@link #getDatabase(String)} that returns NULL if it doesn't exist
      * and this function is that the {@link #getDatabase(String)} needs a good {@link #setPassphrase(String)}
      * to tell you that when the database exists to be able to decreypt and gives you the passpword.
-     *
+     * <p>
      * This function doesn't need a store with a genuine passphrase to tell you if a connection exists.
      *
      * @param name

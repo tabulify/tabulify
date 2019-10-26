@@ -2,6 +2,7 @@ package net.bytle.db.uri;
 
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ public class DataUri implements Comparable<DataUri> {
 
 
     private DataUri(Database dataStore, String... more) {
-
+        assert  dataStore!=null: "the datastore should not be null";
         this.dataStore = dataStore;
         this.pathSegments = new ArrayList<>();
         this.pathSegments.addAll(Arrays.asList(more));
@@ -76,27 +77,14 @@ public class DataUri implements Comparable<DataUri> {
     }
 
 
-    /**
-     *
-     * @param first
-     * @param more
-     * @return a data uri from the default datastore
-     */
-    public static DataUri of(String first, String... more) {
-        if (first.equals("")){
-            if (more.length>0) {
-                return new DataUri(DatabasesStore.of(), more[0], Arrays.copyOfRange(more, 1, more.length));
-            } else {
-                throw new RuntimeException("A data URI can not be build from an empty string and/of a empty array");
-            }
-        } else {
-            return new DataUri(DatabasesStore.of(), first, more);
-        }
-    }
-
 
     public static DataUri of(Path dataStorePath, String dataStoreName, String... more) {
         return new DataUri(DatabasesStore.of(dataStorePath).getDatabase(dataStoreName), more);
+    }
+
+    public static DataUri of(String first, String... more) {
+        assert first!=null: "The first path element should not be null";
+        return new DataUri(Databases.getDefault(), more);
     }
 
 
@@ -121,7 +109,7 @@ public class DataUri implements Comparable<DataUri> {
 
 
     public String getDataName() {
-        return this.pathSegments.get(this.pathSegments.size()-1);
+        return this.pathSegments.get(this.pathSegments.size() - 1);
     }
 
 
@@ -175,10 +163,11 @@ public class DataUri implements Comparable<DataUri> {
     /**
      * The database may not be in the store
      * This get function return the name to test the parse of the uri
+     *
      * @return
      */
     public String getDatabaseName() {
-        if (this.dataStore!=null) {
+        if (this.dataStore != null) {
             return this.dataStore.getDatabaseName();
         } else {
             return this.databaseName;

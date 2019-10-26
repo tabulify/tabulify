@@ -14,30 +14,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-public class CsvDataDef extends RelationDefAbs implements RelationDef {
+public class CsvDataDef  {
 
-    private final FsDataPath fsDataPath;
 
-    public static CsvDataDef of(FsDataPath fsDataPath){
-        return new CsvDataDef(fsDataPath);
-    }
 
-    private CsvDataDef(FsDataPath fsDataPath) {
 
-        super(fsDataPath.toString());
+    public static void build(TableDef dataDef) {
+        FsDataPath fsDataPath = (FsDataPath) dataDef.getDataPath();
 
-        this.fsDataPath = fsDataPath;
-        this.schema = Databases.of().getCurrentSchema();
-
-        if (Files.exists(this.fsDataPath.getPath())) {
+        if (Files.exists(fsDataPath.getPath())) {
             try {
 
-                Reader in = new FileReader(this.fsDataPath.getPath().toFile());
+                Reader in = new FileReader(fsDataPath.getPath().toFile());
                 Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
                 CSVRecord headerRecord = recordIterator.next();
-                this.meta = new RelationMeta(this);
+
                 for (int i = 0; i < headerRecord.size(); i++) {
-                    meta.addColumn(headerRecord.get(i));
+                    dataDef.addColumn(headerRecord.get(i));
                 }
                 in.close();
 
@@ -46,22 +39,9 @@ public class CsvDataDef extends RelationDefAbs implements RelationDef {
             }
         }
 
+
     }
 
 
-    public FsDataPath getFsDataPath() {
-        return this.fsDataPath;
-    }
-
-    @Override
-    public String getName() {
-        return fsDataPath.getName();
-    }
-
-
-    public CsvDataDef addColumn(String name){
-        super.meta.addColumn(name);
-        return this;
-    }
 
 }

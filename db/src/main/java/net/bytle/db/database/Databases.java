@@ -36,6 +36,8 @@ public class Databases {
     }
 
 
+
+
     public static Database getSqliteDefault() {
         /**
          * %TEMP% is the same than %LocalAppData%/Temp
@@ -106,82 +108,7 @@ public class Databases {
 
     }
 
-    /**
-     * Create an insert statement from a result set
-     *
-     * @param targetTableName
-     * @param sourceResultSet
-     * @return the insert statement
-     * @throws SQLException
-     */
-    public static String getInsertStatement(String targetTableName, ResultSet sourceResultSet) throws SQLException {
 
-        ResultSetMetaData metaData = sourceResultSet.getMetaData();
-        String insertStatement = "INSERT INTO " + targetTableName + " (";
-        String insertStatementBindVariable = "";
-
-        // Loop to create the statement
-        int columnCount = metaData.getColumnCount();
-
-        for (int i = 1; i <= columnCount; i++) {
-            insertStatement += "\"" + metaData.getColumnName(i) + "\", ";
-            insertStatementBindVariable += "?, ";
-        }
-
-        // Suppress the last comma
-        insertStatement = insertStatement.substring(0, insertStatement.length() - 2);
-        insertStatementBindVariable = insertStatementBindVariable.substring(0, insertStatementBindVariable.length() - 2);
-
-        insertStatement += ") VALUES (" + insertStatementBindVariable + ")";
-
-        return insertStatement;
-
-    }
-
-    public static void printResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                final int columnCount = resultSet.getMetaData().getColumnCount();
-                while (resultSet.next()) {
-                    for (int i = 0; i < columnCount; i++) {
-                        System.out.print(resultSet.getString(i + 1));
-                        if (i != columnCount - 1) {
-                            System.out.print(",");
-                        }
-                    }
-                    System.out.print(System.lineSeparator());
-                }
-                System.out.flush();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Print the headers (column name)
-     *
-     * @param resultSet
-     */
-    public static void printColumnNames(ResultSet resultSet) {
-        try {
-            ResultSetMetaData metaData = resultSet.getMetaData();
-
-            int columnCount = metaData.getColumnCount();
-
-            for (int i = 0; i < columnCount; i++) {
-                System.out.print(metaData.getColumnName(i + 1));
-                if (i != columnCount - 1) {
-                    System.out.print(",");
-                }
-            }
-            System.out.print(System.lineSeparator());
-            System.out.flush();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 
     public static Database of(String name, DatabasesStore databasesStore) {
@@ -191,5 +118,9 @@ public class Databases {
         } else {
             return database;
         }
+    }
+
+    public static Database getDefault() {
+        return of();
     }
 }
