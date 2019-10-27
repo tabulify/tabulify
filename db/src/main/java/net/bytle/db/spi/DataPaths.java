@@ -24,9 +24,11 @@ public class DataPaths {
     public static DataPath of(DataUri dataUri) {
 
         List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
-        Database dataStore = dataUri.getDataStore();
-        if (dataStore==null) {
+        Database dataStore ;
+        if (dataUri.getDataStore()==null) {
            dataStore = Databases.getDefault();
+        } else {
+            dataStore = DatabasesStore.of().getDatabase(dataUri.getDataStore());
         }
         String scheme = dataStore.getScheme();
         for (TableSystemProvider tableSystemProvider : installedProviders) {
@@ -37,7 +39,7 @@ public class DataPaths {
                     DbLoggers.LOGGER_DB_ENGINE.severe(message);
                     throw new RuntimeException(message);
                 }
-                return tableSystem.getDataPath(dataUri);
+                return tableSystem.getDataPath(dataUri,dataStore);
             }
         }
         final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";
@@ -48,12 +50,12 @@ public class DataPaths {
 
     /**
      *
-     * @param parts
+     * @param pathParts - The part of a path in a list format
      * @return a data path created with the default tabular system (ie memory)
      */
-    public static DataPath of(String... parts) {
+    public static DataPath of(String... pathParts) {
 
-        return TableSystems.getDefault().getDataPath(parts);
+        return TableSystems.getDefault().getDataPath(pathParts);
 
     }
 
@@ -81,29 +83,9 @@ public class DataPaths {
     }
 
     public static DataPath of(Path path) {
-        DataUri dataUri = DataUri.of("file",path.toAbsolutePath().toString());
+        DataUri dataUri = DataUri.of(path.toAbsolutePath().toString()+DataUri.AT_STRING+DatabasesStore.LOCAL_FILE_DATABASE);
         return of(dataUri);
+
     }
 
-//    public static DataPath of(ColumnDef[] columnDefs) {
-//            // Only from the same data path test
-//            assert columnDefs.length >= 1: "The number of columns given must be at minimal one if you want a data stream";
-//            final DataPath dataPath = columnDefs[0].getRelationDef().getDataPath();
-//            StringBuilder query = new StringBuilder();
-//            query.append("select ");
-//            for (int i = 0; i<columnDefs.length;i++){
-//                ColumnDef columnDef = columnDefs[i];
-//                if (!columnDef.getRelationDef().getDataPath().equals(dataPath)){
-//                    throw new RuntimeException("Only a stream of columns of the same data path is for now supported.");
-//                }
-//                query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef));
-//                if (i<columnDefs.length-1) {
-//                    query.append(", ");
-//                }
-//            }
-//            query.append(" from ");
-//            query.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-//            return getSelectStream(query.toString());
-//
-//    }
 }

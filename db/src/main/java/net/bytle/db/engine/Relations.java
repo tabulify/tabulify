@@ -1,24 +1,14 @@
 package net.bytle.db.engine;
 
-import net.bytle.db.database.Database;
 import net.bytle.db.model.*;
-import net.bytle.db.spi.DataPath;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Relations {
 
 
-    public static void addColumns(RelationDef relationDef, ResultSet resultSet) {
-
-        ResultSets.addColumns(resultSet, relationDef);
-
-    }
 
     public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
 

@@ -1,6 +1,5 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.connection.URIExtended;
 import net.bytle.db.jdbc.spi.DataTypeDriver;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.regexp.Globs;

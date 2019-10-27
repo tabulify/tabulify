@@ -4,7 +4,7 @@ package net.bytle.db.jdbc.spi;
  * Created by gerard on 02-12-2015.
  */
 
-import net.bytle.db.connection.URIExtended;
+import net.bytle.db.jdbc.URIExtended;
 
 import java.net.URI;
 import java.util.Map;

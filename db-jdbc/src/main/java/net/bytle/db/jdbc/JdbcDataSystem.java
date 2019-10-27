@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.DbDefaultValue;
-import net.bytle.db.connection.URIExtended;
 import net.bytle.db.database.*;
 import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
 import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;

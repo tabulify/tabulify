@@ -51,8 +51,7 @@ public class DataDefs {
         for (Path filePath : fileDiscovered) {
 
             List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
-            DataUri dataUri = DataUri.of(String.join("/",names),Fs.getFileName(filePath).replace("--datadef",""));
-            DataPath dataPath = DataPaths.of(dataUri);
+            DataPath dataPath = DataPaths.of(String.join("/",names)+Fs.getFileName(filePath).replace("--datadef",""));
             dataPath = readFile(dataPath, filePath);
             dataPaths.add(dataPath);
 

@@ -1,4 +1,4 @@
-package net.bytle.db.connection;
+package net.bytle.db.jdbc;
 
 import java.net.URI;
 import java.net.URISyntaxException;

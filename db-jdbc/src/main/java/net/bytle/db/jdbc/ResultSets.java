@@ -1,4 +1,4 @@
-package net.bytle.db.engine;
+package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
@@ -130,7 +130,6 @@ public class ResultSets {
 
     /**
      * All method used when starting the software
-     * A resultSet is now in a {@link net.bytle.db.model.QueryDef encapsulated}
      *
      * @param resultSetMetaData
      * @param database

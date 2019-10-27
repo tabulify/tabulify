@@ -1,121 +1,97 @@
 package net.bytle.db.uri;
 
-import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class DataUri implements Comparable<DataUri> {
 
-    public static final String PATH_SEPARATOR = "/";
+
     public static final String AT_STRING = "@";
-    private final Database dataStore;
-    private List<String> pathSegments;
-    private String databaseName;
+    static final String QUESTION_MARK = "?";
+    static final String HASH_TAG = "#";
+    private final String uri;
+    private String query = null;
+    private String fragment = null;
+    private String path;
+    private String dataStore;
 
 
-    private DataUri(Database dataStore, String... more) {
-        assert  dataStore!=null: "the datastore should not be null";
-        this.dataStore = dataStore;
-        this.pathSegments = new ArrayList<>();
-        this.pathSegments.addAll(Arrays.asList(more));
 
-    }
+    private DataUri(String uri) {
 
-    private DataUri(DatabasesStore dataStorePath, String first, String... more) {
+        this.uri = uri;
 
-
-        if (first == null) {
-            throw new RuntimeException("The first part of a data uri cannot be null");
+        if (uri == null) {
+            throw new RuntimeException("A data uri cannot be null");
         }
 
+        int atIndex = uri.indexOf(AT_STRING);
+        if (atIndex==-1) {
+            throw new RuntimeException("The at (@) string is mandatory in a data uri and was not found");
+        }
+        if (atIndex!=0) {
+            path = uri.substring(0, atIndex);
+        }
 
-        if (more.length == 0) {
+        // Data Store parsing
+        int questionMarkIndex = uri.indexOf(QUESTION_MARK);
+        if (questionMarkIndex!=-1) {
+            dataStore = uri.substring(atIndex+1,questionMarkIndex);
+        }
+        int hashTagIndex = uri.indexOf(HASH_TAG);
+        if (dataStore==null && hashTagIndex!=-1) {
+            dataStore = uri.substring(atIndex+1,hashTagIndex);
+        }
 
-            final char firstCharacter = first.charAt(0);
-            if (firstCharacter != AT_STRING.charAt(0)) {
+        if (dataStore==null){
+            dataStore = uri.substring(atIndex+1);
+        }
 
-                this.pathSegments = new ArrayList<>();
-                this.pathSegments.addAll(Arrays.asList(first.split(PATH_SEPARATOR)));
-                this.pathSegments.addAll(Arrays.asList(more));
-                this.dataStore = dataStorePath.getDefaultDatabase();
+        if (dataStore.equals("")){
+            throw new RuntimeException("The data store name cannot be null");
+        }
 
-
+        // Query
+        if (questionMarkIndex!=-1) {
+            if (hashTagIndex==-1) {
+                query = uri.substring(questionMarkIndex+1);
             } else {
-
-                String[] pathsParsed = first.substring(1).split(PATH_SEPARATOR);
-                this.pathSegments = Arrays.asList(Arrays.copyOfRange(pathsParsed, 1, pathsParsed.length));
-                this.databaseName = pathsParsed[0];
-                this.dataStore = dataStorePath.getDatabase(databaseName);
-
+                query = uri.substring(questionMarkIndex+1,hashTagIndex);
             }
+        }
 
-        } else {
-
-            final char firstCharacter = first.charAt(0);
-            if (firstCharacter != AT_STRING.charAt(0)) {
-
-                this.pathSegments = new ArrayList<>();
-                this.pathSegments.add(first);
-                this.pathSegments.addAll(Arrays.asList(more));
-                this.dataStore = dataStorePath.getDefaultDatabase();
-
-            } else {
-
-                this.pathSegments = Arrays.asList(more);
-                this.databaseName = first.substring(1);
-                this.dataStore = dataStorePath.getDatabase(databaseName);
-
-            }
-
+        // Fragment
+        if (hashTagIndex!=-1) {
+            fragment = uri.substring(hashTagIndex+1);
         }
 
     }
 
 
 
-    public static DataUri of(Path dataStorePath, String dataStoreName, String... more) {
-        return new DataUri(DatabasesStore.of(dataStorePath).getDatabase(dataStoreName), more);
-    }
 
-    public static DataUri of(String first, String... more) {
-        assert first!=null: "The first path element should not be null";
-        return new DataUri(Databases.getDefault(), more);
+    public static DataUri of(String uri) {
+        assert uri!=null: "The uri should not be null";
+        return new DataUri(uri);
     }
 
 
-    public List<String> getPathSegments() {
-        return this.pathSegments;
+    public String getPath() {
+        return this.path;
     }
 
-    public Database getDataStore() {
-        return this.dataStore;
-    }
+
 
     public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("@").append(dataStore);
-        if (getPathSegments().size() > 0) {
-            stringBuilder
-                    .append("/")
-                    .append(String.join("/", pathSegments));
-        }
-        return stringBuilder.toString();
+
+
+        return this.uri;
     }
 
 
-    public String getDataName() {
-        return this.pathSegments.get(this.pathSegments.size() - 1);
-    }
-
-
-    public String getPathSegment(int i) {
-        return this.pathSegments.get(i);
-    }
 
     /**
      * Compares this object with the specified object for order.  Returns a
@@ -160,17 +136,15 @@ public class DataUri implements Comparable<DataUri> {
         return this.toString().compareTo(o.toString());
     }
 
-    /**
-     * The database may not be in the store
-     * This get function return the name to test the parse of the uri
-     *
-     * @return
-     */
-    public String getDatabaseName() {
-        if (this.dataStore != null) {
-            return this.dataStore.getDatabaseName();
-        } else {
-            return this.databaseName;
-        }
+    public String getFragment() {
+        return fragment;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    public String getDataStore() {
+        return dataStore;
     }
 }
