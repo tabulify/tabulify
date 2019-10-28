@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,11 +56,8 @@ public class FsTableSystem extends TableSystem {
      */
     public List<DataPath> getDataPaths(DataUri dataUri) {
 
-        if (!dataUri.getDataStore().getScheme().equals(DatabasesStore.DEFAULT_DATABASE)){
-            throw new RuntimeException("Only a file uri from the local file system is implemented from now");
-        }
+        List<String> pathSegments = getPathSegments(dataUri);
 
-        final List<String> pathSegments = dataUri.getPathSegments();
 
         // Start
         Path startPath = Paths.get(".");
@@ -97,15 +95,32 @@ public class FsTableSystem extends TableSystem {
                 .collect(Collectors.toList());
     }
 
+    static List<String> getPathSegments(DataUri dataUri) {
+        if (!dataUri.getDataStore().equals(DatabasesStore.LOCAL_FILE_DATABASE)){
+            throw new RuntimeException("Only a file uri from the local file system is implemented from now");
+        }
+
+        final String path = dataUri.getPath();
+        List<String> pathSegments = new ArrayList<>();
+        if (path.contains("/")){
+            pathSegments = Arrays.asList(path.split("/"));
+        } else {
+            pathSegments.add(path);
+        }
+        return pathSegments;
+    }
+
     @Override
     public DataPath getDataPath(DataUri dataUri) {
-        final Path path = Fs.getPath(dataUri.getPathSegments().toArray(new String[0]));
-        return FsDataPath.of(this, path);
+
+        final List<String> pathSegments = getPathSegments(dataUri);
+        return getDataPath(pathSegments.toArray(new String[0]));
     }
 
     @Override
     public DataPath getDataPath(String... name) {
-        return null;
+        Path path = Paths.get(name[0],Arrays.copyOfRange(name,1,name.length));
+        return FsDataPath.of(this,path);
     }
 
     @Override
@@ -269,10 +284,9 @@ public class FsTableSystem extends TableSystem {
      * However, implementers of this interface are strongly encouraged
      * to make their {@code close} methods idempotent.
      *
-     * @throws Exception if this resource cannot be closed
      */
     @Override
-    public void close() throws Exception {
+    public void close() {
         // No connection to the local system, no close then
     }
 }
