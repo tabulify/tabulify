@@ -39,7 +39,7 @@ public class DataPaths {
                     DbLoggers.LOGGER_DB_ENGINE.severe(message);
                     throw new RuntimeException(message);
                 }
-                return tableSystem.getDataPath(dataUri,dataStore);
+                return tableSystem.getDataPath(dataUri);
             }
         }
         final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";

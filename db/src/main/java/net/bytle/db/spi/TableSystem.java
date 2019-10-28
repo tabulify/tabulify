@@ -13,7 +13,7 @@ import java.util.List;
 public abstract class TableSystem implements AutoCloseable {
 
 
-    public abstract DataPath getDataPath(DataUri dataUri, Database dataStore);
+    public abstract DataPath getDataPath(DataUri dataUri);
 
     public abstract DataPath getDataPath(String... name);
 

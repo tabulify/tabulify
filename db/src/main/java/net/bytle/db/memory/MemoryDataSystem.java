@@ -140,10 +140,11 @@ public class MemoryDataSystem extends TableSystem {
 
 
     @Override
-    public DataPath getDataPath(DataUri dataUri, Database dataStore) {
-        this.database = dataStore;
+    public DataPath getDataPath(DataUri dataUri) {
         return getDataPath(dataUri.getPath());
     }
+
+
 
     @Override
     public DataPath getDataPath(String... names) {
