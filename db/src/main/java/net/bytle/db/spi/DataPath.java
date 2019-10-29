@@ -1,5 +1,6 @@
 package net.bytle.db.spi;
 
+import net.bytle.db.database.Database;
 import net.bytle.db.model.TableDef;
 
 import java.util.List;
@@ -27,8 +28,14 @@ public abstract class DataPath implements Comparable<DataPath> {
     public abstract List<String> getPathSegments();
 
     private String getId(){
-        return String.join(".",getPathSegments())+"@"+getDataSystem().getDatabase().getDatabaseName();
+        final String path = getPath();
+        assert path !=null: "Path cannot be null";
+        final Database database = getDataSystem().getDatabase();
+        final String databaseName = database.getDatabaseName();
+        return path +"@"+ databaseName;
     }
+
+    protected abstract String getPath();
 
     public int compareTo(DataPath o) {
         return this.getId().compareTo(o.getId());

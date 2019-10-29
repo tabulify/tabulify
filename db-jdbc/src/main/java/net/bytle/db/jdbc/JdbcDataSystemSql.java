@@ -8,6 +8,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -70,6 +72,20 @@ public class JdbcDataSystemSql {
         final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getRelationDef().getDataPath();
         String identifier = getIdentifierQuote(dataPath.getDataSystem());
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
+    }
+
+    /**
+     *
+     * @param jdbcDataPath
+     * @return a list of column name separated by a comma
+     *
+     * Example:
+     * col1, col2, col3
+     */
+    public static String getColumnsStatement(JdbcDataPath jdbcDataPath) {
+        return IntStream.range(0,jdbcDataPath.getDataDef().getColumnDefs().size())
+                .mapToObj(i->jdbcDataPath.getDataDef().getColumnDef(i).getColumnName())
+                .collect(Collectors.joining(", "));
     }
 
     /**

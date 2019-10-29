@@ -1,9 +1,8 @@
 package net.bytle.db.csv;
 
 
-import net.bytle.db.database.Databases;
 import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.model.*;
+import net.bytle.db.model.TableDef;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -11,7 +10,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Iterator;
 
 public class CsvDataDef  {
@@ -22,10 +20,10 @@ public class CsvDataDef  {
     public static void build(TableDef dataDef) {
         FsDataPath fsDataPath = (FsDataPath) dataDef.getDataPath();
 
-        if (Files.exists(fsDataPath.getPath())) {
+        if (Files.exists(fsDataPath.getNioPath())) {
             try {
 
-                Reader in = new FileReader(fsDataPath.getPath().toFile());
+                Reader in = new FileReader(fsDataPath.getNioPath().toFile());
                 Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
                 CSVRecord headerRecord = recordIterator.next();
 

@@ -8,6 +8,8 @@ import net.bytle.db.spi.TableSystem;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class FsDataPath extends DataPath {
 
@@ -24,7 +26,7 @@ public class FsDataPath extends DataPath {
 
     public static FsDataPath of(FsTableSystem fsTableSystem, Path path) {
 
-        return new FsDataPath(fsTableSystem,path);
+        return new FsDataPath(fsTableSystem, path);
 
     }
 
@@ -37,7 +39,7 @@ public class FsDataPath extends DataPath {
     public TableDef getDataDef() {
 
         // The data def of query is build at runtime
-        if (super.getDataDef().getColumnDefs().size()==0 ){
+        if (super.getDataDef().getColumnDefs().size() == 0) {
             CsvDataDef.build(super.getDataDef());
         }
         return super.getDataDef();
@@ -51,10 +53,16 @@ public class FsDataPath extends DataPath {
 
     @Override
     public List<String> getPathSegments() {
-        throw new RuntimeException("Not yet implemented");
+        return IntStream.range(0, path.getNameCount() - 1)
+                .mapToObj(i->path.getName(i).toString())
+                .collect(Collectors.toList());
     }
 
-    public Path getPath() {
+    public Path getNioPath() {
         return this.path;
+    }
+
+    public String getPath() {
+        return this.path.toString();
     }
 }

@@ -117,6 +117,11 @@ public class JdbcDataPath extends DataPath  {
         return pathSegments;
     }
 
+    @Override
+    protected String getPath() {
+        return String.join(".",getPathSegments());
+    }
+
 
     public String getCatalog() {
         return catalog;

@@ -127,7 +127,7 @@ public class FsTableSystem extends TableSystem {
     public Boolean exists(DataPath dataPath) {
 
         final FsDataPath fsDataPath = (FsDataPath) dataPath;
-        return Files.exists(fsDataPath.getPath());
+        return Files.exists(fsDataPath.getNioPath());
 
     }
 
@@ -139,7 +139,7 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public Database getDatabase() {
-        return null;
+        return database;
     }
 
     @Override
@@ -208,8 +208,8 @@ public class FsTableSystem extends TableSystem {
     }
 
     @Override
-    public DataPath move(DataPath source, DataPath target) {
-        return null;
+    public void move(DataPath source, DataPath target) {
+        throw new RuntimeException("Not implemented");
     }
 
     /**

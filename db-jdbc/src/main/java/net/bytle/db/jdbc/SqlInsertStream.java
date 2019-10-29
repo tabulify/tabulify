@@ -3,8 +3,8 @@ package net.bytle.db.jdbc;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.engine.Relations;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.RelationDef;
 import net.bytle.cli.Log;
 import net.bytle.db.model.TableDef;
@@ -48,13 +48,15 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     @Override
     public InsertStream insert(List<Object> values) {
 
+        final int columnsSize = this.jdbcDataPath.getDataDef().getColumnDefs().size();
+        final int valuesSize = values.size();
+        assert valuesSize == columnsSize : "The number of values to insert ("+ valuesSize +") is not the same than the number of columns ("+columnsSize+")";
 
-        try {
-            if (this.supportNamedParameters) {
+        if (this.supportNamedParameters) {
 
-
+            try {
                 // Columns
-                for (int i = 0; i < values.size(); i++) {
+                for (int i = 0; i < valuesSize; i++) {
 
                     Object sourceObject = values.get(i);
                     final ColumnDef column = sourceMetaDef.getColumnDef(i);
@@ -91,22 +93,28 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                     preparedStatement.execute();
 
                 }
+            } catch (SQLException e) {
 
-
-            } else {
-
-                insertStatement = DbDml.getInsertStatement(targetMetaDef, sourceMetaDef, values);
-                statement.execute(insertStatement);
-                currentRowInLogicalBatch++;
+                resourceClose();
+                throw new RuntimeException("Table: " + targetMetaDef.getDataPath(), e);
 
             }
 
-        } catch (SQLException e) {
+        } else {
 
-            resourceClose();
-            throw new RuntimeException("Table: " + targetMetaDef.getDataPath(), e);
+            try {
+                insertStatement = DbDml.getInsertStatement(sourceMetaDef, targetMetaDef, values);
+                statement.execute(insertStatement);
+                currentRowInLogicalBatch++;
+            } catch (SQLException e) {
+
+                resourceClose();
+                throw new RuntimeException("Table: " + targetMetaDef.getDataPath(), e);
+
+            }
 
         }
+
 
         // Submit the batch for execution if full
         if (currentRowInLogicalBatch >= this.batchSize) {
@@ -142,7 +150,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         final Database database = getDataPath().getDataSystem().getDatabase();
         if (!Tabulars.exists(jdbcDataPath)) {
             if (jdbcDataPath.getDataDef().getColumnDefs().size() == 0) {
-                Relations.addColumns(targetMetaDef, sourceMetaDef);
+                DataDefs.addColumns(targetMetaDef, sourceMetaDef);
             }
             Tabulars.create(jdbcDataPath);
         }
@@ -227,7 +235,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
             }
 
 
-                commit();
+            commit();
 
             insertStreamListener.addRows(currentRowInLogicalBatch);
 

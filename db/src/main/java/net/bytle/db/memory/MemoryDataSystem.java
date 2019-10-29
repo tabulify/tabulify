@@ -99,7 +99,7 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public DataPath move(DataPath source, DataPath target) {
+    public void move(DataPath source, DataPath target) {
         throw new RuntimeException("Not yet implemented");
     }
 

@@ -43,6 +43,11 @@ public class MemoryDataPath extends DataPath {
         return Arrays.asList(names);
     }
 
+    @Override
+    protected String getPath() {
+        return String.join(".",names);
+    }
+
     public int getType() {
         return type;
     }

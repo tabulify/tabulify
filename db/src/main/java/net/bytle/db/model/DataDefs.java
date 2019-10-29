@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Retrieve a list of TableDef through a Data Definition file
@@ -232,10 +233,11 @@ public class DataDefs {
     /**
      * Add the columns to the targetDef from the sourceDef
      *
-     * @param targetDef
      * @param sourceDef
+     * @param targetDef
+     *
      */
-    public static void addColumns(RelationDef targetDef, RelationDef sourceDef) {
+    public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
 
         // Add the columns
         int columnCount = sourceDef.getColumnDefs().size();
@@ -284,5 +286,29 @@ public class DataDefs {
 
         Tabulars.print(tableStructure);
         Tabulars.drop(tableStructure);
+    }
+
+
+    /**
+     * Dropping a foreign key
+     *
+     * @param foreignKeyDef
+     */
+    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+
+        foreignKeyDef.getTableDef().getDataPath().getDataSystem().dropForeignKey(foreignKeyDef);
+
+
+    }
+
+    public static void copy(TableDef source, TableDef target) {
+        addColumns(source, target);
+        final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
+        if (sourcePrimaryKey!=null) {
+            final List<String> columns = sourcePrimaryKey.getColumns().stream()
+                    .map(s->s.getColumnName())
+                    .collect(Collectors.toList());
+            target.setPrimaryKey(columns);
+        }
     }
 }

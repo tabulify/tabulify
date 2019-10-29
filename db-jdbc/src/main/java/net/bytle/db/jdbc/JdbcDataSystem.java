@@ -718,9 +718,28 @@ public class JdbcDataSystem extends TableSystem {
 
     }
 
+    /**
+     * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPath, DataPath)}
+     * The checks on source and target are already done on the calling function
+     *
+     * @param source
+     * @param target
+     *
+     */
     @Override
-    public DataPath move(DataPath source, DataPath target) {
-        throw new RuntimeException("Not yet implemented");
+    public void move(DataPath source, DataPath target) {
+
+        // insert into select statement
+        String insertInto = DbDml.getInsertIntoStatement((JdbcDataPath) source, (JdbcDataPath) target);
+        try {
+            Statement statement = connection.createStatement();
+            statement.execute(insertInto);
+        } catch (SQLException e) {
+            final String msg = "Error when executing the insert into statement: " + insertInto;
+            JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
+            throw new RuntimeException(msg, e);
+        }
+
     }
 
     // The map that will contain the driver data type

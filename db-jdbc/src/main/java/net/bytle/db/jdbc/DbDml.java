@@ -1,8 +1,5 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataSystem;
-import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 
@@ -11,7 +8,6 @@ import java.util.List;
 import static net.bytle.db.engine.DataTypes.isNumeric;
 
 public class DbDml {
-
 
 
     /**
@@ -25,7 +21,7 @@ public class DbDml {
         if (relationDef.getColumnDefs().size() == 0) {
             throw new RuntimeException("The table (" + relationDef.getDataPath() + ") has no columns. We can not create an insert statement.");
         }
-        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName((JdbcDataPath) relationDef.getDataPath()) + " (";
+        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(relationDef.getDataPath()) + " (";
         String insertStatementBindVariable = "";
 
         // Loop to create the statement
@@ -56,7 +52,7 @@ public class DbDml {
     public static String getParameterizedInsertStatement(RelationDef target, RelationDef source) {
 
 
-        return getInsertStatement(target,source,null);
+        return getInsertStatement(target, source, null);
     }
 
     /**
@@ -66,9 +62,8 @@ public class DbDml {
      * @param source - the source relation
      * @param values - the value to insert (If values is null, it will return a parameterized statement)
      * @return
-     *
      */
-    public static String getInsertStatement(RelationDef target, RelationDef source, List<Object> values) {
+    public static String getInsertStatement(RelationDef source, RelationDef target, List<Object> values) {
 
         final JdbcDataPath dataPath = (JdbcDataPath) target.getDataPath();
         String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName((JdbcDataPath) dataPath) + " (";
@@ -80,21 +75,21 @@ public class DbDml {
                 ColumnDef columnDef = target.getColumnDef(colName);
                 if (!columnDef.getIsAutoincrement().equals("YES")) {
                     String fieldQuote = "\"";
-                    if (dataPath.getDataSystem().getCurrentConnection().getMetaData().getDatabaseProductName().equals(JdbcDataSystem.DB_HIVE)){
+                    if (dataPath.getDataSystem().getCurrentConnection().getMetaData().getDatabaseProductName().equals(JdbcDataSystem.DB_HIVE)) {
                         fieldQuote = "`";
                     }
                     insertStatement += fieldQuote + columnDef.getColumnName() + fieldQuote + ", ";
-                    if (values==null) {
+                    if (values == null) {
                         insertStatementBindVariable += "?, ";
                     } else {
                         Object value = values.get(i);
-                        if (value == null){
+                        if (value == null) {
                             insertStatementBindVariable += "null, ";
                         } else {
                             if (isNumeric(columnDef.getDataType().getTypeCode())) {
-                                insertStatementBindVariable += value.toString()+", ";
+                                insertStatementBindVariable += value.toString() + ", ";
                             } else {
-                                insertStatementBindVariable += "'"+value.toString()+"', ";
+                                insertStatementBindVariable += "'" + value.toString() + "', ";
                             }
                         }
                     }
@@ -111,6 +106,25 @@ public class DbDml {
         insertStatement += ") VALUES (" + insertStatementBindVariable + ")";
 
         return insertStatement;
+
     }
 
+    /**
+     *
+     * @param source
+     * @param target
+     * @return an insert into statement
+     */
+    public static String getInsertIntoStatement(JdbcDataPath source, JdbcDataPath target) {
+
+        StringBuilder insertIntoBuilder = new StringBuilder();
+        insertIntoBuilder.append("INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(target) + " (");
+        insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(target));
+        insertIntoBuilder.append(") SELECT ");
+        insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(source));
+        insertIntoBuilder.append(" FROM ");
+        insertIntoBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(source));
+        return insertIntoBuilder.toString();
+
+    }
 }

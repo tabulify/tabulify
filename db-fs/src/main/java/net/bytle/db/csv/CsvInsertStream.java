@@ -29,7 +29,7 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
                 .map(s->s.getColumnName())
                 .collect(Collectors.joining(","));
         try {
-            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getPath());
+            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath());
             printer = CSVFormat
                     .DEFAULT
                     .withHeader(headers)

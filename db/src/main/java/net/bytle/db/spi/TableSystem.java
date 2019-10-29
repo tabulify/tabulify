@@ -51,7 +51,7 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
-    public abstract DataPath move(DataPath source, DataPath target);
+    public abstract void move(DataPath source, DataPath target);
 
     /**
      *

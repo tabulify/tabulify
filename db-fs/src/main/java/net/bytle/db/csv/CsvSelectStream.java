@@ -64,7 +64,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
-            in = new FileReader(this.fsDataPath.getPath().toFile());
+            in = new FileReader(this.fsDataPath.getNioPath().toFile());
             recordIterator = CSVFormat.RFC4180.parse(in).iterator();
             // Pass the header
             recordIterator.next();
@@ -97,6 +97,14 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public Object getObject(int columnIndex) {
+        if (columnIndex > currentRecord.size() - 1) {
+            final int size = fsDataPath.getDataDef().getColumnDefs().size();
+            if (currentRecord.size() > size) {
+                throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
+            } else {
+                return null;
+            }
+        }
         return currentRecord.get(columnIndex);
     }
 
@@ -104,7 +112,6 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     public TableDef getDataDef() {
         return fsDataPath.getDataDef();
     }
-
 
 
     @Override
