@@ -17,12 +17,12 @@ import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 
 import java.io.Closeable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class FsTableSystem extends TableSystem {
@@ -31,7 +31,7 @@ public class FsTableSystem extends TableSystem {
     private final Database database;
 
     private FsTableSystem(Database database) {
-        assert database!=null;
+        assert database != null;
         this.database = database;
     }
 
@@ -45,14 +45,12 @@ public class FsTableSystem extends TableSystem {
 
 
     /**
-     *
      * @param dataUri
      * @return a list of file that matches the uri segments
-     *
+     * <p>
      * ex: the following file uri
-     *   /tmp/*.md
+     * /tmp/*.md
      * will return all md file in the tmp directory
-     *
      */
     public List<DataPath> getDataPaths(DataUri dataUri) {
 
@@ -64,14 +62,14 @@ public class FsTableSystem extends TableSystem {
         List<Path> currentMatchesPaths = new ArrayList<>();
         currentMatchesPaths.add(startPath);
 
-        for (String s: pathSegments){
+        for (String s : pathSegments) {
 
             // Glob to regex Pattern
             String pattern = Globs.toRegexPattern(s);
 
             // The list where the actual matches path will be stored
             List<Path> matchesPath = new ArrayList<>();
-            for (Path currentPath: currentMatchesPaths) {
+            for (Path currentPath : currentMatchesPaths) {
                 List<Path> paths = Fs.getChildrenFiles(currentPath);
                 for (Path childrenPath : paths) {
                     if (childrenPath.getFileName().toString().matches(pattern)) {
@@ -80,7 +78,7 @@ public class FsTableSystem extends TableSystem {
                 }
             }
 
-            if (matchesPath.size()==0){
+            if (matchesPath.size() == 0) {
                 break;
             } else {
                 // Recursion
@@ -91,18 +89,18 @@ public class FsTableSystem extends TableSystem {
 
 
         return currentMatchesPaths.stream()
-                .map(s->FsDataPath.of(this,s))
+                .map(s -> FsDataPath.of(this, s))
                 .collect(Collectors.toList());
     }
 
     static List<String> getPathSegments(DataUri dataUri) {
-        if (!dataUri.getDataStore().equals(DatabasesStore.LOCAL_FILE_DATABASE)){
+        if (!dataUri.getDataStore().equals(DatabasesStore.LOCAL_FILE_DATABASE)) {
             throw new RuntimeException("Only a file uri from the local file system is implemented from now");
         }
 
         final String path = dataUri.getPath();
         List<String> pathSegments = new ArrayList<>();
-        if (path.contains("/")){
+        if (path.contains("/")) {
             pathSegments = Arrays.asList(path.split("/"));
         } else {
             pathSegments.add(path);
@@ -119,8 +117,8 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public DataPath getDataPath(String... name) {
-        Path path = Paths.get(name[0],Arrays.copyOfRange(name,1,name.length));
-        return FsDataPath.of(this,path);
+        Path path = Paths.get(name[0], Arrays.copyOfRange(name, 1, name.length));
+        return FsDataPath.of(this, path);
     }
 
     @Override
@@ -153,8 +151,14 @@ public class FsTableSystem extends TableSystem {
     }
 
     @Override
-    public DataPath create(DataPath dataPath) {
-        return null;
+    public void create(DataPath dataPath) {
+        FsDataPath fsDataPath = (FsDataPath) dataPath;
+        Path path = fsDataPath.getNioPath();
+        try {
+            Files.createFile(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Error during the creation of the file", e);
+        }
     }
 
     @Override
@@ -207,9 +211,31 @@ public class FsTableSystem extends TableSystem {
         return null;
     }
 
+    /**
+     * Move (for now, just a append data move, the source file is not deleted)
+     *
+     * @param source
+     * @param target
+     */
     @Override
     public void move(DataPath source, DataPath target) {
-        throw new RuntimeException("Not implemented");
+        FsDataPath fsSource = (FsDataPath) source;
+        FsDataPath fsTarget = (FsDataPath) target;
+        try {
+
+            Files.write(
+                    fsTarget.getNioPath(),
+                    Files.readAllBytes(fsSource.getNioPath()),
+                    StandardOpenOption.APPEND);
+
+            // The below statement will delete the source file
+            // Files.move(fsSource.getNioPath(), fsTarget.getNioPath(), StandardCopyOption.REPLACE_EXISTING);
+
+
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to move the file", e);
+        }
+
     }
 
     /**
@@ -283,10 +309,11 @@ public class FsTableSystem extends TableSystem {
      * <p>
      * However, implementers of this interface are strongly encouraged
      * to make their {@code close} methods idempotent.
-     *
      */
     @Override
     public void close() {
         // No connection to the local system, no close then
     }
+
+
 }

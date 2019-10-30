@@ -2,6 +2,7 @@ package net.bytle.db.csv;
 
 
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsTableSystemLog;
 import net.bytle.db.model.TableDef;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -25,11 +26,17 @@ public class CsvDataDef  {
 
                 Reader in = new FileReader(fsDataPath.getNioPath().toFile());
                 Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
-                CSVRecord headerRecord = recordIterator.next();
+                try {
+                    CSVRecord headerRecord = recordIterator.next();
 
-                for (int i = 0; i < headerRecord.size(); i++) {
-                    dataDef.addColumn(headerRecord.get(i));
+                    for (int i = 0; i < headerRecord.size(); i++) {
+                        dataDef.addColumn(headerRecord.get(i));
+                    }
+                } catch (java.util.NoSuchElementException e){
+                    // No more CSV records available, file is empty
+                    FsTableSystemLog.LOGGER_DB_FS.info("The file ("+fsDataPath.toString()+") seems to be empty");
                 }
+
                 in.close();
 
             } catch (IOException e) {

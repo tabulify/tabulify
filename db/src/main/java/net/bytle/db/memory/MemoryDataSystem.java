@@ -192,7 +192,7 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public DataPath create(DataPath dataPath) {
+    public void create(DataPath dataPath) {
         MemoryDataPath memoryDataPath = (MemoryDataPath) dataPath;
         switch(memoryDataPath.getType()) {
             case MemoryDataPath.TYPE_BLOCKED_QUEUE:
@@ -207,7 +207,6 @@ public class MemoryDataSystem extends TableSystem {
                 memoryStore.put(dataPath, new ArrayList<ArrayList<Object>>());
                 break;
         }
-        return dataPath;
     }
 
     @Override

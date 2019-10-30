@@ -83,6 +83,9 @@ public class JdbcDataSystemSql {
      * col1, col2, col3
      */
     public static String getColumnsStatement(JdbcDataPath jdbcDataPath) {
+        /**
+         * {@link DatabaseMetaData#getIdentifierQuoteString()}
+         */
         return IntStream.range(0,jdbcDataPath.getDataDef().getColumnDefs().size())
                 .mapToObj(i->jdbcDataPath.getDataDef().getColumnDef(i).getColumnName())
                 .collect(Collectors.joining(", "));
@@ -126,11 +129,18 @@ public class JdbcDataSystemSql {
      *
      * @return
      */
-    public String getQuery(JdbcDataPath dataPath) {
+    public static String getSelectStatement(JdbcDataPath dataPath) {
+
         /**
-         * {@link DatabaseMetaData#getIdentifierQuoteString()}
+         * If it does not work, "select * from " + getFullyQualifiedSqlName(dataPath); ?
          */
-        return "select * from " + getFullyQualifiedSqlName(dataPath);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("SELECT ");
+        stringBuilder.append(JdbcDataSystemSql.getColumnsStatement(dataPath));
+        stringBuilder.append(" FROM ");
+        stringBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+
+        return stringBuilder.toString();
     }
 
     /**

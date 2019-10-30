@@ -371,6 +371,11 @@ public class TableDef implements RelationDef  {
         return this;
     }
 
+    /**
+     *
+     * @return the query definition (select) or null if it's not a query
+     *
+     */
     public String getQuery() {
         return this.query;
     }

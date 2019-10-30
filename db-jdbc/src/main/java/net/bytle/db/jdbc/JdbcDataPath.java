@@ -98,6 +98,9 @@ public class JdbcDataPath extends DataPath  {
         if (catalog!=null){
             return catalog;
         }
+        if (type.equals(QUERY_TYPE)){
+            return "query";
+        }
         JdbcDataSystemLog.LOGGER_DB_JDBC.warning("All JDBC data path name are null (catalog, schema and name)");
         return null;
     }

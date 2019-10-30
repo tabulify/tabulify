@@ -30,14 +30,15 @@ public class Tabulars {
         if (Tabulars.exists(dataPath)) {
             return dataPath.getDataSystem().getSelectStream(dataPath);
         } else {
-            throw new RuntimeException("The data unit ("+dataPath.toString()+") does not exist. You can't therefore ask for a select stream.");
+            throw new RuntimeException("The data unit (" + dataPath.toString() + ") does not exist. You can't therefore ask for a select stream.");
         }
     }
 
 
-    public static DataPath create(DataPath dataPath) {
+    public static void create(DataPath dataPath) {
 
-        return dataPath.getDataSystem().create(dataPath);
+        dataPath.getDataSystem().create(dataPath);
+
     }
 
     /**
@@ -64,8 +65,8 @@ public class Tabulars {
      */
     public static List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
-        if (Tabulars.isDataUnit(dataPath)){
-            throw new RuntimeException("The data path ("+dataPath+") is a data unit, it has therefore no children");
+        if (Tabulars.isDataUnit(dataPath)) {
+            throw new RuntimeException("The data path (" + dataPath + ") is a data unit, it has therefore no children");
         }
         return dataPath.getDataSystem().getChildrenDataPath(dataPath);
 
@@ -167,7 +168,7 @@ public class Tabulars {
         // A hack to avoid building the data def
         // Because there is for now no drop options, the getDropOrderedTables
         // will build the dependency
-        if (dataPaths.size()==1){
+        if (dataPaths.size() == 1) {
             if (exists(dataPaths.get(0))) {
                 drop(dataPaths.get(0));
             }
@@ -220,8 +221,11 @@ public class Tabulars {
     public static void move(DataPath source, DataPath target) {
 
         // check source
-        if (!Tabulars.exists(source)){
-            throw new RuntimeException("We cannot move the source data path ("+source.toString()+") because it does not exist");
+        if (!Tabulars.exists(source)) {
+            // Is it a query definition
+            if (source.getDataDef().getQuery() == null) {
+                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
+            }
         }
 
         // check target
@@ -230,19 +234,25 @@ public class Tabulars {
             DataDefs.copy(source.getDataDef(), target.getDataDef());
             Tabulars.create(target);
         } else {
-            for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
-                ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
-                if (targetColumnDef == null) {
-                    String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-                            " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-                    DbLoggers.LOGGER_DB_ENGINE.severe(message);
-                    throw new RuntimeException(message);
+            // If this for instance, the move of a file, the file may exist
+            // but have no content and therefore no structure
+            if (target.getDataDef().getColumnDefs().size()!=0) {
+                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
+                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+                    if (targetColumnDef == null) {
+                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                        throw new RuntimeException(message);
+                    }
                 }
+            } else {
+                DataDefs.copy(source.getDataDef(), target.getDataDef());
             }
         }
 
         final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
-        if (sourceDataSystem == target.getDataSystem()) {
+        if (sourceDataSystem.equals(target.getDataSystem())) {
             // same provider
             sourceDataSystem.move(source, target);
         } else {
@@ -251,7 +261,7 @@ public class Tabulars {
                     InsertStream targetInsertStream = Tabulars.getInsertStream(target)
             ) {
                 while (sourceSelectStream.next()) {
-                    List<Object> objects = IntStream.range(0,sourceSelectStream.getDataDef().getColumnDefs().size())
+                    List<Object> objects = IntStream.range(0, sourceSelectStream.getDataDef().getColumnDefs().size())
                             .mapToObj(sourceSelectStream::getObject)
                             .collect(Collectors.toList());
                     targetInsertStream.insert(objects);
@@ -284,9 +294,8 @@ public class Tabulars {
     }
 
     /**
-     *
      * @param dataPath - a parent dataPath
-     * @param pattern -  a glob pattern
+     * @param pattern  -  a glob pattern
      * @return the children data path of the parent that matches the glob pattern
      */
     public static List<DataPath> getChildrenDataPath(DataPath dataPath, String pattern) {

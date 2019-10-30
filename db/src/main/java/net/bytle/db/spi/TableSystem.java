@@ -9,6 +9,7 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class TableSystem implements AutoCloseable {
 
@@ -27,7 +28,7 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract boolean isContainer(DataPath dataPath);
 
-    public abstract DataPath create(DataPath dataPath);
+    public abstract void create(DataPath dataPath);
 
     // The product name (for a jdbc database: sql server, oracle, hive ...
     public abstract String getProductName();
@@ -67,4 +68,16 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract DataPath getQuery(String query);
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TableSystem that = (TableSystem) o;
+        return Objects.equals(getDatabase(), that.getDatabase());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getDatabase());
+    }
 }

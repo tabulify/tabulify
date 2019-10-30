@@ -120,10 +120,15 @@ public class DbDml {
         StringBuilder insertIntoBuilder = new StringBuilder();
         insertIntoBuilder.append("INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(target) + " (");
         insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(target));
-        insertIntoBuilder.append(") SELECT ");
-        insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(source));
-        insertIntoBuilder.append(" FROM ");
-        insertIntoBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(source));
+        insertIntoBuilder.append(") ");
+        if (source.getType().equals(JdbcDataPath.QUERY_TYPE)){
+
+            insertIntoBuilder.append(source.getDataDef().getQuery());
+
+        } else {
+
+            JdbcDataSystemSql.getSelectStatement(source);
+        }
         return insertIntoBuilder.toString();
 
     }

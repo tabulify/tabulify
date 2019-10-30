@@ -474,7 +474,7 @@ public class JdbcDataSystem extends TableSystem {
     }
 
     @Override
-    public DataPath create(DataPath dataPath) {
+    public void create(DataPath dataPath) {
 
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
 
@@ -503,8 +503,6 @@ public class JdbcDataSystem extends TableSystem {
         }
         final String name = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : "null";
         JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
-
-        return dataPath;
 
 
     }
@@ -733,7 +731,11 @@ public class JdbcDataSystem extends TableSystem {
         String insertInto = DbDml.getInsertIntoStatement((JdbcDataPath) source, (JdbcDataPath) target);
         try {
             Statement statement = connection.createStatement();
-            statement.execute(insertInto);
+            Boolean resultSetReturned = statement.execute(insertInto);
+            if (!resultSetReturned){
+                int updateCount = statement.getUpdateCount();
+                JdbcDataSystemLog.LOGGER_DB_JDBC.info(updateCount+" records where moved from ("+source.toString()+") to ("+target.toString()+")");
+            }
         } catch (SQLException e) {
             final String msg = "Error when executing the insert into statement: " + insertInto;
             JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
