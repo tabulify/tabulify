@@ -39,7 +39,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public TableSystem getTableSystem(Database database) {
-        return FsTableSystem.of(database);
+        return FsTableSystem.of(this,database);
     }
 
 

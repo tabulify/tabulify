@@ -22,25 +22,31 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class FsTableSystem extends TableSystem {
 
 
     private final Database database;
+    private final FsTableSystemProvider tableprovider;
 
-    private FsTableSystem(Database database) {
+    private FsTableSystem(FsTableSystemProvider fsTableSystemProvider, Database database) {
         assert database != null;
         this.database = database;
+        this.tableprovider = fsTableSystemProvider;
     }
 
-    protected static TableSystem of(Database database) {
-        return new FsTableSystem(database);
+    protected static TableSystem of(FsTableSystemProvider fsTableSystemProvider, Database database) {
+        return new FsTableSystem(fsTableSystemProvider, database);
     }
 
+
+    /**
+     * Used in the test
+     * @return
+     */
     public static FsTableSystem of() {
-        return new FsTableSystem(Databases.of("FsDefault"));
+        return new FsTableSystem(null,Databases.of("FsDefault"));
     }
 
 
@@ -142,12 +148,14 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public <T> T getMax(ColumnDef<T> columnDef) {
-        return null;
+
+        throw new RuntimeException("not yet implemented");
+
     }
 
     @Override
     public boolean isContainer(DataPath dataPath) {
-        return false;
+        return Files.isDirectory(((FsDataPath)dataPath).getNioPath());
     }
 
     @Override
@@ -163,27 +171,35 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public String getProductName() {
-        return null;
+
+        throw new RuntimeException("not yet implemented");
     }
 
     @Override
     public DataType getDataType(Integer typeCode) {
-        return null;
+
+        throw new RuntimeException("not yet implemented");
+
     }
 
     @Override
     public void drop(DataPath dataPath) {
-
+        delete(dataPath);
     }
 
     @Override
     public void delete(DataPath dataPath) {
-
+        FsDataPath fsDataPath = (FsDataPath) dataPath;
+        try {
+            Files.delete(fsDataPath.getNioPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to delete the file ("+fsDataPath.toString()+")",e);
+        }
     }
 
     @Override
     public void truncate(DataPath dataPath) {
-
+        delete(dataPath);
     }
 
     @Override
@@ -198,17 +214,23 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public TableSystemProvider getProvider() {
-        return null;
+
+        return tableprovider;
+
     }
 
     @Override
     public InsertStream getInsertStream(DataPath dataPath) {
-        return null;
+
+        throw new RuntimeException("not yet implemented");
+
     }
 
     @Override
     public List<DataPath> getChildrenDataPath(DataPath dataPath) {
-        return null;
+
+        throw new RuntimeException("not yet implemented");
+
     }
 
     /**
@@ -243,27 +265,27 @@ public class FsTableSystem extends TableSystem {
      */
     @Override
     public Integer getMaxWriterConnection() {
-        return null;
+        throw new RuntimeException("not yet implemented");
     }
 
     @Override
     public Boolean isEmpty(DataPath queue) {
-        return null;
+        throw new RuntimeException("not yet implemented");
     }
 
     @Override
     public Integer size(DataPath dataPath) {
-        return null;
+        throw new RuntimeException("not yet implemented");
     }
 
     @Override
     public boolean isDataUnit(DataPath dataPath) {
-        return false;
+        throw new RuntimeException("not yet implemented");
     }
 
     @Override
     public DataPath getQuery(String query) {
-        return null;
+        throw new RuntimeException("not yet implemented");
     }
 
 

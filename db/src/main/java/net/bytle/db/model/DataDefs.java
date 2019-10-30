@@ -243,7 +243,7 @@ public class DataDefs {
         int columnCount = sourceDef.getColumnDefs().size();
         for (int i = 0; i < columnCount; i++) {
             ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName(),columnDef.getClass())
+            targetDef.getColumnOf(columnDef.getColumnName(),columnDef.getClazz())
                     .typeCode(columnDef.getDataType().getTypeCode())
                     .precision(columnDef.getPrecision())
                     .scale(columnDef.getScale());
