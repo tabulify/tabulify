@@ -1,4 +1,4 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 /**
  * Created by gerard on 4-5-2015.

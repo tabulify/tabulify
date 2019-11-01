@@ -10,32 +10,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-loader</artifactId>
-    <name>Db Loader</name>
-    <description>Db Loader</description>
-
+    <name>Db Move</name>
+    <description>The integration tests that move data between data store</description>
+    <!--
+    To eliminate the errors that says that there is no class, the packaging is set to POM
+    -->
+    <packaging>pom</packaging>
     <dependencies>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-db</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-db-gen</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-db-sqlite</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-db-fs</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

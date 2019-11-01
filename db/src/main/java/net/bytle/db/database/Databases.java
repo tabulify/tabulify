@@ -1,7 +1,6 @@
 package net.bytle.db.database;
 
 import net.bytle.db.DatabasesStore;
-import oracle.jdbc.OracleTypes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -73,40 +72,6 @@ public class Databases {
         return of("bytle");
     }
 
-    /**
-     * Return an object to be set in a prepared statement (for instance)
-     * Example: if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as a
-     * oracle.sql.BINARY_DOUBLE
-     *
-     * @param targetConnection the target connection
-     * @param targetColumnType the target column type
-     * @param sourceObject     the java object to be loaded
-     * @return
-     */
-    public static Object castLoadObjectIfNecessary(Connection targetConnection, int targetColumnType, Object sourceObject) {
-
-        String databaseProductName;
-        try {
-            databaseProductName = targetConnection.getMetaData().getDatabaseProductName();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (databaseProductName.equals("Oracle")) {
-
-            if (targetColumnType == OracleTypes.BINARY_DOUBLE && sourceObject instanceof Double) {
-                return new oracle.sql.BINARY_DOUBLE((Double) sourceObject);
-            } else if (targetColumnType == OracleTypes.BINARY_FLOAT && sourceObject instanceof Float) {
-                return new oracle.sql.BINARY_FLOAT((Float) sourceObject);
-            } else {
-                return sourceObject;
-            }
-
-        } else {
-            return sourceObject;
-        }
-
-    }
 
 
 

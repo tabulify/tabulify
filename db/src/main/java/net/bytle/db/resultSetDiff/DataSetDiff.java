@@ -9,10 +9,14 @@
 package net.bytle.db.resultSetDiff;
 
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.SelectStream;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.ResultSet;
@@ -38,12 +42,12 @@ public class DataSetDiff {
     private static final Logger LOGGER = Logger.getLogger(DataSetDiff.class.getPackage().toString());
     ;
 
-    private final ResultSet sourceDataSet;
-    private final ResultSet targetDataSet;
+    private final DataPath sourceDataPath;
+    private final DataPath targetDataPath;
     private final Integer keyColumnIndex; // The index of the key column
     private final Locale locale; // The locale used for String comparison
-    private final Path outputPath; // The output path for the diff file
-    private CSVPrinter csvWriter; // will contains the diff result
+
+    private DataPath diffDataPath; // will contains the diff result
     private StringBuilder consoleMessage = new StringBuilder(); // will contains the console message
 
     // Represent the type of record inserted in the result
@@ -53,63 +57,59 @@ public class DataSetDiff {
     private int rowInDifFile = 0; // To feedback the number of row in the file
     private int counterDiffLoop = 0; // To Feeback the number of loop performed
 
-    public DataSetDiff(ResultSet sourceDataSet, ResultSet targetDataSet, Integer keyColumnIndex, Path outputPath) {
+    // Global for procecssing
+    private SelectStream selectSourceStream;
+    private InsertStream diffInsertStream;
+    private SelectStream selectTargetStream;
 
-        this.sourceDataSet = sourceDataSet;
-        this.targetDataSet = targetDataSet;
+    public DataSetDiff(DataPath sourceDataPath, DataPath targetDataPath, Integer keyColumnIndex, Path outputPath) {
+
+        this.sourceDataPath = sourceDataPath;
+        this.targetDataPath = targetDataPath;
         this.keyColumnIndex = keyColumnIndex;
-        this.csvWriter = null;
+        this.diffDataPath = DataPaths.of(outputPath);
         this.locale = Locale.getDefault();
-        this.outputPath = outputPath;
 
-        if (outputPath != null) {
-            try {
-                //initialize FileWriter object
-                FileWriter fileWriter = new FileWriter(outputPath.toString());
-                //Create the CSVFormat object with "\n" as a record delimiter
-                CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator(System.lineSeparator());
-                //initialize CSVPrinter object
-                csvWriter = new CSVPrinter(fileWriter, csvFileFormat);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
     }
 
     /*
      * DataSet Diff without a primary key column
      */
-    public DataSetDiff(ResultSet sourceDataSet, ResultSet targetDataSet) {
+    public DataSetDiff(DataPath sourceDataPath, DataPath targetDataPath) {
 
-        this(sourceDataSet, targetDataSet, null, null);
+        this(sourceDataPath, targetDataPath, null, null);
+
     }
 
     /*
-         * Compare the current data set with the data set in the parameter
-         * and return a data set that contains the differences.
-         * If the data set is empty the data set are equals.
-         * Throws an exception if the data set are not comparable with the reason
-         * The actual data set is the source and the data set given in the parameters is the target
-         * @param key: the key column. A key column can only be ordinal (then of type Numeric (Date) or String)
-         * The key column can be null, in this case, the row num is considered as the key
-         * The key column can not be null, otherwise a DataSet exception is thrown
-         * The data set key values are supposed to be in an Ascendant order
-         */
+     * Compare the current data set with the data set in the parameter
+     * and return a data set that contains the differences.
+     * If the data set is empty the data set are equals.
+     * Throws an exception if the data set are not comparable with the reason
+     * The actual data set is the source and the data set given in the parameters is the target
+     * @param key: the key column. A key column can only be ordinal (then of type Numeric (Date) or String)
+     * The key column can be null, in this case, the row num is considered as the key
+     * The key column can not be null, otherwise a DataSet exception is thrown
+     * The data set key values are supposed to be in an Ascendant order
+     */
     public Boolean diff() throws SQLException {
 
         // Have the data sets the same structure
-        String reason = compareMetaData(sourceDataSet, targetDataSet);
+        String reason = compareMetaData(sourceDataPath, targetDataPath);
+
+        // Inserting the data
+
+        diffInsertStream = Tabulars.getInsertStream(diffDataPath);
+        selectSourceStream = Tabulars.getSelectStream(sourceDataPath);
+        selectTargetStream = Tabulars.getSelectStream(targetDataPath);
 
         // Can we diff the data set
         if (!reason.equals("")) {
 
             this.setDataSetDiffFound(true);
-            try {
-                csvWriter.print(reason);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            diffInsertStream.insert(reason);
+
 
         } else {
 
@@ -120,21 +120,12 @@ public class DataSetDiff {
             csvRow.add(1, "Key");
 
             // The headers
-            for (int i = 1; i <= sourceDataSet.getMetaData().getColumnCount(); i++) {
-                csvRow.add(sourceDataSet.getMetaData().getColumnName(i));
-            }
-            try {
-                csvWriter.printRecord(csvRow);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            TableDef sourceDataDef = sourceDataPath.getDataDef();
+            for (int i = 1; i <= sourceDataDef.getColumnDefs().size(); i++) {
+                csvRow.add(sourceDataDef.getColumnDef(i).getColumnName());
             }
 
-
-            // Go Compare
-            if (sourceDataSet.getStatement().getResultSetType() != ResultSet.TYPE_FORWARD_ONLY) {
-                sourceDataSet.beforeFirst();
-                targetDataSet.beforeFirst();
-            }
+            diffInsertStream.insert(csvRow);
 
             // Should we of the next row for the source or the target
             Boolean sourceNext = true;
@@ -151,31 +142,31 @@ public class DataSetDiff {
                 this.counterDiffLoop++;
 
                 if (sourceNext) {
-                    moreSourceRow = sourceDataSet.next();
+                    moreSourceRow = selectSourceStream.next();
                 }
                 if (targetNext) {
-                    moreTargetRow = targetDataSet.next();
+                    moreTargetRow = selectTargetStream.next();
                 }
 
-                if (moreSourceRow == false && moreTargetRow == false) {
+                if (!moreSourceRow && !moreTargetRow) {
                     // No more rows to process
                     break;
-                } else if (moreSourceRow == true && moreTargetRow == true) {
+                } else if (moreSourceRow && moreTargetRow) {
 
                     if (keyColumnIndex != null) {
 
-                        Object keySourceValue = sourceDataSet.getObject(keyColumnIndex);
-                        Object keyTargetValue = targetDataSet.getObject(keyColumnIndex);
+                        Object keySourceValue = selectSourceStream.getObject(keyColumnIndex);
+                        Object keyTargetValue = selectTargetStream.getObject(keyColumnIndex);
 
                         if (keySourceValue == null || keyTargetValue == null) {
 
                             String typeDataSet;
-                            ResultSet dataset;
+                            SelectStream dataset;
                             if (keySourceValue == null) {
-                                dataset = sourceDataSet;
+                                dataset = selectSourceStream;
                                 typeDataSet = "source";
                             } else {
-                                dataset = targetDataSet;
+                                dataset = selectTargetStream;
                                 typeDataSet = "target";
                             }
                             throw new RuntimeException("The value of the primary key column (col: " + keyColumnIndex + ", row:" + dataset.getRow() + ") in the " + typeDataSet + " data set can not be null");
@@ -230,16 +221,13 @@ public class DataSetDiff {
             }
         }
 
+        // Close
+        diffInsertStream.close();
+        selectSourceStream.close();
+        selectTargetStream.close();
 
-        try {
-            this.csvWriter.flush();
-            this.csvWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        LOGGER.info("The diff file can be found on this location ("+outputPath.toAbsolutePath().toString()+")");
-        LOGGER.info("Counter info: number of row in the diff file: ("+this.rowInDifFile+")");
-        LOGGER.info("Counter info: number of diff loop: ("+this.counterDiffLoop+")");
+        LOGGER.info("Counter info: number of row in the diff file: (" + this.rowInDifFile + ")");
+        LOGGER.info("Counter info: number of diff loop: (" + this.counterDiffLoop + ")");
         return this.dataSetDiffFound;
 
     }
@@ -250,19 +238,19 @@ public class DataSetDiff {
 
     private void addRowData(int type, String equalMinPlus, List<Diff> columnPositionWithDiff) throws SQLException {
 
-        if (csvWriter != null) {
+        if (diffDataPath != null) {
 
             this.rowInDifFile++;
 
-            ResultSet dataSet;
+            SelectStream dataSet;
             if (type == SOURCE_TYPE) {
-                dataSet = sourceDataSet;
+                dataSet = selectSourceStream;
                 if (equalMinPlus == null) {
                     equalMinPlus = MIN;
                 }
 
             } else {
-                dataSet = targetDataSet;
+                dataSet = selectTargetStream;
                 if (equalMinPlus == null) {
                     equalMinPlus = PLUS;
                 }
@@ -282,14 +270,14 @@ public class DataSetDiff {
             }
 
             List<Integer> columnPositions = new ArrayList<>();
-            if (columnPositionWithDiff!=null) {
+            if (columnPositionWithDiff != null) {
                 columnPositionWithDiff.forEach(diff -> columnPositions.add(diff.getPosition()));
             }
 
-            for (int i = 1; i <= dataSet.getMetaData().getColumnCount(); i++) {
+            for (int i = 1; i <= dataSet.getDataDef().getColumnDefs().size(); i++) {
                 Object object = dataSet.getObject(i);
 
-                if (columnPositions.contains(i)){
+                if (columnPositions.contains(i)) {
                     if (object != null) {
                         object = "***" + object + "***";
                     } else {
@@ -300,11 +288,8 @@ public class DataSetDiff {
                 csvRow.add(object);
             }
 
-            try {
-                csvWriter.printRecord(csvRow);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            diffInsertStream.insert(csvRow);
+
 
         }
 
@@ -317,12 +302,12 @@ public class DataSetDiff {
     private void compareAndAddRowData() throws SQLException {
         Boolean diffFound = false;
         List<Diff> columnPositionWithDiff = new ArrayList<>();
-        for (int i = 1; i <= sourceDataSet.getMetaData().getColumnCount(); i++) {
+        for (int i = 1; i <= selectSourceStream.getDataDef().getColumnDefs().size(); i++) {
 
-            String cellCoordinates = "Cell(Row,Col)(" + sourceDataSet.getRow() + "," + i + ")";
+            String cellCoordinates = "Cell(Row,Col)(" + selectSourceStream.getRow() + "," + i + ")";
 
-            Object sourceDataPoint = sourceDataSet.getObject(i);
-            Object targetDataPoint = targetDataSet.getObject(i);
+            Object sourceDataPoint = selectSourceStream.getObject(i);
+            Object targetDataPoint = selectTargetStream.getObject(i);
             if (sourceDataPoint != null) {
                 if (targetDataPoint == null) {
                     diffFound = true;
@@ -372,20 +357,24 @@ public class DataSetDiff {
     //
     // If the metadata are equals, this function return null. Otherwise return the reason
     //
-    static public String compareMetaData(ResultSet sourceDataSet, ResultSet targetDataSet) throws SQLException {
+    static public String compareMetaData(DataPath sourceDataSet, DataPath targetDataSet) throws SQLException {
 
         StringBuilder reason = new StringBuilder();
 
         // Length
-        if (sourceDataSet.getMetaData().getColumnCount() != targetDataSet.getMetaData().getColumnCount()) {
-            reason.append("The number of columns are not equals. The source data set has " + sourceDataSet.getMetaData().getColumnCount() + " columns, and the target data set has " + targetDataSet.getMetaData().getColumnCount() + " columns." + System.getProperty("line.separator"));
+        int sourceSize = sourceDataSet.getDataDef().getColumnDefs().size();
+        int targetSize = targetDataSet.getDataDef().getColumnDefs().size();
+        if (sourceSize != targetSize) {
+            reason.append("The number of columns are not equals. The source data set has " + sourceSize + " columns, and the target data set has " + targetSize + " columns." + System.getProperty("line.separator"));
         }
 
 
         // Type
-        for (int i = 1; i <= sourceDataSet.getMetaData().getColumnCount(); i++) {
-            if (sourceDataSet.getMetaData().getColumnType(i) != targetDataSet.getMetaData().getColumnType(i)) {
-                reason.append("The type column of the column (" + i + ") are not equals. The source column (" + sourceDataSet.getMetaData().getColumnName(i) + ") has the type (" + sourceDataSet.getMetaData().getColumnTypeName(i) + ") whereas the target column (" + targetDataSet.getMetaData().getColumnName(i) + ") has the column type (" + targetDataSet.getMetaData().getColumnTypeName(i) + ")." + System.getProperty("line.separator"));
+        for (int i = 1; i <= sourceSize; i++) {
+            ColumnDef sourceColumn = sourceDataSet.getDataDef().getColumnDef(i);
+            ColumnDef targetColumn = targetDataSet.getDataDef().getColumnDef(i);
+            if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+                reason.append("The type column of the column (" + i + ") are not equals. The source column (" + sourceColumn.getColumnName() + ") has the type (" + sourceColumn.getDataType().getTypeName() + ") whereas the target column (" + targetColumn.getColumnName() + ") has the column type (" + targetColumn.getDataType().getTypeName() + ")." + System.getProperty("line.separator"));
             }
         }
         return reason.toString();

@@ -1,4 +1,4 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabaseAbs;
 import oracle.jdbc.OracleTypes;
@@ -6,9 +6,9 @@ import oracle.jdbc.OracleTypes;
 /**
  * Created by gerard on 28-11-2015.
  */
-class OraDbIntervalDsType extends DataTypeDatabaseAbs {
+class OraDbIntervalYmType extends DataTypeDatabaseAbs {
 
-    static Integer TYPE_CODE = OracleTypes.INTERVALDS;
+    static Integer TYPE_CODE = OracleTypes.INTERVALYM;
 
     @Override
     public int getTypeCode() {
@@ -17,21 +17,23 @@ class OraDbIntervalDsType extends DataTypeDatabaseAbs {
 
     @Override
     public String getTypeName() {
-        return "INTERVALDS";
+        return "INTERVAL_YEAR_MONTH";
     }
+
 
     @Override
     public String getCreateStatement(int precision, int scale) {
-        return "INTERVAL DAY ("+precision+") TO SECOND ("+scale+ ")";
+        return "INTERVAL YEAR ("+precision+") TO MONTH";
     }
+
     @Override
     public Class<?> getJavaDataType() {
-        return oracle.sql.INTERVALDS.class;
+        return oracle.sql.INTERVALYM.class;
     }
 
     @Override
     public Class<?> getVendorClass() {
-        return oracle.sql.INTERVALDS.class;
+        return oracle.sql.INTERVALYM.class;
     }
 
 }

@@ -1,4 +1,4 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabaseAbs;
 

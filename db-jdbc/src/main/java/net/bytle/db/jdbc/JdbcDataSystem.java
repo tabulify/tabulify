@@ -5,7 +5,6 @@ import net.bytle.db.database.*;
 import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
 import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.jdbc.Oracle.SqlDatabaseIOracle;
 import net.bytle.db.jdbc.SqlServer.SqlDatabaseISqlServer;
 import net.bytle.db.jdbc.spi.DataTypeDriver;
 import net.bytle.db.jdbc.spi.SqlDatabaseI;
@@ -55,20 +54,17 @@ public class JdbcDataSystem extends TableSystem {
                 throw new RuntimeException(e);
             }
             switch (name) {
-                case DB_ORACLE:
-                    sqlDatabase = new SqlDatabaseIOracle(this);
-                    break;
                 case DB_HANA:
                     sqlDatabase = new SqlDatabaseIHana(this);
                     break;
                 case DB_SQL_SERVER:
                     sqlDatabase = new SqlDatabaseISqlServer(this);
                     break;
-                case DB_SQLITE:
-                    sqlDatabase = SqlDatabases.getSqlDatabase(database.getUrl());
-                    break;
                 case DB_HIVE:
                     sqlDatabase = new SqlDatabaseIHive(this);
+                    break;
+                default:
+                    sqlDatabase = SqlDatabases.getSqlDatabase(database.getUrl());
                     break;
             }
 
@@ -108,7 +104,7 @@ public class JdbcDataSystem extends TableSystem {
             splitter = "/";
 
         }
-        if (path.indexOf(splitter)!=-1){
+        if (path.indexOf(splitter) != -1) {
             pathSegments = Arrays.asList(path.split(splitter));
         } else {
             pathSegments.add(path);
@@ -201,25 +197,32 @@ public class JdbcDataSystem extends TableSystem {
     public Boolean exists(DataPath dataPath) {
 
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
-        boolean tableExist;
-        String[] types = {"TABLE"};
 
-        final String schemaPattern = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : null;
-        try (
-                ResultSet tableResultSet = getCurrentConnection()
-                        .getMetaData()
-                        .getTables(
-                                jdbcDataPath.getCatalog(),
-                                schemaPattern,
-                                jdbcDataPath.getName(),
-                                types)
-        ) {
-            tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        switch (jdbcDataPath.getType()) {
+            case JdbcDataPath.QUERY_TYPE:
+                return true;
+            default:
+                boolean tableExist;
+                String[] types = {"TABLE","VIEW"};
+
+                final String schemaPattern = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : null;
+                try (
+                        ResultSet tableResultSet = getCurrentConnection()
+                                .getMetaData()
+                                .getTables(
+                                        jdbcDataPath.getCatalog(),
+                                        schemaPattern,
+                                        jdbcDataPath.getName(),
+                                        types)
+                ) {
+                    tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return tableExist;
         }
 
-        return tableExist;
 
     }
 
@@ -722,7 +725,6 @@ public class JdbcDataSystem extends TableSystem {
      *
      * @param source
      * @param target
-     *
      */
     @Override
     public void move(DataPath source, DataPath target) {
@@ -732,9 +734,9 @@ public class JdbcDataSystem extends TableSystem {
         try {
             Statement statement = connection.createStatement();
             Boolean resultSetReturned = statement.execute(insertInto);
-            if (!resultSetReturned){
+            if (!resultSetReturned) {
                 int updateCount = statement.getUpdateCount();
-                JdbcDataSystemLog.LOGGER_DB_JDBC.info(updateCount+" records where moved from ("+source.toString()+") to ("+target.toString()+")");
+                JdbcDataSystemLog.LOGGER_DB_JDBC.info(updateCount + " records where moved from (" + source.toString() + ") to (" + target.toString() + ")");
             }
         } catch (SQLException e) {
             final String msg = "Error when executing the insert into statement: " + insertInto;

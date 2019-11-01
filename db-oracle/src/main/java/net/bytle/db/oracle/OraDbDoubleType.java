@@ -1,4 +1,4 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabaseAbs;
 
@@ -6,11 +6,10 @@ import java.sql.Types;
 
 /**
  * Created by gerard on 28-11-2015.
- * setNString depending on the argument's size relative to the driver's limits on NVARCHAR
  */
-class OraDbNVarchar2Type extends DataTypeDatabaseAbs {
+class OraDbDoubleType extends DataTypeDatabaseAbs {
 
-    static Integer TYPE_CODE = Types.NVARCHAR;
+    static Integer TYPE_CODE = Types.DOUBLE;
 
     @Override
     public int getTypeCode() {
@@ -19,17 +18,17 @@ class OraDbNVarchar2Type extends DataTypeDatabaseAbs {
 
     @Override
     public String getTypeName() {
-        return "NVARCHAR2";
+        return "NUMBER";
     }
 
     @Override
     public Class<?> getJavaDataType() {
-        return String.class;
+        return Double.class;
     }
 
     @Override
     public Class<?> getVendorClass() {
-        return String.class;
+        return Double.class;
     }
 
 }

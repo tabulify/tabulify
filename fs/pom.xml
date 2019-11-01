@@ -16,17 +16,14 @@
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-type</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-regexp</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-os</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

@@ -1,13 +1,16 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabaseAbs;
 
+import java.sql.Types;
+
 /**
  * Created by gerard on 28-11-2015.
+ * setNString depending on the argument's size relative to the driver's limits on NVARCHAR
  */
-class OraDbLongRawType extends DataTypeDatabaseAbs {
+class OraDbNVarchar2Type extends DataTypeDatabaseAbs {
 
-    static Integer TYPE_CODE = -4;
+    static Integer TYPE_CODE = Types.NVARCHAR;
 
     @Override
     public int getTypeCode() {
@@ -16,23 +19,17 @@ class OraDbLongRawType extends DataTypeDatabaseAbs {
 
     @Override
     public String getTypeName() {
-        return "LONG RAW";
+        return "NVARCHAR2";
     }
 
     @Override
     public Class<?> getJavaDataType() {
-        return oracle.sql.RAW.class;
-    }
-
-    @Override
-    public String getCreateStatement(int precision, int scale) {
-
-        return "LONG RAW";
+        return String.class;
     }
 
     @Override
     public Class<?> getVendorClass() {
-        return byte[].class;
+        return String.class;
     }
 
 }

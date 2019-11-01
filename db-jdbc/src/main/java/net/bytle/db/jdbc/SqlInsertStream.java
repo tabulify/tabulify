@@ -64,7 +64,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
                     try {
                         if (sourceObject != null) {
 
-                            Object loadObject = Databases.castLoadObjectIfNecessary(preparedStatement.getConnection(), targetColumnType, sourceObject);
+                            Object loadObject = Jdbcs.castLoadObjectIfNecessary(preparedStatement.getConnection(), targetColumnType, sourceObject);
                             preparedStatement.setObject(i + 1, loadObject, targetColumnType);
 
 

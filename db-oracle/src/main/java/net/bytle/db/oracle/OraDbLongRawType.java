@@ -1,15 +1,13 @@
-package net.bytle.db.jdbc.Oracle;
+package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabaseAbs;
-
-import java.sql.Types;
 
 /**
  * Created by gerard on 28-11-2015.
  */
-class OraDbDoubleType extends DataTypeDatabaseAbs {
+class OraDbLongRawType extends DataTypeDatabaseAbs {
 
-    static Integer TYPE_CODE = Types.DOUBLE;
+    static Integer TYPE_CODE = -4;
 
     @Override
     public int getTypeCode() {
@@ -18,17 +16,23 @@ class OraDbDoubleType extends DataTypeDatabaseAbs {
 
     @Override
     public String getTypeName() {
-        return "NUMBER";
+        return "LONG RAW";
     }
 
     @Override
     public Class<?> getJavaDataType() {
-        return Double.class;
+        return oracle.sql.RAW.class;
+    }
+
+    @Override
+    public String getCreateStatement(int precision, int scale) {
+
+        return "LONG RAW";
     }
 
     @Override
     public Class<?> getVendorClass() {
-        return Double.class;
+        return byte[].class;
     }
 
 }

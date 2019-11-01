@@ -21,12 +21,12 @@
         <module>db-gen</module>
         <module>log</module>
         <module>db-excel</module>
+        <module>type</module>
         <module>crypto</module>
         <module>db-sqlserver</module>
         <module>command</module>
         <module>doctest</module>
         <module>fs</module>
-        <module>type</module>
         <module>os</module>
         <module>regexp</module>
         <module>website</module>
@@ -35,6 +35,7 @@
         <module>sftp</module>
         <module>db-fs</module>
         <module>db-json</module>
+        <module>db-oracle</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -50,8 +51,6 @@
         <jre.version.3digit>1.8.144</jre.version.3digit>
         <!-- jre version must be 3 digits (required by the exe wrapper launch4j -->
         <jre.version>1.8</jre.version>
-
-
         <!-- What means main ? it will add it as project.parent.basedir-->
         <main.basedir>${project.basedir}</main.basedir>
     </properties>
@@ -121,167 +120,78 @@
             <version>1.17.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- To be able to unpack them in the assembly -->
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>jre</artifactId>
-            <version>${jre.version.3digit}</version>
-            <type>zip</type>
-            <classifier>windows-x64</classifier>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- To be able to unpack them in the assembly -->
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>jre</artifactId>
-            <version>${jre.version.3digit}</version>
-            <type>zip</type>
-            <classifier>linux-x64</classifier>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>23.0</version>
-        </dependency>
+
     </dependencies>
 
     <!-- In Maven 3.5, the dependency version must come here
          then you can specify them in the child project without version
+         Actually most of the dependency are wrapped in a module and are not
+         scatter everywhere
     -->
     <dependencyManagement>
         <dependencies>
-            <!--Strings Manipulation -->
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.1</version>
-            </dependency>
-            <!-- Collection -->
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-collections4</artifactId>
-                <version>4.0</version>
-            </dependency>
-
-            <!-- ??? -->
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>1.6</version>
-            </dependency>
-            <!-- ??? -->
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>2.6</version>
-            </dependency>
-            <!-- Obiee Obis Driver -->
-            <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>bijdbc</artifactId>
-                <version>1</version>
-            </dependency>
-            <!-- MySQL Jbdc Driver -->
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>5.1.6</version>
-            </dependency>
-            <!-- Timesten -->
-            <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>ttjdbc</artifactId>
-                <version>6</version>
-            </dependency>
-            <!-- Oracle Db -->
-            <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>ojdbc</artifactId>
-                <version>6</version>
-            </dependency>
-            <!-- Microsoft Sql Server -->
-            <dependency>
-                <groupId>com.microsoft</groupId>
-                <artifactId>sqljdbc</artifactId>
-                <version>4.2</version>
-            </dependency>
-            <!-- Sap Hana -->
-            <dependency>
-                <groupId>com.sap</groupId>
-                <artifactId>ngdbc</artifactId>
-                <version>1</version>
-            </dependency>
-            <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-common -->
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-analyzers-common</artifactId>
-                <version>6.2.1</version>
-            </dependency>
-            <!-- xml parser -->
-            <dependency>
-                <groupId>com.thoughtworks.xstream</groupId>
-                <artifactId>xstream</artifactId>
-                <version>1.4.7</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-type</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>net.bytle</groupId>
-                <artifactId>bytle-sftp</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-            <!-- Excel -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi</artifactId>
-                <version>3.13</version>
+                <artifactId>bytle-db-gen</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>3.13</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-sqlite</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- Graph -->
             <dependency>
-                <groupId>org.jgrapht</groupId>
-                <artifactId>jgrapht-core</artifactId>
-                <version>1.1.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-fs</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- Obiee Password Modification utility-->
             <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>BIServerT2PProvisioner</artifactId>
-                <version>1.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-regexp</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- Drill from https://drill.apache.org/docs/using-the-jdbc-driver/-->
             <dependency>
-                <groupId>org.apache.drill.exec</groupId>
-                <artifactId>drill-jdbc</artifactId>
-                <version>1.10.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-os</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- Calcite Core -->
             <dependency>
-                <groupId>org.apache.calcite</groupId>
-                <artifactId>calcite-core</artifactId>
-                <version>1.12.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-log</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- Calcite Csv -->
             <dependency>
-                <groupId>org.apache.calcite</groupId>
-                <artifactId>calcite-example-csv</artifactId>
-                <version>1.12.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-crypto</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- The Weblogic client for JMX -->
             <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>wljmxclient</artifactId>
-                <version>10.3.6.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
-            <!-- The second Weblogic client (needed for JMX call) -->
             <dependency>
-                <groupId>com.oracle</groupId>
-                <artifactId>wlclient</artifactId>
-                <version>10.3.6.0</version>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-command</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
             </dependency>
+
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-jdbc</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-fs</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -299,7 +209,7 @@
         <repository>
             <id>bytle-m2-repo-http</id>
             <name>Bytle Remote</name>
-            <url>http://bytle.net/m2-repo</url>
+            <url>https://bytle.net/m2-repo</url>
         </repository>
     </repositories>
 
@@ -317,6 +227,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -329,6 +240,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.1.1</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -338,25 +250,9 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <!--<plugin>-->
-                    <!--<groupId>org.apache.maven.plugins</groupId>-->
-                    <!--<artifactId>maven-gpg-plugin</artifactId>-->
-                    <!--<version>1.6</version>-->
-                    <!--<executions>-->
-                    <!--<execution>-->
-                    <!--<id>sign-artifacts</id>-->
-                    <!--<phase>verify</phase>-->
-                    <!--<goals>-->
-                    <!--<goal>sign</goal>-->
-                    <!--</goals>-->
-                    <!--</execution>-->
-                    <!--</executions>-->
-                    <!--</plugin>-->
                 </plugins>
             </build>
         </profile>
-
-
 
 
         <profile>
@@ -390,45 +286,6 @@
                                             </includes>
                                         </resource>
                                     </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-
-        <profile>
-            <!-- Will create a Linux Assembly -->
-            <id>assembly-linux</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>net.bytle</groupId>
-                                <artifactId>bytle-assembly</artifactId>
-                                <version>1.0.0</version>
-                            </dependency>
-                        </dependencies>
-                        <executions>
-                            <execution>
-                                <id>create-distribution</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <!-- https://maven.apache.org/plugins/maven-assembly-plugin/examples/sharing-descriptors.html -->
-                                <configuration>
-                                    <descriptorRefs>
-                                        <descriptorRef>linux-x64</descriptorRef>
-                                    </descriptorRefs>
                                 </configuration>
                             </execution>
                         </executions>

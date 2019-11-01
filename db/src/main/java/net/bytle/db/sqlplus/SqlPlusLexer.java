@@ -1,6 +1,6 @@
 package net.bytle.db.sqlplus;
 
-import org.apache.commons.lang3.StringUtils;
+import net.bytle.type.Strings;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -272,7 +272,7 @@ final public class SqlPlusLexer implements AutoCloseable {
                 String lastCharacter = trimLine.substring(trimLine.length() - 1, trimLine.length());
                 if (lastCharacter.equals(";")) {
                     // Add the content and suppress the semicolon
-                    token.content.append(line.substring(0, StringUtils.stripEnd(line, " ").length() - 1));
+                    token.content.append(line.substring(0, Strings.rtrim(line).length() - 1));
                     return token;
                     // Otherwise, add the content and continue
                 } else {
