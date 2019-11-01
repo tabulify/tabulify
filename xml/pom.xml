@@ -20,6 +20,10 @@
             <artifactId>xstream</artifactId>
             <version>1.4.7</version>
         </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db</artifactId>
+        </dependency>
     </dependencies>
 
 

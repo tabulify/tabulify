@@ -80,4 +80,13 @@ public abstract class TableSystem implements AutoCloseable {
     public int hashCode() {
         return Objects.hash(getDatabase());
     }
+
+    /**
+     *
+     * @return the current data path
+     */
+    public DataPath getCurrentPath(){
+        return getDataPath(".");
+    }
+
 }

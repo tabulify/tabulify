@@ -1,11 +1,11 @@
 package net.bytle.xml;
 
-import net.bytle.db.csv.CsvTable;
-import net.bytle.db.csv.CsvSelectStream;
+
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,8 +40,8 @@ public class Xmls {
             // CSV
             LOGGER.info("Batch check mode");
 
-            CsvTable csvTable = CsvTable.of(csvPath);
-            SelectStream selectStream = CsvSelectStream.of(csvTable);
+            DataPath csvTable = DataPaths.of(csvPath);
+            SelectStream selectStream = Tabulars.getSelectStream(csvTable);
             while (selectStream.next()) {
                 String csvXpath = selectStream.getString(0);
                 String csvValue = selectStream.getString(1);
@@ -101,23 +101,18 @@ public class Xmls {
         } else {
             // CSV
             printWriter.println("Batch check mode");
-            try {
-                Reader in = new FileReader(csvPath.toString());
-                Iterable<CSVRecord> records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in);
-                for (CSVRecord record : records) {
-                    String csvXpath = record.get(0);
-                    String csvValue = record.get(1);
+            DataPath csvDataPath = DataPaths.of(csvPath);
+            try (
+                    SelectStream csvStream = Tabulars.getSelectStream(csvDataPath);
+            ) {
+                while (csvStream.next()) {
+                    String csvXpath = csvStream.getString(0);
+                    String csvValue = csvStream.getString(1);
                     int localLoopError = checkOne(doc, csvXpath, csvValue, printWriter);
                     if (localLoopError != 0) {
                         nbError += localLoopError;
                     }
                 }
-            } catch (FileNotFoundException e) {
-                // reader function
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                // parse function
-                throw new RuntimeException(e);
             }
 
         }
@@ -245,46 +240,33 @@ public class Xmls {
         }
 
         // CSV
-        CSVPrinter csvFilePrinter;
-        String lastXPathPart = xpath.substring(xpath.lastIndexOf("/") + 1, xpath.length());
-        Path csvFileName = Paths.get(lastXPathPart + ".csv");
-        try {
-            //initialize FileWriter object
-            FileWriter fileWriter = new FileWriter(csvFileName.toString());
-            //Create the CSVFormat object with "\n" as a record delimiter
-            CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator(System.lineSeparator());
-            //initialize CSVPrinter object
-            csvFilePrinter = new CSVPrinter(fileWriter, csvFileFormat);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
-        try {
+        String lastXPathPart = xpath.substring(xpath.lastIndexOf("/") + 1);
+        Path csvFileName = Paths.get(lastXPathPart + ".csv");
+        DataPath dataPath = DataPaths.of(csvFileName);
+        try (
+                InsertStream insertStream = Tabulars.getInsertStream(dataPath)
+        ) {
 
             // Create CSV file header
             List csvRow = new ArrayList();
             for (String header : headers) {
                 csvRow.add(header);
             }
-            csvFilePrinter.printRecord(csvRow);
+            insertStream.insert(csvRow);
 
             for (Map<String, String> record : records) {
                 csvRow = new ArrayList();
                 for (String header : headers) {
                     csvRow.add(record.get(header));
                 }
-                csvFilePrinter.printRecord(csvRow);
+                insertStream.insert(csvRow);
             }
-
-            // Close the CSV file
-            csvFilePrinter.flush();
-            csvFilePrinter.close();
 
             // Total Rows downloaded
             System.out.println(records.size() + " records where added to the file " + csvFileName.toAbsolutePath());
 
-        } catch (IOException e) { // For all csv.printRecordMethod
-            throw new RuntimeException(e);
+
         }
 
 
@@ -293,13 +275,12 @@ public class Xmls {
     /**
      * From an Xpath location, this function will extract the Xml content
      * and print it to stdout
-     *
+     * <p>
      * IF the node is unique, it will be used as root, otherwise a root node will be added
      * Actually, the content is printed to the console.out
      *
      * @param xpath
      * @param inputFilePath
-     *
      */
     public static void xmlExtract(Path inputFilePath, String xpath) {
         InputStream inputStream = null;

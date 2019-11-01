@@ -28,7 +28,7 @@ public class XmlStructure {
 
     private HierarchicalStreamReader streamReader;
 
-    private XmlStructure(Reader reader)  {
+    XmlStructure(Reader reader)  {
 
         StaxDriver staxDriver = new StaxDriver();
         streamReader = staxDriver.createReader(reader);

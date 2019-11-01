@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * This is a class with static utility to get data path
+ * This is a class with static utility to construct data path
  * If you want any other operations on a data path, go to the {@link Tabulars} class
  */
 public class DataPaths {
@@ -50,12 +50,12 @@ public class DataPaths {
 
     /**
      *
-     * @param pathParts - The part of a path in a list format
+     * @param names - The part of a path in a list format
      * @return a data path created with the default tabular system (ie memory)
      */
-    public static DataPath of(String... pathParts) {
+    public static DataPath of(String... names) {
 
-        return TableSystems.getDefault().getDataPath(pathParts);
+        return TableSystems.getDefault().getDataPath(names);
 
     }
 
@@ -63,9 +63,10 @@ public class DataPaths {
     /**
      * @param dataPath
      * @param names
-     * @return
+     * @return a child data path
+     * Equivalent to the resolve function {@link Path#resolve(String)}
      */
-    public static DataPath of(DataPath dataPath, String... names) {
+    public static DataPath childOf(DataPath dataPath, String... names) {
         List<String> pathSegments = new ArrayList<>();
         pathSegments.addAll(dataPath.getPathSegments());
         pathSegments.addAll(Arrays.asList(names));
@@ -73,19 +74,34 @@ public class DataPaths {
     }
 
 
-    public static DataPath of(TableSystem dataSystem, List<String> pathSegments) {
-        return dataSystem.getDataPath(pathSegments.toArray(new String[0]));
-    }
 
-
-    public static DataPath of(TableSystem tableSystem, String... names) {
-        return tableSystem.getDataPath(names);
-    }
-
+    /**
+     *
+     * @param path
+     * @return a file data path
+     * The file dataSystem is so common, that we wrote a helper function
+     */
     public static DataPath of(Path path) {
+
         DataUri dataUri = DataUri.of(path.toAbsolutePath().toString()+DataUri.AT_STRING+DatabasesStore.LOCAL_FILE_DATABASE);
         return of(dataUri);
 
+    }
+
+    /**
+     *
+     * @param dataPath - a directory data path
+     * @param name
+     * @return a sibling path
+     *
+     * Example with a data path equivalent to /foo/bar and foo as name, we get a DataPath of /foo/foo
+     * Equivalent to the {@link  Path#resolveSibling(String)}
+     */
+    public static DataPath siblingOf(DataPath dataPath, String name){
+        List<String> pathSegments = new ArrayList<>();
+        pathSegments.addAll(dataPath.getPathSegments().subList(0,dataPath.getPathSegments().size()-2));
+        pathSegments.add(name);
+        return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
 }

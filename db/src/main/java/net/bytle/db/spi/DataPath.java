@@ -7,14 +7,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- *
  * An object that may be used to locate a data container (such as a file or a table) in a data system (file system, relational database).
  * It will typically represent a system dependent data path.
- *
  */
 public abstract class DataPath implements Comparable<DataPath> {
-
-
 
 
     private TableDef dataDef;
@@ -27,12 +23,12 @@ public abstract class DataPath implements Comparable<DataPath> {
 
     public abstract List<String> getPathSegments();
 
-    private String getId(){
+    private String getId() {
         final String path = getPath();
-        assert path !=null: "Path cannot be null";
+        assert path != null : "Path cannot be null";
         final Database database = getDataSystem().getDatabase();
         final String databaseName = database.getDatabaseName();
-        return path +"@"+ databaseName;
+        return path + "@" + databaseName;
     }
 
     protected abstract String getPath();
@@ -48,7 +44,7 @@ public abstract class DataPath implements Comparable<DataPath> {
 
 
     public TableDef getDataDef() {
-        if (this.dataDef == null){
+        if (this.dataDef == null) {
             this.dataDef = TableDef.of(this);
         }
         return dataDef;
@@ -66,4 +62,7 @@ public abstract class DataPath implements Comparable<DataPath> {
     public int hashCode() {
         return Objects.hash(getId());
     }
+
+
+
 }

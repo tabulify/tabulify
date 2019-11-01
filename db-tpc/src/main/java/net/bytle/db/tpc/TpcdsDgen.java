@@ -4,16 +4,12 @@ import com.teradata.tpcds.Options;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
 import com.teradata.tpcds.TableGenerator;
-import net.bytle.db.database.Database;
-import net.bytle.db.engine.Dag;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
-import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.cli.Log;
+import net.bytle.db.engine.Dag;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.stream.InsertStreamListener;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +20,7 @@ public class TpcdsDgen {
     Options options = new Options();
     // Every 5 * 10 000 = 50 000 rows
     private Integer feedbackFrequency = 5;
-    private SchemaDef schemaDef;
+    private TableSystem tableSystem;
 
     private TpcdsDgen() {
 
@@ -40,17 +36,6 @@ public class TpcdsDgen {
     }
 
 
-    public TpcdsDgen setDirectory(Path path) {
-        this.options.directory = path.normalize().toAbsolutePath().toString();
-        if (!Files.exists(path)) {
-            try {
-                Files.createDirectories(path);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return this;
-    }
 
     public TpcdsDgen setChunkNumber(Integer n) {
         this.options.parallelism = n;
@@ -62,8 +47,8 @@ public class TpcdsDgen {
         return this;
     }
 
-    public TpcdsDgen setDatabase(Database database) {
-        this.schemaDef = database.getCurrentSchema();
+    public TpcdsDgen setTableSystem(TableSystem tableSystem) {
+        this.tableSystem = tableSystem;
         return this;
     }
 
@@ -85,32 +70,32 @@ public class TpcdsDgen {
      * @param table
      * @return
      */
-    public List<InsertStreamListener> load(TableDef table) {
-        ArrayList<TableDef> tables = new ArrayList<TableDef>();
+    public List<InsertStreamListener> load(DataPath table) {
+        List<DataPath> tables = new ArrayList<>();
         tables.add(table);
         return load(tables);
     }
 
 
-    public List<InsertStreamListener> load(List<TableDef> tables) {
+    public List<InsertStreamListener> load(List<DataPath> dataPaths) {
 
         Session session = options.toSession();
 
-        if (tables.size() == 1) {
+        if (dataPaths.size() == 1) {
             // session.generateOnlyOneTable()
-            this.options.table = tables.get(0).getName();
-            LOGGER.info("Loading only one Tpcds table " + tables.get(0).getName());
+            this.options.table = dataPaths.get(0).getName();
+            LOGGER.info("Loading only one Tpcds table " + dataPaths.get(0).getName());
         } else {
-            LOGGER.info("Loading " + tables.size() + " Tpcds tables");
+            LOGGER.info("Loading " + dataPaths.size() + " Tpcds tables");
         }
 
 
         // Building the table to load
-        tables = Dag.get(tables).getCreateOrderedTables();
+        dataPaths = Dag.get(dataPaths).getCreateOrderedTables();
         List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
-        for (TableDef tableDef : tables) {
+        for (DataPath dataPath : dataPaths) {
 
-            LOGGER.info("Loading the table " + tableDef.getFullyQualifiedName());
+            LOGGER.info("Loading the table " + dataPath.toString());
             List<Thread> threads = new ArrayList<>();
 
             for (int i = 1; i <= session.getParallelism(); i++) {
@@ -118,8 +103,8 @@ public class TpcdsDgen {
                 int chunkNumber = i;
 
                 Table table;
-                if (!tableDef.getName().startsWith("s_")) {
-                    table = Table.getTable(tableDef.getName());
+                if (!dataPath.getName().startsWith("s_")) {
+                    table = Table.getTable(dataPath.getName());
                 } else {
                     LOGGER.severe("The staging table are not yet supported");
                     continue;
@@ -132,8 +117,8 @@ public class TpcdsDgen {
 
 
                 Thread thread;
-                if (schemaDef == null) {
-                    LOGGER.info("Generate the chunk " + chunkNumber + " for the table (" + tableDef.getName() + ") in a file");
+                if (tableSystem == null) {
+                    LOGGER.info("Generate the chunk " + chunkNumber + " for the table (" + dataPath.getName() + ") in a file");
                     thread = new Thread(() -> {
 
                         TableGenerator tableGenerator = new TableGenerator(session.withChunkNumber(chunkNumber));
@@ -141,10 +126,10 @@ public class TpcdsDgen {
 
                     });
                 } else {
-                    LOGGER.fine("Loading the table (" + tableDef.getName() + ") with the " + chunkNumber + " thread");
+                    LOGGER.fine("Loading the table (" + dataPath.getName() + ") with the " + chunkNumber + " thread");
                     //TODO: if there is an exception in the thread, it is not caught
                     thread = new Thread(() -> {
-                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), schemaDef)
+                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), tableSystem)
                                     .setRowFeedback(feedbackFrequency)
                                     .generateTable(table);
                         if (insertStreamListener != null) {
@@ -152,7 +137,7 @@ public class TpcdsDgen {
                         }
                     });
                 }
-                final String threadId = "Table " + tableDef.getName() + ", chunk " + chunkNumber;
+                final String threadId = "Table " + dataPath.getName() + ", chunk " + chunkNumber;
                 thread.setName(threadId);
                 threads.add(thread);
                 thread.start();
@@ -186,8 +171,5 @@ public class TpcdsDgen {
     }
 
 
-    public TpcdsDgen setSchema(SchemaDef schemaDef) {
-        this.schemaDef = schemaDef;
-        return this;
-    }
+
 }

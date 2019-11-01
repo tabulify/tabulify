@@ -2,7 +2,8 @@
 
 ## Gold rule
 
-  * No Cache (in memory) - Wel Persistence
+  * No Global Cache (in memory) - Wel Persistence
+  * Cache can be a local ephemeral cache in a function (example a function that build in one call several tables for instance)
   * No default value on mandatory options or argument - ie target database should be seen in the Cli Command
   * Every object should be created with a name
   * Explicit (no implicit)

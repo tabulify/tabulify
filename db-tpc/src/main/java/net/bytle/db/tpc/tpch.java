@@ -1,6 +1,6 @@
 package net.bytle.db.tpc;
 
-import com.google.common.base.Preconditions;
+
 import io.airlift.tpch.Customer;
 import io.airlift.tpch.CustomerGenerator;
 import io.airlift.tpch.GenerateUtils;
@@ -33,8 +33,8 @@ public class tpch {
 
 
         long startIndex = GenerateUtils.calculateStartIndex(scaleBase, scaleFactor, part, partCount);
-        System.out.printf("Row Count: %s\n",rowCount);
-        System.out.printf("Start Index: %s\n",startIndex);
+        System.out.printf("Row Count: %s\n", rowCount);
+        System.out.printf("Start Index: %s\n", startIndex);
     }
 
 
@@ -42,18 +42,18 @@ public class tpch {
         int scaleFactor = 1; // 1GB
         int part = 1, partCount = 1;
 
-        Preconditions.checkArgument(scaleFactor > 0.0D, "scaleFactor must be greater than 0");
-        Preconditions.checkArgument(part >= 1, "part must be at least 1");
-        Preconditions.checkArgument(part <= partCount, "part must be less than or equal to part count");
+        assert scaleFactor > 0.0D : "scaleFactor must be greater than 0";
+        assert part >= 1 : "part must be at least 1";
+        assert part <= partCount : "part must be less than or equal to part count";
 
 
-        Path tempFile = Files.createTempFile("bytle","_tpch.txt");
+        Path tempFile = Files.createTempFile("bytle", "_tpch.txt");
         Writer writer = new FileWriter(tempFile.toFile());
         for (Customer entity : new CustomerGenerator(scaleFactor, part, partCount)) {
             writer.write(entity.toLine());
             writer.write('\n');
         }
-        System.out.println("Done. File generated at "+tempFile.toAbsolutePath().toString());
+        System.out.println("Done. File generated at " + tempFile.toAbsolutePath().toString());
     }
 
     /**
@@ -61,7 +61,7 @@ public class tpch {
      */
     private static void printSchema() {
         TpchTable.getTables().forEach(table -> {
-            System.out.printf("\nTable %s\n",table.getTableName().toUpperCase());
+            System.out.printf("\nTable %s\n", table.getTableName().toUpperCase());
             System.out.println("Name, Simplified Name, Type, Precision, Scale".toUpperCase());
             table.getColumns().forEach(column -> {
                 System.out.printf("%s, %s, %s, %s, %s\n",

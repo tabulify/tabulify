@@ -3,8 +3,14 @@
 
 ## About
 
-Mvn command frequently used (cheetsheet)
+Mvn command frequently used (cheat sheet)
 
+## Install
+
+Install without test
+```bash
+mvn clean install  -DskipTests
+```
 
 ## Resume
 Resume after a test fail - `rf` stands from `resume from`

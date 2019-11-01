@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-tpc</artifactId>
-    <name>Tpc</name>
+    <name>Db Tpc</name>
     <description>Tpc</description>
 
     <dependencies>

@@ -1,11 +1,10 @@
 package net.bytle.db.tpc;
 
-import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.SchemaSample;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystems;
 import net.bytle.db.spi.Tabulars;
 
 import java.sql.Types;
@@ -144,24 +143,26 @@ public class TpcdsModel implements SchemaSample {
             STORE_SALES
     );
 
-    private final SchemaDef schema;
+    private final TableSystem tableSystem;
 
     // A map containing all TPCDS tables
-    private Map<String, TableDef> tables = new HashMap<>();
+    private Map<String, DataPath> tables = new HashMap<String, DataPath>();
 
     /**
-     * Use {@link #get(Database)} functions
+     * Use {@link #get(TableSystem)} functions
      * to of a Tpcds object
+     *
+     * @param schemaDef
      */
-    private TpcdsModel(SchemaDef schemaDef) {
+    private TpcdsModel(TableSystem schemaDef) {
 
 
-        this.schema = schemaDef;
+        this.tableSystem = schemaDef;
 
         // case TPCDS_SCHEMA_DWH:
-        buildDataWarehouseTables(schema);
+        buildDataWarehouseTables(tableSystem);
         //  TPCDS_SCHEMA_STG:
-        buildStagingTables(schema);
+        buildStagingTables(tableSystem);
 
     }
 
@@ -172,13 +173,13 @@ public class TpcdsModel implements SchemaSample {
      */
     public static TpcdsModel get() {
 
-        return new TpcdsModel(Databases.of().getCurrentSchema());
+        return new TpcdsModel(TableSystems.getDefault());
 
     }
 
 
-    public static TpcdsModel get(Database database) {
-        return new TpcdsModel(database.getCurrentSchema());
+    public static TpcdsModel get(TableSystem tableSystem) {
+        return new TpcdsModel(tableSystem);
     }
 
 
@@ -188,21 +189,22 @@ public class TpcdsModel implements SchemaSample {
      * <p>
      * This is equivalent to the file (tpcds.sql)
      *
-     * @param schema - The schema where to build the datawarehous table
+     * @param tableSystem - The schema where to build the datawarehous table
      */
-    void buildDataWarehouseTables(SchemaDef schema) {
+    void buildDataWarehouseTables(TableSystem tableSystem) {
 
 
-        final TableDef dbGenTable = Tables.getTable(DBGEN_VERSION)
+        final DataPath dbGenTable = tableSystem.getDataPath(DBGEN_VERSION);
+        dbGenTable.getDataDef()
                 .addColumn("dv_version", Types.VARCHAR, 16)
                 .addColumn("dv_create_date", Types.DATE)
                 .addColumn("dv_create_time", Types.TIME)
-                .addColumn("dv_cmdline_args", Types.VARCHAR, 200)
-                .setSchema(schema);
+                .addColumn("dv_cmdline_args", Types.VARCHAR, 200);
         tables.put(dbGenTable.getName(), dbGenTable);
 
 
-        final TableDef customerAddress = Tables.getTable(CUSTOMER_ADDRESS)
+        final DataPath customerAddress = tableSystem.getDataPath(CUSTOMER_ADDRESS);
+        customerAddress.getDataDef()
                 .addColumn("ca_address_sk", Types.INTEGER, false)
                 .addColumn("ca_address_id", Types.CHAR, 16, false)
                 .addColumn("ca_street_number", Types.CHAR, 10)
@@ -216,12 +218,12 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("ca_country", Types.VARCHAR, 20)
                 .addColumn("ca_gmt_offset", Types.DECIMAL, 5, 2)
                 .addColumn("ca_location_type", Types.CHAR, 20)
-                .setPrimaryKey("ca_address_sk")
-                .setSchema(schema);
+                .setPrimaryKey("ca_address_sk");
         tables.put(customerAddress.getName(), customerAddress);
 
 
-        final TableDef customerDemographics = Tables.getTable(CUSTOMER_DEMOGRAPHICS)
+        final DataPath customerDemographics = tableSystem.getDataPath(CUSTOMER_DEMOGRAPHICS);
+        customerDemographics.getDataDef()
                 .addColumn("cd_demo_sk", Types.INTEGER, false)
                 .addColumn("cd_gender", Types.CHAR, 1)
                 .addColumn("cd_marital_status", Types.CHAR, 1)
@@ -231,12 +233,12 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cd_dep_count", Types.INTEGER)
                 .addColumn("cd_dep_employed_count", Types.INTEGER)
                 .addColumn("cd_dep_college_count", Types.INTEGER)
-                .setPrimaryKey("cd_demo_sk")
-                .setSchema(schema);
+                .setPrimaryKey("cd_demo_sk");
         tables.put(customerDemographics.getName(), customerDemographics);
 
 
-        final TableDef dateDim = Tables.get(DATE_DIM)
+        final DataPath dateDim = tableSystem.getDataPath(DATE_DIM);
+        dateDim.getDataDef()
                 .addColumn("d_date_sk", Types.INTEGER, false)
                 .addColumn("d_date_id", Types.CHAR, 16, false)
                 .addColumn("d_date", Types.DATE)
@@ -265,11 +267,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("d_current_month", Types.CHAR, 1)
                 .addColumn("d_current_quarter", Types.CHAR, 1)
                 .addColumn("d_current_year", Types.CHAR, 1)
-                .setPrimaryKey("d_date_sk")
-                .setSchema(schema);
+                .setPrimaryKey("d_date_sk");
         tables.put(dateDim.getName(), dateDim);
 
-        final TableDef warehouse = Tables.get(WAREHOUSE)
+        final DataPath warehouse = tableSystem.getDataPath(WAREHOUSE);
+        warehouse.getDataDef()
                 .addColumn("w_warehouse_sk", Types.INTEGER, false)
                 .addColumn("w_warehouse_id", Types.CHAR, 16, false)
                 .addColumn("w_warehouse_name", Types.VARCHAR, 20)
@@ -284,23 +286,23 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("w_zip", Types.CHAR, 10)
                 .addColumn("w_country", Types.VARCHAR, 20)
                 .addColumn("w_gmt_offset", Types.DECIMAL, 5, 2)
-                .setPrimaryKey("w_warehouse_sk")
-                .setSchema(schema);
+                .setPrimaryKey("w_warehouse_sk");
         tables.put(warehouse.getName(), warehouse);
 
 
-        final TableDef shipMode = Tables.get(SHIP_MODE)
+        final DataPath shipMode = tableSystem.getDataPath(SHIP_MODE);
+        shipMode.getDataDef()
                 .addColumn("sm_ship_mode_sk", Types.INTEGER, false)
                 .addColumn("sm_ship_mode_id", Types.CHAR, 16, false)
                 .addColumn("sm_type", Types.CHAR, 30)
                 .addColumn("sm_code", Types.CHAR, 10)
                 .addColumn("sm_carrier", Types.CHAR, 20)
                 .addColumn("sm_contract", Types.CHAR, 20)
-                .setPrimaryKey("sm_ship_mode_sk")
-                .setSchema(schema);
+                .setPrimaryKey("sm_ship_mode_sk");
         tables.put(shipMode.getName(), shipMode);
 
-        final TableDef timeDim = Tables.get(TIME_DIM)
+        final DataPath timeDim = tableSystem.getDataPath(TIME_DIM);
+        timeDim.getDataDef()
                 .addColumn("t_time_sk", Types.INTEGER, false)
                 .addColumn("t_time_id", Types.CHAR, 16, false)
                 .addColumn("t_time", Types.INTEGER)
@@ -311,27 +313,27 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("t_shift", Types.CHAR, 20)
                 .addColumn("t_sub_shift", Types.CHAR, 20)
                 .addColumn("t_meal_time", Types.CHAR, 20)
-                .setPrimaryKey("t_time_sk")
-                .setSchema(schema);
+                .setPrimaryKey("t_time_sk");
         tables.put(timeDim.getName(), timeDim);
 
-        final TableDef reason = Tables.get(REASON)
+        final DataPath reason = tableSystem.getDataPath(REASON);
+        reason.getDataDef()
                 .addColumn("r_reason_sk", Types.INTEGER, false)
                 .addColumn("r_reason_id", Types.CHAR, 16, false)
                 .addColumn("r_reason_desc", Types.CHAR, 100)
-                .setPrimaryKey("r_reason_sk")
-                .setSchema(schema);
+                .setPrimaryKey("r_reason_sk");
         tables.put(reason.getName(), reason);
 
-        final TableDef incomeBand = Tables.get(INCOME_BAND)
+        final DataPath incomeBand = tableSystem.getDataPath(INCOME_BAND);
+        incomeBand.getDataDef()
                 .addColumn("ib_income_band_sk", Types.INTEGER, false)
                 .addColumn("ib_lower_bound", Types.INTEGER)
                 .addColumn("ib_upper_bound", Types.INTEGER)
-                .setPrimaryKey("ib_income_band_sk")
-                .setSchema(schema);
+                .setPrimaryKey("ib_income_band_sk");
         tables.put(incomeBand.getName(), incomeBand);
 
-        final TableDef item = Tables.get(ITEM)
+        final DataPath item = tableSystem.getDataPath(ITEM);
+        item.getDataDef()
                 .addColumn("i_item_sk", Types.INTEGER, false)
                 .addColumn("i_item_id", Types.CHAR, 16, false)
                 .addColumn("i_rec_start_date", Types.DATE)
@@ -354,11 +356,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("i_container", Types.CHAR, 10)
                 .addColumn("i_manager_id", Types.INTEGER)
                 .addColumn("i_product_name", Types.CHAR, 50)
-                .setPrimaryKey("i_item_sk")
-                .setSchema(schema);
+                .setPrimaryKey("i_item_sk");
         tables.put(item.getName(), item);
 
-        final TableDef store = Tables.get(STORE)
+        final DataPath store = tableSystem.getDataPath(STORE);
+        item.getDataDef()
                 .addColumn("s_store_sk", Types.INTEGER, false)
                 .addColumn("s_store_id", Types.CHAR, 16, false)
                 .addColumn("s_rec_start_date", Types.DATE)
@@ -389,11 +391,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("s_gmt_offset", Types.DECIMAL, 5, 2)
                 .addColumn("s_tax_precentage", Types.DECIMAL, 5, 2)
                 .setPrimaryKey("s_store_sk")
-                .addForeignKey(dateDim, "s_closed_date_sk")
-                .setSchema(schema);
+                .addForeignKey(dateDim, "s_closed_date_sk");
         tables.put(store.getName(), store);
 
-        final TableDef callCenter = Tables.get(CALL_CENTER)
+        final DataPath callCenter = tableSystem.getDataPath(CALL_CENTER);
+        callCenter.getDataDef()
                 .addColumn("cc_call_center_sk", Types.INTEGER, false)
                 .addColumn("cc_call_center_id", Types.CHAR, 16, false)
                 .addColumn("cc_rec_start_date", Types.DATE)
@@ -427,22 +429,22 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cc_tax_percentage", Types.DECIMAL, 5, 2)
                 .setPrimaryKey("cc_call_center_sk")
                 .addForeignKey(dateDim, "cc_closed_date_sk")
-                .addForeignKey(dateDim, "cc_open_date_sk")
-                .setSchema(schema);
+                .addForeignKey(dateDim, "cc_open_date_sk");
         tables.put(callCenter.getName(), callCenter);
 
-        TableDef householdDemographics = Tables.get(HOUSEHOLD_DEMOGRAPHICS)
+        DataPath householdDemographics = tableSystem.getDataPath(HOUSEHOLD_DEMOGRAPHICS);
+        householdDemographics.getDataDef()
                 .addColumn("hd_demo_sk", Types.INTEGER, false)
                 .addColumn("hd_income_band_sk", Types.INTEGER)
                 .addColumn("hd_buy_potential", Types.CHAR, 15)
                 .addColumn("hd_dep_count", Types.INTEGER)
                 .addColumn("hd_vehicle_count", Types.INTEGER)
                 .setPrimaryKey("hd_demo_sk")
-                .addForeignKey(incomeBand, "hd_income_band_sk")
-                .setSchema(schema);
+                .addForeignKey(incomeBand, "hd_income_band_sk");
         tables.put(householdDemographics.getName(), householdDemographics);
 
-        final TableDef customer = Tables.get(CUSTOMER)
+        final DataPath customer = tableSystem.getDataPath(CUSTOMER);
+        customer.getDataDef()
                 .addColumn("c_customer_sk", Types.INTEGER, false)
                 .addColumn("c_customer_id", Types.CHAR, 16, false)
                 .addColumn("c_current_cdemo_sk", Types.INTEGER)
@@ -467,11 +469,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(customerAddress, "c_current_addr_sk")
                 .addForeignKey(dateDim, "c_first_shipto_date_sk")
                 .addForeignKey(dateDim, "c_first_sales_date_sk")
-                .addForeignKey(dateDim, "c_last_review_date_sk")
-                .setSchema(schema);
+                .addForeignKey(dateDim, "c_last_review_date_sk");
         tables.put(customer.getName(), customer);
 
-        final TableDef webSite = Tables.get(WEB_SITE)
+        final DataPath webSite = tableSystem.getDataPath(WEB_SITE);
+        webSite.getDataDef()
                 .addColumn("web_site_sk", Types.INTEGER, false)
                 .addColumn("web_site_id", Types.CHAR, 16)
                 .addColumn("web_rec_start_date", Types.DATE)
@@ -500,11 +502,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("web_tax_percentage", Types.DECIMAL, 5, 2)
                 .setPrimaryKey("web_site_sk")
                 .addForeignKey(dateDim, "web_open_date_sk")
-                .addForeignKey(dateDim, "web_close_date_sk")
-                .setSchema(schema);
+                .addForeignKey(dateDim, "web_close_date_sk");
         tables.put(webSite.getName(), webSite);
 
-        TableDef promotion = Tables.get(PROMOTION)
+        DataPath promotion = tableSystem.getDataPath(PROMOTION);
+        promotion.getDataDef()
                 .addColumn("p_promo_sk", Types.INTEGER, false)
                 .addColumn("p_promo_id", Types.CHAR, 16, false)
                 .addColumn("p_start_date_sk", Types.INTEGER)
@@ -527,12 +529,12 @@ public class TpcdsModel implements SchemaSample {
                 .setPrimaryKey("p_promo_sk")
                 .addForeignKey(dateDim, "p_start_date_sk")
                 .addForeignKey(dateDim, "p_end_date_sk")
-                .addForeignKey(item, "p_item_sk")
-                .setSchema(schema);
+                .addForeignKey(item, "p_item_sk");
         tables.put(promotion.getName(), promotion);
 
 
-        TableDef storeSales = Tables.get(STORE_SALES)
+        DataPath storeSales = tableSystem.getDataPath(STORE_SALES);
+        storeSales.getDataDef()
                 .addColumn("ss_sold_date_sk", Types.INTEGER)
                 .addColumn("ss_sold_time_sk", Types.INTEGER)
                 .addColumn("ss_item_sk", Types.INTEGER, false)
@@ -565,11 +567,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(householdDemographics, "ss_hdemo_sk")
                 .addForeignKey(customerAddress, "ss_addr_sk")
                 .addForeignKey(store, "ss_store_sk")
-                .addForeignKey(promotion, "ss_promo_sk")
-                .setSchema(schema);
+                .addForeignKey(promotion, "ss_promo_sk");
         tables.put(storeSales.getName(), storeSales);
 
-        tables.put(STORE_RETURNS, Tables.get(STORE_RETURNS)
+        DataPath storeReturns = tableSystem.getDataPath(STORE_RETURNS);
+        storeReturns.getDataDef()
                 .addColumn("sr_returned_date_sk", Types.INTEGER)
                 .addColumn("sr_return_time_sk", Types.INTEGER)
                 .addColumn("sr_item_sk", Types.INTEGER, false)
@@ -600,11 +602,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(householdDemographics, "sr_hdemo_sk")
                 .addForeignKey(customerAddress, "sr_addr_sk")
                 .addForeignKey(store, "sr_store_sk")
-                .addForeignKey(reason, "sr_reason_sk")
-                .setSchema(schema));
+                .addForeignKey(reason, "sr_reason_sk");
+        tables.put(STORE_RETURNS, storeReturns);
 
-
-        final TableDef webPage = Tables.get(WEB_PAGE)
+        final DataPath webPage = tableSystem.getDataPath(WEB_PAGE);
+        webPage.getDataDef()
                 .addColumn("wp_web_page_sk", Types.INTEGER, false)
                 .addColumn("wp_web_page_id", Types.CHAR, 16, false)
                 .addColumn("wp_rec_start_date", Types.DATE)
@@ -622,11 +624,11 @@ public class TpcdsModel implements SchemaSample {
                 .setPrimaryKey("wp_web_page_sk")
                 .addForeignKey(dateDim, "wp_creation_date_sk")
                 .addForeignKey(dateDim, "wp_access_date_sk")
-                .addForeignKey(customer, "wp_customer_sk")
-                .setSchema(schema);
+                .addForeignKey(customer, "wp_customer_sk");
         tables.put(webPage.getName(), webPage);
 
-        final TableDef catalogPage = Tables.get(CATALOG_PAGE)
+        final DataPath catalogPage = tableSystem.getDataPath(CATALOG_PAGE);
+        catalogPage.getDataDef()
                 .addColumn("cp_catalog_page_sk", Types.INTEGER, false)
                 .addColumn("cp_catalog_page_id", Types.CHAR, 16, false)
                 .addColumn("cp_start_date_sk", Types.INTEGER)
@@ -638,11 +640,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cp_type", Types.VARCHAR, 100)
                 .setPrimaryKey("cp_catalog_page_sk")
                 .addForeignKey(dateDim, "cp_start_date_sk")
-                .addForeignKey(dateDim, "cp_end_date_sk")
-                .setSchema(schema);
+                .addForeignKey(dateDim, "cp_end_date_sk");
         tables.put(CATALOG_PAGE, catalogPage);
 
-        tables.put(INVENTORY, Tables.get(INVENTORY)
+        DataPath inventory = tableSystem.getDataPath(INVENTORY);
+        inventory.getDataDef()
                 .addColumn("inv_date_sk", Types.INTEGER, false)
                 .addColumn("inv_item_sk", Types.INTEGER, false)
                 .addColumn("inv_warehouse_sk", Types.INTEGER, false)
@@ -650,10 +652,11 @@ public class TpcdsModel implements SchemaSample {
                 .setPrimaryKey("inv_date_sk", "inv_item_sk", "inv_warehouse_sk")
                 .addForeignKey(dateDim, "inv_date_sk")
                 .addForeignKey(item, "inv_item_sk")
-                .addForeignKey(warehouse, "inv_warehouse_sk")
-                .setSchema(schema));
+                .addForeignKey(warehouse, "inv_warehouse_sk");
+        tables.put(INVENTORY, inventory);
 
-        TableDef catalogSales = Tables.get(CATALOG_SALES)
+        DataPath catalogSales = tableSystem.getDataPath(CATALOG_SALES);
+        catalogSales.getDataDef()
                 .addColumn("cs_sold_date_sk", Types.INTEGER)
                 .addColumn("cs_sold_time_sk", Types.INTEGER)
                 .addColumn("cs_ship_date_sk", Types.INTEGER)
@@ -705,11 +708,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(shipMode, "cs_ship_mode_sk")
                 .addForeignKey(warehouse, "cs_warehouse_sk")
                 .addForeignKey(item, "cs_item_sk")
-                .addForeignKey(promotion, "cs_promo_sk")
-                .setSchema(schema);
+                .addForeignKey(promotion, "cs_promo_sk");
         tables.put(catalogSales.getName(), catalogSales);
 
-        tables.put(CATALOG_RETURNS, Tables.get(CATALOG_RETURNS)
+        DataPath catalogReturns = tableSystem.getDataPath(CATALOG_RETURNS);
+        catalogReturns.getDataDef()
                 .addColumn("cr_returned_date_sk", Types.INTEGER)
                 .addColumn("cr_returned_time_sk", Types.INTEGER)
                 .addColumn("cr_item_sk", Types.INTEGER, false)
@@ -754,10 +757,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(catalogPage, "cr_catalog_page_sk")
                 .addForeignKey(shipMode, "cr_ship_mode_sk")
                 .addForeignKey(warehouse, "cr_warehouse_sk")
-                .addForeignKey(reason, "cr_reason_sk")
-                .setSchema(schema));
+                .addForeignKey(reason, "cr_reason_sk");
+        tables.put(catalogReturns.getName(), catalogReturns);
 
-        TableDef webSales = Tables.get(WEB_SALES)
+        DataPath webSales = tableSystem.getDataPath(WEB_SALES);
+        webSales.getDataDef()
                 .addColumn("ws_sold_date_sk", Types.INTEGER)
                 .addColumn("ws_sold_time_sk", Types.INTEGER)
                 .addColumn("ws_ship_date_sk", Types.INTEGER)
@@ -809,11 +813,11 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(webSite, "ws_web_site_sk")
                 .addForeignKey(shipMode, "ws_ship_mode_sk")
                 .addForeignKey(warehouse, "ws_warehouse_sk")
-                .addForeignKey(promotion, "ws_promo_sk")
-                .setSchema(schema);
+                .addForeignKey(promotion, "ws_promo_sk");
         tables.put(webSales.getName(), webSales);
 
-        tables.put(WEB_RETURNS, Tables.get(WEB_RETURNS)
+        DataPath webReturns = tableSystem.getDataPath(WEB_RETURNS);
+        webReturns.getDataDef()
                 .addColumn("wr_returned_date_sk", Types.INTEGER)
                 .addColumn("wr_returned_time_sk", Types.INTEGER)
                 .addColumn("wr_item_sk", Types.INTEGER, false)
@@ -852,8 +856,7 @@ public class TpcdsModel implements SchemaSample {
                 .addForeignKey(householdDemographics, "wr_returning_hdemo_sk")
                 .addForeignKey(customerAddress, "wr_returning_addr_sk")
                 .addForeignKey(webPage, "wr_web_page_sk")
-                .addForeignKey(reason, "wr_reason_sk")
-                .setSchema(schema));
+                .addForeignKey(reason, "wr_reason_sk");
 
     }
 
@@ -867,9 +870,11 @@ public class TpcdsModel implements SchemaSample {
      *
      * @param schema -  The schema where to build the source table
      */
-    void buildStagingTables(SchemaDef schema) {
+    void buildStagingTables(TableSystem schema) {
 
-        tables.put(S_CATALOG_PAGE, Tables.get(S_CATALOG_PAGE)
+        DataPath sCatalogPage = tableSystem.getDataPath(S_CATALOG_PAGE);
+        addToTpcdsDataPaths(sCatalogPage);
+        sCatalogPage.getDataDef()
                 .addColumn("cpag_catalog_number", Types.INTEGER, false)
                 .addColumn("cpag_catalog_page_number", Types.INTEGER, false)
                 .addColumn("cpag_department", Types.CHAR, 20)
@@ -877,15 +882,18 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cpag_start_date", Types.CHAR, 10)
                 .addColumn("cpag_end_date", Types.CHAR, 10)
                 .addColumn("cpag_description", Types.VARCHAR, 100)
-                .addColumn("cpag_type", Types.VARCHAR, 100)
-                .setSchema(schema));
+                .addColumn("cpag_type", Types.VARCHAR, 100);
 
-        tables.put(S_ZIP_TO_GMT, Tables.get(S_ZIP_TO_GMT)
+
+        DataPath sZipToGmt = tableSystem.getDataPath(S_ZIP_TO_GMT);
+        addToTpcdsDataPaths(sZipToGmt);
+        sZipToGmt.getDataDef()
                 .addColumn("zipg_zip", Types.CHAR, 5, false)
-                .addColumn("zipg_gmt_offset", Types.INTEGER, false)
-                .setSchema(schema));
+                .addColumn("zipg_gmt_offset", Types.INTEGER, false);
 
-        tables.put(S_PURCHASE_LINEITEM, Tables.get(S_PURCHASE_LINEITEM)
+        DataPath sPurchaseLineItem = tableSystem.getDataPath(S_PURCHASE_LINEITEM);
+        addToTpcdsDataPaths(sPurchaseLineItem);
+        sPurchaseLineItem.getDataDef()
                 .addColumn("plin_purchase_id", Types.INTEGER, false)
                 .addColumn("plin_line_number", Types.INTEGER, false)
                 .addColumn("plin_item_id", Types.CHAR, 16)
@@ -893,10 +901,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("plin_quantity", Types.INTEGER)
                 .addColumn("plin_sale_price", Types.NUMERIC, 7, 2)
                 .addColumn("plin_coupon_amt", Types.NUMERIC, 7, 2)
-                .addColumn("plin_comment", Types.VARCHAR, 100)
-                .setSchema(schema));
+                .addColumn("plin_comment", Types.VARCHAR, 100);
 
-        tables.put(S_CUSTOMER, Tables.get(S_CUSTOMER)
+        DataPath sCustomer = tableSystem.getDataPath(S_CUSTOMER);
+        addToTpcdsDataPaths(sCustomer);
+        sCustomer.getDataDef()
                 .addColumn("cust_customer_id", Types.CHAR, 16, false)
                 .addColumn("cust_salutation", Types.CHAR, 10)
                 .addColumn("cust_last_name", Types.CHAR, 20)
@@ -933,11 +942,12 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cust_depend_emp_cnt", Types.SMALLINT)
                 .addColumn("cust_depend_college_cnt", Types.SMALLINT)
                 .addColumn("cust_vehicle_cnt", Types.SMALLINT)
-                .addColumn("cust_annual_income", Types.NUMERIC, 9, 2)
-                .setSchema(schema));
+                .addColumn("cust_annual_income", Types.NUMERIC, 9, 2);
 
 
-        tables.put(S_CUSTOMER_ADDRESS, Tables.get(S_CUSTOMER_ADDRESS)
+        DataPath sCustomerAddress = tableSystem.getDataPath(S_CUSTOMER_ADDRESS);
+        addToTpcdsDataPaths(sCustomerAddress);
+        sCustomerAddress.getDataDef()
                 .addColumn("cadr_address_id", Types.CHAR, 16, false)
                 .addColumn("cadr_street_number", Types.INTEGER)
                 .addColumn("cadr_street_name1", Types.CHAR, 25)
@@ -948,10 +958,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cadr_county", Types.CHAR, 30)
                 .addColumn("cadr_state", Types.CHAR, 2)
                 .addColumn("cadr_zip", Types.CHAR, 10)
-                .addColumn("cadr_country", Types.CHAR, 20)
-                .setSchema(schema));
+                .addColumn("cadr_country", Types.CHAR, 20);
 
-        tables.put(S_PURCHASE, Tables.get(S_PURCHASE)
+        DataPath sPurchase = tableSystem.getDataPath(S_PURCHASE);
+        addToTpcdsDataPaths(sPurchase);
+        sPurchase.getDataDef()
                 .addColumn("purc_purchase_id", Types.INTEGER, false)
                 .addColumn("purc_store_id", Types.CHAR, 16)
                 .addColumn("purc_customer_id", Types.CHAR, 16)
@@ -959,10 +970,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("purc_purchase_time", Types.INTEGER)
                 .addColumn("purc_register_id", Types.INTEGER)
                 .addColumn("purc_clerk_id", Types.INTEGER)
-                .addColumn("purc_comment", Types.CHAR, 100)
-                .setSchema(schema));
+                .addColumn("purc_comment", Types.CHAR, 100);
 
-        tables.put(S_CATALOG_ORDER, Tables.get(S_CATALOG_ORDER)
+        DataPath sCatalogOrder = tableSystem.getDataPath(S_CATALOG_ORDER);
+        addToTpcdsDataPaths(sCatalogOrder);
+        sCatalogOrder.getDataDef()
                 .addColumn("cord_order_id", Types.INTEGER, false)
                 .addColumn("cord_bill_customer_id", Types.CHAR, 16)
                 .addColumn("cord_ship_customer_id", Types.CHAR, 16)
@@ -970,10 +982,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cord_order_time", Types.INTEGER)
                 .addColumn("cord_ship_mode_id", Types.CHAR, 16)
                 .addColumn("cord_call_center_id", Types.CHAR, 16)
-                .addColumn("cord_order_comments", Types.VARCHAR, 100)
-                .setSchema(schema));
+                .addColumn("cord_order_comments", Types.VARCHAR, 100);
 
-        tables.put(S_WEB_ORDER, Tables.get(S_WEB_ORDER)
+        DataPath sWebOrder = tableSystem.getDataPath(S_WEB_ORDER);
+        addToTpcdsDataPaths(sCatalogOrder);
+        sCatalogOrder.getDataDef()
                 .addColumn("word_order_id", Types.INTEGER, false)
                 .addColumn("word_bill_customer_id", Types.CHAR, 16)
                 .addColumn("word_ship_customer_id", Types.CHAR, 16)
@@ -981,10 +994,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("word_order_time", Types.INTEGER)
                 .addColumn("word_ship_mode_id", Types.CHAR, 16)
                 .addColumn("word_web_site_id", Types.CHAR, 16)
-                .addColumn("word_order_comments", Types.CHAR, 100)
-                .setSchema(schema));
+                .addColumn("word_order_comments", Types.CHAR, 100);
 
-        tables.put(S_ITEM, Tables.get(S_ITEM)
+        DataPath sItem = tableSystem.getDataPath(S_ITEM);
+        addToTpcdsDataPaths(sItem);
+        sItem.getDataDef()
                 .addColumn("item_item_id", Types.CHAR, 16, false)
                 .addColumn("item_item_description", Types.CHAR, 200)
                 .addColumn("item_list_price", Types.NUMERIC, 7, 2)
@@ -995,9 +1009,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("item_units", Types.CHAR, 10)
                 .addColumn("item_container", Types.CHAR, 10)
                 .addColumn("item_manager_id", Types.INTEGER)
-                .setSchema(schema));
+        ;
 
-        tables.put(S_CATALOG_ORDER_LINEITEM, Tables.get(S_CATALOG_ORDER_LINEITEM)
+        DataPath sCataLogOrderLineItem = tableSystem.getDataPath(S_CATALOG_ORDER_LINEITEM);
+        addToTpcdsDataPaths(sCatalogOrder);
+        sCataLogOrderLineItem.getDataDef()
                 .addColumn("clin_order_id", Types.INTEGER, false)
                 .addColumn("clin_line_number", Types.INTEGER, false)
                 .addColumn("clin_item_id", Types.CHAR, 16)
@@ -1009,10 +1025,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("clin_ship_date", Types.CHAR, 10)
                 .addColumn("clin_catalog_number", Types.INTEGER)
                 .addColumn("clin_catalog_page_number", Types.INTEGER)
-                .addColumn("clin_ship_cost", Types.NUMERIC, 7, 2)
-                .setSchema(schema));
+                .addColumn("clin_ship_cost", Types.NUMERIC, 7, 2);
 
-        tables.put(S_WEB_ORDER_LINEITEM, Tables.get(S_WEB_ORDER_LINEITEM)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_WEB_ORDER_LINEITEM)
+                .getDataDef()
                 .addColumn("wlin_order_id", Types.INTEGER, false)
                 .addColumn("wlin_line_number", Types.INTEGER, false)
                 .addColumn("wlin_item_id", Types.CHAR, 16)
@@ -1023,10 +1039,11 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wlin_warehouse_id", Types.CHAR, 16)
                 .addColumn("wlin_ship_date", Types.CHAR, 10)
                 .addColumn("wlin_ship_cost", Types.NUMERIC, 7, 2)
-                .addColumn("wlin_web_page_id", Types.CHAR, 16)
-                .setSchema(schema));
+                .addColumn("wlin_web_page_id", Types.CHAR, 16));
 
-        tables.put(S_STORE, Tables.get(S_STORE)
+
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_STORE)
+                .getDataDef()
                 .addColumn("stor_store_id", Types.CHAR, 1, false)
                 .addColumn("stor_closed_date", Types.CHAR, 10)
                 .addColumn("stor_name", Types.CHAR, 50)
@@ -1037,10 +1054,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("stor_market_id", Types.INTEGER)
                 .addColumn("stor_geography_class", Types.CHAR, 100)
                 .addColumn("stor_market_manager", Types.CHAR, 40)
-                .addColumn("stor_tax_percentage", Types.NUMERIC, 5, 2)
-                .setSchema(schema));
+                .addColumn("stor_tax_percentage", Types.NUMERIC, 5, 2));
 
-        tables.put(S_CALL_CENTER, Tables.get(S_CALL_CENTER)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_CALL_CENTER)
+                .getDataDef()
                 .addColumn("call_center_id", Types.CHAR, 16, false)
                 .addColumn("call_open_date", Types.CHAR, 10)
                 .addColumn("call_closed_date", Types.CHAR, 10)
@@ -1050,27 +1067,27 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("call_center_sq_ft", Types.INTEGER)
                 .addColumn("call_center_hours", Types.CHAR, 20)
                 .addColumn("call_center_manager", Types.CHAR, 40)
-                .addColumn("call_center_tax_percentage", Types.NUMERIC, 7, 2)
-                .setSchema(schema));
+                .addColumn("call_center_tax_percentage", Types.NUMERIC, 7, 2));
 
 
-        tables.put(S_WEB_SITE, Tables.get(S_WEB_SITE)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_WEB_SITE)
+                .getDataDef()
                 .addColumn("wsit_web_site_id", Types.CHAR, 16, false)
                 .addColumn("wsit_open_date", Types.CHAR, 10)
                 .addColumn("wsit_closed_date", Types.CHAR, 10)
                 .addColumn("wsit_site_name", Types.CHAR, 50)
                 .addColumn("wsit_site_class", Types.CHAR, 50)
                 .addColumn("wsit_site_manager", Types.CHAR, 40)
-                .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2)
-                .setSchema(schema));
+                .addColumn("wsit_tax_percentage", Types.DECIMAL, 5, 2));
 
-        tables.put(S_WAREHOUSE, Tables.get(S_WAREHOUSE)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_WAREHOUSE)
+                .getDataDef()
                 .addColumn("wrhs_warehouse_id", Types.CHAR, 16, false)
                 .addColumn("wrhs_warehouse_desc", Types.CHAR, 200)
-                .addColumn("wrhs_warehouse_sq_ft", Types.INTEGER)
-                .setSchema(schema));
+                .addColumn("wrhs_warehouse_sq_ft", Types.INTEGER));
 
-        tables.put(S_WEB_PAGE, Tables.get(S_WEB_PAGE)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_WEB_PAGE)
+                .getDataDef()
                 .addColumn("wpag_web_page_id", Types.CHAR, 16, false)
                 .addColumn("wpag_create_date", Types.CHAR, 10)
                 .addColumn("wpag_access_date", Types.CHAR, 10)
@@ -1080,10 +1097,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wpag_char_cnt", Types.INTEGER)
                 .addColumn("wpag_link_cnt", Types.INTEGER)
                 .addColumn("wpag_image_cnt", Types.INTEGER)
-                .addColumn("wpag_max_ad_cnt", Types.INTEGER)
-                .setSchema(schema));
+                .addColumn("wpag_max_ad_cnt", Types.INTEGER));
 
-        tables.put(S_PROMOTION, Tables.get(S_PROMOTION)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_PROMOTION)
+                .getDataDef()
                 .addColumn("prom_promotion_id", Types.CHAR, 16, false)
                 .addColumn("prom_promotion_name", Types.CHAR, 30)
                 .addColumn("prom_start_date", Types.CHAR, 10)
@@ -1101,10 +1118,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("prom_channel_details", Types.CHAR, 100)
                 .addColumn("prom_purpose", Types.CHAR, 15)
                 .addColumn("prom_discount_active", Types.CHAR, 1)
-                .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2)
-                .setSchema(schema));
+                .addColumn("prom_discount_pct", Types.NUMERIC, 5, 2));
 
-        tables.put(S_STORE_RETURNS, Tables.get(S_STORE_RETURNS)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_STORE_RETURNS)
+                .getDataDef()
                 .addColumn("sret_store_id", Types.CHAR, 16)
                 .addColumn("sret_purchase_id", Types.CHAR, 16, false)
                 .addColumn("sret_line_number", Types.INTEGER, false)
@@ -1121,10 +1138,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("sret_refunded_cash", Types.NUMERIC, 7, 2)
                 .addColumn("sret_reversed_charge", Types.NUMERIC, 7, 2)
                 .addColumn("sret_store_credit", Types.NUMERIC, 7, 2)
-                .addColumn("sret_reason_id", Types.CHAR, 16)
-                .setSchema(schema));
+                .addColumn("sret_reason_id", Types.CHAR, 16));
 
-        tables.put(S_CATALOG_RETURNS, Tables.get(S_CATALOG_RETURNS)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_CATALOG_RETURNS)
+                .getDataDef()
                 .addColumn("cret_call_center_id", Types.CHAR, 16)
                 .addColumn("cret_order_id", Types.INTEGER, false)
                 .addColumn("cret_line_number", Types.INTEGER, false)
@@ -1144,10 +1161,10 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("cret_reason_id", Types.CHAR, 16)
                 .addColumn("cret_shipmode_id", Types.CHAR, 16)
                 .addColumn("cret_catalog_page_id", Types.CHAR, 16)
-                .addColumn("cret_warehouse_id", Types.CHAR, 16)
-                .setSchema(schema));
+                .addColumn("cret_warehouse_id", Types.CHAR, 16));
 
-        tables.put(S_WEB_RETURNS, Tables.get(S_WEB_RETURNS)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_WEB_RETURNS)
+                .getDataDef()
                 .addColumn("wret_web_site_id", Types.CHAR, 16)
                 .addColumn("wret_order_id", Types.INTEGER, false)
                 .addColumn("wret_line_number", Types.INTEGER, false)
@@ -1164,23 +1181,30 @@ public class TpcdsModel implements SchemaSample {
                 .addColumn("wret_refunded_cash", Types.NUMERIC, 7, 2)
                 .addColumn("wret_reversed_charge", Types.NUMERIC, 7, 2)
                 .addColumn("wret_account_credit", Types.NUMERIC, 7, 2)
-                .addColumn("wret_reason_id", Types.CHAR, 16)
-                .setSchema(schema));
+                .addColumn("wret_reason_id", Types.CHAR, 16));
 
-        tables.put(S_INVENTORY, Tables.get(S_INVENTORY)
+        addToTpcdsDataPaths(tableSystem.getDataPath(S_INVENTORY)
+                .getDataDef()
                 .addColumn("invn_warehouse_id", Types.CHAR, 16, false)
                 .addColumn("invn_item_id", Types.CHAR, 16, false)
                 .addColumn("invn_date", Types.CHAR, 10, false)
-                .addColumn("invn_qty_on_hand", Types.INTEGER)
-                .setSchema(schema));
+                .addColumn("invn_qty_on_hand", Types.INTEGER));
 
 
+    }
+
+    private void addToTpcdsDataPaths(TableDef tableDef) {
+        addToTpcdsDataPaths(tableDef.getDataPath());
+    }
+
+    private void addToTpcdsDataPaths(DataPath dataPath) {
+        tables.put(dataPath.getName(), dataPath);
     }
 
     /**
      * @return all tables for a schema
      */
-    public List<TableDef> getSchemaTables(String schemaName) {
+    public List<DataPath> getSchemaTables(String schemaName) {
 
         switch (schemaName) {
             case TPCDS_SCHEMA:
@@ -1208,7 +1232,7 @@ public class TpcdsModel implements SchemaSample {
     /**
      * @return all tables
      */
-    public List<TableDef> getDataPaths() {
+    public List<DataPath> getDataPaths() {
 
         return new ArrayList<>(tables.values());
 
@@ -1219,14 +1243,14 @@ public class TpcdsModel implements SchemaSample {
      * @param tableName - one of the static constant field that represents a table name
      * @return - the definition of this table
      */
-    public TableDef getDataPath(String tableName) {
-        return tables.get(tableName);
+    public DataPath getDataPath(String tableName) {
+        return tableSystem.getDataPath(tableName);
     }
 
     @Override
-    public List<TableDef> getDataPaths(String... tableNames) {
+    public List<DataPath> getDataPaths(String... tableNames) {
 
-        return Arrays.stream(tableNames).map(name -> tables.get(name)).collect(Collectors.toList());
+        return Arrays.stream(tableNames).map(name -> tableSystem.getDataPath(name)).collect(Collectors.toList());
 
     }
 

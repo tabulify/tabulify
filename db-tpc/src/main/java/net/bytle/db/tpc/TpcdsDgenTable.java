@@ -3,17 +3,16 @@ package net.bytle.db.tpc;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.cli.Log;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
-import net.bytle.cli.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.teradata.tpcds.Results.constructResults;
 import static java.util.Objects.requireNonNull;
 
 public class TpcdsDgenTable {
@@ -21,15 +20,15 @@ public class TpcdsDgenTable {
     public static final Log LOGGER = Tpc.LOGGER_TPC;
 
     private final Session session;
-    private final SchemaDef schemaDef;
+    private final TableSystem tableSystem;
     private Integer rowFeedback = 1;
 
-    private TpcdsDgenTable(Session session, SchemaDef schemaDef) {
+    private TpcdsDgenTable(Session session, TableSystem tableSystem) {
         this.session = requireNonNull(session, "session is null");
-        this.schemaDef = schemaDef;
+        this.tableSystem = tableSystem;
     }
 
-    static synchronized TpcdsDgenTable get(Session session, SchemaDef schemaDef) {
+    static synchronized TpcdsDgenTable get(Session session, TableSystem schemaDef) {
 
         return new TpcdsDgenTable(session, schemaDef);
 
@@ -47,31 +46,31 @@ public class TpcdsDgenTable {
             }
 
 
-            TableDef parentTableDef = schemaDef.getTableOf(table.getName());
+            DataPath parentTableDef = tableSystem.getDataPath(table.getName());
             // The table exist ?
-            if (!Tables.exists(parentTableDef)) {
-                throw new RuntimeException("The table (" + parentTableDef.getFullyQualifiedName() + ") does not exist");
+            if (!Tabulars.exists(parentTableDef)) {
+                throw new RuntimeException("The table (" + parentTableDef + ") does not exist");
             }
             Integer batchSize = 10000;
 
             // TODO: Need to be able to set an option to not go back to auto-commit when closing
             // Otherwise the second thread (the child will got in trouble)
             InsertStream parentInsertStream =
-                    Tables.getTableInsertStream(parentTableDef)
+                    Tabulars.getInsertStream(parentTableDef)
                             .setFeedbackFrequency(rowFeedback)
                             .setBatchSize(batchSize);
 
             InsertStream childInsertStream = null;
             if (table.hasChild()) {
 
-                TableDef childTableDef = schemaDef.getTableOf(table.getChild().getName());
+                DataPath childTableDef = tableSystem.getDataPath(table.getChild().getName());
                 // The table exist ?
-                if (!Tables.exists(childTableDef)) {
+                if (!Tabulars.exists(childTableDef)) {
                     // The child  table ("store_returns") of the table ("store_sales") does not exist in the database.
                     // Is normal when you are not taking the store returns schema
-                    LOGGER.warning("The child  table (" + childTableDef.getFullyQualifiedName() + ") of the table (" + parentTableDef.getFullyQualifiedName() + ") does not exist in the database.");
+                    LOGGER.warning("The child  table (" + childTableDef + ") of the table (" + parentTableDef + ") does not exist in the database.");
                 } else {
-                    childInsertStream = Tables.getTableInsertStream(childTableDef)
+                    childInsertStream = Tabulars.getInsertStream(childTableDef)
                             .setFeedbackFrequency(rowFeedback);
                 }
             }

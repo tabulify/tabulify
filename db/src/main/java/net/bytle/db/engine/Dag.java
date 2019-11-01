@@ -1,9 +1,8 @@
 package net.bytle.db.engine;
 
 
-import com.google.common.collect.Lists;
+
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import org.jgrapht.alg.CycleDetector;
@@ -11,11 +10,7 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 
 public class Dag {
@@ -222,8 +217,9 @@ public class Dag {
      */
     public List<DataPath> getDropOrderedTables() {
 
-        List<DataPath> dataPath = getCreateOrderedTables();
-        return Lists.reverse(dataPath);
+        List<DataPath> dataPaths = getCreateOrderedTables();
+        Collections.reverse(dataPaths);
+        return dataPaths;
 
     }
 
