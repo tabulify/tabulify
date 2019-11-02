@@ -19,9 +19,9 @@
         </dependency>
         <!-- Microsoft Sql Server -->
         <dependency>
-            <groupId>com.microsoft</groupId>
-            <artifactId>sqljdbc</artifactId>
-            <version>4.2</version>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>7.2.2.jre8</version>
         </dependency>
     </dependencies>
 </project>

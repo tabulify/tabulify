@@ -9,9 +9,21 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>bytle-db-loader</artifactId>
+    <artifactId>bytle-db-move</artifactId>
     <name>Db Move</name>
     <description>The integration tests that move data between data store</description>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>7</source>
+                    <target>7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <!--
     To eliminate the errors that says that there is no class, the packaging is set to POM
     -->
@@ -35,6 +47,11 @@
         <dependency>
             <groupId>net.bytle</groupId>
             <artifactId>bytle-db-fs</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

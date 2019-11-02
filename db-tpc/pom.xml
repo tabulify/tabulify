@@ -24,6 +24,11 @@
         </dependency>
         <dependency>
             <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-fs</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
             <artifactId>bytle-db-sqlite</artifactId>
             <scope>test</scope>
         </dependency>

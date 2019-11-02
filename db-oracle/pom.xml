@@ -18,11 +18,18 @@
         </dependency>
         <!-- Oracle Db -->
         <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc</artifactId>
-            <version>6</version>
+            <groupId>com.oracle.jdbc</groupId>
+            <artifactId>ojdbc6</artifactId>
+            <version>11.1.0.6.0</version>
         </dependency>
-
     </dependencies>
+    <!-- Needed to download the oracle jar -->
+    <repositories>
+        <repository>
+            <id>Boundless</id>
+            <name>Boundless Repository</name>
+            <url>https://repo.boundlessgeo.com/main/</url>
+        </repository>
+    </repositories>
 
 </project>

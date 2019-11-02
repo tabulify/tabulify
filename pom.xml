@@ -15,7 +15,7 @@
         <module>db</module>
         <module>db-jdbc</module>
         <module>db-cli</module>
-        <module>db-loader</module>
+        <module>db-move</module>
         <module>db-tpc</module>
         <module>db-sqlite</module>
         <module>db-gen</module>
@@ -93,14 +93,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <extensions>
-            <!-- Enabling the use of SSH for the deployment phase of Maven, not for this Sftp-->
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ssh</artifactId>
-                <version>2.10</version>
-            </extension>
-        </extensions>
+<!--        <extensions>-->
+<!--            &lt;!&ndash; Enabling the use of SSH for the deployment phase of Maven, not for this Sftp&ndash;&gt;-->
+<!--            <extension>-->
+<!--                <groupId>org.apache.maven.wagon</groupId>-->
+<!--                <artifactId>wagon-ssh</artifactId>-->
+<!--                <version>2.10</version>-->
+<!--            </extension>-->
+<!--        </extensions>-->
     </build>
 
 
@@ -204,14 +204,14 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <!-- Public Repository -->
-        <repository>
-            <id>bytle-m2-repo-http</id>
-            <name>Bytle Remote</name>
-            <url>https://bytle.net/m2-repo</url>
-        </repository>
-    </repositories>
+<!--    <repositories>-->
+<!--        &lt;!&ndash; Public Repository &ndash;&gt;-->
+<!--        <repository>-->
+<!--            <id>bytle-m2-repo-http</id>-->
+<!--            <name>Bytle Remote</name>-->
+<!--            <url>https://bytle.net/m2-repo</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
     <organization>
         <name>Bytle</name>
@@ -240,7 +240,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
