@@ -23,28 +23,14 @@ public class DataPaths {
 
     public static DataPath of(DataUri dataUri) {
 
-        List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
+
         Database dataStore ;
         if (dataUri.getDataStore()==null) {
            dataStore = Databases.getDefault();
         } else {
             dataStore = DatabasesStore.of().getDatabase(dataUri.getDataStore());
         }
-        String scheme = dataStore.getScheme();
-        for (TableSystemProvider tableSystemProvider : installedProviders) {
-            if (tableSystemProvider.getSchemes().contains(scheme)) {
-                final TableSystem tableSystem = tableSystemProvider.getTableSystem(dataStore);
-                if (tableSystem == null) {
-                    String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
-                    DbLoggers.LOGGER_DB_ENGINE.severe(message);
-                    throw new RuntimeException(message);
-                }
-                return tableSystem.getDataPath(dataUri);
-            }
-        }
-        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";
-        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-        throw new RuntimeException(message);
+        return of(dataStore,dataUri.getPath());
 
     }
 
@@ -104,4 +90,22 @@ public class DataPaths {
         return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
+    public static DataPath of(Database dataStore, String... paths) {
+        List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
+        String scheme = dataStore.getScheme();
+        for (TableSystemProvider tableSystemProvider : installedProviders) {
+            if (tableSystemProvider.getSchemes().contains(scheme)) {
+                final TableSystem tableSystem = tableSystemProvider.getTableSystem(dataStore);
+                if (tableSystem == null) {
+                    String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
+                    DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                    throw new RuntimeException(message);
+                }
+                return tableSystem.getDataPath(paths);
+            }
+        }
+        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";
+        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+        throw new RuntimeException(message);
+    }
 }

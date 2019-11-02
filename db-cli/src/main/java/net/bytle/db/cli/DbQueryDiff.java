@@ -1,11 +1,9 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.connection.JdbcConnectionBuilder;
+
 import net.bytle.db.resultSetDiff.DataSetDiff;
 import net.bytle.db.resultSetDiff.ExecuteQueryThread;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,9 +32,6 @@ public class DbQueryDiff {
     private static final Logger LOGGER = Logger.getLogger(DbQueryDiff.class.getPackage().toString());
 
 
-    // The CVS file that gives the result of a batch test
-    // One line one diff
-    private static CSVPrinter batchOutputPrinter = null;
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -122,17 +117,9 @@ public class DbQueryDiff {
 
                 } else {
 
-                    try {
-                        //initialize FileWriter object
-                        Path batchOutputPath = Paths.get(pathArg1.toAbsolutePath().toString(), "DiffBatchResult.csv");
-                        FileWriter fileWriter = new FileWriter(batchOutputPath.toFile());
-                        //Create the CSVFormat object with "\n" as a record delimiter
-                        CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator(System.lineSeparator());
-                        //initialize CSVPrinter object
-                        batchOutputPrinter = new CSVPrinter(fileWriter, csvFileFormat);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Path batchOutputPath = Paths.get(pathArg1.toAbsolutePath().toString(), "DiffBatchResult.csv");
+
+
 
                     try {
                         Files.newDirectoryStream(pathArg1).forEach(e -> {
