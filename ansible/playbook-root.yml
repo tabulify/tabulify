@@ -2,6 +2,8 @@
 - hosts: ovh
   tasks:
   roles:
-    - {role: ovh-sec, tags: 'sec'}
+    - role: ovh-sec
+      tags: 'sec'
+      when: ansible_os_family == "RedHat" # Centos
 
   

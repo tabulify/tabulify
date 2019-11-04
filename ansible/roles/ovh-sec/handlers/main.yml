@@ -1,0 +1,11 @@
+
+
+- name: "firewalld reload"
+  systemd:
+    state: restarted
+    name: firewalld
+
+- name: "ssh reload"
+  systemd:
+    state: restarted
+    name: sshd
