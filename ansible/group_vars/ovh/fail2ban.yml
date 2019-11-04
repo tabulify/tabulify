@@ -1,0 +1,7 @@
+
+# ignored ip by fail2ban
+ip_whitelisted: 143.176.206.82
+
+fail2ban_dest_email: gerardnico@gmail.com
+
+fail2ban_sender: fail2ban@bytle.com

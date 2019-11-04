@@ -1,0 +1,32 @@
+
+- name: 'Package - Upgrade all packages'
+  yum:
+    name=*
+    state=latest
+
+- name: Package - Add the EPEL repository
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
+    gpgcheck: yes
+
+- name: "Package - Adds the gpg key from the EPEL repo"
+  rpm_key:
+    state: present
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+
+- name: "Package - Install Jq"
+  yum:
+    name: jq
+    enablerepo: epel
+    state: present
+
+
+# Added nmap to tbe able to scan the open port at the command line
+- name: "Package - Install nmap"
+  yum:
+    name: nmap
+    enablerepo: epel
+    state: present
+

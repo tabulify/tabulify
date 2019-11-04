@@ -1,76 +1,14 @@
 ---
 
-- name: 'Upgrade all packages'
-  yum:
-    name=*
-    state=latest
+- name: Package
+  import_tasks: 'root_package.yml'
 
-- name: Add the EPEL repository
-  yum_repository:
-    name: epel
-    description: EPEL YUM repo
-    baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
-    gpgcheck: yes
+- name: Sshd
+  import_tasks: 'root_sshd.yml'
 
-- name: "Adds the gpg key from the EPEL repo"
-  rpm_key:
-    state: present
-    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+- name: Sendmail
+  import_tasks: 'root_sendmail.yml'
 
-- name: "Install Jq"
-  yum:
-    name: jq
-    enablerepo: epel
-    state: present
+- name: Fail2ban
+  import_tasks: 'root_fail2ban.yml'
 
-- name: "Install fail2ban"
-  yum:
-    name: fail2ban
-    state: present
-
-# Added nmap to tbe able to scan the open port at the command line
-- name: "Install nmap"
-  yum:
-    name: nmap
-    enablerepo: epel
-    state: present
-
-- name: 'Firewalld - Add port {{ssh_target_port}}'
-  firewalld:
-    port: '{{ssh_target_port}}/tcp'
-    permanent: yes
-    state: enabled
-  notify: firewalld reload
-
-- name: Update the /etc/ssh/sshd_config file
-  lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: "^Port"
-    line: "Port {{ ssh_target_port }}"
-    insertafter: EOF
-    state: present
-  notify: ssh reload
-
-- name: "User - Create the group"
-  group:
-    name: '{{ user_group }}'
-    state: present
-
-- name: "User - Create the user "
-  user:
-    name: '{{ user_name }}'
-    comment: Installation user
-    state: present
-    group: '{{ user_group }}'
-    groups:
-      - wheel # To be able to run all commands
-    password: "{{ user_password | password_hash('sha512') }}"
-
-- name: Sshd - No root login
-  lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: "^PermitRootLogin"
-    line: "PermitRootLogin no"
-    insertafter: EOF
-    state: present
-  notify: ssh reload

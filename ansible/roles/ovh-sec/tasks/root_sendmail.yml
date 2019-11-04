@@ -1,0 +1,8 @@
+
+- name: "Sendmail - Install"
+  yum:
+    name: sendmail
+    state: present
+  notify: sendmail reload
+
+

@@ -1,0 +1,39 @@
+- name: "User - Create the login group"
+  group:
+    name: '{{ user_group }}'
+    state: present
+
+- name: "User - Create the login user"
+  user:
+    name: '{{ user_name }}'
+    comment: Installation user
+    state: present
+    group: '{{ user_group }}'
+    groups:
+      - wheel # To be able to run all commands
+    password: "{{ user_password | password_hash('sha512') }}"
+
+- name: 'Firewalld - Add port {{ssh_target_port}}'
+  firewalld:
+    port: '{{ssh_target_port}}/tcp'
+    permanent: yes
+    state: enabled
+  notify: firewalld reload
+
+- name: Update the /etc/ssh/sshd_config file
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^Port"
+    line: "Port {{ ssh_target_port }}"
+    insertafter: EOF
+    state: present
+  notify: ssh reload
+
+- name: Sshd - No root login
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    line: "PermitRootLogin no"
+    insertafter: EOF
+    state: present
+  notify: ssh reload

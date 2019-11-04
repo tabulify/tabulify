@@ -1,0 +1,28 @@
+[DEFAULT]
+
+# "ignoreip" can be an IP address, a CIDR mask or a DNS host. Fail2ban will not
+# ban a host which matches an address in this list. Several addresses can be
+# defined using space (and/or comma) separator.
+ignoreip = {{ ip_whitelisted }}
+
+
+# Email
+destemail = {{ fail2ban_dest_email }}
+sendername = Fail2BanAlerts
+sender = {{ fail2ban_sender }}
+mta = sendmail
+
+
+# ban & send an e-mail with whois report and relevant log lines to the destemail
+# The sendername was added because not in the default conf
+action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+             %(mta)s-whois-lines[name=%(__name__)s, sender="%(sender)s", sendername="%(sendername)s", dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
+
+#
+# JAILS
+#
+
+[sshd]
+port    = {{ ssh_target_port }}
+enabled = true
+maxretry = 3

@@ -19,8 +19,9 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
 ## TODO
 
-  * https://github.com/fail2ban/fail2ban
   * OVH Firewall
+  * get public key authentication working before disabling PasswordAuthentication in sshd_config.
+
   
 ## Documentation
 

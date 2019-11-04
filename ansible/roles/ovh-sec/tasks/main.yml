@@ -3,3 +3,4 @@
 - name: Test TCP connectivity
   become: true
   import_tasks: 'root_task.yml'
+  when: ansible_os_family == "RedHat" # Centos
