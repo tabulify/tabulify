@@ -18,15 +18,18 @@
     key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
 
 - name: "Install Jq"
-  become: yes
   yum:
     name: jq
     enablerepo: epel
     state: present
 
+- name: "Install fail2ban"
+  yum:
+    name: fail2ban
+    state: present
+
 # Added nmap to tbe able to scan the open port at the command line
 - name: "Install nmap"
-  become: yes
   yum:
     name: nmap
     enablerepo: epel
@@ -59,6 +62,8 @@
     comment: Installation user
     state: present
     group: '{{ user_group }}'
+    groups:
+      - wheel # To be able to run all commands
     password: "{{ user_password | password_hash('sha512') }}"
 
 - name: Sshd - No root login

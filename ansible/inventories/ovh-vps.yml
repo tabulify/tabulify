@@ -5,5 +5,5 @@ all: # keys must be unique, i.e. only one 'hosts' per group
           ovh-vps: # ansible_user and ansible_password are in the variables
             ansible_host: vps748761.ovh.net
             ansible_port: '{{ ssh_actual_port }}'
-            ansible_become_pass: '{{ root_password }}'
+            ansible_become_pass: '{{ user_password }}'
 
