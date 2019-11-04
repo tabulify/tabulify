@@ -52,7 +52,7 @@ public class FsDataPath extends DataPath {
     }
 
     @Override
-    public List<String> getPathSegments() {
+    public List<String> getPathParts() {
         return IntStream.range(0, path.getNameCount() - 1)
                 .mapToObj(i->path.getName(i).toString())
                 .collect(Collectors.toList());

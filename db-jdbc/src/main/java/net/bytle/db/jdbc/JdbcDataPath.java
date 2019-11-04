@@ -106,7 +106,7 @@ public class JdbcDataPath extends DataPath  {
     }
 
     @Override
-    public List<String> getPathSegments() {
+    public List<String> getPathParts() {
         List<String> pathSegments = new ArrayList<>();
         if (catalog!=null){
             pathSegments.add(catalog);
@@ -122,7 +122,7 @@ public class JdbcDataPath extends DataPath  {
 
     @Override
     protected String getPath() {
-        return String.join(".",getPathSegments());
+        return String.join(".", getPathParts());
     }
 
 

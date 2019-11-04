@@ -10,6 +10,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bytle-db-oracle</artifactId>
+    <name>Db Oracle</name>
+    <description>A SPI implementation for the bytle-db-jdbc module of Oracle</description>
 
     <dependencies>
         <dependency>

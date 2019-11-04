@@ -1,0 +1,9 @@
+all: # keys must be unique, i.e. only one 'hosts' per group
+  children:  # key order does not matter, indentation does
+    ovh: # groups
+        hosts:
+          ovh-vps: # same host as above, additional group membership
+            ansible_host: vps748761.ovh.net
+            ansible_user: root
+            ansible_password: '{{ vault_root_password }}'
+

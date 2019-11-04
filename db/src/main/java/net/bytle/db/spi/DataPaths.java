@@ -4,11 +4,8 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
-import javax.xml.crypto.Data;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,26 +33,26 @@ public class DataPaths {
 
     /**
      *
-     * @param names - The part of a path in a list format
+     * @param parts - The part of a path in a list format
      * @return a data path created with the default tabular system (ie memory)
      */
-    public static DataPath of(String... names) {
+    public static DataPath of(String... parts) {
 
-        return TableSystems.getDefault().getDataPath(names);
+        return TableSystems.getDefault().getDataPath(parts);
 
     }
 
 
     /**
      * @param dataPath
-     * @param names
+     * @param parts
      * @return a child data path
      * Equivalent to the resolve function {@link Path#resolve(String)}
      */
-    public static DataPath childOf(DataPath dataPath, String... names) {
+    public static DataPath childOf(DataPath dataPath, String... parts) {
         List<String> pathSegments = new ArrayList<>();
-        pathSegments.addAll(dataPath.getPathSegments());
-        pathSegments.addAll(Arrays.asList(names));
+        pathSegments.addAll(dataPath.getPathParts());
+        pathSegments.addAll(Arrays.asList(parts));
         return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
@@ -85,12 +82,12 @@ public class DataPaths {
      */
     public static DataPath siblingOf(DataPath dataPath, String name){
         List<String> pathSegments = new ArrayList<>();
-        pathSegments.addAll(dataPath.getPathSegments().subList(0,dataPath.getPathSegments().size()-2));
+        pathSegments.addAll(dataPath.getPathParts().subList(0,dataPath.getPathParts().size()-2));
         pathSegments.add(name);
         return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
-    public static DataPath of(Database dataStore, String... paths) {
+    public static DataPath of(Database dataStore, String... parts) {
         List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
         String scheme = dataStore.getScheme();
         for (TableSystemProvider tableSystemProvider : installedProviders) {
@@ -101,7 +98,7 @@ public class DataPaths {
                     DbLoggers.LOGGER_DB_ENGINE.severe(message);
                     throw new RuntimeException(message);
                 }
-                return tableSystem.getDataPath(paths);
+                return tableSystem.getDataPath(parts);
             }
         }
         final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";

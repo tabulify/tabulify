@@ -21,7 +21,7 @@ public abstract class DataPath implements Comparable<DataPath> {
 
     public abstract String getName();
 
-    public abstract List<String> getPathSegments();
+    public abstract List<String> getPathParts();
 
     private String getId() {
         final String path = getPath();

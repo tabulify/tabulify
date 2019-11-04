@@ -1,0 +1,7 @@
+---
+- hosts: ovh
+  tasks:
+  roles:
+    - {role: ovh-sec, tags: 'sec'}
+
+  

@@ -39,7 +39,7 @@ public class MemoryDataPath extends DataPath {
     }
 
     @Override
-    public List<String> getPathSegments() {
+    public List<String> getPathParts() {
         return Arrays.asList(names);
     }
 
