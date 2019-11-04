@@ -1,0 +1,15 @@
+---
+
+# User to connect
+user_name: 'nickeau'
+user_group: 'users'
+user_password: '{{ vault_user_password }}'
+
+
+# Root
+root_name: 'root'
+root_password: '{{ vault_root_password }}'
+
+# Ansible
+ansible_user: '{{ user_name }}'
+ansible_password: '{{ user_password }}'
