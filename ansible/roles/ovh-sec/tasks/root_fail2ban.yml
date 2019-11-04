@@ -2,6 +2,7 @@
 - name: "Fail2ban - Install"
   yum:
     name: fail2ban
+    enablerepo: epel
     state: present
   notify: fail2ban reload
 

@@ -20,11 +20,15 @@ action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(por
              %(mta)s-whois-lines[name=%(__name__)s, sender="%(sender)s", sendername="%(sendername)s", dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
 action = %(action_mwl)s
 
+# To use firewalld in place of iptables
+banaction = firewallcmd-ipset
+
 #
 # JAILS
 #
 
 [sshd]
+filter = sshd-aggressive
 port    = {{ ssh_target_port }}
 enabled = true
 maxretry = 3
