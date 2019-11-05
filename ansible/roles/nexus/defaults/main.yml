@@ -1,0 +1,41 @@
+---
+# defaults file for nexus
+
+nexus_group: nexus
+nexus_user: nexus
+nexus_home: /opt/nexus
+nexus_pid_dir: /var/run/nexus
+nexus_shell: /sbin/nologin
+
+nexus_host: 0.0.0.0
+nexus_port: 8081
+
+nexus_ssl: False
+nexus_ssl_port: 8443
+nexus_ssl_keypass: changeit
+nexus_ssl_storepass: changeit
+
+nexus_webapp_context_path: /nexus
+
+# archived versions are here
+#nexus_download_base_url: http://download.sonatype.com/nexus/oss
+# latest version is here
+nexus_download_base_url: http://www.sonatype.org/downloads
+
+# Full list at https://help.sonatype.com/repomanager3/download/download-archives---repository-manager-3
+nexus_version: 3.19.1-01
+
+# The name of the file to download
+nexus_distribution_name: nexus-{{ nexus_version }}-bundle.tar.gz
+
+# An application directory
+nexus_application_directory: nexus-{{ nexus_version }}
+# Data directory, sometimes called the "Sonatype Work" directory
+nexus_data_directory: 'sonatype-work'
+
+# Will redownload the file
+nexus_download_force: no
+# Download destination directory
+nexus_dest: /tmp/nexus
+
+nexus_link: nexus-current

@@ -1,0 +1,58 @@
+---
+# tasks file for nexus
+
+
+
+- name: "Create Nexus symlink"
+  file:
+    src: "{{ nexus_dest }}/{{ nexus_application_directory }}"
+    dest: "{{ nexus_dest }}/{{ nexus_link }}"
+    state: link
+  when:
+    - nexus_download.changed
+
+- name: Stage Nexus service script
+  command: "cp {{ nexus_dest }}/{{ nexus_application_directory }}/bin/nexus /etc/init.d/nexus"
+  when:
+    - nexus_download.changed
+
+- name: Configure Nexus service script
+  lineinfile:
+    dest: "/etc/init.d/nexus"
+    state: present
+    regexp: "{{ item.pattern }}"
+    line: "{{ item.replacement }}"
+    insertafter: "{{ item.after | default(omit) }}"
+  with_items:
+    - pattern: "^NEXUS_HOME="
+      replacement: "NEXUS_HOME=\"{{ nexus_dest }}/{{ nexus_link }}\""
+    - pattern: "^RUN_AS_USER="
+      replacement: "RUN_AS_USER=\"{{ nexus_user }}\""
+      after: "^#RUN_AS_USER="
+    - pattern: "^PIDDIR="
+      replacement: "PIDDIR=\"{{ nexus_pid_dir }}\""
+      after: "^#PIDDIR="
+  notify:
+    - reload systemctl
+    - restart nexus
+
+- name: Configure Nexus properties
+  lineinfile:
+    dest: "{{ nexus_dest }}/{{ nexus_link }}/conf/nexus.properties"
+    state: present
+    regexp: "{{ item.pattern }}"
+    line: "{{ item.replacement }}"
+  with_items:
+    - pattern: "^application-port="
+      replacement: "application-port={{ nexus_port }}"
+    - pattern: "^application-host="
+      replacement: "application-host={{ nexus_host }}"
+    - pattern: "^nexus-webapp-context-path="
+      replacement: "nexus-webapp-context-path={{ nexus_webapp_context_path }}"
+  notify:
+    - restart nexus
+
+- include_tasks: ssl.yml
+  when:
+    - nexus_ssl
+

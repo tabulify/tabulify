@@ -1,0 +1,59 @@
+---
+
+# The steps explained here
+# https://help.sonatype.com/repomanager3/installation/installation-methods
+
+- name: "Ensure nexus group"
+  group: name="{{ nexus_group }}"
+
+- name: "Ensure nexus user"
+  user:
+    name: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    home: "{{ nexus_home }}"
+
+- name: "Ensure Nexus directories exist"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    mode: 0755
+  with_items:
+    - "{{ nexus_home }}"
+    - "{{ nexus_dest }}"
+    - "{{ nexus_pid_dir }}"
+
+
+
+- name: "Download Nexus"
+  get_url:
+    url: "{{ nexus_download_base_url }}/{{ nexus_distribution_name }}"
+    dest: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
+    force: "{{ nexus_download_force }}"
+    validate_certs: no
+  register: nexus_download
+
+- name: "Unarchive Nexus into the nexus home ({{ ){{ nexus_home }})"
+  unarchive:
+    src: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
+    dest: "{{ nexus_home }}"
+    copy: no
+  when:
+    - nexus_download.changed
+
+# The extraction process creates two sibling directories:
+#     * an application directory
+#     * and a data directory, sometimes called the "Sonatype Work" directory
+# setting ownership in unarchive task does not work properly
+- name: "Update Nexus ownership"
+  file:
+    path: "{{ item }}"
+    recurse: yes
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+  when:
+    - nexus_download.changed
+  with_items:
+    - "{{ nexus_home }}/{{ nexus_application_directory }}"
+    - "{{ nexus_home }}/{{ nexus_data_directory }}"
