@@ -1,7 +1,7 @@
 ---
 - name: Configure Nexus SSL properties
   lineinfile:
-    dest: "{{ nexus_dest }}/{{ nexus_link }}/conf/nexus.properties"
+    dest: "{{ nexus_install_temp }}/{{ nexus_link }}/conf/nexus.properties"
     state: present
     regexp: "{{ item.pattern }}"
     line: "{{ item.replacement }}"
@@ -13,7 +13,7 @@
 
 - name: Configure Nexus SSL
   lineinfile:
-    dest: "{{ nexus_dest }}/{{ nexus_link }}/bin/jsw/conf/wrapper.conf"
+    dest: "{{ nexus_install_temp }}/{{ nexus_link }}/bin/jsw/conf/wrapper.conf"
     state: present
     regexp: "{{ item.pattern }}"
     line: "{{ item.replacement }}"
@@ -28,14 +28,14 @@
 
 - name: Ensure Nexus SSL directory exists
   file:
-    path: "{{ nexus_dest }}/{{ nexus_link }}/conf/ssl"
+    path: "{{ nexus_install_temp }}/{{ nexus_link }}/conf/ssl"
     state: directory
     owner: "{{ nexus_user }}"
     group: "{{ nexus_group }}"
     mode: 0755
 
 - name: Determine if a keystore already exists
-  stat: path="{{ nexus_dest }}/{{ nexus_link }}/conf/ssl/keystore.jks"
+  stat: path="{{ nexus_install_temp }}/{{ nexus_link }}/conf/ssl/keystore.jks"
   register: nexus_keystore_file
   when:
     - nexus_ssl_keystore is defined
@@ -43,7 +43,7 @@
 - name: Deploy keystore (if configured and one does not already exist)
   copy:
     src: "{{ nexus_ssl_keystore }}"
-    dest: "{{ nexus_dest }}/{{ nexus_link }}/conf/ssl"
+    dest: "{{ nexus_install_temp }}/{{ nexus_link }}/conf/ssl"
     owner: "{{ nexus_user }}"
     group: "{{ nexus_group }}"
     mode: 0600
@@ -53,7 +53,7 @@
 
 - name: Configure Nexus SSL keystore
   lineinfile:
-    dest: "{{ nexus_dest }}/{{ nexus_link }}/conf/jetty-https.xml"
+    dest: "{{ nexus_install_temp }}/{{ nexus_link }}/conf/jetty-https.xml"
     state: present
     regexp: "{{ item.pattern }}"
     line: "{{ item.replacement }}"

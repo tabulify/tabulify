@@ -4,7 +4,7 @@
 
 - name: Configure Nexus properties
   lineinfile:
-    dest: "{{ nexus_home }}/{{ nexus_link }}/conf/nexus.properties"
+    dest: "{{ nexus_root }}/{{ nexus_link }}/conf/nexus.properties"
     state: present
     regexp: "{{ item.pattern }}"
     line: "{{ item.replacement }}"

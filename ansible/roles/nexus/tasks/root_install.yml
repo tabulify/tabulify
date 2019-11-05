@@ -12,23 +12,23 @@
     group: "{{ nexus_group }}"
     mode: 0755
   with_items:
-    - "{{ nexus_home }}"
-    - "{{ nexus_dest }}"
+    - "{{ nexus_root }}"
+    - "{{ nexus_install_temp }}"
     - "{{ nexus_pid_dir }}"
 
 
-- name: "Download Nexus at ({{ nexus_dest }}/{{ nexus_distribution_name }})"
+- name: "Download Nexus at ({{ nexus_install_temp }}/{{ nexus_distribution_name }})"
   get_url:
     url: "{{ nexus_download_base_url }}/{{ nexus_distribution_name }}"
-    dest: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
+    dest: "{{ nexus_install_temp }}/{{ nexus_distribution_name }}"
     force: "{{ nexus_download_force }}"
     validate_certs: no
   register: nexus_download
 
-- name: "Unarchive Nexus into the nexus home ({{ nexus_home }})"
+- name: "Unarchive Nexus into the nexus home ({{ nexus_root }})"
   unarchive:
-    src: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
-    dest: "{{ nexus_home }}"
+    src: "{{ nexus_install_temp }}/{{ nexus_distribution_name }}"
+    dest: "{{ nexus_root }}"
     remote_src: yes # indicate the archived file is already on the remote system and not local to the Ansible controller
 
 # The extraction process creates two sibling directories:
@@ -42,5 +42,5 @@
     owner: "{{ nexus_user }}"
     group: "{{ nexus_group }}"
   with_items:
-    - "{{ nexus_home }}/{{ nexus_application_directory }}"
-    - "{{ nexus_home }}/{{ nexus_data_directory }}"
+    - "{{ nexus_application_directory }}"
+    - "{{ nexus_data_directory }}"

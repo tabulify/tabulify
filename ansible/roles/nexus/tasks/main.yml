@@ -9,7 +9,7 @@
 - name: Check if the data directory exists
   become: true
   stat:
-    path: '{{ nexus_home }}/{{ nexus_application_directory }}'
+    path: '{{ nexus_application_directory }}'
   register: data_directory_exists
 
 - name: Install

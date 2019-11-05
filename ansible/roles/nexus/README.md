@@ -4,9 +4,10 @@
 
 An Ansible role to install and configure [Sonatype Nexus](http://www.sonatype.org/nexus/)
 
-The extraction process creates two sibling [directories](https://help.sonatype.com/repomanager3/installation/directories): 
+The extraction/installation process creates two sibling [directories](https://help.sonatype.com/repomanager3/installation/directories): 
   * an application directory 
   * and a data directory, sometimes called the "Sonatype Work" directory
+
 
 ## Prerequisites and dependency
 
@@ -22,8 +23,8 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
       nexus_version: 3.19.1-01
       nexus_group: nexus
       nexus_user: nexus
-      nexus_home: /opt/nexus
-      nexus_dest: /tmp/nexus
+      nexus_root: /opt/nexus
+      nexus_install_temp: /tmp/nexus
       nexus_pid_dir: /var/run/nexus
       nexus_shell: /sbin/nologin
       nexus_host: 0.0.0.0
@@ -46,8 +47,10 @@ where:
     * `nexus_user` is the user name
     * `nexus_group` is the user group 
   * directories properties are:
-    * `nexus_home` is the installation directory (default to `/opt/nexus`)
-    * `nexus_dest` is where the installation file will be downloaded
+    * `nexus_root` is the root directory (default to `/opt`) where the installation archive is extracted and create the following directory:
+       * `nexus-install-dir` (install home) = `{{nexus_root}}/nexus-{{nexus-version}}` 
+       * `nexus-data-dir` = `{{nexus_root}}/sonatype-work/nexus3`
+    * `nexus_install_temp` is where the installation file will be downloaded
     * `nexus_pid_dir` is where the pid file will be saved (default to `/var/run/nexus`)
     
 
@@ -55,9 +58,27 @@ Variables that can be passed to this role and their default values are as follow
 
 ## Support / Log
 
+If you got any error, the log is located at 
+${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/
 ```bash
-tail -f ${NEXUS_HOME}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
+tail -f ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
 ```
+
+## Accessing the user interface 
+
+Interface will be available at `http://<server_host>:<port>`
+
+Admin user:
+  * Login: `admin` 
+  * password: `$data-dir\admin.password`
+
+## Next steps
+
+  * [User Interface](https://help.sonatype.com/repomanager3/user-interface)
+  * [Configuration](https://help.sonatype.com/repomanager3/configuration)
+  * [Format Setup (maven, npm,..)](https://help.sonatype.com/repomanager3/formats)
+  * [Security](https://help.sonatype.com/repomanager3/security)
+
 ## Documentation / Reference
 
 Inspired by:

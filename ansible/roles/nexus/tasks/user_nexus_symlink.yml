@@ -2,12 +2,8 @@
 # nexus_link = nexus-latest
 - name: "Create Nexus symlink ({{ nexus_link }})"
   file:
-    src: "{{ nexus_home }}/{{ nexus_application_directory }}"
-    dest: "{{ nexus_home }}/{{ nexus_link }}"
+    src: "{{ nexus_application_directory }}"
+    dest: "{{ nexus_root }}/{{ nexus_link }}"
     state: link
     follow: false
 
-- name: Delete unpacked data directory
-  file:
-    path: "{{ nexus_installation_dir }}/{{ nexus_link }}/data"
-    state: absent
