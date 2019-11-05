@@ -19,7 +19,7 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
 ## TODO
 
-  * OVH Firewall
+  * [OVH Firewall](https://docs.ovh.com/fr/dedicated/firewall-network/)
   * get public key authentication working before disabling PasswordAuthentication in sshd_config.
 
   

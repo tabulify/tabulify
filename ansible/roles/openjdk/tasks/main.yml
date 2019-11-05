@@ -3,8 +3,10 @@
 - name: Fail if not Redhat
   fail:
     msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
-  when: ansible_os_family == "RedHat" # Centos
+  when: ansible_os_family != "RedHat" # Centos
 
-- name: Root task
+- name: Install
   become: true
-  import_tasks: 'root_task.yml'
+  import_tasks: 'root_install.yml'
+
+
