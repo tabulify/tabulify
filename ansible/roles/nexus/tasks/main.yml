@@ -37,3 +37,13 @@
   become: true
   import_tasks: 'root_firewall.yml'
 
+- name: Nexus Configuration
+  become: true
+  become_user: '{{ nexus_user }}'
+  import_tasks: 'user_conf.yml'
+
+- name: Ssl
+  become: true
+  become_user: '{{ nexus_user }}'
+  include_tasks: user_ssl.yml
+  when: nexus_ssl

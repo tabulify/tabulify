@@ -11,8 +11,6 @@
     - name: Install nexus
       role: nexus
       nexus_version: 3.19.1-01
-      nexus_home: /opt/nexus
-      nexus_port: 8081
       tags: nexus
 
   

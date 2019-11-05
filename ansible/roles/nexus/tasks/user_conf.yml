@@ -1,0 +1,20 @@
+# Configuring the Runtime Environment
+# https://help.sonatype.com/repomanager3/installation/configuring-the-runtime-environment
+
+
+- name: 'Configure Nexus properties file ({{ nexus_data_directory}}/etc/nexus.properties)'
+  lineinfile:
+    dest: "{{ nexus_data_directory}}/etc/nexus.properties"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regexp: "^application-port="
+      line: "application-port={{ nexus_port }}"
+    - regexp: "^application-host="
+      line: "application-host={{ nexus_host }}"
+    - regexp: "^nexus-context-path="
+      line: "nexus-context-path=/{{ nexus_context_path }}/"
+  notify:
+    - nexus reload
+

@@ -3,3 +3,7 @@
 nexus_white_ip_address:
   - 143.176.206.82
 
+nexus_host: vps748761.ovh.net
+nexus_port: 8082
+nexus_webapp_context_path: nexus
+

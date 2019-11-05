@@ -28,18 +28,22 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
       nexus_pid_dir: /var/run/nexus
       nexus_shell: /sbin/nologin
       nexus_host: 0.0.0.0
-      nexus_port: 8081
+      nexus_port: 8082
+      nexus_context_path: nexus
       nexus_ssl: False
       nexus_ssl_port: 8443
       nexus_ssl_keypass: changeit
       nexus_ssl_storepass: changeit
       nexus_download_force: no
       nexus_link: nexus-current
+      # Firewall (list of white ip or a range)
+      nexus_white_ip_address:
+        - 139.177.205.84
+        - 0.0.0.0/0 # Public
       # Derived 
       nexus_download_base_url: http://download.sonatype.com/nexus/3/ 
       nexus_distribution_name: nexus-{{ nexus_version }}-bundle.tar.gz
       nexus_application_directory: nexus-{{ nexus_version }}
-      
 ```
 where:
   * `nexus_version` is the version of nexus ([Full list](https://help.sonatype.com/repomanager3/download/download-archives---repository-manager-3))
@@ -52,6 +56,7 @@ where:
        * `nexus-data-dir` = `{{nexus_root}}/sonatype-work/nexus3`
     * `nexus_install_temp` is where the installation file will be downloaded
     * `nexus_pid_dir` is where the pid file will be saved (default to `/var/run/nexus`)
+  * the url will be at: `http://nexus_host:nexus_port/nexus_context_path/`
     
 
 Variables that can be passed to this role and their default values are as follows.
@@ -66,9 +71,9 @@ tail -f ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
 
 ## Accessing the user interface 
 
-Interface will be available at `http://<server_host>:<port>`
+Interface will be available at `http://nexus_host:nexus_port/nexus_context_path/`
 
-Example: [http://vps748761.ovh.net:8081/](http://vps748761.ovh.net:8081/)
+Example: [http://vps748761.ovh.net:8082/nexus](http://vps748761.ovh.net:8082/nexus)
 
 Admin user:
   * Login: `admin` 

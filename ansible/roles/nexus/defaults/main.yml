@@ -10,15 +10,20 @@ nexus_root: /opt
 nexus_pid_dir: /var/run/nexus
 nexus_shell: /sbin/nologin
 
+# Web Url
+# http://host:port/context/
 nexus_host: 0.0.0.0
 nexus_port: 8081
+nexus_context_path: nexus
+
+# Ssl
 
 nexus_ssl: False
 nexus_ssl_port: 8443
 nexus_ssl_keypass: changeit
 nexus_ssl_storepass: changeit
 
-nexus_webapp_context_path: /nexus
+
 
 
 # latest version is here
