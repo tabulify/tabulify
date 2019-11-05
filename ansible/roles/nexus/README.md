@@ -23,7 +23,7 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
       nexus_version: 3.19.1-01
       nexus_group: nexus
       nexus_user: nexus
-      nexus_root: /opt/nexus
+      nexus_root: /opt
       nexus_install_temp: /tmp/nexus
       nexus_pid_dir: /var/run/nexus
       nexus_shell: /sbin/nologin
@@ -67,6 +67,8 @@ tail -f ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
 ## Accessing the user interface 
 
 Interface will be available at `http://<server_host>:<port>`
+
+Example: [http://vps748761.ovh.net:8081/](http://vps748761.ovh.net:8081/)
 
 Admin user:
   * Login: `admin` 

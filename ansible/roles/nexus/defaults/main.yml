@@ -44,3 +44,5 @@ nexus_install_temp: /tmp/nexus
 # sometimes seen as nexus-current
 nexus_link: nexus-latest
 
+# ip address or range of ip where we open the firewall
+nexus_white_ip_address: []

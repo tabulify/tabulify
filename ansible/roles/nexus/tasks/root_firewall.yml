@@ -1,7 +1,9 @@
 
-- name: 'Firewalld - Add port {{nexus_port}}'
+- name: 'Firewalld - Add port {{nexus_port}} for the whitelisted address'
   firewalld:
-    port: '{{nexus_port}}/tcp'
     permanent: yes
     state: enabled
+    rich_rule: 'rule family="ipv4" port port="{{ nexus_port }}" protocol="tcp" source address="{{ item }}" accept'
+  with_items: "{{nexus_white_ip_address}}"
   notify: firewalld reload
+  tags: firewall

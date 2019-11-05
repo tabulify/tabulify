@@ -37,3 +37,11 @@
     insertafter: EOF
     state: present
   notify: ssh reload
+
+- name: 'Firewalld - Remove the old port {{ssh_actual_port}}'
+  firewalld:
+    port: '{{ssh_actual_port}}/tcp'
+    permanent: yes
+    state: enabled
+  when: ssh_actual_port!=ssh_target_port
+  notify: firewalld reload

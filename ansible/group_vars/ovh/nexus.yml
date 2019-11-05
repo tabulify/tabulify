@@ -1,0 +1,5 @@
+
+# The nexus port will be available from this ip
+nexus_white_ip_address:
+  - 143.176.206.82
+
