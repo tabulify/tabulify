@@ -1,0 +1,7 @@
+
+- name: 'Firewalld - Add port {{nexus_port}}'
+  firewalld:
+    port: '{{nexus_port}}/tcp'
+    permanent: yes
+    state: enabled
+  notify: firewalld reload

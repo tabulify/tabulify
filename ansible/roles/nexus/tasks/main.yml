@@ -19,12 +19,21 @@
     - name: Download and unzip the installation file
       include_tasks: 'root_install.yml'
 
-#- name: Install service in sysvinit
-#  become: true
-#  import_tasks: 'root_service_sysvinit.yml'
-#  when: ansible_service_mgr == "sysvinit"
-#
-#- name: Install service in systemd
-#  become: true
-#  import_tasks: 'root_service_systemd.yml'
-#  when: ansible_service_mgr == "systemd"
+- name: Sysvinit Install service
+  become: true
+  when: ansible_service_mgr == "sysvinit"
+  block:
+    - name: Install service in sysvinit
+      include_tasks: 'root_service_sysvinit.yml'
+
+- name: System Install service
+  become: true
+  when: ansible_service_mgr == "systemd"
+  block:
+    - name: Install service systemd
+      include_tasks: 'root_service_systemd.yml'
+
+- name: Firewall
+  become: true
+  import_tasks: 'root_firewall.yml'
+

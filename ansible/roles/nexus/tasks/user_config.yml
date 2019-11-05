@@ -1,14 +1,6 @@
 # Configuring the Runtime Environment
 # https://help.sonatype.com/repomanager3/installation/configuring-the-runtime-environment
 
-- name: "Create Nexus symlink"
-  file:
-    src: "{{ nexus_home }}/{{ nexus_application_directory }}"
-    dest: "{{ nexus_home }}/{{ nexus_link }}"
-    state: link
-  when:
-    - nexus_download.changed
-
 
 - name: Configure Nexus properties
   lineinfile:

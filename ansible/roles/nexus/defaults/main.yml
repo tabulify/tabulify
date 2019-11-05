@@ -17,16 +17,15 @@ nexus_ssl_storepass: changeit
 
 nexus_webapp_context_path: /nexus
 
-# archived versions are here
-#nexus_download_base_url: http://download.sonatype.com/nexus/oss
+
 # latest version is here
-nexus_download_base_url: http://www.sonatype.org/downloads
+nexus_download_base_url: https://download.sonatype.com/nexus/3
 
 # Full list at https://help.sonatype.com/repomanager3/download/download-archives---repository-manager-3
 nexus_version: 3.19.1-01
 
 # The name of the file to download
-nexus_distribution_name: nexus-{{ nexus_version }}-bundle.tar.gz
+nexus_distribution_name: nexus-{{ nexus_version }}-unix.tar.gz
 
 # An application directory
 nexus_application_directory: nexus-{{ nexus_version }}
@@ -38,4 +37,6 @@ nexus_download_force: no
 # Download destination directory
 nexus_dest: /tmp/nexus
 
-nexus_link: nexus-current
+# sometimes seen as nexus-current
+nexus_link: nexus-latest
+

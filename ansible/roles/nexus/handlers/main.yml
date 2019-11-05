@@ -9,6 +9,8 @@
     daemon_reload: yes
     state: restarted
 
-- name: reload systemctl
+- name: "firewalld reload"
   become: yes
-  systemd: daemon_reload=yes
+  systemd:
+    state: restarted
+    name: firewalld

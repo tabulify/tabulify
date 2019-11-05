@@ -5,6 +5,5 @@
     dest: /etc/systemd/system/nexus.service
     mode: 0644
   notify:
-    - reload systemctl
-    -
+    - 'nexus reload'
   tags: config

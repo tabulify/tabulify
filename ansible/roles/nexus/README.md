@@ -35,7 +35,7 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
       nexus_download_force: no
       nexus_link: nexus-current
       # Derived 
-      nexus_download_base_url: http://www.sonatype.org/downloads 
+      nexus_download_base_url: http://download.sonatype.com/nexus/3/ 
       nexus_distribution_name: nexus-{{ nexus_version }}-bundle.tar.gz
       nexus_application_directory: nexus-{{ nexus_version }}
       
@@ -56,7 +56,7 @@ Variables that can be passed to this role and their default values are as follow
 ## Support / Log
 
 ```bash
-tail -f ${NEXUS_HOME}/sonatype-work/nexus3/log/nexus.log
+tail -f ${NEXUS_HOME}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
 ```
 ## Documentation / Reference
 
