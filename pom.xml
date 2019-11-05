@@ -93,14 +93,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-<!--        <extensions>-->
-<!--            &lt;!&ndash; Enabling the use of SSH for the deployment phase of Maven, not for this Sftp&ndash;&gt;-->
-<!--            <extension>-->
-<!--                <groupId>org.apache.maven.wagon</groupId>-->
-<!--                <artifactId>wagon-ssh</artifactId>-->
-<!--                <version>2.10</version>-->
-<!--            </extension>-->
-<!--        </extensions>-->
+        <!--        <extensions>-->
+        <!--            &lt;!&ndash; Enabling the use of SSH for the deployment phase of Maven, not for this Sftp&ndash;&gt;-->
+        <!--            <extension>-->
+        <!--                <groupId>org.apache.maven.wagon</groupId>-->
+        <!--                <artifactId>wagon-ssh</artifactId>-->
+        <!--                <version>2.10</version>-->
+        <!--            </extension>-->
+        <!--        </extensions>-->
     </build>
 
 
@@ -198,20 +198,16 @@
 
     <distributionManagement>
         <repository>
-            <id>bytle-m2-repo</id>
-            <name>Bytle Remote</name>
-            <url>scp://sftp.bytle.net:22/home/gerardni-m2repo</url>
+            <id>nexus</id>
+            <name>Releases</name>
+            <url>http://vps748761.ovh.net:8082/nexus/repository/maven-releases/</url>
         </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <name>Snapshot</name>
+            <url>http://vps748761.ovh.net:8082/nexus/repository/maven-snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
-
-<!--    <repositories>-->
-<!--        &lt;!&ndash; Public Repository &ndash;&gt;-->
-<!--        <repository>-->
-<!--            <id>bytle-m2-repo-http</id>-->
-<!--            <name>Bytle Remote</name>-->
-<!--            <url>https://bytle.net/m2-repo</url>-->
-<!--        </repository>-->
-<!--    </repositories>-->
 
     <organization>
         <name>Bytle</name>

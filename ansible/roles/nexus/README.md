@@ -79,8 +79,10 @@ Admin user:
   * Login: `admin` 
   * password: `$data-dir\admin.password`
 
+
 ## Next steps
 
+  * [Backup and restore](https://help.sonatype.com/repomanager3/backup-and-restore)
   * [User Interface](https://help.sonatype.com/repomanager3/user-interface)
   * [Configuration](https://help.sonatype.com/repomanager3/configuration)
   * [Format Setup (maven, npm,..)](https://help.sonatype.com/repomanager3/formats)
