@@ -2,57 +2,29 @@
 # tasks file for nexus
 
 
+- name: Nexus user ceration
+  become: true
+  import_tasks: 'root_nexus_user.yml'
 
-- name: "Create Nexus symlink"
-  file:
-    src: "{{ nexus_dest }}/{{ nexus_application_directory }}"
-    dest: "{{ nexus_dest }}/{{ nexus_link }}"
-    state: link
-  when:
-    - nexus_download.changed
+- name: Check if the data directory exists
+  become: true
+  stat:
+    path: '{{ nexus_home }}/{{ nexus_application_directory }}'
+  register: data_directory_exists
 
-- name: Stage Nexus service script
-  command: "cp {{ nexus_dest }}/{{ nexus_application_directory }}/bin/nexus /etc/init.d/nexus"
-  when:
-    - nexus_download.changed
+- name: Install
+  become: true
+  when: not data_directory_exists.stat.exists
+  block:
+    - name: Download and unzip the installation file
+      include_tasks: 'root_install.yml'
 
-- name: Configure Nexus service script
-  lineinfile:
-    dest: "/etc/init.d/nexus"
-    state: present
-    regexp: "{{ item.pattern }}"
-    line: "{{ item.replacement }}"
-    insertafter: "{{ item.after | default(omit) }}"
-  with_items:
-    - pattern: "^NEXUS_HOME="
-      replacement: "NEXUS_HOME=\"{{ nexus_dest }}/{{ nexus_link }}\""
-    - pattern: "^RUN_AS_USER="
-      replacement: "RUN_AS_USER=\"{{ nexus_user }}\""
-      after: "^#RUN_AS_USER="
-    - pattern: "^PIDDIR="
-      replacement: "PIDDIR=\"{{ nexus_pid_dir }}\""
-      after: "^#PIDDIR="
-  notify:
-    - reload systemctl
-    - restart nexus
-
-- name: Configure Nexus properties
-  lineinfile:
-    dest: "{{ nexus_dest }}/{{ nexus_link }}/conf/nexus.properties"
-    state: present
-    regexp: "{{ item.pattern }}"
-    line: "{{ item.replacement }}"
-  with_items:
-    - pattern: "^application-port="
-      replacement: "application-port={{ nexus_port }}"
-    - pattern: "^application-host="
-      replacement: "application-host={{ nexus_host }}"
-    - pattern: "^nexus-webapp-context-path="
-      replacement: "nexus-webapp-context-path={{ nexus_webapp_context_path }}"
-  notify:
-    - restart nexus
-
-- include_tasks: ssl.yml
-  when:
-    - nexus_ssl
-
+#- name: Install service in sysvinit
+#  become: true
+#  import_tasks: 'root_service_sysvinit.yml'
+#  when: ansible_service_mgr == "sysvinit"
+#
+#- name: Install service in systemd
+#  become: true
+#  import_tasks: 'root_service_systemd.yml'
+#  when: ansible_service_mgr == "systemd"

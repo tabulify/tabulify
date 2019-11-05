@@ -50,10 +50,14 @@ where:
     * `nexus_dest` is where the installation file will be downloaded
     * `nexus_pid_dir` is where the pid file will be saved (default to `/var/run/nexus`)
     
-    * `nexus_shell` is the default to `/sbin/nologin`
 
 Variables that can be passed to this role and their default values are as follows.
 
+## Support / Log
+
+```bash
+tail -f ${NEXUS_HOME}/sonatype-work/nexus3/log/nexus.log
+```
 ## Documentation / Reference
 
 Inspired by:

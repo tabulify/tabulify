@@ -3,14 +3,6 @@
 # The steps explained here
 # https://help.sonatype.com/repomanager3/installation/installation-methods
 
-- name: "Ensure nexus group"
-  group: name="{{ nexus_group }}"
-
-- name: "Ensure nexus user"
-  user:
-    name: "{{ nexus_user }}"
-    group: "{{ nexus_group }}"
-    home: "{{ nexus_home }}"
 
 - name: "Ensure Nexus directories exist"
   file:
@@ -25,8 +17,7 @@
     - "{{ nexus_pid_dir }}"
 
 
-
-- name: "Download Nexus"
+- name: "Download Nexus at ({{ nexus_dest }}/{{ nexus_distribution_name }})"
   get_url:
     url: "{{ nexus_download_base_url }}/{{ nexus_distribution_name }}"
     dest: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
@@ -34,13 +25,11 @@
     validate_certs: no
   register: nexus_download
 
-- name: "Unarchive Nexus into the nexus home ({{ ){{ nexus_home }})"
+- name: "Unarchive Nexus into the nexus home ({{ nexus_home }})"
   unarchive:
     src: "{{ nexus_dest }}/{{ nexus_distribution_name }}"
     dest: "{{ nexus_home }}"
-    copy: no
-  when:
-    - nexus_download.changed
+    remote_src: yes # indicate the archived file is already on the remote system and not local to the Ansible controller
 
 # The extraction process creates two sibling directories:
 #     * an application directory
@@ -52,8 +41,6 @@
     recurse: yes
     owner: "{{ nexus_user }}"
     group: "{{ nexus_group }}"
-  when:
-    - nexus_download.changed
   with_items:
     - "{{ nexus_home }}/{{ nexus_application_directory }}"
     - "{{ nexus_home }}/{{ nexus_data_directory }}"
