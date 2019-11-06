@@ -59,6 +59,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- com.google.common.base.Preconditions -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
 
     </dependencies>
 </project>
