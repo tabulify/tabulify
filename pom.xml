@@ -12,6 +12,17 @@
     <version>1.1.0-SNAPSHOT</version>
     <modules>
         <module>cli</module>
+        <module>log</module>
+        <module>type</module>
+        <module>crypto</module>
+        <module>command</module>
+        <module>doctest</module>
+        <module>fs</module>
+        <module>os</module>
+        <module>regexp</module>
+        <module>email</module>
+        <module>xml</module>
+        <module>sftp</module>
         <module>db</module>
         <module>db-jdbc</module>
         <module>db-cli</module>
@@ -19,23 +30,13 @@
         <module>db-tpc</module>
         <module>db-sqlite</module>
         <module>db-gen</module>
-        <module>log</module>
-        <module>db-excel</module>
-        <module>type</module>
-        <module>crypto</module>
-        <module>db-sqlserver</module>
-        <module>command</module>
-        <module>doctest</module>
-        <module>fs</module>
-        <module>os</module>
-        <module>regexp</module>
-        <module>website</module>
-        <module>email</module>
-        <module>xml</module>
-        <module>sftp</module>
+        <module>db-website</module>
         <module>db-fs</module>
         <module>db-json</module>
         <module>db-oracle</module>
+        <module>db-assembly</module>
+        <module>db-excel</module>
+        <module>db-sqlserver</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -56,9 +57,15 @@
     </properties>
 
     <!-- Plugin Dependency Version Management -->
+    <!-- The plugin version are set here, set them not on each submodule -->
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
@@ -197,7 +204,6 @@
                 <artifactId>bytle-command</artifactId>
                 <version>1.1.0-SNAPSHOT</version>
             </dependency>
-
             <dependency>
                 <groupId>net.bytle</groupId>
                 <artifactId>bytle-db-jdbc</artifactId>
@@ -208,7 +214,36 @@
                 <artifactId>bytle-fs</artifactId>
                 <version>1.1.0-SNAPSHOT</version>
             </dependency>
-
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-doctest</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-cli</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-move</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-cli</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-db-tpc</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytle</groupId>
+                <artifactId>bytle-xml</artifactId>
+                <version>1.1.0-SNAPSHOT</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -265,45 +300,6 @@
             </build>
         </profile>
 
-
-        <profile>
-            <!-- Will copy the jar to the local installation -->
-            <id>copy-jar</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-jar</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>
-                                        ${lib.path}
-                                    </outputDirectory>
-                                    <overwrite>true</overwrite>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.directory}</directory>
-                                            <includes>
-                                                <include>${project.build.finalName}.jar</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
     </profiles>
 
