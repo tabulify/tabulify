@@ -21,8 +21,8 @@ public class DocTestExecutor {
     public static final String APP_NAME = DocTestExecutor.class.getSimpleName();
     protected final static Log LOGGER_DOCTEST = Log.getLog(DocTestExecutor.class);
     private final String name;
-
-    private boolean enableCacheExecution = false;
+    
+    DocCache docCache;
     Map<String, Class> commands = new HashMap<>();
 
     /**
@@ -62,14 +62,14 @@ public class DocTestExecutor {
     }
 
     /**
-     * If this is true, a file with the same md5 that has already been executed
-     * will not be executed a second time
+     * 
+     * If a docCache is passed, it will be used
      *
-     * @param b
-     * @return
+     * @param docCache - A doc cache for this run
+     * @return a {@link DocTestExecutor} for chaining
      */
-    public DocTestExecutor useCacheExecution(boolean b) {
-        this.enableCacheExecution = b;
+    public DocTestExecutor setCache(DocCache docCache) {
+        this.docCache = docCache;
         return this;
     }
 
@@ -94,8 +94,8 @@ public class DocTestExecutor {
 
             for (Path childPath : childPaths) {
 
-                if (enableCacheExecution) {
-                    String md5Cache = DocCache.get(name).getMd5(childPath);
+                if (docCache!=null) {
+                    String md5Cache = docCache.getMd5(childPath);
                     String md5 = Fs.getMd5(childPath);
                     if (md5.equals(md5Cache)) {
                         LOGGER_DOCTEST.info(this.name, "Cache is on and the file (" + childPath + ") has already been executed. Skipping the execution");
@@ -112,8 +112,8 @@ public class DocTestExecutor {
                     Fs.toFile(docTestRunResult.getNewDoc(), childPath);
                 }
 
-                if (enableCacheExecution) {
-                    DocCache.get(name).store(childPath);
+                if (docCache!=null) {
+                    docCache.store(childPath);
                 }
 
             }
@@ -154,7 +154,10 @@ public class DocTestExecutor {
             docTestExecutorUnit.addMainClass(commandName, commands.get(commandName));
         }
 
-        final List<DocTestUnit> cachedDocTestUnits = DocCache.get(name).getDocTestUnits(path);
+        List<DocTestUnit> cachedDocTestUnits = new ArrayList<>();
+        if (docCache != null){
+            cachedDocTestUnits = docCache.getDocTestUnits(path);
+        }
         Integer previousEnd = 0;
         Boolean oneCodeBlockHasAlreadyRun = false;
         for (int i = 0; i < docTests.size(); i++) {
@@ -227,8 +230,8 @@ public class DocTestExecutor {
             // Run
             String result;
             if (
-                    ((codeChange || fileChange) & this.enableCacheExecution)
-                            || !this.enableCacheExecution
+                    ((codeChange || fileChange) & cacheIsOn())
+                            || (!cacheIsOn())
                             || oneCodeBlockHasAlreadyRun
             ) {
                 try {
@@ -294,6 +297,10 @@ public class DocTestExecutor {
     public DocTestExecutor setBaseFileDirectory(Path path) {
         this.baseFileDirectory = path;
         return this;
+    }
+
+    private Boolean cacheIsOn(){
+        return docCache!=null;
     }
 
 }

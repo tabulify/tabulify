@@ -5,17 +5,17 @@ import net.bytle.os.Oss;
 import net.bytle.regexp.Globs;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.bytle.os.Oss.LINUX;
 import static net.bytle.os.Oss.WIN;
@@ -156,9 +156,8 @@ public class Fs {
     }
 
     /**
-     *
      * @param content
-     * @param suffix - the file suffix. Example: ".txt"
+     * @param suffix  - the file suffix. Example: ".txt"
      * @return
      */
     public static Path createTempFile(String content, String suffix) {
@@ -182,7 +181,6 @@ public class Fs {
     }
 
     /**
-     *
      * @param prefix - a prefix to generate the directory name
      * @return a temp directory
      */
@@ -206,8 +204,8 @@ public class Fs {
      */
     public static String getMd5(Path path) {
 
-        if (Files.isDirectory(path)){
-            throw new RuntimeException("Md5 calculation for directory is not implemented. No md5 for ("+path.toAbsolutePath().toString());
+        if (Files.isDirectory(path)) {
+            throw new RuntimeException("Md5 calculation for directory is not implemented. No md5 for (" + path.toAbsolutePath().toString());
         }
         try {
             byte[] bytes = Files.readAllBytes(path);
@@ -272,6 +270,7 @@ public class Fs {
 
     /**
      * Create a file and all sub-directories if needed
+     *
      * @param path
      */
     public static void createFile(Path path) {
@@ -288,12 +287,13 @@ public class Fs {
      * Wrapper around {@link Files#write(Path, byte[], OpenOption...)}
      * to write a string to a file
      * without exception handling
+     *
      * @param path
      * @param s
      */
     public static void write(Path path, String s) {
         try {
-            Files.write(path,s.getBytes());
+            Files.write(path, s.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -301,6 +301,7 @@ public class Fs {
 
     /**
      * A wrapper around path.relativize(base)
+     *
      * @param path
      * @param base
      * @return a relative path
@@ -311,36 +312,35 @@ public class Fs {
 
     public static void overwrite(Path source, Path target) {
         try {
-            Files.write(target,Files.readAllBytes(source), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(target, Files.readAllBytes(source), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     *
-     * @param path - a regular file or a directory
+     * @param path     - a regular file or a directory
      * @param basePath - a base directory
      * @return a list of name between the path and the base path
-     *
+     * <p>
      * Example
-     *   * basePath = /tmp
-     *   * path = /tmp/foo/bar/blue
+     * * basePath = /tmp
+     * * path = /tmp/foo/bar/blue
      * You will get { 'foo', 'bar'}
      */
     public static List<String> getDirectoryNamesInBetween(Path path, Path basePath) {
 
-        if (basePath.getNameCount()>path.getNameCount()){
+        if (basePath.getNameCount() > path.getNameCount()) {
             throw new RuntimeException("The base path should have less levels than the path");
         }
         List<String> names = new ArrayList<>();
         // -1 in the end limit because the last name if the file name, we don't return it
-        for (int i=0;i<path.getNameCount()-1;i++){
+        for (int i = 0; i < path.getNameCount() - 1; i++) {
             String name = path.getName(i).toString();
-            if (i<=basePath.getNameCount()-1){
+            if (i <= basePath.getNameCount() - 1) {
                 String baseName = basePath.getName(i).toString();
-                if (!baseName.equals(name)){
-                    throw new RuntimeException("The path doesn't share a common branch with the base path. At the level ("+(i+1)+", the name is different. We got ("+name+") for the path and ("+baseName+") for the base path");
+                if (!baseName.equals(name)) {
+                    throw new RuntimeException("The path doesn't share a common branch with the base path. At the level (" + (i + 1) + ", the name is different. We got (" + name + ") for the path and (" + baseName + ") for the base path");
                 }
             } else {
                 names.add(name);
@@ -352,7 +352,7 @@ public class Fs {
 
     /**
      * path.isAbsolute just tell you that the object path is absolute, not the path
-     *
+     * <p>
      * This method check if there is a root
      * If this is the case, the path is absolute otherwise not.
      *
@@ -360,7 +360,7 @@ public class Fs {
      * @return true if the path has a root (is absolute)
      */
     public static boolean isAbsolute(Path path) {
-        if (path.getRoot()!=null) {
+        if (path.getRoot() != null) {
             return true;
         } else {
             return false;
@@ -369,7 +369,6 @@ public class Fs {
 
 
     /**
-     *
      * @param path
      * @return the children path of a directory
      */
@@ -377,7 +376,7 @@ public class Fs {
 
         try {
             List<Path> childrenPaths = new ArrayList<>();
-            for (Path childPath: Files.newDirectoryStream(path)){
+            for (Path childPath : Files.newDirectoryStream(path)) {
                 childrenPaths.add(childPath);
             }
             return childrenPaths;
@@ -387,27 +386,58 @@ public class Fs {
     }
 
     /**
-     *
      * @param segments
      * @return a local pah from an array string
      */
     public static Path getPath(String[] segments) {
         String[] more = Arrays.copyOfRange(segments, 1, segments.length);
-        return Paths.get(segments[0],more);
+        return Paths.get(segments[0], more);
     }
 
     /**
-     *
      * @param path
      * @return the file name without the extension
      */
     public static String getFileName(Path path) {
         final String fileName = path.getFileName().toString();
         final int endIndex = fileName.indexOf(".");
-        if (endIndex==-1){
+        if (endIndex == -1) {
             return fileName;
         } else {
             return fileName.substring(0, endIndex);
+        }
+    }
+
+    /**
+     * @param path - a file or a directory
+     */
+    public static List<Path> deleteIfExists(Path path) {
+        if (Files.exists(path)){
+            return Fs.delete(path);
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    private static List<Path> delete(Path path) {
+        try {
+            List<Path> deletedPaths = new ArrayList<>();
+            if (Files.isDirectory(path)) {
+                try (Stream<Path> walk = Files.walk(path)) {
+                    deletedPaths = walk.sorted(Comparator.reverseOrder())
+                            .filter(s->!Files.isDirectory(s))
+                            .flatMap(s -> Fs.delete(s).stream())
+                            .collect(Collectors.toList());
+                }
+            } else {
+
+                Files.delete(path);
+                deletedPaths.add(path);
+
+            }
+            return deletedPaths;
+        } catch (IOException e) {
+            throw  new RuntimeException(e);
         }
     }
 }
