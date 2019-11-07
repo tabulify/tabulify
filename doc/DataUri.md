@@ -2,6 +2,11 @@
 
 ## About
 
+The following URI can be directly open by the browser.
+```
+file:///D:/code/bytle-mono/db-gen/build/reports/tests/test/index.html
+```
+
 Syntax
 
 ```

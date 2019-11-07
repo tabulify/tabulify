@@ -1,5 +1,8 @@
 target/
-
+build/
+.gradle
+**/.gradle/
+**/build/
 .idea
 .idea/*
 *.iml
