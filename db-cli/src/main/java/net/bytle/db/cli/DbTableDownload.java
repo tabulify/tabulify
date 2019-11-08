@@ -7,6 +7,7 @@ import net.bytle.db.engine.Queries;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

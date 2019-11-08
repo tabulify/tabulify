@@ -1,6 +1,7 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.cli.Log;
+
+import net.bytle.log.Log;
 
 public class Sqlites {
 

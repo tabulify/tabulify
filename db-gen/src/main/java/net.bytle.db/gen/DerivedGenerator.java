@@ -1,7 +1,7 @@
 package net.bytle.db.gen;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 

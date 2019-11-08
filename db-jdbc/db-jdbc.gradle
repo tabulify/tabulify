@@ -3,7 +3,10 @@
  */
 
 dependencies {
-    compile project(':bytle-db')
+    implementation project(':bytle-db')
+    implementation project(':bytle-log')
+    implementation project(':bytle-type')
+    implementation project(':bytle-regexp')
 }
 
 description = 'db-jdbc'

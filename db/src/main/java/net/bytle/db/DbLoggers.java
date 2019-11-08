@@ -1,6 +1,6 @@
 package net.bytle.db;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 
 public class DbLoggers {

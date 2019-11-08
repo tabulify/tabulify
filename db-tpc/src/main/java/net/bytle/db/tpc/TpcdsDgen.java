@@ -4,7 +4,7 @@ import com.teradata.tpcds.Options;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
 import com.teradata.tpcds.TableGenerator;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;

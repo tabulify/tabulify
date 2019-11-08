@@ -1,6 +1,7 @@
 package net.bytle.db.gen;
 
-import net.bytle.cli.Log;
+
+import net.bytle.log.Log;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;

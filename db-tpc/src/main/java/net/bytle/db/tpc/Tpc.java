@@ -1,6 +1,6 @@
 package net.bytle.db.tpc;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 class Tpc {
 

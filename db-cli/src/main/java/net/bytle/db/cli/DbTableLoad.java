@@ -13,6 +13,7 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.uri.IDataUri;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

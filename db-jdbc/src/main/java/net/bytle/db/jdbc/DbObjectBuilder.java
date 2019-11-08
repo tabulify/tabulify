@@ -1,6 +1,6 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;

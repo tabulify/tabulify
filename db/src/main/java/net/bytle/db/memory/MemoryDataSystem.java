@@ -1,7 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;

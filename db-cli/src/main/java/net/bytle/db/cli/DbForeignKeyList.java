@@ -3,7 +3,7 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.uri.TableDataUri;

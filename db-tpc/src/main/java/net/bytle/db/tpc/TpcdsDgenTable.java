@@ -3,7 +3,7 @@ package net.bytle.db.tpc;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.Tabulars;

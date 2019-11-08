@@ -1,4 +1,4 @@
-package net.bytle.cli;
+package net.bytle.log;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,11 +1,11 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
+import net.bytle.log.Log;
 
 import java.util.List;
 
 import static net.bytle.db.cli.Words.COUNT;
-import static net.bytle.db.cli.Words.NO_COUNT;
 import static net.bytle.db.cli.Words.LIST_COMMAND;
 
 /**

@@ -11,6 +11,7 @@ import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

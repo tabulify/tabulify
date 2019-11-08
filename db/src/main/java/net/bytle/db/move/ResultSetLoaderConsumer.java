@@ -1,6 +1,6 @@
 package net.bytle.db.move;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;

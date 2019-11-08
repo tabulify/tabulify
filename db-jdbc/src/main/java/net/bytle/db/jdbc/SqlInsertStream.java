@@ -2,11 +2,10 @@ package net.bytle.db.jdbc;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.RelationDef;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;

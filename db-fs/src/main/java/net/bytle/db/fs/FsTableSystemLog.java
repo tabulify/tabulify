@@ -1,6 +1,6 @@
 package net.bytle.db.fs;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 public class FsTableSystemLog {
 

@@ -1,6 +1,6 @@
 package net.bytle.db.stream;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.DataTypes;
 import net.bytle.db.model.TableDef;

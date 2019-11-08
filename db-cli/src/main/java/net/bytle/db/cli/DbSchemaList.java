@@ -5,6 +5,7 @@ import net.bytle.cli.*;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.SchemaDef;
+import net.bytle.log.Log;
 
 import java.util.HashMap;
 import java.util.List;

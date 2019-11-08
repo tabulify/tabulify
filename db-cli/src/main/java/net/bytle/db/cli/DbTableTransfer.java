@@ -14,6 +14,7 @@ import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.sql.Types;

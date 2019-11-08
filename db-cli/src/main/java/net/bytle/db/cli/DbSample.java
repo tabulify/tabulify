@@ -2,6 +2,7 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
+import net.bytle.log.Log;
 
 import java.util.List;
 

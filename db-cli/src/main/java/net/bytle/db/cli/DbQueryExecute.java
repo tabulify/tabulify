@@ -14,6 +14,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.fs.Fs;
+import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
 import java.io.IOException;

@@ -3,10 +3,10 @@
  */
 
 dependencies {
-    implementation project(':bytle-db-jdbc')
     implementation project(':bytle-db')
     implementation project(':bytle-log')
-    compile 'org.xerial:sqlite-jdbc:3.25.2'
+    implementation project(':bytle-fs')
+    implementation 'org.apache.commons:commons-csv:1.7'
 }
 
-description = 'Db Sqlite'
+description = 'db-fs'

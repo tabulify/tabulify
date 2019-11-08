@@ -1,6 +1,6 @@
 package net.bytle.doctest;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;

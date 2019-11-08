@@ -3,7 +3,7 @@ package net.bytle.db.sqlite;
 
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

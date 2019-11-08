@@ -1,6 +1,6 @@
 package net.bytle.db.memory;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;

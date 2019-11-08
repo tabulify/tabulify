@@ -1,7 +1,7 @@
 package net.bytle.doctest;
 
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.fs.Fs;
 import net.bytle.type.Strings;
 

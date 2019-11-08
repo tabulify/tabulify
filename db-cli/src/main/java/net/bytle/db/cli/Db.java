@@ -1,11 +1,8 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.sqlite.SqliteSqlDatabase;
-import net.bytle.fs.Fs;
+import net.bytle.log.Log;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

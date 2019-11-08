@@ -9,6 +9,7 @@ import net.bytle.db.engine.Tables;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.log.Log;
 import net.bytle.regexp.Globs;
 
 import java.nio.file.Files;

@@ -1,6 +1,6 @@
 package net.bytle.db.gen;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;

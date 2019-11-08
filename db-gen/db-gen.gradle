@@ -3,10 +3,11 @@
  */
 
 dependencies {
-    compile project(':bytle-db')
-    testCompile project(':bytle-db')
-    testCompile project(':bytle-db-sqlite')
-    testCompile project(':bytle-db-jdbc')
+    implementation project(':bytle-type')
+    implementation project(':bytle-db')
+    implementation project(':bytle-log')
+    testImplementation project(':bytle-db-sqlite')
+    testImplementation project(':bytle-db-jdbc')
 }
 
 description = 'Db Gen'

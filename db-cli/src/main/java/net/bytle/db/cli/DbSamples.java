@@ -1,6 +1,6 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.Log;
+import net.bytle.log.Log;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.BytleSchema;
 import net.bytle.db.tpc.TpcdsModel;

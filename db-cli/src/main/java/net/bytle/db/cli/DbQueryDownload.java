@@ -7,6 +7,7 @@ import net.bytle.db.engine.Queries;
 
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.stream.Streams;
+import net.bytle.log.Log;
 import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -16,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;

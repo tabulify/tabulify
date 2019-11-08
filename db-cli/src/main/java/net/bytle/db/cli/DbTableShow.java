@@ -10,6 +10,7 @@ import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.List;
