@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>bytle-parent</artifactId>
+        <groupId>net.bytle</groupId>
+        <version>1.1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>bytle-db-tpc</artifactId>
+    <name>Db Tpc</name>
+    <description>Tpc</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-command</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-fs</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytle</groupId>
+            <artifactId>bytle-db-sqlite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- tpch -->
+        <dependency>
+            <groupId>io.airlift.tpch</groupId>
+            <artifactId>tpch</artifactId>
+            <version>0.9</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.teradata.tpcds</groupId>
+            <artifactId>tpcds</artifactId>
+            <version>1.3-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>airline</artifactId>
+                    <groupId>io.airlift</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- com.google.common.base.Preconditions -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+    </dependencies>
+</project>

@@ -158,18 +158,18 @@ public class Fs {
     }
 
     /**
-     * @param content
+     * @param content -  the content of the file
      * @param suffix  - the file suffix. Example: ".txt"
-     * @return
+     * @return a temp file in the temp directory
      */
     public static Path createTempFile(String content, String suffix) {
 
         try {
 
-            Path temp = Paths.get(System.getProperty("java.io.tmpdir"), "bytle");
+            Path temp = Paths.get(System.getProperty("java.io.tmpdir"));
             Files.createDirectories(temp);
 
-            Path tempFile = Files.createTempFile(temp, "bytle-test", suffix, new FileAttribute[0]);
+            Path tempFile = Files.createTempFile(temp, null, suffix);
             Files.write(tempFile, content.getBytes());
 
             return tempFile;
@@ -183,7 +183,7 @@ public class Fs {
     }
 
     /**
-     * @param prefix - a prefix to generate the directory name
+     * @param prefix - a prefix to generate the directory name (may be null)
      * @return a temp directory
      */
     public static Path createTempDirectory(String prefix) {
@@ -441,5 +441,16 @@ public class Fs {
         } catch (IOException e) {
             throw  new RuntimeException(e);
         }
+    }
+
+    /**
+     *
+     * @param name
+     * @return a file in the temp directory
+     */
+    public static Path getTempFile(String name) {
+        Path path = Paths.get(createTempDirectory(null).toString(),name);
+        createFile(path);
+        return path;
     }
 }
