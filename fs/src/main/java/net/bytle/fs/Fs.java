@@ -234,6 +234,7 @@ public class Fs {
                 break;
             case LINUX:
                 appData = Paths.get(getUserHome().toString(), "." + appName);
+                break;
             default:
                 throw new RuntimeException("AppData directory for OS " + Oss.getName() + " is not implemented");
         }
