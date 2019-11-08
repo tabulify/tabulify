@@ -9,35 +9,42 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'maven-publish'
 
     repositories {
         mavenLocal()
         maven {
             url = 'http://repo.maven.apache.org/maven2'
         }
-
         maven {
             url = 'https://repo.boundlessgeo.com/main/'
         }
     }
 
     dependencies {
-        testCompile 'junit:junit:4.12'
-        testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
+        testImplementation 'junit:junit:4.12'
+        testImplementation 'com.github.stefanbirkner:system-rules:1.17.0'
     }
 
     sourceCompatibility = '1.8'
 
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                from(components.java)
-            }
-        }
+    // Disable the test report for the individual test task
+    // samples/testing/testReport in the full Gradle distribution
+    test {
+        reports.html.enabled = false
     }
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
+
+
+}
+
+// samples/testing/testReport in the full Gradle distribution
+// doc: https://docs.gradle.org/current/userguide/java_testing.html#test_reporting
+// The problem with this publication is that if there is an error in the test you don't get anything
+task testReport(type: TestReport) {
+    destinationDir = file("$buildDir/reports/allTests")
+    // Include the results from the `test` task in all subprojects
+    reportOn subprojects*.test
 }
