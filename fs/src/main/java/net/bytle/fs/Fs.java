@@ -2,10 +2,11 @@ package net.bytle.fs;
 
 
 import net.bytle.os.Oss;
-import net.bytle.regexp.Globs;
 
-import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.security.MessageDigest;
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 
 import static net.bytle.os.Oss.LINUX;
 import static net.bytle.os.Oss.WIN;
+import static net.bytle.type.Bytes.printHexBinary;
 
 
 public class Fs {
@@ -210,7 +212,7 @@ public class Fs {
         try {
             byte[] bytes = Files.readAllBytes(path);
             byte[] hash = MessageDigest.getInstance("MD5").digest(bytes);
-            return DatatypeConverter.printHexBinary(hash);
+            return printHexBinary(hash);
         } catch (NoSuchAlgorithmException | IOException e) {
             throw new RuntimeException(e);
         }

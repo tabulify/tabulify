@@ -3,3 +3,7 @@
  */
 
 description = 'Cli'
+
+dependencies {
+    testImplementation project(':bytle-fs')
+}

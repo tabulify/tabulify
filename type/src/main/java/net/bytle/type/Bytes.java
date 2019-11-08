@@ -25,6 +25,8 @@ public class Bytes {
     // hexadecimal representation of the binary data.
     // hexlify
     // https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
+    //
+    //
     static public String toHexaDecimalViaMap(byte[] bytes){
 
         char[] hexChars = new char[bytes.length * 2];
@@ -37,11 +39,6 @@ public class Bytes {
 
     }
 
-    static public String toHexaDecimalViaJavaxXml(byte[] bytes){
-
-        return javax.xml.bind.DatatypeConverter.printHexBinary(bytes);
-
-    }
 
     /**
      * Byte to UTF-8 String
@@ -72,7 +69,18 @@ public class Bytes {
      * Every byte of data is converted into the corresponding 2-digit hex representation. The resulting string is therefore twice as long as the length of data.
      */
     public static String toHexaDecimal(byte[] bytes) {
-        return toHexaDecimalViaJavaxXml(bytes);
+        return toHexaDecimalViaMap(bytes);
+    }
+
+    /**
+     *
+     * @param bytes
+     * @return the hexadecimal representation of the binary data. (Hexlify in Python)
+     *
+     * javax.xml.bind.DatatypeConverter.printHexBinary(bytes); is deprecated in 9/10 and removed in 11
+     */
+    public static String printHexBinary(byte[] bytes) {
+        return toHexaDecimalViaMap(bytes);
     }
 
 

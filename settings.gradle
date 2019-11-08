@@ -1,13 +1,9 @@
 /*
  * The settings files is the main entry to every project
  */
-
 rootProject.buildFileName = 'root.gradle'
 rootProject.name = 'bytle-parent'
-
 include(':bytle-cli')
-project(':bytle-cli').buildFileName = 'cli.gradle'
-
 include(':bytle-log')
 include(':bytle-type')
 include(':bytle-crypto')
@@ -19,22 +15,13 @@ include(':bytle-regexp')
 include(':bytle-email')
 include(':bytle-xml')
 include(':bytle-sftp')
-
 include(':bytle-db')
-project(':bytle-db').buildFileName = 'db.gradle'
 project(':bytle-db').projectDir = file('db')
-
 include(':bytle-db-jdbc')
-
 include(':bytle-db-cli')
-project(':bytle-db-cli').buildFileName = 'db-cli.gradle'
 project(':bytle-db-cli').projectDir = file('db-cli')
-
 include(':bytle-db-json')
-project(':bytle-db-json').buildFileName = 'db-json.gradle'
 project(':bytle-db-json').projectDir = file('db-json')
-
-
 include(':bytle-db-move')
 include(':bytle-db-tpc')
 include(':bytle-db-sqlite')
@@ -45,7 +32,6 @@ include(':bytle-db-oracle')
 include(':bytle-db-assembly')
 include(':bytle-db-excel')
 include(':bytle-db-sqlserver')
-
 project(':bytle-cli').projectDir = file('cli')
 project(':bytle-log').projectDir = file('log')
 project(':bytle-type').projectDir = file('type')
@@ -59,7 +45,6 @@ project(':bytle-email').projectDir = file('email')
 project(':bytle-xml').projectDir = file('xml')
 project(':bytle-sftp').projectDir = file('sftp')
 project(':bytle-db-jdbc').projectDir = file('db-jdbc')
-
 project(':bytle-db-move').projectDir = file('db-move')
 project(':bytle-db-tpc').projectDir = file('db-tpc')
 project(':bytle-db-sqlite').projectDir = file('db-sqlite')
@@ -70,3 +55,8 @@ project(':bytle-db-oracle').projectDir = file('db-oracle')
 project(':bytle-db-assembly').projectDir = file('db-assembly')
 project(':bytle-db-excel').projectDir = file('db-excel')
 project(':bytle-db-sqlserver').projectDir = file('db-sqlserver')
+
+// The gradle file
+rootProject.children.each { project ->
+    project.buildFileName = "${project.projectDir.name}.gradle"
+}
