@@ -20,13 +20,15 @@ The term `Move` is also known as:
 
 `Move` was preferred because it gives the notion of atomic operations.
 
-`Copy` was not chosen because this is one of the first operations in the well-known `Cut-Copy/Paste`.
+`Copy` was not chosen because this is one of the first task in the well-known `Cut-Copy/Paste` operation
+and therefore does not describe the operation as a whole.
  
 ## Idempotency 
 
 is idempotent (same request will lead to the same result):
   * Replace (delete/create) 
-  * Update / Merge
+  * Update 
+  * Merge/upsert
 
 is not idempotent
   * Insert (append)
@@ -54,19 +56,19 @@ Extract, transform, load (ETL) is the general procedure of copying data from one
     * The data from the clipboard is later inserted wherever a `paste` command is issued.
     * The data remains available to any application supporting the feature, thus allowing easy data transfer between applications.
     * Cut / Paste = Move
-    * Copy / Paste =
+    * Copy / Paste = Copy
 
 ## Method
 
-Short-cut alias method that we may find in `Tabulars`:
+Short-cut alias of the `move` method that we may find in `Tabulars`:
 
  
-  * merge - get all source data, create the target table if not exist and upsert the data to the target
-  * copy (a copy operations) - get all source data, create the target if not exist, verify that the table is empty and insert the data to the target
-  * cut (a cut operations) - get all source data, create the target table if not exist, insert them to the target and delete the source
+  * merge - get all source data and upsert the data to the target
+  * copy (a copy operations) - get all source data, verify that the target is empty and insert the data to the target
+  * cut (a cut operations) - get all source data, verify that the target is empty, insert them to the target and delete the source
   * insert - get all source data and insert the data to the target
-  * replace - get all source data, drop the target, create the target and insert the data to the target
-
+  * replace - get all source data, recreate or truncate the target, and insert the data to the target
+  * move (default to a non-strict merge operations)
 
 ## Strict mode impact
 
