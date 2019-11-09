@@ -1,9 +1,82 @@
-# Cross Loader Test
+# Cross Loader Test (Move/Copy - Data Manipulations actions - ELT) 
 
 ## About
 
-The module test cross data system loading (insert, update, merge)
+The module test cross data system move/copy - loading actions (insert, update, merge)
 
-TEL - or ELT
+This module has only test, the entry code is in 
+  * `Tabulars.move`
+  * and the package `net.bytle.db.move`
 
+## Alias
 
+The term `Move` is also known as:
+
+  * Transport
+  * Transfer
+  * Extract / Load
+  * Processing
+  * Cut / Copy / Paste
+
+`Move` was preferred because it gives the notion of atomic operations.
+
+`Copy` was not chosen because this is one of the first operations in the well-known `Cut-Copy/Paste`.
+ 
+## Idempotency 
+
+is idempotent (same request will lead to the same result):
+  * Replace (delete/create) 
+  * Update / Merge
+
+is not idempotent
+  * Insert (append)
+
+## Type 
+### CRUD
+
+   * create (insert/append), 
+   * read (select/retrieve/get), 
+   * update (modify) 
+   * delete (destroy)
+
+### ETL
+Extract, transform, load (ETL) is the general procedure of copying data from one or more sources into a destination system
+
+  * TEL (Transform, extract, load)
+  * Extract, load, transform (ELT)
+
+### Cut / Copy / Paste
+
+* [Cut / Copy / Paste](https://en.wikipedia.org/wiki/Cut,_copy,_and_paste) - The command names are an interface metaphor based on the physical procedure used in manuscript editing to create a page layout.
+    * `Copy` - The copy command creates a duplicate
+    * `Cut` - The cut command removes the selected data from its original position
+    * In both cases the selected data is kept in temporary storage (the clipboard)
+    * The data from the clipboard is later inserted wherever a `paste` command is issued.
+    * The data remains available to any application supporting the feature, thus allowing easy data transfer between applications.
+    * Cut / Paste = Move
+    * Copy / Paste =
+
+## Method
+
+Short-cut alias method that we may find in `Tabulars`
+  * copy (a copy operations) - get all source data, create the target and insert the data to the target
+  * cut (a cut operations) - get all source data, insert them to the target and delete the source
+  * insert - get all source data and insert the data to the target
+  * merge - get all source data and upsert the data to the target
+  
+
+## Move/Copy Options
+
+  * Operations on the source path
+    * Delete (A file move is doing that)
+    * Truncate (Delete content)
+  * Operations on the target path
+    * Replace
+    * Truncate (Delete content)
+    * Create
+    * CreateIfNotExist
+    * Copy Permissions (COPY_ATTRIBUTES in File)
+  * Operations on the target data 
+    * Insert/Append - get all source data and insert/append them
+    * Update - get all source data and update them
+    * Merge/Upsert - get all source data and update/insert them

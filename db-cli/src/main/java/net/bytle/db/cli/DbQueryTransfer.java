@@ -16,6 +16,7 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -48,13 +49,9 @@ public class DbQueryTransfer {
                 .setFooter(footer);
 
         command.optionOf(DATABASE_STORE);
-        command.optionOf(SOURCE_FETCH_SIZE_OPTION);
-        command.optionOf(SOURCE_QUERY_OPTION);
-        command.optionOf(BUFFER_SIZE_OPTION);
-        command.optionOf(TARGET_WORKER_OPTION);
-        command.optionOf(COMMIT_FREQUENCY_OPTION);
-        command.optionOf(TARGET_BATCH_SIZE_OPTION);
-        command.optionOf(METRICS_PATH_OPTION);
+
+        CliOptions.addCopyOptions(command);
+
 
 
         command.argOf(Words.SOURCE_DATA_URI)
@@ -84,37 +81,13 @@ public class DbQueryTransfer {
             targetDataPath = DataPaths.childOf(targetDataPath, targetTableName);
         }
 
-        SchemaDataUri sourceSchemaDataUri = SchemaDataUri.of(SOURCE_DATA_URI);
-        Database sourceDatabase = databasesStore.getDatabase(sourceSchemaDataUri.getDataStore());
-        SchemaDef sourceSchemaDef = sourceDatabase.getCurrentSchema();
-        if (sourceSchemaDataUri.getSchemaName()!=null){
-            sourceSchemaDef = sourceDatabase.getSchema(sourceSchemaDataUri.getSchemaName());
-        }
-
-        // Source Query
+        DataPath sourceDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(SOURCE_DATA_URI)));
         String query = cliParser.getFileContent(FILE_URI);
-        // Query
-        QueryDef sourceQueryDef = sourceSchemaDef.getQuery(query);
+        DataPath queryDataPath = DataPaths.ofQuery(sourceDataPath,query);
+
+        Files.copy()
 
 
-        Database targetDatabase = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
-
-
-        // Metrics
-        String metricsFilePath = cliParser.getString(METRICS_PATH_OPTION);
-
-        Integer targetWorkerCount = cliParser.getInteger(TARGET_WORKER_OPTION);
-
-
-        Integer bufferSize = cliParser.getInteger(BUFFER_SIZE_OPTION);
-        if (bufferSize == null) {
-            bufferSize = 2 * targetWorkerCount * 10000;
-            LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
-
-        }
-        Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
-        Integer fetchSize = cliParser.getInteger(SOURCE_FETCH_SIZE_OPTION);
-        Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
         TableDef targetTableDef = targetDatabase.getTable(targetTableName);
 
         CliTimer cliTimer = CliTimer.getTimer(targetTableName).start();
