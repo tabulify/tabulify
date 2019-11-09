@@ -58,20 +58,36 @@ Extract, transform, load (ETL) is the general procedure of copying data from one
 
 ## Method
 
-Short-cut alias method that we may find in `Tabulars`
-  * copy (a copy operations) - get all source data, create the target and insert the data to the target
-  * cut (a cut operations) - get all source data, insert them to the target and delete the source
-  * insert - get all source data and insert the data to the target
-  * merge - get all source data and upsert the data to the target
-  
+Short-cut alias method that we may find in `Tabulars`:
 
-## Move/Copy Options
+ 
+  * merge - get all source data, create the target table if not exist and upsert the data to the target
+  * copy (a copy operations) - get all source data, create the target if not exist, verify that the table is empty and insert the data to the target
+  * cut (a cut operations) - get all source data, create the target table if not exist, insert them to the target and delete the source
+  * insert - get all source data and insert the data to the target
+  * replace - get all source data, drop the target, create the target and insert the data to the target
+
+
+## Strict mode impact
+
+
+
+^ Operations ^ Mode ^ Merge ^ Copy ^ Cut ^ Insert ^ Replace ^
+| Error if the target table does not exists | Strict | Yes | - | - | Yes | Yes |
+| Error if the target table does not exists | Non-Strict | No | - | - | No | No |
+| Error if the target table exists | Strict | - | Yes | Yes | - | - |
+| Error if the target table exists | Non-Strict | - | No | No | - | - |
+| Error if the target table is not empty | Strict | - | - | - | - | - |
+| Error if the target table is not empty | Non-Strict | - | Yes | Yes | - | - |
+
+
+## Move Options
 
   * Operations on the source path
-    * Delete (A file move is doing that)
-    * Truncate (Delete content)
+    * Drop (A file move is doing that)
+    * Truncate (Delete content not file or table)
   * Operations on the target path
-    * Replace
+    * Drop
     * Truncate (Delete content)
     * Create
     * CreateIfNotExist
