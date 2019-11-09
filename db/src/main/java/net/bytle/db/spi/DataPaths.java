@@ -20,14 +20,7 @@ public class DataPaths {
 
     public static DataPath of(DataUri dataUri) {
 
-
-        Database dataStore ;
-        if (dataUri.getDataStore()==null) {
-           dataStore = Databases.getDefault();
-        } else {
-            dataStore = DatabasesStore.of().getDatabase(dataUri.getDataStore());
-        }
-        return of(dataStore,dataUri.getPath());
+        return of(DatabasesStore.of(),dataUri);
 
     }
 
@@ -47,7 +40,7 @@ public class DataPaths {
      * @param dataPath
      * @param parts
      * @return a child data path
-     * Equivalent to the resolve function {@link Path#resolve(String)}
+     * Equivalent to the resolve function in a file system {@link Path#resolve(String)}
      */
     public static DataPath childOf(DataPath dataPath, String... parts) {
         List<String> pathSegments = new ArrayList<>();
@@ -104,5 +97,40 @@ public class DataPaths {
         final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + dataStore.getDatabaseName() + ") with the Url (" + dataStore.getUrl() + ")";
         DbLoggers.LOGGER_DB_ENGINE.severe(message);
         throw new RuntimeException(message);
+    }
+
+    public static DataPath of(DatabasesStore databasesStore, DataUri dataUri) {
+
+        Database dataStore ;
+        if (dataUri.getDataStore()==null) {
+            dataStore = Databases.getDefault();
+        } else {
+            dataStore = databasesStore.getDatabase(dataUri.getDataStore());
+        }
+        return of(dataStore,dataUri.getPath());
+    }
+
+    /**
+     * @param databasesStore - the dataStore database
+     * @param dataUri - a data Uri
+     * @param query - the query
+     * @return a data path query
+     */
+    public static DataPath ofQuery(DatabasesStore databasesStore, DataUri dataUri, String query) {
+
+        return  ofQuery(of(databasesStore,dataUri),query);
+
+    }
+
+    /**
+     *
+     * @param dataPath - a container data path that defines where the query will execute
+     * @param query - the query
+     * @return a data path query
+     */
+    public static DataPath ofQuery(DataPath dataPath, String query) {
+
+        return  dataPath.getDataSystem().getQuery(query);
+
     }
 }

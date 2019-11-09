@@ -1,11 +1,8 @@
 package net.bytle.db.uri;
 
-import net.bytle.db.database.Database;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+/**
+ * A data uri is the string representation of a data path
+ */
 public class DataUri implements Comparable<DataUri> {
 
 

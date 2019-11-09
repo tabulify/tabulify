@@ -4,14 +4,13 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.MemorySelectStream;
-import net.bytle.db.stream.Streams;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -62,32 +61,31 @@ public class DbDatabaseList {
         final List<Database> databases = databasesStore.getDatabases(names);
 
         // Creating a table to use the print function
-        TableDef databaseInfo = Tables.get("databases")
+        TableDef databaseInfo = DataPaths.of("databases")
+                .getDataDef()
                 .addColumn("Name")
                 .addColumn("Login")
                 .addColumn("Password")
                 .addColumn("Url")
                 .addColumn("Driver");
 
-        final InsertStream tableInsertStream = Tables.getTableInsertStream(databaseInfo);
-        for (Database database:databases) {
-            String password = null;
-            if (database.getPassword()!=null){
-                password = "xxx";
+        try (InsertStream tableInsertStream = Tabulars.getInsertStream(databaseInfo.getDataPath())) {
+            for (Database database : databases) {
+                String password = null;
+                if (database.getPassword() != null) {
+                    password = "xxx";
+                }
+                tableInsertStream
+                        .insert(database.getDatabaseName(), database.getUser(), password, database.getUrl(), database.getDriver());
             }
-            tableInsertStream
-                    .insert(database.getDatabaseName(), database.getUser(), password, database.getUrl(), database.getDriver());
         }
-        tableInsertStream.close();
 
-        MemorySelectStream tableOutputStream = Tables.getTableOutputStream(databaseInfo);
 
         System.out.println();
-        Streams.print(tableOutputStream);
+        Tabulars.print(databaseInfo.getDataPath());
         System.out.println();
-        tableOutputStream.close();
 
-        Tables.delete(databaseInfo);
+        Tabulars.delete(databaseInfo.getDataPath());
 
 
         LOGGER.info("Bye !");

@@ -1,13 +1,10 @@
 # Data Uri
 
 ## About
+A data Uri is the string representation of a data path.
 
-The following URI can be directly open by the browser.
-```
-file:///D:/code/bytle-mono/db-gen/build/reports/tests/test/index.html
-```
 
-Syntax
+# Syntax
 
 ```
 [path]@datastore[?query][#fragment]
@@ -40,4 +37,9 @@ In Sql the point is a path separator but as we want to be able to define an abso
 the following syntax was not chosen (schema.table@fs?query=1&asd=2#element) 
 because the point has meaning (one point is the current working path, `..` is the parent).
 
-        
+## Note
+
+The following URI can be directly open by the browser.
+```
+file:///D:/code/bytle-mono/db-gen/build/reports/tests/test/index.html
+```

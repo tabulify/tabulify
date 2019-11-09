@@ -8,7 +8,11 @@ import net.bytle.db.move.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
 
@@ -54,18 +58,18 @@ public class DbQueryTransfer {
 
 
         command.argOf(Words.SOURCE_DATA_URI)
-                .setDescription("A schema Uri (@database[/schema]) where the queries will be executed")
+                .setDescription("A Data Uri (@dataStore) where the queries will be executed")
                 .setMandatory(true);
 
         command.argOf(TARGET_DATA_URI)
-                .setDescription("A table Uri (@database[/schema]/tableName) or a schema Uri (@database[/schema]) (in this case, the target table name will be the name of the query file)")
+                .setDescription("A Data Uri (name@dataStore) (by default, the target name will be the name of the query file)")
                 .setMandatory(true);
 
         command.argOf(FILE_URI)
-                .setDescription("A file URI defining sql file(s) or a directory containing queries (Example: query.sql or dim*.sql)")
+                .setDescription("A Data URI defining sql file(s) or a directory containing queries (Example: query.sql or dim*.sql)")
                 .setMandatory(true);
 
-        // create the parser
+        // Create the parser
         CliParser cliParser = Clis.getParser(command, args);
 
         // Database Store
@@ -73,10 +77,11 @@ public class DbQueryTransfer {
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
         // Target Table
-        String targetTableName = cliParser.getString(TARGET_DATA_URI);
-        if (targetTableName == null) {
+        DataPath targetDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(TARGET_DATA_URI)));
+        if (Tabulars.isContainer(targetDataPath)) {
             String fileName = cliParser.getPath(FILE_URI).getFileName().toString();
-            targetTableName = fileName.substring(0, fileName.lastIndexOf("."));
+            String targetTableName = fileName.substring(0, fileName.lastIndexOf(".");
+            targetDataPath = DataPaths.childOf(targetDataPath, targetTableName);
         }
 
         SchemaDataUri sourceSchemaDataUri = SchemaDataUri.of(SOURCE_DATA_URI);

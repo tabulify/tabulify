@@ -3,12 +3,12 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.database.Database;
-import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.SchemaDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.uri.DataUri;
+import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ import static net.bytle.db.cli.Words.DATABASE_STORE;
 public class DbForeignKeyCount {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String TABLE_URIS = "tableUri...";
+    private static final String DATA_URIS = "DataUri...";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -28,7 +28,7 @@ public class DbForeignKeyCount {
         cliCommand
                 .setDescription("Count links (foreign keys)");
 
-        cliCommand.argOf(TABLE_URIS)
+        cliCommand.argOf(DATA_URIS)
                 .setDescription("One or more name table uri (ie @database[/schema]/table)")
                 .setMandatory(true);
 
@@ -41,18 +41,13 @@ public class DbForeignKeyCount {
         final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        List<String> stringTableUris = cliParser.getStrings(TABLE_URIS);
+        List<String> dataUris = cliParser.getStrings(DATA_URIS);
         List<ForeignKeyDef> foreignKeys = new ArrayList<>();
 
-        for (String stringTableUri : stringTableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
-            Database database = databasesStore.getDatabase(tableDataUri.getDataStore());
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (tableDataUri.getSchemaName()!=null) {
-                schemaDef = database.getSchema(tableDataUri.getSchemaName());
-            }
-            final List<ForeignKeyDef> foreignKeys1 = schemaDef.getForeignKeys(tableDataUri.getTableName());
-            foreignKeys.addAll(foreignKeys1);
+        for (String dataUri : dataUris) {
+
+            DataPath tableDataUri = DataPaths.of(databasesStore, DataUri.of(dataUri));
+            foreignKeys.addAll(tableDataUri.getDataDef().getForeignKeys());
 
         }
 
