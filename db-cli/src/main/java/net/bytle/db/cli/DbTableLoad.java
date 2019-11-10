@@ -123,41 +123,7 @@ public class DbTableLoad {
         // Target Table
         TableDef targetTable = targetSchemaDef.getTableOf(tableDataUri.getTableName());
 
-        // Metrics
-        String metricsFilePath = cliParser.getString(Words.METRICS_PATH_OPTION);
 
-        String targetWorkerCountString = cliParser.getString(Words.TARGET_WORKER_OPTION);
-        Integer targetWorkerCount = 1;
-        if (targetWorkerCountString != null) {
-            targetWorkerCount = Integer.valueOf(targetWorkerCountString);
-        } else {
-            LOGGER.info(Words.TARGET_WORKER_OPTION + " parameter NOT found. Using the default : " + targetWorkerCount);
-        }
-
-        String bufferSizeString = cliParser.getString(Words.BUFFER_SIZE_OPTION);
-        Integer bufferSize = 2 * targetWorkerCount * 10000;
-        if (bufferSizeString != null) {
-            bufferSize = Integer.valueOf(bufferSizeString);
-        } else {
-            LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
-        }
-
-        String batchSizeString = cliParser.getString(TARGET_BATCH_SIZE_OPTION);
-        Integer batchSize = 10000;
-        if (batchSizeString != null) {
-            batchSize = Integer.valueOf(batchSizeString);
-        } else {
-            LOGGER.info(TARGET_BATCH_SIZE_OPTION + " parameter NOT found. Using default : " + batchSize);
-        }
-
-
-        String commitFrequencyString = cliParser.getString(COMMIT_FREQUENCY_OPTION);
-        Integer commitFrequency = 99999;
-        if (commitFrequencyString != null) {
-            commitFrequency = Integer.valueOf(commitFrequencyString);
-        } else {
-            LOGGER.info(COMMIT_FREQUENCY_OPTION + " parameter NOT found. Using default : " + commitFrequency);
-        }
 
         CliTimer cliTimer = CliTimer.getTimer(tableDataUri.getTableName())
                 .start();

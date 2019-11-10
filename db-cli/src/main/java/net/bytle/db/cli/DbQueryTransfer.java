@@ -2,12 +2,10 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
+import net.bytle.db.move.MoveProperties;
 import net.bytle.db.move.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
@@ -15,10 +13,17 @@ import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
+import org.graalvm.compiler.lir.sparc.SPARCMove;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -50,8 +55,7 @@ public class DbQueryTransfer {
 
         command.optionOf(DATABASE_STORE);
 
-        CliOptions.addCopyOptions(command);
-
+        CliOptions.addMoveOptions(command);
 
 
         command.argOf(Words.SOURCE_DATA_URI)
@@ -73,40 +77,88 @@ public class DbQueryTransfer {
         final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
+
+        // Query
+        DataPath queryDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(FILE_URI)));
+        List<DataPath> queryDataPaths = new ArrayList<>();
+        if (Tabulars.isContainer(queryDataPath)){
+            queryDataPaths.addAll(DataPaths.getChildren(queryDataPath,"*.sql"));
+        } else {
+            queryDataPaths.add(queryDataPath);
+        }
+
+        // Source Data Path
+        DataPath sourceDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(SOURCE_DATA_URI)));
+        Map<String, DataPath> sourceDataPaths = new HashMap<>();
+        if (Tabulars.isDataUnit(sourceDataPath)){
+            throw new RuntimeException("The source data Uri ("+SOURCE_DATA_URI+" should represent a schema/catalog not a table");
+        } else {
+            sourceDataPaths = queryDataPaths.stream()
+                    .collect(Collectors.toMap(
+                            d->d.getName(),
+                            d->DataPaths.ofQuery(sourceDataPath,Tabulars.getString(d))
+                            ));
+        }
+
         // Target Table
         DataPath targetDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(TARGET_DATA_URI)));
+        List<DataPath> targetDataPaths = new ArrayList<>();
+        if (Tabulars.isContainer(targetDataPath)){
+            targetDataPaths = queryDataPaths.stream()
+                    .map(d->DataPaths.childOf(targetDataPath,d.getName()))
+                    .collect(Collectors.toList());
+        } else {
+            if (queryDataPaths.size()!=1){
+                LOGGER.warning("All ("+queryDataPaths.size()+") queries will be loaded in one table ("+targetDataPath.toString()+")");
+                targetDataPaths = IntStream.of(queryDataPaths.size())
+                        .mapToObj(s->targetDataPath)
+                        .collect(Collectors.toList());
+            } else {
+                targetDataPaths = queryDataPaths
+                        .stream()
+                        .map(s->DataPaths.childOf(targetDataPath,s.getName()))
+                        .collect(Collectors.toList());
+            }
+        }
 
-        DataPath sourceDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(SOURCE_DATA_URI)));
+        MoveProperties moveProperties = CliOptions.getMoveOptions(cliParser);
+        int i = 0;
+        for (Map.Entry<String,DataPath> entry: sourceDataPaths.entrySet()){
 
-        List<DataPath> fileDataPaths = 
-        String query = cliParser.getFileContent(FILE_URI);
-        DataPath queryDataPath = DataPaths.ofQuery(sourceDataPath,query);
-
-
-
-
-        TableDef targetTableDef = targetDatabase.getTable(targetTableName);
-
-        CliTimer cliTimer = CliTimer.getTimer(targetTableName).start();
-
-        LOGGER.info("Loading Table " + targetTableName);
-
-        List<InsertStreamListener> resultSetListener;
-
-        resultSetListener = new ResultSetLoader(targetTableDef, sourceQueryDef)
-                .addTableAttribute("table_type", "COLUMN") // TODO: COLUMN is for SAP HANA - move this to the creation of the table
-                .targetWorkerCount(targetWorkerCount)
-                .bufferSize(bufferSize)
-                .batchSize(batchSize)
-                .commitFrequency(commitFrequency)
-                .metricsFilePath(metricsFilePath)
-                .load();
+            String queryName = entry.getKey();
+            CliTimer cliTimer = CliTimer.getTimer("query "+queryName).start();
+            DataPath source = entry.getValue();
+            DataPath target = targetDataPaths.get(0);
+            LOGGER.info("Loading the query (" + queryName +") from the source ("+sourceDataPath+") into the table ("+target.toString());
 
 
-        cliTimer.stop();
+            List<InsertStreamListener> resultSetListener;
 
-        LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
+            resultSetListener = new ResultSetLoader(targetTableDef, sourceQueryDef)
+                    .targetWorkerCount(targetWorkerCount)
+                    .bufferSize(bufferSize)
+                    .batchSize(batchSize)
+                    .commitFrequency(commitFrequency)
+                    .metricsFilePath(metricsFilePath)
+                    .load();
+
+            LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+            LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
+
+            cliTimer.stop();
+
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         int exitStatus = resultSetListener.stream().mapToInt(s -> s.getExitStatus()).sum();
         if (exitStatus != 0) {

@@ -89,4 +89,11 @@ public abstract class TableSystem implements AutoCloseable {
         return getDataPath(".");
     }
 
+    /**
+     *
+     * @param dataPath
+     * @return the content of a data path in a string format
+     */
+    public abstract String getString(DataPath dataPath);
+
 }

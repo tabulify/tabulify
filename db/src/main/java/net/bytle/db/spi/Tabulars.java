@@ -284,5 +284,12 @@ public class Tabulars {
         throw new RuntimeException("not yet implemented");
     }
 
-
+    /**
+     *
+     * @param dataPath
+     * @return the content of a data path in a string format
+     */
+    public static String getString(DataPath dataPath) {
+        return dataPath.getDataSystem().getString(dataPath);
+    }
 }

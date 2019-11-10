@@ -80,20 +80,18 @@ public class Words {
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
 
-
-
-
+    // Move options
     static final String TARGET_WORKER_OPTION = "tw";
     static final String BUFFER_SIZE_OPTION = "bs";
     static final String COMMIT_FREQUENCY_OPTION = "tcf";
     static final String TARGET_BATCH_SIZE_OPTION = "tbs";
     static final String TARGET_CONNECTION_SCRIPT_OPTION = "tcs";
     static final String METRICS_PATH_OPTION = "mp";
-
-    static final String JDBC_URL_SOURCE_OPTION = "db.source.url";
-    static final String JDBC_DRIVER_SOURCE_OPTION = "sd";
-    static final String SOURCE_QUERY_OPTION = "sq";
     static final String SOURCE_FETCH_SIZE_OPTION = "sfs";
+
+
+    static final String SOURCE_QUERY_OPTION = "sq";
+
 
     static final String OUTPUT_FILE_PATH = "output";
     static final String FILE_FORMAT = "format";
@@ -111,65 +109,7 @@ public class Words {
                 .setTypeAsOption()
                 .setDescription("Define the file format");
 
-        final String default_database_name = "target";
-        cliCommand.globalWordOf(DB_NAME)
-                .setTypeAsOption()
-                .setEnvName("DB_NAME")
-                .setMandatory(true)
-                .setDefaultValue(default_database_name)
-                .setDescription("defines the database name. \nA database connection is defined through its name. To know more about, see the command `" + Words.CLI_NAME + " " + Words.DATABASE_COMMAND + " " + CliParser.PREFIX_LONG_OPTION + Words.HELP + "`");
 
-
-
-        cliCommand.globalWordOf(TARGET_WORKER_OPTION)
-                .setTypeAsOption()
-                .setGroup("Load Options")
-                .setDescription("defines the TARGET number of thread against the TARGET database")
-                .addDefaultValue(1);
-
-        cliCommand.globalWordOf(BUFFER_SIZE_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the size of the buffer between SOURCE and TARGET threads");
-
-        cliCommand.globalWordOf(COMMIT_FREQUENCY_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the commit frequency against the TARGET table by batch")
-                .addDefaultValue(DbDefaultValue.COMMIT_FREQUENCY);
-
-        cliCommand.globalWordOf(TARGET_BATCH_SIZE_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the batch size against the TARGET table")
-                .addDefaultValue(10000);
-
-
-        cliCommand.globalWordOf(TARGET_CONNECTION_SCRIPT_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines a file that contains script that must be run against the target database");
-
-        cliCommand.globalWordOf(METRICS_PATH_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the file path that will save the metrics");
-
-
-        cliCommand.globalWordOf(JDBC_URL_SOURCE_OPTION)
-                .setTypeAsOption()
-                .setIsInConfigFile(true)
-                .setDescription("defines the SOURCE Jdbc connection String for the SOURCE database (Example: jdbc:oracle:thin:scott/tiger@myhost:1521:mysid)");
-
-
-        cliCommand.globalWordOf(JDBC_DRIVER_SOURCE_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the SOURCE driver for the SOURCE database (Example: oracle.jdbc.OracleDriver)");
-
-        cliCommand.globalWordOf(SOURCE_QUERY_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the SOURCE query");
-
-
-        cliCommand.globalWordOf(SOURCE_FETCH_SIZE_OPTION)
-                .setTypeAsOption()
-                .setDescription("defines the fetch size against the SOURCE database")
-                .setDefaultValue(DbDefaultValue.FETCH_SIZE);
 
         cliCommand.globalWordOf(OUTPUT_FILE_PATH)
                 .setTypeAsOption()
