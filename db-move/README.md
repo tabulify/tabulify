@@ -90,10 +90,12 @@ Short-cut alias of the `move` method that we may find in `Tabulars`:
     * Truncate (Delete content not file or table)
   * Operations on the target path
     * Drop
+    * DropIfExist
     * Truncate (Delete content)
+    * TruncateIfExist (Delete content)
     * Create
     * CreateIfNotExist
-    * Copy Permissions (COPY_ATTRIBUTES in File)
+    * Copy Permissions / Attributes / Metadata
   * Operations on the target data 
     * Insert/Append - get all source data and insert/append them
     * Update - get all source data and update them

@@ -5,11 +5,13 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.uri.DataUri;
+import net.bytle.regexp.Globs;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This is a class with static utility to construct data path
@@ -133,4 +135,31 @@ public class DataPaths {
         return  dataPath.getDataSystem().getQuery(query);
 
     }
+
+    /**
+     * @param dataPath - a data path container (a directory, a schema or a catalog)
+     * @return the children data paths representing sql tables, schema or files
+     */
+    public static List<DataPath> getChildren(DataPath dataPath) {
+
+        if (Tabulars.isDataUnit(dataPath)) {
+            throw new RuntimeException("The data path (" + dataPath + ") is a data unit, it has therefore no children");
+        }
+        return dataPath.getDataSystem().getChildrenDataPath(dataPath);
+
+    }
+
+    /**
+     * @param dataPath - a parent/container dataPath
+     * @param glob  -  a glob pattern
+     * @return the children data path of the parent that matches the glob pattern
+     */
+    public static List<DataPath> getChildren(DataPath dataPath, String glob) {
+        final String regex = Globs.toRegexPattern(glob);
+        return getChildren(dataPath)
+                .stream()
+                .filter(s -> s.getName().matches(regex))
+                .collect(Collectors.toList());
+    }
+
 }

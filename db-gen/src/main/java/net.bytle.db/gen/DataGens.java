@@ -1,5 +1,6 @@
 package net.bytle.db.gen;
 
+import net.bytle.db.spi.DataPaths;
 import net.bytle.log.Log;
 
 import net.bytle.db.model.ColumnDef;
@@ -38,7 +39,7 @@ public class DataGens {
         List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
         List<DataPath> dataPathToChecks = new ArrayList<>();
         if (Tabulars.isContainer(dataPath)) {
-            dataPathToChecks.addAll(Tabulars.getChildrenDataPath(dataPath));
+            dataPathToChecks.addAll(DataPaths.getChildren(dataPath));
         } else {
             dataPathToChecks.add(dataPath);
         }
@@ -58,7 +59,7 @@ public class DataGens {
     public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath schemaPath) {
 
         List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (DataPath dataPath : Tabulars.getChildrenDataPath(schemaPath)) {
+        for (DataPath dataPath : DataPaths.getChildren(schemaPath)) {
             List<ColumnDef> columnDefs = new ArrayList<>();
             for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
                 for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {

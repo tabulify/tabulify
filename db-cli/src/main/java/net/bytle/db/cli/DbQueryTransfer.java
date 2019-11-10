@@ -75,17 +75,14 @@ public class DbQueryTransfer {
 
         // Target Table
         DataPath targetDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(TARGET_DATA_URI)));
-        if (Tabulars.isContainer(targetDataPath)) {
-            String fileName = cliParser.getPath(FILE_URI).getFileName().toString();
-            String targetTableName = fileName.substring(0, fileName.lastIndexOf(".");
-            targetDataPath = DataPaths.childOf(targetDataPath, targetTableName);
-        }
 
         DataPath sourceDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(SOURCE_DATA_URI)));
+
+        List<DataPath> fileDataPaths = 
         String query = cliParser.getFileContent(FILE_URI);
         DataPath queryDataPath = DataPaths.ofQuery(sourceDataPath,query);
 
-        Files.copy()
+
 
 
         TableDef targetTableDef = targetDatabase.getTable(targetTableName);

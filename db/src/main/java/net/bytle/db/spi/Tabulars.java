@@ -60,19 +60,6 @@ public class Tabulars {
     }
 
     /**
-     * @param dataPath - a data path container (a directory, a schema or a catalog)
-     * @return the children data paths representing sql tables, schema or files
-     */
-    public static List<DataPath> getChildrenDataPath(DataPath dataPath) {
-
-        if (Tabulars.isDataUnit(dataPath)) {
-            throw new RuntimeException("The data path (" + dataPath + ") is a data unit, it has therefore no children");
-        }
-        return dataPath.getDataSystem().getChildrenDataPath(dataPath);
-
-    }
-
-    /**
      * Create all data object if they don't exist
      * taking into account the foreign key constraints
      * <p>
@@ -291,19 +278,6 @@ public class Tabulars {
         for (DataPath dataPath : dataPaths) {
             create(dataPath);
         }
-    }
-
-    /**
-     * @param dataPath - a parent dataPath
-     * @param pattern  -  a glob pattern
-     * @return the children data path of the parent that matches the glob pattern
-     */
-    public static List<DataPath> getChildrenDataPath(DataPath dataPath, String pattern) {
-        final String regex = Globs.toRegexPattern(pattern);
-        return getChildrenDataPath(dataPath)
-                .stream()
-                .filter(s -> s.getName().matches(regex))
-                .collect(Collectors.toList());
     }
 
     public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
