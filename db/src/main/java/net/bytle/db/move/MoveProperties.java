@@ -60,6 +60,18 @@ public class MoveProperties {
      */
     private Integer feedbackFrequency;
 
+    /**
+     * The load operations
+     * See {@link #setLoadOperation(MoveLoadOperation)}
+     */
+    private MoveLoadOperation loadOperation = MoveLoadOperation.INSERT;
+
+    /**
+     * The target operation
+     * See {@link #setTargetOperations(MoveTargetOperation...)}
+     */
+    private MoveTargetOperation[] moveTargetOperations = { MoveTargetOperation.CREATE_IF_NOT_EXIST };
+
 
     /**
      *
@@ -161,7 +173,7 @@ public class MoveProperties {
      * for the termination of the target workers
      *
      * @param timeout
-     * @return
+     * @return the {@link MoveProperties} instance itself for chaining instantiation
      */
     public MoveProperties setTimeOut(long timeout) {
         this.timeout = timeout;
@@ -170,12 +182,43 @@ public class MoveProperties {
 
     /**
      *
+     * Set load option:
+     *   * insert (append),
+     *   * update,
+     *   * merge (upsert)
+     * @param moveLoadOperation - an enum of {@link MoveLoadOperation}
+     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     */
+    public MoveProperties setLoadOperation(MoveLoadOperation moveLoadOperation) {
+        this.loadOperation = moveLoadOperation;
+        return this;
+    }
+
+    /**
+     *
+     * Set operation on the target
+     *   * truncate,
+     *   * replace,
+     *   * create
+     *   ...
+     * @param moveTargetOperations - an enum of {@link MoveTargetOperation}
+     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     */
+    public MoveProperties setTargetOperations(MoveTargetOperation... moveTargetOperations) {
+        this.moveTargetOperations = moveTargetOperations;
+        return this;
+    }
+
+    /**
      * @return the {@link #setTargetWorkerCount(int) | the target worker count}
      */
     public int getTargetWorkerCount() {
         return targetWorkCount;
     }
 
+    /**
+     * @return the {@link #setBatchSize(Integer) | batchSize}
+     */
     public Integer getBatchSize() {
         return batchSize;
     }

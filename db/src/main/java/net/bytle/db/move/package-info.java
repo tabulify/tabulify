@@ -7,5 +7,7 @@
  *   * ...
  *
  * The package is not tested in this module but in the move module as the tests depends also on the data store module.
+ *
+ * See the documentation in the move module
  */
 package net.bytle.db.move;
