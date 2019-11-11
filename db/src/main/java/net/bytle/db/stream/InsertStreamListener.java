@@ -15,7 +15,7 @@ import java.util.List;
  * - number of commits
  * - ...
  */
-public class MoveListener extends ThreadListenerAbs implements ThreadListener {
+public class InsertStreamListener extends ThreadListenerAbs implements ThreadListener {
 
     private InsertStream insertStream;
 
@@ -24,15 +24,15 @@ public class MoveListener extends ThreadListenerAbs implements ThreadListener {
     private Integer batches = 0;
     private List<RuntimeException> exceptions = new ArrayList<>();
 
-    private MoveListener(InsertStream insertStream) {
+    private InsertStreamListener(InsertStream insertStream) {
 
         this.insertStream = insertStream;
 
     }
 
 
-    public static MoveListener get(InsertStream insertStream) {
-        return new MoveListener(insertStream);
+    public static InsertStreamListener get(InsertStream insertStream) {
+        return new InsertStreamListener(insertStream);
     }
 
 

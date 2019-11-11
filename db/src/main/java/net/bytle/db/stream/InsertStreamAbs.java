@@ -8,7 +8,7 @@ import java.util.List;
 public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
 
     private final DataPath dataPath;
-    protected MoveListener insertStreamListener = MoveListener.get(this);
+    protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);
 
     protected String name = Thread.currentThread().getName();
     protected Integer feedbackFrequency = 10000;
@@ -51,7 +51,7 @@ public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
     }
 
     @Override
-    public MoveListener getInsertStreamListener() {
+    public InsertStreamListener getInsertStreamListener() {
         return this.insertStreamListener;
     }
 

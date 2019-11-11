@@ -7,6 +7,8 @@ rootProject.name = 'bytle-parent'
 include(':bytle-cli')
 project(':bytle-cli').projectDir = file('cli')
 
+include(':bytle-db-move')
+project(':bytle-db-move').projectDir = file('db-move')
 
 include(':bytle-log')
 include(':bytle-type')

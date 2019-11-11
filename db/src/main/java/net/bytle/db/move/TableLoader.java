@@ -178,7 +178,7 @@ public class TableLoader implements AutoCloseable {
 
 
             // Consumer Object Instantiation
-            ResultSetLoaderConsumer tableLoaderConsumer;
+            MoveTargetWorker tableLoaderConsumer;
             //TODO: broken
 //            = new ResultSetLoaderConsumer(
 //                    database,

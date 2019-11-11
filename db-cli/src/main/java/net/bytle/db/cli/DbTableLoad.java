@@ -7,11 +7,11 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.move.ResultSetLoader;
+import net.bytle.db.move.Move;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.stream.MoveListener;
+import net.bytle.db.move.MoveListener;
 import net.bytle.db.uri.IDataUri;
 import net.bytle.log.Log;
 
@@ -132,7 +132,7 @@ public class DbTableLoad {
 
         RelationDef relationDef = Relations.get(inputFilePath);
 
-        List<MoveListener> resultSetListeners = new ResultSetLoader(targetTable, relationDef)
+        List<MoveListener> resultSetListeners = new Move(targetTable, relationDef)
                 .targetWorkerCount(targetWorkerCount)
                 .bufferSize(bufferSize)
                 .batchSize(batchSize)

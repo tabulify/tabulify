@@ -1,6 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.move.MoveProperties;
 import net.bytle.log.Log;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -99,7 +100,7 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public void move(DataPath source, DataPath target) {
+    public void move(DataPath source, DataPath target, MoveProperties moveProperties) {
         throw new RuntimeException("Not yet implemented");
     }
 

@@ -1,0 +1,10 @@
+
+
+dependencies {
+    implementation project(':bytle-db')
+    implementation project(':bytle-log')
+    testImplementation project(':bytle-db-sqlite')
+    testImplementation project(':bytle-db-jdbc')
+}
+
+description = 'Db Move'

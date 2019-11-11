@@ -10,16 +10,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Created by gerard on 29-01-2016.
+ * A worker that takes data from the source and insert them into the memory queue
  */
-public class ResultSetLoaderProducer implements Runnable {
+public class MoveSourceWorker implements Runnable {
 
 
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
-    private final List<MoveListener> listeners;
-
+    private final List<InsertStreamListener> listeners;
 
 
     /**
@@ -27,12 +26,12 @@ public class ResultSetLoaderProducer implements Runnable {
      * @param targetDataPath (A blocking queue !)
      * @param listeners The listener
      */
-    public ResultSetLoaderProducer(DataPath sourceDataPath, DataPath targetDataPath, List<MoveListener> listeners, Integer feedbackFrequency) {
+    public MoveSourceWorker(DataPath sourceDataPath, DataPath targetDataPath, List<InsertStreamListener> listeners, MoveProperties moveProperties) {
 
         this.sourceDataPath = sourceDataPath;
         this.queue = targetDataPath;
         this.listeners = listeners;
-        this.feedbackFrequency = feedbackFrequency;
+        this.feedbackFrequency = moveProperties.getFeedbackFrequency() ;
 
     }
 
@@ -43,7 +42,7 @@ public class ResultSetLoaderProducer implements Runnable {
         InsertStream insertStream = Tabulars.getInsertStream(queue)
                 .setName("Producer: " + Thread.currentThread().getName())
                 .setFeedbackFrequency(feedbackFrequency);
-        MoveListener listener = insertStream.getInsertStreamListener();
+        InsertStreamListener listener = insertStream.getInsertStreamListener();
         listeners.add(listener);
         try {
 

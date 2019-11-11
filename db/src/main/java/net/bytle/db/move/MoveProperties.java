@@ -50,6 +50,16 @@ public class MoveProperties {
      */
     private Integer commitFrequency;
 
+    /**
+     * See {@link #setTimeOut(long)}
+     */
+    private long timeout = Long.MAX_VALUE;
+
+    /**
+     * See {@link #setFeedbackFrequency(int)}
+     */
+    private Integer feedbackFrequency;
+
 
     /**
      *
@@ -81,6 +91,16 @@ public class MoveProperties {
 
     /**
      *
+     * @param feedbackFrequency - The number of rows when feedback is given back to the console
+     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     */
+    public MoveProperties setFeedbackFrequency(int feedbackFrequency) {
+        this.feedbackFrequency = feedbackFrequency;
+        return this;
+    }
+
+    /**
+     *
      * @param metricsDataPath - The location of the metrics data (ie snapshot of the counters by time)
      * @return the {@link MoveProperties} instance itself for chaining instantiation
      */
@@ -93,6 +113,12 @@ public class MoveProperties {
      *
      * @param fetchSize - The fetch size use by the source worker thread to retrieve data
      * @return the {@link MoveProperties} instance itself for chaining instantiation
+     *
+     * Number of rows fetched with each data source round trip for a query,
+     * 10 for Oracle row-prefetch value.
+     * http://docs.oracle.com/cd/B19306_01/java.102/b14355/resltset.htm#i1023619
+     * Changes made to the fetch size of a statement object after a result set is produced will have
+     * no affect on that result set.
      */
     public MoveProperties setFetchSize(Integer fetchSize) {
         this.fetchSize = fetchSize;
@@ -126,5 +152,37 @@ public class MoveProperties {
     public MoveProperties setCommitFrequency(Integer commitFrequency) {
         this.commitFrequency = commitFrequency;
         return this;
+    }
+
+    /**
+     * Time Out in Micro-second
+     *
+     * @param timeout
+     * @return
+     */
+    public MoveProperties setTimeOut(long timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    /**
+     *
+     * @return the {@link #setTargetWorkerCount(int) | the target worker count}
+     */
+    public int getTargetWorkerCount() {
+        return targetWorkCount;
+    }
+
+    public Integer getBatchSize() {
+        return batchSize;
+    }
+
+    public Integer getCommitFrequency() {
+        return commitFrequency;
+    }
+
+
+    public Integer getFeedbackFrequency() {
+        return feedbackFrequency;
     }
 }

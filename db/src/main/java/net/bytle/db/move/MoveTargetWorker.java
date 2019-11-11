@@ -1,11 +1,11 @@
 package net.bytle.db.move;
 
+import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.MoveListener;
 import net.bytle.db.stream.SelectStream;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Created by gerard on 29-01-2016.
  */
-public class ResultSetLoaderConsumer implements Runnable {
+public class MoveTargetWorker implements Runnable {
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
@@ -24,24 +24,23 @@ public class ResultSetLoaderConsumer implements Runnable {
     private final Integer batchSize;
     private final DataPath tableDef;
     private final Integer commitFrequency;
-    private final List<MoveListener> listeners;
+    private final List<InsertStreamListener> listeners;
     private final DataPath sourceDef;
 
-    public ResultSetLoaderConsumer(
+    public MoveTargetWorker(
             DataPath targetDataPath,
             DataPath sourceDataPath,
             DataPath intermediate,
-            Integer batchSize,
-            Integer commitFrequency,
+            MoveProperties moveProperties,
             AtomicBoolean producerWorkIsDone,
-            List<MoveListener> listeners)
+            List<InsertStreamListener> listeners)
     {
         this.tableDef = targetDataPath;
         this.sourceDef = sourceDataPath;
         this.queue = intermediate;
         this.producerWorkIsDone = producerWorkIsDone;
-        this.batchSize = batchSize;
-        this.commitFrequency = commitFrequency;
+        this.batchSize = moveProperties.getBatchSize();
+        this.commitFrequency = moveProperties.getCommitFrequency();
         this.listeners = listeners;
 
     }
@@ -55,7 +54,7 @@ public class ResultSetLoaderConsumer implements Runnable {
                 .setCommitFrequency(this.commitFrequency)
                 .setBatchSize(batchSize);
 
-        MoveListener listener = insertStream.getInsertStreamListener();
+        InsertStreamListener listener = insertStream.getInsertStreamListener();
         // Collect the listener
         this.listeners.add(listener);
         SelectStream selectStream = Tabulars.getSelectStream(queue);

@@ -12,6 +12,7 @@ import net.bytle.db.jdbc.spi.SqlDatabases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.move.MoveProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
@@ -727,12 +728,12 @@ public class JdbcDataSystem extends TableSystem {
     /**
      * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPath, DataPath)}
      * The checks on source and target are already done on the calling function
-     *
-     * @param source
+     *  @param source
      * @param target
+     * @param moveProperties
      */
     @Override
-    public void move(DataPath source, DataPath target) {
+    public void move(DataPath source, DataPath target, MoveProperties moveProperties) {
 
         // insert into select statement
         String insertInto = DbDml.getInsertIntoStatement((JdbcDataPath) source, (JdbcDataPath) target);

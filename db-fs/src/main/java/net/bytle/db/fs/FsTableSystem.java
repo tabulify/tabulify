@@ -7,6 +7,7 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.move.MoveProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
@@ -235,12 +236,12 @@ public class FsTableSystem extends TableSystem {
 
     /**
      * Move (for now, just a append data move, the source file is not deleted)
-     *
-     * @param source
+     *  @param source
      * @param target
+     * @param moveProperties
      */
     @Override
-    public void move(DataPath source, DataPath target) {
+    public void move(DataPath source, DataPath target, MoveProperties moveProperties) {
         FsDataPath fsSource = (FsDataPath) source;
         FsDataPath fsTarget = (FsDataPath) target;
         try {

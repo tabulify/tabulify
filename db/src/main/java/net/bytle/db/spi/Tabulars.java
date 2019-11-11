@@ -7,7 +7,7 @@ import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.move.MoveProperties;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.MoveListener;
+import net.bytle.db.move.MoveListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 

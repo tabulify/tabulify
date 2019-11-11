@@ -2,7 +2,6 @@ package net.bytle.db.move;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
-import net.bytle.db.stream.MoveListener;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
