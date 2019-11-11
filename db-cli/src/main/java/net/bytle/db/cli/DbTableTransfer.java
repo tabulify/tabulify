@@ -73,13 +73,13 @@ public class DbTableTransfer {
         cliCommand.optionOf(COMMIT_FREQUENCY_OPTION);
         cliCommand.optionOf(TARGET_BATCH_SIZE_OPTION);
         cliCommand.optionOf(TARGET_CONNECTION_SCRIPT_OPTION);
-        cliCommand.optionOf(METRICS_PATH_OPTION);
+        cliCommand.optionOf(METRICS_DATA_URI_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
 
         // Load options
-        String metricsFilePath = cliParser.getString(METRICS_PATH_OPTION);
+        String metricsFilePath = cliParser.getString(METRICS_DATA_URI_OPTION);
         Integer targetWorkerCount = cliParser.getInteger(TARGET_WORKER_OPTION);
         String bufferSizeString = cliParser.getString(BUFFER_SIZE_OPTION);
         Integer bufferSize = 2 * targetWorkerCount * 10000;

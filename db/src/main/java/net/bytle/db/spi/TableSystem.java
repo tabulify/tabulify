@@ -64,7 +64,14 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract Integer size(DataPath dataPath);
 
-    public abstract boolean isDataUnit(DataPath dataPath);
+    /**
+     *
+     * @param dataPath
+     * @return true if the data path locate a document
+     *
+     * The opposite is {@link #isContainer(DataPath)}
+     */
+    public abstract boolean isDocument(DataPath dataPath);
 
     public abstract DataPath getQuery(String query);
 

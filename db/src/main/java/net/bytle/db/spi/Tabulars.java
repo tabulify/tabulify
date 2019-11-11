@@ -8,7 +8,6 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
-import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -268,8 +267,16 @@ public class Tabulars {
         return dataPath.getDataSystem().size(dataPath);
     }
 
-    public static boolean isDataUnit(DataPath dataPath) {
-        return dataPath.getDataSystem().isDataUnit(dataPath);
+    /**
+     *
+     * @param dataPath
+     * @return if the data path locate a document
+     *
+     * The counter part is {@link #isContainer(DataPath)}
+     *
+     */
+    public static boolean isDocument(DataPath dataPath) {
+        return dataPath.getDataSystem().isDocument(dataPath);
     }
 
     public static void create(List<DataPath> dataPaths) {

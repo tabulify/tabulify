@@ -432,7 +432,7 @@ public class JdbcDataSystem extends TableSystem {
     }
 
     @Override
-    public boolean isDataUnit(DataPath dataPath) {
+    public boolean isDocument(DataPath dataPath) {
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         return jdbcDataPath.isDataUnit();
     }
@@ -473,7 +473,7 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public boolean isContainer(DataPath dataPath) {
-        return !isDataUnit(dataPath);
+        return !isDocument(dataPath);
     }
 
     @Override

@@ -13,11 +13,8 @@ import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
-import org.graalvm.compiler.lir.sparc.SPARCMove;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +87,7 @@ public class DbQueryTransfer {
         // Source Data Path
         DataPath sourceDataPath = DataPaths.of(databasesStore, DataUri.of(cliParser.getString(SOURCE_DATA_URI)));
         Map<String, DataPath> sourceDataPaths = new HashMap<>();
-        if (Tabulars.isDataUnit(sourceDataPath)){
+        if (Tabulars.isDocument(sourceDataPath)){
             throw new RuntimeException("The source data Uri ("+SOURCE_DATA_URI+" should represent a schema/catalog not a table");
         } else {
             sourceDataPaths = queryDataPaths.stream()

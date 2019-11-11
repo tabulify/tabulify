@@ -86,7 +86,7 @@ public class Words {
     static final String COMMIT_FREQUENCY_OPTION = "tcf";
     static final String TARGET_BATCH_SIZE_OPTION = "tbs";
     static final String TARGET_CONNECTION_SCRIPT_OPTION = "tcs";
-    static final String METRICS_PATH_OPTION = "mp";
+    static final String METRICS_DATA_URI_OPTION = "mp";
     static final String SOURCE_FETCH_SIZE_OPTION = "sfs";
 
 

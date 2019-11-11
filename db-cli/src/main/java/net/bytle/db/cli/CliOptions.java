@@ -2,11 +2,12 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
-import net.bytle.db.DbDefaultValue;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.move.MoveProperties;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
-
-import java.nio.file.Path;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -24,7 +25,7 @@ public class CliOptions {
         command.optionOf(SOURCE_FETCH_SIZE_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the fetch size against the SOURCE database")
-                .setDefaultValue(MoveProperties.FETCH_SIZE);
+                .setDefaultValue(MoveProperties.DEFAULT_FETCH_SIZE);
 
         // No default because it's fetch size dependent
         command.optionOf(BUFFER_SIZE_OPTION)
@@ -39,32 +40,41 @@ public class CliOptions {
         command.optionOf(COMMIT_FREQUENCY_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the commit frequency against the TARGET table by batch")
-                .addDefaultValue(MoveProperties.COMMIT_FREQUENCY);
+                .addDefaultValue(MoveProperties.DEFAULT_COMMIT_FREQUENCY);
 
         command.optionOf(TARGET_BATCH_SIZE_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the batch size against the TARGET table")
-                .addDefaultValue(MoveProperties.BATCH_SIZE);
+                .addDefaultValue(MoveProperties.DEFAULT_BATCH_SIZE);
 
-        command.optionOf(METRICS_PATH_OPTION)
+        command.optionOf(METRICS_DATA_URI_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the file path that will save the metrics");
 
     }
 
-    public static MoveProperties getMoveOptions(CliParser cliParser) {
+    public static MoveProperties getMoveOptions(CliParser cliParser, DatabasesStore databasesStore) {
 
-        Path metricsFilePath = cliParser.getPath(Words.METRICS_PATH_OPTION);
+        DataUri metricsDestination = DataUri.of(cliParser.getString(METRICS_DATA_URI_OPTION));
+        DataPath metricsDataPath = DataPaths.of(databasesStore,metricsDestination);
+
+        Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
+        Integer fetchSize = cliParser.getInteger(SOURCE_FETCH_SIZE_OPTION);
+        Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
         int targetWorkerCount = cliParser.getInteger(Words.TARGET_WORKER_OPTION);
         Integer bufferSize = cliParser.getInteger(BUFFER_SIZE_OPTION);
         if (bufferSize == null) {
-            bufferSize = 2 * targetWorkerCount * 10000;
+            bufferSize = 2 * targetWorkerCount * fetchSize;
             LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
         }
-        Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
-        Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
 
         return MoveProperties.of()
-                .setBufferSize();
+                .setQueueSize(bufferSize)
+                .setTargetWorkerCount(targetWorkerCount)
+                .setMetricsPath(metricsDataPath)
+                .setFetchSize(fetchSize)
+                .setBatchSize(batchSize)
+                .setCommitFrequency(commitFrequency)
+                ;
     }
 }

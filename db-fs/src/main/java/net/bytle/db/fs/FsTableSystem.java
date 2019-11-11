@@ -279,7 +279,7 @@ public class FsTableSystem extends TableSystem {
     }
 
     @Override
-    public boolean isDataUnit(DataPath dataPath) {
+    public boolean isDocument(DataPath dataPath) {
         throw new RuntimeException("not yet implemented");
     }
 

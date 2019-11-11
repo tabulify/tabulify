@@ -53,7 +53,7 @@ public class DbTableLoad {
 
         cliCommand.getGroup("Monitoring option")
                 .setLevel(2)
-                .addWordOf(METRICS_PATH_OPTION);
+                .addWordOf(METRICS_DATA_URI_OPTION);
 
 
         cliCommand.flagOf(NO_STRICT)

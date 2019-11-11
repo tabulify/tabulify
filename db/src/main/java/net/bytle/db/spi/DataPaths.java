@@ -142,8 +142,8 @@ public class DataPaths {
      */
     public static List<DataPath> getChildren(DataPath dataPath) {
 
-        if (Tabulars.isDataUnit(dataPath)) {
-            throw new RuntimeException("The data path (" + dataPath + ") is a data unit, it has therefore no children");
+        if (Tabulars.isDocument(dataPath)) {
+            throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
         }
         return dataPath.getDataSystem().getChildrenDataPath(dataPath);
 
