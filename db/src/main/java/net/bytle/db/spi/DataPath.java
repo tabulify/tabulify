@@ -31,7 +31,7 @@ public abstract class DataPath implements Comparable<DataPath> {
         return path + "@" + databaseName;
     }
 
-    protected abstract String getPath();
+    public abstract String getPath();
 
     public int compareTo(DataPath o) {
         return this.getId().compareTo(o.getId());

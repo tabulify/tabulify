@@ -157,6 +157,9 @@ public class MoveProperties {
     /**
      * Time Out in Micro-second
      *
+     * When the source worker have finished, this is the max delay where we will wait
+     * for the termination of the target workers
+     *
      * @param timeout
      * @return
      */
@@ -184,5 +187,17 @@ public class MoveProperties {
 
     public Integer getFeedbackFrequency() {
         return feedbackFrequency;
+    }
+
+    public Integer getQueueSize() {
+        return queueSize;
+    }
+
+    public DataPath getMetricsPath() {
+        return metricsPath;
+    }
+
+    public long getTimeOut() {
+        return timeout;
     }
 }

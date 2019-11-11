@@ -57,6 +57,7 @@ public class MoveSourceWorker implements Runnable {
                         .mapToObj(selectStream::getObject)
                         .collect(Collectors.toList());
                 insertStream.insert(objects);
+                //  queue.offer(objects, timeout, TimeUnit.SECONDS);
 
             }
 

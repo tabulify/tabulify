@@ -44,7 +44,7 @@ public class MemoryDataPath extends DataPath {
     }
 
     @Override
-    protected String getPath() {
+    public String getPath() {
         return String.join(".",names);
     }
 

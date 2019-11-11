@@ -2,8 +2,10 @@ package net.bytle.db.move;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStreamListener;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -13,34 +15,33 @@ import java.util.logging.Logger;
 /**
  * Created by gerard on 29-01-2016.
  */
-public class ResultSetLoaderMetricsViewer implements Runnable {
+public class MoveMetricsViewer implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(ResultSetLoaderMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
+    private static final Logger LOGGER = Logger.getLogger(MoveMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
 
 
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
-    private final Integer maxBufferSize;
-    private final List<MoveListener> insertStreamListeners;
-    private final String metricsFilePath;
+    private final Integer queueSize;
+    private final List<InsertStreamListener> insertStreamListeners;
+    private final DataPath metricsFilePath;
     private final AtomicBoolean consumerWorkIsDone;
 
 
 
-    public ResultSetLoaderMetricsViewer(
+    public MoveMetricsViewer(
 
             DataPath queue,
-            Integer maxBufferSize,
-            List<MoveListener> insertStreamListeners,
-            String metricsFilePath,
+            MoveProperties moveProperties,
+            List<InsertStreamListener> insertStreamListeners,
             AtomicBoolean producerWorkIsDone,
             AtomicBoolean consumerWorkIsDone) {
 
         this.queue = queue;
         this.producerWorkIsDone = producerWorkIsDone;
-        this.maxBufferSize = maxBufferSize;
+        this.queueSize = moveProperties.getQueueSize();
         this.insertStreamListeners = insertStreamListeners;
-        this.metricsFilePath = metricsFilePath;
+        this.metricsFilePath = moveProperties.getMetricsPath();
         this.consumerWorkIsDone = consumerWorkIsDone;
 
 
@@ -55,7 +56,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
 
             Writer writer;
             if (metricsFilePath !=null) {
-                writer = new FileWriter(metricsFilePath);
+                writer = new FileWriter(Paths.get(metricsFilePath.getPath()).toFile());
             } else {
                 writer = new OutputStreamWriter(System.out);
             }
@@ -80,19 +81,19 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
                 outputStream.write(bufferSizeCsv);
                 outputStream.newLine();
 
-                String bufferMaxSizeCsv = timeMillis + ", Buffer MaxSize, " + this.maxBufferSize;
+                String bufferMaxSizeCsv = timeMillis + ", Buffer MaxSize, " + this.queueSize;
                 outputStream.write(bufferMaxSizeCsv);
                 outputStream.newLine();
 
-                Double ratio = Double.valueOf(size) / this.maxBufferSize * 100;
+                Double ratio = Double.valueOf(size) / this.queueSize * 100;
                 String bufferRatioCsv = timeMillis + ", Buffer Ratio, " + ratio;
                 outputStream.write(bufferRatioCsv);
                 outputStream.newLine();
 
-                LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.maxBufferSize+")");
+                LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.queueSize +")");
 
 
-                for (MoveListener insertStreamListener : insertStreamListeners) {
+                for (InsertStreamListener insertStreamListener : insertStreamListeners) {
 
                     // Commits
                     Integer commits = insertStreamListener.getCommits();
@@ -125,10 +126,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
             }
             LOGGER.fine("End of the viewer");
 
-        } catch (InterruptedException e) {
-
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (InterruptedException | IOException e) {
 
             throw new RuntimeException(e);
         }
