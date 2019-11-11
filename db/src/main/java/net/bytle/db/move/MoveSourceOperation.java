@@ -12,7 +12,7 @@ public enum MoveSourceOperation {
     TRUNCATE,
 
     /**
-     * Drop the document if it exists
+     * Drop the document
      */
     DROP,
 

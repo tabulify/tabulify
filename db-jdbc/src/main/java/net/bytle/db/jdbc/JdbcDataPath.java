@@ -121,7 +121,7 @@ public class JdbcDataPath extends DataPath  {
     }
 
     @Override
-    protected String getPath() {
+    public String getPath() {
         return String.join(".", getPathParts());
     }
 

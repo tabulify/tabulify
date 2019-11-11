@@ -3,6 +3,7 @@ package net.bytle.db.tpc;
 import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
+import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.log.Log;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -34,9 +35,9 @@ public class TpcdsDgenTable {
 
     }
 
-    public List<MoveListener> generateTable(Table table) {
+    public List<InsertStreamListener> generateTable(Table table) {
 
-        List<MoveListener> insertStreamListeners = new ArrayList<>();
+        List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
 
         try {
 

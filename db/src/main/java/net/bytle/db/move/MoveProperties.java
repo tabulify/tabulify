@@ -72,6 +72,12 @@ public class MoveProperties {
      */
     private MoveTargetOperation[] moveTargetOperations = { MoveTargetOperation.CREATE_IF_NOT_EXIST };
 
+    /**
+     * The source operation
+     * See {@link #setSourceOperations(MoveSourceOperation)}
+     */
+    private MoveSourceOperation moveSourceOperations;
+
 
     /**
      *
@@ -206,6 +212,19 @@ public class MoveProperties {
      */
     public MoveProperties setTargetOperations(MoveTargetOperation... moveTargetOperations) {
         this.moveTargetOperations = moveTargetOperations;
+        return this;
+    }
+
+    /**
+     *
+     * Set operation on the source
+     *   * truncate,
+     *   * drop
+     * @param moveSourceOperation - an enum of {@link MoveSourceOperation}
+     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     */
+    public MoveProperties setSourceOperations(MoveSourceOperation moveSourceOperation) {
+        this.moveSourceOperations = moveSourceOperation;
         return this;
     }
 
