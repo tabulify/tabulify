@@ -5,7 +5,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 import net.bytle.db.stream.SelectStream;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public class ResultSetLoaderConsumer implements Runnable {
     private final Integer batchSize;
     private final DataPath tableDef;
     private final Integer commitFrequency;
-    private final List<InsertStreamListener> listeners;
+    private final List<MoveListener> listeners;
     private final DataPath sourceDef;
 
     public ResultSetLoaderConsumer(
@@ -34,7 +34,7 @@ public class ResultSetLoaderConsumer implements Runnable {
             Integer batchSize,
             Integer commitFrequency,
             AtomicBoolean producerWorkIsDone,
-            List<InsertStreamListener> listeners)
+            List<MoveListener> listeners)
     {
         this.tableDef = targetDataPath;
         this.sourceDef = sourceDataPath;
@@ -55,7 +55,7 @@ public class ResultSetLoaderConsumer implements Runnable {
                 .setCommitFrequency(this.commitFrequency)
                 .setBatchSize(batchSize);
 
-        InsertStreamListener listener = insertStream.getInsertStreamListener();
+        MoveListener listener = insertStream.getInsertStreamListener();
         // Collect the listener
         this.listeners.add(listener);
         SelectStream selectStream = Tabulars.getSelectStream(queue);

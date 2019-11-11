@@ -35,7 +35,7 @@ public class CliOptions {
         command.optionOf(TARGET_WORKER_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the TARGET number of thread against the TARGET database")
-                .addDefaultValue(1);
+                .addDefaultValue(MoveProperties.DEFAULT_TARGET_WORKER_COUNT);
 
         command.optionOf(COMMIT_FREQUENCY_OPTION)
                 .setGroup("Move Options")
@@ -49,7 +49,7 @@ public class CliOptions {
 
         command.optionOf(METRICS_DATA_URI_OPTION)
                 .setGroup("Move Options")
-                .setDescription("defines the file path that will save the metrics");
+                .setDescription("defines a data uri where the data metrics should be saved");
 
     }
 
@@ -74,7 +74,6 @@ public class CliOptions {
                 .setMetricsPath(metricsDataPath)
                 .setFetchSize(fetchSize)
                 .setBatchSize(batchSize)
-                .setCommitFrequency(commitFrequency)
-                ;
+                .setCommitFrequency(commitFrequency);
     }
 }

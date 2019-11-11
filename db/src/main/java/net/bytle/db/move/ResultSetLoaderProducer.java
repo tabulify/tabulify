@@ -18,7 +18,7 @@ public class ResultSetLoaderProducer implements Runnable {
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
-    private final List<InsertStreamListener> listeners;
+    private final List<MoveListener> listeners;
 
 
 
@@ -27,7 +27,7 @@ public class ResultSetLoaderProducer implements Runnable {
      * @param targetDataPath (A blocking queue !)
      * @param listeners The listener
      */
-    public ResultSetLoaderProducer(DataPath sourceDataPath, DataPath targetDataPath, List<InsertStreamListener> listeners, Integer feedbackFrequency) {
+    public ResultSetLoaderProducer(DataPath sourceDataPath, DataPath targetDataPath, List<MoveListener> listeners, Integer feedbackFrequency) {
 
         this.sourceDataPath = sourceDataPath;
         this.queue = targetDataPath;
@@ -43,7 +43,7 @@ public class ResultSetLoaderProducer implements Runnable {
         InsertStream insertStream = Tabulars.getInsertStream(queue)
                 .setName("Producer: " + Thread.currentThread().getName())
                 .setFeedbackFrequency(feedbackFrequency);
-        InsertStreamListener listener = insertStream.getInsertStreamListener();
+        MoveListener listener = insertStream.getInsertStreamListener();
         listeners.add(listener);
         try {
 

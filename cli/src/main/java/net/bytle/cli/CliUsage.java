@@ -1,5 +1,7 @@
 package net.bytle.cli;
 
+import net.bytle.log.Log;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Logger;
@@ -8,7 +10,7 @@ import java.util.stream.Collectors;
 public class CliUsage {
 
     public final static String TAB = "\t";
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
+    private static final Log LOGGER = CliLog.LOGGER;
 
     /**
      * Return the usage

@@ -3,13 +3,12 @@ package net.bytle.db.cli;
 import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.move.MoveProperties;
-import net.bytle.db.move.ResultSetLoader;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
@@ -118,7 +117,7 @@ public class DbQueryTransfer {
             }
         }
 
-        MoveProperties moveProperties = CliOptions.getMoveOptions(cliParser);
+        MoveProperties moveProperties = CliOptions.getMoveOptions(cliParser,databasesStore);
         int i = 0;
         for (Map.Entry<String,DataPath> entry: sourceDataPaths.entrySet()){
 
@@ -129,15 +128,7 @@ public class DbQueryTransfer {
             LOGGER.info("Loading the query (" + queryName +") from the source ("+sourceDataPath+") into the table ("+target.toString());
 
 
-            List<InsertStreamListener> resultSetListener;
-
-            resultSetListener = new ResultSetLoader(targetTableDef, sourceQueryDef)
-                    .targetWorkerCount(targetWorkerCount)
-                    .bufferSize(bufferSize)
-                    .batchSize(batchSize)
-                    .commitFrequency(commitFrequency)
-                    .metricsFilePath(metricsFilePath)
-                    .load();
+            List<MoveListener> resultSetListener = Tabulars.move(source,target,moveProperties);
 
             LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
             LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");

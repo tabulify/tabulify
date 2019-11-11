@@ -2,7 +2,7 @@ package net.bytle.db.move;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -22,7 +22,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
     private final Integer maxBufferSize;
-    private final List<InsertStreamListener> insertStreamListeners;
+    private final List<MoveListener> insertStreamListeners;
     private final String metricsFilePath;
     private final AtomicBoolean consumerWorkIsDone;
 
@@ -32,7 +32,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
 
             DataPath queue,
             Integer maxBufferSize,
-            List<InsertStreamListener> insertStreamListeners,
+            List<MoveListener> insertStreamListeners,
             String metricsFilePath,
             AtomicBoolean producerWorkIsDone,
             AtomicBoolean consumerWorkIsDone) {
@@ -93,7 +93,7 @@ public class ResultSetLoaderMetricsViewer implements Runnable {
                 LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.maxBufferSize+")");
 
 
-                for (InsertStreamListener insertStreamListener : insertStreamListeners) {
+                for (MoveListener insertStreamListener : insertStreamListeners) {
 
                     // Commits
                     Integer commits = insertStreamListener.getCommits();

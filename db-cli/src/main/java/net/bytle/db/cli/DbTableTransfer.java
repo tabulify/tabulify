@@ -10,7 +10,7 @@ import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
@@ -169,7 +169,7 @@ public class DbTableTransfer {
 
                 QueryDef queryDef = targetSchemaDef.getQuery("select * from " + tableDef.getFullyQualifiedName());
 
-                List<InsertStreamListener> streamListeners = new ResultSetLoader(targetTableDef, queryDef)
+                List<MoveListener> streamListeners = new ResultSetLoader(targetTableDef, queryDef)
                         .targetWorkerCount(targetWorkerCount)
                         .bufferSize(bufferSize)
                         .batchSize(batchSize)
@@ -178,13 +178,13 @@ public class DbTableTransfer {
                         .load();
 
 
-                int exitStatus = streamListeners.stream().mapToInt(InsertStreamListener::getExitStatus).sum();
+                int exitStatus = streamListeners.stream().mapToInt(MoveListener::getExitStatus).sum();
                 errorCounter += exitStatus;
                 if (exitStatus != 0) {
                     status = "Err";
                 }
 
-                rowCount = streamListeners.stream().mapToInt(InsertStreamListener::getRowCount).sum();
+                rowCount = streamListeners.stream().mapToInt(MoveListener::getRowCount).sum();
             } catch (Exception e) {
                 errorCounter++;
                 status = "Err";

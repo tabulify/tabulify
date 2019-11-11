@@ -1,5 +1,7 @@
 package net.bytle.cli;
 
+import net.bytle.log.Log;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class CliCommand {
 
-    private static final java.util.logging.Logger LOGGER = CliLog.getCliLog().getLogger();
+    private static final Log LOGGER = CliLog.LOGGER;
 
     // The name of the cli (ie command)
     private final String name;

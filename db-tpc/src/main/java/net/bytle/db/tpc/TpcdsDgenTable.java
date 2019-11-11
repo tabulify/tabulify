@@ -8,7 +8,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +34,9 @@ public class TpcdsDgenTable {
 
     }
 
-    public List<InsertStreamListener> generateTable(Table table) {
+    public List<MoveListener> generateTable(Table table) {
 
-        List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
+        List<MoveListener> insertStreamListeners = new ArrayList<>();
 
         try {
 

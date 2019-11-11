@@ -5,7 +5,9 @@ import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.move.MoveProperties;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.MoveListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 
@@ -206,54 +208,7 @@ public class Tabulars {
 
     public static void move(DataPath source, DataPath target) {
 
-        // check source
-        if (!Tabulars.exists(source)) {
-            // Is it a query definition
-            if (source.getDataDef().getQuery() == null) {
-                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
-            }
-        }
-
-        // check target
-        final Boolean exists = Tabulars.exists(target);
-        if (!exists) {
-            DataDefs.copy(source.getDataDef(), target.getDataDef());
-            Tabulars.create(target);
-        } else {
-            // If this for instance, the move of a file, the file may exist
-            // but have no content and therefore no structure
-            if (target.getDataDef().getColumnDefs().size()!=0) {
-                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
-                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
-                    if (targetColumnDef == null) {
-                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-                        throw new RuntimeException(message);
-                    }
-                }
-            } else {
-                DataDefs.copy(source.getDataDef(), target.getDataDef());
-            }
-        }
-
-        final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
-        if (sourceDataSystem.equals(target.getDataSystem())) {
-            // same provider
-            sourceDataSystem.move(source, target);
-        } else {
-            try (
-                    SelectStream sourceSelectStream = Tabulars.getSelectStream(source);
-                    InsertStream targetInsertStream = Tabulars.getInsertStream(target)
-            ) {
-                while (sourceSelectStream.next()) {
-                    List<Object> objects = IntStream.range(0, sourceSelectStream.getDataDef().getColumnDefs().size())
-                            .mapToObj(sourceSelectStream::getObject)
-                            .collect(Collectors.toList());
-                    targetInsertStream.insert(objects);
-                }
-            }
-        }
+        move(source,target,null);
 
     }
 
@@ -298,5 +253,65 @@ public class Tabulars {
      */
     public static String getString(DataPath dataPath) {
         return dataPath.getDataSystem().getString(dataPath);
+    }
+
+    /**
+     * Move a source document to a target document
+     * @param source
+     * @param target
+     * @param moveProperties
+     * @return a {@link MoveListener}
+     */
+    public static List<MoveListener> move(DataPath source, DataPath target, MoveProperties moveProperties) {
+
+        // check source
+        if (!Tabulars.exists(source)) {
+            // Is it a query definition
+            if (source.getDataDef().getQuery() == null) {
+                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
+            }
+        }
+
+        // Check target
+        final Boolean exists = Tabulars.exists(target);
+        if (!exists) {
+            DataDefs.copy(source.getDataDef(), target.getDataDef());
+            Tabulars.create(target);
+        } else {
+            // If this for instance, the move of a file, the file may exist
+            // but have no content and therefore no structure
+            if (target.getDataDef().getColumnDefs().size()!=0) {
+                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
+                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+                    if (targetColumnDef == null) {
+                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                        throw new RuntimeException(message);
+                    }
+                }
+            } else {
+                DataDefs.copy(source.getDataDef(), target.getDataDef());
+            }
+        }
+
+        final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
+        if (sourceDataSystem.equals(target.getDataSystem())) {
+            // same provider
+            sourceDataSystem.move(source, target, moveProperties);
+        } else {
+            try (
+                    SelectStream sourceSelectStream = Tabulars.getSelectStream(source);
+                    InsertStream targetInsertStream = Tabulars.getInsertStream(target)
+            ) {
+                while (sourceSelectStream.next()) {
+                    List<Object> objects = IntStream.range(0, sourceSelectStream.getDataDef().getColumnDefs().size())
+                            .mapToObj(sourceSelectStream::getObject)
+                            .collect(Collectors.toList());
+                    targetInsertStream.insert(objects);
+                }
+            }
+        }
+        return null;
     }
 }

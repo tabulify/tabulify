@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 @SuppressWarnings("WeakerAccess")
 public class Clis {
 
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
 
 
     /**

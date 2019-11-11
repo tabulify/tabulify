@@ -8,7 +8,7 @@ import net.bytle.log.Log;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,14 +70,14 @@ public class TpcdsDgen {
      * @param table
      * @return
      */
-    public List<InsertStreamListener> load(DataPath table) {
+    public List<MoveListener> load(DataPath table) {
         List<DataPath> tables = new ArrayList<>();
         tables.add(table);
         return load(tables);
     }
 
 
-    public List<InsertStreamListener> load(List<DataPath> dataPaths) {
+    public List<MoveListener> load(List<DataPath> dataPaths) {
 
         Session session = options.toSession();
 
@@ -92,7 +92,7 @@ public class TpcdsDgen {
 
         // Building the table to load
         dataPaths = Dag.get(dataPaths).getCreateOrderedTables();
-        List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
+        List<MoveListener> insertStreamListeners = new ArrayList<>();
         for (DataPath dataPath : dataPaths) {
 
             LOGGER.info("Loading the table " + dataPath.toString());
@@ -129,7 +129,7 @@ public class TpcdsDgen {
                     LOGGER.fine("Loading the table (" + dataPath.getName() + ") with the " + chunkNumber + " thread");
                     //TODO: if there is an exception in the thread, it is not caught
                     thread = new Thread(() -> {
-                        List<InsertStreamListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), tableSystem)
+                        List<MoveListener> insertStreamListener=TpcdsDgenTable.get(session.withChunkNumber(chunkNumber), tableSystem)
                                     .setRowFeedback(feedbackFrequency)
                                     .generateTable(table);
                         if (insertStreamListener != null) {

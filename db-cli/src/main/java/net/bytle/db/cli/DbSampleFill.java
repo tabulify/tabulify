@@ -14,7 +14,7 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 import net.bytle.db.stream.MemorySelectStream;
 import net.bytle.db.stream.Streams;
 import net.bytle.db.tpc.TpcdsDgen;
@@ -97,7 +97,7 @@ public class DbSampleFill {
             }
         }
         // load
-        List<InsertStreamListener> insertStreamListeners = TpcdsDgen.get()
+        List<MoveListener> insertStreamListeners = TpcdsDgen.get()
                 .setSchema(schemaDef)
                 .setScale(scale)
                 .setFeedbackFrequency(5)
@@ -115,7 +115,7 @@ public class DbSampleFill {
                 .addColumn("Rows Inserted", Types.INTEGER);
 
         InsertStream printTableInsertStream = Tables.getTableInsertStream(printTable);
-        for (InsertStreamListener insertStreamListener : insertStreamListeners) {
+        for (MoveListener insertStreamListener : insertStreamListeners) {
             printTableInsertStream.insert(
                     insertStreamListener.getInsertStream().getRelationDef().getName()
                     , insertStreamListener.getRowCount()

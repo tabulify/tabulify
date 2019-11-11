@@ -103,7 +103,7 @@ public class CliWord {
     @SuppressWarnings("WeakerAccess")
     public boolean hasValue() {
         if (isArg() || isCommand() || isFlag()) {
-            Logger.getLogger(CliLog.MODULE_NAME).fine("The word (" + getName() + ") is not an option. It then cannot ");
+            CliLog.LOGGER.fine("The word (" + getName() + ") is not an option. It then cannot ");
             return false;
         } else {
             return true;

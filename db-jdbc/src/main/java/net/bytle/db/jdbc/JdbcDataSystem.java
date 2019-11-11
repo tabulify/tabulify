@@ -442,6 +442,11 @@ public class JdbcDataSystem extends TableSystem {
         return JdbcDataPath.ofQuery(this, query);
     }
 
+    @Override
+    public String getString(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
 
     public Database getDatabase() {
         return database;

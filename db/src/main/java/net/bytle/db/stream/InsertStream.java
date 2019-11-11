@@ -44,7 +44,7 @@ public interface InsertStream extends AutoCloseable {
      * is wrappeds in a thread
      * @return insertStreamListener or null if not implemented
      */
-    InsertStreamListener getInsertStreamListener();
+    MoveListener getInsertStreamListener();
 
     /**
      * Close the stream

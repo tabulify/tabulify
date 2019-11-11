@@ -1,5 +1,7 @@
 package net.bytle.cli;
 
+import net.bytle.log.Log;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public class CliParser {
 
-    private static final Logger LOGGER = CliLog.getCliLog().getLogger();
+    private static final Log LOGGER = CliLog.LOGGER;
 
     @SuppressWarnings("WeakerAccess")
     public static final String PREFIX_LONG_OPTION = "--";
@@ -38,7 +40,7 @@ public class CliParser {
     private Map<String, List<String>> foundWords;
 
     // A logger initialized in the {@link CliCommand#getLogger} function
-    private final Logger logger = CliLog.getCliLog().getLogger();
+    private final Log logger = CliLog.LOGGER;
 
 
     /**
@@ -432,7 +434,7 @@ public class CliParser {
         if (verboseWord != null) {
             if (getBoolean(verboseWord)) {
 
-                CliLog.getCliLog().makeLoggerVerbose();
+                CliLog.LOGGER.makeLoggerVerbose();
 
             }
         }

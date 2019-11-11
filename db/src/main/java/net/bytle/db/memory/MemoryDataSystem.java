@@ -138,6 +138,11 @@ public class MemoryDataSystem extends TableSystem {
         throw new RuntimeException("Not yet implemented");
     }
 
+    @Override
+    public String getString(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
 
     @Override
     public DataPath getDataPath(DataUri dataUri) {

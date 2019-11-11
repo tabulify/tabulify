@@ -2,7 +2,7 @@ package net.bytle.db.move;
 
 
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.MoveListener;
 
 import java.sql.Types;
 import java.util.*;
@@ -113,10 +113,10 @@ public class ResultSetLoader {
         return this;
     }
 
-    public List<InsertStreamListener> load() {
+    public List<MoveListener> load() {
 
 
-        List<InsertStreamListener> streamListeners = Collections.synchronizedList(new ArrayList<>());
+        List<MoveListener> streamListeners = Collections.synchronizedList(new ArrayList<>());
 
         try {
 

@@ -3,7 +3,11 @@
  */
 rootProject.buildFileName = 'root.gradle'
 rootProject.name = 'bytle-parent'
+
 include(':bytle-cli')
+project(':bytle-cli').projectDir = file('cli')
+
+
 include(':bytle-log')
 include(':bytle-type')
 include(':bytle-crypto')
@@ -32,7 +36,6 @@ include(':bytle-db-oracle')
 include(':bytle-db-assembly')
 include(':bytle-db-excel')
 include(':bytle-db-sqlserver')
-project(':bytle-cli').projectDir = file('cli')
 project(':bytle-log').projectDir = file('log')
 project(':bytle-type').projectDir = file('type')
 project(':bytle-crypto').projectDir = file('crypto')
