@@ -3,17 +3,22 @@ package net.bytle.db.transfer;
 
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.SelectStream;
 import net.bytle.log.Log;
 
 import java.sql.Types;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
- * A class to transfer a data document content from a data source to another
+ * A class to transfer a tabular data document content from a data source to another
  */
 public class Transfer {
 
@@ -27,7 +32,7 @@ public class Transfer {
             Types.BIT
     );
 
-    public static TransferListener load(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
+    public static TransferListener transfer(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
 
         /**
          * The listener is passed to the consumers and producers threads
@@ -35,17 +40,40 @@ public class Transfer {
          */
         TransferListener transferListener = TransferListener.of();
 
+
+        /**
+         * Single thread ?
+         */
+        int targetWorkerCount = transferProperties.getTargetWorkerCount();
+        if (targetWorkerCount==1){
+            try (
+                    SelectStream sourceSelectStream = Tabulars.getSelectStream(sourceDataPath);
+                    InsertStream targetInsertStream = Tabulars.getInsertStream(targetDataPath)
+            ) {
+
+                transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
+                transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
+
+                while (sourceSelectStream.next()) {
+                    List<Object> objects = IntStream.range(0, sourceSelectStream.getDataDef().getColumnDefs().size())
+                            .mapToObj(sourceSelectStream::getObject)
+                            .collect(Collectors.toList());
+                    targetInsertStream.insert(objects);
+                }
+
+            }
+            return transferListener;
+        }
+
         /**
          * Not every database can make a lot of connection
-         * We of the last connection object for single connection database such as sqlite.
+         * We may use the last connection object for single connection database such as sqlite.
          *
          * Example:
          *     * their is already a connection through a select for instance
          *     * and that the database does not support multiple connection (such as Sqlite)
          **/
-
         // One connection is already used in the construction of the database
-        int targetWorkerCount = transferProperties.getTargetWorkerCount();
         if (targetWorkerCount > targetDataPath.getDataSystem().getMaxWriterConnection()) {
             throw new IllegalArgumentException("The database (" + targetDataPath.getDataSystem().getProductName() + ") does not support more than (" + targetDataPath.getDataSystem().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
         }

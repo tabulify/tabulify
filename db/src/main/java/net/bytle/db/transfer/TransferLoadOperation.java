@@ -3,7 +3,7 @@ package net.bytle.db.transfer;
 /**
  * How the data should be loaded in the target document
  */
-public enum MoveLoadOperation {
+public enum TransferLoadOperation {
 
 
     /**

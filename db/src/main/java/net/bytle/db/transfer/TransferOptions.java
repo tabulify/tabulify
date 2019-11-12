@@ -3,7 +3,7 @@ package net.bytle.db.transfer;
 /**
  * Move Operations on the target document
  */
-public enum MoveTargetOperationOld {
+public enum TransferOptions {
 
 
 

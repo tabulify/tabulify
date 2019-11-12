@@ -62,21 +62,16 @@ public class TransferProperties {
 
     /**
      * The load operations
-     * See {@link #setLoadOperation(MoveLoadOperation)}
+     * See {@link #setLoadOperation(TransferLoadOperation)}
      */
-    private MoveLoadOperation loadOperation = MoveLoadOperation.INSERT;
+    private TransferLoadOperation loadOperation = TransferLoadOperation.INSERT;
 
     /**
      * The target operation
-     * See {@link #setTargetOperations(MoveTargetOperationOld...)}
+     * See {@link #setTargetOperations(TransferOptions...)}
      */
-    private MoveTargetOperationOld[] moveTargetOperationOlds = { MoveTargetOperationOld.CREATE_IF_NOT_EXIST };
+    private TransferOptions[] transferOptions = { TransferOptions.CREATE_IF_NOT_EXIST };
 
-    /**
-     * The source operation
-     * See {@link #setSourceOperations(MoveSourceOperationOld)}
-     */
-    private MoveSourceOperationOld moveSourceOperationsOld;
 
 
     /**
@@ -194,11 +189,11 @@ public class TransferProperties {
      *   * insert (append),
      *   * update,
      *   * merge (upsert)
-     * @param moveLoadOperation - an enum of {@link MoveLoadOperation}
+     * @param transferLoadOperation - an enum of {@link TransferLoadOperation}
      * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public TransferProperties setLoadOperation(MoveLoadOperation moveLoadOperation) {
-        this.loadOperation = moveLoadOperation;
+    public TransferProperties setLoadOperation(TransferLoadOperation transferLoadOperation) {
+        this.loadOperation = transferLoadOperation;
         return this;
     }
 
@@ -209,26 +204,14 @@ public class TransferProperties {
      *   * replace,
      *   * create
      *   ...
-     * @param moveTargetOperationOlds - an enum of {@link MoveTargetOperationOld}
+     * @param transferOptions - an enum of {@link TransferOptions}
      * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public TransferProperties setTargetOperations(MoveTargetOperationOld... moveTargetOperationOlds) {
-        this.moveTargetOperationOlds = moveTargetOperationOlds;
+    public TransferProperties setTargetOperations(TransferOptions... transferOptions) {
+        this.transferOptions = transferOptions;
         return this;
     }
 
-    /**
-     *
-     * Set operation on the source
-     *   * truncate,
-     *   * drop
-     * @param moveSourceOperationOld - an enum of {@link MoveSourceOperationOld}
-     * @return  the {@link TransferProperties} instance itself for chaining instantiation
-     */
-    public TransferProperties setSourceOperations(MoveSourceOperationOld moveSourceOperationOld) {
-        this.moveSourceOperationsOld = moveSourceOperationOld;
-        return this;
-    }
 
     /**
      * @return the {@link #setTargetWorkerCount(int) | the target worker count}

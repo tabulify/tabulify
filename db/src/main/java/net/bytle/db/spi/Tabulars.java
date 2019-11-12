@@ -5,6 +5,7 @@ import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.transfer.Transfer;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
@@ -14,8 +15,6 @@ import net.bytle.db.stream.Streams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 
 public class Tabulars {
@@ -208,7 +207,7 @@ public class Tabulars {
 
     public static void move(DataPath source, DataPath target) {
 
-        move(source,target,null);
+        move(source,target,TransferProperties.of());
 
     }
 
@@ -262,9 +261,9 @@ public class Tabulars {
      * @param transferProperties
      * @return a {@link TransferListener}
      */
-    public static List<TransferListener> move(DataPath source, DataPath target, TransferProperties transferProperties) {
+    public static TransferListener move(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-        // check source
+        // Check source
         if (!Tabulars.exists(source)) {
             // Is it a query definition
             if (source.getDataDef().getQuery() == null) {
@@ -297,20 +296,11 @@ public class Tabulars {
 
         final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
         if (sourceDataSystem.equals(target.getDataSystem())) {
-            // same provider
+            // same provider (fs or jdbc)
             sourceDataSystem.move(source, target, transferProperties);
         } else {
-            try (
-                    SelectStream sourceSelectStream = Tabulars.getSelectStream(source);
-                    InsertStream targetInsertStream = Tabulars.getInsertStream(target)
-            ) {
-                while (sourceSelectStream.next()) {
-                    List<Object> objects = IntStream.range(0, sourceSelectStream.getDataDef().getColumnDefs().size())
-                            .mapToObj(sourceSelectStream::getObject)
-                            .collect(Collectors.toList());
-                    targetInsertStream.insert(objects);
-                }
-            }
+            // different provider (fs to jdbc or jdbc to fs)
+            Transfer.transfer(source,target,transferProperties);
         }
         return null;
     }
