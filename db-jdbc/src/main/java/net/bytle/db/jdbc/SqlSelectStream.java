@@ -10,6 +10,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
 import static net.bytle.db.jdbc.JdbcDataPath.VIEW_TYPE;
@@ -26,7 +28,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
     public SqlSelectStream(JdbcDataPath jdbcDataPath) {
-
+        super(jdbcDataPath);
         this.jdbcDataPath = jdbcDataPath;
         this.jdbcDataSystem = jdbcDataPath.getDataSystem();
 
@@ -117,23 +119,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         return resultSet;
     }
 
-    @Override
-    public boolean first() {
-        try {
-            return getResultSet().first();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    @Override
-    public boolean last() {
-        try {
-            return getResultSet().last();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public int getRow() {
@@ -144,14 +130,6 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         }
     }
 
-    @Override
-    public boolean previous() {
-        try {
-            return getResultSet().previous();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public Object getObject(int columnIndex) {
@@ -198,7 +176,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
      * @return
      */
     @Override
-    public List<Object> next(int timeout, TimeUnit timeUnit) {
+    public boolean next(Integer timeout, TimeUnit timeUnit) {
         throw new RuntimeException("Not implemented");
     }
 
@@ -218,5 +196,12 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public List<Object> getObjects() {
+        return IntStream.of(this.jdbcDataPath.getDataDef().getColumnDefs().size())
+                .mapToObj(s->getObject(s))
+                .collect(Collectors.toList());
     }
 }

@@ -1,10 +1,11 @@
 
 
 dependencies {
-    implementation project(':bytle-db')
-    implementation project(':bytle-log')
+    testImplementation project(':bytle-db')
+    testImplementation project(':bytle-db-gen')
+    testImplementation project(':bytle-log')
     testImplementation project(':bytle-db-sqlite')
     testImplementation project(':bytle-db-jdbc')
 }
 
-description = 'Db Move'
+description = 'Db Transfer'

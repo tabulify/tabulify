@@ -1,7 +1,6 @@
 package net.bytle.db.memory;
 
-import net.bytle.log.Log;
-import net.bytle.db.DbLoggers;
+import net.bytle.db.transfer.TransferLog;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
@@ -9,13 +8,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class MemoryInsertStream extends InsertStreamAbs implements InsertStream {
 
 
-    private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
     private final MemoryDataPath memoryDataPath;
 
     private Collection<? extends List> tabular;
@@ -50,7 +47,7 @@ public class MemoryInsertStream extends InsertStreamAbs implements InsertStream 
 
         currentRowInBatch++;
         // Offer method in place of the add method to avoid a java.lang.IllegalStateException: Queue full
-        int timeout = 60;
+        int timeout = memoryDataPath.getTimeOut();
         boolean result;
         try {
             switch (memoryDataPath.getType()) {
@@ -71,27 +68,32 @@ public class MemoryInsertStream extends InsertStreamAbs implements InsertStream 
 
         if (!result) {
             final String msg = name + ": the timeout of (" + timeout + ") seconds was reached (unable to add rows to the queue, stopping the data load).";
-            LOGGER.severe(msg);
+            TransferLog.LOGGER.severe(msg);
             throw new RuntimeException(msg);
         }
 
         // Batch processing
         // because the log feedback is based on it
         if (currentRowInBatch >= this.batchSize) {
-            insertStreamListener.addRows(currentRowInBatch);
-            currentRowInBatch = 0;
-            batchExecutionCount++;
-            if (Math.floorMod(batchExecutionCount, feedbackFrequency) == 0) {
-                LOGGER.info(name + ": " + insertStreamListener.getRowCount() + " rows loaded in "+this.dataPath.toString());
-            }
+            process_batch_info();
         }
 
         return this;
     }
 
+    private void process_batch_info() {
+        insertStreamListener.addRows(currentRowInBatch);
+        insertStreamListener.incrementBatch();
+        currentRowInBatch = 0;
+        batchExecutionCount++;
+        if (Math.floorMod(batchExecutionCount, feedbackFrequency) == 0) {
+            TransferLog.LOGGER.info(name + ": " + insertStreamListener.getRowCount() + " rows loaded in "+this.dataPath.toString());
+        }
+    }
+
     @Override
     public void close() {
-
+        process_batch_info();
     }
 
     /**

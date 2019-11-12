@@ -8,7 +8,6 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -17,13 +16,13 @@ import java.util.logging.Logger;
  */
 public class TransferMetricsViewer implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(TransferMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
+
 
 
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
     private final Integer queueSize;
-    private final List<InsertStreamListener> insertStreamListeners;
+    private final TransferListener transferListener;
     private final DataPath metricsFilePath;
     private final AtomicBoolean consumerWorkIsDone;
 
@@ -33,14 +32,14 @@ public class TransferMetricsViewer implements Runnable {
 
             DataPath queue,
             TransferProperties transferProperties,
-            List<InsertStreamListener> insertStreamListeners,
+            TransferListener transferListener,
             AtomicBoolean producerWorkIsDone,
             AtomicBoolean consumerWorkIsDone) {
 
         this.queue = queue;
         this.producerWorkIsDone = producerWorkIsDone;
         this.queueSize = transferProperties.getQueueSize();
-        this.insertStreamListeners = insertStreamListeners;
+        this.transferListener = transferListener;
         this.metricsFilePath = transferProperties.getMetricsPath();
         this.consumerWorkIsDone = consumerWorkIsDone;
 
@@ -52,7 +51,7 @@ public class TransferMetricsViewer implements Runnable {
 
         try {
 
-            LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": Started");
+            TransferLog.LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": Started");
 
             Writer writer;
             if (metricsFilePath !=null) {
@@ -90,10 +89,10 @@ public class TransferMetricsViewer implements Runnable {
                 outputStream.write(bufferRatioCsv);
                 outputStream.newLine();
 
-                LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.queueSize +")");
+                TransferLog.LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.queueSize +")");
 
 
-                for (InsertStreamListener insertStreamListener : insertStreamListeners) {
+                for (InsertStreamListener insertStreamListener : transferListener.getInsertStreamListeners()) {
 
                     // Commits
                     Integer commits = insertStreamListener.getCommits();
@@ -124,10 +123,10 @@ public class TransferMetricsViewer implements Runnable {
                 outputStream.close();
                 writer.close();
             }
-            LOGGER.fine("End of the viewer");
+            TransferLog.LOGGER.fine("End of the viewer");
 
         } catch (InterruptedException | IOException e) {
-
+            this.transferListener.addException(e);
             throw new RuntimeException(e);
         }
 

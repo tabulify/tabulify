@@ -27,8 +27,13 @@ public class Transfer {
             Types.BIT
     );
 
-    public static List<TransferListener> load(DataPath sourceDef, DataPath targetDataPath, TransferProperties transferProperties) {
+    public static TransferListener load(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
 
+        /**
+         * The listener is passed to the consumers and producers threads
+         * to ultimately ends in the view thread to report life on the process
+         */
+        TransferListener transferListener = TransferListener.of();
 
         /**
          * Not every database can make a lot of connection
@@ -46,14 +51,13 @@ public class Transfer {
         }
 
 
-
-        // The dead objects - They will be inserted in the queue at the end to send a termination message
+        // Object flag status
         AtomicBoolean producerWorkIsDone = new AtomicBoolean(false);
         AtomicBoolean consumerWorkIsDone = new AtomicBoolean(false);
 
-        long timeout = transferProperties.getTimeOut();
 
         // The queue between the producer (source) and the consumer (target)
+        long timeout = transferProperties.getTimeOut();
         MemoryDataPath queue = MemoryDataPath.of("Transfer")
                 .setType(MemoryDataPath.TYPE_BLOCKED_QUEUE)
                 .setTimeout(timeout)
@@ -61,13 +65,12 @@ public class Transfer {
 
         try {
 
-
-            TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDef, queue, transferProperties);
+            // Start the producer thread
+            TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDataPath, queue, transferProperties, transferListener);
             Thread producer = new Thread(transferSourceWorker);
             producer.start();
 
-
-            // Start the target threads
+            // Start the consumer / target threads
             ExecutorService targetWorkExecutor = Executors.newFixedThreadPool(targetWorkerCount);
             for (int i = 0; i < targetWorkerCount; i++) {
 
@@ -81,7 +84,8 @@ public class Transfer {
 
             }
 
-            TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, streamListeners, producerWorkIsDone, consumerWorkIsDone);
+            // Start the viewer
+            TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, transferListener, producerWorkIsDone, consumerWorkIsDone);
             Thread viewer = new Thread(transferMetricsViewer);
             viewer.start();
 
@@ -101,21 +105,18 @@ public class Transfer {
                 throw new RuntimeException(e);
             }
 
+            // Send a signal to the viewer that the consumer work is done
             consumerWorkIsDone.set(true);
 
             // Wait the viewer
             viewer.join();
 
 
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        } finally {
-            // Close things here if something is going wrong
-            producerWorkIsDone.set(true);
-
         }
 
-        return null;
+        return transferListener;
 
     }
 

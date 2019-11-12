@@ -6,8 +6,6 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.*;
 
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -20,19 +18,21 @@ public class TransferSourceWorker implements Runnable {
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
-    private final TransferProperties transferProperties;
+    private final TransferListener transferListener;
 
 
     /**
      * @param sourceDataPath
-     * @param queue          (A blocking queue !)
+     * @param queue          (The target data path, a blocking queue !)
+     * @param transferProperties - The properties of the transfer
+     * @param transferListener - The cross thread listeners used in the viewer thread
      */
-    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, TransferProperties transferProperties) {
+    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, TransferProperties transferProperties, TransferListener transferListener) {
 
         this.sourceDataPath = sourceDataPath;
         this.queue = queue;
         this.feedbackFrequency = transferProperties.getFeedbackFrequency();
-        this.transferProperties = transferProperties;
+        this.transferListener = transferListener;
 
     }
 
@@ -40,21 +40,28 @@ public class TransferSourceWorker implements Runnable {
     @Override
     public void run() {
 
-        TransferListener transferListener = TransferListener.of();
+        String name = "Producer: " + Thread.currentThread().getName();
         try (
+
+                SelectStream selectStream = Tabulars.getSelectStream(sourceDataPath)
+                        .setName(name);
+
                 InsertStream insertStream = Tabulars.getInsertStream(queue)
-                        .setName("Producer: " + Thread.currentThread().getName())
+                        .setName(name)
                         .setFeedbackFrequency(feedbackFrequency);
+
         ) {
 
-            transferListener.addInsertListener(insertStream.getInsertStreamListener());
+            // The feedback
+            transferListener.addSelectListener(selectStream.getSelectStreamListener());
+            InsertStreamListener insertStreamListener = insertStream.getInsertStreamListener();
+            transferListener.addInsertListener(insertStreamListener);
 
-            SelectStream selectStream = Tabulars.getSelectStream(sourceDataPath);
-            List<Object> objects;
+            // The transfer
             int columnCount = sourceDataPath.getDataDef().getColumnDefs().size();
             while (selectStream.next()) {
 
-                objects = IntStream.of(columnCount)
+                List<Object> objects = IntStream.of(columnCount)
                         .mapToObj(selectStream::getObject)
                         .collect(Collectors.toList());
                 insertStream.insert(objects);

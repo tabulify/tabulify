@@ -8,6 +8,7 @@ import net.bytle.db.stream.SelectStreamListener;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,7 +23,11 @@ import java.util.List;
 public class TransferListener extends ThreadListenerAbs implements ThreadListener {
 
 
-    private List<InsertStreamListener> insertListener = new ArrayList<>();
+    /**
+     * The insert listeners are read to give live feedback
+     * because they are also written, we make them thread safe with the synchronizedList
+     */
+    private List<InsertStreamListener> insertListener = Collections.synchronizedList(new ArrayList<>());
     private List<SelectStreamListener> selectListener = new ArrayList<>();
 
     public static TransferListener of() {
@@ -92,5 +97,9 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
     public TransferListener addSelectListener(SelectStreamListener selectStreamListener) {
         this.selectListener.add(selectStreamListener);
         return this;
+    }
+
+    public List<InsertStreamListener> getInsertStreamListeners() {
+        return this.insertListener;
     }
 }

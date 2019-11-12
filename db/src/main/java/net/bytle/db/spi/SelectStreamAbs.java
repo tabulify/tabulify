@@ -11,6 +11,7 @@ public abstract class SelectStreamAbs implements SelectStream {
 
     private final DataPath dataPath;
     protected SelectStreamListener selectStreamListener = SelectStreamListener.of(this);
+    private String name;
 
     public SelectStreamAbs(DataPath dataPath) {
 
@@ -31,6 +32,11 @@ public abstract class SelectStreamAbs implements SelectStream {
         return this.selectStreamListener;
     }
 
+    @Override
+    public SelectStream setName(String name) {
+        this.name = name;
+        return this;
+    }
 
 
 }

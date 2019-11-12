@@ -27,12 +27,12 @@ public class MemoryDataSystem extends TableSystem {
 
     private static MemoryDataSystem staticMemoryDataSystem;
     private final MemorySystemProvider memoryStoreProvider;
-    private final MemoryStore<Collection<? extends List>> memoryStore;
+    private final MemoryStore memoryStore;
     private Database database = Databases.of("memory");
 
     public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
         this.memoryStoreProvider = memorySystemProvider;
-        this.memoryStore = new MemoryStore<>();
+        this.memoryStore = new MemoryStore();
     }
 
 

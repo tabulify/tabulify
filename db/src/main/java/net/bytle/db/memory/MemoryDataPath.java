@@ -121,7 +121,7 @@ public class MemoryDataPath extends DataPath {
      * See {@link #setTimeout(long)}
      * @return Timeout en seconds
      */
-    public long getTimeOut() {
+    public Integer getTimeOut() {
         return this.timeout;
     }
 

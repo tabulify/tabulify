@@ -45,4 +45,11 @@ public interface SelectStream extends AutoCloseable {
 
     SelectStream setName(String name);
 
+    /**
+     * This function is used in two pass functions.
+     *
+     * Example:
+     * {@link Streams#print(SelectStream)} will first scan the rows to calculate the layout then print
+     */
+    void beforeFirst();
 }

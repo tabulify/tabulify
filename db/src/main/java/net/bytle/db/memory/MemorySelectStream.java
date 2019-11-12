@@ -161,4 +161,15 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
         return currentRow;
     }
 
+    @Override
+    public void beforeFirst() {
+        switch (memoryDataPath.getType()) {
+            case MemoryDataPath.TYPE_LIST:
+                rowIndex = -1;
+            default:
+                throw new RuntimeException("The Type (" + memoryDataPath.getType() + ") of the data path (" + memoryDataPath + ") does not support going back to the first argument" );
+        }
+    }
+
+
 }
