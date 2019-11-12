@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
- * A class to move a data document
+ * A class to transfer a data document content from a data source to another
  */
 public class Transfer {
 
@@ -27,10 +27,7 @@ public class Transfer {
             Types.BIT
     );
 
-    public static List<MoveListener> load(DataPath sourceDef, DataPath targetDataPath, TransferProperties transferProperties) {
-
-
-        List<InsertStreamListener> streamListeners = Collections.synchronizedList(new ArrayList<>());
+    public static List<TransferListener> load(DataPath sourceDef, DataPath targetDataPath, TransferProperties transferProperties) {
 
 
         /**
@@ -65,7 +62,7 @@ public class Transfer {
         try {
 
 
-            TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDef, queue, streamListeners, transferProperties);
+            TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDef, queue, transferProperties);
             Thread producer = new Thread(transferSourceWorker);
             producer.start();
 
@@ -79,8 +76,7 @@ public class Transfer {
                                 queue,
                                 targetDataPath,
                                 transferProperties,
-                                producerWorkIsDone,
-                                streamListeners)
+                                producerWorkIsDone)
                 );
 
             }
@@ -97,7 +93,7 @@ public class Transfer {
             targetWorkExecutor.shutdown();
             // And wait the termination
             try {
-                Boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.SECONDS);
+                boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.SECONDS);
                 if (!result) {
                     throw new RuntimeException("The timeout of the consumers (" + timeout + " s) elapsed before termination");
                 }

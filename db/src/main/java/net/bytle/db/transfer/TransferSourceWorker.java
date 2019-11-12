@@ -20,21 +20,18 @@ public class TransferSourceWorker implements Runnable {
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
-    private final List<InsertStreamListener> listeners;
     private final TransferProperties transferProperties;
 
 
     /**
-     *  @param sourceDataPath
-     * @param queue (A blocking queue !)
-     * @param listeners The listener
+     * @param sourceDataPath
+     * @param queue          (A blocking queue !)
      */
-    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, List<InsertStreamListener> listeners, TransferProperties transferProperties) {
+    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, TransferProperties transferProperties) {
 
         this.sourceDataPath = sourceDataPath;
         this.queue = queue;
-        this.listeners = listeners;
-        this.feedbackFrequency = transferProperties.getFeedbackFrequency() ;
+        this.feedbackFrequency = transferProperties.getFeedbackFrequency();
         this.transferProperties = transferProperties;
 
     }
@@ -43,12 +40,14 @@ public class TransferSourceWorker implements Runnable {
     @Override
     public void run() {
 
-        InsertStream insertStream = Tabulars.getInsertStream(queue)
-                .setName("Producer: " + Thread.currentThread().getName())
-                .setFeedbackFrequency(feedbackFrequency);
-        InsertStreamListener listener = insertStream.getInsertStreamListener();
-        listeners.add(listener);
-        try {
+        TransferListener transferListener = TransferListener.of();
+        try (
+                InsertStream insertStream = Tabulars.getInsertStream(queue)
+                        .setName("Producer: " + Thread.currentThread().getName())
+                        .setFeedbackFrequency(feedbackFrequency);
+        ) {
+
+            transferListener.addInsertListener(insertStream.getInsertStreamListener());
 
             SelectStream selectStream = Tabulars.getSelectStream(sourceDataPath);
             List<Object> objects;
@@ -62,12 +61,9 @@ public class TransferSourceWorker implements Runnable {
 
             }
 
-            insertStream.close();
-
-
         } catch (Exception e) {
 
-            listener.addException(e);
+            transferListener.addException(e);
             throw new RuntimeException(e);
 
         }

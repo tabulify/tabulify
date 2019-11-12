@@ -21,55 +21,54 @@ public class TransferTargetWorker implements Runnable {
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
     private final DataPath targetDataPath;
-    private final List<InsertStreamListener> listeners;
     private final TransferProperties transferProperties;
 
     public TransferTargetWorker(
             DataPath sourceDataPath,
             DataPath targetDataPath,
             TransferProperties transferProperties,
-            AtomicBoolean producerWorkIsDone,
-            List<InsertStreamListener> listeners) {
+            AtomicBoolean producerWorkIsDone) {
         this.queue = sourceDataPath;
         this.targetDataPath = targetDataPath;
         this.producerWorkIsDone = producerWorkIsDone;
         this.transferProperties = transferProperties;
-        this.listeners = listeners;
 
     }
 
     @Override
     public void run() {
+        String name = "Consumer: " + Thread.currentThread().getName();
+        TransferListener transferListener = TransferListener.of();
+        try (
 
+            InsertStream insertStream = Tabulars.getInsertStream(targetDataPath)
+                    .setName(name)
+                    .setCommitFrequency(transferProperties.getCommitFrequency())
+                    .setBatchSize(transferProperties.getBatchSize());
 
-        InsertStream insertStream = Tabulars.getInsertStream(targetDataPath)
-                .setName("Consumer: " + Thread.currentThread().getName())
-                .setCommitFrequency(transferProperties.getCommitFrequency())
-                .setBatchSize(transferProperties.getBatchSize());
+            SelectStream selectStream = Tabulars.getSelectStream(queue)
+                    .setName(name);
 
-        InsertStreamListener listener = insertStream.getInsertStreamListener();
-        this.listeners.add(listener);
+        ){
 
-        SelectStream selectStream = Tabulars.getSelectStream(queue);
-        try {
+            transferListener.addInsertListener(insertStream.getInsertStreamListener());
+            transferListener.addSelectListener(selectStream.getSelectStreamListener());
 
             List<Object> objects;
-            while (
-                    producerWorkIsDone.get()
-            ) {
-
+            while (true) {
                 while (selectStream.next(transferProperties.getTimeOut(), TimeUnit.SECONDS)) {
 
                     objects = selectStream.getObjects();
                     insertStream.insert(objects);
 
                 }
-
+                if (producerWorkIsDone.get()) {
+                    break;
+                }
             }
-            insertStream.close();
 
         } catch (Exception e) {
-            listener.addException(e);
+            transferListener.addException(e);
             throw new RuntimeException(e);
         }
 

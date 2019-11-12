@@ -3,37 +3,30 @@ package net.bytle.db.transfer;
 import net.bytle.db.engine.ThreadListener;
 import net.bytle.db.engine.ThreadListenerAbs;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.InsertStreamListener;
+import net.bytle.db.stream.SelectStreamListener;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by gerard on 12-01-2017.
- * An object listener to of informations from the threads
+ * An object listener to information from the threads
  * <p>
  * Example:
  * - exception and errors
  * - number of commits
  * - ...
  */
-public class MoveListener extends ThreadListenerAbs implements ThreadListener {
-
-    private InsertStream insertStream;
-
-    private Integer commits = 0;
-    private Integer rows = 0;
-    private Integer batches = 0;
-    private List<RuntimeException> exceptions = new ArrayList<>();
-
-    private MoveListener(InsertStream insertStream) {
-
-        this.insertStream = insertStream;
-
-    }
+public class TransferListener extends ThreadListenerAbs implements ThreadListener {
 
 
-    public static MoveListener get(InsertStream insertStream) {
-        return new MoveListener(insertStream);
+    private List<InsertStreamListener> insertListener = new ArrayList<>();
+    private List<SelectStreamListener> selectListener = new ArrayList<>();
+
+    public static TransferListener of() {
+        return new TransferListener();
     }
 
 
@@ -46,7 +39,7 @@ public class MoveListener extends ThreadListenerAbs implements ThreadListener {
      */
     public int getExitStatus() {
 
-        return exceptions.size();
+        throw new RuntimeException("");
 
     }
 
@@ -55,7 +48,7 @@ public class MoveListener extends ThreadListenerAbs implements ThreadListener {
      */
     public void incrementCommit() {
 
-        this.commits++;
+
 
     }
 
@@ -64,7 +57,6 @@ public class MoveListener extends ThreadListenerAbs implements ThreadListener {
      */
     public void incrementBatch() {
 
-        this.batches++;
 
     }
 
@@ -75,24 +67,30 @@ public class MoveListener extends ThreadListenerAbs implements ThreadListener {
      */
     public void addRows(int rows) {
 
-        this.rows = this.rows + rows;
+
 
     }
 
     public Integer getCommits() {
-        return commits;
+        return null;
     }
 
     public Integer getRowCount() {
-        return rows;
+        return null;
     }
 
     public Integer getBatchCount() {
-        return batches;
+        return null;
     }
 
 
-    public InsertStream getInsertStream() {
-        return insertStream;
+    public TransferListener addInsertListener(InsertStreamListener listener) {
+        this.insertListener.add(listener);
+        return this;
+    }
+
+    public TransferListener addSelectListener(SelectStreamListener selectStreamListener) {
+        this.selectListener.add(selectStreamListener);
+        return this;
     }
 }

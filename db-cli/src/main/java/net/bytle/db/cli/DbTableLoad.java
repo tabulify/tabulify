@@ -11,7 +11,7 @@ import net.bytle.db.transfer.Transfer;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.transfer.MoveListener;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.uri.IDataUri;
 import net.bytle.log.Log;
 
@@ -132,7 +132,7 @@ public class DbTableLoad {
 
         RelationDef relationDef = Relations.get(inputFilePath);
 
-        List<MoveListener> resultSetListeners = new Transfer(targetTable, relationDef)
+        List<TransferListener> resultSetListeners = new Transfer(targetTable, relationDef)
                 .targetWorkerCount(targetWorkerCount)
                 .bufferSize(bufferSize)
                 .batchSize(batchSize)

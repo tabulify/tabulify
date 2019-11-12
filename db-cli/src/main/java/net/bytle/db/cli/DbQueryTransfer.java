@@ -8,7 +8,7 @@ import net.bytle.db.model.SchemaDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
-import net.bytle.db.transfer.MoveListener;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.log.Log;
@@ -128,7 +128,7 @@ public class DbQueryTransfer {
             LOGGER.info("Loading the query (" + queryName +") from the source ("+sourceDataPath+") into the table ("+target.toString());
 
 
-            List<MoveListener> resultSetListener = Tabulars.move(source,target, transferProperties);
+            List<TransferListener> resultSetListener = Tabulars.move(source,target, transferProperties);
 
             LOGGER.info("Response Time for the load of the table (" + targetTableName + ") with (" + targetWorkerCount + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
             LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");

@@ -7,7 +7,7 @@ import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.transfer.MoveListener;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 
@@ -260,9 +260,9 @@ public class Tabulars {
      * @param source
      * @param target
      * @param transferProperties
-     * @return a {@link MoveListener}
+     * @return a {@link TransferListener}
      */
-    public static List<MoveListener> move(DataPath source, DataPath target, TransferProperties transferProperties) {
+    public static List<TransferListener> move(DataPath source, DataPath target, TransferProperties transferProperties) {
 
         // check source
         if (!Tabulars.exists(source)) {

@@ -43,4 +43,6 @@ public interface SelectStream extends AutoCloseable {
 
     List<Object> getObjects();
 
+    SelectStream setName(String name);
+
 }
