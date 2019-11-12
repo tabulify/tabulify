@@ -130,12 +130,12 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     /**
      * Retrieves and removes the head of this data path, or returns null if this queue is empty.
      *
-     * @param i
+     * @param timeout
      * @param timeUnit
      * @return
      */
     @Override
-    public List<Object> poll(int i, TimeUnit timeUnit) {
+    public List<Object> next(int timeout, TimeUnit timeUnit) {
         throw new RuntimeException("Not yet implemented");
     }
 

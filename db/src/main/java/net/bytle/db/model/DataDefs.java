@@ -1,15 +1,12 @@
 package net.bytle.db.model;
 
 
-import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.memory.ListInsertStream;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.type.Maps;
 import org.yaml.snakeyaml.Yaml;

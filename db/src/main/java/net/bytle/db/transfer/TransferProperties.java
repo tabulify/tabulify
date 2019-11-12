@@ -51,9 +51,9 @@ public class TransferProperties {
     private Integer commitFrequency;
 
     /**
-     * See {@link #setTimeOut(long)}
+     * See {@link #setTimeOut(Integer)}
      */
-    private long timeout = Long.MAX_VALUE;
+    private Integer timeout = Integer.MAX_VALUE;
 
     /**
      * See {@link #setFeedbackFrequency(int)}
@@ -173,7 +173,7 @@ public class TransferProperties {
     }
 
     /**
-     * Time Out in Micro-second
+     * Time Out in Second
      *
      *   * When the source worker have finished, this is the max delay where we will wait
      * for the termination of the target workers
@@ -183,7 +183,7 @@ public class TransferProperties {
      * @param timeout
      * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public TransferProperties setTimeOut(long timeout) {
+    public TransferProperties setTimeOut(Integer timeout) {
         this.timeout = timeout;
         return this;
     }
@@ -261,7 +261,11 @@ public class TransferProperties {
         return metricsPath;
     }
 
-    public long getTimeOut() {
+    /**
+     *
+     * @return the {@link #setTimeOut(Integer)|Timeout}
+     */
+    public Integer getTimeOut() {
         return timeout;
     }
 }

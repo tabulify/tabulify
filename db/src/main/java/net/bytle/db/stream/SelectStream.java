@@ -15,15 +15,8 @@ public interface SelectStream extends AutoCloseable {
 
     String getString(int columnIndex);
 
-    void beforeFirst();
-
-    boolean first();
-
-    boolean last();
-
     int getRow();
 
-    boolean previous();
 
     Object getObject(int columnIndex);
 
@@ -35,15 +28,19 @@ public interface SelectStream extends AutoCloseable {
     Clob getClob(int columnIndex);
 
     /**
-     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
-     * @param i
-     * @param timeUnit
-     * @return
+     *
+     * @param timeout - timeout to retrieve an object from a queue implementation
+     * @param timeUnit - timeUnit of the timeout
+     *
      */
-    List<Object> poll(int i, TimeUnit timeUnit);
+    boolean next(Integer timeout, TimeUnit timeUnit);
 
     Integer getInteger(int columnIndex);
 
     Object getObject(String columnName);
+
+    SelectStreamListener getSelectStreamListener();
+
+    List<Object> getObjects();
 
 }

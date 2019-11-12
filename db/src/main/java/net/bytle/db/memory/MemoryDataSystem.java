@@ -12,7 +12,6 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 
 import java.io.Closeable;
@@ -86,15 +85,7 @@ public class MemoryDataSystem extends TableSystem {
     public InsertStream getInsertStream(DataPath dataPath) {
 
         MemoryDataPath memoryDataPath = (MemoryDataPath) dataPath;
-        switch (memoryDataPath.getType()) {
-            case MemoryDataPath.TYPE_BLOCKED_QUEUE:
-                return new BlockingQueueInsertStream(memoryDataPath);
-            case MemoryDataPath.TYPE_LIST:
-                return new ListInsertStream(memoryDataPath);
-            default:
-                throw new RuntimeException("Type ("+memoryDataPath.getType()+") is unknown for this memory data path ("+memoryDataPath+")");
-        }
-
+        return new MemoryInsertStream(memoryDataPath);
 
     }
 
@@ -167,16 +158,16 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public SelectStream getSelectStream(DataPath memoryTable) {
+    public net.bytle.db.stream.SelectStream getSelectStream(DataPath memoryTable) {
 
         MemoryDataPath memoryDataPath = (MemoryDataPath) memoryTable;
         switch(memoryDataPath.getType()) {
             case MemoryDataPath.TYPE_BLOCKED_QUEUE:
                 throw new RuntimeException("Not yet implemented");
             case MemoryDataPath.TYPE_LIST:
-                return new ListSelectStream(memoryDataPath);
+                return new MemorySelectStream(memoryDataPath);
             default:
-                return new ListSelectStream(memoryDataPath);
+                return new MemorySelectStream(memoryDataPath);
         }
 
 

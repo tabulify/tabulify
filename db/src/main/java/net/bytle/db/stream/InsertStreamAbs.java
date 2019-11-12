@@ -7,7 +7,7 @@ import java.util.List;
 
 public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
 
-    private final DataPath dataPath;
+    protected final DataPath dataPath;
     protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);
 
     protected String name = Thread.currentThread().getName();

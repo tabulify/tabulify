@@ -58,10 +58,9 @@ public class Transfer {
 
         // The queue between the producer (source) and the consumer (target)
         MemoryDataPath queue = MemoryDataPath.of("Transfer")
-                .setBlocking(true)
+                .setType(MemoryDataPath.TYPE_BLOCKED_QUEUE)
                 .setTimeout(timeout)
                 .setCapacity(transferProperties.getQueueSize());
-
 
         try {
 
@@ -76,10 +75,9 @@ public class Transfer {
             for (int i = 0; i < targetWorkerCount; i++) {
 
                 targetWorkExecutor.execute(
-                        new MoveTargetWorker(
-                                targetDataPath,
-                                sourceDef,
+                        new TransferTargetWorker(
                                 queue,
+                                targetDataPath,
                                 transferProperties,
                                 producerWorkIsDone,
                                 streamListeners)
@@ -87,8 +85,8 @@ public class Transfer {
 
             }
 
-            TransferMetricsViewer TRansferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, streamListeners, producerWorkIsDone, consumerWorkIsDone);
-            Thread viewer = new Thread(TRansferMetricsViewer);
+            TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, streamListeners, producerWorkIsDone, consumerWorkIsDone);
+            Thread viewer = new Thread(transferMetricsViewer);
             viewer.start();
 
             // Wait the producer
@@ -99,9 +97,9 @@ public class Transfer {
             targetWorkExecutor.shutdown();
             // And wait the termination
             try {
-                Boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.MICROSECONDS);
+                Boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.SECONDS);
                 if (!result) {
-                    throw new RuntimeException("The timeout of the consumers (" + timeout + " ms) elapsed before termination");
+                    throw new RuntimeException("The timeout of the consumers (" + timeout + " s) elapsed before termination");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

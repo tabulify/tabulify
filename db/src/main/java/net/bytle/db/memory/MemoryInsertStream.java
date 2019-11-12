@@ -5,30 +5,42 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class BlockingQueueInsertStream extends InsertStreamAbs implements InsertStream {
+public class MemoryInsertStream extends InsertStreamAbs implements InsertStream {
 
 
     private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+    private final MemoryDataPath memoryDataPath;
 
-    private BlockingQueue<List<Object>> queue;
+    private Collection<? extends List> tabular;
+
     private int currentRowInBatch = 0;
     private int batchExecutionCount = 0;
 
-    public BlockingQueueInsertStream(MemoryDataPath memoryTable) {
-        super(memoryTable);
-        final MemoryStore memoryStore = memoryTable.getDataSystem().getMemoryStore();
-        Collection collection = memoryStore.getValues(memoryTable);
-        if (collection==null){
-            this.queue = new ArrayBlockingQueue<>(memoryTable.getCapacity());
-            memoryStore.put(memoryTable,queue);
-        } else {
-            queue = (BlockingQueue<List<Object>>) collection;
+    public MemoryInsertStream(MemoryDataPath memoryDataPath) {
+        super(memoryDataPath);
+        this.memoryDataPath = memoryDataPath;
+
+        final MemoryStore memoryStore = memoryDataPath.getDataSystem().getMemoryStore();
+        tabular = memoryStore.getValues(memoryDataPath);
+        if (tabular==null){
+            switch (memoryDataPath.getType()) {
+                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                    this.tabular = new ArrayBlockingQueue<>(memoryDataPath.getCapacity());
+                    break;
+                case MemoryDataPath.TYPE_LIST:
+                    this.tabular = new ArrayList<>();
+                    break;
+                default:
+                    throw new RuntimeException("Type ("+memoryDataPath.getType()+") is unknown for this memory data path ("+memoryDataPath+")");
+            }
+            memoryStore.put(memoryDataPath, tabular);
         }
     }
 
@@ -41,7 +53,17 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
         int timeout = 60;
         boolean result;
         try {
-            result = queue.offer(objects, timeout, TimeUnit.SECONDS);
+            switch (memoryDataPath.getType()) {
+                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                    result = ((ArrayBlockingQueue) tabular).offer(objects, timeout, TimeUnit.SECONDS);
+                    break;
+                case MemoryDataPath.TYPE_LIST:
+                    result = ((ArrayList) tabular).add(objects);
+                    break;
+                default:
+                    throw new RuntimeException("Type ("+memoryDataPath.getType()+") is unknown for this memory data path ("+memoryDataPath+")");
+            }
+
         } catch (InterruptedException e) {
             this.insertStreamListener.addException(e);
             throw new RuntimeException(e);
@@ -60,7 +82,7 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
             currentRowInBatch = 0;
             batchExecutionCount++;
             if (Math.floorMod(batchExecutionCount, feedbackFrequency) == 0) {
-                LOGGER.info(name + ": " + insertStreamListener.getRowCount() + " rows loaded in queue ");
+                LOGGER.info(name + ": " + insertStreamListener.getRowCount() + " rows loaded in "+this.dataPath.toString());
             }
         }
 

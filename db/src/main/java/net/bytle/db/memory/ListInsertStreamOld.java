@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ListInsertStream extends InsertStreamAbs implements InsertStream {
+public class ListInsertStreamOld extends InsertStreamAbs implements InsertStream {
 
     private final MemoryDataPath memoryTable;
 
     private List<List<Object>> tableValues;
 
-    ListInsertStream(MemoryDataPath memoryDataPath) {
+    ListInsertStreamOld(MemoryDataPath memoryDataPath) {
         super(memoryDataPath);
         this.memoryTable = memoryDataPath;
         final MemoryStore memoryStore = memoryDataPath.getDataSystem().getMemoryStore();
@@ -28,7 +28,7 @@ public class ListInsertStream extends InsertStreamAbs implements InsertStream {
 
 
     @Override
-    public ListInsertStream insert(List<Object> values) {
+    public ListInsertStreamOld insert(List<Object> values) {
 
         if (memoryTable.getDataDef().getColumnDefs().size() < values.size()) {
             while (memoryTable.getDataDef().getColumnDefs().size() < values.size()) {

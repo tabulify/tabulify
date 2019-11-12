@@ -4,20 +4,20 @@ import net.bytle.db.spi.DataPath;
 
 import java.util.*;
 
-public class MemoryStore<T extends Collection<? extends List>> {
+public class MemoryStore {
 
-    private Map<DataPath, T> tableValues = new HashMap<>();
+    private Map<DataPath, Collection<? extends List>> tableValues = new HashMap<>();
 
-    public T getValues(DataPath memoryTable) {
+    public Collection<? extends List> getValues(DataPath memoryTable) {
 
         return tableValues.get(memoryTable);
     }
 
-    public T remove(DataPath memoryTable) {
+    public Collection<? extends List> remove(DataPath memoryTable) {
         return tableValues.remove(memoryTable);
     }
 
-    public void put(DataPath memoryTable, T objects) {
+    public void put(DataPath memoryTable, Collection<? extends List> objects) {
         tableValues.put(memoryTable,objects);
     }
 

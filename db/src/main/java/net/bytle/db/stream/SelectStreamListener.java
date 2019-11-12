@@ -31,7 +31,7 @@ public class SelectStreamListener extends ThreadListenerAbs implements ThreadLis
     }
 
 
-    public static SelectStreamListener get(SelectStream selectStream) {
+    public static SelectStreamListener of(SelectStream selectStream) {
 
         return new SelectStreamListener(selectStream);
 
