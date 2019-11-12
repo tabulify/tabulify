@@ -6,6 +6,8 @@ dependencies {
     testImplementation project(':bytle-log')
     testImplementation project(':bytle-db-sqlite')
     testImplementation project(':bytle-db-jdbc')
+    testImplementation project(':bytle-db-fs')
+    testImplementation project(':bytle-fs')
 }
 
 description = 'Db Transfer'

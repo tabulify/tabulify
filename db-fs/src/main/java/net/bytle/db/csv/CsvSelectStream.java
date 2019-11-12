@@ -25,6 +25,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     private int rowNum;
 
     CsvSelectStream(FsDataPath fsDataPath) {
+        super(fsDataPath);
         this.fsDataPath = fsDataPath;
         beforeFirst();
 
@@ -74,26 +75,13 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
         }
     }
 
-    @Override
-    public boolean first() {
-        beforeFirst();
-        return next();
-    }
 
-    @Override
-    public boolean last() {
-        throw new RuntimeException("Not Yet implemented");
-    }
 
     @Override
     public int getRow() {
         return rowNum;
     }
 
-    @Override
-    public boolean previous() {
-        throw new RuntimeException("Not Yet implemented");
-    }
 
     @Override
     public Object getObject(int columnIndex) {
@@ -135,7 +123,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
      * @return
      */
     @Override
-    public List<Object> next(int timeout, TimeUnit timeUnit) {
+    public boolean next(Integer timeout, TimeUnit timeUnit) {
         throw new RuntimeException("Not yet implemented");
     }
 
@@ -148,4 +136,8 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     public Object getObject(String columnName) {
         return currentRecord.get(columnName);
     }
+
+
+
+
 }

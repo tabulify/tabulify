@@ -289,6 +289,12 @@ public class FsTableSystem extends TableSystem {
         throw new RuntimeException("not yet implemented");
     }
 
+    @Override
+    public String getString(DataPath dataPath) {
+        FsDataPath fsDataPath = (FsDataPath) dataPath;
+        return Fs.getFileContent(fsDataPath.getNioPath());
+    }
+
 
     /**
      * Closes this resource, relinquishing any underlying resources.

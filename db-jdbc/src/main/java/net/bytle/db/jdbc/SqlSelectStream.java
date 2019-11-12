@@ -198,10 +198,5 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         }
     }
 
-    @Override
-    public List<Object> getObjects() {
-        return IntStream.of(this.jdbcDataPath.getDataDef().getColumnDefs().size())
-                .mapToObj(s->getObject(s))
-                .collect(Collectors.toList());
-    }
+
 }
