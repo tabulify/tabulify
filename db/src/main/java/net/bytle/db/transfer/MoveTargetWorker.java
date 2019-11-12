@@ -1,4 +1,4 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.log.Log;
@@ -31,7 +31,7 @@ public class MoveTargetWorker implements Runnable {
             DataPath targetDataPath,
             DataPath sourceDataPath,
             DataPath intermediate,
-            MoveProperties moveProperties,
+            TransferProperties transferProperties,
             AtomicBoolean producerWorkIsDone,
             List<InsertStreamListener> listeners)
     {
@@ -39,8 +39,8 @@ public class MoveTargetWorker implements Runnable {
         this.sourceDef = sourceDataPath;
         this.queue = intermediate;
         this.producerWorkIsDone = producerWorkIsDone;
-        this.batchSize = moveProperties.getBatchSize();
-        this.commitFrequency = moveProperties.getCommitFrequency();
+        this.batchSize = transferProperties.getBatchSize();
+        this.commitFrequency = transferProperties.getCommitFrequency();
         this.listeners = listeners;
 
     }

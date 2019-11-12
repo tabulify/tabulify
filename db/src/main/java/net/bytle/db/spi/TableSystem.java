@@ -4,7 +4,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.move.MoveProperties;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
@@ -53,7 +53,7 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
-    public abstract void move(DataPath source, DataPath target, MoveProperties moveProperties);
+    public abstract void move(DataPath source, DataPath target, TransferProperties transferProperties);
 
     /**
      *

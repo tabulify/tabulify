@@ -1,4 +1,4 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 /**
  * How the data should be loaded in the target document

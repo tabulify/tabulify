@@ -1,4 +1,4 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
@@ -15,9 +15,9 @@ import java.util.logging.Logger;
 /**
  * Created by gerard on 29-01-2016.
  */
-public class MoveMetricsViewer implements Runnable {
+public class TransferMetricsViewer implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(MoveMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
+    private static final Logger LOGGER = Logger.getLogger(TransferMetricsViewer.class.getPackage().toString()+Thread.currentThread().getName());
 
 
     private final DataPath queue;
@@ -29,19 +29,19 @@ public class MoveMetricsViewer implements Runnable {
 
 
 
-    public MoveMetricsViewer(
+    public TransferMetricsViewer(
 
             DataPath queue,
-            MoveProperties moveProperties,
+            TransferProperties transferProperties,
             List<InsertStreamListener> insertStreamListeners,
             AtomicBoolean producerWorkIsDone,
             AtomicBoolean consumerWorkIsDone) {
 
         this.queue = queue;
         this.producerWorkIsDone = producerWorkIsDone;
-        this.queueSize = moveProperties.getQueueSize();
+        this.queueSize = transferProperties.getQueueSize();
         this.insertStreamListeners = insertStreamListeners;
-        this.metricsFilePath = moveProperties.getMetricsPath();
+        this.metricsFilePath = transferProperties.getMetricsPath();
         this.consumerWorkIsDone = consumerWorkIsDone;
 
 

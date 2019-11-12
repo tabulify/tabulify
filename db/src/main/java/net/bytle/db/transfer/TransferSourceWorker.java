@@ -1,4 +1,4 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 
 import net.bytle.db.spi.DataPath;
@@ -6,32 +6,36 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.*;
 
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * A worker that takes data from the source and insert them into the memory queue
  */
-public class MoveSourceWorker implements Runnable {
+public class TransferSourceWorker implements Runnable {
 
 
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
     private final List<InsertStreamListener> listeners;
+    private final TransferProperties transferProperties;
 
 
     /**
      *  @param sourceDataPath
-     * @param targetDataPath (A blocking queue !)
+     * @param queue (A blocking queue !)
      * @param listeners The listener
      */
-    public MoveSourceWorker(DataPath sourceDataPath, DataPath targetDataPath, List<InsertStreamListener> listeners, MoveProperties moveProperties) {
+    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, List<InsertStreamListener> listeners, TransferProperties transferProperties) {
 
         this.sourceDataPath = sourceDataPath;
-        this.queue = targetDataPath;
+        this.queue = queue;
         this.listeners = listeners;
-        this.feedbackFrequency = moveProperties.getFeedbackFrequency() ;
+        this.feedbackFrequency = transferProperties.getFeedbackFrequency() ;
+        this.transferProperties = transferProperties;
 
     }
 
@@ -46,9 +50,7 @@ public class MoveSourceWorker implements Runnable {
         listeners.add(listener);
         try {
 
-
             SelectStream selectStream = Tabulars.getSelectStream(sourceDataPath);
-
             List<Object> objects;
             int columnCount = sourceDataPath.getDataDef().getColumnDefs().size();
             while (selectStream.next()) {
@@ -57,7 +59,6 @@ public class MoveSourceWorker implements Runnable {
                         .mapToObj(selectStream::getObject)
                         .collect(Collectors.toList());
                 insertStream.insert(objects);
-                //  queue.offer(objects, timeout, TimeUnit.SECONDS);
 
             }
 
@@ -65,7 +66,7 @@ public class MoveSourceWorker implements Runnable {
 
 
         } catch (Exception e) {
-            // TODO - bad he ...
+
             listener.addException(e);
             throw new RuntimeException(e);
 

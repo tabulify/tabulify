@@ -3,7 +3,7 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.move.MoveProperties;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.uri.DataUri;
@@ -25,7 +25,7 @@ public class CliOptions {
         command.optionOf(SOURCE_FETCH_SIZE_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the fetch size against the SOURCE database")
-                .setDefaultValue(MoveProperties.DEFAULT_FETCH_SIZE);
+                .setDefaultValue(TransferProperties.DEFAULT_FETCH_SIZE);
 
         // No default because it's fetch size dependent
         command.optionOf(BUFFER_SIZE_OPTION)
@@ -35,17 +35,17 @@ public class CliOptions {
         command.optionOf(TARGET_WORKER_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the TARGET number of thread against the TARGET database")
-                .addDefaultValue(MoveProperties.DEFAULT_TARGET_WORKER_COUNT);
+                .addDefaultValue(TransferProperties.DEFAULT_TARGET_WORKER_COUNT);
 
         command.optionOf(COMMIT_FREQUENCY_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the commit frequency against the TARGET table by batch")
-                .addDefaultValue(MoveProperties.DEFAULT_COMMIT_FREQUENCY);
+                .addDefaultValue(TransferProperties.DEFAULT_COMMIT_FREQUENCY);
 
         command.optionOf(TARGET_BATCH_SIZE_OPTION)
                 .setGroup("Move Options")
                 .setDescription("defines the batch size against the TARGET table")
-                .addDefaultValue(MoveProperties.DEFAULT_BATCH_SIZE);
+                .addDefaultValue(TransferProperties.DEFAULT_BATCH_SIZE);
 
         command.optionOf(METRICS_DATA_URI_OPTION)
                 .setGroup("Move Options")
@@ -53,7 +53,7 @@ public class CliOptions {
 
     }
 
-    public static MoveProperties getMoveOptions(CliParser cliParser, DatabasesStore databasesStore) {
+    public static TransferProperties getMoveOptions(CliParser cliParser, DatabasesStore databasesStore) {
 
         DataUri metricsDestination = DataUri.of(cliParser.getString(METRICS_DATA_URI_OPTION));
         DataPath metricsDataPath = DataPaths.of(databasesStore,metricsDestination);
@@ -68,7 +68,7 @@ public class CliOptions {
             LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
         }
 
-        return MoveProperties.of()
+        return TransferProperties.of()
                 .setQueueSize(bufferSize)
                 .setTargetWorkerCount(targetWorkerCount)
                 .setMetricsPath(metricsDataPath)

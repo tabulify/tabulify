@@ -6,7 +6,7 @@ The module test cross data system move/copy - loading actions (insert, update, m
 
 This module has only test, the entry code is in 
   * `Tabulars.move`
-  * and the package `net.bytle.db.move`
+  * and the package `net.bytle.db.transfer`
 
 ## Alias
 

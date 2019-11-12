@@ -1,14 +1,11 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 
-import net.bytle.db.DbLoggers;
+import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStreamListener;
-import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.log.Log;
 
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,9 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A class to move a data document
  */
-public class Move {
+public class Transfer {
 
-    public static final Log LOGGER = Log.getLog(Move.class);
+    public static final Log LOGGER = Log.getLog(Transfer.class);
 
     private final List<Integer> typesNotSupported = Arrays.asList(
             Types.ARRAY,
@@ -30,7 +27,7 @@ public class Move {
             Types.BIT
     );
 
-    public static List<MoveListener> load(DataPath sourceDef, DataPath targetDataPath, MoveProperties moveProperties) {
+    public static List<MoveListener> load(DataPath sourceDef, DataPath targetDataPath, TransferProperties transferProperties) {
 
 
         List<InsertStreamListener> streamListeners = Collections.synchronizedList(new ArrayList<>());
@@ -46,48 +43,35 @@ public class Move {
          **/
 
         // One connection is already used in the construction of the database
-        int targetWorkerCount = moveProperties.getTargetWorkerCount();
+        int targetWorkerCount = transferProperties.getTargetWorkerCount();
         if (targetWorkerCount > targetDataPath.getDataSystem().getMaxWriterConnection()) {
             throw new IllegalArgumentException("The database (" + targetDataPath.getDataSystem().getProductName() + ") does not support more than (" + targetDataPath.getDataSystem().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
         }
 
 
-        /**
-         * Loading preparation
-         *   * Creation of the table
-         *   * Creation of the statement
-         */
-        Boolean tableExist = Tabulars.exists(targetDataPath);
 
-        // Go ahead if the table Exist
-        if (tableExist) {
-
-            Tabulars.drop(targetDataPath);
-            LOGGER.info("Table " + targetDataPath.toString() + " dropped");
-            Tabulars.create(targetDataPath);
-            LOGGER.info("Table " + targetDataPath.toString() + " created");
-
-        }
-
-        // Thread can start below
+        // The dead objects - They will be inserted in the queue at the end to send a termination message
         AtomicBoolean producerWorkIsDone = new AtomicBoolean(false);
         AtomicBoolean consumerWorkIsDone = new AtomicBoolean(false);
 
-        //TODO
-        // BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
-        DataPath queue = null;
-        // The listener to be able to see when exceptions occurs in the thread
+        long timeout = transferProperties.getTimeOut();
 
-        long timeout = moveProperties.getTimeOut();
+        // The queue between the producer (source) and the consumer (target)
+        MemoryDataPath queue = MemoryDataPath.of("Transfer")
+                .setBlocking(true)
+                .setTimeout(timeout)
+                .setCapacity(transferProperties.getQueueSize());
+
+
         try {
 
 
-            MoveSourceWorker moveSourceWorker = new MoveSourceWorker(sourceDef, queue, streamListeners, moveProperties);
-            Thread producer = new Thread(moveSourceWorker);
+            TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDef, queue, streamListeners, transferProperties);
+            Thread producer = new Thread(transferSourceWorker);
             producer.start();
 
 
-            // Start the threads
+            // Start the target threads
             ExecutorService targetWorkExecutor = Executors.newFixedThreadPool(targetWorkerCount);
             for (int i = 0; i < targetWorkerCount; i++) {
 
@@ -96,15 +80,15 @@ public class Move {
                                 targetDataPath,
                                 sourceDef,
                                 queue,
-                                moveProperties,
+                                transferProperties,
                                 producerWorkIsDone,
                                 streamListeners)
                 );
 
             }
 
-            MoveMetricsViewer moveMetricsViewer = new MoveMetricsViewer(queue, moveProperties, streamListeners, producerWorkIsDone, consumerWorkIsDone);
-            Thread viewer = new Thread(moveMetricsViewer);
+            TransferMetricsViewer TRansferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, streamListeners, producerWorkIsDone, consumerWorkIsDone);
+            Thread viewer = new Thread(TRansferMetricsViewer);
             viewer.start();
 
             // Wait the producer

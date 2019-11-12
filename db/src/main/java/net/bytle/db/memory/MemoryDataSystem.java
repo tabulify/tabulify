@@ -1,7 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.move.MoveProperties;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -43,6 +43,10 @@ public class MemoryDataSystem extends TableSystem {
             staticMemoryDataSystem = new MemoryDataSystem(memorySystemProvider);
         }
         return staticMemoryDataSystem;
+    }
+
+    public static MemoryDataSystem of() {
+        return MemoryDataSystem.of(MemorySystemProvider.of());
     }
 
     public void delete(DataPath memoryTable) {
@@ -88,7 +92,7 @@ public class MemoryDataSystem extends TableSystem {
             case MemoryDataPath.TYPE_LIST:
                 return new ListInsertStream(memoryDataPath);
             default:
-                return new ListInsertStream(memoryDataPath);
+                throw new RuntimeException("Type ("+memoryDataPath.getType()+") is unknown for this memory data path ("+memoryDataPath+")");
         }
 
 
@@ -100,7 +104,7 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public void move(DataPath source, DataPath target, MoveProperties moveProperties) {
+    public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
         throw new RuntimeException("Not yet implemented");
     }
 

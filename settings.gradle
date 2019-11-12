@@ -5,11 +5,7 @@ rootProject.buildFileName = 'root.gradle'
 rootProject.name = 'bytle-parent'
 
 include(':bytle-cli')
-project(':bytle-cli').projectDir = file('cli')
-
-include(':bytle-db-move')
-project(':bytle-db-move').projectDir = file('db-move')
-
+include(':bytle-db-transfer')
 include(':bytle-log')
 include(':bytle-type')
 include(':bytle-crypto')
@@ -22,12 +18,9 @@ include(':bytle-email')
 include(':bytle-xml')
 include(':bytle-sftp')
 include(':bytle-db')
-project(':bytle-db').projectDir = file('db')
 include(':bytle-db-jdbc')
 include(':bytle-db-cli')
-project(':bytle-db-cli').projectDir = file('db-cli')
 include(':bytle-db-json')
-project(':bytle-db-json').projectDir = file('db-json')
 include(':bytle-db-move')
 include(':bytle-db-tpc')
 include(':bytle-db-sqlite')
@@ -38,28 +31,11 @@ include(':bytle-db-oracle')
 include(':bytle-db-assembly')
 include(':bytle-db-excel')
 include(':bytle-db-sqlserver')
-project(':bytle-log').projectDir = file('log')
-project(':bytle-type').projectDir = file('type')
-project(':bytle-crypto').projectDir = file('crypto')
-project(':bytle-command').projectDir = file('command')
-project(':bytle-doctest').projectDir = file('doctest')
-project(':bytle-fs').projectDir = file('fs')
-project(':bytle-os').projectDir = file('os')
-project(':bytle-regexp').projectDir = file('regexp')
-project(':bytle-email').projectDir = file('email')
-project(':bytle-xml').projectDir = file('xml')
-project(':bytle-sftp').projectDir = file('sftp')
-project(':bytle-db-jdbc').projectDir = file('db-jdbc')
-project(':bytle-db-move').projectDir = file('db-move')
-project(':bytle-db-tpc').projectDir = file('db-tpc')
-project(':bytle-db-sqlite').projectDir = file('db-sqlite')
-project(':bytle-db-gen').projectDir = file('db-gen')
-project(':bytle-db-website').projectDir = file('db-website')
-project(':bytle-db-fs').projectDir = file('db-fs')
-project(':bytle-db-oracle').projectDir = file('db-oracle')
-project(':bytle-db-assembly').projectDir = file('db-assembly')
-project(':bytle-db-excel').projectDir = file('db-excel')
-project(':bytle-db-sqlserver').projectDir = file('db-sqlserver')
+
+// The gradle project dir
+rootProject.children.each { project ->
+    project.projectDir = file(project.name.replace("bytle-",""))
+}
 
 // The gradle file
 rootProject.children.each { project ->

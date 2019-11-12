@@ -9,7 +9,6 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.move.MoveListener;
 
 import java.util.ArrayList;
 import java.util.List;

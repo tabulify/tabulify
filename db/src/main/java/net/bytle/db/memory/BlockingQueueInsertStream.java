@@ -25,7 +25,7 @@ public class BlockingQueueInsertStream extends InsertStreamAbs implements Insert
         final MemoryStore memoryStore = memoryTable.getDataSystem().getMemoryStore();
         Collection collection = memoryStore.getValues(memoryTable);
         if (collection==null){
-            this.queue = new ArrayBlockingQueue<>(1000);
+            this.queue = new ArrayBlockingQueue<>(memoryTable.getCapacity());
             memoryStore.put(memoryTable,queue);
         } else {
             queue = (BlockingQueue<List<Object>>) collection;

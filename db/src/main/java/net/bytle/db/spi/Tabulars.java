@@ -5,9 +5,9 @@ import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.move.MoveProperties;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.move.MoveListener;
+import net.bytle.db.transfer.MoveListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 
@@ -259,10 +259,10 @@ public class Tabulars {
      * Move a source document to a target document
      * @param source
      * @param target
-     * @param moveProperties
+     * @param transferProperties
      * @return a {@link MoveListener}
      */
-    public static List<MoveListener> move(DataPath source, DataPath target, MoveProperties moveProperties) {
+    public static List<MoveListener> move(DataPath source, DataPath target, TransferProperties transferProperties) {
 
         // check source
         if (!Tabulars.exists(source)) {
@@ -298,7 +298,7 @@ public class Tabulars {
         final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
         if (sourceDataSystem.equals(target.getDataSystem())) {
             // same provider
-            sourceDataSystem.move(source, target, moveProperties);
+            sourceDataSystem.move(source, target, transferProperties);
         } else {
             try (
                     SelectStream sourceSelectStream = Tabulars.getSelectStream(source);

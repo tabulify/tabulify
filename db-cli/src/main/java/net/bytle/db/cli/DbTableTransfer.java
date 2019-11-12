@@ -5,12 +5,12 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.move.Move;
+import net.bytle.db.transfer.Transfer;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.move.MoveListener;
+import net.bytle.db.transfer.MoveListener;
 import net.bytle.db.stream.MemoryInsertStream;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
@@ -169,7 +169,7 @@ public class DbTableTransfer {
 
                 QueryDef queryDef = targetSchemaDef.getQuery("select * from " + tableDef.getFullyQualifiedName());
 
-                List<MoveListener> streamListeners = new Move(targetTableDef, queryDef)
+                List<MoveListener> streamListeners = new Transfer(targetTableDef, queryDef)
                         .targetWorkerCount(targetWorkerCount)
                         .bufferSize(bufferSize)
                         .batchSize(batchSize)

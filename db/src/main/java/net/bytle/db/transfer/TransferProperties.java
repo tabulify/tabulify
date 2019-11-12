@@ -1,8 +1,8 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 import net.bytle.db.spi.DataPath;
 
-public class MoveProperties {
+public class TransferProperties {
 
     public static final Integer DEFAULT_COMMIT_FREQUENCY = 99999;
 
@@ -68,31 +68,31 @@ public class MoveProperties {
 
     /**
      * The target operation
-     * See {@link #setTargetOperations(MoveTargetOperation...)}
+     * See {@link #setTargetOperations(MoveTargetOperationOld...)}
      */
-    private MoveTargetOperation[] moveTargetOperations = { MoveTargetOperation.CREATE_IF_NOT_EXIST };
+    private MoveTargetOperationOld[] moveTargetOperationOlds = { MoveTargetOperationOld.CREATE_IF_NOT_EXIST };
 
     /**
      * The source operation
-     * See {@link #setSourceOperations(MoveSourceOperation)}
+     * See {@link #setSourceOperations(MoveSourceOperationOld)}
      */
-    private MoveSourceOperation moveSourceOperations;
+    private MoveSourceOperationOld moveSourceOperationsOld;
 
 
     /**
      *
-     * @return a {@link MoveProperties} instance
+     * @return a {@link TransferProperties} instance
      */
-    public static MoveProperties of() {
-        return new MoveProperties();
+    public static TransferProperties of() {
+        return new TransferProperties();
     }
 
     /**
      *
      * @param queueSize - The size of the buffer queue between the source and the target
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setQueueSize(Integer queueSize) {
+    public TransferProperties setQueueSize(Integer queueSize) {
         this.queueSize = queueSize;
         return this;
     }
@@ -100,9 +100,9 @@ public class MoveProperties {
     /**
      *
      * @param targetWorkerCount - The number of threads against the target data store
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setTargetWorkerCount(int targetWorkerCount) {
+    public TransferProperties setTargetWorkerCount(int targetWorkerCount) {
         this.targetWorkCount = targetWorkerCount;
         return this;
     }
@@ -110,9 +110,9 @@ public class MoveProperties {
     /**
      *
      * @param feedbackFrequency - The number of rows when feedback is given back to the console
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setFeedbackFrequency(int feedbackFrequency) {
+    public TransferProperties setFeedbackFrequency(int feedbackFrequency) {
         this.feedbackFrequency = feedbackFrequency;
         return this;
     }
@@ -120,9 +120,9 @@ public class MoveProperties {
     /**
      *
      * @param metricsDataPath - The location of the metrics data (ie snapshot of the counters by time)
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setMetricsPath(DataPath metricsDataPath) {
+    public TransferProperties setMetricsPath(DataPath metricsDataPath) {
         this.metricsPath = metricsDataPath;
         return this;
     }
@@ -130,7 +130,7 @@ public class MoveProperties {
     /**
      *
      * @param fetchSize - The fetch size use by the source worker thread to retrieve data
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      *
      * Number of rows fetched with each data source round trip for a query,
      * 10 for Oracle row-prefetch value.
@@ -138,7 +138,7 @@ public class MoveProperties {
      * Changes made to the fetch size of a statement object after a result set is produced will have
      * no affect on that result set.
      */
-    public MoveProperties setFetchSize(Integer fetchSize) {
+    public TransferProperties setFetchSize(Integer fetchSize) {
         this.fetchSize = fetchSize;
         return this;
     }
@@ -146,12 +146,12 @@ public class MoveProperties {
     /**
      *
      * @param batchSize The batch size is the buffer unit of the target worker.
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      *
      * When the number of records fetched form the {@link #setQueueSize(Integer)}  | queue} exceeds the batch size, the data is send through the network
      * to the target data store
      */
-    public MoveProperties setBatchSize(Integer batchSize) {
+    public TransferProperties setBatchSize(Integer batchSize) {
         this.batchSize = batchSize;
         return this;
     }
@@ -159,7 +159,7 @@ public class MoveProperties {
     /**
      *
      * @param commitFrequency
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      *
      * When the number of records fetched form the {@link #setQueueSize(Integer)}  | queue} exceeds the commit frequency size, a commit is send through the network
      * to the target data store.
@@ -167,7 +167,7 @@ public class MoveProperties {
      * A commit can be considered the same than a flush statement on a file system.
      *
      */
-    public MoveProperties setCommitFrequency(Integer commitFrequency) {
+    public TransferProperties setCommitFrequency(Integer commitFrequency) {
         this.commitFrequency = commitFrequency;
         return this;
     }
@@ -175,13 +175,15 @@ public class MoveProperties {
     /**
      * Time Out in Micro-second
      *
-     * When the source worker have finished, this is the max delay where we will wait
+     *   * When the source worker have finished, this is the max delay where we will wait
      * for the termination of the target workers
+     *   * When the source or target worker try to put or get data from the intermediate queue, this
+     *   is the max delay
      *
      * @param timeout
-     * @return the {@link MoveProperties} instance itself for chaining instantiation
+     * @return the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setTimeOut(long timeout) {
+    public TransferProperties setTimeOut(long timeout) {
         this.timeout = timeout;
         return this;
     }
@@ -193,9 +195,9 @@ public class MoveProperties {
      *   * update,
      *   * merge (upsert)
      * @param moveLoadOperation - an enum of {@link MoveLoadOperation}
-     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setLoadOperation(MoveLoadOperation moveLoadOperation) {
+    public TransferProperties setLoadOperation(MoveLoadOperation moveLoadOperation) {
         this.loadOperation = moveLoadOperation;
         return this;
     }
@@ -207,11 +209,11 @@ public class MoveProperties {
      *   * replace,
      *   * create
      *   ...
-     * @param moveTargetOperations - an enum of {@link MoveTargetOperation}
-     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     * @param moveTargetOperationOlds - an enum of {@link MoveTargetOperationOld}
+     * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setTargetOperations(MoveTargetOperation... moveTargetOperations) {
-        this.moveTargetOperations = moveTargetOperations;
+    public TransferProperties setTargetOperations(MoveTargetOperationOld... moveTargetOperationOlds) {
+        this.moveTargetOperationOlds = moveTargetOperationOlds;
         return this;
     }
 
@@ -220,11 +222,11 @@ public class MoveProperties {
      * Set operation on the source
      *   * truncate,
      *   * drop
-     * @param moveSourceOperation - an enum of {@link MoveSourceOperation}
-     * @return  the {@link MoveProperties} instance itself for chaining instantiation
+     * @param moveSourceOperationOld - an enum of {@link MoveSourceOperationOld}
+     * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
-    public MoveProperties setSourceOperations(MoveSourceOperation moveSourceOperation) {
-        this.moveSourceOperations = moveSourceOperation;
+    public TransferProperties setSourceOperations(MoveSourceOperationOld moveSourceOperationOld) {
+        this.moveSourceOperationsOld = moveSourceOperationOld;
         return this;
     }
 

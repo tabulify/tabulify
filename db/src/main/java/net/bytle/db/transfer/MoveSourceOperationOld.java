@@ -1,9 +1,9 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 /**
  * Move options on the source document
  */
-public enum MoveSourceOperation {
+public enum MoveSourceOperationOld {
 
 
     /**

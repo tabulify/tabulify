@@ -1,9 +1,9 @@
-package net.bytle.db.move;
+package net.bytle.db.transfer;
 
 /**
  * Move Operations on the target document
  */
-public enum MoveTargetOperation {
+public enum MoveTargetOperationOld {
 
 
 
