@@ -15,7 +15,15 @@ import java.util.Set;
  * * dataTypeDatabase from the database definition
  * * dataTypeJdbc form the Jdbc Standard
  * <p>
- * Created by gerard on 28-11-2015.
+ *
+ *
+ * See also:
+ *    * https://developers.google.com/public-data/docs/schema/dspl18
+ *    * https://html.spec.whatwg.org/#attr-input-typ - Html Forms Attributes Type
+ *    * https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html - Elastic Search
+ *    * https://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.1 - Json schema
+ *    * https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#metadata-format - See data type description
+ *
  */
 public class DataType {
 

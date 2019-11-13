@@ -117,11 +117,11 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
 
     /**
-     * Retrieves and removes the head of this data path, or returns null if this queue is empty.
+     * Retrieves and removes the head of this data path, or returns false if this queue is empty.
      *
-     * @param timeout
-     * @param timeUnit
-     * @return
+     * @param timeout - the time out before returning null
+     * @param timeUnit - the time unit of the time out
+     * @return true if there is a new element, otherwise false
      */
     @Override
     public boolean next(Integer timeout, TimeUnit timeUnit) {

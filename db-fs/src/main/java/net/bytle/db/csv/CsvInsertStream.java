@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
 
 public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
-    private final TableDef csvDataDef;
+    private final CsvDataDef csvDataDef;
     final CSVPrinter printer;
-    private final FsDataPath csvDataPath;
+    private final CsvDataPath csvDataPath;
 
-    public CsvInsertStream(FsDataPath fsDataPath) {
+    public CsvInsertStream(CsvDataPath fsDataPath) {
 
         super(fsDataPath);
 
@@ -29,7 +29,7 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
                 .map(s->s.getColumnName())
                 .collect(Collectors.joining(","));
         try {
-            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath());
+            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath(),csvDataPath.getDataDef().getCharset());
             printer = CSVFormat
                     .DEFAULT
                     .withHeader(headers)
@@ -40,9 +40,9 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
     }
 
-    public static CsvInsertStream of(FsDataPath fsDataPath) {
+    public static CsvInsertStream of(CsvDataPath csvDataPath) {
 
-        return new CsvInsertStream(fsDataPath);
+        return new CsvInsertStream(csvDataPath);
 
     }
 

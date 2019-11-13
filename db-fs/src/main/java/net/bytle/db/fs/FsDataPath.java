@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.csv.CsvDataDef;
+import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -43,7 +44,7 @@ public class FsDataPath extends DataPath {
     public TableDef getDataDef() {
 
         if (this.dataDef ==null) {
-            this.dataDef = new CsvDataDef(this);
+            this.dataDef = new CsvDataDef((CsvDataPath) this);
         }
         return this.dataDef;
 

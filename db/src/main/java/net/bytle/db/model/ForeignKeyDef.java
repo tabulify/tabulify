@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
  * This object should then not be created with the pair of columns that creates this relations ie
  *   * the intern columns
  *   * the (foreign) primary key
+ *
+ * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#dfn-foreign-key-definition">Web tabular Metadata Foreign Key</a>
+ * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#schema-examples">Web tabular Metadata Foreign Key - Examples</a>
  */
 public class ForeignKeyDef {
 

@@ -5,6 +5,7 @@ import net.bytle.db.fs.FsTableSystem;
 
 import java.nio.file.Path;
 
+
 public class CsvDataPath extends FsDataPath {
 
     public CsvDataPath(FsTableSystem fsTableSystem, Path path) {

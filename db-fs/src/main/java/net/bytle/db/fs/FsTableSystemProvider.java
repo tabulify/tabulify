@@ -37,9 +37,9 @@ public class FsTableSystemProvider extends TableSystemProvider {
 
     /**
      * Returns an existing {@code work} created by this provider.
-     * <p/>
-     * <p/>
-     * <p> If a security manager is installed then a provider implementation
+     *
+     * <br>
+     * If a security manager is installed then a provider implementation
      * may require to check a permission before returning a reference to an
      * existing work.
      *

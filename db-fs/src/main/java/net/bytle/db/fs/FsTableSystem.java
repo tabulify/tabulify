@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.DatabasesStore;
+import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.csv.CsvInsertStream;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
@@ -53,7 +54,7 @@ public class FsTableSystem extends TableSystem {
 
 
     /**
-     * @param dataUri
+     * @param dataUri - a data Uri
      * @return a list of file that matches the uri segments
      * <p>
      * ex: the following file uri
@@ -224,7 +225,7 @@ public class FsTableSystem extends TableSystem {
     @Override
     public InsertStream getInsertStream(DataPath dataPath) {
 
-        final FsDataPath fsDataPath = (FsDataPath) dataPath;
+        final CsvDataPath fsDataPath = (CsvDataPath) dataPath;
         return CsvInsertStream.of(fsDataPath);
 
     }
@@ -238,9 +239,9 @@ public class FsTableSystem extends TableSystem {
 
     /**
      * Move (for now, just a append data move, the source file is not deleted)
-     *  @param source
-     * @param target
-     * @param transferProperties
+     * @param source - the source data path
+     * @param target - the target data path
+     * @param transferProperties - the properties of the transfer
      */
     @Override
     public void move(DataPath source, DataPath target, TransferProperties transferProperties) {

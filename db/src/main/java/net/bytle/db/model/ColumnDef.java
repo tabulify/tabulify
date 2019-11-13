@@ -19,6 +19,10 @@ import java.util.Set;
  * Created by gerard on 01-02-2016.
  * A class that contains a column data structure definition
  * <p>
+ * A column represents a vertical arrangement of cells within a table
+ *
+ * @see <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#columns">Web tabular model Columns</a>
+ * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#columns">Web tabular metadata Columns</a>
  */
 public class ColumnDef<T> implements Comparable<ColumnDef> {
 
