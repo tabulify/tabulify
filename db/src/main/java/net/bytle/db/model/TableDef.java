@@ -322,14 +322,16 @@ public class TableDef implements RelationDef  {
 
 
     public <T> ColumnDef<T> getColumnDef(String columnName) {
+
         return meta.getColumnDef(columnName);
+
     }
 
     /**
      * @param columnIndex
      * @return a columnDef by index starting at 0
      */
-    public ColumnDef getColumnDef(Integer columnIndex) {
+    public <T> ColumnDef<T> getColumnDef(Integer columnIndex) {
 
         return getColumnDefs().get(columnIndex);
     }

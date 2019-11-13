@@ -13,7 +13,7 @@ import java.util.Objects;
 public abstract class DataPath implements Comparable<DataPath> {
 
 
-    private TableDef dataDef;
+    protected TableDef dataDef;
 
 
     public abstract TableSystem getDataSystem();

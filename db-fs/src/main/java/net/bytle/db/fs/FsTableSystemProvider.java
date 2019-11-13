@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 
@@ -11,6 +12,16 @@ public class FsTableSystemProvider extends TableSystemProvider {
 
 
     public static final String LOCAL_FILE_SCHEME = "file";
+
+    protected static Database defaultDatabase = Databases.of(LOCAL_FILE_SCHEME);
+    private static FsTableSystemProvider defaultTableSystemProvider;
+
+    public static FsTableSystemProvider getDefault() {
+        if (defaultTableSystemProvider == null){
+            defaultTableSystemProvider = new FsTableSystemProvider();
+        }
+        return defaultTableSystemProvider;
+    }
 
     /**
      * Returns the URI scheme that identifies this provider.
@@ -33,12 +44,12 @@ public class FsTableSystemProvider extends TableSystemProvider {
      * existing work.
      *
      * @param database URI reference
-     * @return The sql database
+     * @return The table system
      * @throws SecurityException If a security manager is installed and it denies an unspecified
      *                           permission.
      */
     @Override
-    public TableSystem getTableSystem(Database database) {
+    public FsTableSystem getTableSystem(Database database) {
         return FsTableSystem.of(this,database);
     }
 

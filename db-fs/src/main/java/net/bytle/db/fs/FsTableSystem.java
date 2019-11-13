@@ -1,12 +1,13 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.DatabasesStore;
+import net.bytle.db.csv.CsvInsertStream;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -29,25 +30,25 @@ public class FsTableSystem extends TableSystem {
 
 
     private final Database database;
-    private final FsTableSystemProvider tableprovider;
+    private final FsTableSystemProvider fsTableSystemProvider;
 
     private FsTableSystem(FsTableSystemProvider fsTableSystemProvider, Database database) {
         assert database != null;
         this.database = database;
-        this.tableprovider = fsTableSystemProvider;
+        this.fsTableSystemProvider = fsTableSystemProvider;
     }
 
-    protected static TableSystem of(FsTableSystemProvider fsTableSystemProvider, Database database) {
+    protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider, Database database) {
         return new FsTableSystem(fsTableSystemProvider, database);
     }
 
 
     /**
-     * Used in the test
-     * @return
+     *
+     * @return the default table system provider (ie the local file system)
      */
-    public static FsTableSystem of() {
-        return new FsTableSystem(null,Databases.of("FsDefault"));
+    public static FsTableSystem getDefault() {
+        return FsTableSystemProvider.getDefault().getTableSystem(FsTableSystemProvider.defaultDatabase);
     }
 
 
@@ -216,14 +217,15 @@ public class FsTableSystem extends TableSystem {
     @Override
     public TableSystemProvider getProvider() {
 
-        return tableprovider;
+        return fsTableSystemProvider;
 
     }
 
     @Override
     public InsertStream getInsertStream(DataPath dataPath) {
 
-        throw new RuntimeException("not yet implemented");
+        final FsDataPath fsDataPath = (FsDataPath) dataPath;
+        return CsvInsertStream.of(fsDataPath);
 
     }
 
@@ -276,7 +278,13 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public Integer size(DataPath dataPath) {
-        throw new RuntimeException("not yet implemented");
+        int i=0;
+        try (SelectStream selectStream = Tabulars.getSelectStream(dataPath)){
+            while (selectStream.next()) {
+                i++;
+            }
+        }
+        return i;
     }
 
     @Override

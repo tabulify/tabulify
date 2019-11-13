@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 public class FsDataPath extends DataPath {
 
 
-    private final Path path;
+    protected final Path path;
     private final FsTableSystem tableSystem;
 
     public FsDataPath(FsTableSystem fsTableSystem, Path path) {
@@ -30,6 +30,10 @@ public class FsDataPath extends DataPath {
 
     }
 
+    public static FsDataPath of(Path path) {
+        return of(FsTableSystem.getDefault(),path);
+    }
+
     @Override
     public TableSystem getDataSystem() {
         return tableSystem;
@@ -38,11 +42,10 @@ public class FsDataPath extends DataPath {
     @Override
     public TableDef getDataDef() {
 
-        // The data def of query is build at runtime
-        if (super.getDataDef().getColumnDefs().size() == 0) {
-            CsvDataDef.build(super.getDataDef());
+        if (this.dataDef ==null) {
+            this.dataDef = new CsvDataDef(this);
         }
-        return super.getDataDef();
+        return this.dataDef;
 
     }
 

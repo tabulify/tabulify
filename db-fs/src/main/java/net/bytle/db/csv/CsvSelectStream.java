@@ -25,6 +25,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     private int rowNum;
 
     CsvSelectStream(FsDataPath fsDataPath) {
+
         super(fsDataPath);
         this.fsDataPath = fsDataPath;
         beforeFirst();
