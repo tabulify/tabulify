@@ -5,6 +5,7 @@ import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 
@@ -17,7 +18,8 @@ import java.util.List;
 
 public class CsvDataDef extends TableDef {
 
-    private final FsDataPath fsDataPath;
+
+    private final CsvDataPath fsDataPath;
     private boolean columnNameInFirstRow = true;
 
     public boolean isColumnNameInFirstRow() {
@@ -29,7 +31,7 @@ public class CsvDataDef extends TableDef {
         return this;
     }
 
-    public CsvDataDef(FsDataPath dataPath) {
+    public CsvDataDef(CsvDataPath dataPath) {
         super(dataPath);
         this.fsDataPath = dataPath;
     }
@@ -52,8 +54,14 @@ public class CsvDataDef extends TableDef {
         return super.getColumnDef(columnIndex);
     }
 
+    @Override
+    public CsvDataPath getDataPath() {
+        return fsDataPath;
+    }
 
-
+    /**
+     * Build the column metadata from the first row if needed
+     */
     private void buildColumnNamesIfNeeded() {
 
         if (super.getColumnDefs().size() == 0 && this.columnNameInFirstRow) {
