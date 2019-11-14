@@ -97,11 +97,14 @@ public class Tabulars {
 
     }
 
-    public static void drop(DataPath... dataPaths) {
+    public static void drop(DataPath datapath, DataPath... dataPaths) {
 
+        List<DataPath> allDataPaths = new ArrayList<>();
+        allDataPaths.add(datapath);
+        allDataPaths.addAll(Arrays.asList(dataPaths));
 
         // A dag will build the data def and we may not want want it when dropping only one table
-        Dag dag = Dag.get(Arrays.asList(dataPaths));
+        Dag dag = Dag.get(allDataPaths);
         for (DataPath dataPath : dag.getDropOrderedTables()) {
             dataPath.getDataSystem().drop(dataPath);
         }
@@ -119,8 +122,15 @@ public class Tabulars {
      * @param dataPaths - The tables to drop
      */
     public static void drop(List<DataPath> dataPaths) {
-
-        drop(dataPaths.toArray(new DataPath[0]));
+        if (dataPaths.size()==0){
+            throw new RuntimeException("The list of data paths to drop cannot be null");
+        } else {
+            DataPath[] moreDataPath = {};
+            if (dataPaths.size()>1){
+                moreDataPath = dataPaths.subList(1,dataPaths.size()-1).toArray(new DataPath[0]);
+            }
+            drop(dataPaths.get(0), moreDataPath);
+        }
 
     }
 
