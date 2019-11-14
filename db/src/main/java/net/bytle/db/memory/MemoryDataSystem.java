@@ -145,6 +145,11 @@ public class MemoryDataSystem extends TableSystem {
         throw new RuntimeException("Not yet implemented");
     }
 
+    @Override
+    public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
 
     @Override
     public DataPath getDataPath(DataUri dataUri) {

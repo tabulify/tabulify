@@ -4,6 +4,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.transfer.Transfer;
+import net.bytle.db.transfer.TransferLoadOperation;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
@@ -325,5 +326,26 @@ public class Tabulars {
 
     public static TransferListener copy(DataPath source, DataPath target) {
         return copy(source,target,TransferProperties.of());
+    }
+
+    public static TransferListener insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+        assert transferProperties!=null:"The transfer properties should not be null";
+
+        TransferListener transferListener = null;
+        transferProperties.setLoadOperation(TransferLoadOperation.INSERT);
+        final TableSystem sourceDataSystem = source.getDataSystem();
+        if (sourceDataSystem.equals(target.getDataSystem())) {
+            // same provider (fs or jdbc)
+            sourceDataSystem.insert(source, target, transferProperties);
+        } else {
+            // different provider (fs to jdbc or jdbc to fs)
+            Transfer.checkOrCreateTargetStructureFromSource(source,target);
+            transferListener = Transfer.transfer(source,target,transferProperties);
+        }
+        return transferListener;
+    }
+
+    public static TransferListener insert(DataPath source, DataPath target) {
+        return insert(source,target,TransferProperties.of());
     }
 }

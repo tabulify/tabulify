@@ -6,7 +6,12 @@ import net.bytle.db.stream.InsertStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,22 +24,14 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
     public CsvInsertStream(CsvDataPath fsDataPath) {
 
         super(fsDataPath);
-
         this.csvDataDef = fsDataPath.getDataDef();
         this.csvDataPath = fsDataPath;
         CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
-        if (csvDataDef.getHeaderRowCount()>0) {
-            final String[] headers = csvDataDef.getColumnDefs().stream()
-                    .map(ColumnDef::getColumnName).toArray(String[]::new);
-            if (headers.length!=0) {
-                csvFormat = csvFormat.withHeader(headers);
-            } else {
-                throw new RuntimeException("The CSV file has a format asking to print the headers but there is known columns for this CSV.");
-            }
-        }
+
         try {
+            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath(), csvDataDef.getCharset(), StandardOpenOption.APPEND);
             printer = csvFormat
-                    .print(csvDataPath.getNioPath(),csvDataDef.getCharset());
+                    .print(writer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

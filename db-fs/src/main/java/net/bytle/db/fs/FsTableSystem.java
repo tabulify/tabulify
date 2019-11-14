@@ -3,6 +3,7 @@ package net.bytle.db.fs;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.csv.CsvInsertStream;
+import net.bytle.db.csv.CsvManager;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
@@ -163,12 +164,10 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public void create(DataPath dataPath) {
-        FsDataPath fsDataPath = (FsDataPath) dataPath;
-        Path path = fsDataPath.getNioPath();
-        try {
-            Files.createFile(path);
-        } catch (IOException e) {
-            throw new RuntimeException("Error during the creation of the file", e);
+        if (!Files.exists(((FsDataPath) dataPath).getNioPath())){
+            CsvManager.create((CsvDataPath) dataPath);
+        } else {
+            throw new RuntimeException("The data path ("+dataPath+") already exists");
         }
     }
 
@@ -306,6 +305,11 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
         throw new RuntimeException("Not yet implemented");
     }
 

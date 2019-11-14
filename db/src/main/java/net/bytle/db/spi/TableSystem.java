@@ -107,4 +107,5 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties);
 
+    public abstract TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties);
 }

@@ -8,7 +8,6 @@ import net.bytle.db.model.DataDefs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.log.Log;
 
@@ -169,21 +168,31 @@ public class Transfer {
             DataDefs.copy(source.getDataDef(), target.getDataDef());
             Tabulars.create(target);
         } else {
-            // If this for instance, the move of a file, the file may exist
-            // but have no content and therefore no structure
-            if (target.getDataDef().getColumnDefs().size()!=0) {
-                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
-                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
-                    if (targetColumnDef == null) {
-                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-                        throw new RuntimeException(message);
-                    }
+            checkOrCreateTargetStructureFromSource(source,target);
+        }
+    }
+
+    /**
+     * Check that the target has the same structure than the source.
+     * Create it if it does not exist
+     * @param source the source data path
+     * @param target the target data path
+     */
+    public static void checkOrCreateTargetStructureFromSource(DataPath source, DataPath target) {
+        // If this for instance, the move of a file, the file may exist
+        // but have no content and therefore no structure
+        if (target.getDataDef().getColumnDefs().size()!=0) {
+            for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
+                ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+                if (targetColumnDef == null) {
+                    String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+                            " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+                    DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                    throw new RuntimeException(message);
                 }
-            } else {
-                DataDefs.copy(source.getDataDef(), target.getDataDef());
             }
+        } else {
+            DataDefs.copy(source.getDataDef(), target.getDataDef());
         }
     }
 }

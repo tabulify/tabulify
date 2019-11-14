@@ -253,6 +253,12 @@ public class CsvDataDef extends TableDef {
 
     }
 
+    /**
+     * The format of the CSV file excepts the header
+     * that is handled in the function {@link CsvManager#create(CsvDataPath)}
+     * to be able to insert row in an existing file
+     * @return
+     */
     protected CSVFormat getCsvFormat() {
         return CSVFormat.newFormat(delimiter)
                 .withEscape(escapeCharacter)
