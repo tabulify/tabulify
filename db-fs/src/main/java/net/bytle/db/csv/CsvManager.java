@@ -22,7 +22,7 @@ public class CsvManager {
                 csvFormat = csvFormat.withHeader(headers);
 
             } else {
-                throw new RuntimeException("The CSV file has a format asking to print the headers but there is known columns for this CSV.");
+                throw new RuntimeException("The CSV file has a format asking to print the headers but there is no columns defined for this CSV");
             }
         }
 

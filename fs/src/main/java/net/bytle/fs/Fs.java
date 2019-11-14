@@ -452,7 +452,7 @@ public class Fs {
      * @return a file path in the temp directory
      */
     public static Path getTempPath(String name) {
-        Path path = Paths.get(createTempDirectory(null).toString(),name);
+        Path path = Paths.get(createTempDirectory("pre").toString(),name);
         return path;
     }
 

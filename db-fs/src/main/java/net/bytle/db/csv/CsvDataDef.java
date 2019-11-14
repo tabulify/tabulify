@@ -8,9 +8,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -119,8 +117,9 @@ public class CsvDataDef extends TableDef {
      * Set the newline string
      * @param newLineCharacters The strings that is used at the end of a row (default to the system default \r\n for Windows, \n for the other)
      */
-    public void setNewLineCharacters(String newLineCharacters) {
+    public CsvDataDef setNewLineCharacters(String newLineCharacters) {
         this.newLineCharacters = newLineCharacters;
+        return this;
     }
 
     public char getEscapeCharacter() {
@@ -259,13 +258,15 @@ public class CsvDataDef extends TableDef {
      * @return
      */
     protected CSVFormat getCsvFormat() {
-        return CSVFormat.newFormat(delimiter)
-                .withEscape(escapeCharacter)
+        return CSVFormat.DEFAULT
+                .withDelimiter(delimiter)
                 .withIgnoreEmptyLines(isIgnoreEmptyLine)
                 .withCommentMarker(commentCharacter)
                 .withQuote(quoteCharacter)
                 .withRecordSeparator(newLineCharacters);
-    }
+        // TODO: Escape character gives an EOF error
+        //   .withEscape(escapeCharacter);
+}
 
 
     /**
