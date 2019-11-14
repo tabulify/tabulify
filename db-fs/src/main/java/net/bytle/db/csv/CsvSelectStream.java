@@ -87,7 +87,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
 
             // Pass the header
-            for (int i = 0; i <= csvDataDef.getHeaderRowCount(); i++) {
+            for (int i = 0; i < csvDataDef.getHeaderRowCount(); i++) {
                 safeIterate();
             }
 

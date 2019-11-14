@@ -1,15 +1,12 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,17 +25,16 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
         CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
         if (csvDataDef.getHeaderRowCount()>0) {
             final String[] headers = csvDataDef.getColumnDefs().stream()
-                    .map(s -> s.getColumnName())
-                    .collect(Collectors.toList())
-                    .toArray(new String[0]);
-            if (headers.length>0) {
-                csvFormat.withHeader(headers);
+                    .map(ColumnDef::getColumnName).toArray(String[]::new);
+            if (headers.length!=0) {
+                csvFormat = csvFormat.withHeader(headers);
+            } else {
+                throw new RuntimeException("The CSV file has a format asking to print the headers but there is known columns for this CSV.");
             }
         }
         try {
-            BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath(),csvDataPath.getDataDef().getCharset());
             printer = csvFormat
-                    .print(writer);
+                    .print(csvDataPath.getNioPath(),csvDataDef.getCharset());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

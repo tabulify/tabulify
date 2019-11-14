@@ -279,7 +279,7 @@ public class FsTableSystem extends TableSystem {
     @Override
     public Integer size(DataPath dataPath) {
         int i=0;
-        try (SelectStream selectStream = Tabulars.getSelectStream(dataPath)){
+        try (SelectStream selectStream = getSelectStream(dataPath)){
             while (selectStream.next()) {
                 i++;
             }
