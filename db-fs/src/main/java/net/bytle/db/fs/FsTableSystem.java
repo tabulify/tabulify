@@ -9,6 +9,7 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -301,6 +302,11 @@ public class FsTableSystem extends TableSystem {
     public String getString(DataPath dataPath) {
         FsDataPath fsDataPath = (FsDataPath) dataPath;
         return Fs.getFileContent(fsDataPath.getNioPath());
+    }
+
+    @Override
+    public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+        throw new RuntimeException("Not yet implemented");
     }
 
 

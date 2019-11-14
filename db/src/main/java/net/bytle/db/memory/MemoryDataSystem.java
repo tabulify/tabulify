@@ -1,6 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
 import net.bytle.db.database.Database;
@@ -136,6 +137,11 @@ public class MemoryDataSystem extends TableSystem {
 
     @Override
     public String getString(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
         throw new RuntimeException("Not yet implemented");
     }
 

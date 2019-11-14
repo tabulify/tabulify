@@ -1,7 +1,10 @@
 package net.bytle.db.transfer;
 
 
+import net.bytle.db.DbLoggers;
 import net.bytle.db.memory.MemoryDataPath;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -148,6 +151,41 @@ public class Transfer {
 
     }
 
+    /**
+     * Before a copy/move operations the target
+     * table should exist.
+     *
+     * If the target table:
+     *   - does not exist, creates the target table from the source
+     *   - exist, control that the column definition is the same
+     *
+     * @param source the source data path
+     * @param target the target data path
+     */
+    public static void createOrCheckTargetFromSource(DataPath source, DataPath target) {
+        // Check target
+        final Boolean exists = Tabulars.exists(target);
+        if (!exists) {
+            DataDefs.copy(source.getDataDef(), target.getDataDef());
+            Tabulars.create(target);
+        } else {
+            // If this for instance, the move of a file, the file may exist
+            // but have no content and therefore no structure
+            if (target.getDataDef().getColumnDefs().size()!=0) {
+                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
+                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+                    if (targetColumnDef == null) {
+                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+                        throw new RuntimeException(message);
+                    }
+                }
+            } else {
+                DataDefs.copy(source.getDataDef(), target.getDataDef());
+            }
+        }
+    }
 }
 
 

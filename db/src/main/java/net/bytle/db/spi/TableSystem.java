@@ -4,6 +4,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -103,5 +104,7 @@ public abstract class TableSystem implements AutoCloseable {
      * @return the content of a data path in a string format
      */
     public abstract String getString(DataPath dataPath);
+
+    public abstract TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties);
 
 }

@@ -2,8 +2,6 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.transfer.Transfer;
 import net.bytle.db.transfer.TransferProperties;
@@ -211,6 +209,21 @@ public class Tabulars {
 
     }
 
+    public static void transfer(DataPath source, DataPath target) {
+
+        // Check source
+        if (!Tabulars.exists(source)) {
+            // Is it a query definition
+            if (source.getDataDef().getQuery() == null) {
+                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
+            }
+        }
+
+        move(source,target,TransferProperties.of());
+
+    }
+
+
 
     public static boolean isEmpty(DataPath queue) {
         return queue.getDataSystem().isEmpty(queue);
@@ -256,52 +269,51 @@ public class Tabulars {
 
     /**
      * Move a source document to a target document
+     * If the document is:
+     *    * on the same data store, it's a rename operation,
+     *    * not on the same data store, it's a transfer and a delete from the source
      * @param source
      * @param target
      * @param transferProperties
-     * @return a {@link TransferListener}
+     * @return a {@link TransferListener} or null if it was no transfer
      */
     public static TransferListener move(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-        // Check source
-        if (!Tabulars.exists(source)) {
-            // Is it a query definition
-            if (source.getDataDef().getQuery() == null) {
-                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
-            }
-        }
+        TransferListener transferListener = null;
 
-        // Check target
-        final Boolean exists = Tabulars.exists(target);
-        if (!exists) {
-            DataDefs.copy(source.getDataDef(), target.getDataDef());
-            Tabulars.create(target);
-        } else {
-            // If this for instance, the move of a file, the file may exist
-            // but have no content and therefore no structure
-            if (target.getDataDef().getColumnDefs().size()!=0) {
-                for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
-                    ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
-                    if (targetColumnDef == null) {
-                        String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-                                " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-                        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-                        throw new RuntimeException(message);
-                    }
-                }
-            } else {
-                DataDefs.copy(source.getDataDef(), target.getDataDef());
-            }
-        }
-
-        final TableSystem sourceDataSystem = source.getDataDef().getDataPath().getDataSystem();
+        final TableSystem sourceDataSystem = source.getDataSystem();
         if (sourceDataSystem.equals(target.getDataSystem())) {
             // same provider (fs or jdbc)
             sourceDataSystem.move(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfer.transfer(source,target,transferProperties);
+            Transfer.createOrCheckTargetFromSource(source,target);
+            transferListener = Transfer.transfer(source,target,transferProperties);
+            Tabulars.drop();
         }
-        return null;
+
+        return transferListener;
+    }
+
+    public static TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+
+        TransferListener transferListener = null;
+
+        final TableSystem sourceDataSystem = source.getDataSystem();
+        if (sourceDataSystem.equals(target.getDataSystem())) {
+            // same provider (fs or jdbc)
+            sourceDataSystem.copy(source, target, transferProperties);
+        } else {
+            // different provider (fs to jdbc or jdbc to fs)
+            Transfer.createOrCheckTargetFromSource(source,target);
+            transferListener = Transfer.transfer(source,target,transferProperties);
+        }
+
+        return transferListener;
+
+    }
+
+    public static TransferListener copy(DataPath source, DataPath target) {
+        return copy(source,target,TransferProperties.of());
     }
 }
