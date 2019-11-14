@@ -166,8 +166,7 @@ public class Fs {
 
         try {
 
-            Path temp = Paths.get(System.getProperty("java.io.tmpdir"));
-            Files.createDirectories(temp);
+            Path temp = createTempDirectory(null);
 
             Path tempFile = Files.createTempFile(temp, null, suffix);
             Files.write(tempFile, content.getBytes());
@@ -181,6 +180,8 @@ public class Fs {
         }
 
     }
+
+
 
     /**
      * @param prefix - a prefix to generate the directory name (may be null)
@@ -445,13 +446,13 @@ public class Fs {
     }
 
     /**
-     *
+     * Return a temporary file path.
+     * If you want to create it, use a create function such as {@link #createFile(Path)}
      * @param name
-     * @return a file in the temp directory
+     * @return a file path in the temp directory
      */
-    public static Path getTempFile(String name) {
+    public static Path getTempPath(String name) {
         Path path = Paths.get(createTempDirectory(null).toString(),name);
-        createFile(path);
         return path;
     }
 }

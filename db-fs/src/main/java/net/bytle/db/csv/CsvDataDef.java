@@ -254,7 +254,8 @@ public class CsvDataDef extends TableDef {
                 .withEscape(escapeCharacter)
                 .withIgnoreEmptyLines(isIgnoreEmptyLine)
                 .withCommentMarker(commentCharacter)
-                .withQuote(quoteCharacter);
+                .withQuote(quoteCharacter)
+                .withRecordSeparator(newLineCharacters);
     }
 
 

@@ -38,11 +38,27 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public boolean next() {
+        rowNum++;
+        return safeIterate();
+    }
+
+    /**
+     * The file may empty, it throws then exception,
+     * this utility method encapsulates it
+     * @return true if there is another record, false otherwise
+     */
+    private boolean safeIterate() {
         try {
             currentRecord = recordIterator.next();
-            rowNum++;
         } catch (NoSuchElementException e) {
             return false;
+        } catch (Exception e) {
+            if (e instanceof IllegalStateException){
+                // We got that when the file is empty
+                return false;
+            } else {
+                throw new RuntimeException("Error when iterating on the next csv record", e);
+            }
         }
         return true;
     }
@@ -68,16 +84,18 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
             CSVFormat csvFormat = csvDataDef.getCsvFormat();
             csvParser = CSVParser.parse(csvDataPath.getNioPath(), csvDataDef.getCharset(), csvFormat);
             recordIterator = csvParser.iterator();
+
+
             // Pass the header
-            for (int i = 0; i<= csvDataDef.getHeaderRowCount(); i++) {
-                recordIterator.next();
+            for (int i = 0; i <= csvDataDef.getHeaderRowCount(); i++) {
+                safeIterate();
             }
+
             rowNum = 0;
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 
 
     @Override
@@ -121,7 +139,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     /**
      * Retrieves and removes the head of this data path, or returns false if this queue is empty.
      *
-     * @param timeout - the time out before returning null
+     * @param timeout  - the time out before returning null
      * @param timeUnit - the time unit of the time out
      * @return true if there is a new element, otherwise false
      */
@@ -139,8 +157,6 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     public Object getObject(String columnName) {
         return currentRecord.get(columnName);
     }
-
-
 
 
 }
