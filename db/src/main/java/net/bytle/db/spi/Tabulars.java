@@ -289,7 +289,7 @@ public class Tabulars {
             // different provider (fs to jdbc or jdbc to fs)
             Transfer.createOrCheckTargetFromSource(source,target);
             transferListener = Transfer.transfer(source,target,transferProperties);
-            Tabulars.drop();
+            Tabulars.drop(source);
         }
 
         return transferListener;
