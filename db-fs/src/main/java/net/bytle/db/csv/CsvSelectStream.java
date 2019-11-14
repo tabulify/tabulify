@@ -3,11 +3,14 @@ package net.bytle.db.csv;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.fs.Fs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Clob;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -18,9 +21,19 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
     private final CsvDataPath csvDataPath;
     private Iterator<CSVRecord> recordIterator;
-    private CSVRecord currentRecord;
-    private int rowNum;
     private CSVParser csvParser;
+    private CSVRecord currentRecord;
+
+    /**
+     * The record number (0=first)
+     */
+    private int rowNum = 0;
+
+
+    /**
+     * The line number in the file
+     */
+    private int lineNumberInTextFile = 0;
 
     CsvSelectStream(CsvDataPath csvDataPath) {
 
@@ -49,13 +62,18 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
      */
     private boolean safeIterate() {
         try {
+            lineNumberInTextFile++;
             currentRecord = recordIterator.next();
         } catch (NoSuchElementException e) {
             return false;
         } catch (Exception e) {
             if (e instanceof IllegalStateException){
                 // We got that when the file is empty
-                return false;
+                if (Fs.isEmpty(csvDataPath.getNioPath())) {
+                    return false;
+                } else {
+                    throw new RuntimeException("IllegalStateException: Error when iterating on the next csv record", e);
+                }
             } else {
                 throw new RuntimeException("Error when iterating on the next csv record", e);
             }
@@ -80,9 +98,11 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
+
             CsvDataDef csvDataDef = this.csvDataPath.getDataDef();
             CSVFormat csvFormat = csvDataDef.getCsvFormat();
-            csvParser = CSVParser.parse(csvDataPath.getNioPath(), csvDataDef.getCharset(), csvFormat);
+            Path nioPath = csvDataPath.getNioPath();
+            csvParser = CSVParser.parse(nioPath, csvDataDef.getCharset(), csvFormat);
             recordIterator = csvParser.iterator();
 
 

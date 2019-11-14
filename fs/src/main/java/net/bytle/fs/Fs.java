@@ -455,4 +455,12 @@ public class Fs {
         Path path = Paths.get(createTempDirectory(null).toString(),name);
         return path;
     }
+
+    public static boolean isEmpty(Path path) {
+        try {
+            return Files.size(path)==0;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

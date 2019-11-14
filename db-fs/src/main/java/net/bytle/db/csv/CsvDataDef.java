@@ -223,7 +223,6 @@ public class CsvDataDef extends TableDef {
 
         if (super.getColumnDefs().size() == 0 && this.headerRowCount > 0) {
 
-
             if (Files.exists(fsDataPath.getNioPath())) {
                 try (
                        CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
