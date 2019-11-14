@@ -1,40 +1,38 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Clob;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-    private final FsDataPath fsDataPath;
+    private final CsvDataPath csvDataPath;
     private Iterator<CSVRecord> recordIterator;
-    private FileReader in;
     private CSVRecord currentRecord;
     private int rowNum;
+    private CSVParser csvParser;
 
-    CsvSelectStream(FsDataPath fsDataPath) {
+    CsvSelectStream(CsvDataPath csvDataPath) {
 
-        super(fsDataPath);
-        this.fsDataPath = fsDataPath;
+        super(csvDataPath);
+        this.csvDataPath = csvDataPath;
         beforeFirst();
 
     }
 
-    public static CsvSelectStream of(FsDataPath fsDataPath) {
+    public static CsvSelectStream of(CsvDataPath csvDataPath) {
 
-        return new CsvSelectStream(fsDataPath);
+        return new CsvSelectStream(csvDataPath);
 
     }
 
@@ -52,7 +50,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void close() {
         try {
-            in.close();
+            csvParser.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -66,10 +64,14 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public void beforeFirst() {
         try {
-            in = new FileReader(this.fsDataPath.getNioPath().toFile());
-            recordIterator = CSVFormat.RFC4180.parse(in).iterator();
+            CsvDataDef csvDataDef = this.csvDataPath.getDataDef();
+            CSVFormat csvFormat = csvDataDef.getCsvFormat();
+            csvParser = CSVParser.parse(csvDataPath.getNioPath(), csvDataDef.getCharset(), csvFormat);
+            recordIterator = csvParser.iterator();
             // Pass the header
-            recordIterator.next();
+            for (int i = 0; i<= csvDataDef.getHeaderRowCount(); i++) {
+                recordIterator.next();
+            }
             rowNum = 0;
         } catch (IOException e) {
             e.printStackTrace();
@@ -87,7 +89,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     @Override
     public Object getObject(int columnIndex) {
         if (columnIndex > currentRecord.size() - 1) {
-            final int size = fsDataPath.getDataDef().getColumnDefs().size();
+            final int size = csvDataPath.getDataDef().getColumnDefs().size();
             if (currentRecord.size() > size) {
                 throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
             } else {
@@ -99,7 +101,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public TableDef getDataDef() {
-        return fsDataPath.getDataDef();
+        return csvDataPath.getDataDef();
     }
 
 

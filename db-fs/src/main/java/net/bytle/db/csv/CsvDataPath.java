@@ -16,9 +16,6 @@ public class CsvDataPath extends FsDataPath {
         super(FsTableSystem.getDefault(), path);
     }
 
-    public static CsvDataPath of(Path path) {
-        return new CsvDataPath(path);
-    }
 
 
     @Override

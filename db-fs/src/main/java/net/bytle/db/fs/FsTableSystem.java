@@ -120,14 +120,14 @@ public class FsTableSystem extends TableSystem {
     @Override
     public DataPath getDataPath(DataUri dataUri) {
 
-        final List<String> pathSegments = getPathSegments(dataUri);
-        return getDataPath(pathSegments.toArray(new String[0]));
+        Path path = Paths.get(dataUri.getPath());
+        return getDataPath(path);
     }
 
     @Override
     public DataPath getDataPath(String... name) {
         Path path = Paths.get(name[0], Arrays.copyOfRange(name, 1, name.length));
-        return FsDataPath.of(this, path);
+        return getDataPath(path);
     }
 
     @Override
@@ -140,8 +140,7 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public SelectStream getSelectStream(DataPath dataPath) {
-        final FsDataPath fsDataPath = (FsDataPath) dataPath;
-        return CsvSelectStream.of(fsDataPath);
+        return CsvSelectStream.of((CsvDataPath) dataPath);
     }
 
     @Override
@@ -354,4 +353,7 @@ public class FsTableSystem extends TableSystem {
     }
 
 
+    public FsDataPath getDataPath(Path path) {
+        return new CsvDataPath(this,path);
+    }
 }

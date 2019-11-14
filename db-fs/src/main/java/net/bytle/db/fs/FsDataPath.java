@@ -12,28 +12,32 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * A general data path representing a file in a file system
+ * This path should normally not been instantiated directly.
+ * 
+ * If you want to use a local file, use {@link FsTableSystem#getDefault() the default file system} to instantiate
+ * a data path with the function {@link FsTableSystem#getDataPath(Path)}
+ */
 public class FsDataPath extends DataPath {
 
 
     protected final Path path;
     private final FsTableSystem tableSystem;
 
-    public FsDataPath(FsTableSystem fsTableSystem, Path path) {
+    protected FsDataPath(FsTableSystem fsTableSystem, Path path) {
 
         this.tableSystem = fsTableSystem;
         this.path = path;
 
     }
 
-    public static FsDataPath of(FsTableSystem fsTableSystem, Path path) {
+    protected static FsDataPath of(FsTableSystem fsTableSystem, Path path) {
 
         return new FsDataPath(fsTableSystem, path);
 
     }
 
-    public static FsDataPath of(Path path) {
-        return of(FsTableSystem.getDefault(),path);
-    }
 
     @Override
     public TableSystem getDataSystem() {

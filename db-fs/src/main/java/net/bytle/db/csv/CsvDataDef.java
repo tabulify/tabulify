@@ -5,6 +5,7 @@ import net.bytle.db.fs.FsTableSystemLog;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.FileReader;
@@ -21,9 +22,10 @@ import java.util.List;
  *
  * @see <a href="https://commons.apache.org/proper/commons-csv/apidocs/org/apache/commons/csv/CSVFormat.html">CSVFormat for common format</a>
  *
- * Format:
- *   * <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#parsing">W3c Parsing</a>
- *   * <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a>
+ * <br>
+ * Format:<br>
+ *   - <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#parsing">W3c Parsing</a><br>
+ *   - <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a><br>
  *
  *
  */
@@ -54,15 +56,15 @@ public class CsvDataDef extends TableDef {
      * Newline
      * The strings that is used at the end of a row
      */
-    private String newline = "\r\n";
+    private String newLineCharacters = "\r\n";
 
     /**
-     * See {@link #setDelimiter(String) | Delimiter}
+     * See {@link #setDelimiterCharacter(char) | Delimiter}
      */
-    private String delimiter = ",";
+    private char delimiter = ',';
 
     /**
-     * The string that is used to escape the {@link #quoteCharacter | quote character } within escaped cells
+     * See {@link #setEscapeCharacter(char)}
      */
     private char escapeCharacter = '"';
 
@@ -70,6 +72,36 @@ public class CsvDataDef extends TableDef {
      * See {@link #setQuoteCharacter(char)}
      */
     private char quoteCharacter = '"';
+
+    /**
+     * See {@link #setIgnoreEmptyLine(boolean)}
+     */
+    private boolean isIgnoreEmptyLine = true;
+
+    /**
+     * See {@link #setCommentCharacter(char)}
+     */
+    private Character commentCharacter = null;
+
+    /**
+     * Set the comment character
+     * @param commentCharacter A character that, when it appears at the beginning of a row, indicates that the row is a comment - Default is null which means no rows are treated as comments
+     */
+    public void setCommentCharacter(char commentCharacter) {
+        this.commentCharacter = commentCharacter;
+    }
+
+    public void setDelimiter(char delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    /**
+     * Ignore empty line
+     * @param ignoreEmptyLine if true, it will ignore empty line
+     */
+    public void setIgnoreEmptyLine(boolean ignoreEmptyLine) {
+        isIgnoreEmptyLine = ignoreEmptyLine;
+    }
 
     public boolean isTrimWhitespace() {
         return trimWhitespace;
@@ -79,18 +111,22 @@ public class CsvDataDef extends TableDef {
         this.trimWhitespace = trimWhitespace;
     }
 
-    public String getNewline() {
-        return newline;
+    public String getNewLineCharacters() {
+        return newLineCharacters;
     }
 
-    public void setNewline(String newline) {
-        this.newline = newline;
+    public void setNewLineCharacters(String newLineCharacters) {
+        this.newLineCharacters = newLineCharacters;
     }
 
     public char getEscapeCharacter() {
         return escapeCharacter;
     }
 
+    /**
+     * Set the string that is used to escape the {@link #setQuoteCharacter(char)} quote character } within escaped cells
+     * @param escapeCharacter the string that is used to escape the {@link #setQuoteCharacter(char)}  quote character } within escaped cells
+     */
     public void setEscapeCharacter(char escapeCharacter) {
         this.escapeCharacter = escapeCharacter;
     }
@@ -111,7 +147,7 @@ public class CsvDataDef extends TableDef {
      *
      * @return the {@link #delimiter}
      */
-    public String getDelimiter() {
+    public char getDelimiter() {
         return delimiter;
     }
 
@@ -120,7 +156,7 @@ public class CsvDataDef extends TableDef {
      * @param delimiter The separator between cells known as cell delimiter. Default value is a comma ','
      * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
      */
-    public CsvDataDef setDelimiter(String delimiter) {
+    public CsvDataDef setDelimiterCharacter(char delimiter) {
         this.delimiter = delimiter;
         return this;
     }
@@ -186,9 +222,9 @@ public class CsvDataDef extends TableDef {
 
             if (Files.exists(fsDataPath.getNioPath())) {
                 try (
-                    Reader in = new FileReader(fsDataPath.getNioPath().toFile());
+                       CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
                 ){
-                    Iterator<CSVRecord> recordIterator = CSVFormat.RFC4180.parse(in).iterator();
+                    Iterator<CSVRecord> recordIterator = csvParser.iterator();
                     try {
 
                         CSVRecord headerRecord = null;
@@ -213,6 +249,14 @@ public class CsvDataDef extends TableDef {
 
     }
 
+    protected CSVFormat getCsvFormat() {
+        return CSVFormat.newFormat(delimiter)
+                .withEscape(escapeCharacter)
+                .withIgnoreEmptyLines(isIgnoreEmptyLine)
+                .withCommentMarker(commentCharacter)
+                .withQuote(quoteCharacter);
+    }
+
 
     /**
      *
@@ -222,4 +266,11 @@ public class CsvDataDef extends TableDef {
         return charset;
     }
 
+    public boolean isIgnoreEmptyLine() {
+        return isIgnoreEmptyLine;
+    }
+
+    public char getCommentCharacter() {
+        return commentCharacter;
+    }
 }
