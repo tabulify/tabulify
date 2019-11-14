@@ -53,10 +53,10 @@ public class CsvDataDef extends TableDef {
     private boolean trimWhitespace = false;
 
     /**
-     * Newline
-     * The strings that is used at the end of a row
+     *
+     * See {@link #setNewLineCharacters(String)}
      */
-    private String newLineCharacters = "\r\n";
+    private String newLineCharacters = System.lineSeparator();
 
     /**
      * See {@link #setDelimiterCharacter(char) | Delimiter}
@@ -115,6 +115,10 @@ public class CsvDataDef extends TableDef {
         return newLineCharacters;
     }
 
+    /**
+     * Set the newline string
+     * @param newLineCharacters The strings that is used at the end of a row (default to the system default \r\n for Windows, \n for the other)
+     */
     public void setNewLineCharacters(String newLineCharacters) {
         this.newLineCharacters = newLineCharacters;
     }

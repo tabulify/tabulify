@@ -25,14 +25,19 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
         this.csvDataDef = fsDataPath.getDataDef();
         this.csvDataPath = fsDataPath;
-        final String headers = csvDataDef.getColumnDefs().stream()
-                .map(s->s.getColumnName())
-                .collect(Collectors.joining(","));
+        CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
+        if (csvDataDef.getHeaderRowCount()>0) {
+            final String[] headers = csvDataDef.getColumnDefs().stream()
+                    .map(s -> s.getColumnName())
+                    .collect(Collectors.toList())
+                    .toArray(new String[0]);
+            if (headers.length>0) {
+                csvFormat.withHeader(headers);
+            }
+        }
         try {
             BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath(),csvDataPath.getDataDef().getCharset());
-            printer = CSVFormat
-                    .DEFAULT
-                    .withHeader(headers)
+            printer = csvFormat
                     .print(writer);
         } catch (IOException e) {
             throw new RuntimeException(e);
