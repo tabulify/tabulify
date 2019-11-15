@@ -18,7 +18,6 @@ public class Csvs {
      * @return a csvRecord or null if this is the end
      */
     public static CSVRecord safeIterate(Iterator<CSVRecord> recordIterator, CsvDataPath csvDataPath) {
-        CSVRecord record;
         try {
             return recordIterator.next();
         } catch (NoSuchElementException e) {

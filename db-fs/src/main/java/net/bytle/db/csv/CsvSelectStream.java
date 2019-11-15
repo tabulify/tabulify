@@ -33,7 +33,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     /**
      * The line number in the file
      */
-    private int lineNumberInTextFile = 0;
+    private long lineNumberInTextFile = 0;
 
     CsvSelectStream(CsvDataPath csvDataPath) {
 
@@ -51,24 +51,38 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
 
     @Override
     public boolean next() {
-        rowNum++;
-        return safeIterate();
+        boolean recordWasFetched = safeIterate();
+        if (recordWasFetched){
+            rowNum++;
+        }
+        return recordWasFetched;
     }
 
     /**
      * The file may empty, it throws then exception,
      * this utility method encapsulates it
+     *
      * @return true if there is another record, false otherwise
      */
     private boolean safeIterate() {
 
+
+        currentRecord = Csvs.safeIterate(recordIterator, this.csvDataPath);
+        if (currentRecord == null) {
+            return false;
+        } else {
             lineNumberInTextFile++;
-            currentRecord = Csvs.safeIterate(recordIterator, this.csvDataPath);
-            if (currentRecord==null){
-                return false;
+            if (currentRecord.size() == 1) {
+                // Empty line
+                if (currentRecord.get(0).equals("") && csvDataPath.getDataDef().isIgnoreEmptyLine()) {
+                    return safeIterate();
+                } else {
+                    return true;
+                }
             } else {
                 return true;
             }
+        }
 
     }
 
@@ -95,14 +109,15 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
             Path nioPath = csvDataPath.getNioPath();
             csvParser = CSVParser.parse(nioPath, csvDataDef.getCharset(), csvFormat);
             recordIterator = csvParser.iterator();
-
+            lineNumberInTextFile=0;
 
             // Pass the header
-            for (int i = 0; i < csvDataDef.getHeaderRowCount(); i++) {
+            while (lineNumberInTextFile<csvDataDef.getHeaderRowCount()) {
                 safeIterate();
             }
 
             rowNum = 0;
+
         } catch (IOException e) {
             e.printStackTrace();
         }
