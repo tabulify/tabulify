@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#dfn-foreign-key-definition">Web tabular Metadata Foreign Key</a>
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#schema-examples">Web tabular Metadata Foreign Key - Examples</a>
  */
-public class ForeignKeyDef {
+public class ForeignKeyDef implements Comparable<ForeignKeyDef> {
 
     // The list of column
     // Order is important
@@ -122,5 +122,11 @@ public class ForeignKeyDef {
     public TableDef getTableDef() {
         // Bad cast but yeah ...
         return (TableDef) columnDefs.get(0).getRelationDef();
+    }
+
+    @Override
+    public int compareTo(ForeignKeyDef o) {
+
+        return (this.getTableDef().getDataPath().getName() + this.getForeignPrimaryKey().getDataDef().getDataPath().getName()).compareTo(o.getTableDef().getDataPath().getName() + o.getForeignPrimaryKey().getDataDef().getDataPath().getName());
     }
 }

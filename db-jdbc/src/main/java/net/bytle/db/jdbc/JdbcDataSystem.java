@@ -12,6 +12,7 @@ import net.bytle.db.jdbc.spi.SqlDatabases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -445,6 +446,16 @@ public class JdbcDataSystem extends TableSystem {
 
     @Override
     public String getString(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
         throw new RuntimeException("Not yet implemented");
     }
 

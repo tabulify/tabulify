@@ -108,4 +108,20 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties);
 
     public abstract TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties);
+
+    /**
+     *
+     * @param dataPath the ancestor data path
+     * @return the descendants of the data path
+     */
+    public abstract List<DataPath> getDescendants(DataPath dataPath);
+
+    /**
+     *
+     * @param dataPath a data path container (a directory, a schema or a catalog)
+     * @param glob a glob that filters the descendant data path returned
+     * @return the descendant data paths representing sql tables, schema or files
+     */
+    public abstract List<DataPath> getDescendants(DataPath dataPath, String glob);
+
 }

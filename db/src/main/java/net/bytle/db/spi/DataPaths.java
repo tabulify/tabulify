@@ -150,6 +150,33 @@ public class DataPaths {
     }
 
     /**
+     * @param dataPath - a data path container (a directory, a schema or a catalog)
+     * @return the descendant data paths representing sql tables, schema or files
+     */
+    public static List<DataPath> getDescendants(DataPath dataPath) {
+
+        if (Tabulars.isDocument(dataPath)) {
+            throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
+        }
+        return dataPath.getDataSystem().getDescendants(dataPath);
+
+    }
+
+    /**
+     * @param dataPath a data path container (a directory, a schema or a catalog)
+     * @param glob a glob that filters the descendant data path returned
+     * @return the descendant data paths representing sql tables, schema or files
+     */
+    public static List<DataPath> getDescendants(DataPath dataPath, String glob) {
+
+        if (Tabulars.isDocument(dataPath)) {
+            throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
+        }
+        return dataPath.getDataSystem().getDescendants(dataPath, glob);
+
+    }
+
+    /**
      * @param dataPath - a parent/container dataPath
      * @param glob  -  a glob pattern
      * @return the children data path of the parent that matches the glob pattern
@@ -162,4 +189,10 @@ public class DataPaths {
                 .collect(Collectors.toList());
     }
 
+    public static List<DataPath> select(DatabasesStore databaseStore, DataUri dataUri) {
+        Database database = databaseStore.getDatabase(dataUri.getDataStore());
+        DataPath dataPath = DataPaths.of(database);
+        String glob = dataUri.getPath();
+        return dataPath.getDataSystem().getDescendants(dataPath, glob);
+    }
 }
