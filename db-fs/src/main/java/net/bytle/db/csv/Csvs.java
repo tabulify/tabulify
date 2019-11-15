@@ -13,10 +13,9 @@ public class Csvs {
 
     /**
      * @param recordIterator
-     * @param csvDataPath
      * @return a csvRecord or null if this is the end
      */
-    public static CSVRecord safeIterate(Iterator<CSVRecord> recordIterator, CsvDataPath csvDataPath) {
+    public static CSVRecord safeIterate(Iterator<CSVRecord> recordIterator) {
 
         if (recordIterator.hasNext()) {
             return recordIterator.next();

@@ -67,7 +67,7 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
     private boolean safeIterate() {
 
 
-        currentRecord = Csvs.safeIterate(recordIterator, this.csvDataPath);
+        currentRecord = Csvs.safeIterate(recordIterator);
         if (currentRecord == null) {
             return false;
         } else {

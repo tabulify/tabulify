@@ -234,7 +234,7 @@ public class CsvDataDef extends TableDef {
 
                         CSVRecord headerRecord = null;
                         for (int i=0;i<this.headerRowCount;i++) {
-                            headerRecord = Csvs.safeIterate(recordIterator, getDataPath());
+                            headerRecord = Csvs.safeIterate(recordIterator);
                             if (headerRecord==null){
                                 return;
                             }
