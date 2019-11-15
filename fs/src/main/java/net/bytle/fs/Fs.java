@@ -447,13 +447,29 @@ public class Fs {
 
     /**
      * Return a temporary file path.
+     *
+     * This function is a wrapper around the function {@link Files#createTempFile(String, String, FileAttribute[])}
+     * but delete the file to return only a unique path
+     *
      * If you want to create it, use a create function such as {@link #createFile(Path)}
-     * @param name
-     * @return a file path in the temp directory
+     *
+     * @param prefix the beginning of the file name
+     * @param suffix the extension (example .txt) when null '.tmp'
+     * @return a temporary file path
+     *
+     * Example:
+     * Path path = Fs.getTempFilePath("test",".csv");
      */
-    public static Path getTempPath(String name) {
-        Path path = Paths.get(createTempDirectory("pre").toString(),name);
-        return path;
+    public static Path getTempFilePath(String prefix, String suffix) {
+
+        try {
+            Path path = Files.createTempFile(prefix,suffix);
+            Files.deleteIfExists(path);
+            return path;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static boolean isEmpty(Path path) {

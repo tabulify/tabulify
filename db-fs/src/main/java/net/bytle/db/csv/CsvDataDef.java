@@ -29,6 +29,7 @@ import java.util.List;
  */
 public class CsvDataDef extends TableDef {
 
+    private static final char DOUBLE_QUOTE = '"';
     /**
      * See {@link #setCharset(Charset)}
      */
@@ -59,17 +60,17 @@ public class CsvDataDef extends TableDef {
     /**
      * See {@link #setDelimiterCharacter(char) | Delimiter}
      */
-    private char delimiter = ',';
+    private char delimiterCharacter = ',';
 
     /**
      * See {@link #setEscapeCharacter(char)}
      */
-    private char escapeCharacter = '"';
+    private char escapeCharacter = DOUBLE_QUOTE;
 
     /**
      * See {@link #setQuoteCharacter(char)}
      */
-    private char quoteCharacter = '"';
+    private char quoteCharacter = DOUBLE_QUOTE;
 
     /**
      * See {@link #setIgnoreEmptyLine(boolean)}
@@ -84,14 +85,13 @@ public class CsvDataDef extends TableDef {
     /**
      * Set the comment character
      * @param commentCharacter A character that, when it appears at the beginning of a row, indicates that the row is a comment - Default is null which means no rows are treated as comments
+     * @return
      */
-    public void setCommentCharacter(char commentCharacter) {
+    public CsvDataDef setCommentCharacter(char commentCharacter) {
         this.commentCharacter = commentCharacter;
+        return this;
     }
 
-    public void setDelimiter(char delimiter) {
-        this.delimiter = delimiter;
-    }
 
     /**
      * Ignore empty line
@@ -129,9 +129,11 @@ public class CsvDataDef extends TableDef {
     /**
      * Set the string that is used to escape the {@link #setQuoteCharacter(char)} quote character } within escaped cells
      * @param escapeCharacter the string that is used to escape the {@link #setQuoteCharacter(char)}  quote character } within escaped cells
+     * @return
      */
-    public void setEscapeCharacter(char escapeCharacter) {
+    public CsvDataDef setEscapeCharacter(char escapeCharacter) {
         this.escapeCharacter = escapeCharacter;
+        return this;
     }
 
     public char getQuoteCharacter() {
@@ -142,16 +144,17 @@ public class CsvDataDef extends TableDef {
      *
      * @param quoteCharacter The string that is used around escaped cells
      */
-    public void setQuoteCharacter(char quoteCharacter) {
+    public CsvDataDef setQuoteCharacter(char quoteCharacter) {
         this.quoteCharacter = quoteCharacter;
+        return this;
     }
 
     /**
      *
-     * @return the {@link #delimiter}
+     * @return the {@link #delimiterCharacter}
      */
-    public char getDelimiter() {
-        return delimiter;
+    public char getDelimiterCharacter() {
+        return delimiterCharacter;
     }
 
     /**
@@ -160,7 +163,7 @@ public class CsvDataDef extends TableDef {
      * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
      */
     public CsvDataDef setDelimiterCharacter(char delimiter) {
-        this.delimiter = delimiter;
+        this.delimiterCharacter = delimiter;
         return this;
     }
 
@@ -230,8 +233,11 @@ public class CsvDataDef extends TableDef {
                     try {
 
                         CSVRecord headerRecord = null;
-                        for (int i=0;i<=this.headerRowCount;i++) {
-                            headerRecord = recordIterator.next();
+                        for (int i=0;i<this.headerRowCount;i++) {
+                            headerRecord = Csvs.safeIterate(recordIterator, getDataPath());
+                            if (headerRecord==null){
+                                return;
+                            }
                         }
 
                         for (int i = 0; i < headerRecord.size(); i++) {
@@ -254,18 +260,27 @@ public class CsvDataDef extends TableDef {
     /**
      * The format of the CSV file excepts the header
      * that is handled in the function {@link CsvManager#create(CsvDataPath)}
-     * to be able to insert row in an existing file
-     * @return
+     * This way we doesn't overwrite the file and we can add rows in an existing Csv file
+     * @return the Apache common Csv Format
      */
     protected CSVFormat getCsvFormat() {
-        return CSVFormat.DEFAULT
-                .withDelimiter(delimiter)
-                .withIgnoreEmptyLines(isIgnoreEmptyLine)
+        CSVFormat csvFormat = CSVFormat.DEFAULT
+                .withDelimiter(delimiterCharacter)
+                // Ignoring empty line means that it will just skip the line
+                // if we have a comment or front matter above the header with empty line
+                // there is no way to locate the header line precisely
+                .withIgnoreEmptyLines(false)
                 .withCommentMarker(commentCharacter)
                 .withQuote(quoteCharacter)
                 .withRecordSeparator(newLineCharacters);
-        // TODO: Escape character gives an EOF error
-        //   .withEscape(escapeCharacter);
+
+        // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
+        if (escapeCharacter!=DOUBLE_QUOTE){
+            csvFormat = csvFormat
+                    .withEscape(escapeCharacter);
+        }
+        return csvFormat;
+
 }
 
 

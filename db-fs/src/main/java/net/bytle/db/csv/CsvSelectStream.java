@@ -61,24 +61,15 @@ public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
      * @return true if there is another record, false otherwise
      */
     private boolean safeIterate() {
-        try {
+
             lineNumberInTextFile++;
-            currentRecord = recordIterator.next();
-        } catch (NoSuchElementException e) {
-            return false;
-        } catch (Exception e) {
-            if (e instanceof IllegalStateException){
-                // We got that when the file is empty
-                if (Fs.isEmpty(csvDataPath.getNioPath())) {
-                    return false;
-                } else {
-                    throw new RuntimeException("IllegalStateException: Error when iterating on the next csv record", e);
-                }
+            currentRecord = Csvs.safeIterate(recordIterator, this.csvDataPath);
+            if (currentRecord==null){
+                return false;
             } else {
-                throw new RuntimeException("Error when iterating on the next csv record", e);
+                return true;
             }
-        }
-        return true;
+
     }
 
     @Override
