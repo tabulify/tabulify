@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static net.bytle.db.memory.MemoryDataPathType.*;
+
 /**
  * Select implementation
  */
@@ -30,10 +32,10 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
         tabular = memoryStore.getValues(memoryDataPath);
         if (tabular == null) {
             switch (memoryDataPath.getType()) {
-                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                case TYPE_BLOCKED_QUEUE:
                     this.tabular = new ArrayBlockingQueue<>(memoryDataPath.getCapacity());
                     break;
-                case MemoryDataPath.TYPE_LIST:
+                case TYPE_LIST:
                     this.tabular = new ArrayList<>();
                     break;
                 default:
@@ -58,7 +60,7 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
      *   * a list, retrieve the element and returns false if this is the end of the list
      *   * a queue, retrieves and removes the head and returns false if an element can not be retrieve in the specified timeout
      *
-     * @param timeout - the timeout to wait (only for {@link MemoryDataPath#TYPE_BLOCKED_QUEUE | queue structure)
+     * @param timeout - the timeout to wait (only for {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE | queue structure)
      * @param timeUnit - the timeunit to wait (only for queue structure)
      * @return true if there is still an element or false
      */
@@ -68,7 +70,7 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
 
         try {
             switch (memoryDataPath.getType()) {
-                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                case TYPE_BLOCKED_QUEUE:
                     assert timeout!=null : "The timeout should not be null for a queue";
                     assert timeUnit!=null : "The time unit  should not be null for a queue";
 
@@ -78,7 +80,7 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
                     } else {
                         return false;
                     }
-                case MemoryDataPath.TYPE_LIST:
+                case TYPE_LIST:
                     if (rowIndex >= tabular.size() - 1) {
                         return false;
                     } else {
@@ -164,8 +166,9 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
     @Override
     public void beforeFirst() {
         switch (memoryDataPath.getType()) {
-            case MemoryDataPath.TYPE_LIST:
+            case TYPE_LIST:
                 rowIndex = -1;
+                break;
             default:
                 throw new RuntimeException("The Type (" + memoryDataPath.getType() + ") of the data path (" + memoryDataPath + ") does not support going back to the first argument" );
         }

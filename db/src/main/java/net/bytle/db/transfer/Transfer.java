@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static net.bytle.db.memory.MemoryDataPathType.TYPE_BLOCKED_QUEUE;
+
 
 /**
  * A class to transfer a tabular data document content from a data source to another
@@ -89,7 +91,7 @@ public class Transfer {
         // The queue between the producer (source) and the consumer (target)
         long timeout = transferProperties.getTimeOut();
         MemoryDataPath queue = MemoryDataPath.of("Transfer")
-                .setType(MemoryDataPath.TYPE_BLOCKED_QUEUE)
+                .setType(TYPE_BLOCKED_QUEUE)
                 .setTimeout(timeout)
                 .setCapacity(transferProperties.getQueueSize());
 

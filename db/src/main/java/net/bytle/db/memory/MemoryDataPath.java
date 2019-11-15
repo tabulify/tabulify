@@ -15,30 +15,13 @@ public class MemoryDataPath extends DataPath {
     private final String[] names ;
     private final MemoryDataSystem memoryDataSystem;
 
-    /**
-     * a list structure chosen with {@link #setType(int)}
-     */
-    public final static int TYPE_LIST = 0;
 
-    /**
-     * a blocking structure chosen with {@link #setType(int)}
-     *
-     * ie :
-     *   * wait for the queue to become non-empty when retrieving an element,
-     *   * wait for space to become available in the queue when storing an element.
-     *
-     * You can set :
-     *   * the timeout with the function {@link #setTimeout(long)}
-     *   * the capacity with the function {@link #setCapacity(Integer)}
-     *
-     * Implemented with a {@link java.util.concurrent.ArrayBlockingQueue}
-     */
-    public final static int TYPE_BLOCKED_QUEUE = 1;
+
 
     /**
      * Default type
      */
-    private int type = TYPE_LIST;
+    private MemoryDataPathType type = MemoryDataPathType.TYPE_LIST;
 
 
     /**
@@ -89,26 +72,26 @@ public class MemoryDataPath extends DataPath {
         return String.join(".",names);
     }
 
-    public int getType() {
+    public MemoryDataPathType getType() {
         return type;
     }
 
     /**
      *
      * @param type - the type - one value of:
-     *             * {@link #TYPE_LIST} - default
-     *             * {@link #TYPE_BLOCKED_QUEUE}
+     *             * {@link MemoryDataPathType#TYPE_LIST} - default
+     *             * {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE}
      *
      * @return a {@link MemoryDataPath} instance for chaining initialization
      */
-    public MemoryDataPath setType(int type) {
+    public MemoryDataPath setType(MemoryDataPathType type) {
         this.type = type;
         return this;
     }
 
     /**
      *
-     * @param timeOut - a timeout in seconds used only when the structure is {@link #TYPE_BLOCKED_QUEUE | blocking }
+     * @param timeOut - a timeout in seconds used only when the structure is {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE | blocking }
      * @return a {@link MemoryDataPath} instance for chaining initialization
      *
      */
@@ -130,7 +113,7 @@ public class MemoryDataPath extends DataPath {
      * @param capacity - the max number of element that this path may have
      * @return a {@link MemoryDataPath} instance for chaining initialization
      *
-     * This property is used when this is a {@link #setType(int)}  | blocking structure}
+     * This property is used when this is a {@link #setType(MemoryDataPathType)}  | blocking structure}
      */
     public MemoryDataPath setCapacity(Integer capacity) {
         this.capacity = capacity;

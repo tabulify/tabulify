@@ -28,10 +28,10 @@ public class MemoryInsertStream extends InsertStreamAbs implements InsertStream 
         tabular = memoryStore.getValues(memoryDataPath);
         if (tabular==null){
             switch (memoryDataPath.getType()) {
-                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                case TYPE_BLOCKED_QUEUE:
                     this.tabular = new ArrayBlockingQueue<>(memoryDataPath.getCapacity());
                     break;
-                case MemoryDataPath.TYPE_LIST:
+                case TYPE_LIST:
                     this.tabular = new ArrayList<>();
                     break;
                 default:
@@ -51,10 +51,10 @@ public class MemoryInsertStream extends InsertStreamAbs implements InsertStream 
         boolean result;
         try {
             switch (memoryDataPath.getType()) {
-                case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+                case TYPE_BLOCKED_QUEUE:
                     result = ((ArrayBlockingQueue) tabular).offer(objects, timeout, TimeUnit.SECONDS);
                     break;
-                case MemoryDataPath.TYPE_LIST:
+                case TYPE_LIST:
                     result = ((ArrayList) tabular).add(objects);
                     break;
                 default:

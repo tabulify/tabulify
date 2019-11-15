@@ -173,12 +173,12 @@ public class MemoryDataSystem extends TableSystem {
 
         MemoryDataPath memoryDataPath = (MemoryDataPath) memoryTable;
         switch(memoryDataPath.getType()) {
-            case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+            case TYPE_BLOCKED_QUEUE:
                 throw new RuntimeException("Not yet implemented");
-            case MemoryDataPath.TYPE_LIST:
+            case TYPE_LIST:
                 return new MemorySelectStream(memoryDataPath);
             default:
-                return new MemorySelectStream(memoryDataPath);
+                throw new RuntimeException("Type ("+memoryDataPath.getType()+") is unknown");
         }
 
 
@@ -207,17 +207,16 @@ public class MemoryDataSystem extends TableSystem {
     public void create(DataPath dataPath) {
         MemoryDataPath memoryDataPath = (MemoryDataPath) dataPath;
         switch(memoryDataPath.getType()) {
-            case MemoryDataPath.TYPE_BLOCKED_QUEUE:
+            case TYPE_BLOCKED_QUEUE:
                 int bufferSize = 10000;
                 BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
                 memoryStore.put(dataPath, queue);
                 break;
-            case MemoryDataPath.TYPE_LIST:
+            case TYPE_LIST:
                 memoryStore.put(dataPath, new ArrayList<ArrayList<Object>>());
                 break;
             default:
-                memoryStore.put(dataPath, new ArrayList<ArrayList<Object>>());
-                break;
+                throw new RuntimeException("Type ("+memoryDataPath.getType()+" is unknown");
         }
     }
 
