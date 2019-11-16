@@ -459,6 +459,16 @@ public class JdbcDataSystem extends TableSystem {
         throw new RuntimeException("Not yet implemented");
     }
 
+    @Override
+    public List<DataPath> getDescendants(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public List<DataPath> getDescendants(DataPath dataPath, String glob) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
 
     public Database getDatabase() {
         return database;

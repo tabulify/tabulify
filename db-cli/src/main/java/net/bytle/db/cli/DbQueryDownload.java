@@ -33,22 +33,21 @@ public class DbQueryDownload {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
     private static final String ARG_NAME = "(Query|File.sql)";
-    private static final String CLOB_OPTION = "clob";
+    private static final String TARGET_DIRECTORY = "DownloadPathDir";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand.argOf(ARG_NAME);
-        cliCommand.optionOf(Words.OUTPUT_FILE_PATH)
-                .setDescription("defines the path of the output path (Ex: output/query.csv)");
-        cliCommand.flagOf(CLOB_OPTION)
-                .setShortName("c")
-                .setDescription("If present, the values of clob columns will be written in a apart file");
+        cliCommand.argOf(SOURCE_DATA_URI)
+                .setDescription("A data Uri that defines the connection where the query should run");
+        cliCommand.argOf(ARG_NAME)
+                .setDescription("One or more data uri files. Each file should contain a query");
+        cliCommand.argOf(TARGET_DIRECTORY)
+                .setDescription("A directory that defines where the data should be downloaded");
         String footer = "\nExample:\n" +
-                cliCommand.getName() + CliParser.PREFIX_LONG_OPTION + Words.OUTPUT_FILE_PATH + " QueryDownloaded.csv QueryToDownload.sql \n";
+                cliCommand.getName() +  " @sqlite QueryToDownload.sql \n";
         cliCommand.setFooter(footer);
 
-        cliCommand.optionOf(CLOB_OPTION);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 

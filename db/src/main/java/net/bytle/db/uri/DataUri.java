@@ -1,5 +1,8 @@
 package net.bytle.db.uri;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A data uri is the string representation of a data path
  */
@@ -7,6 +10,8 @@ public class DataUri implements Comparable<DataUri> {
 
 
     public static final String AT_STRING = "@";
+    public static final String EQUAL_CHARACTER = "=";
+    public static final String AMPERSAND_CHARACTER = "&";
     static final String QUESTION_MARK = "?";
     static final String HASH_TAG = "#";
     private final String uri;
@@ -14,7 +19,6 @@ public class DataUri implements Comparable<DataUri> {
     private String fragment = null;
     private String path;
     private String dataStore;
-
 
 
     private DataUri(String uri) {
@@ -26,52 +30,50 @@ public class DataUri implements Comparable<DataUri> {
         }
 
         int atIndex = uri.indexOf(AT_STRING);
-        if (atIndex==-1) {
+        if (atIndex == -1) {
             throw new RuntimeException("The at (@) string is mandatory in a data uri and was not found");
         }
-        if (atIndex!=0) {
+        if (atIndex != 0) {
             path = uri.substring(0, atIndex);
         }
 
         // Data Store parsing
         int questionMarkIndex = uri.indexOf(QUESTION_MARK);
-        if (questionMarkIndex!=-1) {
-            dataStore = uri.substring(atIndex+1,questionMarkIndex);
+        if (questionMarkIndex != -1) {
+            dataStore = uri.substring(atIndex + 1, questionMarkIndex);
         }
         int hashTagIndex = uri.indexOf(HASH_TAG);
-        if (dataStore==null && hashTagIndex!=-1) {
-            dataStore = uri.substring(atIndex+1,hashTagIndex);
+        if (dataStore == null && hashTagIndex != -1) {
+            dataStore = uri.substring(atIndex + 1, hashTagIndex);
         }
 
-        if (dataStore==null){
-            dataStore = uri.substring(atIndex+1);
+        if (dataStore == null) {
+            dataStore = uri.substring(atIndex + 1);
         }
 
-        if (dataStore.equals("")){
+        if (dataStore.equals("")) {
             throw new RuntimeException("The data store name cannot be null");
         }
 
         // Query
-        if (questionMarkIndex!=-1) {
-            if (hashTagIndex==-1) {
-                query = uri.substring(questionMarkIndex+1);
+        if (questionMarkIndex != -1) {
+            if (hashTagIndex == -1) {
+                query = uri.substring(questionMarkIndex + 1);
             } else {
-                query = uri.substring(questionMarkIndex+1,hashTagIndex);
+                query = uri.substring(questionMarkIndex + 1, hashTagIndex);
             }
         }
 
         // Fragment
-        if (hashTagIndex!=-1) {
-            fragment = uri.substring(hashTagIndex+1);
+        if (hashTagIndex != -1) {
+            fragment = uri.substring(hashTagIndex + 1);
         }
 
     }
 
 
-
-
     public static DataUri of(String uri) {
-        assert uri!=null: "The uri should not be null";
+        assert uri != null : "The uri should not be null";
         return new DataUri(uri);
     }
 
@@ -81,13 +83,11 @@ public class DataUri implements Comparable<DataUri> {
     }
 
 
-
     public String toString() {
 
 
         return this.uri;
     }
-
 
 
     /**
@@ -143,5 +143,20 @@ public class DataUri implements Comparable<DataUri> {
 
     public String getDataStore() {
         return dataStore;
+    }
+
+    public Map<String, String> getQueryParameters() {
+        String[] ampersandSplit = query.split(AMPERSAND_CHARACTER);
+        Map<String, String> parameters = new HashMap<>();
+        for (String ampersand : ampersandSplit) {
+            int characterIndex = ampersand.indexOf(EQUAL_CHARACTER);
+            if (characterIndex == -1){
+                throw new RuntimeException("The query part ("+ampersand+") should have at minimum the character ("+ EQUAL_CHARACTER+")");
+            }
+            String key = ampersand.substring(0, characterIndex);
+            String value = ampersand.substring(characterIndex+1);
+            parameters.put(key, value);
+        }
+        return parameters;
     }
 }

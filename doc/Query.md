@@ -7,6 +7,14 @@ A query is seen as:
    * a data definition but at runtime.
    * a view without name
 
+A query at the command line is defined with:
+   * source where to execute the query
+   * and a query
+Can we combine that in one unit ?
+  * `'select 1 from whatever'@dataStore`
+  * `"/queryPath@FileDataStore"@DbDataStore`
+  * `@DbDataStore?query=queryPath@FileDataStore`
+
 If it should have a name, create a view object or a map to track the execution.
  
 It permits us to do thing like:
