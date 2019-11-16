@@ -5,6 +5,7 @@ import net.bytle.db.engine.ThreadListenerAbs;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SelectStreamListener;
+import net.bytle.timer.Timer;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
      */
     private List<InsertStreamListener> insertListener = Collections.synchronizedList(new ArrayList<>());
     private List<SelectStreamListener> selectListener = new ArrayList<>();
+
+    private Timer timer = Timer.getTimer("total");
 
     public static TransferListener of() {
         return new TransferListener();
@@ -101,5 +104,13 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
 
     public List<InsertStreamListener> getInsertStreamListeners() {
         return this.insertListener;
+    }
+
+    public void stopTimer() {
+        timer.stop();
+    }
+
+    public void startTimer() {
+        timer.start();
     }
 }

@@ -1,8 +1,8 @@
-package net.bytle.cli;
+package net.bytle.timer;
 
 import java.util.Date;
 
-public class CliTimer {
+public class Timer {
 
 
     private static Date startTime;
@@ -24,12 +24,12 @@ public class CliTimer {
 
     private long responseTimeInMs;
 
-    private CliTimer(String name) {
+    private Timer(String name) {
         this.name = name;
     }
 
-    static public CliTimer getTimer(String name) {
-        return new CliTimer(name);
+    static public Timer getTimer(String name) {
+        return new Timer(name);
     }
 
 
@@ -38,7 +38,7 @@ public class CliTimer {
         return name;
     }
 
-    public CliTimer start() {
+    public Timer start() {
         startTime = new Date();
         return this;
     }

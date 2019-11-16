@@ -5,7 +5,7 @@ import net.bytle.cli.*;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
-import net.bytle.db.transfer.Transfer;
+import net.bytle.db.transfer.Transfers;
 import net.bytle.db.model.QueryDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -169,7 +169,7 @@ public class DbTableTransfer {
 
                 QueryDef queryDef = targetSchemaDef.getQuery("select * from " + tableDef.getFullyQualifiedName());
 
-                List<TransferListener> streamListeners = new Transfer(targetTableDef, queryDef)
+                List<TransferListener> streamListeners = new Transfers(targetTableDef, queryDef)
                         .targetWorkerCount(targetWorkerCount)
                         .bufferSize(bufferSize)
                         .batchSize(batchSize)

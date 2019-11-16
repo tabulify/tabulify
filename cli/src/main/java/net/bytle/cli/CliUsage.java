@@ -174,10 +174,10 @@ public class CliUsage {
 
         }
 
-        String example = cliCommand.getExamples();
-        if (example != null) {
-            usage.append("\n").append(example);
-        }
+        cliCommand.getExamples()
+                .stream()
+                .forEach(e -> usage.append("\n").append(e));
+
 
         String footer = cliCommand.getFooter();
         if (footer != null) {

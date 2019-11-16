@@ -4,6 +4,7 @@
 
 dependencies {
     implementation 'org.jgrapht:jgrapht-core:1.1.0'
+    implementation project(':bytle-timer')
     implementation project(':bytle-log')
     implementation project(':bytle-type')
     implementation project(':bytle-crypto')

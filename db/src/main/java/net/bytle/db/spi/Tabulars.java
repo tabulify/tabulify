@@ -3,7 +3,7 @@ package net.bytle.db.spi;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.transfer.Transfer;
+import net.bytle.db.transfer.Transfers;
 import net.bytle.db.transfer.TransferLoadOperation;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
@@ -222,12 +222,12 @@ public class Tabulars {
 
     public static TransferListener transfer(DataPath source, DataPath target) {
 
-        return transfer(source,target,TransferProperties.of());;
+        return transfer(source,target,TransferProperties.of());
     }
 
     public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-        return Transfer.transfer(source,target,transferProperties);
+        return Transfers.transfer(source,target,transferProperties);
     }
 
 
@@ -294,8 +294,8 @@ public class Tabulars {
             sourceDataSystem.move(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfer.createOrCheckTargetFromSource(source,target);
-            transferListener = Transfer.transfer(source,target,transferProperties);
+            Transfers.createOrCheckTargetFromSource(source,target);
+            transferListener = Transfers.transfer(source,target,transferProperties);
             Tabulars.drop(source);
         }
 
@@ -312,8 +312,8 @@ public class Tabulars {
             sourceDataSystem.copy(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfer.createOrCheckTargetFromSource(source,target);
-            transferListener = Transfer.transfer(source,target,transferProperties);
+            Transfers.createOrCheckTargetFromSource(source,target);
+            transferListener = Transfers.transfer(source,target,transferProperties);
         }
 
         return transferListener;
@@ -335,8 +335,8 @@ public class Tabulars {
             sourceDataSystem.insert(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfer.checkOrCreateTargetStructureFromSource(source,target);
-            transferListener = Transfer.transfer(source,target,transferProperties);
+            Transfers.checkOrCreateTargetStructureFromSource(source,target);
+            transferListener = Transfers.transfer(source,target,transferProperties);
         }
         return transferListener;
     }
