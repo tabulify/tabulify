@@ -47,7 +47,7 @@ public class DbTableDrop {
         // Create the parser
         cliCommand
                 .setDescription(description)
-                .setExample(example);
+                .addExample(example);
 
 
         cliCommand.argOf(TABLE_URIS)

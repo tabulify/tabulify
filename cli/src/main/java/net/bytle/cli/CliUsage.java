@@ -4,7 +4,6 @@ import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class CliUsage {
@@ -175,7 +174,7 @@ public class CliUsage {
 
         }
 
-        String example = cliCommand.getExample();
+        String example = cliCommand.getExamples();
         if (example != null) {
             usage.append("\n").append(example);
         }

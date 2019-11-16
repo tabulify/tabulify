@@ -30,7 +30,7 @@ public class DbXmlUpdate {
 
         String example = "\nExample to change the value of the attribute \"dataSource\" to \"NewValue\" in the element \"ConnectionPool\" with the attribute \"name\" equal to \"myConnectionPool\" of the file \"inputFile\", you would call it as:\n" +
                 CliUsage.getFullChainOfCommand(cliCommand) + " -xp \"//Repository/DECLARE/ConnectionPool[@name=\\\"myConnectionPool\\\"]/@dataSource\" -val newDNS -in inputFile.xml \n";
-        cliCommand.setExample(example);
+        cliCommand.addExample(example);
 
 
         cliCommand.optionOf(XPATH)

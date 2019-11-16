@@ -1,17 +1,17 @@
 # Data Uri
 
 ## About
-A data Uri is the string representation of a data path.
+A data Uri is the string representation of one or more a data path.
 
 
 # Syntax
 
 ```
-[path]@datastore[?query][#fragment]
+[path|glob]@datastore[?query][#fragment]
 ```
 where:
   * `datastore` is the only mandatory part
-  * `path` structure is data store dependent: ie
+  * `path|glob` structure is data store dependent: ie
     * `catalog.schema.object` for sql
     * `schema.object` for sql
     * `../schema` for sql

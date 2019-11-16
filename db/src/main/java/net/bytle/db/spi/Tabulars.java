@@ -220,18 +220,14 @@ public class Tabulars {
 
     }
 
-    public static void transfer(DataPath source, DataPath target) {
+    public static TransferListener transfer(DataPath source, DataPath target) {
 
-        // Check source
-        if (!Tabulars.exists(source)) {
-            // Is it a query definition
-            if (source.getDataDef().getQuery() == null) {
-                throw new RuntimeException("We cannot move the source data path (" + source.toString() + ") because it does not exist");
-            }
-        }
+        return transfer(source,target,TransferProperties.of());;
+    }
 
-        move(source,target,TransferProperties.of());
+    public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
 
+        return Transfer.transfer(source,target,transferProperties);
     }
 
 

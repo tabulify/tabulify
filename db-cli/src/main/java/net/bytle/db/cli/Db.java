@@ -43,7 +43,7 @@ public class Db {
         // Initiate the client helper
         CliCommand cli = Clis.getCli(Words.CLI_NAME)
                 .setDescription("A command line utility tool for every database")
-                .setExample(example)
+                .addExample(example)
                 .setHelpWord(Words.HELP);
 
         cli.optionOf(Words.CONFIG_FILE_PATH)

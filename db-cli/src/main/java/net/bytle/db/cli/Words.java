@@ -1,8 +1,6 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
-import net.bytle.cli.CliParser;
-import net.bytle.db.DbDefaultValue;
 
 import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
 
@@ -93,7 +91,7 @@ public class Words {
     static final String SOURCE_QUERY_OPTION = "sq";
 
 
-    static final String OUTPUT_FILE_PATH = "output";
+    static final String OUTPUT_DATA_URI = "output";
     static final String FILE_FORMAT = "format";
     // Options used in all sub actions
     static final String DATABASE_STORE = "database-store";
@@ -111,7 +109,7 @@ public class Words {
 
 
 
-        cliCommand.globalWordOf(OUTPUT_FILE_PATH)
+        cliCommand.globalWordOf(OUTPUT_DATA_URI)
                 .setTypeAsOption()
                 .setShortName("o")
                 .setValueName("path")

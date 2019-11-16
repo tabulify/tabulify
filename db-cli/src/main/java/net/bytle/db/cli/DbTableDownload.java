@@ -34,7 +34,7 @@ public class DbTableDownload {
         cliCommand.setDescription("Download a table into a file.");
         cliCommand.argOf(ARG_NAME)
                 .setMandatory(true);
-        cliCommand.optionOf(OUTPUT_FILE_PATH)
+        cliCommand.optionOf(OUTPUT_DATA_URI)
                 .setDescription("defines the directory of the downloaded file (Default: currentWorkingDirectory)");
         cliCommand.optionOf(CLOB_OPTION)
                 .setDescription("If present, the values of clob columns will be written in a apart file");
@@ -49,7 +49,7 @@ public class DbTableDownload {
 
         String sourceURL = "";
         String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
-        Path downloadPathDir = cliParser.getPath(OUTPUT_FILE_PATH);
+        Path downloadPathDir = cliParser.getPath(OUTPUT_DATA_URI);
         if (downloadPathDir == null) {
             downloadPathDir = Paths.get(".");
         }

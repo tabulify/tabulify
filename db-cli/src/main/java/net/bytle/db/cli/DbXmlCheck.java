@@ -29,7 +29,7 @@ public class DbXmlCheck {
         String footer = "This application will check if some node (element or attribute) have the correct value\n";
 
         cliCommand.setFooter(footer)
-                .setExample(example);
+                .addExample(example);
 
         cliCommand.optionOf(XPATH)
                 .setDescription("defines the Xpath Expression. It may be also given in the CSV file parameter.");

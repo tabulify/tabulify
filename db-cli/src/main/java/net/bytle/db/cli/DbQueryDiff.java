@@ -5,7 +5,6 @@ import net.bytle.cli.*;
 import net.bytle.db.resultSetDiff.DataSetDiff;
 import net.bytle.db.resultSetDiff.ExecuteQueryThread;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -56,7 +55,7 @@ public class DbQueryDiff {
                 .setDescription("defines the second database connection String (Example: jdbc:sap://localhost:30015/?user=login&password=pwd)");
         cliCommand.optionOf(Words.JDBC_DRIVER_SOURCE_OPTION)
                 .setDescription("defines the Jdbc driver of the second database connection (Example: com.sap.db.jdbc.Driver)");
-        cliCommand.optionOf(OUTPUT_FILE_PATH)
+        cliCommand.optionOf(OUTPUT_DATA_URI)
                 .setDescription("defines the path of the output file");
 
 
@@ -71,7 +70,7 @@ public class DbQueryDiff {
         List<Query> queries = new ArrayList<>();
         if (cliArgs.size() == 1) {
             // Diff between two different databases
-            Path outputPathArg = cliParser.getPath(OUTPUT_FILE_PATH);
+            Path outputPathArg = cliParser.getPath(OUTPUT_DATA_URI);
 
             // Source
             String arg1 = cliParser.getString(argWord);

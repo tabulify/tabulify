@@ -1,25 +1,31 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
+import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Queries;
 
 import net.bytle.db.model.QueryDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.Streams;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
-import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Clob;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -32,100 +38,122 @@ public class DbQueryDownload {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    private static final String ARG_NAME = "(Query|File.sql)";
+    private static final String ARG_NAME = "sqlFileDataUri...|sourceDataUri targetDataUri";
     private static final String TARGET_DIRECTORY = "DownloadPathDir";
+    private static final String TARGET_SOURCE_MODE = "--source-target-mode";
 
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand.argOf(SOURCE_DATA_URI)
-                .setDescription("A data Uri that defines the connection where the query should run");
+        cliCommand.optionOf(SOURCE_DATA_URI)
+                .setDescription("Only in default mode, A data Uri that defines the connection where all queries should run. It works with the default mode.");
         cliCommand.argOf(ARG_NAME)
-                .setDescription("One or more data uri files. Each file should contain a query");
-        cliCommand.argOf(TARGET_DIRECTORY)
-                .setDescription("A directory that defines where the data should be downloaded");
-        String footer = "\nExample:\n" +
-                cliCommand.getName() +  " @sqlite QueryToDownload.sql \n";
-        cliCommand.setFooter(footer);
+                .setDescription("In default mode, a succession of sql files defined by one or more data Uri" +System.lineSeparator()
+                        "In target/source mode, a succession of query data uri followed by its target uri");
+        cliCommand.optionOf(TARGET_DIRECTORY)
+                .setDescription("Only in default mode, a directory that defines where the data should be downloaded");
+        cliCommand.flagOf(TARGET_SOURCE_MODE)
+                .setDescription("if this flag is present, the source target mode will be used (ie a succession of source/target data uri as argument)");
+        String example = cliCommand.getName() + CliParser.PREFIX_LONG_OPTION +SOURCE_DATA_URI+ " @sqlite QueryToDownload.sql \n";
+        cliCommand.addExample(example);
+        cliCommand.optionOf(DATABASE_STORE);
 
-
+        // Parse
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        String sourceURL = "";
-        String sourceDriver = cliParser.getString(JDBC_DRIVER_SOURCE_OPTION);
+        // Database Store
+        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
+        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
 
-        Boolean clobInApartFile = cliParser.getBoolean(CLOB_OPTION);
+        // The data with the transfers
+        Map<DataPath,DataPath> transfers = new HashMap<>();
 
-        Path pathDownloadFile = null;
-        String downloadPathArg = cliParser.getString(OUTPUT_FILE_PATH);
-        if (downloadPathArg != null) {
-            pathDownloadFile = Paths.get(downloadPathArg);
-        }
+        // Mode
+        Boolean targetSourceMode = cliParser.getBoolean(TARGET_SOURCE_MODE);
+        if (!targetSourceMode){
+            LOGGER.info("Mode: Default, download of one or several query file");
 
-
-        List<String> argValues = cliParser.getStrings(ARG_NAME);
-        if (argValues.size() != 1) {
-            System.err.println("An argument must be given");
-            CliUsage.print(cliCommand);
-            System.exit(1);
-        }
-
-        String arg0 = argValues.get(0);
-        String sourceFileQuery;
-        boolean isRegularFile = Files.isRegularFile(Paths.get(arg0));
-        if (isRegularFile) {
-            sourceFileQuery = cliParser.getFileContent(ARG_NAME, false);
-        } else {
-            sourceFileQuery = arg0;
-        }
-
-        // Problem we have no query
-        if (!Queries.isQuery(sourceFileQuery)) {
-
-            System.err.println("The first argument is expected to be an SQL file or a SQL query containing the SELECT keyword.");
-            if (isRegularFile) {
-                System.err.println("The first argument (" + arg0 + ") is a file but its content below does not contain the SELECT word in the first positions");
-                System.err.println("Query: \n" + Strings.toStringNullSafe(sourceFileQuery));
-            } else {
-                System.err.println("The first argument is not a file and its value below does not contain the SELECT word in the first positions");
-                System.err.println("Arg Value: \n" + Strings.toStringNullSafe(arg0));
+            String stringSourceDataUri = cliParser.getString(SOURCE_DATA_URI);
+            if (stringSourceDataUri == null) {
+                throw new RuntimeException("In the default mode, the option ("+SOURCE_DATA_URI+") is mandatory");
             }
-            CliUsage.print(cliParser.getCommand());
-            System.exit(1);
+            DataUri sourceDataUri = DataUri.of(stringSourceDataUri);
+            DataPath sourceDataPath = DataPaths.of(databasesStore,sourceDataUri);
 
+            DataPath dataPathDownloadLocation;
+            String downloadPathArg = cliParser.getString(OUTPUT_DATA_URI);
+            if (downloadPathArg != null) {
+                dataPathDownloadLocation = DataPaths.of(DataUri.of(downloadPathArg));
+            } else {
+                dataPathDownloadLocation = DataPaths.of(Paths.get("."));
+            }
+
+            List<String> sqlFileUris = cliParser.getStrings(ARG_NAME);
+            if (sqlFileUris.size() != 1) {
+                System.err.println("In default mode, at minimum a file data uri must be given");
+                CliUsage.print(cliCommand);
+                System.exit(1);
+            }
+
+            // Creating the transfer map (ie the source query data path/target data path)
+            transfers = new HashMap<>();
+            for (String stringSqlFileUri:sqlFileUris) {
+
+                // Source
+                DataUri sqlFileUri = DataUri.of(stringSqlFileUri);
+                DataPath sqlDataPath = DataPaths.of(databasesStore,sqlFileUri);
+                String sourceFileQuery = Tabulars.getString(sqlDataPath);
+                if (!Queries.isQuery(sourceFileQuery)) {
+                    System.err.println("The data path (" + sqlDataPath + ") does not contains a query.");
+                    CliUsage.print(cliParser.getCommand());
+                    System.exit(1);
+                }
+                DataPath sourceQueryDataPath = DataPaths.ofQuery(sourceDataPath,sourceFileQuery);
+
+                // Target
+                DataPath targetDataPath = DataPaths.childOf(dataPathDownloadLocation,sqlDataPath.getName());
+
+                // Transfer
+                transfers.put(sourceQueryDataPath,targetDataPath);
+
+            }
+
+
+        } else {
+            LOGGER.info("Mode: Target/Source, source uri followed by the target Uri.");
+            throw new RuntimeException("Not yet implemented, sorry");
         }
 
-
-        CliTimer cliTimer = CliTimer.getTimer("download").start();
 
         System.out.println("Download process started");
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(sourceURL)
-                .setDriver(sourceDriver);
 
-        LOGGER.info("Connection successful - Querying and Downloading the data");
-        int exitStatus;
-        try(
-            QueryDef queryDef = database.getQuery(sourceFileQuery);
-        ) {
-             exitStatus = download(queryDef, pathDownloadFile, clobInApartFile);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        CliTimer totalTimer = CliTimer.getTimer("total").start();
+
+        for (Map.Entry<DataPath, DataPath> transfer:transfers.entrySet()) {
+
+            DataPath transferSource = transfer.getKey();
+            DataPath transferTarget = transfer.getValue();
+
+            String transferName = transferSource.getName()+transferTarget.getName();
+            CliTimer cliTimer = CliTimer.getTimer(transferName).start();
+
+            TransferListener transferListener = Tabulars.transfer(transferSource,transferTarget);
+
+            cliTimer.stop();
         }
+        totalTimer.stop();
 
-        // Feedback
-        cliTimer.stop();
-
-        System.out.printf("Response Time to downloader the data: %s (hour:minutes:seconds:milli)%n", cliTimer.getResponseTime());
-        System.out.printf("       Ie (%d) milliseconds%n", cliTimer.getResponseTimeInMilliSeconds());
+        System.out.printf("Response Time to download the data: %s (hour:minutes:seconds:milli)%n", totalTimer.getResponseTime());
+        System.out.printf("       Ie (%d) milliseconds%n", totalTimer.getResponseTimeInMilliSeconds());
 
         // Exit
         if (exitStatus != 0) {
             System.out.println("Error ! (" + exitStatus + ") errors were seen.");
+            System.exit(exitStatus);
         } else {
             System.out.println("Success ! No errors were seen.");
         }
-        System.exit(exitStatus);
+
 
     }
 

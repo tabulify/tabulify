@@ -34,7 +34,7 @@ public class DbXml2Csv {
                 .setMandatory(true);
 
 
-        cliCommand.setExample(CliUsage.getFullChainOfCommand(cliCommand) + " --xpath \"//Repository/DECLARE/Database[@name=\\\"databaseName\\\"]/\" -in inputFile.xml \n");
+        cliCommand.addExample(CliUsage.getFullChainOfCommand(cliCommand) + " --xpath \"//Repository/DECLARE/Database[@name=\\\"databaseName\\\"]/\" -in inputFile.xml \n");
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 

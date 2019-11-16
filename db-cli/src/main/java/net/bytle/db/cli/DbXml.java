@@ -47,7 +47,7 @@ public class DbXml {
 
         // Initiate the client helper
         cliCommand.setDescription("Xml utility")
-                .setExample(example);
+                .addExample(example);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 

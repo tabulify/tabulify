@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Created by gerard on 20-06-2017
+ *
  * <p>
  * A command
  * <p>
@@ -63,7 +63,7 @@ public class CliCommand {
     public static final String CONF_DIR = "conf";
 
     // Example and footer for the usage text
-    private String example;
+    private List<String> examples;
     private String footer;
 
     // Example: the global help Word
@@ -161,13 +161,11 @@ public class CliCommand {
         return this;
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public CliCommand setExample(String example) {
-        this.example = example;
+    public CliCommand addExample(String example) {
+        this.examples.add(example);
         return this;
     }
 
-    @SuppressWarnings("WeakerAccess")
     public CliCommand setFooter(String footer) {
         this.footer = footer;
         return this;
@@ -492,8 +490,8 @@ public class CliCommand {
      * @return an example string
      */
     @SuppressWarnings("WeakerAccess")
-    public String getExample() {
-        return example;
+    public List<String> getExamples() {
+        return examples;
     }
 
     /**

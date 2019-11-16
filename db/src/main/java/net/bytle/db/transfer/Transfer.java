@@ -38,6 +38,13 @@ public class Transfer {
 
     public static TransferListener transfer(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
 
+        // Check source
+        if (!Tabulars.exists(sourceDataPath)) {
+            // Is it a query definition
+            if (sourceDataPath.getDataDef().getQuery() == null) {
+                throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
+            }
+        }
         /**
          * The listener is passed to the consumers and producers threads
          * to ultimately ends in the view thread to report life on the process
