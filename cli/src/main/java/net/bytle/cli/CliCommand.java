@@ -63,7 +63,7 @@ public class CliCommand {
     public static final String CONF_DIR = "conf";
 
     // Example and footer for the usage text
-    private List<String> examples;
+    private List<String> examples = new ArrayList<>();
     private String footer;
 
     // Example: the global help Word

@@ -21,7 +21,6 @@ include(':bytle-db')
 include(':bytle-db-jdbc')
 include(':bytle-db-cli')
 include(':bytle-db-json')
-include(':bytle-db-move')
 include(':bytle-db-tpc')
 include(':bytle-db-sqlite')
 include(':bytle-db-gen')
@@ -31,8 +30,8 @@ include(':bytle-db-oracle')
 include(':bytle-db-assembly')
 include(':bytle-db-excel')
 include(':bytle-db-sqlserver')
-include 'timer'
-findProject(':timer')?.name = 'bytle-timer'
+include(':bytle-timer')
+
 
 // The gradle project dir
 rootProject.children.each { project ->
