@@ -33,9 +33,10 @@ public class DbQueryDownload {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    private static final String ARG_NAME = "sqlFileDataUri...|sourceDataUri targetDataUri";
-    private static final String TARGET_DIRECTORY = "DownloadPathDir";
+    private static final String ARG_NAME = "sqlDataUri...| (sourceDataUri targetDataUri)*";
+    private static final String TARGET_DIRECTORY = "--download-directory";
     private static final String TARGET_SOURCE_MODE = "--source-target-mode";
+    private static final String SOURCE_DATA_URI = Words.SOURCE_DATA_URI;
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -43,7 +44,7 @@ public class DbQueryDownload {
         cliCommand.optionOf(SOURCE_DATA_URI)
                 .setDescription("Only in default mode, A data Uri that defines the connection where all queries should run. It works with the default mode.");
         cliCommand.argOf(ARG_NAME)
-                .setDescription("In default mode, a succession of sql files defined by one or more data Uri" + System.lineSeparator()+
+                .setDescription("In default mode, a succession of sql files defined by one or more data Uri" + System.lineSeparator() +
                         "In target/source mode, a succession of query data uri followed by its target uri");
         cliCommand.optionOf(TARGET_DIRECTORY)
                 .setDescription("Only in default mode, a directory that defines where the data should be downloaded");
@@ -68,6 +69,7 @@ public class DbQueryDownload {
         if (!targetSourceMode) {
             LOGGER.info("Mode: Default, download of one or several query file");
 
+            // Container Source Data Path where the query will run
             String stringSourceDataUri = cliParser.getString(SOURCE_DATA_URI);
             if (stringSourceDataUri == null) {
                 throw new RuntimeException("In the default mode, the option (" + SOURCE_DATA_URI + ") is mandatory");
@@ -75,6 +77,7 @@ public class DbQueryDownload {
             DataUri sourceDataUri = DataUri.of(stringSourceDataUri);
             DataPath sourceDataPath = DataPaths.of(databasesStore, sourceDataUri);
 
+            // Output
             DataPath dataPathDownloadLocation;
             String downloadPathArg = cliParser.getString(OUTPUT_DATA_URI);
             if (downloadPathArg != null) {
@@ -84,7 +87,7 @@ public class DbQueryDownload {
             }
 
             List<String> sqlFileUris = cliParser.getStrings(ARG_NAME);
-            if (sqlFileUris.size() != 1) {
+            if (sqlFileUris.size() == 0) {
                 System.err.println("In default mode, at minimum a file data uri must be given");
                 CliUsage.print(cliCommand);
                 System.exit(1);
@@ -96,25 +99,28 @@ public class DbQueryDownload {
 
                 // Source
                 DataUri sqlFileUri = DataUri.of(stringSqlFileUri);
-                DataPath sqlDataPath = DataPaths.of(databasesStore, sqlFileUri);
-                String sourceFileQuery = Tabulars.getString(sqlDataPath);
-                if (!Queries.isQuery(sourceFileQuery)) {
-                    System.err.println("The data path (" + sqlDataPath + ") does not contains a query.");
-                    CliUsage.print(cliParser.getCommand());
-                    System.exit(1);
+                List<DataPath> sqlDataPaths = DataPaths.select(databasesStore, sqlFileUri);
+                for (DataPath sqlDataPath : sqlDataPaths) {
+                    String sourceFileQuery = Tabulars.getString(sqlDataPath);
+                    if (!Queries.isQuery(sourceFileQuery)) {
+                        System.err.println("The data path (" + sqlDataPaths + ") does not contains a query.");
+                        CliUsage.print(cliParser.getCommand());
+                        System.exit(1);
+                    }
+                    DataPath sourceQueryDataPath = DataPaths.ofQuery(sourceDataPath, sourceFileQuery);
+
+                    // Target
+                    DataPath targetDataPath = DataPaths.childOf(dataPathDownloadLocation, sqlDataPath.getName());
+
+                    // Transfer
+                    transfers.add(
+                            Transfer.of()
+                                    .setSourceDataPath(sourceQueryDataPath)
+                                    .setTargetDataPath(targetDataPath)
+                                    .setTransferProperties(TransferProperties.of())
+                    );
+
                 }
-                DataPath sourceQueryDataPath = DataPaths.ofQuery(sourceDataPath, sourceFileQuery);
-
-                // Target
-                DataPath targetDataPath = DataPaths.childOf(dataPathDownloadLocation, sqlDataPath.getName());
-
-                // Transfer
-                transfers.add(
-                        Transfer.of()
-                                .setSourceDataPath(sourceQueryDataPath)
-                                .setTargetDataPath(targetDataPath)
-                                .setTransferProperties(TransferProperties.of())
-                );
 
             }
 

@@ -1,7 +1,10 @@
 # Data Uri
 
 ## About
-A data Uri is the string representation of one or more a data path.
+A data Uri is:
+
+  * a selector via a glob (source)
+  * a string representation of one or more a data path (target)
 
 
 # Syntax
