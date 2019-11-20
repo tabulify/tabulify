@@ -3,17 +3,18 @@ package net.bytle.db.spi;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.transfer.Transfers;
-import net.bytle.db.transfer.TransferLoadOperation;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferLoadOperation;
+import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.transfer.Transfers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class Tabulars {
@@ -123,12 +124,12 @@ public class Tabulars {
      * @param dataPaths - The tables to drop
      */
     public static void drop(List<DataPath> dataPaths) {
-        if (dataPaths.size()==0){
+        if (dataPaths.size() == 0) {
             throw new RuntimeException("The list of data paths to drop cannot be null");
         } else {
             DataPath[] moreDataPath = {};
-            if (dataPaths.size()>1){
-                moreDataPath = dataPaths.subList(1,dataPaths.size()-1).toArray(new DataPath[0]);
+            if (dataPaths.size() > 1) {
+                moreDataPath = dataPaths.subList(1, dataPaths.size() - 1).toArray(new DataPath[0]);
             }
             drop(dataPaths.get(0), moreDataPath);
         }
@@ -216,20 +217,19 @@ public class Tabulars {
 
     public static void move(DataPath source, DataPath target) {
 
-        move(source,target,TransferProperties.of());
+        move(source, target, TransferProperties.of());
 
     }
 
     public static TransferListener transfer(DataPath source, DataPath target) {
 
-        return transfer(source,target,TransferProperties.of());
+        return transfer(source, target, TransferProperties.of());
     }
 
     public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-        return Transfers.transfer(source,target,transferProperties);
+        return Transfers.transfer(source, target, transferProperties);
     }
-
 
 
     public static boolean isEmpty(DataPath queue) {
@@ -242,12 +242,10 @@ public class Tabulars {
     }
 
     /**
-     *
      * @param dataPath
      * @return if the data path locate a document
-     *
+     * <p>
      * The counter part is {@link #isContainer(DataPath)}
-     *
      */
     public static boolean isDocument(DataPath dataPath) {
         return dataPath.getDataSystem().isDocument(dataPath);
@@ -261,12 +259,22 @@ public class Tabulars {
         }
     }
 
-    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-        throw new RuntimeException("not yet implemented");
+    public static List<ForeignKeyDef> dropReference(DataPath referent, DataPath target) {
+
+        List<ForeignKeyDef> foreignKeyDefs = referent.getDataDef().getForeignKeys().stream()
+                .filter(fk -> fk.getForeignPrimaryKey().getDataDef().getDataPath().equals(target))
+                .collect(Collectors.toList());
+
+        foreignKeyDefs.stream()
+                .forEach(fk -> {
+                    throw new RuntimeException("Not yet implemented");
+                });
+
+        return foreignKeyDefs;
+
     }
 
     /**
-     *
      * @param dataPath
      * @return the content of a data path in a string format
      */
@@ -277,8 +285,9 @@ public class Tabulars {
     /**
      * Move a source document to a target document
      * If the document is:
-     *    * on the same data store, it's a rename operation,
-     *    * not on the same data store, it's a transfer and a delete from the source
+     * * on the same data store, it's a rename operation,
+     * * not on the same data store, it's a transfer and a delete from the source
+     *
      * @param source
      * @param target
      * @param transferProperties
@@ -294,8 +303,8 @@ public class Tabulars {
             sourceDataSystem.move(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfers.createOrCheckTargetFromSource(source,target);
-            transferListener = Transfers.transfer(source,target,transferProperties);
+            Transfers.createOrCheckTargetFromSource(source, target);
+            transferListener = Transfers.transfer(source, target, transferProperties);
             Tabulars.drop(source);
         }
 
@@ -312,8 +321,8 @@ public class Tabulars {
             sourceDataSystem.copy(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfers.createOrCheckTargetFromSource(source,target);
-            transferListener = Transfers.transfer(source,target,transferProperties);
+            Transfers.createOrCheckTargetFromSource(source, target);
+            transferListener = Transfers.transfer(source, target, transferProperties);
         }
 
         return transferListener;
@@ -321,11 +330,11 @@ public class Tabulars {
     }
 
     public static TransferListener copy(DataPath source, DataPath target) {
-        return copy(source,target,TransferProperties.of());
+        return copy(source, target, TransferProperties.of());
     }
 
     public static TransferListener insert(DataPath source, DataPath target, TransferProperties transferProperties) {
-        assert transferProperties!=null:"The transfer properties should not be null";
+        assert transferProperties != null : "The transfer properties should not be null";
 
         TransferListener transferListener = null;
         transferProperties.setLoadOperation(TransferLoadOperation.INSERT);
@@ -335,13 +344,21 @@ public class Tabulars {
             sourceDataSystem.insert(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
-            Transfers.checkOrCreateTargetStructureFromSource(source,target);
-            transferListener = Transfers.transfer(source,target,transferProperties);
+            Transfers.checkOrCreateTargetStructureFromSource(source, target);
+            transferListener = Transfers.transfer(source, target, transferProperties);
         }
         return transferListener;
     }
 
     public static TransferListener insert(DataPath source, DataPath target) {
-        return insert(source,target,TransferProperties.of());
+        return insert(source, target, TransferProperties.of());
+    }
+
+    /**
+     * @param dataPath the data path
+     * @return data paths that references the data path primary via a foreign key
+     */
+    public static List<DataPath> getReferences(DataPath dataPath) {
+        return dataPath.getDataSystem().getReferences(dataPath);
     }
 }

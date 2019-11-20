@@ -23,7 +23,7 @@ public class DataGens {
         int counter = 0;
         for (ForeignKeyDef foreignKeyDef : getSelfReferencingForeignKeys(schemaDef)) {
             counter++;
-            Tabulars.dropForeignKey(foreignKeyDef);
+            Tabulars.dropReference(foreignKeyDef);
         }
         if (counter==0){
             LOGGER.info("No self referencing foreign keys was found.");
@@ -81,7 +81,7 @@ public class DataGens {
         int counter = 0;
         for (ForeignKeyDef foreignKeyDef : getSecondForeignKeysOnTheSameColumn(schemaDef)) {
             counter++;
-            Tabulars.dropForeignKey(foreignKeyDef);
+            Tabulars.dropReference(foreignKeyDef);
         }
         if (counter==0){
             LOGGER.info("No more than one foreign key on the same column was found.");

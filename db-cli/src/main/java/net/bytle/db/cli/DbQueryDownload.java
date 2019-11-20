@@ -33,10 +33,12 @@ public class DbQueryDownload {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    private static final String ARG_NAME = "sqlDataUri...| (sourceDataUri targetDataUri)*";
-    private static final String TARGET_DIRECTORY = "--download-directory";
-    private static final String TARGET_SOURCE_MODE = "--source-target-mode";
     private static final String SOURCE_DATA_URI = Words.SOURCE_DATA_URI;
+    private static final String DOWNLOAD_DIRECTORY = "--download-directory";
+    private static final String ARG_NAME = "sqlDataUri...| (sourceDataUri targetDataUri)*";
+
+    private static final String TARGET_SOURCE_MODE = "--source-target-mode";
+
 
 
     public static void run(CliCommand cliCommand, String[] args) {
@@ -46,7 +48,7 @@ public class DbQueryDownload {
         cliCommand.argOf(ARG_NAME)
                 .setDescription("In default mode, a succession of sql files defined by one or more data Uri" + System.lineSeparator() +
                         "In target/source mode, a succession of query data uri followed by its target uri");
-        cliCommand.optionOf(TARGET_DIRECTORY)
+        cliCommand.optionOf(DOWNLOAD_DIRECTORY)
                 .setDescription("Only in default mode, a directory that defines where the data should be downloaded");
         cliCommand.flagOf(TARGET_SOURCE_MODE)
                 .setDescription("if this flag is present, the source target mode will be used (ie a succession of source/target data uri as argument)");

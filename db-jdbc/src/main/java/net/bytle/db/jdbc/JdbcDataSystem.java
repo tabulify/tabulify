@@ -469,6 +469,11 @@ public class JdbcDataSystem extends TableSystem {
         throw new RuntimeException("Not yet implemented");
     }
 
+    @Override
+    public List<DataPath> getReferences(DataPath dataPath) {
+        return Jdbcs.getReferencingDataPaths((JdbcDataPath) dataPath);
+    }
+
 
     public Database getDatabase() {
         return database;
@@ -742,7 +747,7 @@ public class JdbcDataSystem extends TableSystem {
     public List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
 
-        return DbObjectBuilder.getChildrenDataPath((JdbcDataPath) dataPath);
+        return Jdbcs.getChildrenDataPath((JdbcDataPath) dataPath);
 
     }
 

@@ -25,7 +25,7 @@ import static net.bytle.db.cli.Words.*;
 
 
 /**
- * Created by gerard on 08-12-2016.
+ *
  * <p>
  * main class to load the result of a Query into a table
  */

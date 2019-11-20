@@ -1,28 +1,26 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.DbLoggers;
-import net.bytle.db.database.Database;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
 import static java.lang.System.exit;
-import static net.bytle.db.cli.Words.DATABASE_STORE;
-import static net.bytle.db.cli.Words.FORCE;
-import static net.bytle.db.cli.Words.NO_STRICT;
+import static net.bytle.db.cli.Words.*;
 
 
 public class DbTableDrop {
@@ -36,13 +34,13 @@ public class DbTableDrop {
         String description = "Drop table(s).";
         String example = "";
         example += "To drop the tables D_TIME and F_SALES:\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "@database/D_TIME F_SALES\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME@datastore F_SALES@datastore\n\n";
         example += "To drop only the table D_TIME with force (ie deleting the foreign keys constraint):\n\n" +
                 CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + FORCE + "@database/D_TIME\n\n";
         example += "To drop all dimension tables that begins with (D_):\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + "\"^D\\_.*\"\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " D_*@datastore\n\n";
         example += "To drop all tables:\n\n" +
-                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " \"@database/*\"\n\n";
+                CliUsage.TAB + CliUsage.getFullChainOfCommand(cliCommand) + " *@database\n\n";
 
         // Create the parser
         cliCommand
@@ -78,77 +76,53 @@ public class DbTableDrop {
 
         // Get the tables asked
         List<String> tableUris = cliParser.getStrings(TABLE_URIS);
-        List<TableDef> tables = new ArrayList<>();
-        for (String tableUri : tableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            Database database = databasesStore.getDatabase(tableDataUri.getDataStore());
-            List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
-            if (schemaDefs.size() == 0) {
-                schemaDefs = Arrays.asList(database.getCurrentSchema());
-            }
-            for (SchemaDef schemaDef : schemaDefs) {
-                List<TableDef> tablesFound = schemaDef.getTables(tableDataUri.getTableName());
-                if (tablesFound.size() != 0) {
-
-                    tables.addAll(tablesFound);
-
+        List<DataPath> selectedDataPaths = new ArrayList<>();
+        for (String dataUri : tableUris) {
+            List<DataPath> select = DataPaths.select(databasesStore, DataUri.of(dataUri));
+            if (select.size() == 0) {
+                final String msg = "No tables found with the data Uri (" + dataUri + ")";
+                if (notStrict) {
+                    LOGGER.warning(msg);
                 } else {
-
-                    final String msg = "No tables found with the name/pattern (" + tableUri + ")";
-                    if (notStrict) {
-
-                        LOGGER.warning(msg);
-
-                    } else {
-
-                        LOGGER.severe(msg);
-                        exit(1);
-
-
-                    }
-
+                    LOGGER.severe(msg);
+                    exit(1);
                 }
             }
-
+            selectedDataPaths.addAll(select);
         }
 
-        if (tables.size() == 0) {
-            LOGGER.warning("No tables found to drop");
-            if (notStrict) {
-                return;
-            } else {
-                System.exit(1);
-            }
-        }
 
         // Doing the work
         System.out.println();
-        Dag dag = Dag.get(tables);
-        for (TableDef tableDef : dag.getDropOrderedTables()) {
 
-            List<ForeignKeyDef> foreignKeys = tableDef.getExternalForeignKeys();
-            for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-                if (!tables.contains(foreignKeyDef.getTableDef())) {
+        for (DataPath dataPathToDrop : Dag.get(selectedDataPaths).getDropOrderedTables()) {
+
+            List<DataPath> referenceDataPaths = Tabulars.getReferences(dataPathToDrop);
+            for (DataPath referenceDataPath : referenceDataPaths) {
+                if (!selectedDataPaths.contains(referenceDataPath)) {
                     if (withForce) {
-                        Tables.dropForeignKey(foreignKeyDef);
-                        LOGGER.warning("ForeignKey (" + foreignKeyDef.getName() + ") was dropped from the table (" + foreignKeyDef.getTableDef().getFullyQualifiedName() + ")");
+
+                        List<ForeignKeyDef> droppedForeignKeys = Tabulars.dropReference(referenceDataPath,dataPathToDrop);
+                        droppedForeignKeys.stream()
+                                .forEach(fk->LOGGER.warning("ForeignKey (" + fk.getName() + ") was dropped from the table (" + fk.getTableDef().getDataPath() + ")"));
+
                     } else {
-                        LOGGER.severe("The table ("+foreignKeyDef.getTableDef()+") is referencing the table ("+tableDef+") and is not in the tables to drop");
-                        LOGGER.severe("To drop the foreign keys referencing the tables to drop, you can add the force flag ("+CliParser.PREFIX_LONG_OPTION+Words.FORCE+").");
+                        LOGGER.severe("The table (" + referenceDataPath + ") is referencing the table (" + dataPathToDrop + ") and is not in the tables to drop");
+                        LOGGER.severe("To drop the foreign keys referencing the tables to drop, you can add the force flag (" + CliParser.PREFIX_LONG_OPTION + Words.FORCE + ").");
                         LOGGER.severe("Exiting");
                         System.exit(1);
                     }
                 }
             }
 
-            Tables.drop(tableDef);
-            System.out.println("Table (" + tableDef.getFullyQualifiedName() + ") was dropped.");
+            Tabulars.drop(dataPathToDrop);
+            LOGGER.info("Table (" + dataPathToDrop + ") was dropped.");
         }
 
         // End
-        System.out.println();
+
         // Setting the log back to see them in a test
-        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
+        LOGGER.setLevel(Level.INFO);
         LOGGER.info("Bye !");
 
     }

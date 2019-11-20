@@ -124,4 +124,11 @@ public abstract class TableSystem implements AutoCloseable {
      */
     public abstract List<DataPath> getDescendants(DataPath dataPath, String glob);
 
+    /**
+     *
+     * @param dataPath the data path
+     * @return data paths that references the data path primary key (via foreign keys)
+     */
+    public abstract List<DataPath> getReferences(DataPath dataPath);
+
 }

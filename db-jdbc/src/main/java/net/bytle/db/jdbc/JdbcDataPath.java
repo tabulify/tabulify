@@ -65,7 +65,7 @@ public class JdbcDataPath extends DataPath  {
 
         // The data def of query is build at runtime
         if (super.getDataDef().getColumnDefs().size()==0 && (!type.equals(QUERY_TYPE))){
-            DbObjectBuilder.getTableDef(super.getDataDef());
+            Jdbcs.getTableDef(super.getDataDef());
         }
         return super.getDataDef();
 

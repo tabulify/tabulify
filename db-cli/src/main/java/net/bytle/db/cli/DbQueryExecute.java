@@ -26,14 +26,7 @@ import java.util.logging.Level;
 
 import static net.bytle.db.cli.Words.DATABASE_STORE;
 
-/**
- * Created by gerard on 08-12-2016.
- * To download data
- * <p>
- * TODO:
- * * Download the data options
- * * Muliple Query by files ?
- */
+
 public class DbQueryExecute {
 
 
