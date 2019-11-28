@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 public class TpcDataSetSystem extends DataSetSystem {
 
     private static final String PRODUCT_NAME = "tpcds";
-    public static final String ROOT_SYMBOL = ".";
     private static TpcDataSetSystem tpcDataSetSystem;
     private TpcdsModel tpcModel;
     private final Database database;
@@ -63,7 +62,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public SelectStream getSelectStream(DataPath dataPath) {
-        return null;
+        return TpcdsSelectStream.of(dataPath);
     }
 
     @Override
@@ -92,7 +91,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public List<DataPath> getChildrenDataPath(DataPath dataPath) {
-        if (dataPath.getPath().equals(ROOT_SYMBOL)) {
+        if (dataPath.getPath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY)) {
             return this.tpcModel.getDataPaths();
         } else {
             return new ArrayList<>();
@@ -113,7 +112,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public boolean isDocument(DataPath dataPath) {
-        if (dataPath.getPath().equals(ROOT_SYMBOL)) {
+        if (dataPath.getPath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY)) {
             return false;
         } else {
             return true;

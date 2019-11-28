@@ -298,4 +298,13 @@ public class DataDefs {
             target.setPrimaryKey(columns);
         }
     }
+
+    public static int getColumnIdFromName(TableDef dataDef, String columnName) {
+        for (int i = 0; i<dataDef.getColumnDefs().size();i++){
+            if (dataDef.getColumnDef(i).getColumnName().equals(columnName)){
+                return i;
+            }
+        }
+        throw new RuntimeException("Column name ("+columnName+") not found in data document ("+dataDef.getDataPath()+")");
+    }
 }

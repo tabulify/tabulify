@@ -2,6 +2,10 @@ package net.bytle.db.transfer;
 
 import net.bytle.db.spi.DataPath;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class TransferProperties {
 
     public static final Integer DEFAULT_COMMIT_FREQUENCY = 99999;
@@ -70,7 +74,8 @@ public class TransferProperties {
      * The target operation
      * See {@link #setTargetOperations(TransferOptions...)}
      */
-    private TransferOptions[] transferOptions = { TransferOptions.CREATE_IF_NOT_EXIST };
+    private Set<TransferOptions> transferOptions = new HashSet<>(Arrays.asList(TransferOptions.CREATE_IF_NOT_EXIST));
+
 
 
 
@@ -208,7 +213,7 @@ public class TransferProperties {
      * @return  the {@link TransferProperties} instance itself for chaining instantiation
      */
     public TransferProperties setTargetOperations(TransferOptions... transferOptions) {
-        this.transferOptions = transferOptions;
+        this.transferOptions.addAll(Arrays.asList(transferOptions));
         return this;
     }
 
@@ -250,5 +255,10 @@ public class TransferProperties {
      */
     public Integer getTimeOut() {
         return timeout;
+    }
+
+    public TransferProperties withCreateTargetIfNotExist() {
+        this.transferOptions.add(TransferOptions.CREATE_IF_NOT_EXIST);
+        return this;
     }
 }
