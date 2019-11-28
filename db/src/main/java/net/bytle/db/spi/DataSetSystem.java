@@ -1,17 +1,18 @@
 package net.bytle.db.spi;
 
 import net.bytle.db.database.Database;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
 import java.util.Objects;
 
-public abstract class TableSystem implements AutoCloseable {
+public abstract class DataSetSystem extends TableSystem {
 
 
     public abstract DataPath getDataPath(DataUri dataUri);
@@ -24,31 +25,42 @@ public abstract class TableSystem implements AutoCloseable {
 
     public abstract Database getDatabase();
 
+    public abstract <T> T getMax(ColumnDef<T> columnDef);
 
     public abstract boolean isContainer(DataPath dataPath);
 
-    public abstract void create(DataPath dataPath);
+    public void create(DataPath dataPath){
+        throw new RuntimeException("A data set cannot create a data path. It can only read it");
+    }
 
     // The product name (for a jdbc database: sql server, oracle, hive ...
     public abstract String getProductName();
 
     public abstract DataType getDataType(Integer typeCode);
 
-    public abstract void drop(DataPath dataPath);
+    public void drop(DataPath dataPath){
+        throw new RuntimeException("A data set cannot drop a data path. It can only read it");
+    }
+    public void delete(DataPath dataPath) {
+        throw new RuntimeException("A data set cannot delete a data path. It can only read it");
+    }
 
-    public abstract void delete(DataPath dataPath);
-
-    public abstract void truncate(DataPath dataPath);
-
+    public void truncate(DataPath dataPath){
+        throw new RuntimeException("A data set cannot truncate a data path. It can only read it");
+    }
 
 
     public abstract TableSystemProvider getProvider();
 
-    public abstract InsertStream getInsertStream(DataPath dataPath);
+    public  InsertStream getInsertStream(DataPath dataPath){
+        throw new RuntimeException("A data set cannot insert into a data path. It can only read it");
+    }
 
     public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
-    public abstract void move(DataPath source, DataPath target, TransferProperties transferProperties);
+    public void move(DataPath source, DataPath target, TransferProperties transferProperties){
+        throw new RuntimeException("A data set cannot move its data paths. It can only read them");
+    }
 
     /**
      *
@@ -70,11 +82,12 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract boolean isDocument(DataPath dataPath);
 
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TableSystem that = (TableSystem) o;
+        DataSetSystem that = (DataSetSystem) o;
         return Objects.equals(getDatabase(), that.getDatabase());
     }
 
@@ -98,9 +111,14 @@ public abstract class TableSystem implements AutoCloseable {
      */
     public abstract String getString(DataPath dataPath);
 
-    public abstract TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties);
+    public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties){
+        throw new RuntimeException("A data set cannot copy its data paths. It can only read them");
+    }
 
-    public abstract TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties);
+    public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties)
+    {
+        throw new RuntimeException("A data set cannot insert into its data paths. It can only read them");
+    }
 
     /**
      *
@@ -124,5 +142,8 @@ public abstract class TableSystem implements AutoCloseable {
      */
     public abstract List<DataPath> getReferences(DataPath dataPath);
 
-    public abstract ProcessingEngine getProcessingEngine();
+    public ProcessingEngine getProcessingEngine(){
+        throw new RuntimeException("A data set does not implements a processing engine. It can only read records one at a time");
+    }
+
 }

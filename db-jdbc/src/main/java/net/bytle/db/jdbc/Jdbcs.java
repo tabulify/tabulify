@@ -6,16 +6,16 @@ import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.spi.DataTypeDriver;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.TableSystem;
 import net.bytle.log.Log;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.bytle.db.jdbc.JdbcDataSystem.DB_SQLITE;
 
 /**
  * Static method
@@ -660,6 +660,34 @@ public class Jdbcs {
         return sourceObject;
 
     }
+
+    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
+        /**
+         * TODO: move that outside of the core
+         * for now a hack
+         * because Sqlite does not support alter table drop foreign keys
+         */
+        JdbcDataSystem dataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataSystem();
+        if (!dataSystem.getProductName().equals(DB_SQLITE)) {
+            JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
+            String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
+            try {
+
+                Statement statement = dataSystem.getCurrentConnection().createStatement();
+                statement.execute(dropStatement);
+                statement.close();
+
+                JdbcDataSystemLog.LOGGER_DB_JDBC.info("Foreign Key (" + foreignKeyDef.getName() + ") deleted from the table (" + jdbcDataPath.toString() + ")");
+
+            } catch (SQLException e) {
+
+                System.err.println(dropStatement);
+                throw new RuntimeException(e);
+
+            }
+        }
+    }
+
 
 
 

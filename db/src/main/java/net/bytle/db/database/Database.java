@@ -36,7 +36,11 @@ public class Database implements Comparable<Database> {
 
     }
 
-    
+    public static Database of(String name) {
+        return new Database(name);
+    }
+
+
     public Database setDriver(String jdbcDriver) {
         this.driver = jdbcDriver;
         return this;

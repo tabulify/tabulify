@@ -287,17 +287,6 @@ public class DataDefs {
     }
 
 
-    /**
-     * Dropping a foreign key
-     *
-     * @param foreignKeyDef
-     */
-    public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-
-        foreignKeyDef.getTableDef().getDataPath().getDataSystem().dropForeignKey(foreignKeyDef);
-
-
-    }
 
     public static void copy(TableDef source, TableDef target) {
         addColumns(source, target);

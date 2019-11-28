@@ -12,6 +12,7 @@ import net.bytle.db.jdbc.spi.SqlDatabases;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
@@ -43,6 +44,7 @@ public class JdbcDataSystem extends TableSystem {
 
     private Connection connection;
     private final Database database;
+    private JdbcDataProcessingEngine processingEngine;
 
 
     public SqlDatabaseI getSqlDatabase() {
@@ -421,7 +423,7 @@ public class JdbcDataSystem extends TableSystem {
     public Integer size(DataPath dataPath) {
 
         Integer size = 0;
-        DataPath queryDataPath = dataPath.getDataSystem().getQuery("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+        DataPath queryDataPath = dataPath.getDataSystem().getProcessingEngine().getQuery("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         try (
                 SelectStream selectStream = getSelectStream(queryDataPath)
         ) {
@@ -439,10 +441,6 @@ public class JdbcDataSystem extends TableSystem {
         return jdbcDataPath.isDataUnit();
     }
 
-    @Override
-    public DataPath getQuery(String query) {
-        return JdbcDataPath.ofQuery(this, query);
-    }
 
     @Override
     public String getString(DataPath dataPath) {
@@ -474,34 +472,20 @@ public class JdbcDataSystem extends TableSystem {
         return Jdbcs.getReferencingDataPaths((JdbcDataPath) dataPath);
     }
 
+    @Override
+    public ProcessingEngine getProcessingEngine() {
+        if (this.processingEngine == null){
+            this.processingEngine = new JdbcDataProcessingEngine(this);
+        }
+        return this.processingEngine;
+    }
+
 
     public Database getDatabase() {
         return database;
     }
 
-    @Override
-    public <T> T getMax(ColumnDef<T> columnDef) {
 
-        String columnStatement = columnDef.getColumnName();
-
-        String statementString = "select max(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
-        try (
-                Statement statement = getCurrentConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
-        ) {
-            Object returnValue = null;
-            if (resultSet.next()) {
-                returnValue = resultSet.getObject(1);
-            }
-            return (T) returnValue;
-
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-
-        }
-
-    }
 
     @Override
     public boolean isContainer(DataPath dataPath) {
@@ -525,7 +509,6 @@ public class JdbcDataSystem extends TableSystem {
         List<String> createTableStatements = DbDdl.getCreateTableStatements(dataPath);
         for (String createTableStatement : createTableStatements) {
             try {
-
 
                 Statement statement = getCurrentConnection().createStatement();
                 statement.execute(createTableStatement);
@@ -664,72 +647,8 @@ public class JdbcDataSystem extends TableSystem {
 
     }
 
-    @Override
-    public <T> T getMin(ColumnDef<T> columnDef) {
 
-        String columnStatement = columnDef.getColumnName();
-        String statementString = "select min(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
 
-        try (
-                Statement statement = getCurrentConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
-        ) {
-            Object returnValue = null;
-
-            if (resultSet.next()) {
-                switch (columnDef.getDataType().getTypeCode()) {
-                    case Types.DATE:
-                        // In sqllite, getting a date object returns a long
-                        returnValue = resultSet.getDate(1);
-                        break;
-                    default:
-                        returnValue = resultSet.getObject(1);
-                        break;
-                }
-
-            }
-            if (returnValue != null) {
-
-                return Typess.safeCast(returnValue, columnDef.getClazz());
-
-            } else {
-                return null;
-            }
-
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-
-        }
-
-    }
-
-    @Override
-    public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-        /**
-         * TODO: move that outside of the core
-         * for now a hack
-         * because Sqlite does not support alter table drop foreign keys
-         */
-        if (!this.getProductName().equals(DB_SQLITE)) {
-            JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
-            String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
-            try {
-
-                Statement statement = getCurrentConnection().createStatement();
-                statement.execute(dropStatement);
-                statement.close();
-
-                JdbcDataSystemLog.LOGGER_DB_JDBC.info("Foreign Key (" + foreignKeyDef.getName() + ") deleted from the table (" + jdbcDataPath.toString() + ")");
-
-            } catch (SQLException e) {
-
-                System.err.println(dropStatement);
-                throw new RuntimeException(e);
-
-            }
-        }
-    }
 
 
     @Override

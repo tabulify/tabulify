@@ -132,7 +132,7 @@ public class DataPaths {
      */
     public static DataPath ofQuery(DataPath dataPath, String query) {
 
-        return  dataPath.getDataSystem().getQuery(query);
+        return  dataPath.getDataSystem().getProcessingEngine().getQuery(query);
 
     }
 

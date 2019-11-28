@@ -18,6 +18,11 @@ but from the local/remote repository.
   * Just pass a parameter dommert !
   * [Junit - parameterized-suite](https://github.com/PeterWippermann/parameterized-suite)
   * [TestMG - Passing parameters to the whole test](https://www.seleniumeasy.com/testng-tutorials/parameterization-in-testng)
+
+## Dependency Injection
+
+See [Guice](https://github.com/google/guice/wiki/ModulesShouldBeFastAndSideEffectFree)
+
 ## Doc
 
   * http://maven.apache.org/guides/mini/guide-attached-tests.html

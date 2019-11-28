@@ -20,11 +20,11 @@ public class Columns {
     }
 
     public static <T> T getMin(ColumnDef<T> columnDef){
-        return columnDef.getRelationDef().getDataPath().getDataSystem().getMin(columnDef);
+        return columnDef.getRelationDef().getDataPath().getDataSystem().getProcessingEngine().getMin(columnDef);
     }
 
     public static <T> T getMax(ColumnDef<T> columnDef) {
-        return columnDef.getRelationDef().getDataPath().getDataSystem().getMax(columnDef);
+        return columnDef.getRelationDef().getDataPath().getDataSystem().getProcessingEngine().getMax(columnDef);
     }
 
 }

@@ -2,9 +2,6 @@ package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.spi.SqlDatabaseI;
-import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataSystem;
-import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 
@@ -106,6 +103,7 @@ public class DbDdl {
      * @return the column string part of a create statement
      */
     public static String getCreateTableStatementColumnsDefinition(DataPath dataPath) {
+
 
         List<ColumnDef> columnDefs = dataPath.getDataDef().getColumnDefs();
         StringBuilder statementColumnPart = new StringBuilder();

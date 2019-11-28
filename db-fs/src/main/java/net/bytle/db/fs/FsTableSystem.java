@@ -9,12 +9,9 @@ import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.spi.Tabulars;
+import net.bytle.db.spi.*;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
@@ -150,12 +147,7 @@ public class FsTableSystem extends TableSystem {
         return database;
     }
 
-    @Override
-    public <T> T getMax(ColumnDef<T> columnDef) {
 
-        throw new RuntimeException("not yet implemented");
-
-    }
 
     @Override
     public boolean isContainer(DataPath dataPath) {
@@ -204,15 +196,6 @@ public class FsTableSystem extends TableSystem {
         delete(dataPath);
     }
 
-    @Override
-    public <T> T getMin(ColumnDef<T> columnDef) {
-        return null;
-    }
-
-    @Override
-    public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-
-    }
 
     @Override
     public TableSystemProvider getProvider() {
@@ -292,10 +275,6 @@ public class FsTableSystem extends TableSystem {
         throw new RuntimeException("not yet implemented");
     }
 
-    @Override
-    public DataPath getQuery(String query) {
-        throw new RuntimeException("not yet implemented");
-    }
 
     @Override
     public String getString(DataPath dataPath) {
@@ -310,6 +289,26 @@ public class FsTableSystem extends TableSystem {
 
     @Override
     public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public List<DataPath> getDescendants(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public List<DataPath> getDescendants(DataPath dataPath, String glob) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public List<DataPath> getReferences(DataPath dataPath) {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public ProcessingEngine getProcessingEngine() {
         throw new RuntimeException("Not yet implemented");
     }
 

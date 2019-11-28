@@ -1,6 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
@@ -64,18 +65,6 @@ public class MemoryDataSystem extends TableSystem {
         memoryStore.put(memoryTable, new ArrayList<>());
     }
 
-    @Override
-    public <T> T getMin(ColumnDef<T> columnDef) {
-
-        throw new RuntimeException("Not Implemented");
-
-    }
-
-    @Override
-    public void dropForeignKey(ForeignKeyDef foreignKeyDef) {
-        // Nothing to do
-    }
-
 
     @Override
     public TableSystemProvider getProvider() {
@@ -131,11 +120,6 @@ public class MemoryDataSystem extends TableSystem {
 
 
     @Override
-    public DataPath getQuery(String query) {
-        throw new RuntimeException("Not yet implemented");
-    }
-
-    @Override
     public String getString(DataPath dataPath) {
         throw new RuntimeException("Not yet implemented");
     }
@@ -161,8 +145,13 @@ public class MemoryDataSystem extends TableSystem {
     }
 
     @Override
-    public List<ForeignKeyDef> getReferences(DataPath dataPath) {
+    public List<DataPath> getReferences(DataPath dataPath) {
         throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public ProcessingEngine getProcessingEngine() {
+        throw new RuntimeException("Not implemented");
     }
 
 
@@ -204,17 +193,12 @@ public class MemoryDataSystem extends TableSystem {
         return database;
     }
 
-    @Override
-    public <T> T getMax(ColumnDef<T> columnDef) {
 
-        throw new RuntimeException("Not implemented");
-
-    }
 
     @Override
     public boolean isContainer(DataPath dataPath) {
 
-        return false;
+        throw new RuntimeException("Not implemented");
 
     }
 

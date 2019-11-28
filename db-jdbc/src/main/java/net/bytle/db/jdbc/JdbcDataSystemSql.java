@@ -3,7 +3,6 @@ package net.bytle.db.jdbc;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
 
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +40,7 @@ public class JdbcDataSystemSql {
 
 
         final JdbcDataSystem dataSystem = jdbcDataPath.getDataSystem();
-        String identifierQuoteString = getIdentifierQuote(dataSystem);
+        String identifierQuoteString = DbSql.getIdentifierQuote(dataSystem);
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
         if (dataSystem.getSqlDatabase() != null) {
@@ -55,22 +54,9 @@ public class JdbcDataSystemSql {
 
     }
 
-    private static String getIdentifierQuote(JdbcDataSystem dataSystem) {
-        String identifierQuoteString = "\"";
-        try {
-            final Connection currentConnection = dataSystem.getCurrentConnection();
-            if (currentConnection!=null) {
-                identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
-            }
-        } catch (SQLException e) {
-            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getDatabase()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
-        }
-        return identifierQuoteString;
-    }
-
     public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
         final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getRelationDef().getDataPath();
-        String identifier = getIdentifierQuote(dataPath.getDataSystem());
+        String identifier = DbSql.getIdentifierQuote(dataPath.getDataSystem());
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }
 
