@@ -17,12 +17,11 @@ public class TpcDataSetSystem extends DataSetSystem {
     private static final String PRODUCT_NAME = "tpcds";
     public static final String ROOT_SYMBOL = ".";
     private static TpcDataSetSystem tpcDataSetSystem;
-    private final TpcdsModel tpcModel;
+    private TpcdsModel tpcModel;
     private final Database database;
 
     private TpcDataSetSystem() {
         this.database = Database.of(PRODUCT_NAME);
-        this.tpcModel = TpcdsModel.of(this);
     }
 
     public static TpcDataSetSystem of() {
@@ -33,6 +32,9 @@ public class TpcDataSetSystem extends DataSetSystem {
     }
 
     public TpcdsModel getDataModel() {
+        if (tpcModel==null) {
+            this.tpcModel = TpcdsModel.of(this);
+        }
         return tpcModel;
     }
 
@@ -45,7 +47,12 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public DataPath getDataPath(String... names) {
-        return TpcDataPath.of(this,names[0]);
+        DataPath dataPath = this.getDataModel().getDataPath(names[0]);
+        // Case when it's the working directory
+        if (dataPath==null) {
+            dataPath = TpcDataPath.of(this, names[0]);
+        }
+        return dataPath;
     }
 
     @Override
