@@ -479,4 +479,12 @@ public class Fs {
             throw new RuntimeException(e);
         }
     }
+
+    public static Path getTempDirectory() {
+        try {
+            return Files.createTempDirectory("tmp");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -21,16 +21,16 @@ public class DbSamples {
 
         switch (sample) {
             case TpcdsModel.TPCDS_SCHEMA:
-                return TpcdsModel.get().getSchemaTables(TpcdsModel.TPCDS_SCHEMA);
+                return TpcdsModel.of().getSchemaTables(TpcdsModel.TPCDS_SCHEMA);
 
             case TPCDS_SCHEMA_DWH:
-                return TpcdsModel.get().getSchemaTables(TPCDS_SCHEMA_DWH);
+                return TpcdsModel.of().getSchemaTables(TPCDS_SCHEMA_DWH);
 
             case TPCDS_SCHEMA_STG:
-                return TpcdsModel.get().getSchemaTables(TPCDS_SCHEMA_STG);
+                return TpcdsModel.of().getSchemaTables(TPCDS_SCHEMA_STG);
 
             case TPCDS_SCHEMA_STORE_SALES:
-                return TpcdsModel.get().getSchemaTables(TPCDS_SCHEMA_STORE_SALES);
+                return TpcdsModel.of().getSchemaTables(TPCDS_SCHEMA_STORE_SALES);
 
             case BytleSchema.SCHEMA_NAME:
                 return BytleSchema.get().getTables();

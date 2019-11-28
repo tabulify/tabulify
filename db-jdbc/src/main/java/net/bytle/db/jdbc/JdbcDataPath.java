@@ -16,6 +16,7 @@ import java.util.List;
 public class JdbcDataPath extends DataPath  {
 
 
+    public static final String CURRENT_WORKING_DIRECTORY = ".";
     private final JdbcDataSystem jdbcDataSystem;
     private final String name;
     private final String schema;

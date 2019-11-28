@@ -4,7 +4,6 @@ import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.SchemaSample;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystems;
 import net.bytle.db.spi.Tabulars;
 
 import java.sql.Types;
@@ -142,6 +141,7 @@ public class TpcdsModel implements SchemaSample {
             STORE,
             STORE_SALES
     );
+    private static TpcdsModel tpcModel;
 
     private final TableSystem tableSystem;
 
@@ -149,12 +149,11 @@ public class TpcdsModel implements SchemaSample {
     private Map<String, DataPath> tables = new HashMap<String, DataPath>();
 
     /**
-     * Use {@link #get(TableSystem)} functions
-     * to of a Tpcds object
+     *
      *
      * @param schemaDef
      */
-    private TpcdsModel(TableSystem schemaDef) {
+    private TpcdsModel(TpcDataSetSystem schemaDef) {
 
 
         this.tableSystem = schemaDef;
@@ -167,20 +166,12 @@ public class TpcdsModel implements SchemaSample {
     }
 
 
-    /**
-     * @return a tpcds model object
-     * in the default namespace
-     */
-    public static TpcdsModel get() {
-
-        return new TpcdsModel(TableSystems.getDefault());
-
-    }
 
 
-    public static TpcdsModel get(TableSystem tableSystem) {
+    public static TpcdsModel of(TpcDataSetSystem tableSystem) {
         return new TpcdsModel(tableSystem);
     }
+
 
 
     /**
@@ -1244,6 +1235,7 @@ public class TpcdsModel implements SchemaSample {
      * @return - the definition of this table
      */
     public DataPath getDataPath(String tableName) {
+
         return tables.get(tableName);
     }
 

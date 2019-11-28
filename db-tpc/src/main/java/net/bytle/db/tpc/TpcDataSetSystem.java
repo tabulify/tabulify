@@ -15,16 +15,25 @@ import java.util.stream.Collectors;
 public class TpcDataSetSystem extends DataSetSystem {
 
     private static final String PRODUCT_NAME = "tpcds";
+    public static final String ROOT_SYMBOL = ".";
+    private static TpcDataSetSystem tpcDataSetSystem;
     private final TpcdsModel tpcModel;
     private final Database database;
 
     private TpcDataSetSystem() {
-        this.tpcModel = TpcdsModel.get();
         this.database = Database.of(PRODUCT_NAME);
+        this.tpcModel = TpcdsModel.of(this);
     }
 
     public static TpcDataSetSystem of() {
-        return new TpcDataSetSystem();
+        if (tpcDataSetSystem==null){
+            tpcDataSetSystem = new TpcDataSetSystem();
+        }
+        return tpcDataSetSystem ;
+    }
+
+    public TpcdsModel getDataModel() {
+        return tpcModel;
     }
 
     @Override
@@ -36,8 +45,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public DataPath getDataPath(String... names) {
-        String name = names[0];
-        return tpcModel.getDataPath(name);
+        return TpcDataPath.of(this,names[0]);
     }
 
     @Override
@@ -77,7 +85,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public List<DataPath> getChildrenDataPath(DataPath dataPath) {
-        if (dataPath.getPath().equals("/")) {
+        if (dataPath.getPath().equals(ROOT_SYMBOL)) {
             return this.tpcModel.getDataPaths();
         } else {
             return new ArrayList<>();
@@ -98,7 +106,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public boolean isDocument(DataPath dataPath) {
-        if (dataPath.getPath().equals("/")) {
+        if (dataPath.getPath().equals(ROOT_SYMBOL)) {
             return false;
         } else {
             return true;
