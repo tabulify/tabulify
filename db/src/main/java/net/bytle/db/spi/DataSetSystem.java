@@ -1,7 +1,6 @@
 package net.bytle.db.spi;
 
 import net.bytle.db.database.Database;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -25,8 +24,6 @@ public abstract class DataSetSystem extends TableSystem {
 
     public abstract Database getDatabase();
 
-    public abstract <T> T getMax(ColumnDef<T> columnDef);
-
     public abstract boolean isContainer(DataPath dataPath);
 
     public void create(DataPath dataPath){
@@ -36,7 +33,9 @@ public abstract class DataSetSystem extends TableSystem {
     // The product name (for a jdbc database: sql server, oracle, hive ...
     public abstract String getProductName();
 
-    public abstract DataType getDataType(Integer typeCode);
+    public DataType getDataType(Integer typeCode){
+        throw new RuntimeException("Not implemented");
+    }
 
     public void drop(DataPath dataPath){
         throw new RuntimeException("A data set cannot drop a data path. It can only read it");
@@ -56,6 +55,7 @@ public abstract class DataSetSystem extends TableSystem {
         throw new RuntimeException("A data set cannot insert into a data path. It can only read it");
     }
 
+
     public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
     public void move(DataPath source, DataPath target, TransferProperties transferProperties){
@@ -66,7 +66,9 @@ public abstract class DataSetSystem extends TableSystem {
      *
      * @return The number of thread that can be created against the data system
      */
-    public abstract Integer getMaxWriterConnection();
+    public Integer getMaxWriterConnection(){
+        throw new RuntimeException("A data set source cannot write.");
+    }
 
     public abstract Boolean isEmpty(DataPath queue);
 
@@ -109,7 +111,9 @@ public abstract class DataSetSystem extends TableSystem {
      * @param dataPath
      * @return the content of a data path in a string format
      */
-    public abstract String getString(DataPath dataPath);
+    public String getString(DataPath dataPath){
+        throw new RuntimeException("Not implemented had this time");
+    }
 
     public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties){
         throw new RuntimeException("A data set cannot copy its data paths. It can only read them");
@@ -145,5 +149,7 @@ public abstract class DataSetSystem extends TableSystem {
     public ProcessingEngine getProcessingEngine(){
         throw new RuntimeException("A data set does not implements a processing engine. It can only read records one at a time");
     }
+
+
 
 }
