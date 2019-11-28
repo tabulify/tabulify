@@ -125,4 +125,7 @@ public abstract class TableSystem implements AutoCloseable {
     public abstract List<DataPath> getReferences(DataPath dataPath);
 
     public abstract ProcessingEngine getProcessingEngine();
+
+    public abstract DataPath getChildOf(DataPath dataPath, String part);
+
 }

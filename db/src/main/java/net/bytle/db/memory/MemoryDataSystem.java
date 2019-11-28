@@ -1,23 +1,23 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
-import net.bytle.log.Log;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
-import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
+import net.bytle.log.Log;
 
 import java.io.Closeable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -152,6 +152,14 @@ public class MemoryDataSystem extends TableSystem {
     @Override
     public ProcessingEngine getProcessingEngine() {
         throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public DataPath getChildOf(DataPath dataPath, String part) {
+        List<String> pathSegments = new ArrayList<>();
+        pathSegments.addAll(dataPath.getPathParts());
+        pathSegments.addAll(Arrays.asList(part));
+        return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
 

@@ -1,27 +1,28 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.DbDefaultValue;
-import net.bytle.db.database.*;
+import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.database.DataTypeJdbc;
+import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
 import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.SqlServer.SqlDatabaseISqlServer;
 import net.bytle.db.jdbc.spi.DataTypeDriver;
 import net.bytle.db.jdbc.spi.SqlDatabaseI;
 import net.bytle.db.jdbc.spi.SqlDatabases;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
-import net.bytle.type.Typess;
 
 import java.io.Closeable;
 import java.sql.*;
@@ -478,6 +479,13 @@ public class JdbcDataSystem extends TableSystem {
             this.processingEngine = new JdbcDataProcessingEngine(this);
         }
         return this.processingEngine;
+    }
+
+    @Override
+    public DataPath getChildOf(DataPath dataPath, String part) {
+        List<String> parts = dataPath.getPathParts();
+        parts.add(part);
+        return getDataPath(parts.toArray(new String[]{}));
     }
 
 

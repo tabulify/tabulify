@@ -6,21 +6,25 @@ import net.bytle.db.csv.CsvInsertStream;
 import net.bytle.db.csv.CsvManager;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataType;
-import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.spi.*;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -310,6 +314,14 @@ public class FsTableSystem extends TableSystem {
     @Override
     public ProcessingEngine getProcessingEngine() {
         throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public DataPath getChildOf(DataPath dataPath, String part) {
+        assert isContainer(dataPath):"You cannot get a child from the document ("+dataPath+")";
+        FsDataPath fsDataPath = (FsDataPath) dataPath;
+        Path childPath = fsDataPath.getNioPath().resolve(part);
+        return getDataPath(childPath);
     }
 
 

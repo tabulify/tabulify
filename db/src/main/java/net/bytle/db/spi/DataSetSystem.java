@@ -151,5 +151,10 @@ public abstract class DataSetSystem extends TableSystem {
     }
 
 
+    public DataPath getChildOf(DataPath dataPath, String part) {
+        throw new RuntimeException("This is a data set, we cannot create a data path, only read operations.");
+    }
+
+
 
 }

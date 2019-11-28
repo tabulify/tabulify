@@ -9,7 +9,6 @@ import net.bytle.regexp.Globs;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,15 +39,12 @@ public class DataPaths {
 
     /**
      * @param dataPath
-     * @param parts
+     * @param part
      * @return a child data path
      * Equivalent to the resolve function in a file system {@link Path#resolve(String)}
      */
-    public static DataPath childOf(DataPath dataPath, String... parts) {
-        List<String> pathSegments = new ArrayList<>();
-        pathSegments.addAll(dataPath.getPathParts());
-        pathSegments.addAll(Arrays.asList(parts));
-        return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
+    public static DataPath childOf(DataPath dataPath, String part) {
+        return dataPath.getDataSystem().getChildOf(dataPath, part);
     }
 
 
