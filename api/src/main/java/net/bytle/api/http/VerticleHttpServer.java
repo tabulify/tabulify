@@ -29,8 +29,6 @@ public class VerticleHttpServer extends AbstractVerticle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VerticleHttpServer.class);
 
-  public static final String CONFIG_HTTP_SERVER_PORT = "http.server.port";
-  public static final String CONFIG_HTTP_SERVER_HOST = "http.server.host";
 
   private PingHandler pingHandler;
   private HandlerFailure handlerFailure;
@@ -90,9 +88,9 @@ public class VerticleHttpServer extends AbstractVerticle {
       .addPathParamWithCustomTypeValidator("name", new NameValidator(), false);
 
     // Config
-    int portNumber = config().getInteger(CONFIG_HTTP_SERVER_PORT, 8083);
+    int portNumber = configuration.getInteger(ConfKeys.POKE_API_PORT.name(), 8083);
     // 0.0.0.0 means listen on all available addresses
-    String hostName = config().getString(CONFIG_HTTP_SERVER_HOST, "0.0.0.0");
+    String hostName = configuration.getString(ConfKeys.POKE_API_HOST.name(), "0.0.0.0");
 
     // Create the server
     // https://vertx.io/docs/vertx-core/java/#logging_network_activity
@@ -100,7 +98,7 @@ public class VerticleHttpServer extends AbstractVerticle {
       .setLogActivity(true)
       .setHost(hostName)
       .setPort(portNumber);
-    HttpServer server = vertx.createHttpServer();
+    HttpServer server = vertx.createHttpServer(options);
 
     // Routing
     Router router = Router.router(vertx);

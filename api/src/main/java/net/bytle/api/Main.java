@@ -63,6 +63,7 @@ public class Main {
      *   * when an error occur while retrieving a configuration
      *   * when the configuration retriever is closed (the endHandler is called).
      */
+
     ConfigRetrieverOptions configRetrieverOptions = getConfigRetrieverOptions();
     ConfigRetriever configRetriever = ConfigRetriever.create(vertx, configRetrieverOptions);
 
@@ -73,10 +74,11 @@ public class Main {
     configRetriever.getConfig(
       ar -> {
         int instances = Runtime.getRuntime().availableProcessors();
+        JsonObject config = ar.result();
         vertx.deployVerticle(VerticleHttpServer.class,
           new DeploymentOptions()
             .setInstances(instances)
-            .setConfig(ar.result()));
+            .setConfig(config));
       });
 
     // listen is called each time configuration changes
@@ -100,19 +102,22 @@ public class Main {
   private static ConfigRetrieverOptions getConfigRetrieverOptions() {
 
     /**
-     * Http Store
+     * Http Store to set the configuration of the client
+     * <a href="https://vertx.io/docs/vertx-config/java/#_http">Doc</a>
+     * The Json object is going at  {@link io.vertx.config.impl.spi.HttpConfigStoreFactory#create(Vertx, JsonObject)}
+     * Creating a WebClient or HTTP client will be done with this default variable
      */
-    ConfigStoreOptions httpStore = new ConfigStoreOptions()
-      .setType("http")
-      .setConfig(
-        new JsonObject()
-          .put("host", "localhost")
-          .put("port", 8083)
-          .put("ssl", true)
-      );
+//    ConfigStoreOptions httpStore = new ConfigStoreOptions()
+//      .setType("http")
+//      .setConfig(
+//        new JsonObject()
+//          .put("host", "localhost")
+//          .put("port", 80)
+//          .put("ssl", false)
+//      );
 
     /**
-     * File variable
+     * File in the resources directory
      * <a href="https://vertx.io/docs/vertx-config/java/#_file">Doc</a>
      */
     ConfigStoreOptions classpathFile =
@@ -125,14 +130,16 @@ public class Main {
         );
 
     /**
-     * Directory variable
+     * File on the file system
      */
-    JsonObject envFileConfiguration = new JsonObject().put("path", "/etc/default/demo");
     ConfigStoreOptions envFile =
       new ConfigStoreOptions()
         .setType("file")
         .setFormat("properties")
-        .setConfig(envFileConfiguration)
+        .setConfig(
+          new JsonObject()
+            .put("path", "/etc/default/demo")
+        )
         .setOptional(true);
 
     /**
@@ -142,7 +149,6 @@ public class Main {
     JsonArray envVarKeys = new JsonArray();
     Arrays.asList(ConfKeys.values())
       .forEach(s -> envVarKeys.add(s.name()));
-
     ConfigStoreOptions environment = new ConfigStoreOptions()
       .setType("env")
       .setOptional(true)
@@ -162,7 +168,6 @@ public class Main {
       );
 
     return new ConfigRetrieverOptions()
-      .addStore(httpStore)
       .addStore(classpathFile) // local values : exhaustive list with sane defaults
       .addStore(environment)   // Container / PaaS friendly to override defaults
       .addStore(envFile)       // external file, IaaS friendly to override defaults and config hot reloading
