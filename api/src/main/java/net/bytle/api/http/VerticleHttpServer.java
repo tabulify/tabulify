@@ -51,9 +51,9 @@ public class VerticleHttpServer extends AbstractVerticle {
     this.handlerFailure = new HandlerFailure();
     this.handlerPokemon = new HandlerPokemon(vertx)
       .setPokeApiUrl(
-        configuration.getString(ConfKeys.POKE_API_HOST.name()),
-        configuration.getInteger(ConfKeys.POKE_API_PORT.name()),
-        configuration.getString(ConfKeys.POKE_API_PATH.name())
+        configuration.getString(ConfKeys.HOST.toString()),
+        configuration.getInteger(ConfKeys.PORT.toString()),
+        configuration.getString(ConfKeys.POKE_API_PATH.toString())
       );
     this.greetingHandler = new GreetingHandler();
 
@@ -69,8 +69,8 @@ public class VerticleHttpServer extends AbstractVerticle {
           JsonObject newConfiguration = message.body();
           pingHandler.setMessage(configuration.getString(ConfKeys.PING_RESPONSE.name()));
           handlerPokemon.setPokeApiUrl(
-            newConfiguration.getString(ConfKeys.POKE_API_HOST.name()),
-            newConfiguration.getInteger(ConfKeys.POKE_API_PORT.name()),
+            newConfiguration.getString(ConfKeys.HOST.name()),
+            newConfiguration.getInteger(ConfKeys.PORT.name()),
             newConfiguration.getString(ConfKeys.POKE_API_PATH.name())
           );
           LOGGER.debug(
@@ -88,9 +88,9 @@ public class VerticleHttpServer extends AbstractVerticle {
       .addPathParamWithCustomTypeValidator("name", new NameValidator(), false);
 
     // Config
-    int portNumber = configuration.getInteger(ConfKeys.POKE_API_PORT.name(), 8083);
+    int portNumber = configuration.getInteger(ConfKeys.PORT.toString(), 8083);
     // 0.0.0.0 means listen on all available addresses
-    String hostName = configuration.getString(ConfKeys.POKE_API_HOST.name(), "0.0.0.0");
+    String hostName = configuration.getString(ConfKeys.HOST.toString(), "0.0.0.0");
 
     // Create the server
     // https://vertx.io/docs/vertx-core/java/#logging_network_activity
@@ -102,7 +102,7 @@ public class VerticleHttpServer extends AbstractVerticle {
 
     // Routing
     Router router = Router.router(vertx);
-    router.get("/ip/info").handler(this::ip_info);
+    router.get("/ip").handler(this::ip_info);
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
     router.get("/healthy").handler(HealthCheckHandler.createWithHealthChecks(handlerPokemon.getHealthchecks()));
 

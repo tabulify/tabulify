@@ -22,8 +22,50 @@ public class Main {
 
 
   public static void main(String[] args) {
-    getVertex();
+
+    JsonObject config = new JsonObject();
+    Vertx vertx = getVertex();
+    /**
+     * Vertex Config
+     * The ConfigRetriever provide a way to access the stream of configuration. It’s a ReadStream of JsonObject.
+     * By registering the right set of handlers you are notified:
+     *   * when a new configuration is retrieved
+     *   * when an error occur while retrieving a configuration
+     *   * when the configuration retriever is closed (the endHandler is called).
+     */
+
+    ConfigRetrieverOptions configRetrieverOptions = getConfigRetrieverOptions(config);
+    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, configRetrieverOptions);
+
+    /**
+     * Deploy Verticle and listen to config changes
+     */
+    // Start the verticle from the config
+    configRetriever.getConfig(
+      ar -> {
+        int instances = Runtime.getRuntime().availableProcessors();
+        // Test
+        if (!config.fieldNames().equals(0)) {
+          instances = 1;
+        }
+        JsonObject configRetrieve = ar.result();
+        configRetrieve.mergeIn(config);
+        vertx.deployVerticle(VerticleHttpServer.class,
+          new DeploymentOptions()
+            .setInstances(instances)
+            .setConfig(configRetrieve));
+      });
+
+    // listen is called each time configuration changes
+    configRetriever.listen(
+      configChangeEvent -> {
+        JsonObject updatedConfiguration = configChangeEvent.getNewConfiguration();
+        vertx.eventBus().publish(
+          EventBusChannels.CONFIGURATION_CHANGED.name(),
+          updatedConfiguration);
+      });
   }
+
 
   public static Vertx getVertex() {
 
@@ -55,40 +97,7 @@ public class Main {
     VertxOptions vertxOptions = new VertxOptions().setMetricsOptions(metricsOptions);
     Vertx vertx = Vertx.vertx(vertxOptions);
 
-    /**
-     * Vertex Config
-     * The ConfigRetriever provide a way to access the stream of configuration. It’s a ReadStream of JsonObject.
-     * By registering the right set of handlers you are notified:
-     *   * when a new configuration is retrieved
-     *   * when an error occur while retrieving a configuration
-     *   * when the configuration retriever is closed (the endHandler is called).
-     */
 
-    ConfigRetrieverOptions configRetrieverOptions = getConfigRetrieverOptions();
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, configRetrieverOptions);
-
-    /**
-     * Deploy Verticle and listen to config changes
-     */
-    // Start the verticle from the config
-    configRetriever.getConfig(
-      ar -> {
-        int instances = Runtime.getRuntime().availableProcessors();
-        JsonObject config = ar.result();
-        vertx.deployVerticle(VerticleHttpServer.class,
-          new DeploymentOptions()
-            .setInstances(instances)
-            .setConfig(config));
-      });
-
-    // listen is called each time configuration changes
-    configRetriever.listen(
-      configChangeEvent -> {
-        JsonObject updatedConfiguration = configChangeEvent.getNewConfiguration();
-        vertx.eventBus().publish(
-          EventBusChannels.CONFIGURATION_CHANGED.name(),
-          updatedConfiguration);
-      });
 
     return vertx;
 
@@ -97,9 +106,12 @@ public class Main {
   /**
    * <a href="https://vertx.io/docs/vertx-config/java/">Doc</a>
    *
+   * @param config
    * @return a configuration object that defines a list of store where to find the configuration
    */
-  private static ConfigRetrieverOptions getConfigRetrieverOptions() {
+  private static ConfigRetrieverOptions getConfigRetrieverOptions(JsonObject config) {
+
+    ConfigRetrieverOptions configRetriever = new ConfigRetrieverOptions();
 
     /**
      * Http Store to set the configuration of the client
@@ -107,14 +119,12 @@ public class Main {
      * The Json object is going at  {@link io.vertx.config.impl.spi.HttpConfigStoreFactory#create(Vertx, JsonObject)}
      * Creating a WebClient or HTTP client will be done with this default variable
      */
-//    ConfigStoreOptions httpStore = new ConfigStoreOptions()
-//      .setType("http")
-//      .setConfig(
-//        new JsonObject()
-//          .put("host", "localhost")
-//          .put("port", 80)
-//          .put("ssl", false)
-//      );
+    if (config.fieldNames().contains(ConfKeys.HOST.toString())) {
+      ConfigStoreOptions httpStore = new ConfigStoreOptions()
+        .setType("http")
+        .setConfig(config);
+      configRetriever.addStore(httpStore);
+    }
 
     /**
      * File in the resources directory
@@ -167,11 +177,13 @@ public class Main {
           .put("raw-data", false)
       );
 
-    return new ConfigRetrieverOptions()
-      .addStore(classpathFile) // local values : exhaustive list with sane defaults
+
+    return configRetriever.addStore(classpathFile) // local values : exhaustive list with sane defaults
       .addStore(environment)   // Container / PaaS friendly to override defaults
       .addStore(envFile)       // external file, IaaS friendly to override defaults and config hot reloading
       .addStore(sysPropsStore)
       .setScanPeriod(5000);
+
+
   }
 }
