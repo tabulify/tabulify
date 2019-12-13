@@ -1,11 +1,8 @@
 plugins {
   id 'java'
   id 'application'
-  id 'com.github.johnrengelman.shadow' version '5.0.0'
+  id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
-
-group = 'bytle.net'
-version = '1.0.0-SNAPSHOT'
 
 repositories {
   mavenCentral()
@@ -13,7 +10,6 @@ repositories {
 
 ext {
   vertxVersion = '3.8.4'
-  junitJupiterEngineVersion = '5.4.0'
 }
 
 application {
@@ -22,24 +18,27 @@ application {
 
 sourceCompatibility = '1.8'
 
-def mainVerticleName = 'net.bytle.api.MainVerticle'
+def mainVerticleName = 'net.bytle.api.Main'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
 dependencies {
 
   implementation "io.vertx:vertx-core:$vertxVersion"
+  // provides a way to configure the Vert.x application
+  // https://vertx.io/docs/vertx-config/java/
+  implementation "io.vertx:vertx-config:$vertxVersion"
   implementation "io.vertx:vertx-web:$vertxVersion"
-  implementation project(':bytle-log')
-
-  testImplementation "io.vertx:vertx-junit5:$vertxVersion"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
-  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
+  implementation "io.vertx:vertx-health-check:$vertxVersion"
+  implementation "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
+  implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
+  implementation "io.vertx:vertx-web-client:$vertxVersion"
+  implementation "io.vertx:vertx-circuit-breaker:$vertxVersion"
+  testImplementation "io.vertx:vertx-unit:$vertxVersion"
 }
 
 
 shadowJar {
-  classifier = 'fat'
   manifest {
     attributes 'Main-Verticle': mainVerticleName
   }
@@ -49,7 +48,6 @@ shadowJar {
 }
 
 test {
-  useJUnitPlatform()
   testLogging {
     events 'PASSED', 'FAILED', 'SKIPPED'
   }

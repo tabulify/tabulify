@@ -17,12 +17,13 @@ To package your application:
 
 To run your application:
 ```
-./gradlew clean run
+cd api
+gradle clean run
 ```
 
 ## Help
 
-* https://vertx.io/docs/[Vert.x Documentation]
+* [Vert.x Documentation](https://vertx.io/docs/)
 * https://stackoverflow.com/questions/tagged/vert.x?sort=newest&pageSize=15[Vert.x Stack Overflow]
 * https://groups.google.com/forum/?fromgroups#!forum/vertx[Vert.x User Group]
 * https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
