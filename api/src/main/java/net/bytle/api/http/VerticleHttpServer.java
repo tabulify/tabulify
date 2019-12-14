@@ -67,11 +67,11 @@ public class VerticleHttpServer extends AbstractVerticle {
         message -> {
           LOGGER.debug("Configuration has changed, verticle {} is updating...", deploymentID());
           JsonObject newConfiguration = message.body();
-          pingHandler.setMessage(configuration.getString(ConfKeys.PING_RESPONSE.name()));
+          pingHandler.setMessage(newConfiguration.getString(ConfKeys.PING_RESPONSE.toString()));
           handlerPokemon.setPokeApiUrl(
-            newConfiguration.getString(ConfKeys.HOST.name()),
-            newConfiguration.getInteger(ConfKeys.PORT.name()),
-            newConfiguration.getString(ConfKeys.POKE_API_PATH.name())
+            newConfiguration.getString(ConfKeys.HOST.toString()),
+            newConfiguration.getInteger(ConfKeys.PORT.toString()),
+            newConfiguration.getString(ConfKeys.POKE_API_PATH.toString())
           );
           LOGGER.debug(
             "Configuration has changed, verticle {} has been updated...", deploymentID());

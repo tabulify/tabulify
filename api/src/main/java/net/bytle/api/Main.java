@@ -6,25 +6,58 @@ import com.codahale.metrics.Slf4jReporter;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.dropwizard.DropwizardMetricsOptions;
-import net.bytle.api.http.VerticleHttpServer;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-public class Main {
+/**
+ * The Vertx Launcher
+ * https://vertx.io/docs/vertx-core/java/#_the_vert_x_launcher
+ * By default, it executed the run command {@link }
+ */
+public class Main extends io.vertx.core.Launcher {
 
 
-  public static void main(String[] args) {
+  private ConfigRetriever configRetriever;
 
-    JsonObject config = new JsonObject();
-    Vertx vertx = getVertex();
+  @Override
+  public void beforeStartingVertx(VertxOptions options) {
+    options.setMetricsOptions(getMetricsOptions());
+  }
+
+  @Override
+  public void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
+    // Start the verticle from the config
+    int instances = 1; // May be Runtime.getRuntime().availableProcessors();
+    deploymentOptions
+      .setInstances(instances);
+
+    Future<JsonObject> future = Future.future(configRetriever::getConfig);
+    future.setHandler(ar -> {
+      if (ar.failed()) {
+        // Failed to retrieve the configuration
+      } else {
+        deploymentOptions.setConfig(ar.result());
+      }
+    });
+  }
+
+  private JsonObject addHttpConfig(JsonObject jsonObject) {
+    return jsonObject.mergeIn(new JsonObject()
+      .put(ConfKeys.HOST.toString(), "localhost")
+      .put(ConfKeys.PORT.toString(), 8080)
+      .put(ConfKeys.POKE_API_PATH.toString(), "v2/pokemon")
+    );
+  }
+
+  @Override
+  public void afterStartingVertx(Vertx vertx) {
+
     /**
      * Vertex Config
      * The ConfigRetriever provide a way to access the stream of configuration. It’s a ReadStream of JsonObject.
@@ -34,27 +67,8 @@ public class Main {
      *   * when the configuration retriever is closed (the endHandler is called).
      */
 
-    ConfigRetrieverOptions configRetrieverOptions = getConfigRetrieverOptions(config);
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, configRetrieverOptions);
-
-    /**
-     * Deploy Verticle and listen to config changes
-     */
-    // Start the verticle from the config
-    configRetriever.getConfig(
-      ar -> {
-        int instances = Runtime.getRuntime().availableProcessors();
-        // Test
-        if (!config.fieldNames().equals(0)) {
-          instances = 1;
-        }
-        JsonObject configRetrieve = ar.result();
-        configRetrieve.mergeIn(config);
-        vertx.deployVerticle(VerticleHttpServer.class,
-          new DeploymentOptions()
-            .setInstances(instances)
-            .setConfig(configRetrieve));
-      });
+    ConfigRetrieverOptions configRetrieverOptions = getConfigRetrieverOptions();
+    configRetriever = ConfigRetriever.create(vertx, configRetrieverOptions);
 
     // listen is called each time configuration changes
     configRetriever.listen(
@@ -64,10 +78,11 @@ public class Main {
           EventBusChannels.CONFIGURATION_CHANGED.name(),
           updatedConfiguration);
       });
+
   }
 
 
-  public static Vertx getVertex() {
+  private static DropwizardMetricsOptions getMetricsOptions() {
 
     /**
      * Dropwizard
@@ -85,46 +100,22 @@ public class Main {
       .build();
     reporter.start(1, TimeUnit.MINUTES);
 
-    // Initialize vertx with the metric registry
-    DropwizardMetricsOptions metricsOptions = new DropwizardMetricsOptions()
+    return new DropwizardMetricsOptions()
       .setEnabled(true)
       .setMetricRegistry(registry);
 
-    /**
-     * Vertex
-     */
-    // Initialize vertx with the metric registry
-    VertxOptions vertxOptions = new VertxOptions().setMetricsOptions(metricsOptions);
-    Vertx vertx = Vertx.vertx(vertxOptions);
-
-
-
-    return vertx;
 
   }
 
   /**
    * <a href="https://vertx.io/docs/vertx-config/java/">Doc</a>
    *
-   * @param config
    * @return a configuration object that defines a list of store where to find the configuration
    */
-  private static ConfigRetrieverOptions getConfigRetrieverOptions(JsonObject config) {
+  private static ConfigRetrieverOptions getConfigRetrieverOptions() {
 
     ConfigRetrieverOptions configRetriever = new ConfigRetrieverOptions();
 
-    /**
-     * Http Store to set the configuration of the client
-     * <a href="https://vertx.io/docs/vertx-config/java/#_http">Doc</a>
-     * The Json object is going at  {@link io.vertx.config.impl.spi.HttpConfigStoreFactory#create(Vertx, JsonObject)}
-     * Creating a WebClient or HTTP client will be done with this default variable
-     */
-    if (config.fieldNames().contains(ConfKeys.HOST.toString())) {
-      ConfigStoreOptions httpStore = new ConfigStoreOptions()
-        .setType("http")
-        .setConfig(config);
-      configRetriever.addStore(httpStore);
-    }
 
     /**
      * File in the resources directory
@@ -158,7 +149,7 @@ public class Main {
      */
     JsonArray envVarKeys = new JsonArray();
     Arrays.asList(ConfKeys.values())
-      .forEach(s -> envVarKeys.add(s.name()));
+      .forEach(s -> envVarKeys.add(s.toString()));
     ConfigStoreOptions environment = new ConfigStoreOptions()
       .setType("env")
       .setOptional(true)
@@ -184,6 +175,12 @@ public class Main {
       .addStore(sysPropsStore)
       .setScanPeriod(5000);
 
+
+  }
+
+  public static void main(String[] args) {
+
+    new Main().dispatch(args);
 
   }
 }

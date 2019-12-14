@@ -13,12 +13,12 @@ ext {
 }
 
 application {
-  mainClassName = 'io.vertx.core.Launcher'
+  mainClassName = 'net.bytle.api.Main'
 }
 
 sourceCompatibility = '1.8'
 
-def mainVerticleName = 'net.bytle.api.Main'
+def mainVerticleName = 'net.bytle.api.http.VerticleHttpServer'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
@@ -52,6 +52,11 @@ test {
     events 'PASSED', 'FAILED', 'SKIPPED'
   }
 }
+
+//run {
+//  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+//}
+
 
 run {
   args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
