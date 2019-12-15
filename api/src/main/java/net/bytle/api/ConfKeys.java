@@ -1,10 +1,12 @@
 package net.bytle.api;
 
 public enum ConfKeys {
+
+  // Because they are constants, the names of an enum type's fields are in uppercase letters.
   PING_RESPONSE,
   HOST,
   PORT,
-  POKE_API_PATH;
+  PATH;
 
   @Override
   public String toString() {

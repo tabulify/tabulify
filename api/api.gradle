@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'application'
+  id 'application' // https://docs.gradle.org/current/userguide/application_plugin.html
   id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
@@ -12,14 +12,16 @@ ext {
   vertxVersion = '3.8.4'
 }
 
+
+// https://vertx.io/blog/automatic-redeployment-in-eclipse-ide/
 application {
-  mainClassName = 'net.bytle.api.Main'
+  mainClassName = 'io.vertx.core.Launcher'
 }
 
 sourceCompatibility = '1.8'
 
-def mainVerticleName = 'net.bytle.api.http.VerticleHttpServer'
-def watchForChange = 'src/**/*'
+def launcher = 'net.bytle.api.Main'
+def watchForChange = 'src/main/java/net/**/*'
 def doOnChange = './gradlew classes'
 
 dependencies {
@@ -40,7 +42,7 @@ dependencies {
 
 shadowJar {
   manifest {
-    attributes 'Main-Verticle': mainVerticleName
+    attributes 'Main-Verticle': launcher
   }
   mergeServiceFiles {
     include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
@@ -57,7 +59,9 @@ test {
 //  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
 //}
 
-
+// Run args from the application id
+// https://docs.gradle.org/current/userguide/application_plugin.html
 run {
-  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+  args = ['run', "--redeploy=$watchForChange", "--launcher-class=$launcher", "--on-redeploy=$doOnChange"]
 }
+// run  --redeploy=src/**/* --launcher-class=net.bytle.api.Main --on-redeploy="./gradlew classes"

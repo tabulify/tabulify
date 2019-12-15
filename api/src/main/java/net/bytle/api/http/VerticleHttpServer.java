@@ -47,13 +47,13 @@ public class VerticleHttpServer extends AbstractVerticle {
      * Handler
      */
     this.pingHandler = new PingHandler()
-      .setMessage(configuration.getString(ConfKeys.PING_RESPONSE.name()));
+      .setMessage(configuration.getString(ConfKeys.PING_RESPONSE.toString()));
     this.handlerFailure = new HandlerFailure();
     this.handlerPokemon = new HandlerPokemon(vertx)
       .setPokeApiUrl(
         configuration.getString(ConfKeys.HOST.toString()),
         configuration.getInteger(ConfKeys.PORT.toString()),
-        configuration.getString(ConfKeys.POKE_API_PATH.toString())
+        configuration.getString(ConfKeys.PATH.toString())
       );
     this.greetingHandler = new GreetingHandler();
 
@@ -71,7 +71,7 @@ public class VerticleHttpServer extends AbstractVerticle {
           handlerPokemon.setPokeApiUrl(
             newConfiguration.getString(ConfKeys.HOST.toString()),
             newConfiguration.getInteger(ConfKeys.PORT.toString()),
-            newConfiguration.getString(ConfKeys.POKE_API_PATH.toString())
+            newConfiguration.getString(ConfKeys.PATH.toString())
           );
           LOGGER.debug(
             "Configuration has changed, verticle {} has been updated...", deploymentID());
