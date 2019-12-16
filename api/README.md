@@ -21,6 +21,11 @@ cd api
 gradle clean run
 ```
 
+To migrate the database
+```bash
+cd api
+gradle flywayMigrate -i
+```
 ## Help
 
 * [Vert.x Documentation](https://vertx.io/docs/)

@@ -2,42 +2,51 @@ plugins {
   id 'java'
   id 'application' // https://docs.gradle.org/current/userguide/application_plugin.html
   id 'com.github.johnrengelman.shadow' version '5.2.0'
+  id "org.flywaydb.flyway" version "6.1.1" // https://flywaydb.org/getstarted/firststeps/gradle
 }
 
 repositories {
   mavenCentral()
 }
 
-ext {
-  vertxVersion = '3.8.4'
+// https://flywaydb.org/documentation/gradle/
+flyway {
+  url = 'jdbc:sqlite:./db.db'
 }
 
-
-// https://vertx.io/blog/automatic-redeployment-in-eclipse-ide/
-application {
-  mainClassName = 'io.vertx.core.Launcher'
+ext {
+  vertxVersion = '4.0.0-milestone4'
 }
 
 sourceCompatibility = '1.8'
 
+dependencies {
+
+  // Vert.x
+  implementation "io.vertx:vertx-core:$vertxVersion"
+  implementation "io.vertx:vertx-config:$vertxVersion" // Config management: https://vertx.io/docs/vertx-config/java/
+  // Web
+  implementation "io.vertx:vertx-web:$vertxVersion"
+  implementation "io.vertx:vertx-web-client:$vertxVersion"
+  implementation "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
+  // Database
+  implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
+  implementation "org.xerial:sqlite-jdbc:3.25.2"
+  implementation "org.flywaydb:flyway-core:6.1.1"
+  // Log (Slf4j + LogBack)
+  implementation "ch.qos.logback:logback-classic:1.2.3"
+  // for the service health
+  implementation "io.vertx:vertx-health-check:$vertxVersion"
+  implementation "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
+  implementation "io.vertx:vertx-circuit-breaker:$vertxVersion"
+  // Test
+  testImplementation "io.vertx:vertx-unit:$vertxVersion"
+
+}
+
 def launcher = 'net.bytle.api.Main'
 def watchForChange = 'src/main/java/net/**/*'
 def doOnChange = './gradlew classes'
-
-dependencies {
-
-  implementation "io.vertx:vertx-core:$vertxVersion"
-  // provides a way to configure the Vert.x application
-  // https://vertx.io/docs/vertx-config/java/
-  implementation "io.vertx:vertx-config:$vertxVersion"
-  implementation "io.vertx:vertx-web:$vertxVersion"
-  implementation "io.vertx:vertx-health-check:$vertxVersion"
-  implementation "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
-  implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
-  implementation "io.vertx:vertx-web-client:$vertxVersion"
-  implementation "io.vertx:vertx-circuit-breaker:$vertxVersion"
-  testImplementation "io.vertx:vertx-unit:$vertxVersion"
-}
 
 
 shadowJar {
@@ -55,13 +64,17 @@ test {
   }
 }
 
-//run {
-//  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
-//}
+
+// https://docs.gradle.org/current/userguide/application_plugin.html
+application {
+  mainClassName = 'io.vertx.core.Launcher'
+}
+
 
 // Run args from the application id
-// https://docs.gradle.org/current/userguide/application_plugin.html
+// https://vertx.io/blog/automatic-redeployment-in-eclipse-ide/
+// Same as: vertx run  --redeploy=src/**/* --launcher-class=net.bytle.api.Main --on-redeploy="./gradlew classes"
 run {
   args = ['run', "--redeploy=$watchForChange", "--launcher-class=$launcher", "--on-redeploy=$doOnChange"]
 }
-// run  --redeploy=src/**/* --launcher-class=net.bytle.api.Main --on-redeploy="./gradlew classes"
+

@@ -1,0 +1,12 @@
+
+create table IP (
+  IP_FROM INTEGER,
+  IP_TO INTEGER,
+  REGISTRY TEXT,
+  ASSIGNED INTEGER,
+  CTRY TEXT,
+  CNTRY TEXT,
+  COUNTRY TEXT
+);
+
+create unique index IP_FROM_TO on ip (IP_FROM, IP_TO);
