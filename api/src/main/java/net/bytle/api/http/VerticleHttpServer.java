@@ -102,7 +102,11 @@ public class VerticleHttpServer extends AbstractVerticle {
 
     // Routing
     Router router = Router.router(vertx);
+    router.get("/ip/:ip").handler(this::ip_info);
+    router.get("/ip/").handler(this::ip_info);
     router.get("/ip").handler(this::ip_info);
+
+    // Healthy services ?
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
     router.get("/healthy").handler(HealthCheckHandler.createWithHealthChecks(handlerPokemon.getHealthchecks()));
 

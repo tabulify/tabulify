@@ -27,6 +27,8 @@ import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.stream.IntStream;
+
 /**
  * <a href="https://vertx.io/docs/vertx-jdbc-client/java/">Doc</a>
  */
@@ -52,7 +54,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
     // Migrate if not done
     // https://flywaydb.org/documentation/api/
-    Flyway flyway = Flyway.configure().dataSource(url,null,null).load();
+    Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
     flyway.migrate();
 
     // CreateShared creates a pool connection shared among Verticles known to the vertx instance
@@ -68,7 +70,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         promise.fail(ar.cause());
       } else {
         vertx.eventBus().consumer(eventBusQueueName, this::onMessage);
-        LOGGER.info("Queue created "+eventBusQueueName, ar.cause());
+        LOGGER.info("Queue created " + eventBusQueueName, ar.cause());
         promise.complete();
       }
     });
@@ -83,6 +85,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   /**
    * The message handler from the event bus
+   *
    * @param message
    */
   public void onMessage(Message<JsonObject> message) {
@@ -106,9 +109,10 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   private void fetchIp(Message<JsonObject> message) {
     String ip = message.body().getString("ip");
+    Integer numericIp = getNumericIp(ip);
     JsonArray params = new JsonArray()
-      .add(ip)
-      .add(ip);
+      .add(numericIp)
+      .add(numericIp);
     // One shot, no need to close anything and return only one row
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
     dbClient.querySingleWithParams("SELECT * FROM ip WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
@@ -119,8 +123,9 @@ public class DatabaseVerticle extends AbstractVerticle {
           response.put("found", false);
         } else {
           response.put("found", true);
-          response.put("country2",row.getString(4));
-          response.put("country3",row.getString(5));
+          response.put("country2", row.getString(4));
+          response.put("country3", row.getString(5));
+          response.put("country", row.getString(6));
         }
         message.reply(response);
       } else {
@@ -129,6 +134,20 @@ public class DatabaseVerticle extends AbstractVerticle {
     });
   }
 
+  /**
+   * 1.2.3.4 = 4 + (3 * 256) + (2 * 256 * 256) + (1 * 256 * 256 * 256)
+   * is 4 + 768 + 13,1072 + 16,777,216 = 16,909,060
+   *
+   * @param ip
+   * @return the numeric representation
+   */
+  static protected Integer getNumericIp(String ip) {
+    Integer[] factorByPosition = {256 * 256 * 256, 256 * 256, 256, 1};
+    String[] ipParts = ip.split("\\.");
+    return IntStream.range(0, ipParts.length)
+      .map(i -> Integer.parseInt(ipParts[i]) * factorByPosition[i])
+      .sum();
+  }
 
 
   private void reportQueryError(Message<JsonObject> message, Throwable cause) {

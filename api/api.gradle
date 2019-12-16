@@ -15,11 +15,15 @@ flyway {
 }
 
 ext {
-  vertxVersion = '3.8.2' // 4.0.0-milestone4
+  vertxVersion = '3.8.4' // 4.0.0-milestone4
 }
+
+
 
 sourceCompatibility = '1.8'
 
+// https://docs.gradle.org/5.2.1/userguide/java_library_plugin.html
+// compileOnly = only for the compilation not for the test
 dependencies {
 
   // Vert.x
@@ -31,11 +35,17 @@ dependencies {
   implementation "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
   // Database
   implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
-  implementation "org.xerial:sqlite-jdbc:3.25.2"
   implementation "org.hsqldb:hsqldb:2.5.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
   // Log (Slf4j + LogBack)
   implementation "ch.qos.logback:logback-classic:1.2.3"
+  // Vertx service
+  compileOnly "io.vertx:vertx-service-proxy:$vertxVersion"
+  compileOnly  "io.vertx:vertx-codegen:$vertxVersion"
+  annotationProcessor "io.vertx:vertx-codegen:$vertxVersion:processor"
+  // <3.8.4
+  // annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion:processor"
+  annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion"
   // for the service health
   implementation "io.vertx:vertx-health-check:$vertxVersion"
   implementation "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
@@ -48,6 +58,49 @@ dependencies {
 def launcher = 'net.bytle.api.Main'
 def watchForChange = 'src/main/java/net/**/*'
 def doOnChange = './gradlew classes'
+
+// Is a dependence on compileJava
+// https://docs.gradle.org/current/dsl/org.gradle.api.tasks.compile.JavaCompile.html
+// the generated code is put in src/main/generated,
+// which some integrated development environments like IntelliJ IDEA will automatically pick up on the classpath.
+// https://github.com/bulivlad/vertx-codegen-plugin
+// https://gitter.im/eclipse-vertx/vertx-users?at=5d8db754bf625112c0eb65e4
+// https://vertx.io/docs/vertx-web-api-service/java/
+task annotationProcessing(type: JavaCompile, group: 'build') { // codegen
+  description 'Generates the stubs'
+  options.incremental = false
+  source = sourceSets.main.java
+  classpath = configurations.compileClasspath
+  destinationDir = project.file('src/main/generated')
+  options.annotationProcessorPath = configurations.annotationProcessor
+  options.debugOptions.debugLevel = "source,lines,vars"
+  options.compilerArgs = [
+    "-proc:only",
+    "-processor", "io.vertx.codegen.CodeGenProcessor",
+    "-Acodegen.output=${project.projectDir}/src/main"
+  ]
+}
+
+// Adding the generated map to the set of source directory
+sourceSets {
+  main {
+    java {
+      srcDirs += 'src/main/generated'
+    }
+  }
+}
+
+
+compileJava {
+  targetCompatibility = 1.8
+  sourceCompatibility = 1.8
+  dependsOn (annotationProcessing)
+}
+
+compileTestJava {
+  options.compilerArgs += '-proc:none'
+}
+
 
 
 shadowJar {
