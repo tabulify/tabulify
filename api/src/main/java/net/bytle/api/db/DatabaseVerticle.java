@@ -23,7 +23,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
-import io.vertx.ext.sql.ResultSet;
 import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +47,7 @@ public class DatabaseVerticle extends AbstractVerticle {
     // "jdbc:sqlite:./db.db"
     String url = config().getString(JDBC_URL, "jdbc:hsqldb:file:db/wiki");
     String jdbcDriver = config().getString(JDBC_DRIVER, "org.hsqldb.jdbcDriver");
-    int jdbcPoolSize = config().getInteger(JDBC_MAX_POOL_SIZE, 1);
+    int jdbcPoolSize = config().getInteger(JDBC_MAX_POOL_SIZE, 3);
     String eventBusQueueName = config().getString(EVENT_BUS_QUEUE_NAME, "ip.queue");
 
     // Migrate if not done
@@ -107,17 +106,21 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   private void fetchIp(Message<JsonObject> message) {
     String ip = message.body().getString("ip");
-    JsonArray params = new JsonArray().add(ip);
-    dbClient.queryWithParams("select * from ip where ip_from >= ? and ip_to <= ?", params, fetch -> {
+    JsonArray params = new JsonArray()
+      .add(ip)
+      .add(ip);
+    // One shot, no need to close anything and return only one row
+    // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
+    dbClient.querySingleWithParams("SELECT * FROM ip WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
       if (fetch.succeeded()) {
+        JsonArray row = fetch.result();
         JsonObject response = new JsonObject();
-        ResultSet resultSet = fetch.result();
-        if (resultSet.getNumRows() == 0) {
+        if (row == null) {
           response.put("found", false);
         } else {
           response.put("found", true);
-          JsonArray row = resultSet.getResults().get(0);
-          response.put("country", row.getInteger(4));
+          response.put("country2",row.getString(4));
+          response.put("country3",row.getString(5));
         }
         message.reply(response);
       } else {
