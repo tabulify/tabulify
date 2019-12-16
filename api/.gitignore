@@ -1,6 +1,10 @@
 ### Vert.x ###
 .vertx/
 
+### Database ###
+db.db
+db/**/*
+
 ### Eclipse ###
 
 .metadata

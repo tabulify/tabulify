@@ -48,9 +48,9 @@ public class Launcher extends io.vertx.core.Launcher {
 
   private JsonObject addHttpConfig(JsonObject jsonObject) {
     return jsonObject.mergeIn(new JsonObject()
-      .put(ConfKeys.HOST.toString(), "localhost")
-      .put(ConfKeys.PORT.toString(), 8080)
-      .put(ConfKeys.PATH.toString(), "v2/pokemon")
+      .put(Conf.Properties.HOST.toString(), "localhost")
+      .put(Conf.Properties.PORT.toString(), 8080)
+      .put(Conf.Properties.PATH.toString(), "v2/pokemon")
     );
   }
 

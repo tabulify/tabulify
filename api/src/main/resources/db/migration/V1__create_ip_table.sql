@@ -2,11 +2,11 @@
 create table IP (
   IP_FROM INTEGER,
   IP_TO INTEGER,
-  REGISTRY TEXT,
+  REGISTRY varchar(255),
   ASSIGNED INTEGER,
-  CTRY TEXT,
-  CNTRY TEXT,
-  COUNTRY TEXT
+  CTRY varchar(2),
+  CNTRY varchar(3),
+  COUNTRY varchar(255)
 );
 
 create unique index IP_FROM_TO on ip (IP_FROM, IP_TO);

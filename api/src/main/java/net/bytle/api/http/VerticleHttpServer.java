@@ -13,7 +13,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
-import net.bytle.api.ConfKeys;
+import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
 import org.slf4j.MDC;
 
@@ -47,13 +47,13 @@ public class VerticleHttpServer extends AbstractVerticle {
      * Handler
      */
     this.pingHandler = new PingHandler()
-      .setMessage(configuration.getString(ConfKeys.PING_RESPONSE.toString()));
+      .setMessage(configuration.getString(Conf.Properties.PING_RESPONSE.toString()));
     this.handlerFailure = new HandlerFailure();
     this.handlerPokemon = new HandlerPokemon(vertx)
       .setPokeApiUrl(
-        configuration.getString(ConfKeys.HOST.toString()),
-        configuration.getInteger(ConfKeys.PORT.toString()),
-        configuration.getString(ConfKeys.PATH.toString())
+        configuration.getString(Conf.Properties.HOST.toString()),
+        configuration.getInteger(Conf.Properties.PORT.toString()),
+        configuration.getString(Conf.Properties.PATH.toString())
       );
     this.greetingHandler = new GreetingHandler();
 
@@ -67,11 +67,11 @@ public class VerticleHttpServer extends AbstractVerticle {
         message -> {
           LOGGER.debug("Configuration has changed, verticle {} is updating...", deploymentID());
           JsonObject newConfiguration = message.body();
-          pingHandler.setMessage(newConfiguration.getString(ConfKeys.PING_RESPONSE.toString()));
+          pingHandler.setMessage(newConfiguration.getString(Conf.Properties.PING_RESPONSE.toString()));
           handlerPokemon.setPokeApiUrl(
-            newConfiguration.getString(ConfKeys.HOST.toString()),
-            newConfiguration.getInteger(ConfKeys.PORT.toString()),
-            newConfiguration.getString(ConfKeys.PATH.toString())
+            newConfiguration.getString(Conf.Properties.HOST.toString()),
+            newConfiguration.getInteger(Conf.Properties.PORT.toString()),
+            newConfiguration.getString(Conf.Properties.PATH.toString())
           );
           LOGGER.debug(
             "Configuration has changed, verticle {} has been updated...", deploymentID());
@@ -88,9 +88,9 @@ public class VerticleHttpServer extends AbstractVerticle {
       .addPathParamWithCustomTypeValidator("name", new NameValidator(), false);
 
     // Config
-    int portNumber = configuration.getInteger(ConfKeys.PORT.toString(), 8083);
+    int portNumber = configuration.getInteger(Conf.Properties.PORT.toString(), 8083);
     // 0.0.0.0 means listen on all available addresses
-    String hostName = configuration.getString(ConfKeys.HOST.toString(), "0.0.0.0");
+    String hostName = configuration.getString(Conf.Properties.HOST.toString(), "0.0.0.0");
 
     // Create the server
     // https://vertx.io/docs/vertx-core/java/#logging_network_activity

@@ -12,6 +12,21 @@ import java.util.Arrays;
 
 public class Conf {
 
+  public enum Properties {
+
+    // Because they are constants, the names of an enum type's fields are in uppercase letters.
+    PING_RESPONSE,
+    HOST,
+    PORT,
+    PATH;
+
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
+
+  }
+
   protected static ConfigRetriever getConfigRetriever(Vertx vertx){
     /**
      * Vertex Config
@@ -78,7 +93,7 @@ public class Conf {
      * <a href="https://vertx.io/docs/vertx-config/java/#_environment_variables">Doc</a>
      */
     JsonArray envVarKeys = new JsonArray();
-    Arrays.asList(ConfKeys.values())
+    Arrays.asList(Properties.values())
       .forEach(s -> envVarKeys.add(s.toString()));
     ConfigStoreOptions environment = new ConfigStoreOptions()
       .setType("env")

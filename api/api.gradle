@@ -15,7 +15,7 @@ flyway {
 }
 
 ext {
-  vertxVersion = '4.0.0-milestone4'
+  vertxVersion = '3.8.2' // 4.0.0-milestone4
 }
 
 sourceCompatibility = '1.8'
@@ -32,6 +32,7 @@ dependencies {
   // Database
   implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
   implementation "org.xerial:sqlite-jdbc:3.25.2"
+  implementation "org.hsqldb:hsqldb:2.5.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
   // Log (Slf4j + LogBack)
   implementation "ch.qos.logback:logback-classic:1.2.3"
