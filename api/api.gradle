@@ -2,17 +2,12 @@ plugins {
   id 'java'
   id 'application' // https://docs.gradle.org/current/userguide/application_plugin.html
   id 'com.github.johnrengelman.shadow' version '5.2.0'
-  id "org.flywaydb.flyway" version "6.1.1" // https://flywaydb.org/getstarted/firststeps/gradle
 }
 
 repositories {
   mavenCentral()
 }
 
-// https://flywaydb.org/documentation/gradle/
-flyway {
-  url = 'jdbc:sqlite:./db.db'
-}
 
 ext {
   vertxVersion = '3.8.4' // 4.0.0-milestone4
@@ -40,7 +35,7 @@ dependencies {
   // Log (Slf4j + LogBack)
   implementation "ch.qos.logback:logback-classic:1.2.3"
   // Vertx service
-  compileOnly "io.vertx:vertx-service-proxy:$vertxVersion"
+  implementation "io.vertx:vertx-service-proxy:$vertxVersion"
   compileOnly  "io.vertx:vertx-codegen:$vertxVersion"
   annotationProcessor "io.vertx:vertx-codegen:$vertxVersion:processor"
   // <3.8.4
@@ -65,7 +60,6 @@ def doOnChange = './gradlew classes'
 // which some integrated development environments like IntelliJ IDEA will automatically pick up on the classpath.
 // https://github.com/bulivlad/vertx-codegen-plugin
 // https://gitter.im/eclipse-vertx/vertx-users?at=5d8db754bf625112c0eb65e4
-// https://vertx.io/docs/vertx-web-api-service/java/
 task annotationProcessing(type: JavaCompile, group: 'build') { // codegen
   description 'Generates the stubs'
   options.incremental = false

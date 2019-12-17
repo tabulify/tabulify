@@ -1,8 +1,9 @@
 ### Vert.x ###
 .vertx/
 
+### Generated Stub ###
+src/main/generated
 ### Database ###
-db.db
 db/**/*
 
 ### Eclipse ###

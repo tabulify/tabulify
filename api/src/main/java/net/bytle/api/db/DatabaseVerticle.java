@@ -19,15 +19,11 @@ package net.bytle.api.db;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
-import org.flywaydb.core.Flyway;
+import io.vertx.serviceproxy.ServiceBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.stream.IntStream;
 
 /**
  * <a href="https://vertx.io/docs/vertx-jdbc-client/java/">Doc</a>
@@ -36,123 +32,46 @@ public class DatabaseVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseVerticle.class);
 
-  private JDBCClient dbClient;
 
-  public static final String JDBC_URL = "jdbc.url";
-  public static final String JDBC_DRIVER = "jdbc.driver_class";
-  public static final String JDBC_MAX_POOL_SIZE = "jdbc.max_pool_size";
-  public static final String EVENT_BUS_QUEUE_NAME = "ip.queue";
+  // The key of the properties
+  public static final String KEY_JDBC_URL = "jdbc.url";
+  public static final String KEY_JDBC_DRIVER = "jdbc.driver_class";
+  public static final String KEY_JDBC_MAX_POOL_SIZE = "jdbc.max_pool_size";
+
+  // The name of the queue
+  public static final String IP_QUEUE_NAME = "ip.queue";
 
   @Override
-  public void start(Promise<Void> promise) throws Exception {
+  public void start(Promise<Void> promise) {
 
     // "jdbc:sqlite:./db.db"
-    String url = config().getString(JDBC_URL, "jdbc:hsqldb:file:db/wiki");
-    String jdbcDriver = config().getString(JDBC_DRIVER, "org.hsqldb.jdbcDriver");
-    int jdbcPoolSize = config().getInteger(JDBC_MAX_POOL_SIZE, 3);
-    String eventBusQueueName = config().getString(EVENT_BUS_QUEUE_NAME, "ip.queue");
+    String url = config().getString(KEY_JDBC_URL, "jdbc:hsqldb:file:db/wiki");
+    String jdbcDriver = config().getString(KEY_JDBC_DRIVER, "org.hsqldb.jdbcDriver");
+    int jdbcPoolSize = config().getInteger(KEY_JDBC_MAX_POOL_SIZE, 3);
 
-    // Migrate if not done
-    // https://flywaydb.org/documentation/api/
-    Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
-    flyway.migrate();
 
     // CreateShared creates a pool connection shared among Verticles known to the vertx instance
-    dbClient = JDBCClient.createShared(vertx, new JsonObject()
+    JsonObject config = new JsonObject()
       .put("url", url)
       .put("driver_class", jdbcDriver)
-      .put("max_pool_size", jdbcPoolSize)
-    );
+      .put("max_pool_size", jdbcPoolSize);
+    JDBCClient dbClient = JDBCClient.createShared(vertx, config);
 
-    dbClient.getConnection(ar -> {
-      if (ar.failed()) {
-        LOGGER.error("Could not open a database connection", ar.cause());
-        promise.fail(ar.cause());
-      } else {
-        vertx.eventBus().consumer(eventBusQueueName, this::onMessage);
-        LOGGER.info("Queue created " + eventBusQueueName, ar.cause());
+    // Register the service
+    DatabaseServiceInterface.create(dbClient, config, ready -> {
+      if (ready.succeeded()) {
+        ServiceBinder binder = new ServiceBinder(vertx);
+        binder
+          .setAddress(IP_QUEUE_NAME)
+          .register(DatabaseServiceInterface.class, ready.result());
         promise.complete();
-      }
-    });
-
-  }
-
-  public enum ErrorCodes {
-    NO_ACTION_SPECIFIED,
-    BAD_ACTION,
-    DB_ERROR
-  }
-
-  /**
-   * The message handler from the event bus
-   *
-   * @param message
-   */
-  public void onMessage(Message<JsonObject> message) {
-
-    if (!message.headers().contains("action")) {
-      LOGGER.error("No action header specified for message with headers {} and body {}",
-        message.headers(), message.body().encodePrettily());
-      message.fail(ErrorCodes.NO_ACTION_SPECIFIED.ordinal(), "No action header specified");
-      return;
-    }
-    String action = message.headers().get("action");
-
-    switch (action) {
-      case "get-ip":
-        fetchIp(message);
-        break;
-      default:
-        message.fail(ErrorCodes.BAD_ACTION.ordinal(), "Bad action: " + action);
-    }
-  }
-
-  private void fetchIp(Message<JsonObject> message) {
-    String ip = message.body().getString("ip");
-    Integer numericIp = getNumericIp(ip);
-    JsonArray params = new JsonArray()
-      .add(numericIp)
-      .add(numericIp);
-    // One shot, no need to close anything and return only one row
-    // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
-    dbClient.querySingleWithParams("SELECT * FROM ip WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
-      if (fetch.succeeded()) {
-        JsonArray row = fetch.result();
-        JsonObject response = new JsonObject();
-        if (row == null) {
-          response.put("found", false);
-        } else {
-          response.put("found", true);
-          response.put("country2", row.getString(4));
-          response.put("country3", row.getString(5));
-          response.put("country", row.getString(6));
-        }
-        message.reply(response);
       } else {
-        reportQueryError(message, fetch.cause());
+        promise.fail(ready.cause());
       }
     });
-  }
-
-  /**
-   * 1.2.3.4 = 4 + (3 * 256) + (2 * 256 * 256) + (1 * 256 * 256 * 256)
-   * is 4 + 768 + 13,1072 + 16,777,216 = 16,909,060
-   *
-   * @param ip
-   * @return the numeric representation
-   */
-  static protected Integer getNumericIp(String ip) {
-    Integer[] factorByPosition = {256 * 256 * 256, 256 * 256, 256, 1};
-    String[] ipParts = ip.split("\\.");
-    return IntStream.range(0, ipParts.length)
-      .map(i -> Integer.parseInt(ipParts[i]) * factorByPosition[i])
-      .sum();
-  }
 
 
-  private void reportQueryError(Message<JsonObject> message, Throwable cause) {
-    LOGGER.error("Database query error", cause);
-    message.fail(ErrorCodes.DB_ERROR.ordinal(), cause.getMessage());
   }
+
 
 }
