@@ -139,7 +139,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
   @Override
   public final <A extends BasicFileAttributes> A readAttributes(final Path path,
                                                                 final Class<A> type, final LinkOption... options) throws IOException {
-    return (A) new HttpBasicFileAttributes();
+    return (A) new HttpBasicFileAttributes((HttpPath) path);
   }
 
   @Override

@@ -13,6 +13,7 @@ import java.util.Set;
 final class HttpFileSystem extends FileSystem {
 
 
+  static final String USER_AGENT = "Bytle NioFs Http";
   private final HttpFileSystemProvider provider;
   private final URL url;
   private final Map<String, ?> env;

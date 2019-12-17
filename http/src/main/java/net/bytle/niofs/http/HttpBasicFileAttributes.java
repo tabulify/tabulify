@@ -4,7 +4,13 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
 public class HttpBasicFileAttributes implements BasicFileAttributes {
-    @Override
+  private final HttpPath path;
+
+  public HttpBasicFileAttributes(HttpPath httpPath) {
+    this.path = httpPath;
+  }
+
+  @Override
     public FileTime lastModifiedTime() {
         return null;
     }
@@ -41,7 +47,9 @@ public class HttpBasicFileAttributes implements BasicFileAttributes {
 
     @Override
     public long size() {
-        return 0;
+
+        return HttpStatic.getSize(path.getUrl());
+
     }
 
     @Override

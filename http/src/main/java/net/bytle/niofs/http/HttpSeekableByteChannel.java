@@ -15,8 +15,6 @@ import java.nio.channels.*;
  */
 class HttpSeekableByteChannel implements SeekableByteChannel {
 
-  private static final String USER_AGENT = "Bytle NioFs Http";
-
   static Logger logger = LoggerFactory.getLogger(HttpSeekableByteChannel.class);
 
 
@@ -38,8 +36,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   private void build(long start) {
     try {
-      currentConnection = (HttpURLConnection) url.openConnection();
-      currentConnection.addRequestProperty("User-Agent", USER_AGENT);
+      currentConnection = HttpStatic.getConnection(url);
       currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
       currentChannel = Channels.newChannel(currentConnection.getInputStream());
     } catch (IOException e) {
@@ -49,6 +46,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   @Override
   public synchronized int read(final ByteBuffer dst) throws IOException {
+    // We could also send a range HTTP request
     final int read = currentChannel.read(dst);
     this.currentPosition += read;
     return read;
@@ -99,29 +97,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   @Override
   public synchronized long size() throws IOException {
-
-
-    final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-    connection.setRequestMethod("HEAD");
-    connection.connect();
-    long size;
-    try {
-
-      // The Content-Length entity-header field indicates the size of the entity-body,
-      // in decimal number of OCTETs, sent to the recipient or, in the case of the HEAD
-      // method, the size of the entity-body that would have been sent had the request
-      // been a GET.
-      size = connection.getContentLengthLong();
-
-      if (size == -1) {
-        throw new IOException("Unable to retrieve content length for " + url);
-      }
-
-    } finally {
-      connection.disconnect();
-    }
-
-    return size;
+    return HttpStatic.getSize(url);
   }
 
   @Override
