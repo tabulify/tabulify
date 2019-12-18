@@ -9,11 +9,27 @@ import java.net.URL;
  */
 class HttpStatic {
 
+  /**
+   * Doc: https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
+   *
+   * The Content-Length header is not required.
+   * Generated pages don't send it, they instead use things like Transfer-Encoding: chunked
+   * Where the end of the response is signaled by a zero size chunk; or by forgoing persistent connections (via Connection: close) and simply closing the connection when the response is fully sent.
+   *
+   * If the request is for a static file, there's a good chance that Content-Length will be present
+   * and you can get the size without downloading the file.
+   *
+   * But in the general case, the only fully viable way is by actually downloading the full response.
+   *
+   * @param url
+   * @return
+   */
   static long getSize(URL url) {
     final HttpURLConnection connection;
     try {
       connection = getConnection(url);
       connection.setRequestMethod("HEAD");
+      connection.setRequestProperty("Accept-Encoding", "identity"); // no compression, nor modification
       connection.connect();
     } catch (IOException e) {
       throw new RuntimeException(e);

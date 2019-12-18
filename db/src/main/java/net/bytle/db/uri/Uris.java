@@ -14,8 +14,9 @@ public class Uris {
 
   static void print(URI uri) {
 
-
+    System.out.println("The following URI ("+uri+") is:");
     System.out.println("Opaque            : " + uri.isOpaque());
+    System.out.println("Hierarchical      : " + !uri.isOpaque());
     System.out.println("Absolute          : " + uri.isAbsolute());
     System.out.println("Scheme            : " + uri.getScheme());
     System.out.println("SchemeSpecificPart: " + uri.getSchemeSpecificPart());

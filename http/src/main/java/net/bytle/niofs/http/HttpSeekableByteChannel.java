@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
@@ -19,7 +18,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
 
   // The connection Url
-  private final URL url;
+  private final HttpPath httpPath;
   // The current position in the connection
   private long currentPosition = 0;
   // The connection
@@ -29,14 +28,14 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   HttpSeekableByteChannel(final HttpPath httpPath) {
     assert httpPath != null : "httpPath cannot be null";
-    this.url = httpPath.getUrl();
+    this.httpPath = httpPath;
     build(currentPosition);
 
   }
 
   private void build(long start) {
     try {
-      currentConnection = HttpStatic.getConnection(url);
+      currentConnection = HttpStatic.getConnection(httpPath.getUrl());
       currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
       currentChannel = Channels.newChannel(currentConnection.getInputStream());
     } catch (IOException e) {
@@ -97,7 +96,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   @Override
   public synchronized long size() throws IOException {
-    return HttpStatic.getSize(url);
+    return new HttpBasicFileAttributes(httpPath).size();
   }
 
   @Override

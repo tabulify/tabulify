@@ -45,7 +45,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
       .add(numericIp);
     // One shot, no need to close anything and return only one row
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
-    dbClient.querySingleWithParams("SELECT * FROM ip WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
+    dbClient.querySingleWithParams("SELECT * FROM IP WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
       if (fetch.succeeded()) {
         JsonArray row = fetch.result();
         JsonObject response = new JsonObject();

@@ -32,8 +32,6 @@ dependencies {
   implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
   implementation "org.hsqldb:hsqldb:2.5.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
-  // Log (Slf4j + LogBack)
-  implementation "ch.qos.logback:logback-classic:1.2.3"
   // Vertx service
   implementation "io.vertx:vertx-service-proxy:$vertxVersion"
   compileOnly  "io.vertx:vertx-codegen:$vertxVersion"

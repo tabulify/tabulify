@@ -31,7 +31,12 @@ import org.slf4j.LoggerFactory;
 public class DatabaseVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseVerticle.class);
+  private JDBCClient dbClient;
 
+  @Override
+  public void stop() {
+    dbClient.close();
+  }
 
   // The key of the properties
   public static final String KEY_JDBC_URL = "jdbc.url";
@@ -44,8 +49,8 @@ public class DatabaseVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> promise) {
 
-    // "jdbc:sqlite:./db.db"
-    String url = config().getString(KEY_JDBC_URL, "jdbc:hsqldb:file:db/wiki");
+
+    String url = config().getString(KEY_JDBC_URL, "jdbc:hsqldb:file:db/api");
     String jdbcDriver = config().getString(KEY_JDBC_DRIVER, "org.hsqldb.jdbcDriver");
     int jdbcPoolSize = config().getInteger(KEY_JDBC_MAX_POOL_SIZE, 3);
 
@@ -55,7 +60,7 @@ public class DatabaseVerticle extends AbstractVerticle {
       .put("url", url)
       .put("driver_class", jdbcDriver)
       .put("max_pool_size", jdbcPoolSize);
-    JDBCClient dbClient = JDBCClient.createShared(vertx, config);
+    dbClient = JDBCClient.createShared(vertx, config);
 
     // Register the service
     DatabaseServiceInterface.create(dbClient, config, ready -> {

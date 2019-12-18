@@ -138,9 +138,14 @@ public class HttpPath implements Path {
     return this;
   }
 
+  /**
+   * We are not taking redirection into account
+   * @param options
+   * @return
+   */
   @Override
-  public Path toRealPath(LinkOption... options) throws IOException {
-    throw new UnsupportedOperationException("Not implemented");
+  public Path toRealPath(LinkOption... options) {
+    return this;
   }
 
   @Override

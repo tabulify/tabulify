@@ -10,9 +10,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class HttpFileSystemProvider extends FileSystemProvider {
@@ -127,7 +129,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
   }
 
   @Override
-  public final void checkAccess(final Path path, final AccessMode... modes) {
+  public final void checkAccess(final Path path, final AccessMode... modes) throws IOException {
 
     if (modes.length==0){
       try {
@@ -148,7 +150,25 @@ public class HttpFileSystemProvider extends FileSystemProvider {
         throw new RuntimeException(e);
       }
     } else {
-      throw new UnsupportedOperationException("Modes access check is not yet implemented");
+      // Read
+      if (modes.length==1 && modes[0]==AccessMode.READ){
+        try {
+          // check the existence of the file
+          HttpPath httpPath = (HttpPath) path;
+          HttpURLConnection connection = HttpStatic.getConnection(httpPath.getUrl());
+          connection.setRequestMethod("HEAD");
+          connection.connect();
+          int responseCode = connection.getResponseCode();
+          if (responseCode!=HttpURLConnection.HTTP_OK){
+              throw new SecurityException("No read permission. The http request was not successful, we got the following response code "+responseCode);
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        // A IOException is catched by the isAccessible function
+        throw new IOException("Http cannot handle the following modes "+ Arrays.stream(modes).map(Enum::toString).collect(Collectors.joining(",")));
+      }
     }
 
   }
