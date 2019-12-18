@@ -66,7 +66,7 @@ public class DbDml {
     public static String getInsertStatement(RelationDef source, RelationDef target, List<Object> values) {
 
         final JdbcDataPath dataPath = (JdbcDataPath) target.getDataPath();
-        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName((JdbcDataPath) dataPath) + " (";
+        String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (";
         String insertStatementBindVariable = "";
 
         try {

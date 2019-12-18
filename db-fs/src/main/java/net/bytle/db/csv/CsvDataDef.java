@@ -22,281 +22,286 @@ import java.util.List;
  *
  * <br>
  * Format:<br>
- *   - <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#parsing">W3c Parsing</a><br>
- *   - <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a><br>
- *
- *
+ * - <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#parsing">W3c Parsing</a><br>
+ * - <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a><br>
  */
 public class CsvDataDef extends TableDef {
 
-    private static final char DOUBLE_QUOTE = '"';
-    /**
-     * See {@link #setCharset(Charset)}
-     */
-    private Charset charset = StandardCharsets.UTF_8;
+  private static final char DOUBLE_QUOTE = '"';
+  /**
+   * See {@link #setCharset(Charset)}
+   */
+  private Charset charset = StandardCharsets.UTF_8;
 
-    /**
-     * The path of the Csv
-     */
-    private final CsvDataPath fsDataPath;
+  /**
+   * The path of the Csv
+   */
+  private final CsvDataPath fsDataPath;
 
-    /**
-     * The number of header rows in the file
-     */
-    private int headerRowCount = 0;
+  /**
+   * The number of header rows in the file
+   */
+  private int headerRowCount = 0;
 
-    /**
-     * Indicates whether to trim whitespace around cells
-     * In case of fixed format
-     */
-    private boolean trimWhitespace = false;
+  /**
+   * Indicates whether to trim whitespace around cells
+   * In case of fixed format
+   */
+  private boolean trimWhitespace = false;
 
-    /**
-     *
-     * See {@link #setNewLineCharacters(String)}
-     */
-    private String newLineCharacters = System.lineSeparator();
+  /**
+   * See {@link #setNewLineCharacters(String)}
+   */
+  private String newLineCharacters = System.lineSeparator();
 
-    /**
-     * See {@link #setDelimiterCharacter(char) | Delimiter}
-     */
-    private char delimiterCharacter = ',';
+  /**
+   * See {@link #setDelimiterCharacter(char) | Delimiter}
+   */
+  private char delimiterCharacter = ',';
 
-    /**
-     * See {@link #setEscapeCharacter(char)}
-     */
-    private char escapeCharacter = DOUBLE_QUOTE;
+  /**
+   * See {@link #setEscapeCharacter(char)}
+   */
+  private char escapeCharacter = DOUBLE_QUOTE;
 
-    /**
-     * See {@link #setQuoteCharacter(char)}
-     */
-    private char quoteCharacter = DOUBLE_QUOTE;
+  /**
+   * See {@link #setQuoteCharacter(char)}
+   */
+  private char quoteCharacter = DOUBLE_QUOTE;
 
-    /**
-     * See {@link #setIgnoreEmptyLine(boolean)}
-     */
-    private boolean isIgnoreEmptyLine = true;
+  /**
+   * See {@link #setIgnoreEmptyLine(boolean)}
+   */
+  private boolean isIgnoreEmptyLine = true;
 
-    /**
-     * See {@link #setCommentCharacter(char)}
-     */
-    private Character commentCharacter = null;
+  /**
+   * See {@link #setCommentCharacter(char)}
+   */
+  private Character commentCharacter = '#';
 
-    /**
-     * Set the comment character
-     * @param commentCharacter A character that, when it appears at the beginning of a row, indicates that the row is a comment - Default is null which means no rows are treated as comments
-     * @return
-     */
-    public CsvDataDef setCommentCharacter(char commentCharacter) {
-        this.commentCharacter = commentCharacter;
-        return this;
-    }
+  /**
+   * Set the comment character
+   *
+   * @param commentCharacter A character that, when it appears at the beginning of a row, indicates that the row is a comment - Default is null which means no rows are treated as comments
+   * @return
+   */
+  public CsvDataDef setCommentCharacter(char commentCharacter) {
+    this.commentCharacter = commentCharacter;
+    return this;
+  }
 
 
-    /**
-     * Ignore empty line
-     * @param ignoreEmptyLine if true, it will ignore empty line
-     */
-    public void setIgnoreEmptyLine(boolean ignoreEmptyLine) {
-        isIgnoreEmptyLine = ignoreEmptyLine;
-    }
+  /**
+   * Ignore empty line
+   *
+   * @param ignoreEmptyLine if true, it will ignore empty line
+   */
+  public void setIgnoreEmptyLine(boolean ignoreEmptyLine) {
+    isIgnoreEmptyLine = ignoreEmptyLine;
+  }
 
-    public boolean isTrimWhitespace() {
-        return trimWhitespace;
-    }
+  public boolean isTrimWhitespace() {
+    return trimWhitespace;
+  }
 
-    public void setTrimWhitespace(boolean trimWhitespace) {
-        this.trimWhitespace = trimWhitespace;
-    }
+  public void setTrimWhitespace(boolean trimWhitespace) {
+    this.trimWhitespace = trimWhitespace;
+  }
 
-    public String getNewLineCharacters() {
-        return newLineCharacters;
-    }
+  public String getNewLineCharacters() {
+    return newLineCharacters;
+  }
 
-    /**
-     * Set the newline string
-     * @param newLineCharacters The strings that is used at the end of a row (default to the system default \r\n for Windows, \n for the other)
-     */
-    public CsvDataDef setNewLineCharacters(String newLineCharacters) {
-        this.newLineCharacters = newLineCharacters;
-        return this;
-    }
+  /**
+   * Set the newline string
+   *
+   * @param newLineCharacters The strings that is used at the end of a row (default to the system default \r\n for Windows, \n for the other)
+   */
+  public CsvDataDef setNewLineCharacters(String newLineCharacters) {
+    this.newLineCharacters = newLineCharacters;
+    return this;
+  }
 
-    public char getEscapeCharacter() {
-        return escapeCharacter;
-    }
+  public char getEscapeCharacter() {
+    return escapeCharacter;
+  }
 
-    /**
-     * Set the string that is used to escape the {@link #setQuoteCharacter(char)} quote character } within escaped cells
-     * @param escapeCharacter the string that is used to escape the {@link #setQuoteCharacter(char)}  quote character } within escaped cells
-     * @return
-     */
-    public CsvDataDef setEscapeCharacter(char escapeCharacter) {
-        this.escapeCharacter = escapeCharacter;
-        return this;
-    }
+  /**
+   * Set the string that is used to escape the {@link #setQuoteCharacter(char)} quote character } within escaped cells
+   *
+   * @param escapeCharacter the string that is used to escape the {@link #setQuoteCharacter(char)}  quote character } within escaped cells
+   * @return
+   */
+  public CsvDataDef setEscapeCharacter(char escapeCharacter) {
+    this.escapeCharacter = escapeCharacter;
+    return this;
+  }
 
-    public char getQuoteCharacter() {
-        return quoteCharacter;
-    }
+  public char getQuoteCharacter() {
+    return quoteCharacter;
+  }
 
-    /**
-     *
-     * @param quoteCharacter The string that is used around escaped cells
-     */
-    public CsvDataDef setQuoteCharacter(char quoteCharacter) {
-        this.quoteCharacter = quoteCharacter;
-        return this;
-    }
+  /**
+   * @param quoteCharacter The string that is used around escaped cells
+   */
+  public CsvDataDef setQuoteCharacter(char quoteCharacter) {
+    this.quoteCharacter = quoteCharacter;
+    return this;
+  }
 
-    /**
-     *
-     * @return the {@link #delimiterCharacter}
-     */
-    public char getDelimiterCharacter() {
-        return delimiterCharacter;
-    }
+  /**
+   * @return the {@link #delimiterCharacter}
+   */
+  public char getDelimiterCharacter() {
+    return delimiterCharacter;
+  }
 
-    /**
-     *
-     * @param delimiter The separator between cells known as cell delimiter. Default value is a comma ','
-     * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
-     */
-    public CsvDataDef setDelimiterCharacter(char delimiter) {
-        this.delimiterCharacter = delimiter;
-        return this;
-    }
+  /**
+   * @param delimiter The separator between cells known as cell delimiter. Default value is a comma ','
+   * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
+   */
+  public CsvDataDef setDelimiterCharacter(char delimiter) {
+    this.delimiterCharacter = delimiter;
+    return this;
+  }
 
-    /**
-     * Set the character set of the file
-     * @param charset The character encoding for the file - Default: UTf-8
-     * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
-     */
-    public CsvDataDef setCharset(Charset charset) {
-        this.charset = charset;
-        return this;
-    }
+  /**
+   * Set the character set of the file
+   *
+   * @param charset The character encoding for the file - Default: UTf-8
+   * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
+   */
+  public CsvDataDef setCharset(Charset charset) {
+    this.charset = charset;
+    return this;
+  }
 
-    public int getHeaderRowCount() {
-        return headerRowCount;
-    }
+  public int getHeaderRowCount() {
+    return headerRowCount;
+  }
 
-    public CsvDataDef setHeaderRowCount(int headerRowCount) {
-        this.headerRowCount = headerRowCount;
-        return this;
-    }
+  public CsvDataDef setHeaderRowCount(int headerRowCount) {
+    this.headerRowCount = headerRowCount;
+    return this;
+  }
 
-    /**
-     *
-     * @param dataPath The CsvDataPath
-     */
-    public CsvDataDef(CsvDataPath dataPath) {
-        super(dataPath);
-        this.fsDataPath = dataPath;
-    }
+  /**
+   * @param dataPath The CsvDataPath
+   */
+  public CsvDataDef(CsvDataPath dataPath) {
+    super(dataPath);
+    this.fsDataPath = dataPath;
+  }
 
-    @Override
-    public List<ColumnDef> getColumnDefs() {
-        buildColumnNamesIfNeeded();
-        return super.getColumnDefs();
-    }
+  @Override
+  public List<ColumnDef> getColumnDefs() {
+    buildColumnNamesIfNeeded();
+    return super.getColumnDefs();
+  }
 
-    @Override
-    public <T> ColumnDef<T> getColumnDef(String columnName) {
-        buildColumnNamesIfNeeded();
-        return super.getColumnDef(columnName);
-    }
+  @Override
+  public <T> ColumnDef<T> getColumnDef(String columnName) {
+    buildColumnNamesIfNeeded();
+    return super.getColumnDef(columnName);
+  }
 
-    @Override
-    public <T> ColumnDef<T> getColumnDef(Integer columnIndex) {
-        buildColumnNamesIfNeeded();
-        return super.getColumnDef(columnIndex);
-    }
+  @Override
+  public <T> ColumnDef<T> getColumnDef(Integer columnIndex) {
+    buildColumnNamesIfNeeded();
+    return super.getColumnDef(columnIndex);
+  }
 
-    @Override
-    public CsvDataPath getDataPath() {
-        return fsDataPath;
-    }
+  @Override
+  public CsvDataPath getDataPath() {
+    return fsDataPath;
+  }
 
-    /**
-     * Build the column metadata from the first row if needed
-     */
-    private void buildColumnNamesIfNeeded() {
+  /**
+   * Build the column metadata from the first row if needed
+   * Lazy initialization
+   */
+  private void buildColumnNamesIfNeeded() {
 
-        if (super.getColumnDefs().size() == 0 && this.headerRowCount > 0) {
+    if (super.getColumnDefs().size() == 0) {
 
-            if (Files.exists(fsDataPath.getNioPath())) {
-                try (
-                       CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
-                ){
-                    Iterator<CSVRecord> recordIterator = csvParser.iterator();
-                    try {
+      if (Files.exists(fsDataPath.getNioPath())) {
+        try (
+          CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
+        ) {
+          Iterator<CSVRecord> recordIterator = csvParser.iterator();
+          try {
 
-                        CSVRecord headerRecord = null;
-                        for (int i=0;i<this.headerRowCount;i++) {
-                            headerRecord = Csvs.safeIterate(recordIterator);
-                            if (headerRecord==null){
-                                return;
-                            }
-                        }
-
-                        for (int i = 0; i < headerRecord.size(); i++) {
-                            this.addColumn(headerRecord.get(i));
-                        }
-
-                    } catch (java.util.NoSuchElementException e) {
-                        // No more CSV records available, file is empty
-                        FsTableSystemLog.LOGGER_DB_FS.info("The file (" + fsDataPath.toString() + ") seems to be empty");
-                    }
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            CSVRecord headerRecord = null;
+            int iterate = (headerRowCount==0?1:headerRowCount);
+            for (int i = 0; i < iterate; i++) {
+              headerRecord = Csvs.safeIterate(recordIterator);
+              if (headerRecord == null) {
+                return;
+              }
             }
+
+            for (int i = 0; i < headerRecord.size(); i++) {
+              if (headerRowCount > 0) {
+                this.addColumn(headerRecord.get(i));
+              } else {
+                String columnName = String.valueOf(i + 1);
+                this.addColumn(columnName);
+              }
+            }
+
+          } catch (java.util.NoSuchElementException e) {
+            // No more CSV records available, file is empty
+            FsTableSystemLog.LOGGER_DB_FS.info("The file (" + fsDataPath.toString() + ") seems to be empty");
+          }
+
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
-
+      }
     }
 
-    /**
-     * The format of the CSV file excepts the header
-     * that is handled in the function {@link CsvManager#create(CsvDataPath)}
-     * This way we doesn't overwrite the file and we can add rows in an existing Csv file
-     * @return the Apache common Csv Format
-     */
-    protected CSVFormat getCsvFormat() {
-        CSVFormat csvFormat = CSVFormat.DEFAULT
-                .withDelimiter(delimiterCharacter)
-                // Ignoring empty line means that it will just skip the line
-                // if we have a comment or front matter above the header with empty line
-                // there is no way to locate the header line precisely
-                .withIgnoreEmptyLines(false)
-                .withCommentMarker(commentCharacter)
-                .withQuote(quoteCharacter)
-                .withRecordSeparator(newLineCharacters);
+  }
 
-        // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
-        if (escapeCharacter!=DOUBLE_QUOTE){
-            csvFormat = csvFormat
-                    .withEscape(escapeCharacter);
-        }
-        return csvFormat;
+  /**
+   * The format of the CSV file excepts the header
+   * that is handled in the function {@link CsvManager#create(CsvDataPath)}
+   * This way we doesn't overwrite the file and we can add rows in an existing Csv file
+   *
+   * @return the Apache common Csv Format
+   */
+  protected CSVFormat getCsvFormat() {
+    CSVFormat csvFormat = CSVFormat.DEFAULT
+      .withDelimiter(delimiterCharacter)
+      // Ignoring empty line means that it will just skip the line
+      // if we have a comment or front matter above the header with empty line
+      // there is no way to locate the header line precisely
+      .withIgnoreEmptyLines(false)
+      .withCommentMarker(commentCharacter)
+      .withQuote(quoteCharacter)
+      .withRecordSeparator(newLineCharacters);
 
-}
-
-
-    /**
-     *
-     * @return the {@link #charset}
-     */
-    public Charset getCharset() {
-        return charset;
+    // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
+    if (escapeCharacter != DOUBLE_QUOTE) {
+      csvFormat = csvFormat
+        .withEscape(escapeCharacter);
     }
+    return csvFormat;
 
-    public boolean isIgnoreEmptyLine() {
-        return isIgnoreEmptyLine;
-    }
+  }
 
-    public char getCommentCharacter() {
-        return commentCharacter;
-    }
+
+  /**
+   * @return the {@link #charset}
+   */
+  public Charset getCharset() {
+    return charset;
+  }
+
+  public boolean isIgnoreEmptyLine() {
+    return isIgnoreEmptyLine;
+  }
+
+  public char getCommentCharacter() {
+    return commentCharacter;
+  }
 }

@@ -95,7 +95,8 @@ public final class SqlDatabases {
                 return provider.getSqlDatabase(uri);
             }
         }
-        throw new RuntimeException("Provider for the server \"" + server + "\" not found");
+        // Provider for the server server not found, default to jdbc
+        return null;
     }
 
     /**

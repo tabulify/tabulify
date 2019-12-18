@@ -32,6 +32,12 @@ dependencies {
   implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
   implementation "org.hsqldb:hsqldb:2.5.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
+  implementation project(':bytle-db')
+  implementation project(':bytle-db-jdbc')
+  implementation project(':bytle-db-fs')
+  // File system
+  implementation project(':bytle-http')
+  implementation project(':bytle-zip')
   // Vertx service
   implementation "io.vertx:vertx-service-proxy:$vertxVersion"
   compileOnly  "io.vertx:vertx-codegen:$vertxVersion"

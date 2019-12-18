@@ -8,22 +8,24 @@ import java.nio.file.Path;
 
 public class CsvDataPath extends FsDataPath {
 
-    public CsvDataPath(FsTableSystem fsTableSystem, Path path) {
-        super(fsTableSystem, path);
+  public CsvDataPath(FsTableSystem fsTableSystem, Path path) {
+    super(fsTableSystem, path);
+  }
+
+  public CsvDataPath(Path path) {
+    super(FsTableSystem.getDefault(), path);
+  }
+
+  public static CsvDataPath of(Path path) {
+    return new CsvDataPath(path);
+  }
+
+  @Override
+  public CsvDataDef getDataDef() {
+    if (this.dataDef == null) {
+      this.dataDef = new CsvDataDef(this);
     }
-
-    public CsvDataPath(Path path) {
-        super(FsTableSystem.getDefault(), path);
-    }
-
-
-
-    @Override
-    public CsvDataDef getDataDef() {
-        if (this.dataDef==null) {
-            this.dataDef = new CsvDataDef(this);
-        }
-        return (CsvDataDef) this.dataDef;
-    }
+    return (CsvDataDef) this.dataDef;
+  }
 
 }

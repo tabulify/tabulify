@@ -302,7 +302,7 @@ public class TableDef implements RelationDef  {
     }
 
     public PrimaryKeyDef primaryKeyOf(String... columnNames) {
-        assert columnNames.length > 0;
+        assert columnNames.length > 0: "The number of columns should be greater than one for a primary key";
 
         this.primaryKeyDef = PrimaryKeyDef.of(this,columnNames);
         return this.primaryKeyDef;

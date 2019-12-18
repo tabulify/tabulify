@@ -9,4 +9,4 @@ create table IP (
   COUNTRY varchar(255)
 );
 
-create unique index IP_FROM_TO on ip (IP_FROM, IP_TO);
+create unique index IP_FROM_TO on IP (IP_FROM, IP_TO);

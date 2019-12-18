@@ -150,7 +150,7 @@ public class JdbcDataSystemSql {
              * Only for catalog
              * {@link DatabaseMetaData#getCatalogSeparator()}
              */
-            return jdbcDataPath.getSchema() + "." + statementTableName;
+            return jdbcDataPath.getSchema().getName() + "." + statementTableName;
         }
 
 

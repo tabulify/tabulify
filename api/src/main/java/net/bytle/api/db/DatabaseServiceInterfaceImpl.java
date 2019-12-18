@@ -7,11 +7,19 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
+import net.bytle.db.database.Database;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.*;
 import java.util.stream.IntStream;
 
 public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
@@ -22,18 +30,61 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
 
   public DatabaseServiceInterfaceImpl(JDBCClient dbClient, JsonObject jsonObject, Handler<AsyncResult<DatabaseServiceInterface>> readyHandler) {
     this.dbClient = dbClient;
-
+    String url = jsonObject.getString("url");
     // Migrate if not done
     // https://flywaydb.org/documentation/api/
     try {
-      String url = jsonObject.getString("url");
-      Flyway flyway = Flyway.configure().dataSource(url,null,null).load();
+      Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
       flyway.migrate();
     } catch (FlywayException e) {
-      LOGGER.error("Database preparation error", e.getCause());
+      LOGGER.error("Flyay Database preparation error {}", e.getMessage());
       readyHandler.handle(Future.failedFuture(e.getCause()));
     }
-    readyHandler.handle(Future.succeededFuture(this));
+
+    // Do we have the data ?
+    dbClient.querySingle("select count(1) from ip", ar -> {
+      if (ar.succeeded()) {
+        int size = ar.result().getInteger(0);
+        if (size == 0) {
+          Path csvPath = Paths.get("./IpToCountry.csv");
+          if (!Files.exists(csvPath)) {
+            try {
+
+              // Download the zip locally
+              URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
+              Path source = Paths.get(zipFile.toURI());
+              Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
+              Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
+
+              // Extract the csv with a zipfs file system
+              FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null);
+              Path zipPath = zipFs.getPath("IpToCountry.csv");
+              Files.copy(zipPath, csvPath);
+
+            } catch (URISyntaxException | IOException e) {
+              readyHandler.handle(Future.failedFuture(e));
+              return;
+            }
+          }
+          try {
+            Database database = Database.of("ip")
+              .setConnectionString(url);
+            DataPath ipTable = DataPaths.of(database, "IP");
+            DataPath csvDataPath = DataPaths.of(csvPath);
+            Tabulars.move(csvDataPath, ipTable);
+          } catch (Exception e){
+            LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
+            e.getCause().printStackTrace();
+            readyHandler.handle(Future.failedFuture(e.getCause()));
+            return;
+          }
+        }
+        readyHandler.handle(Future.succeededFuture());
+      } else {
+        readyHandler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
+
 
   }
 
