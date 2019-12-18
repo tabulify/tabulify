@@ -9,7 +9,9 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TpcDataSetSystem extends DataSetSystem {
@@ -19,19 +21,26 @@ public class TpcDataSetSystem extends DataSetSystem {
     private TpcdsModel tpcModel;
     private final Database database;
 
+    /**
+     * The streams have a parent child relationship
+     * This map holds the value to manage that relationship
+     * See {@link #getSelectStream(DataPath)}
+     */
+    private Map<DataPath, TpcdsSelectStream> selectStreams = new HashMap<>();
+
     private TpcDataSetSystem() {
         this.database = Database.of(PRODUCT_NAME);
     }
 
     public static TpcDataSetSystem of() {
-        if (tpcDataSetSystem==null){
+        if (tpcDataSetSystem == null) {
             tpcDataSetSystem = new TpcDataSetSystem();
         }
-        return tpcDataSetSystem ;
+        return tpcDataSetSystem;
     }
 
     public TpcdsModel getDataModel() {
-        if (tpcModel==null) {
+        if (tpcModel == null) {
             this.tpcModel = TpcdsModel.of(this);
         }
         return tpcModel;
@@ -48,7 +57,7 @@ public class TpcDataSetSystem extends DataSetSystem {
     public DataPath getDataPath(String... names) {
         DataPath dataPath = this.getDataModel().getDataPath(names[0]);
         // Case when it's the working directory
-        if (dataPath==null) {
+        if (dataPath == null) {
             dataPath = TpcDataPath.of(this, names[0]);
         }
         return dataPath;
@@ -56,20 +65,39 @@ public class TpcDataSetSystem extends DataSetSystem {
 
     @Override
     public Boolean exists(DataPath dataPath) {
-        assert dataPath!=null:"A data path should not be null";
-        return tpcModel.getDataPath(dataPath.getName())!=null;
+        assert dataPath != null : "A data path should not be null";
+        return tpcModel.getDataPath(dataPath.getName()) != null;
     }
 
+    /**
+     * Select stream may be dependent, you c
+     *
+     * @param dataPath
+     * @return a select stream
+     */
     @Override
     public SelectStream getSelectStream(DataPath dataPath) {
-        return TpcdsSelectStream.of(dataPath);
+
+        TpcdsSelectStream selectStream = getFromPool(dataPath);
+        if (selectStream == null) {
+            selectStream = TpcdsSelectStream.of(dataPath);
+            addToPool(selectStream);
+        }
+        return selectStream;
+    }
+
+    private void addToPool(TpcdsSelectStream selectStream) {
+        selectStreams.put(selectStream.getDataDef().getDataPath(), selectStream);
+    }
+
+    private TpcdsSelectStream getFromPool(DataPath dataPath) {
+        return selectStreams.get(dataPath);
     }
 
     @Override
     public Database getDatabase() {
         return this.database;
     }
-
 
 
     @Override
@@ -97,7 +125,6 @@ public class TpcDataSetSystem extends DataSetSystem {
             return new ArrayList<>();
         }
     }
-
 
 
     @Override
@@ -128,15 +155,21 @@ public class TpcDataSetSystem extends DataSetSystem {
     public List<DataPath> getDescendants(DataPath dataPath, String glob) {
         String pattern = Globs.toRegexPattern(glob);
         return getChildrenDataPath(dataPath).stream()
-                .filter(d->d.getPath().matches(pattern))
+                .filter(d -> d.getPath().matches(pattern))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<DataPath> getReferences(DataPath dataPath) {
-        throw new RuntimeException("Not yet implemented");
+        return getDataModel().getDataPaths().stream()
+                .filter(
+                        s -> s.getDataDef()
+                                .getForeignKeys().stream()
+                                .filter(d -> d.getForeignPrimaryKey().getDataDef().getDataPath().equals(dataPath))
+                                .count() > 0
+                )
+                .collect(Collectors.toList());
     }
-
 
 
     @Override

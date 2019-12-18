@@ -6,10 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 
 /**
  * Static function around database.
@@ -60,7 +56,7 @@ public class Databases {
         String rootWindows = "///";
         String url = "jdbc:sqlite:" + rootWindows + pathDb.toString().replace("\\", "\\\\");
 
-        return of(BYTLE_LOCAL_SQLITE_DB_NAME).setUrl(url);
+        return of(BYTLE_LOCAL_SQLITE_DB_NAME).setConnectionString(url);
 
     }
 

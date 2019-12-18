@@ -100,6 +100,7 @@ final class HttpFileSystem extends FileSystem {
 
   @Override
   public String toString() {
+
     return String.format("%s[%s]@%s", this.getClass().getSimpleName(), provider, hashCode());
   }
 
@@ -112,4 +113,6 @@ final class HttpFileSystem extends FileSystem {
   public int hashCode() {
     throw new UnsupportedOperationException("Not implemented");
   }
+
+
 }

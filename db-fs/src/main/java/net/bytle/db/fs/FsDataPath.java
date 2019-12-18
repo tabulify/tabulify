@@ -13,9 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * A general data path representing a file in a file system
- * This path should normally not been instantiated directly.
- * 
+ * A wrapper around a {@link Path} that adds the data def
+ *
  * If you want to use a local file, use {@link FsTableSystem#getDefault() the default file system} to instantiate
  * a data path with the function {@link FsTableSystem#getDataPath(Path)}
  */
@@ -47,7 +46,7 @@ public class FsDataPath extends DataPath {
     @Override
     public TableDef getDataDef() {
 
-        if (this.dataDef ==null) {
+        if (this.getClass().equals(CsvDataPath.class)) {
             this.dataDef = new CsvDataDef((CsvDataPath) this);
         }
         return this.dataDef;

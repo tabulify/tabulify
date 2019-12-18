@@ -42,4 +42,8 @@ public class TpcDataPath extends DataPath {
     public String getPath() {
         return getName();
     }
+
+    boolean isChild(){
+
+    }
 }

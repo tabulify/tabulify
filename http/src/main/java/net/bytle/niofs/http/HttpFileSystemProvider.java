@@ -1,6 +1,7 @@
 package net.bytle.niofs.http;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
@@ -127,7 +128,29 @@ public class HttpFileSystemProvider extends FileSystemProvider {
 
   @Override
   public final void checkAccess(final Path path, final AccessMode... modes) {
-    throw new UnsupportedOperationException("Not implemented");
+
+    if (modes.length==0){
+      try {
+        // check the existence of the file
+        HttpPath httpPath = (HttpPath) path;
+        HttpURLConnection connection = HttpStatic.getConnection(httpPath.getUrl());
+        connection.setRequestMethod("HEAD");
+        connection.connect();
+        int responseCode = connection.getResponseCode();
+        if (responseCode !=HttpURLConnection.HTTP_OK){
+          if (responseCode==HttpURLConnection.HTTP_NOT_FOUND) {
+            throw new NoSuchFileException(httpPath.toString());
+          } else {
+            throw new RuntimeException("The http request was not successful, we got the following response code "+responseCode);
+          }
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      throw new UnsupportedOperationException("Modes access check is not yet implemented");
+    }
+
   }
 
   @Override

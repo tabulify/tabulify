@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static net.bytle.db.database.Databases.MODULE_NAME;
@@ -77,12 +79,13 @@ public class DatabasesStore {
         return new DatabasesStore(path);
     }
 
-    public static DatabasesStore of() {
+    public static DatabasesStore ofDefault() {
         return of(DEFAULT_STORAGE_FILE);
     }
 
 
-    public DatabasesStore setPassphrase(String passphrase) {
+
+  public DatabasesStore setPassphrase(String passphrase) {
         this.passphrase = passphrase;
         return this;
     }
@@ -95,7 +98,7 @@ public class DatabasesStore {
     private DatabasesStore save(Database database, Boolean internalPassphrase) {
 
         Ini ini = getIniFile();
-        ini.put(database.getDatabaseName(), URL, database.getUrl());
+        ini.put(database.getDatabaseName(), URL, database.getConnectionString());
         ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
         ini.put(database.getDatabaseName(), USER, database.getUser());
         String localPassphrase;
@@ -218,13 +221,13 @@ public class DatabasesStore {
         switch (name) {
             case LOCAL_FILE_DATABASE:
                 database = Databases.of(name);
-                database.setUrl(LOCAL_FILE_DATABASE +":"+Paths.get(".").toAbsolutePath()+toString());
+                database.setConnectionString(Paths.get(".").toUri().toString());
                 break;
             default:
                 Wini.Section iniSection = getIniFile().get(name);
                 if (iniSection != null) {
                     database = Databases.of(name);
-                    database.setUrl(iniSection.get(URL));
+                    database.setConnectionString(iniSection.get(URL));
                     database.setUser(iniSection.get(USER));
                     if (iniSection.get(PASSWORD) != null) {
                         String localPassphrase;
@@ -284,30 +287,30 @@ public class DatabasesStore {
                 String rootWindows = "///";
                 Database database = Databases.of("sqlite")
                         .setDriver("org.sqlite.JDBC")
-                        .setUrl("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
+                        .setConnectionString("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
                 save(database);
 
                 database = Databases.of("oracle")
                         .setDriver("oracle.jdbc.OracleDriver")
-                        .setUrl("jdbc:oracle:thin:@[host]:[port]/[servicename]");
+                        .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
                 save(database);
 
                 database = Databases.of("sqlserver")
                         .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
-                        .setUrl("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+                        .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
                         .setUser("sa")
                         .setPassword("TheSecret1!");
                 save(database, true);
 
                 database = Databases.of("mysql")
                         .setDriver("com.mysql.jdbc.Driver")
-                        .setUrl("jdbc:mysql://[host]:[port]/[database]");
+                        .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
                 save(database);
 
                 // jdbc:postgresql://host:port/database?prop=value
                 database = Databases.of("postgresql")
                         .setDriver("org.postgresql.Driver")
-                        .setUrl("jdbc:postgresql://host:port/test?ssl=true");
+                        .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
                 save(database);
 
             } else {

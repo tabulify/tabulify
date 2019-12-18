@@ -57,7 +57,7 @@ public class DbTableDownload {
 
 
         Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET)
-                .setUrl(sourceURL)
+                .setConnectionString(sourceURL)
                 .setDriver(sourceDriver);
         Connection connection = database.getCurrentConnection();
 

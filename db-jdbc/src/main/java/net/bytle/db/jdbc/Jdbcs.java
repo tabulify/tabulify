@@ -1,12 +1,10 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.spi.DataTypeDriver;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
 import net.bytle.log.Log;
 
 import java.net.URI;
@@ -519,7 +517,7 @@ public class Jdbcs {
             System.out.println();
             URI url;
             try {
-                url = new URI(jdbcDataSystem.getDatabase().getUrl());
+                url = new URI(jdbcDataSystem.getDatabase().getConnectionString());
                 URIExtended uriExtended = new URIExtended(url);
                 System.out.println("URL (" + url + ")");
                 System.out.println("Authority: " + url.getAuthority());

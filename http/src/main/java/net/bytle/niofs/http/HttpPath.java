@@ -2,6 +2,7 @@ package net.bytle.niofs.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -90,7 +91,22 @@ public class HttpPath implements Path {
 
   @Override
   public Path resolve(String other) {
-    throw new UnsupportedOperationException("Not implemented");
+    try {
+      int port = url.getPort();
+      if (port == -1){
+        port = url.getDefaultPort();
+      }
+      URI uri = url.toURI();
+      String path = uri.getPath()+"/"+other;
+      String file = path + "?" + uri.getQuery();
+      URL url = new URL(this.url.getProtocol(), this.url.getHost(), port, file);
+      return new HttpPath(httpFileSystem, url);
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+
   }
 
   @Override
@@ -119,7 +135,7 @@ public class HttpPath implements Path {
 
   @Override
   public Path toAbsolutePath() {
-    throw new UnsupportedOperationException("Not implemented");
+    return this;
   }
 
   @Override
@@ -154,5 +170,10 @@ public class HttpPath implements Path {
 
   public URL getUrl() {
     return this.url;
+  }
+
+  @Override
+  public String toString() {
+    return url.toString();
   }
 }

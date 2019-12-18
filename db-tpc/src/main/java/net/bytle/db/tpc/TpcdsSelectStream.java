@@ -7,6 +7,7 @@ import com.teradata.tpcds.Table;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
 
@@ -63,7 +64,7 @@ public class TpcdsSelectStream implements SelectStream {
             throw new RuntimeException("This table is a child table and should be loaded with its parent. Not yet supported");
         }
         if (table.hasChild()){
-            throw new RuntimeException("This table is a parent table and should be loaded with its child. Not yet supported");
+            throw new RuntimeException("This table ("+dataPath+") is a parent table and should be loaded with its children ("+ Tabulars.getReferences(dataPath)+"). Not yet supported");
         }
         results = Results.constructResults(table, session).iterator();
     }

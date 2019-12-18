@@ -112,7 +112,7 @@ public class DbDatabaseAdd {
         }
 
         Database database = Databases.of(databaseName)
-                .setUrl(urlValue)
+                .setConnectionString(urlValue)
                 .setDriver(driverValue)
                 .setUser(userValue)
                 .setPassword(pwdValue)

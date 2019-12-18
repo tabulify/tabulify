@@ -1,8 +1,6 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
-import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 
 import java.util.Arrays;
@@ -13,7 +11,11 @@ public class FsTableSystemProvider extends TableSystemProvider {
 
     public static final String LOCAL_FILE_SCHEME = "file";
 
-    protected static Database defaultDatabase = Databases.of(LOCAL_FILE_SCHEME);
+    // TODO: get them from the NIOS implementation
+    public static final String HTTP_SCHEME = "http";
+    public static final String HTTP_SCHEMES = "https";
+
+
     private static FsTableSystemProvider defaultTableSystemProvider;
 
     public static FsTableSystemProvider getDefault() {
@@ -30,7 +32,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public List<String> getSchemes() {
-        return Arrays.asList(LOCAL_FILE_SCHEME);
+        return Arrays.asList(LOCAL_FILE_SCHEME, HTTP_SCHEME, HTTP_SCHEMES);
     }
 
 

@@ -20,291 +20,291 @@ import java.util.stream.Collectors;
 
 /**
  * Retrieve a list of TableDef through a Data Definition file
- *
- *
  */
 public class DataDefs {
 
 
-    /**
-     * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of data path
-     *
-     * @param path
-     * @return
-     */
-    public static List<DataPath> load(Path path) {
+  /**
+   * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of data path
+   *
+   * @param path
+   * @return
+   */
+  public static List<DataPath> load(Path path) {
 
-        if (!Files.exists(path)) {
-            throw new RuntimeException("The data definition file path (" + path.toAbsolutePath().toString() + " does not exist");
-        }
+    if (!Files.exists(path)) {
+      throw new RuntimeException("The data definition file path (" + path.toAbsolutePath().toString() + " does not exist");
+    }
 
-        List<Path> fileDiscovered = new ArrayList<>();
-        // if it's a file
-        if (Files.isRegularFile(path)) {
-            fileDiscovered.add(path);
-        } else {
-            fileDiscovered.addAll(Fs.getDescendantFiles(path));
-        }
+    List<Path> fileDiscovered = new ArrayList<>();
+    // if it's a file
+    if (Files.isRegularFile(path)) {
+      fileDiscovered.add(path);
+    } else {
+      fileDiscovered.addAll(Fs.getDescendantFiles(path));
+    }
 
-        Set<DataPath> dataPaths = new TreeSet<>();
-        for (Path filePath : fileDiscovered) {
+    Set<DataPath> dataPaths = new TreeSet<>();
+    for (Path filePath : fileDiscovered) {
 
-            List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
-            DataPath dataPath = DataPaths.of(String.join("/",names)+Fs.getFileName(filePath).replace("--datadef",""));
-            dataPath = readFile(dataPath, filePath);
-            dataPaths.add(dataPath);
-
-        }
-
-        // To list
-        final ArrayList<DataPath> dataPathsList = new ArrayList<>(dataPaths);
-        Collections.sort(dataPathsList);
-        return dataPathsList;
+      List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
+      DataPath dataPath = DataPaths.of(String.join("/", names) + Fs.getFileName(filePath).replace("--datadef", ""));
+      dataPath = readFile(dataPath, filePath);
+      dataPaths.add(dataPath);
 
     }
 
+    // To list
+    final ArrayList<DataPath> dataPathsList = new ArrayList<>(dataPaths);
+    Collections.sort(dataPathsList);
+    return dataPathsList;
 
-    /**
-     * Add the meta from a data def file
-     *
-     * @param path
-     * @return the data path with its meta
-     */
-    private static DataPath readFile(DataPath dataPath, Path path) {
+  }
 
-        InputStream input;
-        try {
-            input = Files.newInputStream(path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+
+  /**
+   * Add the meta from a data def file
+   *
+   * @param path
+   * @return the data path with its meta
+   */
+  private static DataPath readFile(DataPath dataPath, Path path) {
+
+    InputStream input;
+    try {
+      input = Files.newInputStream(path);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // Transform the file in properties
+    Yaml yaml = new Yaml();
+
+    // Every document is one dataDef
+    List<Map<String, Object>> documents = new ArrayList<>();
+    for (Object data : yaml.loadAll(input)) {
+      Map<String, Object> document;
+      try {
+        document = (Map<String, Object>) data;
+      } catch (ClassCastException e) {
+        String message = "A data Def must be in a map format. ";
+        if (data.getClass().equals(java.util.ArrayList.class)) {
+          message += "They are in a list format. You should suppress the minus if they are present.";
         }
+        message += "The Bad Data Def Values are: " + data;
+        throw new RuntimeException(message, e);
+      }
+      documents.add(document);
+    }
 
-        // Transform the file in properties
-        Yaml yaml = new Yaml();
+    switch (documents.size()) {
+      case 0:
+        break;
+      case 1:
 
-        // Every document is one dataDef
-        List<Map<String, Object>> documents = new ArrayList<>();
-        for (Object data : yaml.loadAll(input)) {
-            Map<String, Object> document;
-            try {
-                document = (Map<String, Object>) data;
-            } catch (ClassCastException e) {
-                String message = "A data Def must be in a map format. ";
-                if (data.getClass().equals(java.util.ArrayList.class)) {
-                    message += "They are in a list format. You should suppress the minus if they are present.";
+        Map<String, Object> document = documents.get(0);
+
+        // Loop through all other properties
+        for (Map.Entry<String, Object> entry : document.entrySet()) {
+
+          switch (entry.getKey().toLowerCase()) {
+            case "name":
+              continue;
+            case "columns":
+              Map<String, Object> columns;
+              try {
+                columns = (Map<String, Object>) entry.getValue();
+              } catch (ClassCastException e) {
+                String message = "The columns of the data def file (" + path.toString() + ") must be in a map format. ";
+                if (entry.getValue().getClass().equals(java.util.ArrayList.class)) {
+                  message += "They are in a list format. You should suppress the minus if they are present.";
                 }
-                message += "The Bad Data Def Values are: " + data;
+                message += "Bad Columns Values are: " + entry.getValue();
                 throw new RuntimeException(message, e);
-            }
-            documents.add(document);
-        }
+              }
+              for (Map.Entry<String, Object> column : columns.entrySet()) {
 
-        switch (documents.size()) {
-            case 0:
-                break;
-            case 1:
+                try {
+                  Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
 
-                Map<String, Object> document = documents.get(0);
+                  String type = "varchar";
+                  Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
+                  if (oType != null) {
+                    type = (String) oType;
+                  }
 
-                // Loop through all other properties
-                for (Map.Entry<String, Object> entry : document.entrySet()) {
+                  DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
 
-                    switch (entry.getKey().toLowerCase()) {
-                        case "name":
-                            continue;
-                        case "columns":
-                            Map<String, Object> columns;
-                            try {
-                                columns = (Map<String, Object>) entry.getValue();
-                            } catch (ClassCastException e) {
-                                String message = "The columns of the data def file (" + path.toString() + ") must be in a map format. ";
-                                if (entry.getValue().getClass().equals(java.util.ArrayList.class)) {
-                                    message += "They are in a list format. You should suppress the minus if they are present.";
-                                }
-                                message += "Bad Columns Values are: " + entry.getValue();
-                                throw new RuntimeException(message, e);
-                            }
-                            for (Map.Entry<String, Object> column : columns.entrySet()) {
-
-                                try {
-                                    Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
-
-                                    String type = "varchar";
-                                    Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
-                                    if (oType != null) {
-                                        type = (String) oType;
-                                    }
-
-                                    DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
-
-                                    ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getClass());
-                                    for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
-                                        switch (columnProperty.getKey().toLowerCase()) {
-                                            case "type":
-                                                columnDef.typeCode(dataTypeJdbc.getTypeCode());
-                                                break;
-                                            case "precision":
-                                                columnDef.precision((Integer) columnProperty.getValue());
-                                                break;
-                                            case "scale":
-                                                columnDef.scale((Integer) columnProperty.getValue());
-                                                break;
-                                            case "comment":
-                                                columnDef.comment((String) columnProperty.getValue());
-                                                break;
-                                            case "nullable":
-                                                columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
-                                                break;
-                                            default:
-                                                columnDef.addProperty(columnProperty.getKey(), columnProperty.getValue());
-                                                break;
-                                        }
-                                    }
-
-                                } catch (ClassCastException e) {
-                                    String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataPath.toString() + ") must be in a map format. ";
-                                    if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
-                                        message += "They are in a list format. You should suppress the minus if they are present.";
-                                    }
-                                    message += "Bad Columns Properties Values are: " + column.getValue();
-                                    throw new RuntimeException(message, e);
-                                }
-                            }
-                            break;
-                        default:
-                            dataPath.getDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
-                            break;
+                  ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getClass());
+                  for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
+                    switch (columnProperty.getKey().toLowerCase()) {
+                      case "type":
+                        columnDef.typeCode(dataTypeJdbc.getTypeCode());
+                        break;
+                      case "precision":
+                        columnDef.precision((Integer) columnProperty.getValue());
+                        break;
+                      case "scale":
+                        columnDef.scale((Integer) columnProperty.getValue());
+                        break;
+                      case "comment":
+                        columnDef.comment((String) columnProperty.getValue());
+                        break;
+                      case "nullable":
+                        columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
+                        break;
+                      default:
+                        columnDef.addProperty(columnProperty.getKey(), columnProperty.getValue());
+                        break;
                     }
+                  }
+
+                } catch (ClassCastException e) {
+                  String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataPath.toString() + ") must be in a map format. ";
+                  if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
+                    message += "They are in a list format. You should suppress the minus if they are present.";
+                  }
+                  message += "Bad Columns Properties Values are: " + column.getValue();
+                  throw new RuntimeException(message, e);
                 }
-                break;
+              }
+              break;
             default:
-                throw new RuntimeException("Too much metadata documents ("+documents.size()+") found in the file ("+path.toString()+") for the dataPath ("+dataPath.toString()+")");
+              dataPath.getDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
+              break;
+          }
         }
-        return dataPath;
+        break;
+      default:
+        throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + path.toString() + ") for the dataPath (" + dataPath.toString() + ")");
+    }
+    return dataPath;
 
+  }
+
+
+  /**
+   * Merge the tables property {@link TableDef#getProperty(String)}
+   * and the column property {@link ColumnDef#getProperty(String)} into one.
+   * <p>
+   * The first table has priority.
+   * If a property does exist in the first and second table, the first will kept.
+   *
+   * @param firstTable
+   * @param secondTable
+   * @return the first table object updated
+   */
+  public static void mergeProperties(TableDef firstTable, TableDef secondTable) {
+
+    Map<String, Object> firstTableProp = firstTable.getProperties();
+    for (Map.Entry<String, Object> entry : secondTable.getProperties().entrySet()) {
+      if (!firstTableProp.containsKey(entry.getKey())) {
+        firstTableProp.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    for (ColumnDef<?> columnDefFirstTable : firstTable.getColumnDefs()) {
+      ColumnDef<?> columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
+      if (columnSecondTable != null) {
+        Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
+        final Map<String, Object> properties = columnSecondTable.getProperties();
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+          if (!columnPropertiesFirstTable.containsKey(entry.getKey())) {
+            columnPropertiesFirstTable.put(entry.getKey(), entry.getValue());
+          }
+        }
+      }
+    }
+
+  }
+
+
+  public static TableDef of(DataPath dataPath) {
+
+    return dataPath.getDataDef();
+
+  }
+
+  /**
+   * Add the columns to the targetDef from the sourceDef
+   *
+   * @param sourceDef
+   * @param targetDef
+   */
+  public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
+
+    assert sourceDef != null : "SourceDef should not be null";
+    int columnCount = sourceDef.getColumnDefs().size();
+    for (int i = 0; i < columnCount; i++) {
+      ColumnDef columnDef = sourceDef.getColumnDef(i);
+      targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClazz())
+        .typeCode(columnDef.getDataType().getTypeCode())
+        .precision(columnDef.getPrecision())
+        .scale(columnDef.getScale());
     }
 
 
+  }
 
-    /**
-     * Merge the tables property {@link TableDef#getProperty(String)}
-     * and the column property {@link ColumnDef#getProperty(String)} into one.
-     *
-     * The first table has priority.
-     * If a property does exist in the first and second table, the first will kept.
-     *
-     * @param firstTable
-     * @param secondTable
-     * @return the first table object updated
-     */
-    public static void mergeProperties(TableDef firstTable, TableDef secondTable) {
+  public static void printColumns(TableDef tableDef) {
 
-        Map<String, Object> firstTableProp = firstTable.getProperties();
-        for (Map.Entry<String,Object> entry : secondTable.getProperties().entrySet()){
-            if (!firstTableProp.containsKey(entry.getKey())){
-                firstTableProp.put(entry.getKey(),entry.getValue());
-            }
-        }
+    DataPath tableStructure = DataPaths.of("structure");
+    tableStructure
+      .getDataDef()
+      .addColumn("#")
+      .addColumn("Colum Name")
+      .addColumn("Data Type")
+      .addColumn("Key")
+      .addColumn("Not Null")
+      .addColumn("Default")
+      .addColumn("Auto Increment")
+      .addColumn("Description");
 
-        for (ColumnDef<?> columnDefFirstTable:firstTable.getColumnDefs()){
-            ColumnDef<?> columnSecondTable = secondTable.getColumnDef(columnDefFirstTable.getColumnName());
-            if (columnSecondTable!=null){
-                Map<String, Object> columnPropertiesFirstTable = columnDefFirstTable.getProperties();
-                final Map<String,Object> properties = columnSecondTable.getProperties();
-                for (Map.Entry<String,Object> entry : properties.entrySet()){
-                    if (!columnPropertiesFirstTable.containsKey(entry.getKey())){
-                        columnPropertiesFirstTable.put(entry.getKey(),entry.getValue());
-                    }
-                }
-            }
-        }
+    InsertStream insertStream = Tabulars.getInsertStream(tableStructure);
+    int i = 0;
+    for (ColumnDef columnDef : tableDef.getColumnDefs()) {
+      i++;
+      insertStream.insert(
+        i,
+        columnDef.getColumnName(),
+        columnDef.getDataType().getTypeName(),
+        (tableDef.getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
+        (columnDef.getNullable() == 0 ? "x" : ""),
+        columnDef.getDefault(),
+        columnDef.getIsAutoincrement(),
+        columnDef.getDescription()
 
+      );
     }
+    insertStream.close();
 
 
-    public static TableDef of(DataPath dataPath) {
+    Tabulars.print(tableStructure);
+    Tabulars.drop(tableStructure);
+  }
 
-        return dataPath.getDataDef();
 
+  public static void copy(TableDef source, TableDef target) {
+
+    if (source == null) {
+      return;
     }
-
-    /**
-     * Add the columns to the targetDef from the sourceDef
-     *
-     * @param sourceDef
-     * @param targetDef
-     *
-     */
-    public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
-
-        // Add the columns
-        int columnCount = sourceDef.getColumnDefs().size();
-        for (int i = 0; i < columnCount; i++) {
-            ColumnDef columnDef = sourceDef.getColumnDef(i);
-            targetDef.getColumnOf(columnDef.getColumnName(),columnDef.getClazz())
-                    .typeCode(columnDef.getDataType().getTypeCode())
-                    .precision(columnDef.getPrecision())
-                    .scale(columnDef.getScale());
-        }
-
+    addColumns(source, target);
+    final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
+    if (sourcePrimaryKey != null) {
+      final List<String> columns = sourcePrimaryKey.getColumns().stream()
+        .map(s -> s.getColumnName())
+        .collect(Collectors.toList());
+      target.setPrimaryKey(columns);
     }
+  }
 
-    public static void printColumns(TableDef tableDef) {
-
-        DataPath tableStructure = DataPaths.of("structure");
-        tableStructure
-                .getDataDef()
-                .addColumn("#")
-                .addColumn("Colum Name")
-                .addColumn("Data Type")
-                .addColumn("Key")
-                .addColumn("Not Null")
-                .addColumn("Default")
-                .addColumn("Auto Increment")
-                .addColumn("Description");
-
-        InsertStream insertStream = Tabulars.getInsertStream(tableStructure);
-        int i = 0;
-        for (ColumnDef columnDef : tableDef.getColumnDefs()) {
-            i++;
-            insertStream.insert(
-                    i,
-                    columnDef.getColumnName(),
-                    columnDef.getDataType().getTypeName(),
-                    (tableDef.getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
-                    (columnDef.getNullable() == 0 ? "x" : ""),
-                    columnDef.getDefault(),
-                    columnDef.getIsAutoincrement(),
-                    columnDef.getDescription()
-
-            );
-        }
-        insertStream.close();
-
-
-        Tabulars.print(tableStructure);
-        Tabulars.drop(tableStructure);
+  public static int getColumnIdFromName(TableDef dataDef, String columnName) {
+    for (int i = 0; i < dataDef.getColumnDefs().size(); i++) {
+      if (dataDef.getColumnDef(i).getColumnName().equals(columnName)) {
+        return i;
+      }
     }
-
-
-
-    public static void copy(TableDef source, TableDef target) {
-        addColumns(source, target);
-        final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
-        if (sourcePrimaryKey!=null) {
-            final List<String> columns = sourcePrimaryKey.getColumns().stream()
-                    .map(s->s.getColumnName())
-                    .collect(Collectors.toList());
-            target.setPrimaryKey(columns);
-        }
-    }
-
-    public static int getColumnIdFromName(TableDef dataDef, String columnName) {
-        for (int i = 0; i<dataDef.getColumnDefs().size();i++){
-            if (dataDef.getColumnDef(i).getColumnName().equals(columnName)){
-                return i;
-            }
-        }
-        throw new RuntimeException("Column name ("+columnName+") not found in data document ("+dataDef.getDataPath()+")");
-    }
+    throw new RuntimeException("Column name (" + columnName + ") not found in data document (" + dataDef.getDataPath() + ")");
+  }
 }

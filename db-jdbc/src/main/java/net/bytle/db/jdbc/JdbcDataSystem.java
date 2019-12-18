@@ -69,7 +69,7 @@ public class JdbcDataSystem extends TableSystem {
                     sqlDatabase = new SqlDatabaseIHive(this);
                     break;
                 default:
-                    sqlDatabase = SqlDatabases.getSqlDatabase(database.getUrl());
+                    sqlDatabase = SqlDatabases.getSqlDatabase(database.getConnectionString());
                     break;
             }
 
@@ -335,7 +335,7 @@ public class JdbcDataSystem extends TableSystem {
     public synchronized Connection getNewConnection(String appName) {
 
 
-        URIExtended uriExtended = new URIExtended(this.database.getUrl());
+        URIExtended uriExtended = new URIExtended(this.database.getConnectionString());
         String driver = uriExtended.getDriver();
 
         if (driver != null) {
@@ -349,7 +349,7 @@ public class JdbcDataSystem extends TableSystem {
 
 
         Connection connection;
-        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Trying to connect to the connection (" + database.getUrl() + ")");
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Trying to connect to the connection (" + database.getConnectionString() + ")");
         try {
 
             // connection = DriverManager.getConnection(this.url, this.user, this.password);
@@ -364,10 +364,10 @@ public class JdbcDataSystem extends TableSystem {
                     connectionProperties.put("password", database.getPassword());
                 }
             }
-            connection = DriverManager.getConnection(database.getUrl(), connectionProperties);
+            connection = DriverManager.getConnection(database.getConnectionString(), connectionProperties);
 
         } catch (SQLException e) {
-            String msg = "Unable to connect to the database (" + database.getDatabaseName() + ")with the following URL (" + database.getUrl() + "). Error: " + e.getMessage();
+            String msg = "Unable to connect to the database (" + database.getDatabaseName() + ")with the following URL (" + database.getConnectionString() + "). Error: " + e.getMessage();
             JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
             throw new RuntimeException(e);
         }

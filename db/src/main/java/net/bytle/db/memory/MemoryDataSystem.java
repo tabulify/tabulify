@@ -15,6 +15,7 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.io.Closeable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -118,8 +119,13 @@ public class MemoryDataSystem extends TableSystem {
         throw new RuntimeException("Not implemented");
     }
 
+  @Override
+  public DataPath getCurrentPath() {
+    return getDataPath("");
+  }
 
-    @Override
+
+  @Override
     public String getString(DataPath dataPath) {
         throw new RuntimeException("Not yet implemented");
     }
@@ -162,12 +168,21 @@ public class MemoryDataSystem extends TableSystem {
         return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
     }
 
+  @Override
+  protected DataPath getRootPath() {
+    return getDataPath("");
+  }
 
-    @Override
+  @Override
+  public DataPath getDataPath(URI uri) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+
+  @Override
     public DataPath getDataPath(DataUri dataUri) {
         return getDataPath(dataUri.getPath());
     }
-
 
 
     @Override

@@ -25,11 +25,23 @@ public class HttpBasicFileAttributes implements BasicFileAttributes {
         return null;
     }
 
+  /**
+   * HTTP does not have the notion of directory/file
+   *
+   * @return always true
+   */
     @Override
     public boolean isRegularFile() {
-        return false;
+        return true;
     }
 
+    /**
+     * HTTP does not have the notion of directory
+     * This attribute determine if the result of Fs.copy will be a directory or a file
+     * If true, it will create a directory and not a file.
+     *
+     * @return always false
+     */
     @Override
     public boolean isDirectory() {
         return false;

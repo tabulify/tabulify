@@ -316,9 +316,9 @@ public class Tabulars {
         TransferListener transferListener = null;
 
         final TableSystem sourceDataSystem = source.getDataSystem();
-        if (sourceDataSystem.equals(target.getDataSystem())) {
+        if (sourceDataSystem.getClass().equals(target.getDataSystem().getClass())) {
             // same provider (fs or jdbc)
-            sourceDataSystem.copy(source, target, transferProperties);
+          transferListener = sourceDataSystem.copy(source, target, transferProperties);
         } else {
             // different provider (fs to jdbc or jdbc to fs)
             Transfers.createOrCheckTargetFromSource(source, target);

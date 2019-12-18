@@ -2,12 +2,10 @@ package net.bytle.db.transfer;
 
 import net.bytle.db.engine.ThreadListener;
 import net.bytle.db.engine.ThreadListenerAbs;
-import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SelectStreamListener;
 import net.bytle.timer.Timer;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +45,7 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
      */
     public int getExitStatus() {
 
-        throw new RuntimeException("");
+        return getExceptions().size();
 
     }
 
@@ -106,11 +104,13 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
         return this.insertListener;
     }
 
-    public void stopTimer() {
+    public TransferListener stopTimer() {
         timer.stop();
+        return this;
     }
 
-    public void startTimer() {
+    public TransferListener startTimer() {
         timer.start();
+        return this;
     }
 }

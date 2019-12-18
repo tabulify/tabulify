@@ -1,6 +1,5 @@
 package net.bytle.db.uri;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -8,12 +7,10 @@ import java.util.Map;
  */
 public class DataUri implements Comparable<DataUri> {
 
-
-    public static final String AT_STRING = "@";
-    public static final String EQUAL_CHARACTER = "=";
-    public static final String AMPERSAND_CHARACTER = "&";
     static final String QUESTION_MARK = "?";
     static final String HASH_TAG = "#";
+    public static final String AT_STRING = "@";
+
     private final String uri;
     private String query = null;
     private String fragment = null;
@@ -84,8 +81,6 @@ public class DataUri implements Comparable<DataUri> {
 
 
     public String toString() {
-
-
         return this.uri;
     }
 
@@ -146,17 +141,8 @@ public class DataUri implements Comparable<DataUri> {
     }
 
     public Map<String, String> getQueryParameters() {
-        String[] ampersandSplit = query.split(AMPERSAND_CHARACTER);
-        Map<String, String> parameters = new HashMap<>();
-        for (String ampersand : ampersandSplit) {
-            int characterIndex = ampersand.indexOf(EQUAL_CHARACTER);
-            if (characterIndex == -1){
-                throw new RuntimeException("The query part ("+ampersand+") should have at minimum the character ("+ EQUAL_CHARACTER+")");
-            }
-            String key = ampersand.substring(0, characterIndex);
-            String value = ampersand.substring(characterIndex+1);
-            parameters.put(key, value);
-        }
-        return parameters;
+
+        return Uris.getQueryAsMap(query);
+
     }
 }

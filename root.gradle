@@ -25,6 +25,7 @@ subprojects {
     dependencies {
         testImplementation 'junit:junit:4.12'
         testImplementation 'com.github.stefanbirkner:system-rules:1.17.0'
+        implementation "ch.qos.logback:logback-classic:1.2.3"
     }
 
     sourceCompatibility = '1.8'
