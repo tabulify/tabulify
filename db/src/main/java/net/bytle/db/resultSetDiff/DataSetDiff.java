@@ -17,9 +17,7 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -274,7 +272,7 @@ public class DataSetDiff {
                 columnPositionWithDiff.forEach(diff -> columnPositions.add(diff.getPosition()));
             }
 
-            for (int i = 1; i <= dataSet.getDataDef().getColumnDefs().size(); i++) {
+            for (int i = 1; i <= dataSet.getSelectDataDef().getColumnDefs().size(); i++) {
                 Object object = dataSet.getObject(i);
 
                 if (columnPositions.contains(i)) {
@@ -302,7 +300,7 @@ public class DataSetDiff {
     private void compareAndAddRowData() throws SQLException {
         Boolean diffFound = false;
         List<Diff> columnPositionWithDiff = new ArrayList<>();
-        for (int i = 1; i <= selectSourceStream.getDataDef().getColumnDefs().size(); i++) {
+        for (int i = 1; i <= selectSourceStream.getSelectDataDef().getColumnDefs().size(); i++) {
 
             String cellCoordinates = "Cell(Row,Col)(" + selectSourceStream.getRow() + "," + i + ")";
 

@@ -235,7 +235,7 @@ public class JdbcDataSystem extends TableSystem {
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
     JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
-    return SqlSelectStream.of(jdbcDataPath);
+    return jdbcDataPath.getSelectStream();
   }
 
   /**

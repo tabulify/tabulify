@@ -140,7 +140,7 @@ public class CsvSelectStream extends SelectStreamAbs  {
     }
 
     @Override
-    public TableDef getDataDef() {
+    public TableDef getSelectDataDef() {
         return csvDataPath.getDataDef();
     }
 

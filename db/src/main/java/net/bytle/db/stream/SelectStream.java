@@ -21,7 +21,7 @@ public interface SelectStream extends AutoCloseable {
     Object getObject(int columnIndex);
 
 
-    TableDef getDataDef();
+    TableDef getSelectDataDef();
 
     double getDouble(int columnIndex);
 

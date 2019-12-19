@@ -87,7 +87,7 @@ public class TpcDataSetSystem extends DataSetSystem {
     }
 
     private void addToPool(TpcdsSelectStream selectStream) {
-        selectStreams.put(selectStream.getDataDef().getDataPath(), selectStream);
+        selectStreams.put(selectStream.getSelectDataDef().getDataPath(), selectStream);
     }
 
     private TpcdsSelectStream getFromPool(DataPath dataPath) {

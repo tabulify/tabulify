@@ -25,7 +25,7 @@ public class Streams {
         assert selectStream != null : "Select Stream is null";
 
         Map<Integer, Integer> maxs = new HashMap<>();
-        final TableDef tableDef = selectStream.getDataDef();
+        final TableDef tableDef = selectStream.getSelectDataDef();
         while (selectStream.next()) {
             for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
                 String string = selectStream.getString(i);
@@ -100,7 +100,7 @@ public class Streams {
     }
 
     private static Object[] getObjects(SelectStream selectStream) {
-        int size = selectStream.getDataDef().getColumnDefs().size();
+        int size = selectStream.getSelectDataDef().getColumnDefs().size();
         Object[] os = new Object[size];
 
         for (int i = 0; i < size; i++) {

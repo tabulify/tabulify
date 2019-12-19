@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static net.bytle.db.memory.MemoryDataPathType.*;
-
 /**
  * Select implementation
  */
@@ -133,7 +131,7 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
     }
 
     @Override
-    public TableDef getDataDef() {
+    public TableDef getSelectDataDef() {
         return memoryDataPath.getDataDef();
     }
 

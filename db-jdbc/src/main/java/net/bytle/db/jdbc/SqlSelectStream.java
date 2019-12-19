@@ -8,13 +8,9 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
-import static net.bytle.db.jdbc.JdbcDataPath.VIEW_TYPE;
 
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
@@ -26,8 +22,13 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     // The cursor
     private ResultSet resultSet;
 
+    private TableDef selectDataDef;
 
-    public SqlSelectStream(JdbcDataPath jdbcDataPath) {
+    // Just for debugging purpose, in order to see the query that created this stream
+    private String query;
+
+  public SqlSelectStream(JdbcDataPath jdbcDataPath) {
+
         super(jdbcDataPath);
         this.jdbcDataPath = jdbcDataPath;
         this.jdbcDataSystem = jdbcDataPath.getDataSystem();
@@ -83,10 +84,10 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     private void init() {
-        String query;
+
         switch (jdbcDataPath.getType()) {
             case QUERY_TYPE:
-                query = jdbcDataPath.getDataDef().getQuery();
+                query = jdbcDataPath.getQuery();
                 break;
             default:
                 query = "select * from " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
@@ -95,12 +96,11 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
         try {
             this.resultSet = jdbcDataSystem.getCurrentConnection().createStatement().executeQuery(query);
-
-            if (jdbcDataPath.getType().equals(QUERY_TYPE)) {
+            if (selectDataDef == null) {
                 ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
-                TableDef dataDef = jdbcDataPath.getDataDef();
+                selectDataDef = TableDef.of(jdbcDataPath);
                 for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-                    dataDef.addColumn(
+                    selectDataDef.addColumn(
                             resultSetMetaData.getColumnName(i),
                             resultSetMetaData.getColumnType(i),
                             resultSetMetaData.getPrecision(i),
@@ -140,12 +140,16 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         }
     }
 
-    @Override
-    public TableDef getDataDef() {
-        if (resultSet == null) {
-            init();
+  /**
+   *
+   * @return the data def of the result set from the select
+   */
+  @Override
+    public TableDef getSelectDataDef() {
+        if (this.selectDataDef==null){
+          init();
         }
-        return this.jdbcDataPath.getDataDef();
+        return this.selectDataDef;
     }
 
 

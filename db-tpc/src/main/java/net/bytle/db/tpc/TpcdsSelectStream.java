@@ -105,7 +105,7 @@ public class TpcdsSelectStream implements SelectStream {
     }
 
     @Override
-    public TableDef getDataDef() {
+    public TableDef getSelectDataDef() {
         return dataPath.getDataDef();
     }
 

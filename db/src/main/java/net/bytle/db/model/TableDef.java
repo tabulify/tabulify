@@ -45,8 +45,6 @@ public class TableDef implements RelationDef  {
 
     private Set<UniqueKeyDef> uniqueKeys = new HashSet<>();
 
-    private String query;
-
     public TableDef(DataPath dataPath) {
         this.dataPath = dataPath;
     }
@@ -368,17 +366,5 @@ public class TableDef implements RelationDef  {
         return meta.getColumns(columnNames.toArray(new String[0]));
     }
 
-    public TableDef setQuery(String query) {
-        this.query = query;
-        return this;
-    }
 
-    /**
-     *
-     * @return the query definition (select) or null if it's not a query
-     *
-     */
-    public String getQuery() {
-        return this.query;
-    }
 }

@@ -94,7 +94,7 @@ public class JsonSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public TableDef getDataDef() {
+  public TableDef getSelectDataDef() {
     return jsonDataPath.getDataDef();
   }
 

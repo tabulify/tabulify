@@ -123,7 +123,7 @@ public class DbDml {
         insertIntoBuilder.append(") ");
         if (source.getType().equals(JdbcDataPath.QUERY_TYPE)){
 
-            insertIntoBuilder.append(source.getDataDef().getQuery());
+            insertIntoBuilder.append(source.getQuery());
 
         } else {
 

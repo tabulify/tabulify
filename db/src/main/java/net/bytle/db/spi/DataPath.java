@@ -12,58 +12,72 @@ import java.util.Objects;
  */
 public abstract class DataPath implements Comparable<DataPath> {
 
+  // The query is here because even if it defines a little bit the structure
+  // (data def), for now, we get it after its execution
+  // if you put the query on the data def you got a recursion
+  private String query;
 
-    protected TableDef dataDef;
+  protected TableDef dataDef;
 
 
+  public abstract TableSystem getDataSystem();
 
-    public abstract TableSystem getDataSystem();
+
+  public abstract String getName();
+
+  public abstract List<String> getPathParts();
+
+  private String getId() {
+    final String path = getPath();
+    assert path != null : "Path cannot be null";
+    final Database database = getDataSystem().getDatabase();
+    final String databaseName = database.getDatabaseName();
+    return path + "@" + databaseName;
+  }
+
+  public abstract String getPath();
+
+  public int compareTo(DataPath o) {
+    return this.getId().compareTo(o.getId());
+  }
+
+  @Override
+  public String toString() {
+    return getId();
+  }
 
 
-    public abstract String getName();
-
-    public abstract List<String> getPathParts();
-
-    private String getId() {
-        final String path = getPath();
-        assert path != null : "Path cannot be null";
-        final Database database = getDataSystem().getDatabase();
-        final String databaseName = database.getDatabaseName();
-        return path + "@" + databaseName;
+  public TableDef getDataDef() {
+    if (this.dataDef == null) {
+      this.dataDef = TableDef.of(this);
     }
+    return dataDef;
+  }
 
-    public abstract String getPath();
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DataPath dataPath = (DataPath) o;
+    return getId().equals(dataPath.getId());
+  }
 
-    public int compareTo(DataPath o) {
-        return this.getId().compareTo(o.getId());
-    }
-
-    @Override
-    public String toString() {
-        return getId();
-    }
-
-
-    public TableDef getDataDef() {
-        if (this.dataDef == null) {
-            this.dataDef = TableDef.of(this);
-        }
-        return dataDef;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DataPath dataPath = (DataPath) o;
-        return getId().equals(dataPath.getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId());
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId());
+  }
 
 
+  public DataPath setQuery(String query) {
+    this.query = query;
+    return this;
+  }
+
+  /**
+   * @return the query definition (select) or null if it's not a query
+   */
+  public String getQuery() {
+    return this.query;
+  }
 
 }

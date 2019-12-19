@@ -169,6 +169,17 @@ public class DataPaths {
   }
 
   /**
+   * @param dataStore - a dataStore
+   * @param query    - the query
+   * @return a data path query
+   */
+  public static DataPath ofQuery(Database dataStore, String query) {
+
+    return of(dataStore,".").getDataSystem().getProcessingEngine().getQuery(query);
+
+  }
+
+  /**
    * @param dataPath - a data path container (a directory, a schema or a catalog)
    * @return the children data paths representing sql tables, schema or files
    */
