@@ -1,3 +1,6 @@
+plugins {
+  id 'application'
+}
 
 dependencies {
   implementation 'org.yaml:snakeyaml:1.20'
@@ -7,4 +10,15 @@ dependencies {
   implementation project(':bytle-db-fs')
   implementation project(':bytle-db-jdbc')
   implementation project(':bytle-db-sqlite')
+}
+
+application {
+  mainClassName = 'net.bytle.db.play.DbPlay'
+  executableDir = 'bin'
+}
+
+task createStartScripts(type: CreateStartScripts) {
+
+  applicationName = 'db-play'
+
 }
