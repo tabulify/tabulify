@@ -498,7 +498,7 @@ public class Fs {
 
 
   public static String getExtension(String fullFileName) {
-    return fullFileName.substring(fullFileName.lastIndexOf('.'));
+    return fullFileName.substring(fullFileName.lastIndexOf('.')+1);
   }
 
   public static String getFileName(String fullFileName) {

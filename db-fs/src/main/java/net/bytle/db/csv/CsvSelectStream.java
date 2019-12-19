@@ -2,21 +2,17 @@ package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.SelectStreamAbs;
-import net.bytle.db.stream.SelectStream;
-import net.bytle.fs.Fs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Clob;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-public class CsvSelectStream extends SelectStreamAbs implements SelectStream {
+public class CsvSelectStream extends SelectStreamAbs  {
 
 
     private final CsvDataPath csvDataPath;

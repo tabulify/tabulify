@@ -8,6 +8,8 @@ import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.html.HtmlDataPath;
+import net.bytle.db.json.JsonDataPath;
+import net.bytle.db.json.JsonSelectStream;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.*;
 import net.bytle.db.stream.InsertStream;
@@ -158,7 +160,15 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
-    return CsvSelectStream.of((CsvDataPath) dataPath);
+    // TODO: We need to get it from the path ?
+    if (CsvDataPath.class.equals(dataPath.getClass())) {
+      return CsvSelectStream.of((CsvDataPath) dataPath);
+    } else if (JsonDataPath.class.equals(dataPath.getClass())){
+      return JsonSelectStream.of((JsonDataPath) dataPath);
+    } else {
+      throw new RuntimeException("We cannot give a select stream because this data path type ("+dataPath.getClass()+") has no known select stream.");
+    }
+
   }
 
   @Override
@@ -435,7 +445,16 @@ public class FsTableSystem extends TableSystem {
 
     switch (path.toUri().getScheme()) {
       case "file":
-        return new CsvDataPath(this, path);
+        String extension = Fs.getExtension(path.toString()).toLowerCase();
+        switch (extension) {
+          case "csv":
+            return new CsvDataPath(this, path);
+          case "jsonl":
+          case "json":
+            return new JsonDataPath(this, path);
+          default:
+            return new FsDataPath(this, path);
+        }
       case "https":
       case "http":
         return new HtmlDataPath(this, path);
