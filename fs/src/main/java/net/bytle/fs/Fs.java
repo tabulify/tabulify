@@ -40,6 +40,14 @@ public class Fs {
         }
     }
 
+  /**
+   *
+   * @param path
+   * @return a string for the file content with the os line separator
+   *
+   * One liner without getting the OS line separator:
+   *    new String(Files.readAllBytes(jsonFile))
+   */
     public static String getFileContent(Path path) {
         try {
 
