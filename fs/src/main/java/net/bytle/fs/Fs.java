@@ -489,4 +489,11 @@ public class Fs {
     }
 
 
+  public static String getExtension(String fullFileName) {
+    return fullFileName.substring(fullFileName.lastIndexOf('.'));
+  }
+
+  public static String getFileName(String fullFileName) {
+    return fullFileName.substring(0,fullFileName.lastIndexOf('.'));
+  }
 }

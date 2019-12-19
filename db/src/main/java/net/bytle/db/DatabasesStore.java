@@ -9,6 +9,8 @@ import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
 import org.ini4j.Profile;
 import org.ini4j.Wini;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +28,8 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
  * If a password is saved a passphrase should be provided
  */
 public class DatabasesStore {
+
+    static Logger LOGGER = LoggerFactory.getLogger(DatabasesStore.class);
 
     /**
      * The local file database name as also stated
@@ -250,6 +254,8 @@ public class DatabasesStore {
                     database.setDriver(iniSection.get(DRIVER));
                     database.setStatement(iniSection.get(STATEMENT));
                     database.setDatabaseStore(this);
+                } else {
+                  LOGGER.warn("The database {} was not found. A null database was returned",name);
                 }
         }
         return database;

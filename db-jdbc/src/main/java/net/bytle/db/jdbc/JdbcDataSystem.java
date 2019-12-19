@@ -503,7 +503,7 @@ public class JdbcDataSystem extends TableSystem {
 
   @Override
   public DataPath getDataPath(URI uri) {
-    throw new UnsupportedOperationException("Not implemented");
+    throw new UnsupportedOperationException("Getting a JDBC data path from the URI ("+uri.toString() +") is not implemented");
   }
 
 

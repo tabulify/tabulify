@@ -49,6 +49,15 @@ public class Transfers {
                 throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
             }
         }
+
+        // Check Target
+        if (!Tabulars.exists(targetDataPath)) {
+            if (targetDataPath.getDataDef().getColumnDefs().size() == 0) {
+                DataDefs.addColumns(sourceDataPath.getDataDef(), targetDataPath.getDataDef());
+            }
+            Tabulars.create(targetDataPath);
+        }
+
         /**
          * The listener is passed to the consumers and producers threads
          * to ultimately ends in the view thread to report life on the process

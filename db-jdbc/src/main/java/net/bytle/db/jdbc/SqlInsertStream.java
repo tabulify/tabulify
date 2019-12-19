@@ -1,15 +1,13 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.Database;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.RelationDef;
-import net.bytle.log.Log;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
+import net.bytle.log.Log;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,7 +37,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     }
 
     public synchronized static SqlInsertStream of(JdbcDataPath jdbcDataPath) {
-
+        if (!Tabulars.exists(jdbcDataPath)){
+            throw new RuntimeException("You can't open an insert stream on the SQL table ("+jdbcDataPath+") because it does not exist.");
+        }
         return new SqlInsertStream(jdbcDataPath);
 
     }
@@ -145,14 +145,6 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
     }
 
     private void init() {
-
-        final Database database = getDataPath().getDataSystem().getDatabase();
-        if (!Tabulars.exists(jdbcDataPath)) {
-            if (jdbcDataPath.getDataDef().getColumnDefs().size() == 0) {
-                DataDefs.addColumns(targetMetaDef, sourceMetaDef);
-            }
-            Tabulars.create(jdbcDataPath);
-        }
 
         if (jdbcDataPath.getDataSystem().getMaxWriterConnection() == 1) {
             connection = jdbcDataPath.getDataSystem().getCurrentConnection();

@@ -84,4 +84,8 @@ public class Databases {
     public static Database getDefault() {
         return of();
     }
+
+  public static Database ofDefaultDataStores(String name) {
+    return of(name,DatabasesStore.ofDefault());
+  }
 }
