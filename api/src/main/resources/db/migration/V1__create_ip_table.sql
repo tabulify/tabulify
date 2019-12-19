@@ -1,9 +1,9 @@
 
 create table IP (
-  IP_FROM INTEGER,
-  IP_TO INTEGER,
+  IP_FROM BIGINT,
+  IP_TO BIGINT,
   REGISTRY varchar(255),
-  ASSIGNED INTEGER,
+  ASSIGNED BIGINT,
   CTRY varchar(2),
   CNTRY varchar(3),
   COUNTRY varchar(255)

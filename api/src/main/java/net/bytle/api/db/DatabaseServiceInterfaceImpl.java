@@ -7,19 +7,9 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
-import net.bytle.db.database.Database;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
-import net.bytle.db.spi.Tabulars;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.FlywayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.*;
 import java.util.stream.IntStream;
 
 public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
@@ -28,69 +18,19 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
 
   private final JDBCClient dbClient;
 
-  public DatabaseServiceInterfaceImpl(JDBCClient dbClient, JsonObject jsonObject, Handler<AsyncResult<DatabaseServiceInterface>> readyHandler) {
+  public DatabaseServiceInterfaceImpl(JDBCClient dbClient, Handler<AsyncResult<DatabaseServiceInterface>> readyHandler) {
+
     this.dbClient = dbClient;
-    String url = jsonObject.getString("url");
-    // Migrate if not done
-    // https://flywaydb.org/documentation/api/
-    try {
-      Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
-      flyway.migrate();
-    } catch (FlywayException e) {
-      LOGGER.error("Flyay Database preparation error {}", e.getMessage());
-      readyHandler.handle(Future.failedFuture(e.getCause()));
-    }
 
-    // Do we have the data ?
-    dbClient.querySingle("select count(1) from ip", ar -> {
-      if (ar.succeeded()) {
-        int size = ar.result().getInteger(0);
-        if (size == 0) {
-          Path csvPath = Paths.get("./IpToCountry.csv");
-          if (!Files.exists(csvPath)) {
-            try {
-
-              // Download the zip locally
-              URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
-              Path source = Paths.get(zipFile.toURI());
-              Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
-              Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
-
-              // Extract the csv with a zipfs file system
-              FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null);
-              Path zipPath = zipFs.getPath("IpToCountry.csv");
-              Files.copy(zipPath, csvPath);
-
-            } catch (URISyntaxException | IOException e) {
-              readyHandler.handle(Future.failedFuture(e));
-              return;
-            }
-          }
-          try {
-            Database database = Database.of("ip")
-              .setConnectionString(url);
-            DataPath ipTable = DataPaths.of(database, "IP");
-            DataPath csvDataPath = DataPaths.of(csvPath);
-            Tabulars.move(csvDataPath, ipTable);
-          } catch (Exception e){
-            LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
-            e.getCause().printStackTrace();
-            readyHandler.handle(Future.failedFuture(e.getCause()));
-            return;
-          }
-        }
-        readyHandler.handle(Future.succeededFuture());
-      } else {
-        readyHandler.handle(Future.failedFuture(ar.cause()));
-      }
-    });
-
+    LOGGER.info("Return the service with (this)");
+    readyHandler.handle(Future.succeededFuture(this));
 
   }
 
   @Override
   public DatabaseServiceInterface getIp(String ip, Handler<AsyncResult<JsonObject>> resultHandler) {
-    Integer numericIp = getNumericIp(ip);
+    Long numericIp = getNumericIp(ip);
+    LOGGER.info("numericIp is {}",numericIp);
     JsonArray params = new JsonArray()
       .add(numericIp)
       .add(numericIp);
@@ -98,6 +38,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
     dbClient.querySingleWithParams("SELECT * FROM IP WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
       if (fetch.succeeded()) {
+        LOGGER.info("Fetch succeeded for IP {}",numericIp);
         JsonArray row = fetch.result();
         JsonObject response = new JsonObject();
         if (row == null) {
@@ -108,6 +49,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
           response.put("country3", row.getString(5));
           response.put("country", row.getString(6));
         }
+        LOGGER.info("Query fetched {}", response);
         resultHandler.handle(Future.succeededFuture(response));
       } else {
         LOGGER.error("Database query error", fetch.cause());
@@ -117,6 +59,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
     // Fluent
     return this;
   }
+
 
   private void reportQueryError(Message<JsonObject> message, Throwable cause) {
     LOGGER.error("Database query error", cause);
@@ -130,11 +73,11 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
    * @param ip
    * @return the numeric representation
    */
-  static protected Integer getNumericIp(String ip) {
-    Integer[] factorByPosition = {256 * 256 * 256, 256 * 256, 256, 1};
+  static protected Long getNumericIp(String ip) {
+    Long[] factorByPosition = {256 * 256 * 256L, 256 * 256L, 256L, 1L};
     String[] ipParts = ip.split("\\.");
     return IntStream.range(0, ipParts.length)
-      .map(i -> Integer.parseInt(ipParts[i]) * factorByPosition[i])
+      .mapToLong(i -> Integer.parseInt(ipParts[i]) * factorByPosition[i])
       .sum();
   }
 

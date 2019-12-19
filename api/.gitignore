@@ -5,6 +5,8 @@
 src/main/generated
 ### Database ###
 db/**/*
+### The downloaded data ###
+IpToCountry.csv
 
 ### Eclipse ###
 

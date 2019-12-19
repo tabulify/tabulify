@@ -23,8 +23,8 @@ public interface DatabaseServiceInterface {
   DatabaseServiceInterface getIp(String ip, Handler<AsyncResult<JsonObject>> resultHandler);
 
   @GenIgnore
-  static DatabaseServiceInterface create(JDBCClient dbClient, JsonObject jsonObject, Handler<AsyncResult<DatabaseServiceInterface>> readyHandler) {
-    return new DatabaseServiceInterfaceImpl(dbClient, jsonObject, readyHandler);
+  static DatabaseServiceInterface create(JDBCClient dbClient, Handler<AsyncResult<DatabaseServiceInterface>> readyHandler) {
+    return new DatabaseServiceInterfaceImpl(dbClient, readyHandler);
   }
 
   @GenIgnore

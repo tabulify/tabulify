@@ -106,7 +106,11 @@ public class Jdbcs {
     pkProp.add(key_seq);
 
     // Primary Key building
-    ResultSet pkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName());
+    String schemaName =null;
+    if (dataPath.getSchema()!=null){
+      schemaName = dataPath.getSchema().getName();
+    }
+    ResultSet pkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
     // Collect all the data because we don't known if they will be in order
     // and because in a recursive call, the result set may be closed
     List<Map<String, String>> pkColumns = new ArrayList<>();
@@ -204,7 +208,11 @@ public class Jdbcs {
     }
     if (!added) {
 
-      ResultSet columnResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName(), null);
+      String schemaName = null;
+      if (dataPath.getSchema()!=null){
+        schemaName = dataPath.getSchema().getName();
+      }
+      ResultSet columnResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
 
       while (columnResultSet.next()) {
 
@@ -312,9 +320,13 @@ public class Jdbcs {
     // Just to hold the data a list of all fk columns values
     List<Map<String, String>> fkDatas = new ArrayList<>();
 
+    String schemaName = null;
+    if (dataPath.getSchema()!=null){
+      schemaName = dataPath.getSchema().getName();
+    }
     try (
       // ImportedKey = the primary keys imported by a table
-      ResultSet fkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), dataPath.getSchema().getName(), dataPath.getName());
+      ResultSet fkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
     ) {
 
       while (fkResultSet.next()) {

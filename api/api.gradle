@@ -30,6 +30,8 @@ dependencies {
   implementation "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
   // Database
   implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
+  //implementation "org.hsqldb:hsqldb:2.5.0"
+  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
   implementation "org.hsqldb:hsqldb:2.5.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
   implementation project(':bytle-db')

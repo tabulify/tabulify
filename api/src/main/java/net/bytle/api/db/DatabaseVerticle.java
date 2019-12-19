@@ -22,8 +22,19 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.serviceproxy.ServiceBinder;
+import net.bytle.db.database.Database;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.Tabulars;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.*;
 
 /**
  * <a href="https://vertx.io/docs/vertx-jdbc-client/java/">Doc</a>
@@ -31,6 +42,13 @@ import org.slf4j.LoggerFactory;
 public class DatabaseVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseVerticle.class);
+
+  // Default config
+  public static final String JDBC_DRIVER_DEFAULT = "org.hsqldb.jdbcDriver";
+  public static final String JDBC_URL_DEFAULT = "jdbc:hsqldb:file:db/api";
+  public static final int JDBC_POOL_SIZE_DEFAULT = 30;
+
+  // The client
   private JDBCClient dbClient;
 
   @Override
@@ -50,9 +68,9 @@ public class DatabaseVerticle extends AbstractVerticle {
   public void start(Promise<Void> promise) {
 
 
-    String url = config().getString(KEY_JDBC_URL, "jdbc:hsqldb:file:db/api");
-    String jdbcDriver = config().getString(KEY_JDBC_DRIVER, "org.hsqldb.jdbcDriver");
-    int jdbcPoolSize = config().getInteger(KEY_JDBC_MAX_POOL_SIZE, 3);
+    String url = config().getString(KEY_JDBC_URL, JDBC_URL_DEFAULT);
+    String jdbcDriver = config().getString(KEY_JDBC_DRIVER, JDBC_DRIVER_DEFAULT);
+    int jdbcPoolSize = config().getInteger(KEY_JDBC_MAX_POOL_SIZE, JDBC_POOL_SIZE_DEFAULT);
 
 
     // CreateShared creates a pool connection shared among Verticles known to the vertx instance
@@ -60,18 +78,62 @@ public class DatabaseVerticle extends AbstractVerticle {
       .put("url", url)
       .put("driver_class", jdbcDriver)
       .put("max_pool_size", jdbcPoolSize);
-    dbClient = JDBCClient.createShared(vertx, config);
+
+    // Migrate if not done
+    // https://flywaydb.org/documentation/api/
+    try {
+      Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
+      flyway.migrate();
+    } catch (FlywayException e) {
+      LOGGER.error("Flyway Database preparation error {}", e.getMessage());
+    }
+
+    // Load meta
+    Database database = Database.of("ip")
+      .setConnectionString(url);
+    DataPath ipTable = DataPaths.of(database, "IP");
+    if (Tabulars.getSize(ipTable) == 0) {
+      Path csvPath = Paths.get("./IpToCountry.csv");
+      if (!Files.exists(csvPath)) {
+        try {
+          // Download the zip locally
+          URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
+          Path source = Paths.get(zipFile.toURI());
+          Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
+          Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
+
+          // Extract the csv with a zipfs file system
+          FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null);
+          Path zipPath = zipFs.getPath("IpToCountry.csv");
+          Files.copy(zipPath, csvPath);
+
+        } catch (URISyntaxException | IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      try {
+        DataPath csvDataPath = DataPaths.of(csvPath);
+        Tabulars.transfer(csvDataPath, ipTable);
+      } catch (Exception e) {
+        LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
+        e.getCause().printStackTrace();
+        throw new RuntimeException(e);
+      }
+    }
+
 
     // Register the service
-    DatabaseServiceInterface.create(dbClient, config, ready -> {
-      if (ready.succeeded()) {
-        ServiceBinder binder = new ServiceBinder(vertx);
-        binder
-          .setAddress(IP_QUEUE_NAME)
-          .register(DatabaseServiceInterface.class, ready.result());
+    LOGGER.info("Register the service with the address {}", IP_QUEUE_NAME);
+    dbClient = JDBCClient.createShared(vertx, config);
+    LOGGER.info("Instantiate the implementation class with the creation method of the interface");
+    DatabaseServiceInterface.create(dbClient, asyncResult -> {
+      if (asyncResult.succeeded()) {
+        // ready result is the implementation (ie DatabaseServiceInterfaceImpl instance)
+        ServiceBinder binder = new ServiceBinder(vertx).setAddress(IP_QUEUE_NAME);
+        binder.register(DatabaseServiceInterface.class, asyncResult.result());
         promise.complete();
       } else {
-        promise.fail(ready.cause());
+        promise.fail(asyncResult.cause());
       }
     });
 
