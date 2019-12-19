@@ -34,6 +34,7 @@ include(':bytle-db-sqlserver')
 include(':bytle-timer')
 include(':bytle-http')
 include(':bytle-zip')
+include(':bytle-db-play')
 
 // The gradle project dir
 rootProject.children.each { project ->
