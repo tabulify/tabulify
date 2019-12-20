@@ -24,28 +24,36 @@ public class DbPlay {
   private static Path sqlDir;
   private static Path playDir;
   static private Path dataDir;
+  static private Path outDir;
   private static DatabasesStore databasesStore;
+  private static Path workingDir;
 
 
   public static void main(String[] args) throws IOException {
 
-    Path workingPath = Paths.get(".");
-    Path playFile = workingPath.resolve("play.yml");
+    Path workingPath = null;
+    Path playFile = null;
     if (args.length > 0) {
       playFile = Paths.get(args[0]);
+      workingPath = Paths.get(".");
     } else {
       System.err.println("A play should be given as first parameters");
+      System.exit(1);
     }
     if (args.length > 1) {
       workingPath = Paths.get(args[1]);
+      playFile = workingPath.resolve(args[0]);
     }
     if (!Files.exists(playFile)) {
       System.err.println("The play file (" + playFile.toAbsolutePath().toString() + ") does not exist");
       System.exit(1);
     }
 
+    workingDir = workingPath;
     dataDir = workingPath.resolve("data");
     playDir = workingPath.resolve("play");
+    outDir = workingPath.resolve("out");
+
     sqlDir = workingPath.resolve("sql");
     Path dsnDir = workingPath.resolve("dsn");
     databasesStore = DatabasesStore.of(dsnDir.resolve("dsn.ini"));
@@ -127,20 +135,56 @@ public class DbPlay {
   private static void loadTask(Map<String, Object> task) {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the load operations: " + desc);
-    String sourcePath = (String) Maps.getPropertyCaseIndependent(task, "source");
-    Path source = dataDir.resolve(sourcePath);
-    DataPath sourceDataPath = DataPaths.of(source);
-    if (sourceDataPath.getClass().equals(CsvDataPath.class)) {
-      sourceDataPath = ((CsvDataPath) sourceDataPath)
-        .getDataDef()
-        .setHeaderRowCount(1)
-        .getDataPath();
+
+    // Source
+    Database database;
+    String targetPath;
+    DataPath sourceDataPath;
+    Path sourcePath = null;
+    Object sourceValue = Maps.getPropertyCaseIndependent(task, "source");
+    if (sourceValue.getClass().equals(String.class)){
+      // A file
+      sourcePath = dataDir.resolve((String) sourceValue);
+      sourceDataPath = DataPaths.of(sourcePath);
+      if (sourceDataPath.getClass().equals(CsvDataPath.class)) {
+        sourceDataPath = ((CsvDataPath) sourceDataPath)
+          .getDataDef()
+          .setHeaderRowCount(1)
+          .getDataPath();
+      }
+    } else {
+      // A query
+      Map<String,Object> targetValues = (Map<String, Object>) sourceValue;
+      String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
+      database = databasesStore.getDatabase(dsn);
+      targetPath = (String) Maps.getPropertyCaseIndependent(targetValues, "sql");
+      Path targetSqlFile = sqlDir.resolve(targetPath);
+      sourceDataPath = DataPaths.ofQuery(database,Fs.getFileContent(targetSqlFile));
     }
-    String targetValue = (String) Maps.getPropertyCaseIndependent(task, "target");
-    Database database = databasesStore.getDatabase(targetValue);
-    String sourceFileName = source.getFileName().toString();
-    String targetTableName = Fs.getFileName(sourceFileName);
-    DataPath targetDataPath = DataPaths.of(database, targetTableName);
+
+    // Target
+    Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
+    DataPath targetDataPath;
+    if (targetValue.getClass().equals(String.class)){
+      database = databasesStore.getDatabase((String) targetValue);
+      String sourceFileName = sourcePath.getFileName().toString();
+      targetPath = Fs.getFileName(sourceFileName);
+      targetDataPath = DataPaths.of(database, targetPath);
+    } else {
+      Map<String,Object> targetValues = (Map<String, Object>) targetValue;
+      String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
+      database = databasesStore.getDatabase(dsn);
+      String targetPathValue = (String) Maps.getPropertyCaseIndependent(targetValues, "name");
+      if (dsn.equals("file")){
+        Path targetValueAsPath = workingDir.resolve(targetPathValue);
+        targetDataPath = DataPaths.of(targetValueAsPath);
+      } else {
+        targetDataPath = DataPaths.of(database, targetPathValue);
+      }
+    }
+
+
+
     Tabulars.transfer(sourceDataPath, targetDataPath);
     System.out.println("The load operations has terminated");
   }
