@@ -79,61 +79,75 @@ public class DatabaseVerticle extends AbstractVerticle {
       .put("driver_class", jdbcDriver)
       .put("max_pool_size", jdbcPoolSize);
 
-    // Migrate if not done
-    // https://flywaydb.org/documentation/api/
-    try {
-      Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
-      flyway.migrate();
-    } catch (FlywayException e) {
-      LOGGER.error("Flyway Database preparation error {}", e.getMessage());
-    }
+    // Execute the blocking database  migration code
+    vertx.<Boolean>executeBlocking(future -> {
 
-    // Load meta
-    Database database = Database.of("ip")
-      .setConnectionString(url);
-    DataPath ipTable = DataPaths.of(database, "IP");
-    if (Tabulars.getSize(ipTable) == 0) {
-      Path csvPath = Paths.get("./IpToCountry.csv");
-      if (!Files.exists(csvPath)) {
-        try {
-          // Download the zip locally
-          URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
-          Path source = Paths.get(zipFile.toURI());
-          Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
-          Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
-
-          // Extract the csv with a zipfs file system
-          FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null);
-          Path zipPath = zipFs.getPath("IpToCountry.csv");
-          Files.copy(zipPath, csvPath);
-
-        } catch (URISyntaxException | IOException e) {
-          throw new RuntimeException(e);
-        }
-      }
+      // Migrate if not done
+      // https://flywaydb.org/documentation/api/
       try {
-        DataPath csvDataPath = DataPaths.of(csvPath);
-        Tabulars.transfer(csvDataPath, ipTable);
-      } catch (Exception e) {
-        LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
-        e.getCause().printStackTrace();
-        throw new RuntimeException(e);
+        Flyway flyway = Flyway.configure().dataSource(url, null, null).load();
+        flyway.migrate();
+      } catch (FlywayException e) {
+        LOGGER.error("Flyway Database preparation error {}", e.getMessage());
+        future.fail(e);
       }
-    }
 
+      // Load meta
+      Database database = Database.of("ip")
+        .setConnectionString(url);
+      DataPath ipTable = DataPaths.of(database, "IP");
+      if (Tabulars.getSize(ipTable) == 0) {
+        Path csvPath = Paths.get("./IpToCountry.csv");
+        if (!Files.exists(csvPath)) {
+          try {
+            // Download the zip locally
+            URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
+            Path source = Paths.get(zipFile.toURI());
+            Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
+            Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
 
-    // Register the service
-    LOGGER.info("Register the service with the address {}", IP_QUEUE_NAME);
-    dbClient = JDBCClient.createShared(vertx, config);
-    LOGGER.info("Instantiate the implementation class with the creation method of the interface");
-    DatabaseServiceInterface.create(dbClient, asyncResult -> {
-      if (asyncResult.succeeded()) {
-        // ready result is the implementation (ie DatabaseServiceInterfaceImpl instance)
-        ServiceBinder binder = new ServiceBinder(vertx).setAddress(IP_QUEUE_NAME);
-        binder.register(DatabaseServiceInterface.class, asyncResult.result());
-        promise.complete();
+            // Extract the csv with a zipfs file system
+            FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null);
+            Path zipPath = zipFs.getPath("IpToCountry.csv");
+            Files.copy(zipPath, csvPath);
+
+          } catch (URISyntaxException | IOException e) {
+            future.fail(e);
+          }
+        }
+        try {
+          DataPath csvDataPath = DataPaths.of(csvPath);
+          Tabulars.transfer(csvDataPath, ipTable);
+        } catch (Exception e) {
+          LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
+          future.fail(e);
+        }
+
+      }
+      future.complete(true);
+    }, res -> {
+
+      if (res.succeeded()) {
+
+        // Register the service
+        LOGGER.info("Register the service with the address {}", IP_QUEUE_NAME);
+        dbClient = JDBCClient.createShared(vertx, config);
+        LOGGER.info("Instantiate the implementation class with the creation method of the interface");
+        DatabaseServiceInterface.create(dbClient, asyncResult -> {
+          if (asyncResult.succeeded()) {
+            // ready result is the implementation (ie DatabaseServiceInterfaceImpl instance)
+            ServiceBinder binder = new ServiceBinder(vertx).setAddress(IP_QUEUE_NAME);
+            binder.register(DatabaseServiceInterface.class, asyncResult.result());
+            promise.complete();
+          } else {
+            promise.fail(asyncResult.cause());
+          }
+        });
+
       } else {
-        promise.fail(asyncResult.cause());
+
+        promise.fail(res.cause());
+
       }
     });
 

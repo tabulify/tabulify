@@ -30,7 +30,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
   @Override
   public DatabaseServiceInterface getIp(String ip, Handler<AsyncResult<JsonObject>> resultHandler) {
     Long numericIp = getNumericIp(ip);
-    LOGGER.info("numericIp is {}",numericIp);
+    LOGGER.info("numericIp is {}", numericIp);
     JsonArray params = new JsonArray()
       .add(numericIp)
       .add(numericIp);
@@ -38,16 +38,17 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
     // https://vertx.io/docs/apidocs/io/vertx/ext/sql/SQLOperations.html#querySingleWithParams-java.lang.String-io.vertx.core.json.JsonArray-io.vertx.core.Handler-
     dbClient.querySingleWithParams("SELECT * FROM IP WHERE ip_from <= ? and ip_to >= ?", params, fetch -> {
       if (fetch.succeeded()) {
-        LOGGER.info("Fetch succeeded for IP {}",numericIp);
+        LOGGER.info("Fetch succeeded for IP {}", numericIp);
         JsonArray row = fetch.result();
         JsonObject response = new JsonObject();
         if (row == null) {
           response.put("found", false);
         } else {
-          response.put("found", true);
-          response.put("country2", row.getString(4));
-          response.put("country3", row.getString(5));
-          response.put("country", row.getString(6));
+          response.put("found", true)
+            .put("country2", row.getString(4))
+            .put("country3", row.getString(5))
+            .put("country", row.getString(6))
+            .put("ip", ip);
         }
         LOGGER.info("Query fetched {}", response);
         resultHandler.handle(Future.succeededFuture(response));

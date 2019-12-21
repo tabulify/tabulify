@@ -6,3 +6,6 @@ build/
 .idea
 .idea/*
 *.iml
+
+### the api db
+db/**

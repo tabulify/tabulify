@@ -13,10 +13,9 @@ public class Main {
 
     DropwizardMetricsOptions metricsOptions = DropWizard.getMetricsOptions();
 
-    Vertx vertx = Vertx.vertx(
-      new VertxOptions()
-        .setMetricsOptions(metricsOptions)
-    );
+    VertxOptions vertxOptions = new VertxOptions()
+      .setMetricsOptions(metricsOptions);
+    Vertx vertx = Vertx.vertx(vertxOptions);
 
     ConfigRetriever configRetriever = Conf.getConfigRetriever(vertx);
 

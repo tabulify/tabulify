@@ -15,6 +15,8 @@ import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
 import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
+import net.bytle.api.db.DatabaseServiceInterface;
+import net.bytle.api.db.DatabaseVerticle;
 import org.slf4j.MDC;
 
 import java.net.InetAddress;
@@ -34,9 +36,15 @@ public class VerticleHttpServer extends AbstractVerticle {
   private HandlerFailure handlerFailure;
   private HandlerPokemon handlerPokemon;
   private GreetingHandler greetingHandler;
+  private DatabaseServiceInterface dbService;
 
   @Override
-  public void start(Promise<Void> promise) throws Exception {
+  public void start(Promise<Void> promise) {
+
+    /**
+     * Create the db service proxy that will send the event bus
+     */
+    dbService = DatabaseServiceInterface.createProxy(vertx, DatabaseVerticle.IP_QUEUE_NAME);
 
     /**
      * Get config
@@ -154,20 +162,40 @@ public class VerticleHttpServer extends AbstractVerticle {
     String ip = context.request().getParam("ip");
 
     context.response().putHeader("Content-Type", "application/json");
-    if (true) {
-      context.response().setStatusCode(200);
-      context.response().end(
-        new JsonObject()
-          .put("success", true)
-          .encode());
-    } else {
-      context.response().end(
-        new JsonObject()
-          .put("success", false)
-          .put("error", "error desc")
-          .encode());
-      context.response().setStatusCode(201);
-    }
+    dbService.getIp(ip, ar -> {
+      if (ar.succeeded()) {
+        // Use the json object
+        JsonObject json = ar.result();
+        boolean found = json.getBoolean("found");
+
+        if (true) {
+          context.response().setStatusCode(200);
+          context.response().end(
+            new JsonObject()
+              .put("success", true)
+              .put("ip", json.getString("ip"))
+              .put("country2", json.getString("country2"))
+              .put("country3", json.getString("country3"))
+              .put("country", json.getString("country"))
+              .encode());
+        } else {
+          context.response().setStatusCode(404);
+          context.response().end(
+            new JsonObject()
+              .put("success", false)
+              .put("error", "country not found with the ip (" + ip + ")")
+              .encode());
+        }
+      } else {
+        context.response().setStatusCode(500);
+        context.response().end(
+          new JsonObject()
+            .put("success", false)
+            .put("error", ar.cause().getMessage())
+            .encode());
+      }
+    });
+
   }
 
   private static void configureLogging() {
