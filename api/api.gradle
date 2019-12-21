@@ -1,7 +1,7 @@
 plugins {
   id 'java'
+  id 'java-library' // for the api
   id 'application' // https://docs.gradle.org/current/userguide/application_plugin.html
-  id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
 repositories {
@@ -13,6 +13,9 @@ ext {
   vertxVersion = '3.8.4' // 4.0.0-milestone4
 }
 
+configurations {
+  vertx
+}
 
 
 sourceCompatibility = '1.8'
@@ -22,17 +25,16 @@ sourceCompatibility = '1.8'
 dependencies {
 
   // Vert.x
-  implementation "io.vertx:vertx-core:$vertxVersion"
-  implementation "io.vertx:vertx-config:$vertxVersion" // Config management: https://vertx.io/docs/vertx-config/java/
+  api   "io.vertx:vertx-core:$vertxVersion"
+  api  "io.vertx:vertx-config:$vertxVersion" // Config management: https://vertx.io/docs/vertx-config/java/
   // Web
-  implementation "io.vertx:vertx-web:$vertxVersion"
-  implementation "io.vertx:vertx-web-client:$vertxVersion"
-  implementation "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
+  api  "io.vertx:vertx-web:$vertxVersion"
+  api  "io.vertx:vertx-web-client:$vertxVersion"
+  api  "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
   // Database
-  implementation "io.vertx:vertx-jdbc-client:$vertxVersion"
-  //implementation "org.hsqldb:hsqldb:2.5.0"
-  implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
+  api  "io.vertx:vertx-jdbc-client:$vertxVersion"
   implementation "org.hsqldb:hsqldb:2.5.0"
+  //implementation "org.xerial:sqlite-jdbc:3.28.0"
   implementation "org.flywaydb:flyway-core:6.1.1"
   implementation project(':bytle-db')
   implementation project(':bytle-db-jdbc')
@@ -41,22 +43,22 @@ dependencies {
   implementation project(':bytle-http')
   implementation project(':bytle-zip')
   // Vertx service
-  implementation "io.vertx:vertx-service-proxy:$vertxVersion"
+  api  "io.vertx:vertx-service-proxy:$vertxVersion"
   compileOnly  "io.vertx:vertx-codegen:$vertxVersion"
   annotationProcessor "io.vertx:vertx-codegen:$vertxVersion:processor"
   // <3.8.4
   // annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion:processor"
   annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion"
   // for the service health
-  implementation "io.vertx:vertx-health-check:$vertxVersion"
-  implementation "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
-  implementation "io.vertx:vertx-circuit-breaker:$vertxVersion"
+  api  "io.vertx:vertx-health-check:$vertxVersion"
+  api  "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
+  api  "io.vertx:vertx-circuit-breaker:$vertxVersion"
   // Test
   testImplementation "io.vertx:vertx-unit:$vertxVersion"
 
 }
 
-def launcher = 'net.bytle.api.Main'
+mainClassName = 'net.bytle.api.Main'
 def watchForChange = 'src/main/java/net/**/*'
 def doOnChange = './gradlew classes'
 
@@ -102,16 +104,6 @@ compileTestJava {
 }
 
 
-
-shadowJar {
-  manifest {
-    attributes 'Main-Verticle': launcher
-  }
-  mergeServiceFiles {
-    include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
-  }
-}
-
 test {
   testLogging {
     events 'PASSED', 'FAILED', 'SKIPPED'
@@ -119,16 +111,11 @@ test {
 }
 
 
-// https://docs.gradle.org/current/userguide/application_plugin.html
-application {
-  mainClassName = 'io.vertx.core.Launcher'
-}
-
 
 // Run args from the application id
 // https://vertx.io/blog/automatic-redeployment-in-eclipse-ide/
 // Same as: vertx run  --redeploy=src/**/* --launcher-class=net.bytle.api.Main --on-redeploy="./gradlew classes"
 run {
-  args = ['run', "--redeploy=$watchForChange", "--launcher-class=$launcher", "--on-redeploy=$doOnChange"]
+  args = ['run', "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
 }
 

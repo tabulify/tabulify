@@ -7,7 +7,8 @@ import net.bytle.api.db.DatabaseVerticle;
 import net.bytle.api.http.VerticleHttpServer;
 
 /**
- *
+ * See {@link Main}
+ * Not used but just for information
  */
 
 public class MainVerticle extends AbstractVerticle {

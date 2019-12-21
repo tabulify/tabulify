@@ -19,7 +19,9 @@ public class Launcher extends io.vertx.core.Launcher {
 
   @Override
   public void beforeStartingVertx(VertxOptions options) {
+
     options.setMetricsOptions(DropWizard.getMetricsOptions());
+
   }
 
   @Override

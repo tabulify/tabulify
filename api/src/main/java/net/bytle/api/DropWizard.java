@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DropWizard {
 
-  static DropwizardMetricsOptions getMetricsOptions() {
+  public static DropwizardMetricsOptions getMetricsOptions() {
 
     /**
      * Dropwizard
