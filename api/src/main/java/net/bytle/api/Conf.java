@@ -84,7 +84,7 @@ public class Conf {
         .setFormat("properties")
         .setConfig(
           new JsonObject()
-            .put("path", "/etc/default/demo")
+            .put("path", "/etc/bytle/api")
         )
         .setOptional(true);
 

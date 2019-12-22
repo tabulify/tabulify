@@ -7,5 +7,3 @@ build/
 .idea/*
 *.iml
 
-### the api db
-db/**

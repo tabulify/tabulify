@@ -138,6 +138,7 @@ public class DatabaseVerticle extends AbstractVerticle {
             // ready result is the implementation (ie DatabaseServiceInterfaceImpl instance)
             ServiceBinder binder = new ServiceBinder(vertx).setAddress(IP_QUEUE_NAME);
             binder.register(DatabaseServiceInterface.class, asyncResult.result());
+            LOGGER.info("Database Verticle complete");
             promise.complete();
           } else {
             promise.fail(asyncResult.cause());

@@ -15,7 +15,10 @@ By default SLF4J outputs many log events to the console from Vert.x, Netty, C3PO
   <logger name="com.mchange.v2" level="warn"/>
   <logger name="io.netty" level="warn"/>
   <logger name="io.vertx" level="info"/>
+  <logger name="net.bytle" level="warn"/>
   <logger name="net.bytle.api" level="info"/>
+  <logger name="net.bytle.api.http" level="info"/>
+  <logger name="net.bytle.api.db" level="info"/>
 
   <root level="debug">
     <appender-ref ref="STDOUT"/>

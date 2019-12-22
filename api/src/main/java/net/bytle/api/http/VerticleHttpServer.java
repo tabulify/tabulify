@@ -6,8 +6,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.healthchecks.HealthCheckHandler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -17,6 +15,8 @@ import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
 import net.bytle.api.db.DatabaseServiceInterface;
 import net.bytle.api.db.DatabaseVerticle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.net.InetAddress;
@@ -96,7 +96,7 @@ public class VerticleHttpServer extends AbstractVerticle {
       .addPathParamWithCustomTypeValidator("name", new NameValidator(), false);
 
     // Config
-    int portNumber = configuration.getInteger(Conf.Properties.PORT.toString(), 8083);
+    int portNumber = configuration.getInteger(Conf.Properties.PORT.toString(), 80);
     // 0.0.0.0 means listen on all available addresses
     String hostName = configuration.getString(Conf.Properties.HOST.toString(), "0.0.0.0");
 
@@ -160,8 +160,12 @@ public class VerticleHttpServer extends AbstractVerticle {
 
   private void ip_info(RoutingContext context) {
     String ip = context.request().getParam("ip");
+    if (ip ==null){
+      ip = context.request().remoteAddress().host();
+    }
 
     context.response().putHeader("Content-Type", "application/json");
+    String finalIp = ip;
     dbService.getIp(ip, ar -> {
       if (ar.succeeded()) {
         // Use the json object
@@ -183,7 +187,7 @@ public class VerticleHttpServer extends AbstractVerticle {
           context.response().end(
             new JsonObject()
               .put("success", false)
-              .put("error", "country not found with the ip (" + ip + ")")
+              .put("error", "country not found with the ip (" + finalIp + ")")
               .encode());
         }
       } else {
