@@ -3,7 +3,7 @@
 ## About
 A data Uri is:
 
-  * a selector via a glob (source)
+  * a selector via a glob (source) that contains an URI wildcard
   * a string representation of one or more a data path (target)
 
 
