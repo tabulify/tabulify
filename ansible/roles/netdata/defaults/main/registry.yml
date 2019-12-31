@@ -1,0 +1,4 @@
+# https://registry.my-netdata.io
+# https://docs.netdata.cloud/registry/
+
+netdata_registry_to_announce: https://registry.my-netdata.io

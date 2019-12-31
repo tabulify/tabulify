@@ -1,0 +1,74 @@
+---
+# doc: https://docs.netdata.cloud/packaging/installer/#prepare-your-system
+
+- name: Prepare | Installing Pre-Reqs
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: 'Package - Add the EPEL repository'
+      yum_repository:
+        name: epel
+        description: EPEL YUM repo
+        baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
+        gpgcheck: yes
+    - name: "Package - Adds the gpg key from the EPEL repo"
+      rpm_key:
+        state: present
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+    - name: Required Package
+      yum:
+        name:
+          - autoconf
+          - automake
+          - cronie
+          - curl
+          - gcc
+          - git
+          - iproute
+          - libmnl-devel
+          - libuuid-devel
+          - lm_sensors
+          - make
+          - MySQL-python
+          - nc
+          - pkgconfig
+          - python
+          - python-psycopg2
+          - PyYAML
+          - util-linux
+          - uuid
+          - uuid-devel
+          - zlib-devel
+          - libuv-devel
+        state: present
+        enablerepo: epel
+    - name: Optional Package for plugins
+      yum:
+        name:
+          - bash
+          - curl
+          - iproute
+          - python
+          - python-yaml
+          - beanstalkd
+          - python-dns
+          - python-ipaddress
+          - MySQL-python
+          - python-psycopg2
+          - python-pymongo
+          - nodejs
+          - lm_sensors
+          - libmnl
+          - nmap # for netcat
+        state: present
+        enablerepo: epel
+    - name: Optional Package to enable Netdata DB engine
+      yum:
+        name:
+          - lz4 # liblz4
+          - Judy
+          - openssl
+        state: present
+        enablerepo: epel
+
+
+

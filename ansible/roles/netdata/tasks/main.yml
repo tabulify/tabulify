@@ -1,0 +1,38 @@
+---
+
+# from
+# https://github.com/netdata/netdata/blob/master/netdata-installer.sh#L121
+#  We suggest to install it as root, or certain data collectors will
+#  not be able to work. Netdata drops root privileges when running.
+#  So, if you plan to keep it, install it as root to get the full
+#  functionality.
+
+- name: "Installation as root"
+  become: true
+  block:
+    - name: 'Installation script is only for Redhat/Centos'
+      fail:
+        msg: "This host is not a redhat os but a ({{ ansible_os_family }}). The installation is not supported"
+      when: ansible_os_family != "RedHat"
+
+    - name: 'Prerequisites (package)'
+      include: prepare_root.yml
+
+    - name: 'Installation'
+      include: install_root.yml
+
+    - name: 'Services'
+      include: services_root.yml
+
+    - name: 'Config'
+      include: config.yml
+      when: netdata_config
+
+    # cron is done during installation
+    #- include: netdata_update.yml
+    #  when: netdata_update or netdata_update_force or netdata_auto_updates['enabled']
+
+    - include: uninstall.yml
+      when: netdata_uninstall
+      tags:
+        - netdata_uninstall

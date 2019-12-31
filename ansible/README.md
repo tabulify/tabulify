@@ -15,7 +15,13 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
   * Subsequent run does not need this extra vargs
 ```bash
 ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh
+# or with tags
+ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh --tags netdata
 ```
+
+## Application available
+
+  * [http://vps748761.ovh.net:8082/nexus](http://vps748761.ovh.net:8082/nexus)
 
 ## TODO
 

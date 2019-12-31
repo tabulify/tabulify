@@ -30,3 +30,9 @@
     enablerepo: epel
     state: present
 
+- name: "Package - Install unzip"
+  yum:
+    name: unzip
+    enablerepo: epel
+    state: present
+

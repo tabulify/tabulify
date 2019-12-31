@@ -1,6 +1,7 @@
 
 # ignored ip by fail2ban
-ip_whitelisted: 143.176.206.82
+# nico, geerte
+ip_whitelisted: 143.176.206.82,217.120.19.3
 
 fail2ban_dest_email: gerardnico@gmail.com
 

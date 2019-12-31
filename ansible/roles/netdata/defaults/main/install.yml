@@ -1,0 +1,10 @@
+# Defines the Git repo to pull down for installs
+netdata_git_repo: https://github.com/netdata/netdata.git
+
+# Defines directory to store install source from Git repo
+netdata_source_dir: /usr/local/src/netdata
+
+# Default Netdata user info used in the install script and reused here as variable
+# for service installation
+netdata_user_name: netdata
+netdata_user_group: netdata

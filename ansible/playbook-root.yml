@@ -12,5 +12,8 @@
       role: nexus
       nexus_version: 3.19.1-01
       tags: nexus
+    - name: Install netdata
+      role: netdata
+      tags: netdata
 
-  
+

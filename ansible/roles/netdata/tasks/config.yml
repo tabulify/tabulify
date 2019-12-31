@@ -1,0 +1,32 @@
+---
+- name: config | Configuring Netdata
+  template:
+    src: netdata.conf.j2
+    dest: "{{ netdata_config_file }}"
+    owner: "{{ netdata_user_name }}"
+    group: root
+    mode: u=rx,g=rx,o=r
+    backup: yes
+  notify: restart netdata
+
+- name: config | Configuring Netdata Alarm Notifications
+  template:
+    dest: "{{ netdata_alarm_config_file }}"
+    owner: "{{ netdata_user_name }}"
+    group: root
+    src: "health_alarm_notify.conf.j2"
+    backup: yes
+  notify: restart netdata
+  when: netdata_alarm_configure
+
+- name: config | Configuring Netdata streaming
+  template:
+    src: stream.conf.j2
+    dest: "{{ netdata_stream_config_file }}"
+    owner: "{{ netdata_user_name }}"
+    group: root
+    mode: u=rx,g=rx,o=r
+    backup: yes
+  notify: restart netdata
+  when: netdata_stream_enabled
+
