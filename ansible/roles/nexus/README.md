@@ -27,6 +27,7 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
       nexus_install_temp: /tmp/nexus
       nexus_pid_dir: /var/run/nexus
       nexus_shell: /sbin/nologin
+      nexus_fqdn: nexus.example.com
       nexus_host: 0.0.0.0
       nexus_port: 8082
       nexus_context_path: nexus
@@ -47,6 +48,7 @@ For dependency (OS family,...) and licence, see [meta](meta/main.yml)
 ```
 where:
   * `nexus_version` is the version of nexus ([Full list](https://help.sonatype.com/repomanager3/download/download-archives---repository-manager-3))
+  * `nexus_fqdn` is the full qualified domain name used by nginx to proxy every request in port 80 to the nexus_port. 
   * user properties are:
     * `nexus_user` is the user name
     * `nexus_group` is the user group 
@@ -61,7 +63,9 @@ where:
 
 Variables that can be passed to this role and their default values are as follows.
 
-## Support / Log
+## Support 
+
+### Log
 
 If you got any error, the log is located at 
 ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/
@@ -69,16 +73,30 @@ ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/
 tail -f ${nexus_root}/nexus-${NEXUS_VERSION}/sonatype-work/nexus3/log/nexus.log
 ```
 
+### Test
+
+```bash
+curl -I vps748761.ovh.net:8082/nexus
+```
+```text
+HTTP/1.1 302 Found
+Date: Wed, 01 Jan 2020 15:35:25 GMT
+Location: http://vps748761.ovh.net:8082/nexus/
+Content-Length: 0
+Server: Jetty(9.4.18.v20190429)
+```
+
 ## Accessing the user interface 
 
 Interface will be available at `http://nexus_host:nexus_port/nexus_context_path/`
 
-Example: [http://vps748761.ovh.net:8082/nexus](http://vps748761.ovh.net:8082/nexus)
+Example: 
+  * without Nginx: [http://vps748761.ovh.net:8082/nexus](http://vps748761.ovh.net:8082/nexus)
+  * with Nginx: Use just the full qualified domain name [http://nexus.example.com](http://nexus.example.come)
 
 Admin user:
   * Login: `admin` 
   * password: `$data-dir\admin.password`
-
 
 ## Next steps
 

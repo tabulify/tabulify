@@ -2,8 +2,9 @@
 - hosts: ovh
   tasks:
   roles:
-    - role: ovh-sec
-      tags: 'sec'
+    - name: Ovh common
+      role: ovh-sec
+      tags: ovh
     - name: Install Nginx
       role: nginx
       tags: nginx

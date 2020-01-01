@@ -14,3 +14,10 @@
   systemd:
     state: restarted
     name: firewalld
+
+
+- name: reload nginx
+  become: true
+  systemd:
+    state: reloaded
+    name: nginx

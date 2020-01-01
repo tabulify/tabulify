@@ -12,9 +12,9 @@
     - regexp: "^application-port="
       line: "application-port={{ nexus_port }}"
     - regexp: "^application-host="
-      line: "application-host={{ nexus_host }}"
+      line: "application-host=0.0.0.0" # bind to all host
     - regexp: "^nexus-context-path="
-      line: "nexus-context-path=/{{ nexus_context_path }}/"
+      line: "nexus-context-path={{ nexus_context_path }}"
   notify:
     - nexus reload
 

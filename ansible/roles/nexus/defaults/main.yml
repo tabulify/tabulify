@@ -12,9 +12,13 @@ nexus_shell: /sbin/nologin
 
 # Web Url
 # http://host:port/context/
-nexus_host: 0.0.0.0
+nexus_host: '{{ ansible_hostname }}'
 nexus_port: 8081
-nexus_context_path: nexus
+# should be in the form /nexus/ (not nexus or /nexus)
+nexus_context_path: /
+
+# Used by nginx to reach nexus directly
+nexus_fqdn: '{{ ansible_fqdn }}'
 
 # Ssl
 

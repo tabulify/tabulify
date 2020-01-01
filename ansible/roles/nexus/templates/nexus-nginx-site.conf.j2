@@ -1,0 +1,22 @@
+# from https://help.sonatype.com/repomanager3/installation/run-behind-a-reverse-proxy#RunBehindaReverseProxy-nginx.1
+server {
+    listen 80;
+
+    # Change `example.com` to match your domain name.
+    server_name {{ nexus_fqdn }};
+
+    # allow large uploads of files
+    client_max_body_size 1G;
+
+    # optimize downloading files larger than 1G
+    # proxy_max_temp_file_size 2G;
+
+    location {{ nexus_context_path }} {
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Use IPv4 upstream address instead of DNS name to avoid attempts by nginx to use IPv6 DNS lookup
+        proxy_pass http://127.0.0.1:{{ nexus_port }}{{ nexus_context_path }};
+    }
+
+}

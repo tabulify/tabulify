@@ -47,3 +47,7 @@
   become_user: '{{ nexus_user }}'
   include_tasks: user_ssl.yml
   when: nexus_ssl
+
+- name: Nexus Nginx Configuration
+  become: true
+  import_tasks: 'root_nginx.yml'

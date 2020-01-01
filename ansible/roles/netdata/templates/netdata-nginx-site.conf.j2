@@ -1,4 +1,5 @@
-# Require by the proxy
+# Define a group of server
+# http://nginx.org/en/docs/http/ngx_http_upstream_module.html
 upstream netdata {
     server 127.0.0.1:{{ netdata_default_port }};
     # A keepalive directive sets the maximum number of upstream idle connections that can remain open at any given time (for each Nginx worker process).

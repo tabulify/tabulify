@@ -22,6 +22,11 @@
     enablerepo: epel
     state: present
 
+- name: "Package - Install wget"
+  yum:
+    name: wget
+    enablerepo: epel
+    state: present
 
 # Added nmap to tbe able to scan the open port at the command line
 - name: "Package - Install nmap"

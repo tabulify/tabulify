@@ -1,3 +1,5 @@
+---
+# https://www.nginx.com/resources/wiki/start/topics/examples/javaservers/
 
 - name: Stat the Nginx conf
   stat:
@@ -9,7 +11,7 @@
   block:
     - name: Nginx | Configuring Nginx
       template:
-        src: nexusn-nginx-site.conf.j2
-        dest: "/etc/nginx/conf.d/netdata.conf"
+        src: nexus-nginx-site.conf.j2
+        dest: "/etc/nginx/conf.d/nexus.conf"
         backup: yes
       notify: reload nginx
