@@ -1,0 +1,54 @@
+# Doc
+# https://certbot.eff.org/lets-encrypt/centosrhel7-other
+# with the DNS plugin
+# https://certbot-dns-ovh.readthedocs.io/en/stable/
+
+
+- name: EPEL
+  block:
+    - name: 'Package - Add the EPEL repository'
+      yum_repository:
+        name: epel
+        description: EPEL YUM repo
+        baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
+        gpgcheck: yes
+    - name: "Package - Adds the gpg key from the EPEL repo"
+      rpm_key:
+        state: present
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+
+# https://certbot-dns-ovh.readthedocs.io/en/stable/
+- name: Install Certbot and the dns-ovh plugin
+  yum:
+    name:
+      - certbot
+      - python2-certbot-dns-ovh
+    state: present
+    enablerepo: epel
+
+- name: Create secret directoy
+  file:
+    state: directory
+    path: "/root/.secrets/certbot"
+
+- name: Copy Ovh Key (To manipulate DNS record)
+  template:
+    src: ovh.ini
+    dest: "/root/.secrets/certbot/ovh.ini"
+    backup: yes
+
+- name: Get the certificate
+  shell: |
+    certbot certonly \
+      --dns-ovh \
+      --dns-ovh-credentials /root/.secrets/certbot/ovh.ini \
+      --dns-ovh-propagation-seconds 60 \
+      -n \
+      --agree-tos \
+      -m nico@bytle.net \
+      -d netdata.bytle.net \
+      -d nexus.bytle.net \
+      -d api.bytle.net \
+      -d bytle.net
+
+

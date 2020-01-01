@@ -21,14 +21,21 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
 ## Application available
 
-  * [http://vps748761.ovh.net:8082/nexus](http://vps748761.ovh.net:8082/nexus)
+  * http://nexus.bytle.net
+  * http://netdata.bytle.net
+  
 
 ## TODO
 
   * [OVH Firewall](https://docs.ovh.com/fr/dedicated/firewall-network/)
   * get public key authentication working before disabling PasswordAuthentication in sshd_config.
 
-  
+## Ter info
+
+Encryption
+```bash
+ansible-vault encrypt_string --vault-id passphrase.sh 'the_password_to_encrypt'
+```  
 ## Documentation
 
   * [Securisation](https://docs.ovh.com/fr/vps/conseils-securisation-vps/)
