@@ -4,6 +4,9 @@
   roles:
     - role: ovh-sec
       tags: 'sec'
+    - name: Install Nginx
+      role: nginx
+      tags: nginx
     - name: Install openjdk
       role: openjdk
       openjdk_version: 1.8.0
