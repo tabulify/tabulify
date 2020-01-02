@@ -1,0 +1,16 @@
+gnico_app_name: gnico
+# user that will run the jar
+gnico_user_name: '{{ gnico_app_name }}'
+gnico_user_group: '{{ gnico_app_name }}'
+
+# install path
+gnico_install_path: '/opt/{{ gnico_app_name }}'
+# fat jar
+gnico_fat_jar: bytle-api-0.0.1-20200102.224625-3-all.jar
+
+# Download info
+gnico_fat_url: http://nexus.bytle.net/repository/maven-snapshots/net/bytle/bytle-api/0.0.1-SNAPSHOT/{{ gnico_fat_jar }}
+gnico_fat_url_auth_user: admin
+#vault_gnico_fat_url_auth_pwd: changeme
+
+

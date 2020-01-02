@@ -1,0 +1,3 @@
+
+gnico_fat_jar: bytle-api-0.0.1-20200102.224625-3-all.jar
+gnico_fat_url: http://127.0.0.1:8082/repository/maven-snapshots/net/bytle/bytle-api/0.0.1-SNAPSHOT/{{ gnico_fat_jar }}

@@ -1,0 +1,48 @@
+
+
+- name: Install
+  become: yes
+  block:
+    - name: "Create the group {{ gnico_user_group }}"
+      group:
+        name: '{{ gnico_user_group }}'
+        state: present
+    - name: "Create the user {{ gnico_user_name }}"
+      user:
+        name: '{{ gnico_user_name }}'
+        comment: User for the gerarnico app
+        shell: /bin/bash
+        state: present
+        group: '{{ gnico_user_group }}'
+    - name: Create the install path {{ gnico_install_path }}
+      file:
+        state: directory
+        path: '{{ gnico_install_path }}'
+        group: '{{ gnico_user_name }}'
+        owner: '{{ gnico_user_group }}'
+    - name: Download the fat jar
+      maven_artifact:
+        group_id: net.bytle
+        artifact_id: bytle-api
+        version: latest
+        repository_url: 'http://127.0.0.1:8082/repository/maven-snapshots'
+        username: '{{ gnico_fat_url_auth_user }}'
+        password: '{{ vault_gnico_fat_url_auth_pwd }}'
+        dest: '{{ gnico_install_path }}/{{ gnico_fat_jar }}'
+#      get_url:
+#        url: '{{ gnico_fat_url }}'
+#        dest: '{{ gnico_install_path }}/{{ gnico_fat_jar }}'
+#        url_username: '{{ gnico_fat_url_auth_user }}'
+#        url_password: '{{ vault_gnico_fat_url_auth_pwd }}'
+#        group: '{{ gnico_user_name }}'
+#        owner: '{{ gnico_user_group }}'
+#        force: no # download only if the destination file does not exist
+    - name: Copy the systemd nexus.service file
+      template:
+        src: gnico.service
+        dest: /etc/systemd/system/gnico.service
+        mode: 0644
+      notify:
+        - 'gnico reload'
+      tags: config
+

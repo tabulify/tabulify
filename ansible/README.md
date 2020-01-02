@@ -21,8 +21,9 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
 ## Application available
 
-  * http://nexus.bytle.net
-  * http://netdata.bytle.net
+  * https://nexus.bytle.net (Port 8082)
+  * https://netdata.bytle.net (Port 19999)
+  * https://api.bytle.net 
   
 
 ## TODO

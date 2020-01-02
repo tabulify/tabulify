@@ -19,5 +19,8 @@
     - name: Install netdata
       role: netdata
       tags: netdata
+    - name: Install gnico
+      role: gnico
+      tags: gnico
 
 
