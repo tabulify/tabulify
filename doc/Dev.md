@@ -1,14 +1,20 @@
 # Dev environment
 
+## About
+How to set up a dev environment
 
-## Maven
+## Gradle
+MAven was deprecated
 
+Create a `gradle.properties` file at the root of the project
 
-  * Create the local repository at C:\Maven\repository (to not have it in your profile ${user.home}/.m2/repository)
-  * Create a symlink to the settings configuration file repository
-```dos
-mklink /D C:\Users\gerardnico\.m2 C:\Users\gerardnico\Dropbox\config\Maven\.m2
+```ini
+nexusUrl=https://nexus.bytle.net
+nexusUsername=admin
+nexusPassword=xxx
 ```
+
+
 
 ## Java 
 Download the last JDK8 (Java SE Development Kit)
@@ -28,28 +34,6 @@ Error:
 Error:java: Annotation processing is not supported for module cycles. Please ensure that all modules from cycle [db,db-gen] are excluded from annotation processing
 ```
 
-## Build
-
-From idea
-```bash
-mvn clean install
-```
-
-## Cli
-
-After the first build:
-  * create a `bin` directory
-```
-C:\Users\userName\bin
-```
-  * add it to your path
-  * create a symlink of the following file in it
-```
-ROOT_DIR\db-cli\target\btyle-db-cli-1.1.0-SNAPSHOT\db.bat"
-```
-  * then when you call `db` you will get the last build library
-
-
 
 ## Bytle Db Dev doc
 
@@ -61,3 +45,22 @@ To not use the name of the user in the path of the databases store, we set the e
 `C:\Users\BytleDb\AppData\Local\db\databases.ini`
 
 The permissions must be changed to authorize everybody to save data.
+
+
+## Others
+###  Maven
+Just FYI, maven was deprecated
+
+  * Create the local repository at C:\Maven\repository (to not have it in your profile ${user.home}/.m2/repository)
+  * Create a symlink to the settings configuration file repository
+```dos
+mklink /D C:\Users\gerardnico\.m2 C:\Users\gerardnico\Dropbox\config\Maven\.m2
+```
+
+  * Build
+
+From idea
+```bash
+mvn clean install
+```
+

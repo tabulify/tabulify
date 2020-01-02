@@ -1,11 +1,7 @@
 plugins {
   id 'java'
-  id 'application'
   id 'com.github.johnrengelman.shadow' version '5.2.0'
-}
-
-repositories {
-  mavenCentral()
+  id 'maven'
 }
 
 
@@ -20,14 +16,14 @@ sourceCompatibility = '1.8'
 dependencies {
 
   // Vert.x
-  compile  "io.vertx:vertx-core:$vertxVersion"
-  compile  "io.vertx:vertx-config:$vertxVersion" // Config management: https://vertx.io/docs/vertx-config/java/
+  compile "io.vertx:vertx-core:$vertxVersion"
+  compile "io.vertx:vertx-config:$vertxVersion" // Config management: https://vertx.io/docs/vertx-config/java/
   // Web
-  compile  "io.vertx:vertx-web:$vertxVersion"
-  compile  "io.vertx:vertx-web-client:$vertxVersion"
-  compile  "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
+  compile "io.vertx:vertx-web:$vertxVersion"
+  compile "io.vertx:vertx-web-client:$vertxVersion"
+  compile "io.vertx:vertx-web-api-contract:$vertxVersion" // Used to verify that the request has the good structure
   // Database
-  compile  "io.vertx:vertx-jdbc-client:$vertxVersion"
+  compile "io.vertx:vertx-jdbc-client:$vertxVersion"
   compile "org.hsqldb:hsqldb:2.5.0"
   //implementation "org.xerial:sqlite-jdbc:3.28.0"
   compile "org.flywaydb:flyway-core:6.1.1"
@@ -38,28 +34,29 @@ dependencies {
   compile project(':bytle-http')
   compile project(':bytle-zip')
   // Vertx service
-  compile  "io.vertx:vertx-service-proxy:$vertxVersion"
-  compileOnly  "io.vertx:vertx-codegen:$vertxVersion"
+  compile "io.vertx:vertx-service-proxy:$vertxVersion"
+  compileOnly "io.vertx:vertx-codegen:$vertxVersion"
   annotationProcessor "io.vertx:vertx-codegen:$vertxVersion:processor"
   // <3.8.4
   // annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion:processor"
   annotationProcessor "io.vertx:vertx-service-proxy:$vertxVersion"
   // for the service health
-  compile  "io.vertx:vertx-health-check:$vertxVersion"
-  compile  "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
-  compile  "io.vertx:vertx-circuit-breaker:$vertxVersion"
+  compile "io.vertx:vertx-health-check:$vertxVersion"
+  compile "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
+  compile "io.vertx:vertx-circuit-breaker:$vertxVersion"
   // Test
   testImplementation "io.vertx:vertx-unit:$vertxVersion"
 
 }
 
-mainClassName = 'net.bytle.api.Launcher'
+def mainClassName = 'net.bytle.api.Launcher'
 def watchForChange = 'src/main/java/net/**/*'
 def doOnChange = './gradlew classes'
 def mainVerticle = 'net.bytle.api.MainVerticle'
 
 shadowJar {
-  manifest{
+  manifest {
+    attributes 'Main-Class': mainClassName
     attributes 'Main-Verticle': mainVerticle
     attributes 'Main-Command': 'run'
   }
@@ -102,7 +99,7 @@ sourceSets {
 compileJava {
   targetCompatibility = 1.8
   sourceCompatibility = 1.8
-  dependsOn (annotationProcessing)
+  dependsOn(annotationProcessing)
 }
 
 compileTestJava {
@@ -110,11 +107,39 @@ compileTestJava {
 }
 
 
-
-
 // Run args from the application id
 // https://vertx.io/blog/automatic-redeployment-in-eclipse-ide/
 // Same as: vertx run  --redeploy=src/**/* --launcher-class=net.bytle.api.Launcher --on-redeploy="./gradlew classes"
-run {
-  args = ['run', "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+//run {
+//  args = ['run', "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+//}
+
+uploadShadow {
+  repositories {
+    mavenDeployer {
+      repository(
+        url: "${nexusUrl}/repository/maven-releases/") {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+      snapshotRepository(
+        url: "${nexusUrl}/repository/maven-snapshots/") {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+    }
+  }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(
+        url: "${nexusUrl}/repository/maven-releases/") {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+      snapshotRepository(
+        url: "${nexusUrl}/repository/maven-snapshots/") {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+    }
+  }
 }
