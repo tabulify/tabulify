@@ -52,4 +52,6 @@
 - name: Nginx conf verif | Verification of the configuration
   become: true
   command: '/sbin/nginx -t'
+  register: nginx_conf
+  changed_when: "nginx_conf.rc != 0"
 
