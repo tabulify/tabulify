@@ -31,24 +31,27 @@
     state: directory
     path: "/root/.secrets/certbot"
 
+# Key from https://eu.api.ovh.com/createToken/
+# with the following permissions and only for the server 164.132.99.202
+# GET /domain/zone/*
+# PUT /domain/zone/*
+# POST /domain/zone/*
+# DELETE /domain/zone/*
 - name: Copy Ovh Key (To manipulate DNS record)
   template:
     src: ovh.ini
     dest: "/root/.secrets/certbot/ovh.ini"
     backup: yes
 
+# Create one certificate with the name of the first domain
+# that's why bytle.net is the first one
 - name: Get the certificate
-  shell: |
-    certbot certonly \
-      --dns-ovh \
-      --dns-ovh-credentials /root/.secrets/certbot/ovh.ini \
-      --dns-ovh-propagation-seconds 60 \
-      -n \
-      --agree-tos \
-      -m nico@bytle.net \
-      -d netdata.bytle.net \
-      -d nexus.bytle.net \
-      -d api.bytle.net \
-      -d bytle.net
+  with_items: "{{letsencrypt_domains}}"
+  include: certbot_certonly.yml letsencrypt_domain={{ item }}
 
-
+- name: Add letsencrypt cronjob for cert renewal
+  cron:
+    name: 'letsencrypt_renewal_{{item}}'
+    special_time: weekly
+    job: letsencrypt --renew certonly --dns-ovh --dns-ovh-credentials /root/.secrets/certbot/ovh.ini --dns-ovh-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
+  with_items: "{{letsencrypt_domains}}"

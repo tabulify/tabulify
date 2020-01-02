@@ -12,10 +12,10 @@
     state: "started"
     enabled: true
 
-- name: 'Firewalld - Add port 80'
+- name: 'Firewalld - Add port 443'
   become: true
   firewalld:
-    port: '80/tcp'
+    port: '443/tcp'
     permanent: yes
     state: enabled
   notify: firewalld reload
@@ -24,8 +24,32 @@
   become: true
   include: certbot_root.yml
 
-- name: Add letsencrypt cronjob for cert renewal
-  cron:
-    name: letsencrypt_renewal
-    special_time: weekly
-    job: letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ letsencrypt_email }} --agree-tos -d {{ domain_name }} && service nginx reload
+- name: Nginx | Configuring Nginx
+  become: true
+  template:
+    src: nginx.conf
+    dest: "/etc/nginx/nginx.conf"
+    backup: yes
+  notify: reload nginx
+
+- name: Netdata | Configuring Netdata
+  become: true
+  template:
+    src: netdata-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/netdata.conf"
+    backup: yes
+  notify: reload nginx
+
+# https://www.nginx.com/resources/wiki/start/topics/examples/javaservers/
+- name: Nexus | Configuring Nexus
+  become: true
+  template:
+    src: nexus-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/nexus.conf"
+    backup: yes
+  notify: reload nginx
+
+- name: Nginx conf verif | Verification of the configuration
+  become: true
+  command: '/sbin/nginx -t'
+

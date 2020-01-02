@@ -28,8 +28,6 @@
       include: config.yml
       when: netdata_config
 
-    - name: 'Nginx'
-      include: netdata_nginx.yml
 
     # cron is done during installation
     #- include: netdata_update.yml

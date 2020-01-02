@@ -12,7 +12,7 @@
 - name: "firewalld reload"
   become: yes
   systemd:
-    state: restarted
+    state: reloaded
     name: firewalld
 
 

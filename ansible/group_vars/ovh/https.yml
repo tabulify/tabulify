@@ -1,0 +1,9 @@
+
+
+letsencrypt_email: nico@bytle.net
+
+letsencrypt_domains:
+  - bytle.net
+  - netdata.bytle.net
+  - nexus.bytle.net
+  - api.bytle.net
