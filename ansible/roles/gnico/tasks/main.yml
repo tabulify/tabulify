@@ -34,7 +34,7 @@
       maven_artifact:
         group_id: net.bytle
         artifact_id: bytle-api
-        version: latest
+        version: 'latest'
         classifier: all
         repository_url: '{{ gnico_repository_url }}'
         username: '{{ gnico_repository_user }}'
