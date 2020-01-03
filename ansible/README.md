@@ -34,9 +34,13 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 ## Ter info
 
 Encryption
+```dos
+ansible-bash
+```  
+then
 ```bash
 ansible-vault encrypt_string --vault-id passphrase.sh 'the_password_to_encrypt'
-```  
+```
 ## Documentation
 
   * [Securisation](https://docs.ovh.com/fr/vps/conseils-securisation-vps/)

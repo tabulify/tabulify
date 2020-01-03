@@ -1,2 +1,5 @@
 
 gnico_repository_pwd: '{{ vault_gnico_repository_pwd }}'
+gnico_fqdn: 'api.gerardnico.com'
+gnico_port: 8083
+gnico_app: apignico

@@ -1,7 +1,8 @@
 # Doc
 # https://certbot.eff.org/lets-encrypt/centosrhel7-other
 # with the DNS plugin
-# https://certbot-dns-ovh.readthedocs.io/en/stable/
+#   - https://certbot-dns-ovh.readthedocs.io/en/stable/
+#   - https://certbot-dns-cloudflare.readthedocs.io/en/stable/
 
 
 - name: EPEL
@@ -18,11 +19,12 @@
         key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
 
 # https://certbot-dns-ovh.readthedocs.io/en/stable/
-- name: Install Certbot and the dns-ovh plugin
+- name: Install Certbot and the dns plugins
   yum:
     name:
       - certbot
       - python2-certbot-dns-ovh
+      - python2-certbot-dns-cloudflare
     state: present
     enablerepo: epel
 
@@ -39,19 +41,39 @@
 # DELETE /domain/zone/*
 - name: Copy Ovh Key (To manipulate DNS record)
   template:
-    src: ovh.ini
+    src: dns_provider/ovh.ini
     dest: "/root/.secrets/certbot/ovh.ini"
+    backup: yes
+
+# Global key: https://dash.cloudflare.com/profile/api-tokens
+# as this is the only one supported
+# https://certbot-dns-cloudflare.readthedocs.io/en/stable/#credentials
+- name: Copy Cloudflare Key (To manipulate DNS record)
+  template:
+    src: dns_provider/cloudflare.ini
+    dest: "/root/.secrets/certbot/cloudflare.ini"
     backup: yes
 
 # Create one certificate with the name of the first domain
 # that's why bytle.net is the first one
-- name: Get the certificate
-  with_items: "{{letsencrypt_domains}}"
-  include: certbot_certonly.yml letsencrypt_domain={{ item }}
+- name: Get the Ovh certificate
+  with_items: "{{ovh_domains}}"
+  include: certbot_certonly_ovh.yml letsencrypt_domain={{ item }}
 
-- name: Add letsencrypt cronjob for cert renewal
+- name: Get the Cloudflare certificate
+  with_items: "{{cloudflare_domains}}"
+  include: certbot_certonly_cloudflare.yml letsencrypt_domain={{ item }}
+
+- name: Add Ovh letsencrypt cronjob for cert renewal
   cron:
     name: 'letsencrypt_renewal_{{item}}'
     special_time: weekly
     job: letsencrypt --renew certonly --dns-ovh --dns-ovh-credentials /root/.secrets/certbot/ovh.ini --dns-ovh-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
-  with_items: "{{letsencrypt_domains}}"
+  with_items: "{{ovh_domains}}"
+
+- name: Add Cloudflare letsencrypt cronjob for cert renewal
+  cron:
+    name: 'letsencrypt_renewal_{{item}}'
+    special_time: weekly
+    job: letsencrypt --renew certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini --dns-cloudflare-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
+  with_items: "{{cloudflare_domains}}"

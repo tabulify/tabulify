@@ -49,6 +49,15 @@
     backup: yes
   notify: reload nginx
 
+- name: Gnico | Configuring Gnico
+  become: true
+  template:
+    src: gnico-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/gnico.conf"
+    backup: yes
+  notify: reload nginx
+
+
 - name: Nginx conf verif | Verification of the configuration
   become: true
   command: '/sbin/nginx -t'
