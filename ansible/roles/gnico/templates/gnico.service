@@ -7,7 +7,8 @@ After=network.target
 Type=simple
 User={{ gnico_user_name }}
 Group={{ gnico_user_group }}
-ExecStart=cd {{ gnico_install_path }} && java -jar {{ gnico_fat_jar }}
+WorkingDirectory={{ gnico_install_path }}
+ExecStart=/bin/java -jar {{ gnico_fat_jar_path }}
 Restart=on-failure
 
 TimeoutStopSec=5

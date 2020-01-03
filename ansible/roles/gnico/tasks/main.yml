@@ -20,23 +20,35 @@
         path: '{{ gnico_install_path }}'
         group: '{{ gnico_user_name }}'
         owner: '{{ gnico_user_group }}'
+        mode: 'u=rwx,g=rx,o=r'
+#    - name: Add mappings to /etc/hosts
+#      blockinfile:
+#        path: /etc/hosts
+#        block: |
+#          {{ item.ip }} {{ item.name }}
+#        marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
+#      loop:
+#        - { name: '{{ gnico_fat_host }}', ip: 127.0.0.1 }
+
     - name: Download the fat jar
       maven_artifact:
         group_id: net.bytle
         artifact_id: bytle-api
         version: latest
-        repository_url: 'http://127.0.0.1:8082/repository/maven-snapshots'
-        username: '{{ gnico_fat_url_auth_user }}'
-        password: '{{ vault_gnico_fat_url_auth_pwd }}'
-        dest: '{{ gnico_install_path }}/{{ gnico_fat_jar }}'
-#      get_url:
-#        url: '{{ gnico_fat_url }}'
-#        dest: '{{ gnico_install_path }}/{{ gnico_fat_jar }}'
-#        url_username: '{{ gnico_fat_url_auth_user }}'
-#        url_password: '{{ vault_gnico_fat_url_auth_pwd }}'
-#        group: '{{ gnico_user_name }}'
-#        owner: '{{ gnico_user_group }}'
-#        force: no # download only if the destination file does not exist
+        classifier: all
+        repository_url: '{{ gnico_repository_url }}'
+        username: '{{ gnico_repository_user }}'
+        password: '{{ gnico_repository_pwd }}'
+        dest: '{{ gnico_install_path }}/'
+        group: '{{ gnico_user_name }}'
+        owner: '{{ gnico_user_group }}'
+        state: present
+        keep_name: yes
+        mode: 'u=rwx,g=rx,o=r'
+      register: maven_download
+    - name: 'Get and set the downloaded latest jar path'
+      set_fact:
+        gnico_fat_jar_path: '{{ maven_download.dest }}'
     - name: Copy the systemd nexus.service file
       template:
         src: gnico.service
@@ -44,5 +56,4 @@
         mode: 0644
       notify:
         - 'gnico reload'
-      tags: config
 
