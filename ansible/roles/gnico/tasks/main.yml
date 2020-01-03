@@ -20,7 +20,7 @@
         path: '{{ gnico_install_path }}'
         group: '{{ gnico_user_name }}'
         owner: '{{ gnico_user_group }}'
-        mode: 'u=rwx,g=rx,o=r'
+        mode: 'u=rwx,g=rx,o=rx'
 #    - name: Add mappings to /etc/hosts
 #      blockinfile:
 #        path: /etc/hosts
@@ -44,7 +44,7 @@
         owner: '{{ gnico_user_group }}'
         state: present
         keep_name: yes
-        mode: 'u=rwx,g=rx,o=r'
+        mode: 'u=rwx,g=rx,o=rx'
       register: maven_download
     - name: 'Get and set the downloaded latest jar path'
       set_fact:

@@ -96,7 +96,7 @@ public class VerticleHttpServer extends AbstractVerticle {
       .addPathParamWithCustomTypeValidator("name", new NameValidator(), false);
 
     // Config
-    int portNumber = configuration.getInteger(Conf.Properties.PORT.toString(), 80);
+    int portNumber = configuration.getInteger(Conf.Properties.PORT.toString(), 8083);
     // 0.0.0.0 means listen on all available addresses
     String hostName = configuration.getString(Conf.Properties.HOST.toString(), "0.0.0.0");
 

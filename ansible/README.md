@@ -23,7 +23,7 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
   * https://nexus.bytle.net (Port 8082)
   * https://netdata.bytle.net (Port 19999)
-  * https://api.bytle.net 
+  * https://api.gerardnico.com (Port 8083) 
   
 
 ## TODO
