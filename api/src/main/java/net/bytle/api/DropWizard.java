@@ -1,31 +1,33 @@
 package net.bytle.api;
 
+import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
-import com.codahale.metrics.Slf4jReporter;
 import io.vertx.ext.dropwizard.DropwizardMetricsOptions;
-import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Dropwizard
+ */
 public class DropWizard {
 
   public static DropwizardMetricsOptions getMetricsOptions() {
 
-    /**
-     * Dropwizard
-     */
     // Initialize Dropwizard metric registry
-    String registryName = "registry";
+    String registryName = "vertx";
     MetricRegistry registry = SharedMetricRegistries.getOrCreate(registryName);
     SharedMetricRegistries.setDefault(registryName);
 
-    // Initialize Dropwizard reporter
-    Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-      .outputTo(LoggerFactory.getLogger(Launcher.class))
+    // Initialize Dropwizard csv
+    Path csvPath = Log.LOG_DIR_PATH.resolve("dropwizardVertxMetrics.csv");
+
+    // The reporter
+    CsvReporter reporter = CsvReporter.forRegistry(registry)
       .convertRatesTo(TimeUnit.SECONDS)
       .convertDurationsTo(TimeUnit.MILLISECONDS)
-      .build();
+      .build(csvPath.toFile());
     reporter.start(1, TimeUnit.MINUTES);
 
     return new DropwizardMetricsOptions()

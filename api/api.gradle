@@ -5,6 +5,7 @@ plugins {
 }
 
 
+
 ext {
   vertxVersion = '3.8.4'
 }
@@ -30,6 +31,7 @@ dependencies {
   compile project(':bytle-db')
   compile project(':bytle-db-jdbc')
   compile project(':bytle-db-fs')
+  compile project(':bytle-fs')
   // File system
   compile project(':bytle-http')
   compile project(':bytle-zip')

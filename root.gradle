@@ -3,42 +3,55 @@
  */
 
 allprojects {
-    group = 'net.bytle'
-    version = '0.0.1-SNAPSHOT'
+  group = 'net.bytle'
+  version = '0.0.1-SNAPSHOT'
+}
+
+// because we are not using it and that a lot of project are
+// We get no error when compiling, excluding it shows an error where it's used.
+configurations {
+  compile.exclude group: "org.slf4j"
 }
 
 subprojects {
-    apply plugin: 'java'
+  apply plugin: 'java'
 
-    sourceCompatibility = 1.8
+  sourceCompatibility = 1.8
 
-    repositories {
-        mavenLocal()
-        maven {
-            url = 'http://repo.maven.apache.org/maven2'
-        }
-        maven {
-            url = 'https://repo.boundlessgeo.com/main/'
-        }
+  repositories {
+    mavenLocal()
+    maven {
+      url = 'http://repo.maven.apache.org/maven2'
     }
-
-    dependencies {
-        testImplementation 'junit:junit:4.12'
-        testImplementation 'com.github.stefanbirkner:system-rules:1.17.0'
-        implementation "ch.qos.logback:logback-classic:1.2.3"
+    maven {
+      url = 'https://repo.boundlessgeo.com/main/'
     }
+  }
 
-    sourceCompatibility = '1.8'
+  dependencies {
+    testCompile 'junit:junit:4.12'
+    testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api
+    compile 'org.apache.logging.log4j:log4j-api:2.13.0'
+    compile 'org.apache.logging.log4j:log4j-core:2.13.0'
+    // To suppress the SL4J message
+    // See
+    runtime 'org.slf4j:slf4j-nop:1.7.30'
 
-    // Disable the test report for the individual test task
-    // samples/testing/testReport in the full Gradle distribution
-    test {
-        reports.html.enabled = false
-    }
 
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-    }
+  }
+
+  sourceCompatibility = '1.8'
+
+  // Disable the test report for the individual test task
+  // samples/testing/testReport in the full Gradle distribution
+  test {
+    reports.html.enabled = false
+  }
+
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+  }
 
 
 }
@@ -47,7 +60,7 @@ subprojects {
 // doc: https://docs.gradle.org/current/userguide/java_testing.html#test_reporting
 // The problem with this publication is that if there is an error in the test you don't get anything
 task testReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/allTests")
-    // Include the results from the `test` task in all subprojects
-    reportOn subprojects*.test
+  destinationDir = file("$buildDir/reports/allTests")
+  // Include the results from the `test` task in all subprojects
+  reportOn subprojects*.test
 }

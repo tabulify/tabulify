@@ -6,11 +6,11 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ini4j.Ini;
 import org.ini4j.Profile;
 import org.ini4j.Wini;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +29,7 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
  */
 public class DatabasesStore {
 
-    static Logger LOGGER = LoggerFactory.getLogger(DatabasesStore.class);
+    protected static final Logger logger = LogManager.getLogger();
 
     /**
      * The local file database name as also stated
@@ -255,7 +255,7 @@ public class DatabasesStore {
                     database.setStatement(iniSection.get(STATEMENT));
                     database.setDatabaseStore(this);
                 } else {
-                  LOGGER.warn("The database {} was not found. A null database was returned",name);
+                  logger.warn("The database {} was not found. A null database was returned",name);
                 }
         }
         return database;

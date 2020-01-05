@@ -1,7 +1,5 @@
 package net.bytle.api;
 
-import io.vertx.config.ConfigRetriever;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxOptions;
 
 /**
@@ -12,7 +10,6 @@ import io.vertx.core.VertxOptions;
 public class Launcher extends io.vertx.core.Launcher {
 
 
-  private ConfigRetriever configRetriever;
 
   @Override
   public void beforeStartingVertx(VertxOptions options) {
@@ -21,18 +18,10 @@ public class Launcher extends io.vertx.core.Launcher {
 
   }
 
-  @Override
-  public void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {
-
-
-
-  }
-
-
-
   public static void main(String[] args) {
 
     new Launcher().dispatch(args);
 
   }
+
 }

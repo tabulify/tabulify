@@ -1,7 +1,8 @@
 package net.bytle.niofs.http;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -14,7 +15,7 @@ import java.nio.channels.*;
  */
 class HttpSeekableByteChannel implements SeekableByteChannel {
 
-  static Logger logger = LoggerFactory.getLogger(HttpSeekableByteChannel.class);
+  protected static final Logger logger = LogManager.getLogger();
 
 
   // The connection Url
@@ -39,7 +40,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
       currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
       currentChannel = Channels.newChannel(currentConnection.getInputStream());
     } catch (IOException e) {
-     throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
   }
 

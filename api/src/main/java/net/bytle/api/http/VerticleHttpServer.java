@@ -11,16 +11,15 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
+import io.vertx.ext.web.handler.LoggerFormat;
+import io.vertx.ext.web.handler.LoggerHandler;
 import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
 import net.bytle.api.db.DatabaseServiceInterface;
 import net.bytle.api.db.DatabaseVerticle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 
 /**
@@ -29,7 +28,7 @@ import java.util.Arrays;
 public class VerticleHttpServer extends AbstractVerticle {
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VerticleHttpServer.class);
+  protected static final Logger LOGGER = LogManager.getLogger();
 
   public static final int PORT_DEFAULT = 8083;
   public static final String LOCALHOST_DEFAULT = "0.0.0.0";
@@ -115,6 +114,11 @@ public class VerticleHttpServer extends AbstractVerticle {
 
     // Routing
     Router router = Router.router(vertx);
+
+    // Logging Web Request
+    router.route().handler(LoggerHandler.create(LoggerFormat.DEFAULT));
+
+    // Ip routing
     router.get("/ip/:ip").handler(this::ip_info);
     router.get("/ip/").handler(this::ip_info);
     router.get("/ip").handler(this::ip_info);
@@ -207,16 +211,5 @@ public class VerticleHttpServer extends AbstractVerticle {
 
   }
 
-  private static void configureLogging() {
-    // It's OK to use MDC with static values
-    MDC.put("application", "blog");
-    MDC.put("version", "1.0.0");
-    MDC.put("release", "canary");
-    try {
-      MDC.put("hostname", InetAddress.getLocalHost().getHostName());
-    } catch (UnknownHostException e) {
-      // Silent error, we can live without it
-    }
-  }
 
 }
