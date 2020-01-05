@@ -19,7 +19,8 @@ public class Launcher extends io.vertx.core.Launcher {
   }
 
   public static void main(String[] args) {
-
+    // Use log4j2
+    System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.Log4j2LogDelegateFactory");
     new Launcher().dispatch(args);
 
   }

@@ -10,7 +10,7 @@ public class Log {
   static Path LOG_DIR_PATH;
 
   static {
-    Path logDirPath = Paths.get(Paths.get(".").toString(),"log");
+    Path logDirPath = Paths.get(Paths.get(".").toString(),"logs");
     Fs.createDirectoryIfNotExists(logDirPath);
     LOG_DIR_PATH = logDirPath;
   }

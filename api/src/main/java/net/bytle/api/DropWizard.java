@@ -21,7 +21,7 @@ public class DropWizard {
     SharedMetricRegistries.setDefault(registryName);
 
     // Initialize Dropwizard csv
-    Path csvPath = Log.LOG_DIR_PATH.resolve("dropwizardVertxMetrics.csv");
+    Path csvPath = Log.LOG_DIR_PATH;
 
     // The reporter
     CsvReporter reporter = CsvReporter.forRegistry(registry)
