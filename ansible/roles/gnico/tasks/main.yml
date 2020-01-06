@@ -21,15 +21,14 @@
         group: '{{ gnico_user_name }}'
         owner: '{{ gnico_user_group }}'
         mode: 'u=rwx,g=rx,o=rx'
-#    - name: Add mappings to /etc/hosts
-#      blockinfile:
-#        path: /etc/hosts
-#        block: |
-#          {{ item.ip }} {{ item.name }}
-#        marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
-#      loop:
-#        - { name: '{{ gnico_fat_host }}', ip: 127.0.0.1 }
-
+    - name: Stop gnico
+      systemd:
+        state: stopped
+        name: gnico
+    - name: Delete the jar (Hack because we are for now deploying a snapshot jar that has always the same name)
+      file:
+        state: absent
+        path: '{{ gnico_install_path }}/bytle-api-0.0.1-SNAPSHOT-all.jar'
     - name: Download the fat jar
       maven_artifact:
         group_id: net.bytle
@@ -56,4 +55,17 @@
         mode: 0644
       notify:
         - 'gnico reload'
-
+    - name: Restart gnico
+      systemd:
+        state: restarted
+        name: gnico
+    - name: Test that the service is up
+      uri:
+        url: http://localhost:8083/ip/143.176.206.80
+        method: GET
+        status_code: 200
+      register: ipcall
+    - name: Fail if the body is not the expected one
+      when: ipcall.msg != '{"success":true,"ip":"143.176.206.80","country2":"NL","country3":"NLD","country":"Netherlands"}'
+      fail:
+        msg: 'The expected body is not the good one {{ ipcall.msg }}'

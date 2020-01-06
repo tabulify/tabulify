@@ -1,16 +1,17 @@
 package net.bytle.db;
 
+
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.ini4j.Ini;
 import org.ini4j.Profile;
 import org.ini4j.Wini;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +30,7 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
  */
 public class DatabasesStore {
 
-    protected static final Logger logger = LogManager.getLogger();
+    protected static final Logger logger = LoggerFactory.getLogger(DatabasesStore.class);
 
     /**
      * The local file database name as also stated

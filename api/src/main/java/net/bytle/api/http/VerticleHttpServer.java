@@ -17,8 +17,8 @@ import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
 import net.bytle.api.db.DatabaseServiceInterface;
 import net.bytle.api.db.DatabaseVerticle;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -28,7 +28,7 @@ import java.util.Arrays;
 public class VerticleHttpServer extends AbstractVerticle {
 
 
-  protected static final Logger LOGGER = LogManager.getLogger();
+  protected static final Logger LOGGER = LoggerFactory.getLogger(VerticleHttpServer.class);
 
   public static final int PORT_DEFAULT = 8083;
   public static final String LOCALHOST_DEFAULT = "0.0.0.0";

@@ -1,8 +1,8 @@
 package net.bytle.niofs.http;
 
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -15,7 +15,7 @@ import java.nio.channels.*;
  */
 class HttpSeekableByteChannel implements SeekableByteChannel {
 
-  protected static final Logger logger = LogManager.getLogger();
+  protected static final Logger logger = LoggerFactory.getLogger(HttpSeekableByteChannel.class);
 
 
   // The connection Url
