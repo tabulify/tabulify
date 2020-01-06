@@ -5,6 +5,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.HealthCheckHandler;
 import io.vertx.ext.web.Router;
@@ -12,7 +13,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
 import io.vertx.ext.web.handler.LoggerFormat;
-import io.vertx.ext.web.handler.LoggerHandler;
 import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
 import net.bytle.api.db.DatabaseServiceInterface;
@@ -116,7 +116,8 @@ public class VerticleHttpServer extends AbstractVerticle {
     Router router = Router.router(vertx);
 
     // Logging Web Request
-    router.route().handler(LoggerHandler.create(LoggerFormat.DEFAULT));
+    router.route().handler(new WebLogger(LoggerFormat.DEFAULT));
+
 
     // Ip routing
     router.get("/ip/:ip").handler(this::ip_info);
@@ -168,9 +169,10 @@ public class VerticleHttpServer extends AbstractVerticle {
 
 
   private void ip_info(RoutingContext context) {
-    String ip = context.request().getParam("ip");
+    HttpServerRequest request = context.request();
+    String ip = request.getParam("ip");
     if (ip ==null){
-      ip = context.request().remoteAddress().host();
+      ip = Https.getRealRemoteClient(request);
     }
 
     context.response().putHeader("Content-Type", "application/json");

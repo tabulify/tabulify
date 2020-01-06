@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
+<Configuration status="WARN" monitorInterval="30">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <RollingFile name="RollingFile" fileName="logs/webrequest.log"
-                 filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+    <RollingFile name="RollingFile" fileName="logs/web.log" filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
       <PatternLayout>
         <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
       </PatternLayout>
@@ -19,7 +18,7 @@
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
-    <Logger name="io.vertx.ext.web.handler.impl.LoggerHandlerImpl" level="debug" additivity="false">
+    <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
       <AppenderRef ref="RollingFile"/>
     </Logger>
   </Loggers>

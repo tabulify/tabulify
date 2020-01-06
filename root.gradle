@@ -5,13 +5,16 @@
 allprojects {
   group = 'net.bytle'
   version = '0.0.1-SNAPSHOT'
+
+  configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+  }
+
 }
 
 // because we are not using it and that a lot of project are
 // We get no error when compiling, excluding it shows an error where it's used.
-configurations {
-  compile.exclude group: "org.slf4j"
-}
+
 
 subprojects {
   apply plugin: 'java'
@@ -35,9 +38,7 @@ subprojects {
     compile 'org.apache.logging.log4j:log4j-api:2.13.0'
     compile 'org.apache.logging.log4j:log4j-core:2.13.0'
     // To suppress the SL4J message
-    // See
-    runtime 'org.slf4j:slf4j-nop:1.7.30'
-
+    runtimeOnly 'org.slf4j:slf4j-nop:1.7.30'
 
   }
 

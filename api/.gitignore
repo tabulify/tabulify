@@ -8,7 +8,7 @@ db/**/*
 ### The downloaded data ###
 IpToCountry.csv
 ### The logs directory ###
-logs/*.*
+logs/*
 
 ### Eclipse ###
 
