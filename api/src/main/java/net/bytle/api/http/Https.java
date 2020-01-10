@@ -6,27 +6,47 @@ import io.vertx.core.net.SocketAddress;
 
 public class Https {
 
+  public static final String CACHE_CONTROL = "Cache-Control";
+  public static final String CACHE_CONTROL_NO_STORE = "no-store";
+  public final static String X_FORWARDED_FOR = "X-Forwarded-For";
+  public static final String X_REAL_IP = "X-Real-IP";
+
   /**
-   *
    * @param request
-   * @return the IP address of the real client (browser), not the proxy
+   * @return the IP address of the real client (browser), not the proxy - may be null
    */
   public static String getRealRemoteClient(HttpServerRequest request) {
 
-    // remoteClient is the ip of the direct connection (ie a proxy or the real client)
-    String remoteClient = getClientAddress(request.remoteAddress());
-
-    // X-Real-IP headers is checked
     final MultiMap headers = request.headers();
-    return headers.contains("X-Real-IP") ? headers.get("X-Real-IP") : remoteClient;
+
+    String xForwardedFor = headers.get(X_FORWARDED_FOR);
+    if (xForwardedFor != null) {
+      return Https.getRemoteIpFromXForwardedFor(xForwardedFor);
+    }
+    String xRealIP = headers.get(X_REAL_IP);
+    if (xRealIP != null) {
+      return xRealIP;
+    }
+
+    // remoteClient is the ip of the direct connection (ie a proxy or the real client)
+    SocketAddress inetSocketAddress = request.remoteAddress();
+    if (inetSocketAddress == null) {
+      return null;
+    } else {
+      return inetSocketAddress.host();
+    }
 
   }
 
-  private static String getClientAddress(SocketAddress inetSocketAddress) {
-    if (inetSocketAddress == null) {
-      return null;
-    }
-    return inetSocketAddress.host();
+
+  /**
+   * @param xForwardedFor - The content of a X-Forwarded-For header
+   * @return the remote ip (not the proxy ip)
+   */
+  public static String getRemoteIpFromXForwardedFor(String xForwardedFor) {
+    assert xForwardedFor != null;
+    String[] xForwardedForParts = xForwardedFor.split(",");
+    return xForwardedForParts[0];
   }
 
 }

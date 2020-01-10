@@ -176,6 +176,8 @@ public class VerticleHttpServer extends AbstractVerticle {
     }
 
     context.response().putHeader("Content-Type", "application/json");
+    context.response().putHeader(Https.CACHE_CONTROL, Https.CACHE_CONTROL_NO_STORE);
+
     String finalIp = ip;
     dbService.getIp(ip, ar -> {
       if (ar.succeeded()) {

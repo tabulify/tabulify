@@ -63,9 +63,7 @@
       uri:
         url: http://localhost:8083/ip/143.176.206.80
         method: GET
-        status_code: 200
       register: ipcall
-    - name: Fail if the body is not the expected one
-      when: ipcall.msg != '{"success":true,"ip":"143.176.206.80","country2":"NL","country3":"NLD","country":"Netherlands"}'
-      fail:
-        msg: 'The expected body is not the good one {{ ipcall.msg }}'
+      until: ipcall.status == 200
+      delay: 5 # Every 5 seconds
+      retries: 5 # 5 * 5 seconds = 25
