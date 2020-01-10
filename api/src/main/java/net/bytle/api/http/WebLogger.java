@@ -89,8 +89,8 @@ public class WebLogger implements LoggerHandler {
         String userAgent = request.headers().get("user-agent");
         referrer = referrer == null ? "-" : referrer;
         userAgent = userAgent == null ? "-" : userAgent;
-
-        message = String.format("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"",
+        String xForwardedFor = headers.get("X-Forwarded-For") == null ? "-" : headers.get("X-Forwarded-For");
+        message = String.format("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\" \"%s\"",
           remoteClient,
           Utils.formatRFC1123DateTime(timestamp),
           method,
@@ -99,7 +99,8 @@ public class WebLogger implements LoggerHandler {
           status,
           contentLength,
           referrer,
-          userAgent);
+          userAgent,
+          xForwardedFor);
         break;
       case SHORT:
         message = String.format("%s - %s %s %s %d %d - %d ms",

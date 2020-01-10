@@ -4,6 +4,7 @@
 rootProject.buildFileName = 'root.gradle'
 rootProject.name = 'bytle-parent'
 
+include(':ansible')
 include(':bytle-api')
 include(':bytle-cli')
 include(':bytle-db-transfer')
