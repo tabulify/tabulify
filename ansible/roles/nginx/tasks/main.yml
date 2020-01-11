@@ -20,6 +20,14 @@
     state: enabled
   notify: firewalld reload
 
+- name: 'Firewalld - Add port 80 for a SSL redirect'
+  become: true
+  firewalld:
+    port: '80/tcp'
+    permanent: yes
+    state: enabled
+  notify: firewalld reload
+
 - name: 'Certbot - Certificate'
   become: true
   include: certbot_root.yml

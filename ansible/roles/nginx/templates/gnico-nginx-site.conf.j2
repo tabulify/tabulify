@@ -36,3 +36,10 @@ server {
 
     }
 }
+
+# redirect ssl
+server {
+    listen 80;
+    server_name {{ gnico_fqdn }};
+    return 301 https://{{ gnico_fqdn }}$request_uri;
+}

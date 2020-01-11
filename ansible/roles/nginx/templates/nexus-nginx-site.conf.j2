@@ -29,3 +29,10 @@ server {
     }
 
 }
+
+# redirect ssl
+server {
+    listen 80;
+    server_name {{ nexus_fqdn }};
+    return 301 https://{{ nexus_fqdn }}$request_uri;
+}
