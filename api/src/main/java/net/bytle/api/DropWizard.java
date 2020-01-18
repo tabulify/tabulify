@@ -11,10 +11,13 @@ public class DropWizard {
 
   public static DropwizardMetricsOptions getMetricsOptions() {
 
-    // Initialize Dropwizard metric registry
+
     String registryName = "vertx";
     MetricRegistry registry = SharedMetricRegistries.getOrCreate(registryName);
-    SharedMetricRegistries.setDefault(registryName);
+    MetricRegistry metricRegistry = SharedMetricRegistries.tryGetDefault();
+    if (metricRegistry==null) {
+      SharedMetricRegistries.setDefault(registryName);
+    }
 
 //    // Initialize Dropwizard csv
 //    Path csvPath = Paths.get(Log.LOG_DIR_PATH.toString(),"dropwizard");

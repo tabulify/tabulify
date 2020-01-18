@@ -5,7 +5,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.HealthCheckHandler;
 import io.vertx.ext.web.Router;
@@ -59,7 +58,10 @@ public class VerticleHttpServer extends AbstractVerticle {
      * Handler
      */
     this.pingHandler = new PingHandler()
-      .setMessage(configuration.getString(Conf.Properties.PING_RESPONSE.toString(),PING_RESPONSE_DEFAULT));
+      .setMessage(configuration.getString(Conf.Properties.PING_RESPONSE.toString(), PING_RESPONSE_DEFAULT));
+    /**
+     * Failure
+     */
     this.handlerFailure = new HandlerFailure();
     this.handlerPokemon = new HandlerPokemon(vertx)
       .setPokeApiUrl(
@@ -79,9 +81,9 @@ public class VerticleHttpServer extends AbstractVerticle {
         message -> {
           LOGGER.debug("Configuration has changed, verticle {} is updating...", deploymentID());
           JsonObject newConfiguration = message.body();
-          pingHandler.setMessage(newConfiguration.getString(Conf.Properties.PING_RESPONSE.toString(),PING_RESPONSE_DEFAULT));
+          pingHandler.setMessage(newConfiguration.getString(Conf.Properties.PING_RESPONSE.toString(), PING_RESPONSE_DEFAULT));
           handlerPokemon.setPokeApiUrl(
-            newConfiguration.getString(Conf.Properties.HOST.toString(),LOCALHOST_DEFAULT),
+            newConfiguration.getString(Conf.Properties.HOST.toString(), LOCALHOST_DEFAULT),
             newConfiguration.getInteger(Conf.Properties.PORT.toString(), PORT_DEFAULT),
             newConfiguration.getString(Conf.Properties.PATH.toString(), PATH_DEFAULT)
           );
@@ -113,16 +115,22 @@ public class VerticleHttpServer extends AbstractVerticle {
     HttpServer server = vertx.createHttpServer(options);
 
     // Routing
+    // a router should not be shared between verticles.
     Router router = Router.router(vertx);
 
     // Logging Web Request
     router.route().handler(new WebLogger(LoggerFormat.DEFAULT));
 
-
     // Ip routing
-    router.get("/ip/:ip").handler(this::ip_info);
-    router.get("/ip/").handler(this::ip_info);
-    router.get("/ip").handler(this::ip_info);
+    IpHandler ipHandler = new IpHandler(vertx);
+    router.get("/ip/:ip").handler(ipHandler);
+    router.get("/ip/").handler(ipHandler);
+    router.get("/ip").handler(ipHandler);
+
+    // Analytics
+    AnalyticsHandler analyticsHandler = new AnalyticsHandler(vertx);
+    router.post(AnalyticsHandler.ANALYTICS_PATH).handler(analyticsHandler);
+    router.get(AnalyticsHandler.ANALYTICS_PATH).handler(analyticsHandler);
 
     // Healthy services ?
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
@@ -168,52 +176,7 @@ public class VerticleHttpServer extends AbstractVerticle {
   }
 
 
-  private void ip_info(RoutingContext context) {
-    HttpServerRequest request = context.request();
-    String ip = request.getParam("ip");
-    if (ip ==null){
-      ip = Https.getRealRemoteClient(request);
-    }
-
-    context.response().putHeader("Content-Type", "application/json");
-    context.response().putHeader(Https.CACHE_CONTROL, Https.CACHE_CONTROL_NO_STORE);
-
-    String finalIp = ip;
-    dbService.getIp(ip, ar -> {
-      if (ar.succeeded()) {
-        // Use the json object
-        JsonObject json = ar.result();
-        boolean found = json.getBoolean("found");
-
-        if (true) {
-          context.response().setStatusCode(200);
-          context.response().end(
-            new JsonObject()
-              .put("success", true)
-              .put("ip", json.getString("ip"))
-              .put("country2", json.getString("country2"))
-              .put("country3", json.getString("country3"))
-              .put("country", json.getString("country"))
-              .encode());
-        } else {
-          context.response().setStatusCode(404);
-          context.response().end(
-            new JsonObject()
-              .put("success", false)
-              .put("error", "country not found with the ip (" + finalIp + ")")
-              .encode());
-        }
-      } else {
-        context.response().setStatusCode(500);
-        context.response().end(
-          new JsonObject()
-            .put("success", false)
-            .put("error", ar.cause().getMessage())
-            .encode());
-      }
-    });
-
-  }
-
-
 }
+
+
+

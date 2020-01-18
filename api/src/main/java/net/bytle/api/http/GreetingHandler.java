@@ -5,6 +5,8 @@ import io.vertx.ext.web.RoutingContext;
 
 public class GreetingHandler implements Handler<RoutingContext> {
 
+
+
     @Override
     public void handle(RoutingContext routingContext) {
         // Thanks to the validation handler, we are sure required parameters are present

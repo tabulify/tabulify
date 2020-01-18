@@ -1,8 +1,11 @@
 package net.bytle.api.http;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
+import net.bytle.api.DropWizard;
 
 public class Https {
 
@@ -47,6 +50,12 @@ public class Https {
     assert xForwardedFor != null;
     String[] xForwardedForParts = xForwardedFor.split(",");
     return xForwardedForParts[0];
+  }
+
+  public static Vertx getVertx() {
+    VertxOptions vertxOptions = new VertxOptions();
+    vertxOptions.setMetricsOptions(DropWizard.getMetricsOptions());
+    return Vertx.vertx(vertxOptions);
   }
 
 }

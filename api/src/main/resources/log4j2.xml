@@ -4,7 +4,16 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <RollingFile name="RollingFile" fileName="logs/web.log" filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+    <RollingFile name="Web" fileName="logs/web.log" filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
+    <RollingFile name="RollingFile" fileName="logs/analytics.jsonl" filePattern="logs/analytics/$${date:yyyy-MM}/analytics-%d{yyyy-dd-MM}-%i.jsonl.gz">
       <PatternLayout>
         <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
       </PatternLayout>
@@ -19,7 +28,10 @@
       <AppenderRef ref="Console"/>
     </Root>
     <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
-      <AppenderRef ref="RollingFile"/>
+      <AppenderRef ref="Web"/>
+    </Logger>
+    <Logger name="net.bytle.api.http.AnalyticsLogger" level="debug" additivity="false">
+      <AppenderRef ref="Web"/>
     </Logger>
   </Loggers>
 </Configuration>
