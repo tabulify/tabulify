@@ -4,19 +4,33 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <RollingFile name="Web" fileName="logs/web.log" filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log.gz">
-      <PatternLayout>
-        <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
-      </PatternLayout>
-      <Policies>
-        <TimeBasedTriggeringPolicy/>
-        <SizeBasedTriggeringPolicy size="250 MB"/>
-      </Policies>
-    </RollingFile>
-    <RollingFile name="RollingFile" fileName="logs/analytics.jsonl" filePattern="logs/analytics/$${date:yyyy-MM}/analytics-%d{yyyy-dd-MM}-%i.jsonl.gz">
-      <PatternLayout>
-        <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
-      </PatternLayout>
+    <Routing name="Analytics" ignoreExceptions="false">
+      <Routes>
+        <Script name="RoutingInit" language="JavaScript"><![CDATA[
+             logEvent.getContextMap().get("event_slug");
+            ]]>
+        </Script>
+        <Route>
+          <RollingFile
+            name="analytics-${ctx:event_slug}"
+            fileName="logs/analytics/${ctx:event_slug}.jsonl"
+            filePattern="logs/analytics/$${date:yyyy-MM}/analytics-${ctx:event_slug}-%d{yyyy-dd-MM-}-%i.jsonl.gz">
+            <PatternLayout>
+              <pattern>%m%n</pattern>
+            </PatternLayout>
+            <Policies>
+              <TimeBasedTriggeringPolicy/>
+              <SizeBasedTriggeringPolicy size="250 MB"/>
+            </Policies>
+          </RollingFile>
+        </Route>
+      </Routes>
+      <!-- Created appender TTL -->
+      <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
+    </Routing>
+    <RollingFile name="Web"
+                 fileName="logs/web.log"
+                 filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log.gz">
       <Policies>
         <TimeBasedTriggeringPolicy/>
         <SizeBasedTriggeringPolicy size="250 MB"/>
@@ -27,10 +41,10 @@
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
-    <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
-      <AppenderRef ref="Web"/>
-    </Logger>
     <Logger name="net.bytle.api.http.AnalyticsLogger" level="debug" additivity="false">
+      <AppenderRef ref="Analytics"/>
+    </Logger>
+    <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
       <AppenderRef ref="Web"/>
     </Logger>
   </Loggers>

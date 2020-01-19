@@ -128,9 +128,9 @@ public class VerticleHttpServer extends AbstractVerticle {
     router.get("/ip").handler(ipHandler);
 
     // Analytics
-    AnalyticsHandler analyticsHandler = new AnalyticsHandler(vertx);
-    router.post(AnalyticsHandler.ANALYTICS_PATH).handler(analyticsHandler);
-    router.get(AnalyticsHandler.ANALYTICS_PATH).handler(analyticsHandler);
+    AnalyticsLogger analyticsLogger = new AnalyticsLogger(vertx);
+    router.post(AnalyticsLogger.ANALYTICS_PATH).handler(analyticsLogger);
+    router.get(AnalyticsLogger.ANALYTICS_PATH).handler(analyticsLogger);
 
     // Healthy services ?
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
