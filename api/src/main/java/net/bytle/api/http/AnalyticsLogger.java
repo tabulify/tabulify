@@ -5,10 +5,13 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.api.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 
 /**
@@ -17,10 +20,14 @@ import java.util.Date;
  */
 public class AnalyticsLogger implements Handler<RoutingContext> {
 
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+  // Static field
+  public static final String ANALYTICS_NAME = "analytics";
+  public static final String ANALYTICS_URL_PATH = "/"+ANALYTICS_NAME;
+  public static final Path ANALYTICS_LOG_PATH = Paths.get(Log.LOG_DIR_NAME, ANALYTICS_NAME);
 
-  public static final String ANALYTICS_PATH = "/analytics";
   private final Vertx vertx;
 
   /**
@@ -44,14 +51,13 @@ public class AnalyticsLogger implements Handler<RoutingContext> {
 
       // Adding extra server info
       final JsonObject body = bodyHandler.toJsonObject();
-      body.put("received_at", new Date().toInstant());
+      body.put("received_at", new Date().toInstant()); // UTC time
       JsonObject eventContext = body.getJsonObject("context");
       if (eventContext==null){
         eventContext = new JsonObject();
         body.put("context",eventContext);
       }
       eventContext.put("ip", Https.getRealRemoteClient(request));
-
       // Log
       String eventName = body.getString("event_name");
       if (eventName==null){

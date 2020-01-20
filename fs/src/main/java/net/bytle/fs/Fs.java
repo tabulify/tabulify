@@ -429,6 +429,11 @@ public class Fs {
     }
   }
 
+  /**
+   * Delete a file or a directory (with all its content)
+   * @param path
+   * @return
+   */
   private static List<Path> delete(Path path) {
     try {
       List<Path> deletedPaths = new ArrayList<>();

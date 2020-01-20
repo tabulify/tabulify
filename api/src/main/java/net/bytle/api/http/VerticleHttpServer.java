@@ -129,8 +129,8 @@ public class VerticleHttpServer extends AbstractVerticle {
 
     // Analytics
     AnalyticsLogger analyticsLogger = new AnalyticsLogger(vertx);
-    router.post(AnalyticsLogger.ANALYTICS_PATH).handler(analyticsLogger);
-    router.get(AnalyticsLogger.ANALYTICS_PATH).handler(analyticsLogger);
+    router.post(AnalyticsLogger.ANALYTICS_URL_PATH).handler(analyticsLogger);
+    router.get(AnalyticsLogger.ANALYTICS_URL_PATH).handler(analyticsLogger);
 
     // Healthy services ?
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
