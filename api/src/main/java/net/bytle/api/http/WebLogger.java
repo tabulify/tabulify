@@ -4,12 +4,11 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.LoggerFormat;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.impl.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Due to the proxy, we get always the remote of the proxy as remote
@@ -21,7 +20,12 @@ import org.slf4j.LoggerFactory;
  */
 public class WebLogger implements LoggerHandler {
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  /**
+   * This is a branch from the Vertx Weblogger
+   * This is why we have a vertx logger below
+   * If you want to go over to slf4j+log4, you need to change the format
+   */
+  private final io.vertx.core.logging.Logger logger = LoggerFactory.getLogger(this.getClass());
 
   /**
    * log before request or after
@@ -41,6 +45,7 @@ public class WebLogger implements LoggerHandler {
   public WebLogger(LoggerFormat format) {
     this(false, format);
   }
+
 
   private void log(RoutingContext context, long timestamp, String remoteClient, HttpVersion version, HttpMethod method, String uri) {
     HttpServerRequest request = context.request();
