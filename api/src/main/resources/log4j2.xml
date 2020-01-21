@@ -5,7 +5,6 @@
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
     <Routing name="AnalyticsInfo" ignoreExceptions="false">
-      <param name="Threshold" value="INFO"/>
       <!-- http://logging.apache.org/log4j/2.x/faq.html#separate_log_files -->
       <Routes pattern="${ctx:event_slug}">
         <Route>
@@ -14,6 +13,7 @@
             fileName="logs/analytics/${ctx:event_slug}.jsonl"
             filePattern="logs/analytics/$${date:yyyy-MM}/analytics-${ctx:event_slug}-%d{yyyy-dd-MM-}-%i.jsonl.gz"
             ignoreExceptions="false" >
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
               <pattern>%m%n</pattern>
             </PatternLayout>
@@ -38,7 +38,7 @@
     <RollingFile name="AnalyticsError"
                  fileName="logs/analytics-error.log"
                  filePattern="logs/error/analytics-%d{MM-dd-yyyy}-%i.log">
-      <param name="Threshold" value="ERROR"/>
+      <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
       <Policies>
         <TimeBasedTriggeringPolicy/>
         <SizeBasedTriggeringPolicy size="250 MB"/>
