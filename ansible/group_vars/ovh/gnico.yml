@@ -5,6 +5,7 @@ gnico_port: 8083
 gnico_app: apignico
 
 # The app has two different endpoint
-gnico_fqdn_api: 'api.gerardnico.com'
-gnico_fqdn_analytics: 'analytics.gerardnico.com'
+gnico_fqdn: 'gerardnico.com'
+gnico_fqdn_api: 'api.{{ gnico_fqdn }}'
+gnico_fqdn_analytics: 'analytics.{{ gnico_fqdn }}'
 
