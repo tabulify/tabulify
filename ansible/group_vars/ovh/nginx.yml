@@ -9,7 +9,8 @@ ovh_domains:
   - api.bytle.net
 
 cloudflare_domains:
-  - api.gerardnico.com
+  - '{{ gnico_fqdn_api }}'
+  - '{{ gnico_fqdn_analytics }}'
 
 
 dns_ovh_consumer_key: !vault |
