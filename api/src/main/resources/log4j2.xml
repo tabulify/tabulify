@@ -4,7 +4,8 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <Routing name="Analytics" ignoreExceptions="false">
+    <Routing name="AnalyticsInfo" ignoreExceptions="false">
+      <param name="Threshold" value="INFO"/>
       <Routes>
         <Script name="RoutingInit" language="JavaScript"><![CDATA[
              // This script must return a route name
@@ -45,13 +46,23 @@
         <SizeBasedTriggeringPolicy size="250 MB"/>
       </Policies>
     </RollingFile>
+    <RollingFile name="AnalyticsError"
+                 fileName="logs/analytics-error.log"
+                 filePattern="logs/error/analytics-%d{MM-dd-yyyy}-%i.log">
+      <param name="Threshold" value="ERROR"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
   </Appenders>
   <Loggers>
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
-    <Logger name="net.bytle.api.http.AnalyticsLogger" level="debug" additivity="false">
-      <AppenderRef ref="Analytics"/>
+    <Logger name="net.bytle.api.http.AnalyticsLogger" level="info" additivity="false">
+      <AppenderRef ref="AnalyticsInfo"/>
+      <AppenderRef ref="AnalyticsError"/>
     </Logger>
     <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
       <AppenderRef ref="Web"/>

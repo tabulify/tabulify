@@ -17,7 +17,6 @@ import java.util.Date;
 
 /**
  * The log are done with the <a href="http://logging.apache.org/log4j/2.x/manual/appenders.html#RoutingAppender">Routes</a>
- *
  */
 public class AnalyticsLogger implements Handler<RoutingContext> {
 
@@ -26,7 +25,7 @@ public class AnalyticsLogger implements Handler<RoutingContext> {
 
   // Static field
   public static final String ANALYTICS_NAME = "analytics";
-  public static final String ANALYTICS_URL_PATH = "/"+ANALYTICS_NAME;
+  public static final String ANALYTICS_URL_PATH = "/" + ANALYTICS_NAME;
   public static final Path ANALYTICS_LOG_PATH = Paths.get(Log.LOG_DIR_NAME, ANALYTICS_NAME);
 
   private final Vertx vertx;
@@ -43,7 +42,6 @@ public class AnalyticsLogger implements Handler<RoutingContext> {
   }
 
 
-
   @Override
   public void handle(RoutingContext context) {
 
@@ -52,7 +50,16 @@ public class AnalyticsLogger implements Handler<RoutingContext> {
       request.bodyHandler(bodyHandler -> {
 
         // Adding extra server info
-        final JsonObject body = bodyHandler.toJsonObject();
+        JsonObject body = null;
+        try {
+          body = bodyHandler.toJsonObject();
+        } catch (Exception e) {
+          // The GA endpoint will always return 200, even if the request is missing required parameters.
+          logger.error("Unable to decode the body as Json. Body=("+bodyHandler.toString()+"), Error Message=("+e.getMessage()+")");
+          context.response()
+            .setStatusCode(200)
+            .end();
+        }
         body.put("received_at", new Date().toInstant()); // UTC time
         JsonObject eventContext = body.getJsonObject("context");
         if (eventContext == null) {
@@ -77,7 +84,7 @@ public class AnalyticsLogger implements Handler<RoutingContext> {
     } else {
       context.response()
         .setStatusCode(200)
-        .end("analytics");
+        .end("");
     }
 
 

@@ -28,6 +28,17 @@ To run your application:
   * database migration is taken into the code of the [DatabaseVerticle](src/main/java/net/bytle/api/db/DatabaseVerticle.java)
   * the source script are in the [resources directory](src/main/resources/db/migration/)
 
+## Debug
+
+  * The service log 
+```bash
+journalctl -f -u gnico
+```
+  * The web request log
+```bash
+tail -f /opt/gnico/logs/web.log
+```
+
 ## Help
 
 * [Vert.x Documentation](https://vertx.io/docs/)
