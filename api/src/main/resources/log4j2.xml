@@ -6,19 +6,8 @@
     </Console>
     <Routing name="AnalyticsInfo" ignoreExceptions="false">
       <param name="Threshold" value="INFO"/>
-      <Routes>
-        <Script name="RoutingInit" language="JavaScript"><![CDATA[
-             // This script must return a route name
-             //
-             // Example from https://logging.apache.org/log4j/2.x/manual/appenders.html#RoutingAppender
-             // on how to get a MDC value
-             // logEvent.getContextMap().get("event_slug");
-             //
-             // but as we use only one route with dynamic name, we return 1
-
-            1
-            ]]>
-        </Script>
+      <!-- http://logging.apache.org/log4j/2.x/faq.html#separate_log_files -->
+      <Routes pattern="${ctx:event_slug}">
         <Route>
           <RollingFile
             name="analytics-${ctx:event_slug}"

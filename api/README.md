@@ -34,6 +34,10 @@ To run your application:
 ```bash
 journalctl -f -u gnico
 ```
+  * The analytics error log
+```bash
+tail -f /opt/gnico/logs/analytics-error.log
+```
   * The web request log
 ```bash
 tail -f /opt/gnico/logs/web.log
