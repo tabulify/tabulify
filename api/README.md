@@ -19,6 +19,7 @@ To run your application:
 
   * From Idea
     * Main Class: net.bytle.api.Launcher
+    * VMOption: -Denv=development
     * Program Arguments: run net.bytle.api.MainVerticle
     * Working Dir: D:\code\bytle-mono\api (at the start, it will create a db and download the Ip data)
 

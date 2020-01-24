@@ -29,6 +29,12 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
 
   @Override
   public DatabaseServiceInterface getIp(String ip, Handler<AsyncResult<JsonObject>> resultHandler) {
+    final String ipv4;
+    if (ip.equals("0:0:0:0:0:0:0:1")){
+      ipv4 =  ip = "127.0.0.1";
+    } else {
+      ipv4 = ip;
+    }
     Long numericIp = getNumericIp(ip);
     LOGGER.info("numericIp is {}", numericIp);
     JsonArray params = new JsonArray()
@@ -48,7 +54,7 @@ public class DatabaseServiceInterfaceImpl implements DatabaseServiceInterface {
             .put("country2", row.getString(4))
             .put("country3", row.getString(5))
             .put("country", row.getString(6))
-            .put("ip", ip);
+            .put("ip", ipv4);
         }
         LOGGER.info("Query fetched {}", response);
         resultHandler.handle(Future.succeededFuture(response));

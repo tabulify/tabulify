@@ -11,7 +11,7 @@
           <RollingFile
             name="analytics-${ctx:event_slug}"
             fileName="logs/analytics/${ctx:event_slug}.jsonl"
-            filePattern="logs/analytics/$${date:yyyy-MM}/analytics-${ctx:event_slug}-%d{yyyy-dd-MM-}-%i.jsonl.gz"
+            filePattern="logs/analytics/$${date:yyyy-MM}/analytics-${ctx:event_slug}-%d{yyyy-dd-MM}-%i.jsonl"
             ignoreExceptions="false" >
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
@@ -29,7 +29,7 @@
     </Routing>
     <RollingFile name="Web"
                  fileName="logs/web.log"
-                 filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log.gz">
+                 filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log">
       <Policies>
         <TimeBasedTriggeringPolicy/>
         <SizeBasedTriggeringPolicy size="250 MB"/>

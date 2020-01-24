@@ -3,6 +3,7 @@ package net.bytle.api.http;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
@@ -11,6 +12,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.api.validation.HTTPRequestValidationHandler;
 import io.vertx.ext.web.api.validation.ParameterType;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import net.bytle.api.Conf;
 import net.bytle.api.EventBusChannels;
@@ -20,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <a href="https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients">Doc</a>
@@ -120,6 +124,33 @@ public class VerticleHttpServer extends AbstractVerticle {
 
     // Logging Web Request
     router.route().handler(new WebLogger(LoggerFormat.DEFAULT));
+
+    // Cors
+    String corsPattern = "https:\\/\\/(.*)gerardnico.com";
+    String env = System.getProperty("env");
+    if (env != null && env.equals("development")) {
+      corsPattern = "http:\\/\\/localhost:([0-9]*)";
+    }
+    Set<String> allowedHeaders = new HashSet<>();
+    allowedHeaders.add("x-requested-with");
+    allowedHeaders.add("Access-Control-Allow-Origin");
+    allowedHeaders.add("Origin");
+    allowedHeaders.add("content-Type");
+    allowedHeaders.add("accept");
+    allowedHeaders.add("X-PINGARUNER");
+    Set<HttpMethod> allowedMethods = new HashSet<>();
+    allowedMethods.add(HttpMethod.GET);
+    allowedMethods.add(HttpMethod.POST);
+    allowedMethods.add(HttpMethod.OPTIONS);
+    allowedMethods.add(HttpMethod.DELETE);
+    allowedMethods.add(HttpMethod.PATCH);
+    allowedMethods.add(HttpMethod.PUT);
+    router.route().handler(
+      CorsHandler
+        .create(corsPattern)
+        .allowedHeaders(allowedHeaders)
+        .allowedMethods(allowedMethods)
+    );
 
     // Ip routing
     IpHandler ipHandler = new IpHandler(vertx);
