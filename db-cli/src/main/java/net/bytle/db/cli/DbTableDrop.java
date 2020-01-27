@@ -102,7 +102,7 @@ public class DbTableDrop {
                 if (!selectedDataPaths.contains(referenceDataPath)) {
                     if (withForce) {
 
-                        List<ForeignKeyDef> droppedForeignKeys = Tabulars.dropReference(referenceDataPath,dataPathToDrop);
+                        List<ForeignKeyDef> droppedForeignKeys = Tabulars.dropOneToManyRelationship(referenceDataPath,dataPathToDrop);
                         droppedForeignKeys.stream()
                                 .forEach(fk->LOGGER.warning("ForeignKey (" + fk.getName() + ") was dropped from the table (" + fk.getTableDef().getDataPath() + ")"));
 

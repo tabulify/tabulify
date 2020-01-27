@@ -16,78 +16,79 @@ import java.util.List;
  */
 public class DataGens {
 
-    private static final Log LOGGER = DataGeneration.GEN_LOG;
+  private static final Log LOGGER = DataGeneration.GEN_LOG;
 
-    public static void suppressSelfReferencingForeignKeys(DataPath schemaDef) {
+  public static void suppressSelfReferencingForeignKeys(DataPath schemaDef) {
 
-        int counter = 0;
-        for (ForeignKeyDef foreignKeyDef : getSelfReferencingForeignKeys(schemaDef)) {
-            counter++;
-            Tabulars.dropReference(foreignKeyDef);
-        }
-        if (counter==0){
-            LOGGER.info("No self referencing foreign keys was found.");
-        } else {
-            LOGGER.info(counter+" self referencing foreign keys was found and suppressed.");
-        }
-
+    int counter = 0;
+    for (ForeignKeyDef foreignKeyDef : getSelfReferencingForeignKeys(schemaDef)) {
+      counter++;
+      DataPath foreignKeyDataPath = foreignKeyDef.getTableDef().getDataPath();
+      Tabulars.dropOneToManyRelationship(foreignKeyDataPath, foreignKeyDataPath);
+    }
+    if (counter == 0) {
+      LOGGER.info("No self referencing foreign keys was found.");
+    } else {
+      LOGGER.info(counter + " self referencing foreign keys was found and suppressed.");
     }
 
-    public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath dataPath) {
+  }
+
+  public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath dataPath) {
 
 
-        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        List<DataPath> dataPathToChecks = new ArrayList<>();
-        if (Tabulars.isContainer(dataPath)) {
-            dataPathToChecks.addAll(DataPaths.getChildren(dataPath));
-        } else {
-            dataPathToChecks.add(dataPath);
-        }
-
-        for (DataPath dataPathToCheck : dataPathToChecks) {
-            for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getDataDef().getForeignKeys()) {
-                if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
-                    foreignKeyDefs.add(foreignKeyDef);
-                }
-            }
-        }
-        return foreignKeyDefs;
-
+    List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
+    List<DataPath> dataPathToChecks = new ArrayList<>();
+    if (Tabulars.isContainer(dataPath)) {
+      dataPathToChecks.addAll(DataPaths.getChildren(dataPath));
+    } else {
+      dataPathToChecks.add(dataPath);
     }
 
-
-    public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath schemaPath) {
-
-        List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-        for (DataPath dataPath : DataPaths.getChildren(schemaPath)) {
-            List<ColumnDef> columnDefs = new ArrayList<>();
-            for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
-                for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
-                    if (columnDefs.contains(columnDef)){
-                        foreignKeyDefs.add(foreignKeyDef);
-                    } else {
-                        columnDefs.add(columnDef);
-                    }
-                }
-            }
+    for (DataPath dataPathToCheck : dataPathToChecks) {
+      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getDataDef().getForeignKeys()) {
+        if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
+          foreignKeyDefs.add(foreignKeyDef);
         }
-        return foreignKeyDefs;
+      }
+    }
+    return foreignKeyDefs;
 
+  }
+
+
+  public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath schemaPath) {
+
+    List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
+    for (DataPath dataPath : DataPaths.getChildren(schemaPath)) {
+      List<ColumnDef> columnDefs = new ArrayList<>();
+      for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+        for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
+          if (columnDefs.contains(columnDef)) {
+            foreignKeyDefs.add(foreignKeyDef);
+          } else {
+            columnDefs.add(columnDef);
+          }
+        }
+      }
+    }
+    return foreignKeyDefs;
+
+  }
+
+
+  public static void suppressSecondForeignKeysOnTheSameColumn(DataPath schemaDef) {
+
+    int counter = 0;
+    for (ForeignKeyDef foreignKeyDef : getSecondForeignKeysOnTheSameColumn(schemaDef)) {
+      counter = counter+1;
+      Tabulars.dropOneToManyRelationship(foreignKeyDef);
+    }
+    if (counter == 0) {
+      LOGGER.info("No more than one foreign key on the same column was found.");
+    } else {
+      LOGGER.info(counter + " second foreign keys on the same column was deleted.");
     }
 
-
-    public static void suppressSecondForeignKeysOnTheSameColumn(DataPath schemaDef) {
-
-        int counter = 0;
-        for (ForeignKeyDef foreignKeyDef : getSecondForeignKeysOnTheSameColumn(schemaDef)) {
-            counter++;
-            Tabulars.dropReference(foreignKeyDef);
-        }
-        if (counter==0){
-            LOGGER.info("No more than one foreign key on the same column was found.");
-        } else {
-            LOGGER.info(counter+" second foreign keys on the same column was deleted.");
-        }
-
-    }
+  }
 }

@@ -259,10 +259,16 @@ public class Tabulars {
         }
     }
 
-    public static List<ForeignKeyDef> dropReference(DataPath referent, DataPath target) {
+  /**
+   *
+   * @param one - the primary key table
+   * @param many - the foreign key table
+   * @return the dropped foreign keys
+   */
+    public static List<ForeignKeyDef> dropOneToManyRelationship(DataPath one, DataPath many) {
 
-        List<ForeignKeyDef> foreignKeyDefs = referent.getDataDef().getForeignKeys().stream()
-                .filter(fk -> fk.getForeignPrimaryKey().getDataDef().getDataPath().equals(target))
+        List<ForeignKeyDef> foreignKeyDefs = one.getDataDef().getForeignKeys().stream()
+                .filter(fk -> fk.getForeignPrimaryKey().getDataDef().getDataPath().equals(many))
                 .collect(Collectors.toList());
 
         foreignKeyDefs.stream()
@@ -361,4 +367,8 @@ public class Tabulars {
     public static List<DataPath> getReferences(DataPath dataPath) {
         return dataPath.getDataSystem().getReferences(dataPath);
     }
+
+  public static void dropOneToManyRelationship(ForeignKeyDef foreignKeyDef) {
+    throw new RuntimeException("Not yet implemented");
+  }
 }
