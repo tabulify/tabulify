@@ -11,8 +11,7 @@ import java.util.Objects;
 
 /**
  * An object with all meta information about a data store
- * An resource object has an URL
- * but a connection also
+ * in order to create connections
  */
 public class Database implements Comparable<Database> {
 
@@ -22,7 +21,7 @@ public class Database implements Comparable<Database> {
   // The database name
   private final String name;
 
-  // Does this database comes from a database store
+  // The databaseStore from the database (if any))
   private DatabasesStore databaseStore;
 
   // Connection Url
@@ -40,7 +39,7 @@ public class Database implements Comparable<Database> {
   private String workingPath;
 
   // Env (equivalent Url query)
-  Map<String, String> env = new HashMap<>();
+  Map<String, String> properties = new HashMap<>();
 
 
   Database(String name) {
@@ -54,6 +53,12 @@ public class Database implements Comparable<Database> {
   }
 
 
+  /**
+   * This is a JDBC connection parameter
+   * It should be threated as {@link #addProperty(String, String)}
+   * @param jdbcDriver
+   * @return
+   */
   public Database setDriver(String jdbcDriver) {
     this.driver = jdbcDriver;
     return this;
@@ -158,9 +163,14 @@ public class Database implements Comparable<Database> {
    */
   public String getScheme() {
     if (connectionString == null) {
-      return DatabasesStore.DEFAULT_DATABASE;
+      throw new RuntimeException("The connection string is null");
     } else {
-      return getConnectionString().substring(0, getConnectionString().indexOf(":"));
+      int endIndex = getConnectionString().indexOf(":");
+      if (endIndex==-1){
+        return getConnectionString();
+      } else {
+        return getConnectionString().substring(0, endIndex);
+      }
     }
   }
 
@@ -169,12 +179,8 @@ public class Database implements Comparable<Database> {
     return this;
   }
 
-  public String getWorkingPath() {
-    return workingPath;
-  }
-
-  public Database addEnvironments(Map<String, String> env) {
-    env.putAll(env);
+  public Database addProperty(String key, String value) {
+    properties.put(key,value);
     return this;
   }
 

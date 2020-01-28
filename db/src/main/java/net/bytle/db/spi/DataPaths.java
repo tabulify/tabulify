@@ -2,6 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.Tabular;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.uri.DataUri;
@@ -32,9 +33,11 @@ public class DataPaths {
    * @param parts - The part of a path in a list format
    * @return a data path created with the default tabular system (ie memory)
    */
-  public static DataPath of(String... parts) {
+  public static DataPath of(String part, String... parts) {
 
-    return TableSystems.getDefault().getDataPath(parts);
+
+    return Tabular.tabular().getDataPath(part, parts);
+
 
   }
 
@@ -71,8 +74,10 @@ public class DataPaths {
         // Http or https gives always absolute path
         database = Database.of(uri.getHost())
           .setConnectionString(uri.toString())
-          .setWorkingPath(uri.getPath())
-          .addEnvironments(Uris.getQueryAsMap(uri.getQuery()));
+          .setWorkingPath(uri.getPath());
+
+        Uris.getQueryAsMap(uri.getQuery()).forEach(database::addProperty);
+
         return of(database, path);
     }
 
@@ -93,14 +98,15 @@ public class DataPaths {
     return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
   }
 
+
   /**
    * @param dataStore
-   * @param parts parts
+   * @param dataUri
    * @return
    */
-  public static DataPath of(Database dataStore, String... parts) {
+  public static DataPath of(Database dataStore, DataUri dataUri) {
 
-    return getTableSystem(dataStore).getDataPath(parts);
+    return getTableSystem(dataStore).getDataPath(dataUri);
 
   }
 
@@ -142,7 +148,7 @@ public class DataPaths {
     } else {
       dataStore = databasesStore.getDatabase(dataUri.getDataStore());
     }
-    return of(dataStore, dataUri.getPath());
+    return of(dataStore, dataUri);
   }
 
   /**
@@ -170,12 +176,13 @@ public class DataPaths {
 
   /**
    * @param dataStore - a dataStore
-   * @param query    - the query
+   * @param query     - the query
    * @return a data path query
    */
   public static DataPath ofQuery(Database dataStore, String query) {
 
-    return of(dataStore,".").getDataSystem().getProcessingEngine().getQuery(query);
+    DataUri dataUri = DataUri.of("." + DataUri.AT_STRING + dataStore.getDatabaseName());
+    return of(dataStore, dataUri).getDataSystem().getProcessingEngine().getQuery(query);
 
   }
 
@@ -234,7 +241,7 @@ public class DataPaths {
 
   public static List<DataPath> select(DatabasesStore databaseStore, DataUri dataUri) {
     Database database = databaseStore.getDatabase(dataUri.getDataStore());
-    DataPath dataPath = DataPaths.of(database);
+    DataPath dataPath = DataPaths.of(database, dataUri);
     String glob = dataUri.getPath();
     return dataPath.getDataSystem().getDescendants(dataPath, glob);
   }

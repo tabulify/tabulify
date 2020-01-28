@@ -122,7 +122,7 @@ public class DbDatabaseAdd {
 
         DatabasesStore databasesStore = DatabasesStore.of(storagePathValue)
                 .setPassphrase(passphrase);
-        if (databasesStore.getDatabases(databaseName).size() == 1) {
+        if (databasesStore.getDataStores(databaseName).size() == 1) {
             LOGGER.severe("The database ("+databaseName+") exist already.");
             System.exit(1);
         } else {

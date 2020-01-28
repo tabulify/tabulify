@@ -58,7 +58,7 @@ public class DbDatabaseList {
 
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
 
-        final List<Database> databases = databasesStore.getDatabases(names);
+        final List<Database> databases = databasesStore.getDataStores(names);
 
         // Creating a table to use the print function
         TableDef databaseInfo = DataPaths.of("databases")

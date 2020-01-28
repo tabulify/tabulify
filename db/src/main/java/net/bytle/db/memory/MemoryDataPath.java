@@ -2,6 +2,7 @@ package net.bytle.db.memory;
 
 
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.uri.DataUri;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,12 +12,10 @@ public class MemoryDataPath extends DataPath {
 
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
     public static final Integer DEFAULT_TIME_OUT = 10;
+  public static final String PATH_SEPARATOR = "/";
 
-    private final String[] names ;
+  private final String[] names ;
     private final MemoryDataSystem memoryDataSystem;
-
-
-
 
     /**
      * Default type
@@ -37,21 +36,27 @@ public class MemoryDataPath extends DataPath {
     private Integer capacity = Integer.MAX_VALUE;
 
 
-    public MemoryDataPath(MemoryDataSystem memoryDataSystem, String[] names) {
+    private MemoryDataPath(MemoryDataSystem memoryDataSystem, DataUri dataUri) {
         this.memoryDataSystem = memoryDataSystem;
-        this.names = names;
+        this.names = dataUri.getPath().split(PATH_SEPARATOR);
     }
 
-    public static MemoryDataPath of(MemoryDataSystem memoryDataSystem, String[] names) {
-        assert names.length!=0:"Names should not be empty";
-        return new MemoryDataPath(memoryDataSystem,names);
+    protected static MemoryDataPath of(MemoryDataSystem memoryDataSystem, DataUri dataUri) {
+        assert dataUri.getPath() != null :"Path should not be null";
+        return new MemoryDataPath(memoryDataSystem,dataUri);
     }
 
-    public static MemoryDataPath of(String... names) {
-        return of(MemoryDataSystem.of(),names);
-    }
+  /**
+   * A shortcut to create a memory datapath
+   * @param name
+   * @return
+   */
+  public static MemoryDataPath of(String name) {
+    return MemoryDataSystem.of().getDataPath(name);
+  }
 
-    @Override
+
+  @Override
     public MemoryDataSystem getDataSystem() {
         return memoryDataSystem;
     }

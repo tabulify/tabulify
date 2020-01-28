@@ -55,7 +55,7 @@ public class DbDatabaseRemove {
         final Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
         for (String name : names) {
-            final List<Database> databases = databasesStore.getDatabases(name);
+            final List<Database> databases = databasesStore.getDataStores(name);
             if (databases.size() == 0) {
                 final String msg = "There is no database called (" + name + ")";
                 if (noStrictMode){

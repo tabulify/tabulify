@@ -30,342 +30,343 @@ import static net.bytle.db.database.Databases.MODULE_NAME;
  */
 public class DatabasesStore {
 
-    protected static final Logger logger = LoggerFactory.getLogger(DatabasesStore.class);
+  protected static final Logger logger = LoggerFactory.getLogger(DatabasesStore.class);
 
-    /**
-     * The local file database name as also stated
-     * by the {@link Path#getFileSystem()}
-     */
-    public static final String LOCAL_FILE_DATABASE = "file";
+  /**
+   * The local file database name as also stated
+   * by the {@link Path#getFileSystem()}
+   */
+  public static final String LOCAL_FILE_DATABASE = "file";
 
-    /**
-     * The default database is the memory one
-     */
-    public static final String DEFAULT_DATABASE = MemorySystemProvider.SCHEME;
-
-
-    /**
-     * This is a passphrase used to encrypt the sample database password
-     * Don't change this value
-     */
-    private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
-    private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase";
-    private String passphrase;
-    private Path path;
-
-    public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(MODULE_NAME).toString(), "dsn.ini");
-
-    /**
-     * Constant
-     */
-    private static final String URL = "url";
-    private static final String USER = "user";
-    private static final String DRIVER = "driver";
-    private static final String PASSWORD = "password";
-    private static final String STATEMENT = "statement";
+  /**
+   * The memory database
+   */
+  public static final String MEMORY_DATABASE = "memory";
 
 
-    /**
-     * The ini file were database information are saved to disk
-     */
-    private Ini ini;
+  /**
+   * This is a passphrase used to encrypt the sample database password
+   * Don't change this value
+   */
+  private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
+  private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase";
+  private String passphrase;
+  private Path path;
 
-    private DatabasesStore(Path path) {
+  public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(MODULE_NAME).toString(), "dsn.ini");
 
-        if (path != null) {
-            this.path = path;
-            DbLoggers.LOGGER_DB_ENGINE.info("Opening the database store (" + path.toAbsolutePath().toString() + ")");
-        } else {
-            throw new RuntimeException("The path store should not be null");
-        }
+  /**
+   * Constant
+   */
+  private static final String URL = "url";
+  private static final String USER = "user";
+  private static final String DRIVER = "driver";
+  private static final String PASSWORD = "password";
+  private static final String STATEMENT = "statement";
+
+
+  /**
+   * The ini file were database information are saved to disk
+   */
+  private Ini ini;
+
+  private DatabasesStore(Path path) {
+
+    if (path != null) {
+      this.path = path;
+      DbLoggers.LOGGER_DB_ENGINE.info("Opening the database store (" + path.toAbsolutePath().toString() + ")");
+    } else {
+      throw new RuntimeException("The path store should not be null");
     }
+  }
 
-    public static DatabasesStore of(Path path) {
-        return new DatabasesStore(path);
-    }
+  public static DatabasesStore of(Path path) {
+    return new DatabasesStore(path);
+  }
 
-    public static DatabasesStore ofDefault() {
-        return of(DEFAULT_STORAGE_FILE);
-    }
-
+  public static DatabasesStore ofDefault() {
+    return of(DEFAULT_STORAGE_FILE);
+  }
 
 
   public DatabasesStore setPassphrase(String passphrase) {
-        this.passphrase = passphrase;
-        return this;
-    }
+    this.passphrase = passphrase;
+    return this;
+  }
 
-    /**
-     * @param database
-     * @param internalPassphrase - to indicate that this is an built-in database and that the internal passphrase should be used - only called from this class
-     * @return
-     */
-    private DatabasesStore save(Database database, Boolean internalPassphrase) {
+  /**
+   * @param database
+   * @param internalPassphrase - to indicate that this is an built-in database and that the internal passphrase should be used - only called from this class
+   * @return
+   */
+  private DatabasesStore save(Database database, Boolean internalPassphrase) {
 
-        Ini ini = getIniFile();
-        ini.put(database.getDatabaseName(), URL, database.getConnectionString());
-        ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
-        ini.put(database.getDatabaseName(), USER, database.getUser());
-        String localPassphrase;
-        if (database.getPassword() != null) {
-            if (this.passphrase == null) {
-                if (internalPassphrase) {
-                    localPassphrase = INTERNAL_PASSPHRASE;
-                    ini.put(database.getDatabaseName(), INTERNAL_PASSPHRASE_KEY, true);
-                } else {
-                    throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
-                }
-            } else {
-                localPassphrase = this.passphrase;
-            }
-            String password = Protector.get(localPassphrase).encrypt(database.getPassword());
-            ini.put(database.getDatabaseName(), PASSWORD, password);
+    Ini ini = getIniFile();
+    ini.put(database.getDatabaseName(), URL, database.getConnectionString());
+    ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
+    ini.put(database.getDatabaseName(), USER, database.getUser());
+    String localPassphrase;
+    if (database.getPassword() != null) {
+      if (this.passphrase == null) {
+        if (internalPassphrase) {
+          localPassphrase = INTERNAL_PASSPHRASE;
+          ini.put(database.getDatabaseName(), INTERNAL_PASSPHRASE_KEY, true);
+        } else {
+          throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
         }
-        ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
-        flush();
-        return this;
+      } else {
+        localPassphrase = this.passphrase;
+      }
+      String password = Protector.get(localPassphrase).encrypt(database.getPassword());
+      ini.put(database.getDatabaseName(), PASSWORD, password);
     }
+    ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
+    flush();
+    return this;
+  }
 
-    public DatabasesStore save(Database database) {
+  public DatabasesStore save(Database database) {
 
-        return save(database, false);
+    return save(database, false);
+  }
+
+
+  /**
+   * Write the changes to the disk
+   */
+  private void flush() {
+
+    try {
+      getIniFile().store();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
 
-    /**
-     * Write the changes to the disk
-     */
-    private void flush() {
+  private Ini getIniFile() {
+    if (ini == null) {
+      reload();
+    }
+    return ini;
+  }
 
-        try {
-            getIniFile().store();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+  /**
+   * Remove all databases metadata information that matchs on of the globPatterns
+   *
+   * @param globPatterns
+   * @return a list of database name removed
+   */
+  public List<String> removeDatabases(String... globPatterns) {
+    Ini ini = getIniFile();
+    List<String> databases = new ArrayList<>();
+    for (String globPattern : globPatterns) {
+      String regexpPattern = Globs.toRegexPattern(globPattern);
+      for (Profile.Section section : ini.values()) {
+        final String sectionDatabaseName = section.getName();
+        if (sectionDatabaseName.matches(regexpPattern)) {
+          Profile.Section deletedSection = ini.remove(section);
+          databases.add(deletedSection.getName());
         }
+      }
     }
+    flush();
+    return databases;
+  }
 
+  /**
+   * Removes all databases
+   *
+   * @return
+   */
+  public List<String> removeAllDatabases() {
+    return removeDatabases("*");
+  }
 
-    private Ini getIniFile() {
-        if (ini == null) {
-            reload();
-        }
-        return ini;
+  /**
+   * @return all databases
+   */
+  public List<Database> getDataStores() {
+    return getDataStores("*");
+  }
+
+  /**
+   * @param globPatterns
+   * @return all databases that match this glob patterns
+   */
+  public List<Database> getDataStores(String... globPatterns) {
+    List<Database> databases = new ArrayList<>();
+    for (String globPattern : globPatterns) {
+      String regexpPattern = Globs.toRegexPattern(globPattern);
+      databases.addAll(
+        getIniFile().keySet()
+          .stream()
+          .filter(s -> s.matches(regexpPattern))
+          .map(s -> getDatabase(s))
+          .collect(Collectors.toList())
+      );
     }
+    Collections.sort(databases);
+    return databases;
+  }
 
-    /**
-     * Remove all databases metadata information that matchs on of the globPatterns
-     *
-     * @param globPatterns
-     * @return a list of database name removed
-     */
-    public List<String> removeDatabases(String... globPatterns) {
-        Ini ini = getIniFile();
-        List<String> databases = new ArrayList<>();
-        for (String globPattern : globPatterns) {
-            String regexpPattern = Globs.toRegexPattern(globPattern);
-            for (Profile.Section section : ini.values()) {
-                final String sectionDatabaseName = section.getName();
-                if (sectionDatabaseName.matches(regexpPattern)) {
-                    Profile.Section deletedSection = ini.remove(section);
-                    databases.add(deletedSection.getName());
-                }
-            }
-        }
-        flush();
-        return databases;
-    }
+  public List<Database> getDataStores(List<String> globPatterns) {
+    return getDataStores(globPatterns.toArray(new String[0]));
+  }
 
-    /**
-     * Removes all databases
-     *
-     * @return
-     */
-    public List<String> removeAllDatabases() {
-        return removeDatabases("*");
-    }
+  /**
+   * @param name
+   * @return a database by its name or NULL
+   */
+  public Database getDatabase(String name) {
+    assert name != null : "The name of the database cannot be null";
 
-    /**
-     * @return all databases
-     */
-    public List<Database> getDatabases() {
-        return getDatabases("*");
-    }
-
-    /**
-     * @param globPatterns
-     * @return all databases that match this glob patterns
-     */
-    public List<Database> getDatabases(String... globPatterns) {
-        List<Database> databases = new ArrayList<>();
-        for (String globPattern : globPatterns) {
-            String regexpPattern = Globs.toRegexPattern(globPattern);
-            databases.addAll(
-                    getIniFile().keySet()
-                            .stream()
-                            .filter(s -> s.matches(regexpPattern))
-                            .map(s -> getDatabase(s))
-                            .collect(Collectors.toList())
-            );
-        }
-        Collections.sort(databases);
-        return databases;
-    }
-
-    public List<Database> getDatabases(List<String> globPatterns) {
-        return getDatabases(globPatterns.toArray(new String[0]));
-    }
-
-    /**
-     * @param name
-     * @return a database by its name or NULL
-     */
-    public Database getDatabase(String name) {
-        assert name != null : "The name of the database cannot be null";
-
-        Database database = null;
-        switch (name) {
-            case LOCAL_FILE_DATABASE:
-                database = Databases.of(name);
-                database.setConnectionString(Paths.get(".").toUri().toString());
-                break;
-            default:
-                Wini.Section iniSection = getIniFile().get(name);
-                if (iniSection != null) {
-                    database = Databases.of(name);
-                    database.setConnectionString(iniSection.get(URL));
-                    database.setUser(iniSection.get(USER));
-                    if (iniSection.get(PASSWORD) != null) {
-                        String localPassphrase;
-                        if (this.passphrase != null) {
-                            localPassphrase = this.passphrase;
-                        } else {
-                            final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-                            if (s != null) {
-                                if (s.equals("true")) {
-                                    localPassphrase = INTERNAL_PASSPHRASE;
-                                } else {
-                                    throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
-                                }
-                            } else {
-                                throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
-                            }
-                        }
-                        database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
-                    }
-                    database.setDriver(iniSection.get(DRIVER));
-                    database.setStatement(iniSection.get(STATEMENT));
-                    database.setDatabaseStore(this);
-                } else {
-                  logger.warn("The database {} was not found. A null database was returned",name);
-                }
-        }
-        return database;
-
-    }
-
-    /**
-     * Reread the file
-     */
-    public DatabasesStore reload() {
-        load();
-        return this;
-    }
-
-    /**
-     * Read the file
-     */
-    private void load() {
-        try {
-            if (!(Files.exists(this.path))) {
-                Fs.createFile(this.path);
-                ini = new Ini(this.path.toFile());
-
-                // Add a Sqlite
-                Path dbFile;
-                // Trick to not have the user name in the output ie C:\Users\Username\...
-                // The env value have a fake account
-                final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
-                if (bytle_db_databases_store != null) {
-                    dbFile = Paths.get(bytle_db_databases_store);
-                } else {
-                    dbFile = Paths.get(Fs.getAppData(DbDefaultValue.LIBRARY_NAME).toAbsolutePath().toString(), DbDefaultValue.LIBRARY_NAME + ".db");
-                }
-                Files.createDirectories(dbFile.getParent());
-                String rootWindows = "///";
-                Database database = Databases.of("sqlite")
-                        .setDriver("org.sqlite.JDBC")
-                        .setConnectionString("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
-                save(database);
-
-                database = Databases.of("oracle")
-                        .setDriver("oracle.jdbc.OracleDriver")
-                        .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
-                save(database);
-
-                database = Databases.of("sqlserver")
-                        .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
-                        .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
-                        .setUser("sa")
-                        .setPassword("TheSecret1!");
-                save(database, true);
-
-                database = Databases.of("mysql")
-                        .setDriver("com.mysql.jdbc.Driver")
-                        .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
-                save(database);
-
-                // jdbc:postgresql://host:port/database?prop=value
-                database = Databases.of("postgresql")
-                        .setDriver("org.postgresql.Driver")
-                        .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
-                save(database);
-
-            } else {
-                ini = new Ini(this.path.toFile());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void removeDatabase(String name) {
-        Profile.Section deletedSection = getIniFile().remove(name);
-        if (deletedSection == null) {
-            throw new RuntimeException("The database (" + name + ") is non existent and therefore cannot be removed.");
-        }
-        flush();
-    }
-
-    public Path getPath() {
-        return this.path;
-    }
-
-    public void removeDatabaseIfExists(String name) {
-        if (exists(name)) {
-            removeDatabase(name);
-        }
-    }
-
-    /**
-     * The difference between a {@link #getDatabase(String)} that returns NULL if it doesn't exist
-     * and this function is that the {@link #getDatabase(String)} needs a good {@link #setPassphrase(String)}
-     * to tell you that when the database exists to be able to decreypt and gives you the passpword.
-     * <p>
-     * This function doesn't need a store with a genuine passphrase to tell you if a connection exists.
-     *
-     * @param name
-     * @return boolean
-     */
-    boolean exists(String name) {
+    Database database = null;
+    switch (name) {
+      case MEMORY_DATABASE:
+        database = Databases.of(MEMORY_DATABASE)
+          .setConnectionString(MemorySystemProvider.SCHEME);
+        break;
+      case LOCAL_FILE_DATABASE:
+        database = Databases.of(name);
+        database.setConnectionString(Paths.get(".").toUri().toString());
+        break;
+      default:
         Wini.Section iniSection = getIniFile().get(name);
         if (iniSection != null) {
-            return true;
+          database = Databases.of(name);
+          database.setConnectionString(iniSection.get(URL));
+          database.setUser(iniSection.get(USER));
+          if (iniSection.get(PASSWORD) != null) {
+            String localPassphrase;
+            if (this.passphrase != null) {
+              localPassphrase = this.passphrase;
+            } else {
+              final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+              if (s != null) {
+                if (s.equals("true")) {
+                  localPassphrase = INTERNAL_PASSPHRASE;
+                } else {
+                  throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                }
+              } else {
+                throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+              }
+            }
+            database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+          }
+          database.setDriver(iniSection.get(DRIVER));
+          database.setStatement(iniSection.get(STATEMENT));
+          database.setDatabaseStore(this);
         } else {
-            return false;
+          logger.warn("The database {} was not found. A null database was returned", name);
         }
     }
+    return database;
 
-    public Database getDefaultDatabase() {
-        return Databases.of(DEFAULT_DATABASE);
+  }
+
+  /**
+   * Reread the file
+   */
+  public DatabasesStore reload() {
+    load();
+    return this;
+  }
+
+  /**
+   * Read the file
+   */
+  private void load() {
+    try {
+      if (!(Files.exists(this.path))) {
+        Fs.createFile(this.path);
+        ini = new Ini(this.path.toFile());
+
+        // Add a Sqlite
+        Path dbFile;
+        // Trick to not have the user name in the output ie C:\Users\Username\...
+        // The env value have a fake account
+        final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
+        if (bytle_db_databases_store != null) {
+          dbFile = Paths.get(bytle_db_databases_store);
+        } else {
+          dbFile = Paths.get(Fs.getAppData(DbDefaultValue.LIBRARY_NAME).toAbsolutePath().toString(), DbDefaultValue.LIBRARY_NAME + ".db");
+        }
+        Files.createDirectories(dbFile.getParent());
+        String rootWindows = "///";
+        Database database = Databases.of("sqlite")
+          .setDriver("org.sqlite.JDBC")
+          .setConnectionString("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
+        save(database);
+
+        database = Databases.of("oracle")
+          .setDriver("oracle.jdbc.OracleDriver")
+          .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
+        save(database);
+
+        database = Databases.of("sqlserver")
+          .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+          .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+          .setUser("sa")
+          .setPassword("TheSecret1!");
+        save(database, true);
+
+        database = Databases.of("mysql")
+          .setDriver("com.mysql.jdbc.Driver")
+          .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
+        save(database);
+
+        // jdbc:postgresql://host:port/database?prop=value
+        database = Databases.of("postgresql")
+          .setDriver("org.postgresql.Driver")
+          .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
+        save(database);
+
+      } else {
+        ini = new Ini(this.path.toFile());
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  public void removeDatabase(String name) {
+    Profile.Section deletedSection = getIniFile().remove(name);
+    if (deletedSection == null) {
+      throw new RuntimeException("The database (" + name + ") is non existent and therefore cannot be removed.");
+    }
+    flush();
+  }
+
+  public Path getPath() {
+    return this.path;
+  }
+
+  public void removeDatabaseIfExists(String name) {
+    if (exists(name)) {
+      removeDatabase(name);
+    }
+  }
+
+  /**
+   * The difference between a {@link #getDatabase(String)} that returns NULL if it doesn't exist
+   * and this function is that the {@link #getDatabase(String)} needs a good {@link #setPassphrase(String)}
+   * to tell you that when the database exists to be able to decreypt and gives you the passpword.
+   * <p>
+   * This function doesn't need a store with a genuine passphrase to tell you if a connection exists.
+   *
+   * @param name
+   * @return boolean
+   */
+  boolean exists(String name) {
+    Wini.Section iniSection = getIniFile().get(name);
+    if (iniSection != null) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+
 }

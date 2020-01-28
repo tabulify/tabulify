@@ -60,7 +60,7 @@ public class DbDatabaseInfo {
 
         // Retrieve
         List<String> databaseNames = cliParser.getStrings(DATABASE_NAMES);
-        final List<Database> databases = databasesStore.getDatabases(databaseNames);
+        final List<Database> databases = databasesStore.getDataStores(databaseNames);
 
         Boolean force = cliParser.getBoolean(Words.FORCE);
 
