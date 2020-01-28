@@ -202,7 +202,7 @@ public class DatabasesStore {
         getIniFile().keySet()
           .stream()
           .filter(s -> s.matches(regexpPattern))
-          .map(s -> getDatabase(s))
+          .map(s -> getDataStore(s))
           .collect(Collectors.toList())
       );
     }
@@ -218,7 +218,7 @@ public class DatabasesStore {
    * @param name
    * @return a database by its name or NULL
    */
-  public Database getDatabase(String name) {
+  public Database getDataStore(String name) {
     assert name != null : "The name of the database cannot be null";
 
     Database database = null;
@@ -350,8 +350,8 @@ public class DatabasesStore {
   }
 
   /**
-   * The difference between a {@link #getDatabase(String)} that returns NULL if it doesn't exist
-   * and this function is that the {@link #getDatabase(String)} needs a good {@link #setPassphrase(String)}
+   * The difference between a {@link #getDataStore(String)} that returns NULL if it doesn't exist
+   * and this function is that the {@link #getDataStore(String)} needs a good {@link #setPassphrase(String)}
    * to tell you that when the database exists to be able to decreypt and gives you the passpword.
    * <p>
    * This function doesn't need a store with a genuine passphrase to tell you if a connection exists.

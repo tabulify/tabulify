@@ -6,7 +6,10 @@ import net.bytle.db.spi.DataPaths;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A tabular is a global domain.
@@ -27,6 +30,8 @@ public class Tabular {
 
   DatabasesStore databaseStore = null;
 
+  Map<String, Database> dataStores = new HashMap<>();
+
   public String getDefaultDatastore() {
     return DEFAULT_DATASTORE;
   }
@@ -44,16 +49,12 @@ public class Tabular {
   }
 
   public List<Database> getDataStores() {
-    if (databaseStore == null) {
-      databaseStore = DatabasesStore.ofDefault();
-    }
-    return databaseStore.getDataStores();
+    return new ArrayList<>(dataStores.values());
   }
 
   /**
-   *
    * @param dataUri - A data uri defining the first data path
-   * @param parts - The child of the first one if any
+   * @param parts   - The child of the first one if any
    * @return
    */
   public DataPath getDataPath(String dataUri, String... parts) {
@@ -73,16 +74,33 @@ public class Tabular {
   }
 
   private Database getDataStore(String dataStoreName) {
-    if (databaseStore == null) {
-      databaseStore = DatabasesStore.ofDefault();
-    }
-    return databaseStore.getDatabase(dataStoreName);
+    return dataStores.get(dataStoreName);
   }
 
   public DatabasesStore getDataStoreVault() {
-    if (databaseStore == null) {
-      databaseStore = DatabasesStore.ofDefault();
-    }
     return this.databaseStore;
+  }
+
+  public Tabular setDataStoreVault(Path storagePath) {
+    databaseStore = DatabasesStore.of(storagePath);
+    databaseStore.getDataStores().forEach(
+      ds -> {
+        dataStores.put(ds.getDatabaseName(),ds);
+      }
+    );
+    return this;
+  }
+
+  public Database getOrCreateDataStore(String dataStoreName) {
+    Database dataStore = dataStores.get(dataStoreName);
+    if (dataStore==null){
+      dataStore = Database.of(dataStoreName);
+      dataStores.put(dataStore.getDatabaseName(), dataStore);
+    }
+    return dataStore;
+  }
+
+  public void close() {
+    // Close all resources
   }
 }

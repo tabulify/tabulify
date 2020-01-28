@@ -1,7 +1,10 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.engine.Dag;
@@ -12,6 +15,7 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.log.Log;
+import net.bytle.timer.Timer;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -73,7 +77,7 @@ public class DbSchemaFill {
         // Database
         Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
 
-        CliTimer cliTimer = CliTimer.getTimer("schema").start();
+        Timer cliTimer = Timer.getTimer("schema").start();
 
         if (yamlFile != null) {
 

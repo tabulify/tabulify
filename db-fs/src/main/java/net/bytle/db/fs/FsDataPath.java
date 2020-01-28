@@ -5,6 +5,7 @@ import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
+import net.bytle.db.uri.DataUri;
 
 
 import java.nio.file.Path;
@@ -53,7 +54,12 @@ public class FsDataPath extends DataPath {
 
     }
 
-    @Override
+  @Override
+  public DataUri getDataUri() {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
     public String getName() {
         return this.path.getFileName().toString();
     }

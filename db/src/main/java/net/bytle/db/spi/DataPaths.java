@@ -112,12 +112,23 @@ public class DataPaths {
 
   /**
    * @param dataStore
+   * @param names
+   * @return
+   */
+  public static DataPath of(Database dataStore, String... names) {
+
+    return getTableSystem(dataStore).getDataPath(names);
+
+  }
+
+  /**
+   * @param dataStore
    * @param path
    * @return
    */
   public static DataPath of(Database dataStore, Path path) {
 
-    return getTableSystem(dataStore).getDataPath(path.toUri());
+    return getTableSystem(dataStore).getChildDataPath(path.toUri());
 
   }
 
@@ -146,7 +157,7 @@ public class DataPaths {
     if (dataUri.getDataStore() == null) {
       dataStore = Databases.getDefault();
     } else {
-      dataStore = databasesStore.getDatabase(dataUri.getDataStore());
+      dataStore = databasesStore.getDataStore(dataUri.getDataStore());
     }
     return of(dataStore, dataUri);
   }
@@ -240,7 +251,7 @@ public class DataPaths {
   }
 
   public static List<DataPath> select(DatabasesStore databaseStore, DataUri dataUri) {
-    Database database = databaseStore.getDatabase(dataUri.getDataStore());
+    Database database = databaseStore.getDataStore(dataUri.getDataStore());
     DataPath dataPath = DataPaths.of(database, dataUri);
     String glob = dataUri.getPath();
     return dataPath.getDataSystem().getDescendants(dataPath, glob);

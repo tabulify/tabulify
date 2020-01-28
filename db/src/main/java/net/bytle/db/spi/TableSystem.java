@@ -2,10 +2,10 @@ package net.bytle.db.spi;
 
 import net.bytle.db.database.Database;
 import net.bytle.db.model.DataType;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 
 import java.net.URI;
@@ -15,8 +15,18 @@ import java.util.Objects;
 public abstract class TableSystem implements AutoCloseable {
 
 
+  /**
+   *
+   * @param dataUri
+   * @return a data path from the DataUri
+   */
   public abstract DataPath getDataPath(DataUri dataUri);
 
+  /**
+   *
+   * @param name
+   * @return a child data path from the current working path
+   */
   public abstract DataPath getDataPath(String... name);
 
   public abstract Boolean exists(DataPath dataPath);
@@ -122,6 +132,6 @@ public abstract class TableSystem implements AutoCloseable {
 
   protected abstract DataPath getRootPath();
 
-  public abstract DataPath getDataPath(URI uri);
+  public abstract DataPath getChildDataPath(URI uri);
 
 }

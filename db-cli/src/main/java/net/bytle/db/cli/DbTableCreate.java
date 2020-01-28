@@ -71,7 +71,7 @@ public class DbTableCreate {
             LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
 
             SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
-            Database database = databasesStore.getDatabase(schemaDataUri.getDataStore());
+            Database database = databasesStore.getDataStore(schemaDataUri.getDataStore());
             final String schemaName = schemaDataUri.getSchemaName();
             SchemaDef schemaDef = database.getCurrentSchema();
             if (schemaName != null) {

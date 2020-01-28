@@ -110,7 +110,8 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public Integer size(DataPath dataPath) {
 
-    throw new RuntimeException("Not yet implemented");
+      return ((MemoryDataPath) dataPath).getDataSystem().getMemoryStore().getValues(dataPath).size();
+
   }
 
   @Override
@@ -172,7 +173,7 @@ public class MemoryDataSystem extends TableSystem {
   }
 
   @Override
-  public DataPath getDataPath(URI uri) {
+  public DataPath getChildDataPath(URI uri) {
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -185,7 +186,7 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public MemoryDataPath getDataPath(String... names) {
-    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR) + DataUri.AT_STRING + this.getDatabase().getDatabaseName());
+    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDatabase().getDatabaseName());
     return MemoryDataPath.of(this, dataUri);
   }
 
@@ -219,7 +220,7 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public boolean isContainer(DataPath dataPath) {
 
-    throw new RuntimeException("Not implemented");
+    return false;
 
   }
 

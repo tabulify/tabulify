@@ -387,7 +387,7 @@ public class FsTableSystem extends TableSystem {
   }
 
   @Override
-  public DataPath getDataPath(URI uri) {
+  public DataPath getChildDataPath(URI uri) {
     return getDataPath(Paths.get(uri));
   }
 

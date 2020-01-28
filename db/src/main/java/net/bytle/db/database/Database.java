@@ -2,6 +2,9 @@ package net.bytle.db.database;
 
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPaths;
+import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.net.URI;
@@ -56,6 +59,7 @@ public class Database implements Comparable<Database> {
   /**
    * This is a JDBC connection parameter
    * It should be threated as {@link #addProperty(String, String)}
+   *
    * @param jdbcDriver
    * @return
    */
@@ -166,7 +170,7 @@ public class Database implements Comparable<Database> {
       throw new RuntimeException("The connection string is null");
     } else {
       int endIndex = getConnectionString().indexOf(":");
-      if (endIndex==-1){
+      if (endIndex == -1) {
         return getConnectionString();
       } else {
         return getConnectionString().substring(0, endIndex);
@@ -180,7 +184,7 @@ public class Database implements Comparable<Database> {
   }
 
   public Database addProperty(String key, String value) {
-    properties.put(key,value);
+    properties.put(key, value);
     return this;
   }
 
@@ -196,4 +200,16 @@ public class Database implements Comparable<Database> {
   }
 
 
+  /**
+   * @param path
+   * @return a data path from the current database and its path
+   */
+  public DataPath getDataPath(String path) {
+    DataUri dataUri = DataUri.of(path + DataUri.AT_STRING + this.getDatabaseName());
+    return DataPaths.of(this, dataUri);
+  }
+
+  public DataPath getCurrentDataPath() {
+    return DataPaths.of(this, ".");
+  }
 }

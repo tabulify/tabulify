@@ -2,11 +2,9 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
-import net.bytle.db.DatabasesStore;
-import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
-import net.bytle.db.uri.DataUri;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
 
 import static net.bytle.db.cli.Words.*;
@@ -53,10 +51,9 @@ public class CliOptions {
 
     }
 
-    public static TransferProperties getMoveOptions(CliParser cliParser, DatabasesStore databasesStore) {
+    public static TransferProperties getMoveOptions(CliParser cliParser) {
 
-        DataUri metricsDestination = DataUri.of(cliParser.getString(METRICS_DATA_URI_OPTION));
-        DataPath metricsDataPath = DataPaths.of(databasesStore,metricsDestination);
+        DataPath metricsDataPath = Tabular.tabular().getDataPath(cliParser.getString(METRICS_DATA_URI_OPTION));
 
         Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
         Integer fetchSize = cliParser.getInteger(SOURCE_FETCH_SIZE_OPTION);

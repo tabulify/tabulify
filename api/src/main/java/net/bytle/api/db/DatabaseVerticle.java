@@ -22,7 +22,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.serviceproxy.ServiceBinder;
-import net.bytle.db.database.Database;
+import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
@@ -93,9 +93,11 @@ public class DatabaseVerticle extends AbstractVerticle {
       }
 
       // Load meta
-      Database database = Database.of("ip")
-        .setConnectionString(url);
-      DataPath ipTable = DataPaths.of(database, "IP");
+      String dataStoreName = "ip";
+      DataPath ipTable = Tabular.tabular()
+        .getOrCreateDataStore(dataStoreName)
+        .setConnectionString(url)
+        .getDataPath("ip");
       if (Tabulars.getSize(ipTable) == 0) {
         Path csvPath = Paths.get("./IpToCountry.csv");
         if (!Files.exists(csvPath)) {
@@ -125,6 +127,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
       }
       future.complete(true);
+      Tabular.tabular().close();
     }, res -> {
 
       if (res.succeeded()) {

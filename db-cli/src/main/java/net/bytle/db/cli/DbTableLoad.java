@@ -109,7 +109,7 @@ public class DbTableLoad {
             LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
             tableDataUri = TableDataUri.of(IDataUri.get(IDataUri.toString(),targetTableName));
         }
-        Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDataStore());
+        Database targetDatabase = databasesStore.getDataStore(tableDataUri.getDataStore());
 
         // Schema
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();

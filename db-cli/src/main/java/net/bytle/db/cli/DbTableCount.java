@@ -42,7 +42,7 @@ public class DbTableCount {
         Integer count = 0;
         for (String stringTableUri : stringTablesUris) {
             TableDataUri tableUri = TableDataUri.of(stringTableUri);
-            Database database = databasesStore.getDatabase(tableUri.getDataStore());
+            Database database = databasesStore.getDataStore(tableUri.getDataStore());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableUri.getSchemaName() != null) {
                 schemaDef = database.getSchema(tableUri.getSchemaName());

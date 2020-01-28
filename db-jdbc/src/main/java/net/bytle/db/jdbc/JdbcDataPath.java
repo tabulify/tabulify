@@ -3,9 +3,11 @@ package net.bytle.db.jdbc;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.uri.DataUri;
 
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,7 +26,6 @@ public class JdbcDataPath extends DataPath {
   private final String catalog;
 
 
-
   /**
    * TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
    */
@@ -36,11 +37,101 @@ public class JdbcDataPath extends DataPath {
   private SqlSelectStream selectStream;
 
 
-  public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
-    this.jdbcDataSystem = jdbcDataSystem;
-    this.catalog = catalog;
-    this.schema = schema;
-    this.name = name;
+  /**
+   * Constructor used in the JDBC api to build a jdbc path
+   * @param dataSystem
+   * @param cat_name
+   * @param schema_name
+   * @param table_name
+   * @return
+   */
+  public static JdbcDataPath of(JdbcDataSystem dataSystem, String cat_name, String schema_name, String table_name) {
+    return new JdbcDataPath(dataSystem, cat_name,schema_name,table_name);
+  }
+
+  /**
+   * Constructor from an data Uri string
+   * @param jdbcDataSystem
+   * @param dataUri
+   * @return
+   */
+  public static JdbcDataPath of(JdbcDataSystem jdbcDataSystem, DataUri dataUri) {
+
+    String path = dataUri.getPath();
+    List<String> pathSegments = new ArrayList<>();
+
+    // Separator is a point by default
+    char splitter = '.';
+    if (path.charAt(0) == '.') {
+      // except if thi
+      splitter = '/';
+    }
+    if (path.indexOf(splitter) != -1) {
+      pathSegments = Arrays.asList(path.split(String.valueOf(splitter)));
+    } else {
+      pathSegments.add(path);
+    }
+
+    String catalog = jdbcDataSystem.getCurrentCatalog();
+    String schema = jdbcDataSystem.getCurrentSchema();
+    String first = pathSegments.get(0);
+    switch (first) {
+      case ".":
+        switch (pathSegments.size()) {
+          case 1:
+            return new JdbcDataPath(jdbcDataSystem,catalog,schema, null);
+          case 2:
+            String name = pathSegments.get(pathSegments.size() - 1);
+            return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+          default:
+            throw new RuntimeException("The working context is the schema and have no children, it's then not possible to have following path (" + String.join("/", pathSegments) + ")");
+        }
+      case "..":
+        switch (pathSegments.size()) {
+          case 1:
+            // A catalog
+            return new JdbcDataPath(jdbcDataSystem,catalog,null, null);
+          case 2:
+            switch (pathSegments.get(1)) {
+              case "..":
+                // the root
+                return new JdbcDataPath(jdbcDataSystem,null,null, null);
+              case ".":
+                return new JdbcDataPath(jdbcDataSystem,catalog,null, null);
+              default:
+                schema = pathSegments.get(1);
+                return new JdbcDataPath(jdbcDataSystem,catalog,schema, null);
+            }
+          case 3:
+            schema = pathSegments.get(1);
+            String name = pathSegments.get(2);
+            return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+          default:
+            throw new RuntimeException("A Jdbc path knows max only three parts (catalog, schema, name). This path is then not possible (" + String.join("/", pathSegments) + ")");
+        }
+      default:
+        if (pathSegments.size() > 3) {
+          throw new RuntimeException("This jdbc path (" + String.join("/", pathSegments) + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
+        }
+
+        if (pathSegments.size() > 2) {
+          catalog = pathSegments.get(pathSegments.size() - 3);
+        } else {
+          catalog = jdbcDataSystem.getCurrentCatalog();
+        }
+
+        if (pathSegments.size() > 1) {
+          schema = pathSegments.get(pathSegments.size() - 2);
+        } else {
+          schema = jdbcDataSystem.getCurrentSchema();
+        }
+
+        String name = pathSegments.get(pathSegments.size() - 1);
+        return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+
+    }
+
+
   }
 
   public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String query) {
@@ -52,9 +143,23 @@ public class JdbcDataPath extends DataPath {
     this.catalog = jdbcDataSystem.getCurrentCatalog();
   }
 
-  public static JdbcDataPath of(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
-    return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
+
+  /**
+   * The global constructor for table or view.
+   * Query has another one, See {@link #ofQuery(JdbcDataSystem, String)}
+   * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
+   * @param jdbcDataSystem
+   * @param catalog
+   * @param schema
+   * @param name
+   */
+  private JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
+    this.jdbcDataSystem = jdbcDataSystem;
+    this.catalog = catalog;
+    this.schema = schema;
+    this.name = name;
   }
+
 
   public static JdbcDataPath ofQuery(JdbcDataSystem jdbcDataSystem, String query) {
     return new JdbcDataPath(jdbcDataSystem, query);
@@ -75,7 +180,7 @@ public class JdbcDataPath extends DataPath {
         selectStream = SqlSelectStream.of(this);
         dataDef = selectStream.getSelectDataDef();
         // sqlite for instance
-        if (this.getDataSystem().getMaxWriterConnection()==1){
+        if (this.getDataSystem().getMaxWriterConnection() == 1) {
           selectStream.close();
           selectStream = null;
         }
@@ -87,6 +192,29 @@ public class JdbcDataPath extends DataPath {
 
   }
 
+
+  @Override
+  public DataUri getDataUri() {
+    // The data URI is rebuild because the first mean of JdbcDataPath creation
+    // is the JDBC API that gives catalog, schema and name
+
+    StringBuilder stringBuilder = new StringBuilder();
+
+    if (catalog!=null){
+      stringBuilder.append(catalog).append(".");
+    }
+    if (schema!=null){
+      stringBuilder.append(schema).append(".");
+    }
+    if (name !=null){
+      stringBuilder.append(name).append(".");
+    }
+    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataSystem.getDatabase().getDatabaseName());
+
+    return DataUri.of(stringBuilder.toString());
+
+  }
+
   /**
    * {@link DatabaseMetaData#getMaxSchemaNameLength()}
    */
@@ -95,10 +223,12 @@ public class JdbcDataPath extends DataPath {
     if (schema == null) {
       return null;
     } else {
-      return JdbcDataPath.of(jdbcDataSystem, catalog, schema, null);
+      return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
     }
 
   }
+
+
 
   /**
    * {@link DatabaseMetaData#getMaxTableNameLength()}
@@ -164,7 +294,7 @@ public class JdbcDataPath extends DataPath {
 
     // When it's a query, the select stream has already been created to
     // get the data def
-    if (selectStream==null){
+    if (selectStream == null) {
       selectStream = SqlSelectStream.of(this);
     }
     return selectStream;

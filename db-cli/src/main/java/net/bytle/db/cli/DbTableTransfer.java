@@ -103,7 +103,7 @@ public class DbTableTransfer {
         List<TableDef> tablesToTransfer = new ArrayList<>();
         for (String tableUri : tableUris) {
             TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            Database database = databasesStore.getDatabase(tableDataUri.getDataStore());
+            Database database = databasesStore.getDataStore(tableDataUri.getDataStore());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
             if (schemaDefs.size() == 0) {
                 schemaDefs = Arrays.asList(database.getCurrentSchema());
@@ -135,7 +135,7 @@ public class DbTableTransfer {
         // Target
         String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
         SchemaDataUri tableDataUri = SchemaDataUri.of(targetTableUriOpt);
-        Database targetDatabase = databasesStore.getDatabase(tableDataUri.getDataStore());
+        Database targetDatabase = databasesStore.getDataStore(tableDataUri.getDataStore());
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
         if (tableDataUri.getSchemaName() != null) {
             targetSchemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());

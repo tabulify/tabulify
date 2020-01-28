@@ -73,7 +73,7 @@ public class Databases {
 
 
     public static Database of(String name, DatabasesStore databasesStore) {
-        final Database database = databasesStore.getDatabase(name);
+        final Database database = databasesStore.getDataStore(name);
         if (database==null){
             return of(name);
         } else {

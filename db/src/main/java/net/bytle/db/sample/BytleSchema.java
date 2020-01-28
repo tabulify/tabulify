@@ -1,11 +1,8 @@
 package net.bytle.db.sample;
 
+import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
-import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystems;
 
-import javax.xml.crypto.Data;
 import java.sql.Types;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,25 +49,21 @@ public class BytleSchema implements SchemaSample {
     private Map<String, DataPath> bytleTables = new HashMap<>();
 
 
-    BytleSchema(DataPath tableSystem) {
+    BytleSchema() {
 
-        buildTables(tableSystem);
+        buildTables();
 
     }
 
     public static BytleSchema of() {
-        return new BytleSchema(DataPaths.of("."));
-    }
-
-    public static SchemaSample of(DataPath dataPath) {
-        return new BytleSchema(dataPath);
+        return new BytleSchema();
     }
 
 
-    void buildTables(DataPath tableSystem) {
+    void buildTables() {
 
         // Dim Cat Table
-        final DataPath catTable = DataPaths.childOf(tableSystem, TABLE_CATEGORY_NAME);
+        final DataPath catTable = Tabular.tabular().getDataPath(TABLE_CATEGORY_NAME);
         bytleTables.put(TABLE_CATEGORY_NAME, catTable);
         catTable.getDataDef()
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -81,7 +74,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Dim timeTable
-        final DataPath timeTable = DataPaths.childOf(tableSystem, TABLE_TIME_NAME);
+        final DataPath timeTable = Tabular.tabular().getDataPath(TABLE_TIME_NAME);
         bytleTables.put(TABLE_TIME_NAME, timeTable);
         timeTable.getDataDef()
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
@@ -95,7 +88,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Fact Table
-        final DataPath factTable = DataPaths.childOf(tableSystem, TABLE_FACT_NAME);
+        final DataPath factTable = Tabular.tabular().getDataPath(TABLE_FACT_NAME);
         bytleTables.put(TABLE_FACT_NAME, factTable);
         factTable.getDataDef()
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)

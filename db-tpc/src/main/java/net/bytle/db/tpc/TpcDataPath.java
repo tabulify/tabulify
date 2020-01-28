@@ -2,6 +2,7 @@ package net.bytle.db.tpc;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
+import net.bytle.db.uri.DataUri;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +14,8 @@ public class TpcDataPath extends DataPath {
 
     private final TpcDataSetSystem dataStore;
     private final String name;
+
+    DataUri dataUri;
 
     public TpcDataPath(TpcDataSetSystem dataStore, String name) {
         this.dataStore = dataStore;
@@ -43,7 +46,10 @@ public class TpcDataPath extends DataPath {
         return getName();
     }
 
-    boolean isChild(){
+  @Override
+  public DataUri getDataUri() {
+    return dataUri;
+  }
 
-    }
+
 }
