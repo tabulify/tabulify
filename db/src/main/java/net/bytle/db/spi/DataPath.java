@@ -2,6 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.database.Database;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.uri.DataUri;
 
 import java.util.List;
 import java.util.Objects;
@@ -79,5 +80,7 @@ public abstract class DataPath implements Comparable<DataPath> {
   public String getQuery() {
     return this.query;
   }
+
+  public abstract DataUri getDataUri();
 
 }

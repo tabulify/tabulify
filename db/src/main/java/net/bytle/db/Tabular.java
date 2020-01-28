@@ -79,4 +79,10 @@ public class Tabular {
     return databaseStore.getDatabase(dataStoreName);
   }
 
+  public DatabasesStore getDataStoreVault() {
+    if (databaseStore == null) {
+      databaseStore = DatabasesStore.ofDefault();
+    }
+    return this.databaseStore;
+  }
 }

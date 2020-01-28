@@ -1,5 +1,6 @@
 package net.bytle.db.memory;
 
+import net.bytle.db.DataUris;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
@@ -17,7 +18,6 @@ import net.bytle.log.Log;
 import java.io.Closeable;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -161,10 +161,9 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public DataPath getChildOf(DataPath dataPath, String part) {
-    List<String> pathSegments = new ArrayList<>();
-    pathSegments.addAll(dataPath.getPathParts());
-    pathSegments.addAll(Arrays.asList(part));
-    return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
+    DataUri dataUri = dataPath.getDataUri();
+    DataUri childDataUri = DataUris.injectPath(dataUri, dataUri.getPath()+MemoryDataPath.PATH_SEPARATOR+part);
+    return dataPath.getDataSystem().getDataPath(childDataUri);
   }
 
   @Override

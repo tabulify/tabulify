@@ -7,8 +7,8 @@ import java.util.Map;
  */
 public class DataUri implements Comparable<DataUri> {
 
-    static final String QUESTION_MARK = "?";
-    static final String HASH_TAG = "#";
+    public static final String QUESTION_MARK = "?";
+    public static final String HASH_TAG = "#";
     public static final String AT_STRING = "@";
 
     private final String uri;
