@@ -17,6 +17,7 @@ public class MainVerticle extends AbstractVerticle {
     // Create a config retriever
     ConfigRetriever retriever = Conf.getConfigRetriever(vertx);
 
+
     retriever.getConfig(ar -> {
       if (ar.failed()) {
 

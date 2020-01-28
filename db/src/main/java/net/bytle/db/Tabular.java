@@ -22,11 +22,10 @@ import java.util.Map;
  * * a connection
  * * or
  */
-public class Tabular {
+public class Tabular implements AutoCloseable {
 
   public static final String DEFAULT_DATASTORE = DatabasesStore.MEMORY_DATABASE;
 
-  private static Tabular tabular;
 
   DatabasesStore databaseStore = null;
 
@@ -37,10 +36,7 @@ public class Tabular {
   }
 
   public static Tabular tabular() {
-    if (tabular == null) {
-      tabular = new Tabular();
-    }
-    return tabular;
+    return new Tabular();
   }
 
 
@@ -101,6 +97,8 @@ public class Tabular {
   }
 
   public void close() {
-    // Close all resources
+    for(Database dataStore : dataStores.values()){
+      dataStore.getDataSystem()
+    }
   }
 }

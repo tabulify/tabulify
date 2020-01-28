@@ -4,6 +4,7 @@ import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
+import net.bytle.db.spi.DataSetSystem;
 import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
@@ -44,6 +45,8 @@ public class Database implements Comparable<Database> {
   // Env (equivalent Url query)
   Map<String, String> properties = new HashMap<>();
 
+  // The equivalent of a connection with actions implementation
+  private DataSetSystem dataSetSystem;
 
   Database(String name) {
 
@@ -211,5 +214,9 @@ public class Database implements Comparable<Database> {
 
   public DataPath getCurrentDataPath() {
     return DataPaths.of(this, ".");
+  }
+
+  public DataSetSystem getDataSystem() {
+    return dataSetSystem;
   }
 }

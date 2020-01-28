@@ -219,7 +219,6 @@ public class JdbcDataSystem extends TableSystem {
    */
   public Connection getCurrentConnection() {
 
-
     if (this.connection == null) {
       this.connection = getNewConnection(Databases.MODULE_NAME);
     }
