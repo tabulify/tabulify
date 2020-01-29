@@ -1,45 +1,77 @@
 package net.bytle.db.database;
 
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.Uris;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
+
 /**
  * A file data store (ie a store that is instantiated with a file system path or a uri)
  */
 public class FileDataStore extends DataStore {
 
+  final public static FileDataStore LOCAL_FILE_STORE = new FileDataStore("file")
+    .setConnectionString(Paths.get(".").toAbsolutePath().toUri().toString())
+    .setWorkingPath(Paths.get(".").toAbsolutePath().toUri().toString());
 
+  public FileDataStore(String name) {
 
-  public FileDataStore(Path path) {
-    this(path.toUri());
+    super(name);
+
   }
 
-  public FileDataStore(URI uri) {
+  public static FileDataStore of(Path path) {
+    return of(path.toUri());
+  }
 
-    super(uri.toString());
-    this.setWorkingPath(uri.getPath());
-
+  /**
+   * @param uri
+   * @return a unique database name from an Uri (ie path.toUri)
+   */
+  public static String getDataStoreName(URI uri) {
+    String databaseName;
     switch (uri.getScheme()) {
-      case "file":
-        String workingPath = Paths.get(".").toString();
-        this
-          .setConnectionString(Paths.get(".").toUri().toString())
-          .setWorkingPath(workingPath);
+      case LOCAL_FILE_SCHEME:
+        databaseName = LOCAL_FILE_SCHEME;
         break;
       default:
+        databaseName = uri.getScheme() + "://" + uri.getHost();
+        break;
+    }
+    return databaseName;
+  }
+
+  public FileDataStore setWorkingPath(String path) {
+    super.setWorkingPath(path);
+    return this;
+  }
+
+  public FileDataStore setConnectionString(String connectionString) {
+    super.setConnectionString(connectionString);
+    return this;
+  }
+
+  private static FileDataStore of(URI uri) {
+
+    FileDataStore fileDataStore;
+    String databaseName = getDataStoreName(uri);
+    switch (databaseName) {
+      case LOCAL_FILE_SCHEME:
+        return LOCAL_FILE_STORE;
+      default:
         // Http or https gives always absolute path
-        this
+        fileDataStore = new FileDataStore(databaseName)
           .setConnectionString(uri.toString())
           .setWorkingPath(uri.getPath());
-
-        Uris.getQueryAsMap(uri.getQuery()).forEach(this::addProperty);
+        Uris.getQueryAsMap(uri.getQuery()).forEach(fileDataStore::addProperty);
         break;
 
     }
-
+    return fileDataStore;
   }
 
 
@@ -51,6 +83,12 @@ public class FileDataStore extends DataStore {
       default:
         return URI.create(connectionString);
     }
+
+  }
+
+  public DataPath getDataPath(Path path) {
+
+    return getTableSystem().getDataPath(path.toUri().getPath());
 
   }
 

@@ -9,7 +9,6 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +32,7 @@ public class Tabular implements AutoCloseable {
    * The local file database name as also stated
    * by the {@link Path#getFileSystem()}
    */
-  public static final String LOCAL_FILE_DATABASE = "file";
+  public static final String LOCAL_FILE_SCHEME = "file";
   public static final String MEMORY_DATASTORE = "memory";
 
   /**
@@ -44,10 +43,20 @@ public class Tabular implements AutoCloseable {
 
   DatabasesStore databaseStore = null;
 
-  Map<String, Database> dataStores = new HashMap<>();
+  Map<String, DataStore> dataStores = new HashMap<>();
 
-  public String getDefaultDatastore() {
-    return DEFAULT_DATASTORE;
+
+  public Tabular() {
+
+    // This one are always on
+    FileDataStore fileDataStore = FileDataStore.LOCAL_FILE_STORE;
+    dataStores.put(fileDataStore.getName(), fileDataStore);
+
+
+    Database memoryDataBase = Databases.of(MEMORY_DATASTORE)
+      .setConnectionString(MemorySystemProvider.SCHEME);
+    dataStores.put(memoryDataBase.getName(), memoryDataBase);
+
   }
 
   public static Tabular tabular() {
@@ -55,11 +64,7 @@ public class Tabular implements AutoCloseable {
   }
 
 
-  public DataPath ofPath(Path path) {
-    return null;
-  }
-
-  public List<Database> getDataStores() {
+  public List<DataStore> getDataStores() {
     return new ArrayList<>(dataStores.values());
   }
 
@@ -87,17 +92,16 @@ public class Tabular implements AutoCloseable {
 
   }
 
+  /**
+   *
+   * @param dataStoreName
+   * @return a datastore
+   *
+   * There is two specials data store always available (namely file and memory that store data respectively on the local file system and in memory)
+   */
   private DataStore getDataStore(String dataStoreName) {
 
-    switch (dataStoreName) {
-      case MEMORY_DATASTORE:
-        return Databases.of(MEMORY_DATASTORE)
-          .setConnectionString(MemorySystemProvider.SCHEME);
-      case LOCAL_FILE_DATABASE:
-        return Databases.of(LOCAL_FILE_DATABASE).setConnectionString(Paths.get(".").toUri().toString());
-      default:
-        return dataStores.get(dataStoreName);
-    }
+    return dataStores.get(dataStoreName);
 
   }
 
@@ -115,8 +119,8 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
-  public Database getOrCreateDataStore(String dataStoreName) {
-    Database dataStore = dataStores.get(dataStoreName);
+  public DataStore getOrCreateDataStore(String dataStoreName) {
+    DataStore dataStore = dataStores.get(dataStoreName);
     if (dataStore == null) {
       dataStore = Database.of(dataStoreName);
       dataStores.put(dataStore.getName(), dataStore);
@@ -146,8 +150,8 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  public void close()  {
-    for (Database dataStore : dataStores.values()) {
+  public void close() {
+    for (DataStore dataStore : dataStores.values()) {
       try {
         dataStore.getDataSystem().close();
       } catch (Exception e) {
@@ -156,10 +160,16 @@ public class Tabular implements AutoCloseable {
     }
   }
 
-  public DataPath getDataPath(Path outputPath) {
-    return
-      new FileDataStore(outputPath)
-        .getCurrentDataPath();
+  public DataPath getDataPath(Path path) {
+
+    String databaseName = FileDataStore.getDataStoreName(path.toUri());
+    FileDataStore dataStore = (FileDataStore) this.dataStores.get(databaseName);
+    if (dataStore == null) {
+      dataStore = FileDataStore.of(path);
+      this.dataStores.put(dataStore.getName(), dataStore);
+    }
+    return dataStore.getDataPath(path);
+
   }
 
   /**

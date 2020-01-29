@@ -166,6 +166,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   }
 
+
   /**
    * @return the current/working path of this data store
    */

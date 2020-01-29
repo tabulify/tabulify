@@ -57,7 +57,7 @@ public class FsTableSystem extends TableSystem {
    * @return the default table system provider (ie the local file system)
    */
   public static FsTableSystem getDefault() {
-    FileDataStore defaultDatabase =  new FileDataStore(Paths.get("."));
+    FileDataStore defaultDatabase =  FileDataStore.of(Paths.get("."));
     return FsTableSystemProvider.getDefault().getTableSystem(defaultDatabase);
   }
 
@@ -158,10 +158,11 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public void create(DataPath dataPath) {
-    if (!Files.exists(((FsDataPath) dataPath).getNioPath())) {
+    Path nioPath = ((FsDataPath) dataPath).getNioPath();
+    if (!Files.exists(nioPath)) {
       CsvManager.create((CsvDataPath) dataPath);
     } else {
-      throw new RuntimeException("The data path (" + dataPath + ") already exists");
+      throw new RuntimeException("The data path (" + nioPath + ") already exists");
     }
   }
 
