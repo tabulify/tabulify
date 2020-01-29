@@ -79,7 +79,7 @@ public class DbDatabaseInfo {
         System.out.println(HORIZONTAL_LINE);
         for (int i=0; i<databases.size();i++) {
             Database database = databases.get(i);
-            System.out.println("Name: "+database.getDatabaseName());
+            System.out.println("Name: "+database.getName());
             System.out.println("URL: "+database.getConnectionString());
             System.out.println("Login: "+database.getUser());
             String password;

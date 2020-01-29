@@ -98,7 +98,7 @@ public class JdbcDataSystem extends TableSystem {
   @Override
   public JdbcDataPath getDataPath(String... names) {
 
-    DataUri dataUri = DataUri.of(String.join(".",names)+DataUri.AT_STRING+this.getDatabase().getDatabaseName());
+    DataUri dataUri = DataUri.of(String.join(".",names)+DataUri.AT_STRING+this.getDatabase().getName());
     return getDataPath(dataUri);
 
   }
@@ -201,7 +201,7 @@ public class JdbcDataSystem extends TableSystem {
     if (this.connection != null) {
       try {
         this.connection.close();
-        JdbcDataSystemLog.LOGGER_DB_JDBC.info("The connection of the database (" + this.database.getDatabaseName() + ") was closed.");
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("The connection of the database (" + this.database.getName() + ") was closed.");
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
@@ -278,7 +278,7 @@ public class JdbcDataSystem extends TableSystem {
       connection = DriverManager.getConnection(database.getConnectionString(), connectionProperties);
 
     } catch (SQLException e) {
-      String msg = "Unable to connect to the database (" + database.getDatabaseName() + ")with the following URL (" + database.getConnectionString() + "). Error: " + e.getMessage();
+      String msg = "Unable to connect to the database (" + database.getName() + ")with the following URL (" + database.getConnectionString() + "). Error: " + e.getMessage();
       JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
       throw new RuntimeException(e);
     }

@@ -88,12 +88,12 @@ public class DbSampleFill {
         LOGGER.info("Checking if all tables exist.");
         for (TableDef tableDef : tableDefs) {
             if (!Tables.exists(tableDef, database)) {
-                System.err.println("The table (" + tableDef.getName() + ") does not exist in the target database (" + database.getDatabaseName() + ")");
+                System.err.println("The table (" + tableDef.getName() + ") does not exist in the target database (" + database.getName() + ")");
                 System.err.println("Possible cause:");
                 System.err.println("  * The schema tables have not been created with the 'create' command.");
                 System.exit(1);
             } else {
-                System.out.println("The table (" + tableDef.getName() + ") exists in the target database (" + database.getDatabaseName() + ")");
+                System.out.println("The table (" + tableDef.getName() + ") exists in the target database (" + database.getName() + ")");
             }
         }
         // load

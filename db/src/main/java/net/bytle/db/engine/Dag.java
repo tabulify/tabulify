@@ -4,7 +4,6 @@ package net.bytle.db.engine;
 
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -143,7 +142,7 @@ public class Dag {
 
     public static Dag get(DataPath dataPath) {
         if (Tabulars.isContainer(dataPath)) {
-            return get(DataPaths.getChildren(dataPath));
+            return get(Tabulars.getChildren(dataPath));
         } else {
             return new Dag().addTable(dataPath);
         }

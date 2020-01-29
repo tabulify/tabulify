@@ -1,10 +1,10 @@
 package net.bytle.db.model;
 
 
+import net.bytle.db.Tabular;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.fs.Fs;
@@ -48,7 +48,8 @@ public class DataDefs {
     for (Path filePath : fileDiscovered) {
 
       List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
-      DataPath dataPath = DataPaths.of(String.join("/", names) + Fs.getFileName(filePath).replace("--datadef", ""));
+      names.add(Fs.getFileName(filePath).replace("--datadef", ""));
+      DataPath dataPath = Tabular.tabular().getDataPath(names.get(0), names.subList(1,names.size()).toArray(new String[0]));
       dataPath = readFile(dataPath, filePath);
       dataPaths.add(dataPath);
 
@@ -248,7 +249,7 @@ public class DataDefs {
 
   public static void printColumns(TableDef tableDef) {
 
-    DataPath tableStructure = DataPaths.of("structure");
+    DataPath tableStructure = Tabular.tabular().getDataPath("structure");
     tableStructure
       .getDataDef()
       .addColumn("#")

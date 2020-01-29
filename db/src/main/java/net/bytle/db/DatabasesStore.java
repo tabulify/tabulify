@@ -102,15 +102,15 @@ public class DatabasesStore {
   private DatabasesStore save(Database database, Boolean internalPassphrase) {
 
     Ini ini = getIniFile();
-    ini.put(database.getDatabaseName(), URL, database.getConnectionString());
-    ini.put(database.getDatabaseName(), DRIVER, database.getDriver());
-    ini.put(database.getDatabaseName(), USER, database.getUser());
+    ini.put(database.getName(), URL, database.getConnectionString());
+    ini.put(database.getName(), DRIVER, database.getDriver());
+    ini.put(database.getName(), USER, database.getUser());
     String localPassphrase;
     if (database.getPassword() != null) {
       if (this.passphrase == null) {
         if (internalPassphrase) {
           localPassphrase = INTERNAL_PASSPHRASE;
-          ini.put(database.getDatabaseName(), INTERNAL_PASSPHRASE_KEY, true);
+          ini.put(database.getName(), INTERNAL_PASSPHRASE_KEY, true);
         } else {
           throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
         }
@@ -118,9 +118,9 @@ public class DatabasesStore {
         localPassphrase = this.passphrase;
       }
       String password = Protector.get(localPassphrase).encrypt(database.getPassword());
-      ini.put(database.getDatabaseName(), PASSWORD, password);
+      ini.put(database.getName(), PASSWORD, password);
     }
-    ini.put(database.getDatabaseName(), STATEMENT, database.getConnectionStatement());
+    ini.put(database.getName(), STATEMENT, database.getConnectionStatement());
     flush();
     return this;
   }
@@ -257,7 +257,6 @@ public class DatabasesStore {
           }
           database.setDriver(iniSection.get(DRIVER));
           database.setStatement(iniSection.get(STATEMENT));
-          database.setDatabaseStore(this);
         } else {
           logger.warn("The database {} was not found. A null database was returned", name);
         }

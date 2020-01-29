@@ -32,7 +32,7 @@ public abstract class DataPath implements Comparable<DataPath> {
     final String path = getPath();
     assert path != null : "Path cannot be null";
     final Database database = getDataSystem().getDatabase();
-    final String databaseName = database.getDatabaseName();
+    final String databaseName = database.getName();
     return path + "@" + databaseName;
   }
 
@@ -82,5 +82,29 @@ public abstract class DataPath implements Comparable<DataPath> {
   }
 
   public abstract DataUri getDataUri();
+
+  /**
+   *
+   * @param name - the sibling name
+   * @return a sibling (ie on the path `/a/c`, the sibling `b` would be `/a/b`
+   *
+   * Example with a data path equivalent to /foo/bar and foo as name, we get a DataPath of /foo/foo
+   * Equivalent to the {@link java.nio.file.Path#resolveSibling(String)}
+   */
+  public abstract String getSibling(String name);
+
+  /**
+   *
+   * @param name - a child name
+   * @return a child (ie on the path `/a/c`, the child `b` would be `/a/c/b`
+   *
+   * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
+   * but where:
+   *   * you can't use .. and .
+   *   * you can use only one argument
+   *
+   */
+  public abstract String getChild(String name);
+
 
 }

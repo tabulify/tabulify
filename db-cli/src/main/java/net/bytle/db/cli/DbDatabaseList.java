@@ -76,7 +76,7 @@ public class DbDatabaseList {
                     password = "xxx";
                 }
                 tableInsertStream
-                        .insert(database.getDatabaseName(), database.getUser(), password, database.getConnectionString(), database.getDriver());
+                        .insert(database.getName(), database.getUser(), password, database.getConnectionString(), database.getDriver());
             }
         }
 

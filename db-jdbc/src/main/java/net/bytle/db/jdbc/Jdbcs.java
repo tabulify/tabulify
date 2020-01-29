@@ -492,7 +492,7 @@ public class Jdbcs {
    */
   public static void printDatabaseInformation(JdbcDataSystem jdbcDataSystem) {
 
-    System.out.println("Information about the database (" + jdbcDataSystem.getDatabase().getDatabaseName() + "):");
+    System.out.println("Information about the database (" + jdbcDataSystem.getDatabase().getName() + "):");
 
     System.out.println();
     System.out.println("Driver Information:");

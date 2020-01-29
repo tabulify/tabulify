@@ -70,8 +70,8 @@ public class DbDatabaseRemove {
                 LOGGER.info(databases.size() + " databases were found");
             }
             for (Database database : databases) {
-                databasesStore.removeDatabase(database.getDatabaseName());
-                LOGGER.info("The database (" + database.getDatabaseName() + ") was removed");
+                databasesStore.removeDatabase(database.getName());
+                LOGGER.info("The database (" + database.getName() + ") was removed");
             }
 
         }

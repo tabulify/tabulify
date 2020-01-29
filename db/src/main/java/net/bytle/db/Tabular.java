@@ -1,8 +1,8 @@
 package net.bytle.db;
 
 import net.bytle.db.database.Database;
+import net.bytle.db.database.FileDataStore;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
@@ -55,17 +55,20 @@ public class Tabular implements AutoCloseable {
    */
   public DataPath getDataPath(String dataUri, String... parts) {
 
+    // First argument
     if (!dataUri.contains(DataUri.AT_STRING)) {
       dataUri = dataUri + DataUri.AT_STRING + DEFAULT_DATASTORE;
     }
     DataUri dataUriObj = DataUri.of(dataUri);
     String dataStoreName = dataUriObj.getDataStore();
-    Database database = getDataStore(dataStoreName);
-    DataPath dataPath = DataPaths.of(database, dataUriObj);
+    DataPath dataUriPath = getDataStore(dataStoreName)
+      .getDataPath(dataUriObj.getPath());
+
+    // Second argument to get the childs
     for (int i = 0; i < parts.length; i++) {
-      dataPath = dataPath.getDataSystem().getChildOf(dataPath, parts[i]);
+      dataUriPath = dataUriPath.getDataSystem().getChildOf(dataUriPath, parts[i]);
     }
-    return dataPath;
+    return dataUriPath;
 
   }
 
@@ -81,7 +84,7 @@ public class Tabular implements AutoCloseable {
     databaseStore = DatabasesStore.of(storagePath);
     databaseStore.getDataStores().forEach(
       ds -> {
-        dataStores.put(ds.getDatabaseName(),ds);
+        dataStores.put(ds.getName(), ds);
       }
     );
     return this;
@@ -89,16 +92,44 @@ public class Tabular implements AutoCloseable {
 
   public Database getOrCreateDataStore(String dataStoreName) {
     Database dataStore = dataStores.get(dataStoreName);
-    if (dataStore==null){
+    if (dataStore == null) {
       dataStore = Database.of(dataStoreName);
-      dataStores.put(dataStore.getDatabaseName(), dataStore);
+      dataStores.put(dataStore.getName(), dataStore);
     }
     return dataStore;
   }
 
-  public void close() {
-    for(Database dataStore : dataStores.values()){
-      dataStore.getDataSystem()
+  /**
+   * @param dataUri - a pattern data uri (ie the path is a glob pattern)
+   * @return a list of path that match the pattern
+   * Example dim*@db will return all object with a name that start with `dim` for the data store `db`
+   */
+  public List<DataPath> select(String dataUri) {
+
+    if (!dataUri.contains(DataUri.AT_STRING)) {
+      dataUri = dataUri + DataUri.AT_STRING + DEFAULT_DATASTORE;
     }
+
+    DataUri dataUriObj = DataUri.of(dataUri);
+    String dataStoreName = dataUriObj.getDataStore();
+    DataPath currentDataPath = getDataStore(dataStoreName)
+      .getCurrentDataPath();
+
+    String glob = dataUriObj.getPath();
+
+    return currentDataPath.getDataSystem().getDescendants(currentDataPath, glob);
+
+  }
+
+  public void close() throws Exception {
+    for (Database dataStore : dataStores.values()) {
+      dataStore.getDataSystem().close();
+    }
+  }
+
+  public DataPath getDataPath(Path outputPath) {
+    return
+      new FileDataStore(outputPath)
+        .getCurrentDataPath();
   }
 }

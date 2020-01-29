@@ -86,6 +86,16 @@ public class MemoryDataPath extends DataPath {
     return dataUri;
   }
 
+  @Override
+  public String getSibling(String name) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public String getChild(String name) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
   public MemoryDataPathType getType() {
     return type;
   }

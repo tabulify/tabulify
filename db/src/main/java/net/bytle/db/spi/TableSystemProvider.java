@@ -1,7 +1,7 @@
 package net.bytle.db.spi;
 
 
-import net.bytle.db.database.Database;
+import net.bytle.db.database.DataStore;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -136,12 +136,12 @@ public abstract class TableSystemProvider {
      * may require to check a permission before returning a reference to an
      * existing work.
      *
-     * @param database : an object that got all Uri information
+     * @param dataStore : an object that got all Uri information
      * @return The sql database
      * @throws SecurityException           If a security manager is installed and it denies an unspecified
      *                                     permission.
      */
-    public abstract TableSystem getTableSystem(Database database);
+    public abstract TableSystem getTableSystem(DataStore dataStore);
 
 
     /**

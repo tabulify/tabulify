@@ -186,7 +186,7 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public MemoryDataPath getDataPath(String... names) {
-    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDatabase().getDatabaseName());
+    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDatabase().getName());
     return MemoryDataPath.of(this, dataUri);
   }
 

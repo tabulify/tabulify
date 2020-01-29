@@ -9,6 +9,7 @@
 package net.bytle.db.resultSetDiff;
 
 
+import net.bytle.db.Tabular;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -65,7 +66,7 @@ public class DataSetDiff {
         this.sourceDataPath = sourceDataPath;
         this.targetDataPath = targetDataPath;
         this.keyColumnIndex = keyColumnIndex;
-        this.diffDataPath = DataPaths.of(outputPath);
+        this.diffDataPath = Tabular.tabular().getDataPath(outputPath);
         this.locale = Locale.getDefault();
 
 
