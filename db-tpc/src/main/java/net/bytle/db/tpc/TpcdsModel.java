@@ -1197,17 +1197,17 @@ public class TpcdsModel implements SchemaSample {
 
         switch (schemaName) {
             case TPCDS_SCHEMA:
-                return getDataPaths();
+                return getAndCreateDataPaths();
             case TPCDS_SCHEMA_DWH:
-                return getDataPaths().stream()
+                return getAndCreateDataPaths().stream()
                         .filter(s -> dwhTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STG:
-                return getDataPaths().stream()
+                return getAndCreateDataPaths().stream()
                         .filter(s -> stagingTables.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STORE_SALES:
-                return Tabulars.atomic(getDataPaths().stream()
+                return Tabulars.atomic(getAndCreateDataPaths().stream()
                         .filter(s -> storeSalesTables.contains(s.getName()))
                         .collect(Collectors.toList())
                 );
@@ -1221,7 +1221,7 @@ public class TpcdsModel implements SchemaSample {
     /**
      * @return all tables
      */
-    public List<DataPath> getDataPaths() {
+    public List<DataPath> getAndCreateDataPaths() {
 
         return new ArrayList<>(tables.values());
 
@@ -1232,13 +1232,13 @@ public class TpcdsModel implements SchemaSample {
      * @param tableName - one of the static constant field that represents a table name
      * @return - the definition of this table
      */
-    public DataPath getDataPath(String tableName) {
+    public DataPath getAndCreateDataPath(String tableName) {
 
         return tables.get(tableName);
     }
 
     @Override
-    public List<DataPath> getDataPaths(String... tableNames) {
+    public List<DataPath> getAndCreateDataPaths(String... tableNames) {
 
         return Arrays.stream(tableNames).map(name -> tables.get(name)).collect(Collectors.toList());
 

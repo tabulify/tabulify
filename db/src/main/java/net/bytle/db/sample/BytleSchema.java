@@ -2,6 +2,7 @@ package net.bytle.db.sample;
 
 import net.bytle.db.memory.MemoryDataSystem;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 
 import java.sql.Types;
 import java.util.*;
@@ -105,17 +106,21 @@ public class BytleSchema implements SchemaSample {
 
 
     @Override
-    public List<DataPath> getDataPaths() {
-        return new ArrayList<>(bytleTables.values());
+    public List<DataPath> getAndCreateDataPaths() {
+      ArrayList<DataPath> dataPaths = new ArrayList<>(bytleTables.values());
+      Tabulars.createIfNotExist(dataPaths);
+      return dataPaths;
     }
 
     @Override
-    public DataPath getDataPath(String tableName) {
-        return bytleTables.get(tableName);
+    public DataPath getAndCreateDataPath(String tableName) {
+      DataPath dataPath = bytleTables.get(tableName);
+      Tabulars.create(dataPath);
+      return dataPath;
     }
 
     @Override
-    public List<DataPath> getDataPaths(String... tableNames) {
+    public List<DataPath> getAndCreateDataPaths(String... tableNames) {
         return Arrays.stream(tableNames).map(name -> bytleTables.get(name)).collect(Collectors.toList());
     }
 

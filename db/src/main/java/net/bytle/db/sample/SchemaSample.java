@@ -10,7 +10,7 @@ public interface SchemaSample {
     /**
      * @return all tables
      */
-    List<DataPath> getDataPaths();
+    List<DataPath> getAndCreateDataPaths();
 
     /**
      * @param tableName
@@ -19,9 +19,9 @@ public interface SchemaSample {
      * The table name must be public constant in each class
      * to allow getting one table
      */
-    DataPath getDataPath(String tableName);
+    DataPath getAndCreateDataPath(String tableName);
 
 
-    List<DataPath> getDataPaths(String... tableNames);
+    List<DataPath> getAndCreateDataPaths(String... tableNames);
 
 }

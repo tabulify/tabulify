@@ -56,7 +56,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   @Override
   public DataPath getDataPath(String... names) {
-    DataPath dataPath = this.getDataModel().getDataPath(names[0]);
+    DataPath dataPath = this.getDataModel().getAndCreateDataPath(names[0]);
     // Case when it's the working directory
     if (dataPath == null) {
       dataPath = TpcDataPath.of(this, names[0]);
@@ -72,7 +72,7 @@ public class TpcDataSetSystem extends DataSetSystem {
   @Override
   public Boolean exists(DataPath dataPath) {
     assert dataPath != null : "A data path should not be null";
-    return tpcModel.getDataPath(dataPath.getName()) != null;
+    return tpcModel.getAndCreateDataPath(dataPath.getName()) != null;
   }
 
   /**
@@ -126,7 +126,7 @@ public class TpcDataSetSystem extends DataSetSystem {
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
     if (dataPath.getPath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY)) {
-      return this.tpcModel.getDataPaths();
+      return this.tpcModel.getAndCreateDataPaths();
     } else {
       return new ArrayList<>();
     }
@@ -167,7 +167,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   @Override
   public List<DataPath> getReferences(DataPath dataPath) {
-    return getDataModel().getDataPaths().stream()
+    return getDataModel().getAndCreateDataPaths().stream()
       .filter(
         s -> s.getDataDef()
           .getForeignKeys().stream()
