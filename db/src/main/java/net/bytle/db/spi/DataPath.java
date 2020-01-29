@@ -1,6 +1,6 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.uri.DataUri;
 
@@ -31,8 +31,8 @@ public abstract class DataPath implements Comparable<DataPath> {
   private String getId() {
     final String path = getPath();
     assert path != null : "Path cannot be null";
-    final Database database = getDataSystem().getDatabase();
-    final String databaseName = database.getName();
+    final DataStore dataStore = getDataSystem().getDataStore();
+    final String databaseName = dataStore.getName();
     return path + "@" + databaseName;
   }
 

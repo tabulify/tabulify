@@ -60,6 +60,26 @@ public class FsDataPath extends DataPath {
   }
 
   @Override
+  public FsDataPath getSibling(String name) {
+     return FsDataPath.of(this.tableSystem, path.resolveSibling(name));
+  }
+
+  @Override
+  public FsDataPath getChild(String name) {
+    return resolve(name);
+  }
+
+  @Override
+  public FsDataPath resolve(String... names) {
+      assert names.length!=0: "The names array to resolve must not be empty";
+      Path resolvedPath = null;
+      for (String name: names){
+        resolvedPath = path.resolve(name);
+      }
+      return FsDataPath.of(this.tableSystem, resolvedPath);
+  }
+
+  @Override
     public String getName() {
         return this.path.getFileName().toString();
     }

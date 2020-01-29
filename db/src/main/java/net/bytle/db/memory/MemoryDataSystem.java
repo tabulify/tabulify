@@ -2,6 +2,7 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DataUris;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
 import net.bytle.db.model.DataType;
@@ -31,7 +32,7 @@ public class MemoryDataSystem extends TableSystem {
   private static MemoryDataSystem staticMemoryDataSystem;
   private final MemorySystemProvider memoryStoreProvider;
   private final MemoryStore memoryStore;
-  private Database database = Databases.of("memory");
+  private Database dataStore = Databases.of("memory");
 
   public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
     this.memoryStoreProvider = memorySystemProvider;
@@ -186,7 +187,7 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public MemoryDataPath getDataPath(String... names) {
-    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDatabase().getName());
+    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDataStore().getName());
     return MemoryDataPath.of(this, dataUri);
   }
 
@@ -212,8 +213,8 @@ public class MemoryDataSystem extends TableSystem {
   }
 
   @Override
-  public Database getDatabase() {
-    return database;
+  public DataStore getDataStore() {
+    return dataStore;
   }
 
 

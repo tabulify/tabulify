@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.database.DataStore;
+import net.bytle.db.database.FileDataStore;
 import net.bytle.db.spi.TableSystemProvider;
 
 import java.util.Arrays;
@@ -45,14 +46,14 @@ public class FsTableSystemProvider extends TableSystemProvider {
      * may require to check a permission before returning a reference to an
      * existing work.
      *
-     * @param database URI reference
+     * @param dataStore URI reference
      * @return The table system
      * @throws SecurityException If a security manager is installed and it denies an unspecified
      *                           permission.
      */
     @Override
-    public FsTableSystem getTableSystem(Database database) {
-        return FsTableSystem.of(this,database);
+    public FsTableSystem getTableSystem(DataStore dataStore) {
+        return FsTableSystem.of(this, (FileDataStore) dataStore);
     }
 
 

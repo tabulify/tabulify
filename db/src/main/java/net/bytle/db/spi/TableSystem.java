@@ -1,6 +1,6 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.database.Database;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.model.DataType;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -33,7 +33,7 @@ public abstract class TableSystem implements AutoCloseable {
 
   public abstract SelectStream getSelectStream(DataPath dataPath);
 
-  public abstract Database getDatabase();
+  public abstract DataStore getDataStore();
 
 
   public abstract boolean isContainer(DataPath dataPath);
@@ -83,12 +83,12 @@ public abstract class TableSystem implements AutoCloseable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TableSystem that = (TableSystem) o;
-    return Objects.equals(getDatabase(), that.getDatabase());
+    return Objects.equals(getDataStore(), that.getDataStore());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getDatabase());
+    return Objects.hash(getDataStore());
   }
 
   /**

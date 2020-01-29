@@ -213,7 +213,7 @@ public class JdbcDataPath extends DataPath {
     if (name != null) {
       stringBuilder.append(name).append(".");
     }
-    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataSystem.getDatabase().getName());
+    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataSystem.getFileDataStore().getName());
 
     return DataUri.of(stringBuilder.toString());
 

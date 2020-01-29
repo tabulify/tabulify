@@ -5,8 +5,6 @@ import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.Database;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
-import net.bytle.db.jdbc.spi.SqlDatabaseI;
-import net.bytle.db.jdbc.spi.SqlDatabaseProvider;
 import net.bytle.db.model.TableDef;
 
 import java.util.List;
@@ -26,7 +24,7 @@ public abstract class SqlDatabase implements SqlDatabaseI {
     private SqlDatabaseProvider sqlDatabaseProvider = null;
 
     public SqlDatabase(JdbcDataSystem jdbcDataSystem) {
-        this.database = jdbcDataSystem.getDatabase();
+        this.database = jdbcDataSystem.getFileDataStore();
     }
 
     public SqlDatabase(SqlDatabaseProvider databaseProvider) {

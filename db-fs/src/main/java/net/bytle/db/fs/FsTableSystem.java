@@ -1,17 +1,19 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.DatabasesStore;
 import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.csv.CsvInsertStream;
 import net.bytle.db.csv.CsvManager;
 import net.bytle.db.csv.CsvSelectStream;
-import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
+import net.bytle.db.database.DataStore;
+import net.bytle.db.database.FileDataStore;
 import net.bytle.db.html.HtmlDataPath;
 import net.bytle.db.json.JsonDataPath;
 import net.bytle.db.json.JsonSelectStream;
 import net.bytle.db.model.DataType;
-import net.bytle.db.spi.*;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -26,7 +28,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,18 +37,18 @@ import java.util.stream.Collectors;
 public class FsTableSystem extends TableSystem {
 
 
-  private final Database database;
+  private final FileDataStore fileDataStore;
   private final FsTableSystemProvider fsTableSystemProvider;
   private final FileSystem fileSystem;
 
-  private FsTableSystem(FsTableSystemProvider fsTableSystemProvider, Database database) {
-    assert database != null;
-    this.database = database;
+  private FsTableSystem(FsTableSystemProvider fsTableSystemProvider, FileDataStore fileDataStore) {
+    assert fileDataStore != null;
+    this.fileDataStore = fileDataStore;
     this.fsTableSystemProvider = fsTableSystemProvider;
-    this.fileSystem = Paths.get(this.database.getUri()).getFileSystem();
+    this.fileSystem = Paths.get(this.fileDataStore.getUri()).getFileSystem();
   }
 
-  protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider, Database database) {
+  protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider, FileDataStore database) {
     return new FsTableSystem(fsTableSystemProvider, database);
   }
 
@@ -56,11 +57,8 @@ public class FsTableSystem extends TableSystem {
    * @return the default table system provider (ie the local file system)
    */
   public static FsTableSystem getDefault() {
-    Database defaultDatabase =
-      Databases.of(FsTableSystemProvider.LOCAL_FILE_SCHEME)
-        .setConnectionString(Paths.get(".").toUri().toString());
-    return FsTableSystemProvider.getDefault()
-      .getTableSystem(defaultDatabase);
+    FileDataStore defaultDatabase =  new FileDataStore(Paths.get("."));
+    return FsTableSystemProvider.getDefault().getTableSystem(defaultDatabase);
   }
 
 
@@ -74,8 +72,7 @@ public class FsTableSystem extends TableSystem {
    */
   public List<DataPath> getDataPaths(DataUri dataUri) {
 
-    List<String> pathSegments = getPathSegments(dataUri);
-
+    String[] pathSegments = dataUri.getPath().split(this.fileSystem.getSeparator());
 
     // Start
     Path startPath = Paths.get(".");
@@ -107,26 +104,11 @@ public class FsTableSystem extends TableSystem {
 
     }
 
-
     return currentMatchesPaths.stream()
       .map(s -> FsDataPath.of(this, s))
       .collect(Collectors.toList());
   }
 
-  static List<String> getPathSegments(DataUri dataUri) {
-    if (!dataUri.getDataStore().equals(DatabasesStore.LOCAL_FILE_DATABASE)) {
-      throw new RuntimeException("Only a file uri from the local file system is implemented from now");
-    }
-
-    final String path = dataUri.getPath();
-    List<String> pathSegments = new ArrayList<>();
-    if (path.contains("/")) {
-      pathSegments = Arrays.asList(path.split("/"));
-    } else {
-      pathSegments.add(path);
-    }
-    return pathSegments;
-  }
 
   @Override
   public DataPath getDataPath(DataUri dataUri) {
@@ -136,18 +118,10 @@ public class FsTableSystem extends TableSystem {
   }
 
   @Override
-  public DataPath getDataPath(String... name) {
-    DataPath dataPathToReturn;
-    // Absolute path
-    if (name[0].startsWith(this.fileSystem.getSeparator())) {
-      dataPathToReturn = this.getRootPath();
-    } else {
-      dataPathToReturn = this.getCurrentPath();
-    }
-    for (int i = 0; i < name.length; i++) {
-      dataPathToReturn = DataPaths.childOf(dataPathToReturn, name[i]);
-    }
-    return dataPathToReturn;
+  public FsDataPath getDataPath(String... names) {
+
+    return getCurrentPath().resolve(names);
+
   }
 
   @Override
@@ -172,8 +146,8 @@ public class FsTableSystem extends TableSystem {
   }
 
   @Override
-  public Database getDatabase() {
-    return database;
+  public DataStore getDataStore() {
+    return this.fileDataStore;
   }
 
 
@@ -305,8 +279,8 @@ public class FsTableSystem extends TableSystem {
   }
 
   @Override
-  public DataPath getCurrentPath() {
-    Path currentPath = Paths.get(this.database.getUri());
+  public FsDataPath getCurrentPath() {
+    Path currentPath = Paths.get(this.fileDataStore.getUri());
     return new FsDataPath(this, currentPath);
   }
 
@@ -368,7 +342,7 @@ public class FsTableSystem extends TableSystem {
   @Override
   protected DataPath getRootPath() {
     try {
-      URI connectionUri = this.database.getUri();
+      URI connectionUri = this.fileDataStore.getUri();
       // Port may be not given
       Integer port = connectionUri.getPort();
       // A rootUri has no path

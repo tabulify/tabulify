@@ -416,7 +416,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
 
-  public Database getDatabase() {
+  public Database getFileDataStore() {
     return database;
   }
 

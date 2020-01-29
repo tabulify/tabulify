@@ -29,7 +29,7 @@ public abstract class DataSetSystem extends TableSystem {
 
   public abstract SelectStream getSelectStream(DataPath dataPath);
 
-  public abstract Database getDatabase();
+  public abstract Database getFileDataStore();
 
   public abstract boolean isContainer(DataPath dataPath);
 
@@ -95,12 +95,12 @@ public abstract class DataSetSystem extends TableSystem {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DataSetSystem that = (DataSetSystem) o;
-    return Objects.equals(getDatabase(), that.getDatabase());
+    return Objects.equals(getFileDataStore(), that.getFileDataStore());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getDatabase());
+    return Objects.hash(getFileDataStore());
   }
 
   /**

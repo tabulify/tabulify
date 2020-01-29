@@ -101,7 +101,7 @@ public class TpcDataSetSystem extends DataSetSystem {
   }
 
   @Override
-  public Database getDatabase() {
+  public Database getFileDataStore() {
     return this.database;
   }
 

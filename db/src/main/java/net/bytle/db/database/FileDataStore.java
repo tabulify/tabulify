@@ -12,9 +12,6 @@ import java.nio.file.Paths;
 public class FileDataStore extends DataStore {
 
 
-  public FileDataStore(String name) {
-    super(name);
-  }
 
   public FileDataStore(Path path) {
     this(path.toUri());
@@ -23,7 +20,6 @@ public class FileDataStore extends DataStore {
   public FileDataStore(URI uri) {
 
     super(uri.toString());
-    this.setConnectionString(uri.toString());
     this.setWorkingPath(uri.getPath());
 
     switch (uri.getScheme()) {
@@ -32,6 +28,7 @@ public class FileDataStore extends DataStore {
         this
           .setConnectionString(Paths.get(".").toUri().toString())
           .setWorkingPath(workingPath);
+        break;
       default:
         // Http or https gives always absolute path
         this
@@ -39,6 +36,7 @@ public class FileDataStore extends DataStore {
           .setWorkingPath(uri.getPath());
 
         Uris.getQueryAsMap(uri.getQuery()).forEach(this::addProperty);
+        break;
 
     }
 
