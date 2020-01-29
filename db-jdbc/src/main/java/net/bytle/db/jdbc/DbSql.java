@@ -13,7 +13,7 @@ public class DbSql {
                 identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
             }
         } catch (SQLException e) {
-            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getFileDataStore()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
+            JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database "+dataSystem.getDataStore()+" throw an error when retrieving the quoted string identifier."+e.getMessage());
         }
         return identifierQuoteString;
     }

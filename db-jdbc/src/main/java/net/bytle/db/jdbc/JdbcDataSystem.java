@@ -25,7 +25,6 @@ import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 
 import java.io.Closeable;
-import java.net.URI;
 import java.sql.*;
 import java.util.*;
 
@@ -398,25 +397,9 @@ public class JdbcDataSystem extends TableSystem {
     return this.processingEngine;
   }
 
-  @Override
-  public DataPath getChildOf(DataPath dataPath, String part) {
-    List<String> parts = dataPath.getNames();
-    parts.add(part);
-    return getDataPath(parts.toArray(new String[]{}));
-  }
 
   @Override
-  protected DataPath getRootPath() {
-    throw new UnsupportedOperationException("Not implemented");
-  }
-
-  @Override
-  public DataPath getChildDataPath(URI uri) {
-    throw new UnsupportedOperationException("Getting a JDBC data path from the URI ("+uri.toString() +") is not implemented");
-  }
-
-
-  public Database getFileDataStore() {
+  public Database getDataStore() {
     return database;
   }
 

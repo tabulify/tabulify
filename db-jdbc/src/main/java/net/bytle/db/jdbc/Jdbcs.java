@@ -492,7 +492,7 @@ public class Jdbcs {
    */
   public static void printDatabaseInformation(JdbcDataSystem jdbcDataSystem) {
 
-    System.out.println("Information about the database (" + jdbcDataSystem.getFileDataStore().getName() + "):");
+    System.out.println("Information about the database (" + jdbcDataSystem.getDataStore().getName() + "):");
 
     System.out.println();
     System.out.println("Driver Information:");
@@ -543,7 +543,7 @@ public class Jdbcs {
       System.out.println();
       URI url;
       try {
-        url = new URI(jdbcDataSystem.getFileDataStore().getConnectionString());
+        url = new URI(jdbcDataSystem.getDataStore().getConnectionString());
         URIExtended uriExtended = new URIExtended(url);
         System.out.println("URL (" + url + ")");
         System.out.println("Authority: " + url.getAuthority());

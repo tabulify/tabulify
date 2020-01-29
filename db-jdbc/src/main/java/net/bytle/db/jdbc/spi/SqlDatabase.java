@@ -24,7 +24,7 @@ public abstract class SqlDatabase implements SqlDatabaseI {
     private SqlDatabaseProvider sqlDatabaseProvider = null;
 
     public SqlDatabase(JdbcDataSystem jdbcDataSystem) {
-        this.database = jdbcDataSystem.getFileDataStore();
+        this.database = jdbcDataSystem.getDataStore();
     }
 
     public SqlDatabase(SqlDatabaseProvider databaseProvider) {
