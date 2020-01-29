@@ -20,6 +20,7 @@ public class JdbcDataPath extends DataPath {
 
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
+  private static final String SEPARATOR = ".";
   private final JdbcDataSystem jdbcDataSystem;
   private final String name;
   private final String schema;
@@ -39,6 +40,7 @@ public class JdbcDataPath extends DataPath {
 
   /**
    * Constructor used in the JDBC api to build a jdbc path
+   *
    * @param dataSystem
    * @param cat_name
    * @param schema_name
@@ -46,11 +48,12 @@ public class JdbcDataPath extends DataPath {
    * @return
    */
   public static JdbcDataPath of(JdbcDataSystem dataSystem, String cat_name, String schema_name, String table_name) {
-    return new JdbcDataPath(dataSystem, cat_name,schema_name,table_name);
+    return new JdbcDataPath(dataSystem, cat_name, schema_name, table_name);
   }
 
   /**
    * Constructor from an data Uri string
+   *
    * @param jdbcDataSystem
    * @param dataUri
    * @return
@@ -79,10 +82,10 @@ public class JdbcDataPath extends DataPath {
       case ".":
         switch (pathSegments.size()) {
           case 1:
-            return new JdbcDataPath(jdbcDataSystem,catalog,schema, null);
+            return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
           case 2:
             String name = pathSegments.get(pathSegments.size() - 1);
-            return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+            return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
           default:
             throw new RuntimeException("The working context is the schema and have no children, it's then not possible to have following path (" + String.join("/", pathSegments) + ")");
         }
@@ -90,22 +93,22 @@ public class JdbcDataPath extends DataPath {
         switch (pathSegments.size()) {
           case 1:
             // A catalog
-            return new JdbcDataPath(jdbcDataSystem,catalog,null, null);
+            return new JdbcDataPath(jdbcDataSystem, catalog, null, null);
           case 2:
             switch (pathSegments.get(1)) {
               case "..":
                 // the root
-                return new JdbcDataPath(jdbcDataSystem,null,null, null);
+                return new JdbcDataPath(jdbcDataSystem, null, null, null);
               case ".":
-                return new JdbcDataPath(jdbcDataSystem,catalog,null, null);
+                return new JdbcDataPath(jdbcDataSystem, catalog, null, null);
               default:
                 schema = pathSegments.get(1);
-                return new JdbcDataPath(jdbcDataSystem,catalog,schema, null);
+                return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
             }
           case 3:
             schema = pathSegments.get(1);
             String name = pathSegments.get(2);
-            return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+            return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
           default:
             throw new RuntimeException("A Jdbc path knows max only three parts (catalog, schema, name). This path is then not possible (" + String.join("/", pathSegments) + ")");
         }
@@ -127,7 +130,7 @@ public class JdbcDataPath extends DataPath {
         }
 
         String name = pathSegments.get(pathSegments.size() - 1);
-        return new JdbcDataPath(jdbcDataSystem,catalog,schema, name);
+        return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
 
     }
 
@@ -148,6 +151,7 @@ public class JdbcDataPath extends DataPath {
    * The global constructor for table or view.
    * Query has another one, See {@link #ofQuery(JdbcDataSystem, String)}
    * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
+   *
    * @param jdbcDataSystem
    * @param catalog
    * @param schema
@@ -200,13 +204,13 @@ public class JdbcDataPath extends DataPath {
 
     StringBuilder stringBuilder = new StringBuilder();
 
-    if (catalog!=null){
+    if (catalog != null) {
       stringBuilder.append(catalog).append(".");
     }
-    if (schema!=null){
+    if (schema != null) {
       stringBuilder.append(schema).append(".");
     }
-    if (name !=null){
+    if (name != null) {
       stringBuilder.append(name).append(".");
     }
     stringBuilder.append(DataUri.AT_STRING).append(jdbcDataSystem.getDatabase().getName());
@@ -217,12 +221,69 @@ public class JdbcDataPath extends DataPath {
 
   @Override
   public DataPath getSibling(String name) {
-    throw new RuntimeException("Not yet implemented");
+    return new JdbcDataPath(this.jdbcDataSystem, catalog, schema, name);
   }
 
   @Override
-  public DataPath getChild(String name) {
-    throw new RuntimeException("Not yet implemented");
+  public JdbcDataPath getChild(String name) {
+    return resolve(name);
+  }
+
+  @Override
+  public JdbcDataPath resolve(String... names) {
+
+    List<String> actualPath = new ArrayList<>();
+    if (catalog != null) {
+      actualPath.add(catalog);
+    }
+    if (schema != null) {
+      actualPath.add(schema);
+    }
+    if (name != null) {
+      actualPath.add(name);
+    }
+    for (int i = 0; i < names.length; i++) {
+      switch (names[i]) {
+        case ".":
+          // Nothing to do
+          break;
+        case "..":
+          if (actualPath.size()==0){
+            throw new RuntimeException("You can't apply two points on this path (..) because you are already on the root path and we can't therefore go to th parent");
+          } else {
+            actualPath.remove(actualPath.size() - 1);
+          }
+          break;
+        default:
+          if (names[i].startsWith("/")) {
+            actualPath = new ArrayList<>();
+            actualPath.add(names[i].substring(1, names[i].length() - 1));
+          } else {
+            actualPath.add((names[i]));
+          }
+      }
+    }
+    if (this.catalog != null) {
+      return new JdbcDataPath(this.jdbcDataSystem,
+        actualPath.size() >= 1 ? actualPath.get(0) : null,
+        actualPath.size() >= 2 ? actualPath.get(1) : null,
+        actualPath.size() >= 3 ? actualPath.get(2) : null);
+    } else {
+      if (this.schema != null) {
+        return new JdbcDataPath(this.jdbcDataSystem,
+          null,
+          actualPath.size() >= 1 ? actualPath.get(0) : null,
+          actualPath.size() >= 2 ? actualPath.get(1) : null
+        );
+      } else {
+        return new JdbcDataPath(this.jdbcDataSystem,
+          null,
+          null,
+          actualPath.size() >= 1 ? actualPath.get(0) : null
+        );
+      }
+    }
+
   }
 
   /**
@@ -237,7 +298,6 @@ public class JdbcDataPath extends DataPath {
     }
 
   }
-
 
 
   /**

@@ -298,6 +298,7 @@ public class DataDefs {
         .collect(Collectors.toList());
       target.setPrimaryKey(columns);
     }
+
   }
 
   public static int getColumnIdFromName(TableDef dataDef, String columnName) {

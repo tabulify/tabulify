@@ -1,6 +1,6 @@
 package net.bytle.db.sample;
 
-import net.bytle.db.Tabular;
+import net.bytle.db.memory.MemoryDataSystem;
 import net.bytle.db.spi.DataPath;
 
 import java.sql.Types;
@@ -56,14 +56,14 @@ public class BytleSchema implements SchemaSample {
     }
 
     public static BytleSchema of() {
-        return new BytleSchema();
+      return new BytleSchema();
     }
 
 
     void buildTables() {
 
         // Dim Cat Table
-        final DataPath catTable = Tabular.tabular().getDataPath(TABLE_CATEGORY_NAME);
+        final DataPath catTable = MemoryDataSystem.of().getDataPath(TABLE_CATEGORY_NAME);
         bytleTables.put(TABLE_CATEGORY_NAME, catTable);
         catTable.getDataDef()
                 .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -74,7 +74,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Dim timeTable
-        final DataPath timeTable = Tabular.tabular().getDataPath(TABLE_TIME_NAME);
+        final DataPath timeTable = MemoryDataSystem.of().getDataPath(TABLE_TIME_NAME);
         bytleTables.put(TABLE_TIME_NAME, timeTable);
         timeTable.getDataDef()
                 .addColumn(COLUMN_DATE_ID, Types.DATE)
@@ -88,7 +88,7 @@ public class BytleSchema implements SchemaSample {
 
 
         // Fact Table
-        final DataPath factTable = Tabular.tabular().getDataPath(TABLE_FACT_NAME);
+        final DataPath factTable = MemoryDataSystem.of().getDataPath(TABLE_FACT_NAME);
         bytleTables.put(TABLE_FACT_NAME, factTable);
         factTable.getDataDef()
                 .addColumn(COLUMN_FACT_ID, Types.INTEGER)

@@ -98,8 +98,7 @@ public class JdbcDataSystem extends TableSystem {
   @Override
   public JdbcDataPath getDataPath(String... names) {
 
-    DataUri dataUri = DataUri.of(String.join(".",names)+DataUri.AT_STRING+this.getDatabase().getName());
-    return getDataPath(dataUri);
+    return getCurrentPath().resolve(names);
 
   }
 
@@ -356,7 +355,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
   @Override
-  public DataPath getCurrentPath() {
+  public JdbcDataPath getCurrentPath() {
     return JdbcDataPath.of(this,getCurrentCatalog(), getCurrentSchema(),null);
   }
 
@@ -525,8 +524,9 @@ public class JdbcDataSystem extends TableSystem {
       Statement statement = getCurrentConnection().createStatement()
     ) {
 
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Dropping "+jdbcDataPath.getType()+" " + dataPath.toString());
       statement.execute(dropTableStatement.toString());
-      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table " + dataPath.toString() + " dropped");
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info(jdbcDataPath.getType()+" " + dataPath.toString() + " dropped");
 
     } catch (SQLException e) {
       System.err.println(dropTableStatement);

@@ -98,7 +98,7 @@ public abstract class DataPath implements Comparable<DataPath> {
    * @param name - a child name
    * @return a child (ie on the path `/a/c`, the child `b` would be `/a/c/b`
    *
-   * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
+   * This is the equivalent to the {@link #resolve(String...)}
    * but where:
    *   * you can't use .. and .
    *   * you can use only one argument
@@ -106,5 +106,13 @@ public abstract class DataPath implements Comparable<DataPath> {
    */
   public abstract DataPath getChild(String name);
 
+
+  /**
+   * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
+   *    * but where:
+   * @param names
+   * @return
+   */
+  public abstract DataPath resolve(String... names);
 
 }

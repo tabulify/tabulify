@@ -87,12 +87,17 @@ public class MemoryDataPath extends DataPath {
   }
 
   @Override
-  public DataPath getSibling(String name) {
+  public MemoryDataPath getSibling(String name) {
     throw new RuntimeException("Not yet implemented");
   }
 
   @Override
-  public DataPath getChild(String name) {
+  public MemoryDataPath getChild(String name) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public MemoryDataPath resolve(String... names) {
     throw new RuntimeException("Not yet implemented");
   }
 
