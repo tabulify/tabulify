@@ -51,12 +51,7 @@ public class Transfers {
     }
 
     // Check Target
-    if (!Tabulars.exists(targetDataPath)) {
-      if (targetDataPath.getDataDef().getColumnDefs().size() == 0) {
-        DataDefs.addColumns(sourceDataPath.getDataDef(), targetDataPath.getDataDef());
-      }
-      Tabulars.create(targetDataPath);
-    }
+    Transfers.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
 
     /**
      * The listener is passed to the consumers and producers threads
@@ -189,7 +184,7 @@ public class Transfers {
     // Check target
     final Boolean exists = Tabulars.exists(target);
     if (!exists) {
-      DataDefs.copy(source.getDataDef(), target.getDataDef());
+      Tabulars.copyDataDef(source, target);
       Tabulars.create(target);
     } else {
       checkOrCreateTargetStructureFromSource(source, target);

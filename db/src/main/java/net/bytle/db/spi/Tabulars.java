@@ -131,7 +131,7 @@ public class Tabulars {
     } else {
       DataPath[] moreDataPath = {};
       if (dataPaths.size() > 1) {
-        moreDataPath = dataPaths.subList(1, dataPaths.size() - 1).toArray(new DataPath[0]);
+        moreDataPath = dataPaths.subList(1, dataPaths.size()).toArray(new DataPath[0]);
       }
       drop(dataPaths.get(0), moreDataPath);
     }
@@ -367,7 +367,6 @@ public class Tabulars {
       sourceDataSystem.move(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      Transfers.createOrCheckTargetFromSource(source, target);
       transferListener = Transfers.transfer(source, target, transferProperties);
       Tabulars.drop(source);
     }

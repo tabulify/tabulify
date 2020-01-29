@@ -366,5 +366,9 @@ public class TableDef implements RelationDef  {
         return meta.getColumns(columnNames.toArray(new String[0]));
     }
 
+  @Override
+  public String toString() {
+    return "DataDef of "+ dataPath;
+  }
 
 }

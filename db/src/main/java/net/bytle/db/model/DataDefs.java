@@ -9,6 +9,8 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.fs.Fs;
 import net.bytle.type.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  */
 public class DataDefs {
 
+  static final Logger logger = LoggerFactory.getLogger(DataDefs.class);
 
   /**
    * Transform a path (a data definition file or a directory containing dataDefinition file) into a bunch of data path
@@ -49,7 +52,7 @@ public class DataDefs {
 
       List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
       names.add(Fs.getFileName(filePath).replace("--datadef", ""));
-      DataPath dataPath = Tabular.tabular().getDataPath(names.get(0), names.subList(1,names.size()).toArray(new String[0]));
+      DataPath dataPath = Tabular.tabular().getDataPath(names.get(0), names.subList(1, names.size()).toArray(new String[0]));
       dataPath = readFile(dataPath, filePath);
       dataPaths.add(dataPath);
 
@@ -290,7 +293,11 @@ public class DataDefs {
     if (source == null) {
       return;
     }
+
+    // Add the columns
     addColumns(source, target);
+
+    // Add the primary key
     final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
     if (sourcePrimaryKey != null) {
       final List<String> columns = sourcePrimaryKey.getColumns().stream()
@@ -299,6 +306,30 @@ public class DataDefs {
       target.setPrimaryKey(columns);
     }
 
+    // Add the foreign key if the tables exist
+    final List<ForeignKeyDef> foreignKeyDefs = source.getForeignKeys();
+    for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
+      DataPath sourceForeignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
+      DataPath targetForeignDataPath = target.getDataPath().getSibling(sourceForeignDataPath.getName());
+      // Does the table exist in the target
+      if (Tabulars.exists(targetForeignDataPath)) {
+        List<String> targetForeignPrimaryKeyColumns = targetForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+        List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+        // Do they have the same primary key columns
+        if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
+          // Create it then
+          target.addForeignKey(targetForeignDataPath,
+            foreignKeyDef.getChildColumns().stream()
+              .map(ColumnDef::getColumnName)
+              .toArray(String[]::new)
+          );
+        } else {
+          logger.warn("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
+        }
+      } else {
+        logger.warn("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") does not exist");
+      }
+    }
   }
 
   public static int getColumnIdFromName(TableDef dataDef, String columnName) {
