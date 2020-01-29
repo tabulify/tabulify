@@ -357,7 +357,7 @@ public class JdbcDataSystem extends TableSystem {
 
   @Override
   public DataPath getCurrentPath() {
-    throw new UnsupportedOperationException("Not implemented");
+    return JdbcDataPath.of(this,getCurrentCatalog(), getCurrentSchema(),null);
   }
 
 

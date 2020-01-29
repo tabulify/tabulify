@@ -146,9 +146,13 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  public void close() throws Exception {
+  public void close()  {
     for (Database dataStore : dataStores.values()) {
-      dataStore.getDataSystem().close();
+      try {
+        dataStore.getDataSystem().close();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 
