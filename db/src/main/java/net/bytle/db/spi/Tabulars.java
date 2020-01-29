@@ -2,6 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -427,5 +428,9 @@ public class Tabulars {
 
   public static void dropOneToManyRelationship(ForeignKeyDef foreignKeyDef) {
     throw new RuntimeException("Not yet implemented");
+  }
+
+  public static void copyDataDef(DataPath source, DataPath target) {
+    DataDefs.copy(source.getDataDef(), target.getDataDef());
   }
 }

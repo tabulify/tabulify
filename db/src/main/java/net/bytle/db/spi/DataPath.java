@@ -91,7 +91,7 @@ public abstract class DataPath implements Comparable<DataPath> {
    * Example with a data path equivalent to /foo/bar and foo as name, we get a DataPath of /foo/foo
    * Equivalent to the {@link java.nio.file.Path#resolveSibling(String)}
    */
-  public abstract String getSibling(String name);
+  public abstract DataPath getSibling(String name);
 
   /**
    *
@@ -104,7 +104,7 @@ public abstract class DataPath implements Comparable<DataPath> {
    *   * you can use only one argument
    *
    */
-  public abstract String getChild(String name);
+  public abstract DataPath getChild(String name);
 
 
 }

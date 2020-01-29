@@ -216,12 +216,12 @@ public class JdbcDataPath extends DataPath {
   }
 
   @Override
-  public String getSibling(String name) {
+  public DataPath getSibling(String name) {
     throw new RuntimeException("Not yet implemented");
   }
 
   @Override
-  public String getChild(String name) {
+  public DataPath getChild(String name) {
     throw new RuntimeException("Not yet implemented");
   }
 
