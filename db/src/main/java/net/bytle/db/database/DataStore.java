@@ -139,18 +139,19 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
       String scheme = this.getScheme();
       for (TableSystemProvider tableSystemProvider : installedProviders) {
         if (tableSystemProvider.getSchemes().contains(scheme)) {
-          final TableSystem tableSystem = tableSystemProvider.getTableSystem(this);
+          tableSystem = tableSystemProvider.getTableSystem(this);
           if (tableSystem == null) {
             String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
             DbLoggers.LOGGER_DB_ENGINE.severe(message);
             throw new RuntimeException(message);
           }
-          this.tableSystem = tableSystem;
         }
       }
-      final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + this.getName() + ") with the Url (" + this.getConnectionString() + ")";
-      DbLoggers.LOGGER_DB_ENGINE.severe(message);
-      throw new RuntimeException(message);
+      if (tableSystem==null) {
+        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + this.getName() + ") with the Url (" + this.getConnectionString() + ")";
+        DbLoggers.LOGGER_DB_ENGINE.severe(message);
+        throw new RuntimeException(message);
+      }
     }
     return tableSystem;
   }

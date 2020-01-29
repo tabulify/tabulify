@@ -1,11 +1,15 @@
 package net.bytle.db;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
+import net.bytle.db.database.Databases;
 import net.bytle.db.database.FileDataStore;
+import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +28,18 @@ import java.util.Map;
  */
 public class Tabular implements AutoCloseable {
 
-  public static final String DEFAULT_DATASTORE = DatabasesStore.MEMORY_DATABASE;
+
+  /**
+   * The local file database name as also stated
+   * by the {@link Path#getFileSystem()}
+   */
+  public static final String LOCAL_FILE_DATABASE = "file";
+  public static final String MEMORY_DATASTORE = "memory";
+
+  /**
+   * The memory database
+   */
+  public static final String DEFAULT_DATASTORE = MEMORY_DATASTORE;
 
 
   DatabasesStore databaseStore = null;
@@ -72,8 +87,18 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  private Database getDataStore(String dataStoreName) {
-    return dataStores.get(dataStoreName);
+  private DataStore getDataStore(String dataStoreName) {
+
+    switch (dataStoreName) {
+      case MEMORY_DATASTORE:
+        return Databases.of(MEMORY_DATASTORE)
+          .setConnectionString(MemorySystemProvider.SCHEME);
+      case LOCAL_FILE_DATABASE:
+        return Databases.of(LOCAL_FILE_DATABASE).setConnectionString(Paths.get(".").toUri().toString());
+      default:
+        return dataStores.get(dataStoreName);
+    }
+
   }
 
   public DatabasesStore getDataStoreVault() {
@@ -131,5 +156,15 @@ public class Tabular implements AutoCloseable {
     return
       new FileDataStore(outputPath)
         .getCurrentDataPath();
+  }
+
+  /**
+   * Use the default storage location
+   *
+   * @return
+   */
+  public Tabular withDefaultStorage() {
+    setDataStoreVault(DatabasesStore.DEFAULT_STORAGE_FILE);
+    return this;
   }
 }

@@ -4,7 +4,6 @@ package net.bytle.db;
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -32,16 +31,6 @@ public class DatabasesStore {
 
   protected static final Logger logger = LoggerFactory.getLogger(DatabasesStore.class);
 
-  /**
-   * The local file database name as also stated
-   * by the {@link Path#getFileSystem()}
-   */
-  public static final String LOCAL_FILE_DATABASE = "file";
-
-  /**
-   * The memory database
-   */
-  public static final String MEMORY_DATABASE = "memory";
 
 
   /**
@@ -222,45 +211,35 @@ public class DatabasesStore {
     assert name != null : "The name of the database cannot be null";
 
     Database database = null;
-    switch (name) {
-      case MEMORY_DATABASE:
-        database = Databases.of(MEMORY_DATABASE)
-          .setConnectionString(MemorySystemProvider.SCHEME);
-        break;
-      case LOCAL_FILE_DATABASE:
-        database = Databases.of(name);
-        database.setConnectionString(Paths.get(".").toUri().toString());
-        break;
-      default:
-        Wini.Section iniSection = getIniFile().get(name);
-        if (iniSection != null) {
-          database = Databases.of(name);
-          database.setConnectionString(iniSection.get(URL));
-          database.setUser(iniSection.get(USER));
-          if (iniSection.get(PASSWORD) != null) {
-            String localPassphrase;
-            if (this.passphrase != null) {
-              localPassphrase = this.passphrase;
-            } else {
-              final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-              if (s != null) {
-                if (s.equals("true")) {
-                  localPassphrase = INTERNAL_PASSPHRASE;
-                } else {
-                  throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
-                }
-              } else {
-                throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
-              }
-            }
-            database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
-          }
-          database.setDriver(iniSection.get(DRIVER));
-          database.setStatement(iniSection.get(STATEMENT));
+    Wini.Section iniSection = getIniFile().get(name);
+    if (iniSection != null) {
+      database = Databases.of(name);
+      database.setConnectionString(iniSection.get(URL));
+      database.setUser(iniSection.get(USER));
+      if (iniSection.get(PASSWORD) != null) {
+        String localPassphrase;
+        if (this.passphrase != null) {
+          localPassphrase = this.passphrase;
         } else {
-          logger.warn("The database {} was not found. A null database was returned", name);
+          final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+          if (s != null) {
+            if (s.equals("true")) {
+              localPassphrase = INTERNAL_PASSPHRASE;
+            } else {
+              throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+            }
+          } else {
+            throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+          }
         }
+        database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+      }
+      database.setDriver(iniSection.get(DRIVER));
+      database.setStatement(iniSection.get(STATEMENT));
+    } else {
+      logger.warn("The database {} was not found. A null database was returned", name);
     }
+
     return database;
 
   }
