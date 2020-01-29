@@ -24,8 +24,6 @@ import net.bytle.regexp.Globs;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,14 +111,39 @@ public class FsTableSystem extends TableSystem {
   @Override
   public DataPath getDataPath(DataUri dataUri) {
 
-    Path path = Paths.get(dataUri.getPath());
-    return getDataPath(path);
+    return getDataPath(dataUri.getPath());
+
   }
 
   @Override
   public FsDataPath getDataPath(String... names) {
 
-    return getCurrentPath().resolve(names);
+    // Rebuild the path
+    Path currentPath = Paths.get(this.fileDataStore.getUri());
+    Path path = currentPath;
+    for (String name: names){
+      path = path.resolve(name);
+    }
+
+    // Give the good implementation
+    switch (this.getDataStore().getScheme()) {
+      case "file":
+        String extension = Fs.getExtension(path.toString()).toLowerCase();
+        switch (extension) {
+          case "csv":
+            return new CsvDataPath(this, path);
+          case "jsonl":
+          case "json":
+            return new JsonDataPath(this, path);
+          default:
+            return new FsDataPath(this, path);
+        }
+      case "https":
+      case "http":
+        return new HtmlDataPath(this, path);
+      default:
+        return new FsDataPath(this, path);
+    }
 
   }
 
@@ -332,39 +355,8 @@ public class FsTableSystem extends TableSystem {
     throw new RuntimeException("Not yet implemented");
   }
 
-  @Override
-  public DataPath getChildOf(DataPath dataPath, String part) {
-    assert isContainer(dataPath) : "You cannot get a child from the document (" + dataPath + ")";
-    FsDataPath fsDataPath = (FsDataPath) dataPath;
-    Path childPath = fsDataPath.getNioPath().resolve(part);
-    return getDataPath(childPath);
-  }
 
-  @Override
-  protected DataPath getRootPath() {
-    try {
-      URI connectionUri = this.fileDataStore.getUri();
-      // Port may be not given
-      Integer port = connectionUri.getPort();
-      // A rootUri has no path
-      URI rootUri = new URI(
-        connectionUri.getScheme(),
-        connectionUri.getUserInfo(),
-        connectionUri.getHost(),
-        connectionUri.getPort(), // You can pass -1
-        "",
-        connectionUri.getQuery(),
-        connectionUri.getFragment());
-      return new FsDataPath(this, Paths.get(rootUri));
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
-  @Override
-  public DataPath getChildDataPath(URI uri) {
-    return getDataPath(Paths.get(uri));
-  }
 
 
   /**
@@ -416,26 +408,13 @@ public class FsTableSystem extends TableSystem {
   }
 
 
-  public FsDataPath getDataPath(Path path) {
-
-    switch (path.toUri().getScheme()) {
-      case "file":
-        String extension = Fs.getExtension(path.toString()).toLowerCase();
-        switch (extension) {
-          case "csv":
-            return new CsvDataPath(this, path);
-          case "jsonl":
-          case "json":
-            return new JsonDataPath(this, path);
-          default:
-            return new FsDataPath(this, path);
-        }
-      case "https":
-      case "http":
-        return new HtmlDataPath(this, path);
-      default:
-        return new FsDataPath(this, path);
-    }
-
+  /**
+   * A convenient method for the test
+   * @param path
+   * @return
+   */
+  public DataPath getDataPath(Path path) {
+    return getDataPath(path.toString());
   }
+
 }

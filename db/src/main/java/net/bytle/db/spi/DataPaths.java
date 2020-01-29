@@ -16,7 +16,7 @@ public class DataPaths {
    */
   public static DataPath sibling(DataPath dataPath, String name) {
     List<String> pathSegments = new ArrayList<>();
-    pathSegments.addAll(dataPath.getPathParts().subList(0, dataPath.getPathParts().size() - 2));
+    pathSegments.addAll(dataPath.getNames().subList(0, dataPath.getNames().size() - 2));
     pathSegments.add(name);
     return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
   }

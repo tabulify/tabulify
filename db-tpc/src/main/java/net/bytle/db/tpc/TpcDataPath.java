@@ -37,7 +37,7 @@ public class TpcDataPath extends DataPath {
     }
 
     @Override
-    public List<String> getPathParts() {
+    public List<String> getNames() {
         return Collections.singletonList(name);
     }
 

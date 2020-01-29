@@ -65,11 +65,11 @@ public class MemoryDataPath extends DataPath {
 
   @Override
   public String getName() {
-    return getPathParts().get(getPathParts().size()-1);
+    return getNames().get(getNames().size()-1);
   }
 
   @Override
-  public List<String> getPathParts() {
+  public List<String> getNames() {
 
     return Arrays.asList(dataUri.getPath().split(PATH_SEPARATOR));
   }

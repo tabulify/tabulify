@@ -1,6 +1,5 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.DataUris;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
@@ -17,7 +16,6 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.io.Closeable;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -159,23 +157,6 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("Not implemented");
-  }
-
-  @Override
-  public DataPath getChildOf(DataPath dataPath, String part) {
-    DataUri dataUri = dataPath.getDataUri();
-    DataUri childDataUri = DataUris.injectPath(dataUri, dataUri.getPath()+MemoryDataPath.PATH_SEPARATOR+part);
-    return dataPath.getDataSystem().getDataPath(childDataUri);
-  }
-
-  @Override
-  protected DataPath getRootPath() {
-    return getDataPath("");
-  }
-
-  @Override
-  public DataPath getChildDataPath(URI uri) {
-    throw new UnsupportedOperationException("Not implemented");
   }
 
 

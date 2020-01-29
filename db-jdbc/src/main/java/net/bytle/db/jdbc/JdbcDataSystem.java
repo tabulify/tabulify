@@ -400,7 +400,7 @@ public class JdbcDataSystem extends TableSystem {
 
   @Override
   public DataPath getChildOf(DataPath dataPath, String part) {
-    List<String> parts = dataPath.getPathParts();
+    List<String> parts = dataPath.getNames();
     parts.add(part);
     return getDataPath(parts.toArray(new String[]{}));
   }

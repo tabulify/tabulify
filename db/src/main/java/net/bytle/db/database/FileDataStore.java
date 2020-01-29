@@ -88,7 +88,7 @@ public class FileDataStore extends DataStore {
 
   public DataPath getDataPath(Path path) {
 
-    return getTableSystem().getDataPath(path.toUri().getPath());
+    return getTableSystem().getDataPath(path.toString());
 
   }
 

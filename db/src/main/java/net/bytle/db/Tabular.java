@@ -86,7 +86,7 @@ public class Tabular implements AutoCloseable {
 
     // Second argument to get the childs
     for (int i = 0; i < parts.length; i++) {
-      dataUriPath = dataUriPath.getDataSystem().getChildOf(dataUriPath, parts[i]);
+      dataUriPath = dataUriPath.getChild(parts[i]);
     }
     return dataUriPath;
 

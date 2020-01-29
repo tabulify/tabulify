@@ -8,7 +8,6 @@ import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
@@ -127,11 +126,7 @@ public abstract class TableSystem implements AutoCloseable {
 
   public abstract ProcessingEngine getProcessingEngine();
 
-  public abstract DataPath getChildOf(DataPath dataPath, String part);
 
 
-  protected abstract DataPath getRootPath();
-
-  public abstract DataPath getChildDataPath(URI uri);
 
 }
