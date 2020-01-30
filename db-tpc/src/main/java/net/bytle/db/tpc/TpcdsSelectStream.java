@@ -64,13 +64,18 @@ public class TpcdsSelectStream implements SelectStream {
             throw new RuntimeException("This table is a child table and should be loaded with its parent. Not yet supported");
         }
         if (table.hasChild()){
-            throw new RuntimeException("This table ("+dataPath+") is a parent table and should be loaded with its children ("+ Tabulars.getReferences(dataPath)+"). Not yet supported");
+            LOGGER.warning("The table ("+dataPath+") is a parent table and should be loaded with its children ("+ Tabulars.getReferences(dataPath)+")");
         }
         results = Results.constructResults(table, session).iterator();
     }
 
     public static TpcdsSelectStream of(DataPath dataPath) {
         return new TpcdsSelectStream(dataPath);
+    }
+
+    @Override
+    public List<DataPath> getReference(){
+      return Tabulars.getReferences(dataPath);
     }
 
     @Override

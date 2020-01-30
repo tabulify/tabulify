@@ -36,12 +36,52 @@ public class Transfers {
     Types.BIT
   );
 
-  public static TransferListener transfer(Transfer transfer) {
+  public static TransferListener atomicTransfer(List<Transfer> transfers) {
 
-    DataPath sourceDataPath = transfer.getSourceDataPath();
-    DataPath targetDataPath = transfer.getTargetDataPath();
-    TransferProperties transferProperties = transfer.getTransferProperties();
+    for (Transfer transfer : transfers) {
+      Transfers.checkSource(transfer.getSourceDataPath());
+      Transfers.createOrCheckTargetFromSource(transfer.getSourceDataPath(), transfer.getTargetDataPath());
+    }
+    TransferListener transferListener = TransferListener.of();
+    transferListener.startTimer();
 
+    List<List<Object>> streamTransfers = new ArrayList<>();
+    for (Transfer transfer : transfers) {
+      SelectStream sourceSelectStream = Tabulars.getSelectStream(transfer.getSourceDataPath());
+      InsertStream targetInsertStream = Tabulars.getInsertStream(transfer.getTargetDataPath());
+      List<Object> mapStream = new ArrayList<>();
+      mapStream.add(sourceSelectStream);
+      mapStream.add(targetInsertStream);
+      streamTransfers.add(mapStream);
+      transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
+      transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
+    }
+
+    SelectStream firstStream = (SelectStream) streamTransfers.get(0).get(0);
+    while (firstStream.next()) {
+      for (int i =0 ; i< streamTransfers.size();i++) {
+
+        SelectStream sourceSelectStream;
+        if (i==0){
+          sourceSelectStream = firstStream;
+        } else {
+          sourceSelectStream = (SelectStream) streamTransfers.get(i);
+          sourceSelectStream.next();
+        }
+        InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i);
+
+        List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
+          .mapToObj(sourceSelectStream::getObject)
+          .collect(Collectors.toList());
+        targetInsertStream.insert(objects);
+      }
+    }
+
+    transferListener.stopTimer();
+    return transferListener;
+  }
+
+  public static void checkSource(DataPath sourceDataPath) {
     // Check source
     if (!Tabulars.exists(sourceDataPath)) {
       // Is it a query definition
@@ -49,6 +89,16 @@ public class Transfers {
         throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
       }
     }
+  }
+
+  public static TransferListener transfer(Transfer transfer) {
+
+    DataPath sourceDataPath = transfer.getSourceDataPath();
+    DataPath targetDataPath = transfer.getTargetDataPath();
+    TransferProperties transferProperties = transfer.getTransferProperties();
+
+    // Check source
+    Transfers.checkSource(sourceDataPath);
 
     // Check Target
     Transfers.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
@@ -233,6 +283,7 @@ public class Transfers {
       .setTargetDataPath(target)
       .setTransferProperties(transferProperties));
   }
+
 }
 
 

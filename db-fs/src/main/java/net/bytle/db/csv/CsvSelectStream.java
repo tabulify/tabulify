@@ -1,6 +1,7 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Clob;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CsvSelectStream extends SelectStreamAbs  {
@@ -45,7 +47,12 @@ public class CsvSelectStream extends SelectStreamAbs  {
 
     }
 
-    @Override
+  @Override
+  public List<DataPath> getReference() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
     public boolean next() {
         boolean recordWasFetched = safeIterate();
         if (recordWasFetched){
@@ -61,7 +68,6 @@ public class CsvSelectStream extends SelectStreamAbs  {
      * @return true if there is another record, false otherwise
      */
     private boolean safeIterate() {
-
 
         currentRecord = Csvs.safeIterate(recordIterator);
         if (currentRecord == null) {
@@ -120,7 +126,7 @@ public class CsvSelectStream extends SelectStreamAbs  {
     }
 
 
-    @Override
+  @Override
     public int getRow() {
         return rowNum;
     }

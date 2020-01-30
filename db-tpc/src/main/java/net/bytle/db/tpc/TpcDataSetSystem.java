@@ -10,9 +10,7 @@ import net.bytle.db.uri.DataUri;
 import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TpcDataSetSystem extends DataSetSystem {
@@ -22,12 +20,6 @@ public class TpcDataSetSystem extends DataSetSystem {
   private TpcdsModel tpcModel;
   private final Database database;
 
-  /**
-   * The streams have a parent child relationship
-   * This map holds the value to manage that relationship
-   * See {@link #getSelectStream(DataPath)}
-   */
-  private Map<DataPath, TpcdsSelectStream> selectStreams = new HashMap<>();
 
   private TpcDataSetSystem() {
     this.database = Database.of(PRODUCT_NAME);
@@ -80,12 +72,8 @@ public class TpcDataSetSystem extends DataSetSystem {
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
 
-    TpcdsSelectStream selectStream = getFromPool(dataPath);
-    if (selectStream == null) {
-      selectStream = TpcdsSelectStream.of(dataPath);
-      addToPool(selectStream);
-    }
-    return selectStream;
+    return TpcdsSelectStream.of(dataPath);
+
   }
 
   @Override
@@ -93,13 +81,6 @@ public class TpcDataSetSystem extends DataSetSystem {
     return database;
   }
 
-  private void addToPool(TpcdsSelectStream selectStream) {
-    selectStreams.put(selectStream.getSelectDataDef().getDataPath(), selectStream);
-  }
-
-  private TpcdsSelectStream getFromPool(DataPath dataPath) {
-    return selectStreams.get(dataPath);
-  }
 
   @Override
   public Database getFileDataStore() {
@@ -177,7 +158,6 @@ public class TpcDataSetSystem extends DataSetSystem {
       )
       .collect(Collectors.toList());
   }
-
 
 
   @Override

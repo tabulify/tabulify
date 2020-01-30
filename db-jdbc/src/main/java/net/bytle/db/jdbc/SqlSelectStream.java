@@ -1,6 +1,7 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
@@ -8,6 +9,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
@@ -42,7 +44,12 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
 
-    @Override
+  @Override
+  public List<DataPath> getReference() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
     public boolean next() {
         try {
             return getResultSet().next();
@@ -83,7 +90,8 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         }
     }
 
-    private void init() {
+
+  private void init() {
 
         switch (jdbcDataPath.getType()) {
             case QUERY_TYPE:
