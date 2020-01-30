@@ -8,7 +8,7 @@ import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.DagDataPath;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.TableDef;
 
@@ -71,7 +71,7 @@ public class DbSampleDrop {
             System.exit(1);
         }
 
-        Dag dag = Dag.get(DbSamples.getTables(sampleName));
+        DagDataPath dag = DagDataPath.get(DbSamples.getTables(sampleName));
         List<TableDef> tables = dag.getDropOrderedTables();
 
         Boolean noSrictMode = cliParser.getBoolean(NO_STRICT);

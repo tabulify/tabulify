@@ -48,7 +48,7 @@ public class CsvSelectStream extends SelectStreamAbs  {
     }
 
   @Override
-  public List<DataPath> getReference() {
+  public List<DataPath> getParents() {
     throw new RuntimeException("Not yet implemented");
   }
 

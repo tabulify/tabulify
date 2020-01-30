@@ -22,7 +22,7 @@ public interface SelectStream extends AutoCloseable {
    *
    * @return the data path that should be loaded synchronously
    */
-  List<DataPath> getReference();
+  List<DataPath> getParents();
 
   boolean next();
 

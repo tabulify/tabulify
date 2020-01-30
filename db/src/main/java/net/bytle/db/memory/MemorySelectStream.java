@@ -46,7 +46,7 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
 
 
   @Override
-  public List<DataPath> getReference() {
+  public List<DataPath> getParents() {
     throw new RuntimeException("Not implemented");
   }
 

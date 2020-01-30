@@ -7,7 +7,7 @@ import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.transfer.Transfers;
+import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.db.model.TableDef;
@@ -132,7 +132,7 @@ public class DbTableLoad {
 
         RelationDef relationDef = Relations.get(inputFilePath);
 
-        List<TransferListener> resultSetListeners = new Transfers(targetTable, relationDef)
+        List<TransferListener> resultSetListeners = new TransferManager(targetTable, relationDef)
                 .targetWorkerCount(targetWorkerCount)
                 .bufferSize(bufferSize)
                 .batchSize(batchSize)

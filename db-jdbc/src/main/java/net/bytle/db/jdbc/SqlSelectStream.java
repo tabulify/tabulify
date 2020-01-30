@@ -45,7 +45,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   @Override
-  public List<DataPath> getReference() {
+  public List<DataPath> getParents() {
     throw new RuntimeException("Not yet implemented");
   }
 

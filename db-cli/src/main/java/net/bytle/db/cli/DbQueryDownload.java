@@ -12,7 +12,7 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.transfer.Transfer;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.transfer.Transfers;
+import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 import net.bytle.timer.Timer;
@@ -136,7 +136,7 @@ public class DbQueryDownload {
 
         Timer totalTimer = Timer.getTimer("total").start();
 
-        List<TransferListener> transferListeners = Transfers.transfers(transfers);
+        List<TransferListener> transferListeners = TransferManager.transfers(transfers);
 
         totalTimer.stop();
 

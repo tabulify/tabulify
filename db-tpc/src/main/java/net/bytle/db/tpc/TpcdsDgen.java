@@ -6,7 +6,7 @@ import com.teradata.tpcds.Table;
 import com.teradata.tpcds.TableGenerator;
 import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.log.Log;
-import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.DagDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 
@@ -91,7 +91,7 @@ public class TpcdsDgen {
 
 
         // Building the table to load
-        dataPaths = Dag.get(dataPaths).getCreateOrderedTables();
+        dataPaths = DagDataPath.get(dataPaths).getCreateOrderedTables();
         List<InsertStreamListener> insertStreamListeners = new ArrayList<>();
         for (DataPath dataPath : dataPaths) {
 

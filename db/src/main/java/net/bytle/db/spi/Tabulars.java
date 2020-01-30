@@ -2,6 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.DagDataPath;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
@@ -9,8 +10,8 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferLoadOperation;
+import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.transfer.Transfers;
 import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class Tabulars {
    */
   public static void createIfNotExist(List<DataPath> dataPaths) {
 
-    Dag dag = Dag.get(dataPaths);
+    Dag<DataPath> dag = DagDataPath.get(dataPaths);
     dataPaths = dag.getCreateOrderedTables();
     for (DataPath dataPath : dataPaths) {
       createIfNotExist(dataPath);
@@ -108,7 +109,7 @@ public class Tabulars {
     allDataPaths.addAll(Arrays.asList(dataPaths));
 
     // A dag will build the data def and we may not want want it when dropping only one table
-    Dag dag = Dag.get(allDataPaths);
+    Dag<DataPath> dag = DagDataPath.get(allDataPaths);
     for (DataPath dataPath : dag.getDropOrderedTables()) {
       dataPath.getDataSystem().drop(dataPath);
     }
@@ -172,7 +173,7 @@ public class Tabulars {
         drop(dataPaths.get(0));
       }
     } else {
-      for (DataPath dataPath : Dag.get(dataPaths).getDropOrderedTables()) {
+      for (DataPath dataPath : DagDataPath.get(dataPaths).getDropOrderedTables()) {
         if (exists(dataPath)) {
           drop(dataPath);
         }
@@ -206,7 +207,7 @@ public class Tabulars {
   public static List<DataPath> move(List<DataPath> sources, DataPath target) {
 
     List<DataPath> targetDataPaths = new ArrayList<>();
-    for (DataPath sourceDataPath : Dag.get(sources).getCreateOrderedTables()) {
+    for (DataPath sourceDataPath : DagDataPath.get(sources).getCreateOrderedTables()) {
       DataPath targetDataPath = target.getDataSystem().getDataPath(sourceDataPath.getName());
       Tabulars.move(sourceDataPath, targetDataPath);
       targetDataPaths.add(targetDataPath);
@@ -239,7 +240,7 @@ public class Tabulars {
 
   public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-    return Transfers.transfer(source, target, transferProperties);
+    return TransferManager.transfer(source, target, transferProperties);
   }
 
 
@@ -263,7 +264,7 @@ public class Tabulars {
   }
 
   public static void create(List<DataPath> dataPaths) {
-    Dag dag = Dag.get(dataPaths);
+    Dag<DataPath> dag = DagDataPath.get(dataPaths);
     dataPaths = dag.getCreateOrderedTables();
     for (DataPath dataPath : dataPaths) {
       create(dataPath);
@@ -376,7 +377,7 @@ public class Tabulars {
       sourceDataSystem.move(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      transferListener = Transfers.transfer(source, target, transferProperties);
+      transferListener = TransferManager.transfer(source, target, transferProperties);
       Tabulars.drop(source);
     }
 
@@ -404,7 +405,7 @@ public class Tabulars {
       transferListener = sourceDataSystem.copy(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      transferListener = Transfers.transfer(source, target, transferProperties);
+      transferListener = TransferManager.transfer(source, target, transferProperties);
     }
 
     return transferListener;
@@ -433,8 +434,8 @@ public class Tabulars {
       sourceDataSystem.insert(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      Transfers.checkOrCreateTargetStructureFromSource(source, target);
-      transferListener = Transfers.transfer(source, target, transferProperties);
+      TransferManager.checkOrCreateTargetStructureFromSource(source, target);
+      transferListener = TransferManager.transfer(source, target, transferProperties);
     }
     return transferListener;
   }

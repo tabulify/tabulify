@@ -24,9 +24,9 @@ import static net.bytle.db.memory.MemoryDataPathType.TYPE_BLOCKED_QUEUE;
 /**
  * A class to transfer a tabular data document content from a data source to another
  */
-public class Transfers {
+public class TransferManager {
 
-  public static final Log LOGGER = Log.getLog(Transfers.class);
+  public static final Log LOGGER = Log.getLog(TransferManager.class);
 
   private final List<Integer> typesNotSupported = Arrays.asList(
     Types.ARRAY,
@@ -35,12 +35,26 @@ public class Transfers {
     Types.CLOB,
     Types.BIT
   );
+  private List<Transfer> transfers = new ArrayList<>();
+  List<TransferListener> transferListeners = new ArrayList<>();
 
-  public static TransferListener atomicTransfer(List<Transfer> transfers) {
+  /**
+   * An utility function to start only one transfer
+   * @param source
+   * @param target
+   * @param transferProperties
+   * @return
+   */
+  public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+    return of().addTransfer(source,target,transferProperties).start().get(0);
+  }
+
+
+  public TransferListener childParentTransfer(List<Transfer> transfers) {
 
     for (Transfer transfer : transfers) {
-      Transfers.checkSource(transfer.getSourceDataPath());
-      Transfers.createOrCheckTargetFromSource(transfer.getSourceDataPath(), transfer.getTargetDataPath());
+      TransferManager.checkSource(transfer.getSourceDataPath());
+      TransferManager.createOrCheckTargetFromSource(transfer.getSourceDataPath(), transfer.getTargetDataPath());
     }
     TransferListener transferListener = TransferListener.of();
     transferListener.startTimer();
@@ -59,10 +73,10 @@ public class Transfers {
 
     SelectStream firstStream = (SelectStream) streamTransfers.get(0).get(0);
     while (firstStream.next()) {
-      for (int i =0 ; i< streamTransfers.size();i++) {
+      for (int i = 0; i < streamTransfers.size(); i++) {
 
         SelectStream sourceSelectStream;
-        if (i==0){
+        if (i == 0) {
           sourceSelectStream = firstStream;
         } else {
           sourceSelectStream = (SelectStream) streamTransfers.get(i);
@@ -91,17 +105,17 @@ public class Transfers {
     }
   }
 
-  public static TransferListener transfer(Transfer transfer) {
+  public TransferListener transfer(Transfer transfer) {
 
     DataPath sourceDataPath = transfer.getSourceDataPath();
     DataPath targetDataPath = transfer.getTargetDataPath();
     TransferProperties transferProperties = transfer.getTransferProperties();
 
     // Check source
-    Transfers.checkSource(sourceDataPath);
+    TransferManager.checkSource(sourceDataPath);
 
     // Check Target
-    Transfers.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
+    TransferManager.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
 
     /**
      * The listener is passed to the consumers and producers threads
@@ -266,22 +280,28 @@ public class Transfers {
     }
   }
 
-  public static List<TransferListener> transfers(List<Transfer> transfers) {
-    List<TransferListener> transferListeners = new ArrayList<>();
 
-    for (Transfer transfer : transfers) {
-
-      transferListeners.add(transfer(transfer));
-
-    }
+  public List<TransferListener> start() {
+    List<SelectStream> selectStreams = transfers.stream().map(
+      t -> Tabulars.getSelectStream(t.getSourceDataPath())
+    ).collect(Collectors.toList());
+//    List<SelectStream> dag = SelectStreamDag.get(selectStreams);
     return transferListeners;
   }
 
-  public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    return transfer(Transfer.of()
+  public TransferManager() {
+  }
+
+  public static TransferManager of() {
+    return new TransferManager();
+  }
+
+  public TransferManager addTransfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+    transfers.add(Transfer.of()
       .setSourceDataPath(source)
       .setTargetDataPath(target)
       .setTransferProperties(transferProperties));
+    return this;
   }
 
 }

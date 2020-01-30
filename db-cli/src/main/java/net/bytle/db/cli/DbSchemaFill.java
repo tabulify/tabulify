@@ -7,7 +7,7 @@ import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.Databases;
-import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.DagDataPath;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.DataDefs;
@@ -99,7 +99,7 @@ public class DbSchemaFill {
             SchemaDef currentSchema = database.getCurrentSchema();
             LOGGER.info("Loading generated data to the schema (" + currentSchema.getName() + ") without file definition.");
 
-            List<TableDef> tableDefs = Dag.get(currentSchema).getCreateOrderedTables();
+            List<TableDef> tableDefs = DagDataPath.get(currentSchema).getCreateOrderedTables();
             if (tableDefs.size() > 0) {
 
                 // List

@@ -1,9 +1,12 @@
 package net.bytle.db.spi;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.engine.Relational;
+import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.uri.DataUri;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -11,7 +14,7 @@ import java.util.Objects;
  * An object that may be used to locate a data container (such as a file or a table) in a data system (file system, relational database).
  * It will typically represent a system dependent data path.
  */
-public abstract class DataPath implements Comparable<DataPath> {
+public abstract class DataPath implements Comparable<DataPath>, Relational<DataPath> {
 
   // The query is here because even if it defines a little bit the structure
   // (data def), for now, we get it after its execution
@@ -84,35 +87,51 @@ public abstract class DataPath implements Comparable<DataPath> {
   public abstract DataUri getDataUri();
 
   /**
-   *
    * @param name - the sibling name
    * @return a sibling (ie on the path `/a/c`, the sibling `b` would be `/a/b`
-   *
+   * <p>
    * Example with a data path equivalent to /foo/bar and foo as name, we get a DataPath of /foo/foo
    * Equivalent to the {@link java.nio.file.Path#resolveSibling(String)}
    */
   public abstract DataPath getSibling(String name);
 
   /**
-   *
    * @param name - a child name
    * @return a child (ie on the path `/a/c`, the child `b` would be `/a/c/b`
-   *
+   * <p>
    * This is the equivalent to the {@link #resolve(String...)}
    * but where:
-   *   * you can't use .. and .
-   *   * you can use only one argument
-   *
+   * * you can't use .. and .
+   * * you can use only one argument
    */
   public abstract DataPath getChild(String name);
 
 
   /**
    * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
-   *    * but where:
+   * * but where:
+   *
    * @param names
    * @return
    */
   public abstract DataPath resolve(String... names);
 
+  /**
+   *
+   * @return the parent (ie the foreign)
+   *
+   */
+  public List<DataPath> getParents() {
+    List<ForeignKeyDef> foreignKeys = this.getDataDef() != null ? this.getDataDef().getForeignKeys() : new ArrayList<>();
+    List<DataPath> parentDataPaths = new ArrayList<>();
+    if (foreignKeys.size() > 0) {
+
+      for (ForeignKeyDef foreignKeyDef : foreignKeys) {
+
+        parentDataPaths.add(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath());
+      }
+    }
+    return parentDataPaths;
+
+  }
 }
