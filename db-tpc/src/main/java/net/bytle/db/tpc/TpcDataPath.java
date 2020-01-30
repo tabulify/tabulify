@@ -10,45 +10,64 @@ import java.util.List;
 public class TpcDataPath extends DataPath {
 
 
-    public static final String CURRENT_WORKING_DIRECTORY = ".";
+  public static final String CURRENT_WORKING_DIRECTORY = ".";
 
-    private final TpcDataSetSystem dataStore;
-    private final String name;
+  private final TpcDataSetSystem dataStore;
+  private final String name;
 
-    DataUri dataUri;
+  DataUri dataUri;
 
-    public TpcDataPath(TpcDataSetSystem dataStore, String name) {
-        this.dataStore = dataStore;
-        this.name = name;
-    }
+  public TpcDataPath(TpcDataSetSystem dataStore, String name) {
+    this.dataStore = dataStore;
+    this.name = name;
+  }
 
-    public static TpcDataPath of(TpcDataSetSystem dataStore, String name) {
-        return new TpcDataPath(dataStore,name);
-    }
+  public static TpcDataPath of(TpcDataSetSystem dataStore, String name) {
+    return new TpcDataPath(dataStore, name);
+  }
 
-    @Override
-    public TableSystem getDataSystem() {
-        return this.dataStore;
-    }
+  @Override
+  public TableSystem getDataSystem() {
+    return this.dataStore;
+  }
 
-    @Override
-    public String getName() {
-        return this.name;
-    }
+  @Override
+  public String getName() {
+    return this.name;
+  }
 
-    @Override
-    public List<String> getNames() {
-        return Collections.singletonList(name);
-    }
+  @Override
+  public List<String> getNames() {
+    return Collections.singletonList(name);
+  }
 
-    @Override
-    public String getPath() {
-        return getName();
-    }
+  @Override
+  public String getPath() {
+    return getName();
+  }
 
   @Override
   public DataUri getDataUri() {
     return dataUri;
+  }
+
+  @Override
+  public DataPath getSibling(String name) {
+    return of(this.dataStore, name);
+  }
+
+  @Override
+  public DataPath getChild(String name) {
+    if (this.name == null) {
+      return of(this.dataStore, name);
+    } else {
+      throw new RuntimeException("You can get a child from the table (" + name + ")");
+    }
+  }
+
+  @Override
+  public DataPath resolve(String... names) {
+    throw new RuntimeException("Not implemented, TPC is a read only source with a fix structure. Resolving a path is not needed.");
   }
 
 

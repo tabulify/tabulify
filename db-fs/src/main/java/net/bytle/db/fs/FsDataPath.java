@@ -1,12 +1,7 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.csv.CsvDataDef;
-import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
-
 
 import java.nio.file.Path;
 import java.util.List;
@@ -40,19 +35,10 @@ public class FsDataPath extends DataPath {
 
 
   @Override
-  public TableSystem getDataSystem() {
+  public FsTableSystem getDataSystem() {
     return tableSystem;
   }
 
-  @Override
-  public TableDef getDataDef() {
-
-    if (this.getClass().equals(CsvDataPath.class)) {
-      this.dataDef = new CsvDataDef((CsvDataPath) this);
-    }
-    return this.dataDef;
-
-  }
 
   @Override
   public DataUri getDataUri() {
@@ -61,7 +47,8 @@ public class FsDataPath extends DataPath {
 
   @Override
   public FsDataPath getSibling(String name) {
-    return FsDataPath.of(this.tableSystem, path.resolveSibling(name));
+    Path siblingPath = path.resolveSibling(name);
+    return getDataSystem().getFileManager(siblingPath).getDataPath(siblingPath);
   }
 
   @Override
@@ -76,7 +63,7 @@ public class FsDataPath extends DataPath {
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return FsDataPath.of(this.tableSystem, resolvedPath);
+    return getDataSystem().getFileManager(resolvedPath).getDataPath(resolvedPath);
   }
 
   @Override

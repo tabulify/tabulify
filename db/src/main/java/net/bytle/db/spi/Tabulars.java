@@ -383,9 +383,20 @@ public class Tabulars {
     return transferListener;
   }
 
+  /**
+   *
+   * @param source
+   * @param target - the target document or a container (if this is a container, the target will be a document with the name of the source)
+   * @param transferProperties
+   * @return
+   */
   public static TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-    TransferListener transferListener = null;
+    if (Tabulars.isContainer(target)){
+      target = target.getChild(source.getName());
+    }
+
+    TransferListener transferListener;
 
     final TableSystem sourceDataSystem = source.getDataSystem();
     if (sourceDataSystem.getClass().equals(target.getDataSystem().getClass())) {
@@ -393,7 +404,6 @@ public class Tabulars {
       transferListener = sourceDataSystem.copy(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      Transfers.createOrCheckTargetFromSource(source, target);
       transferListener = Transfers.transfer(source, target, transferProperties);
     }
 
@@ -401,6 +411,13 @@ public class Tabulars {
 
   }
 
+  /**
+   *
+   * @param source - a source document data path
+   * @param target - a target document or container (If this is a container, the target document will get the name of the source document)
+   * @return
+   *
+   */
   public static TransferListener copy(DataPath source, DataPath target) {
     return copy(source, target, TransferProperties.of());
   }

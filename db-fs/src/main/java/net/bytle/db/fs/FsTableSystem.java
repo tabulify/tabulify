@@ -6,8 +6,9 @@ import net.bytle.db.csv.CsvManager;
 import net.bytle.db.csv.CsvSelectStream;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.FileDataStore;
-import net.bytle.db.html.HtmlDataPath;
+import net.bytle.db.html.HtmlManager;
 import net.bytle.db.json.JsonDataPath;
+import net.bytle.db.json.JsonManager;
 import net.bytle.db.json.JsonSelectStream;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
@@ -55,7 +56,7 @@ public class FsTableSystem extends TableSystem {
    * @return the default table system provider (ie the local file system)
    */
   public static FsTableSystem getDefault() {
-    FileDataStore defaultDatabase =  FileDataStore.of(Paths.get("."));
+    FileDataStore defaultDatabase = FileDataStore.of(Paths.get("."));
     return FsTableSystemProvider.getDefault().getTableSystem(defaultDatabase);
   }
 
@@ -121,29 +122,11 @@ public class FsTableSystem extends TableSystem {
     // Rebuild the path
     Path currentPath = Paths.get(this.fileDataStore.getUri());
     Path path = currentPath;
-    for (String name: names){
+    for (String name : names) {
       path = path.resolve(name);
     }
 
-    // Give the good implementation
-    switch (this.getDataStore().getScheme()) {
-      case "file":
-        String extension = Fs.getExtension(path.toString()).toLowerCase();
-        switch (extension) {
-          case "csv":
-            return new CsvDataPath(this, path);
-          case "jsonl":
-          case "json":
-            return new JsonDataPath(this, path);
-          default:
-            return new FsDataPath(this, path);
-        }
-      case "https":
-      case "http":
-        return new HtmlDataPath(this, path);
-      default:
-        return new FsDataPath(this, path);
-    }
+    return getDataPath(path);
 
   }
 
@@ -160,10 +143,10 @@ public class FsTableSystem extends TableSystem {
     // TODO: We need to get it from the path ?
     if (CsvDataPath.class.equals(dataPath.getClass())) {
       return CsvSelectStream.of((CsvDataPath) dataPath);
-    } else if (JsonDataPath.class.equals(dataPath.getClass())){
+    } else if (JsonDataPath.class.equals(dataPath.getClass())) {
       return JsonSelectStream.of((JsonDataPath) dataPath);
     } else {
-      throw new RuntimeException("We cannot give a select stream because this data path type ("+dataPath.getClass()+") has no known select stream.");
+      throw new RuntimeException("We cannot give a select stream because this data path type (" + dataPath.getClass() + ") has no known select stream.");
     }
 
   }
@@ -183,10 +166,44 @@ public class FsTableSystem extends TableSystem {
   public void create(DataPath dataPath) {
     Path nioPath = ((FsDataPath) dataPath).getNioPath();
     if (!Files.exists(nioPath)) {
-      CsvManager.create((CsvDataPath) dataPath);
+      getFileManager(nioPath).create(dataPath);
     } else {
       throw new RuntimeException("The data path (" + nioPath + ") already exists");
     }
+  }
+
+  /**
+   * @param path
+   * @return the manager of a file (ie if this is a CSV, it will return the CSV  manager)
+   */
+  public FsFileManager getFileManager(Path path) {
+
+    // Give the good implementation
+    String scheme = path.toUri().getScheme();
+    switch (scheme) {
+      case "https":
+      case "http":
+        return HtmlManager.of(this);
+      default:
+        String extension = Fs.getExtension(path.getFileName().toString());
+        if (extension==null){
+          return CsvManager.of(this);
+        }
+        String switchKey = extension.toLowerCase();
+        switch (switchKey) {
+          case "csv":
+            return CsvManager.of(this);
+          case "jsonl":
+          case "json":
+            return JsonManager.of(this);
+          case "htm":
+          case "html":
+            return HtmlManager.of(this);
+          default:
+            throw new RuntimeException("No file manager could be found for the extension (" + switchKey + ")");
+        }
+    }
+
   }
 
   @Override
@@ -356,9 +373,6 @@ public class FsTableSystem extends TableSystem {
   }
 
 
-
-
-
   /**
    * Closes this resource, relinquishing any underlying resources.
    * This method is invoked automatically on objects managed by the
@@ -410,11 +424,12 @@ public class FsTableSystem extends TableSystem {
 
   /**
    * A convenient method for the test
+   *
    * @param path
    * @return
    */
-  public DataPath getDataPath(Path path) {
-    return getDataPath(path.toString());
+  public FsDataPath getDataPath(Path path) {
+    return getFileManager(path).getDataPath(path);
   }
 
 }

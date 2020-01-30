@@ -1,5 +1,6 @@
 package net.bytle.db.tpc;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSetSystem;
@@ -8,7 +9,6 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.regexp.Globs;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -64,10 +64,6 @@ public class TpcDataSetSystem extends DataSetSystem {
     return dataPath;
   }
 
-  @Override
-  public DataPath getChildDataPath(URI uri) {
-    return null;
-  }
 
   @Override
   public Boolean exists(DataPath dataPath) {
@@ -90,6 +86,11 @@ public class TpcDataSetSystem extends DataSetSystem {
       addToPool(selectStream);
     }
     return selectStream;
+  }
+
+  @Override
+  public DataStore getDataStore() {
+    return database;
   }
 
   private void addToPool(TpcdsSelectStream selectStream) {
@@ -177,10 +178,6 @@ public class TpcDataSetSystem extends DataSetSystem {
       .collect(Collectors.toList());
   }
 
-  @Override
-  protected DataPath getRootPath() {
-    throw new RuntimeException("not yet implemented");
-  }
 
 
   @Override

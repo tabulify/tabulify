@@ -1,15 +1,29 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.fs.Fs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
-public class CsvManager {
-    public static void create(CsvDataPath csvDataPath) {
+public class CsvManager extends FsFileManager {
 
+  private static Map<FsTableSystem, CsvManager> csvManagers = new HashMap<>();
+
+  public CsvManager(FsTableSystem fsTableSystem) {
+    super(fsTableSystem);
+  }
+
+  public void create(DataPath dataPath) {
+
+        CsvDataPath csvDataPath = (CsvDataPath) dataPath;
         Fs.createFile(csvDataPath.getNioPath());
         CsvDataDef csvDataDef = csvDataPath.getDataDef();
         CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
@@ -33,4 +47,19 @@ public class CsvManager {
         }
 
     }
+
+  @Override
+  public CsvDataPath getDataPath(Path path) {
+    return new CsvDataPath(getFsTableSystem(),path);
+  }
+
+  public static FsFileManager of(FsTableSystem fsTableSystem) {
+    CsvManager csvManager = csvManagers.get(fsTableSystem);
+    if (csvManager == null){
+      csvManager = new CsvManager(fsTableSystem);
+      csvManagers.put(fsTableSystem,csvManager);
+    }
+    return csvManager;
+  }
+
 }

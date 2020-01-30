@@ -501,7 +501,12 @@ public class Fs {
 
 
   public static String getExtension(String fullFileName) {
-    return fullFileName.substring(fullFileName.lastIndexOf('.') + 1);
+    int i = fullFileName.lastIndexOf('.');
+    if (i==-1){
+      return null;
+    } else {
+      return fullFileName.substring(i + 1);
+    }
   }
 
   public static String getFileName(String fullFileName) {
