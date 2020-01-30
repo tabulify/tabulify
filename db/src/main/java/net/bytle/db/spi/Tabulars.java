@@ -217,8 +217,17 @@ public class Tabulars {
   }
 
 
+  /**
+   *
+   * @param source - the source to move
+   * @param target - a target data path container or document
+   * If the target is a container, the target will have the name of the source
+   */
   public static void move(DataPath source, DataPath target) {
 
+    if (Tabulars.isContainer(target)){
+      target = target.getChild(source.getName());
+    }
     move(source, target, TransferProperties.of());
 
   }
