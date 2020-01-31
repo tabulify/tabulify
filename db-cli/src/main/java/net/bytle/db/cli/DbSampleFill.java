@@ -7,7 +7,7 @@ import net.bytle.cli.Clis;
 import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
@@ -81,7 +81,7 @@ public class DbSampleFill {
             System.exit(1);
         }
 
-        DagDataPath dag = DagDataPath.get(DbSamples.getTables(sampleName));
+        ForeignKeyDag dag = ForeignKeyDag.get(DbSamples.getTables(sampleName));
         List<TableDef> tableDefs = dag.getCreateOrderedTables();
 
 

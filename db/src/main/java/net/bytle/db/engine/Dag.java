@@ -10,15 +10,40 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import java.util.*;
 
 
-public class Dag<T extends Relational> {
+public class Dag {
 
+  /**
+   * A foreign key relationship is defined by a foreign key
+   */
+  protected static final String FOREIGN_KEY_RELATIONSHIP = "FK";
+
+  /**
+   * A data generation relationship is needed when transferring (generating) data
+   * <p>
+   * <p>
+   * If this method is returning data paths,
+   * this data path are children that should be loaded synchronously
+   * ie a call to
+   *        SelectStream.getRow
+   * should be executed after a
+   *        ParentSelectStream.getRow
+   * because:
+   *   * the data is generated in tandem (as TPCDS does for instance, it generate the returns at the same time that the sales)
+   *   * of we are loading an tree like file (xml, ..) that contains several data path in one file.
+   */
+  protected static final String DATA_GENERATION_RELATIONSHIP = "DG";
+
+  /**
+   * A variable to hold the relationship value
+   */
+  private final String relationType;
 
   /**
    * The tables to start building the graph with
    */
-  private List<T> relationalList = new ArrayList<>();
+  private List<DataPath> relationalList = new ArrayList<>();
 
-  DefaultDirectedGraph<T, DefaultEdge> g = null;
+  DefaultDirectedGraph<DataPath, DefaultEdge> g = null;
 
   /**
    * If set to true, the dag will add the foreign tables
@@ -26,9 +51,10 @@ public class Dag<T extends Relational> {
   private Boolean withForeignTable = false;
 
   /**
-   * You may also use the {@link DagDataPath#get(DataPath)} function
+   * You may also use the {@link ForeignKeyDag#get(DataPath)} function
    */
-  Dag() {
+  Dag(String relationType) {
+    this.relationType = relationType;
   }
 
 
@@ -40,29 +66,29 @@ public class Dag<T extends Relational> {
     // Building the graph
     g = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-    for (T relation : relationalList) {
+    for (DataPath relation : relationalList) {
       addTableToVertex(relation);
     }
 
-    CycleDetector<T, DefaultEdge> cycleDetector = new CycleDetector<>(g);
+    CycleDetector<DataPath, DefaultEdge> cycleDetector = new CycleDetector<>(g);
     if (cycleDetector.detectCycles()) {
 
       System.out.println("Cycles detected.");
 
       // Get all vertices involved in cycles.
-      Set<T> cycleVertices = cycleDetector.findCycles();
+      Set<DataPath> cycleVertices = cycleDetector.findCycles();
 
       // Loop through vertices trying to find disjoint cycles.
       while (!cycleVertices.isEmpty()) {
         System.out.println("Cycle:");
 
         // Get a vertex involved in a cycle.
-        Iterator<T> iterator = cycleVertices.iterator();
-        T cycle = iterator.next();
+        Iterator<DataPath> iterator = cycleVertices.iterator();
+        DataPath cycle = iterator.next();
 
         // Get all vertices involved with this vertex.
-        Set<T> subCycle = cycleDetector.findCyclesContainingVertex(cycle);
-        for (T subRelation : subCycle) {
+        Set<DataPath> subCycle = cycleDetector.findCyclesContainingVertex(cycle);
+        for (DataPath subRelation : subCycle) {
           // The Remove vertex that this cycle is not encountered again is not necessary as we throw an exception
           // but I let it for information
           // cycleVertices.remove(sub);
@@ -75,38 +101,38 @@ public class Dag<T extends Relational> {
   /**
    * Add one table to the vertex
    *
-   * @param dataPath recursive function
+   * @param relation recursive function
    */
-  private void addTableToVertex(T dataPath) {
+  private void addTableToVertex(DataPath relation) {
 
     // Add the vertex
-    if (!g.containsVertex(dataPath)) {
-      g.addVertex(dataPath);
+    if (!g.containsVertex(relation)) {
+      g.addVertex(relation);
     }
 
     // Add the edges
-    List<T> parents = dataPath.getParents();
-    for (T foreignDataPath : parents) {
+    List<DataPath> parents = relation.getForeignDataPaths();
+    for (DataPath parent : parents) {
       // Only if the table is in the list
       // or we take also the parent
-      if (relationalList.contains(foreignDataPath) || withForeignTable) {
+      if (relationalList.contains(parent) || withForeignTable) {
 
         // Because we don't have any cache the object in the dataPathList
         // may not be the same than foreignDataPath (ie the properties for instance may differ)
         // Hack to get the object from the list
-        if (relationalList.contains(foreignDataPath)) {
-          for (T dataPathInList : relationalList) {
-            if (dataPathInList.equals(foreignDataPath)) {
-              foreignDataPath = dataPathInList;
+        if (relationalList.contains(parent)) {
+          for (DataPath relationInList : relationalList) {
+            if (relationInList.equals(parent)) {
+              parent = relationInList;
               break;
             }
           }
         }
 
-        addTableToVertex(foreignDataPath);
+        addTableToVertex(parent);
 
         // Add Edge
-        g.addEdge(foreignDataPath, dataPath);
+        g.addEdge(parent, relation);
 
       }
 
@@ -116,10 +142,9 @@ public class Dag<T extends Relational> {
   }
 
 
-
   /**
    * If set to true, the dag will add the parent table
-   * (Table defined in a foreign key)
+   * (DataPathable defined in a foreign key)
    *
    * @param aBoolean
    * @return the dag for chaining initialization
@@ -129,7 +154,7 @@ public class Dag<T extends Relational> {
     return this;
   }
 
-  Dag<T> addRelation(T dataPath) {
+  Dag addRelation(DataPath dataPath) {
     if (!this.relationalList.contains(dataPath)) {
       this.relationalList.add(dataPath);
     }
@@ -142,23 +167,23 @@ public class Dag<T extends Relational> {
    *
    * @return
    */
-  public List<T> getCreateOrderedTables() {
+  public List<DataPath> getCreateOrderedTables() {
 
     if (g == null) {
       build();
     }
 
-    T currentDataPath = null;
-    T previousDataPath = null;
-    List<T> dataPaths = new ArrayList<>();
-    TopologicalOrderIterator<T, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(g);
+    DataPath currentDataPath = null;
+    DataPath previousDataPath = null;
+    List<DataPath> dataPaths = new ArrayList<>();
+    TopologicalOrderIterator<DataPath, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(g);
 
     // Because of the algorithm, we may have a table with a parent between table without parent
     // Little trick with on slot
     while (orderIterator.hasNext()) {
       currentDataPath = orderIterator.next();
 
-      final List<T> parents = currentDataPath.getParents();
+      final List<DataPath> parents = currentDataPath.getForeignDataPaths();
       if (parents.size() == 0) {
         dataPaths.add(currentDataPath);
       } else {
@@ -184,15 +209,15 @@ public class Dag<T extends Relational> {
    *
    * @return
    */
-  public List<T> getDropOrderedTables() {
+  public List<DataPath> getDropOrderedTables() {
 
-    List<T> relations = getCreateOrderedTables();
+    List<DataPath> relations = getCreateOrderedTables();
     Collections.reverse(relations);
     return relations;
 
   }
 
-  public Dag<T> addRelations(List<T> relations) {
+  public Dag addRelations(List<DataPath> relations) {
     relations.forEach(this::addRelation);
     return this;
   }

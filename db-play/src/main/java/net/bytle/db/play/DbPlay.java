@@ -3,7 +3,7 @@ package net.bytle.db.play;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
@@ -123,7 +123,7 @@ public class DbPlay {
     Database database = databasesStore.getDataStore(target);
     DataPath dataPath = DataPaths.of(database, ".");
     List<DataPath> children = DataPaths.getChildren(dataPath);
-    DagDataPath.get(children).getDropOrderedTables()
+    ForeignKeyDag.get(children).getDropOrderedTables()
       .stream().forEach(
       s -> {
         Tabulars.drop(s);

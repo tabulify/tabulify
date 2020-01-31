@@ -4,6 +4,7 @@ package net.bytle.db.memory;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -149,4 +150,8 @@ public class MemoryDataPath extends DataPath {
     return this.capacity;
   }
 
+  @Override
+  public List getForeignSelectDataPaths() {
+    return new ArrayList(); // Nothing to see here
+  }
 }

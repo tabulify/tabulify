@@ -1,7 +1,6 @@
 package net.bytle.db.stream;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 
 import java.sql.Clob;
 import java.util.List;
@@ -9,20 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public interface SelectStream extends AutoCloseable {
 
-  /**
-   * If this method is returning data paths,
-   * this data path are children that should be loaded synchronously
-   * ie a call to
-   *    SelectStream.getRow
-   * should be immediately followed by a
-   *    ReferenceSelectStream.getRow
-   * because:
-   *   * the data is generated in tandem (as TPCDS does for instance)
-   *   * of we are loading an tree like file (xml, ..) that contains several data path in one file.
-   *
-   * @return the data path that should be loaded synchronously
-   */
-  List<DataPath> getParents();
 
   boolean next();
 

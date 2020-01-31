@@ -14,7 +14,7 @@ import java.util.Objects;
  * An object that may be used to locate a data container (such as a file or a table) in a data system (file system, relational database).
  * It will typically represent a system dependent data path.
  */
-public abstract class DataPath implements Comparable<DataPath>, Relational<DataPath> {
+public abstract class DataPath implements Comparable<DataPath>, Relational {
 
   // The query is here because even if it defines a little bit the structure
   // (data def), for now, we get it after its execution
@@ -118,20 +118,22 @@ public abstract class DataPath implements Comparable<DataPath>, Relational<DataP
 
   /**
    *
-   * @return the parent (ie the foreign)
+   * @return the parent (ie the foreign key relationship)
    *
    */
-  public List<DataPath> getParents() {
+  public List<DataPath> getForeignDataPaths() {
+
     List<ForeignKeyDef> foreignKeys = this.getDataDef() != null ? this.getDataDef().getForeignKeys() : new ArrayList<>();
     List<DataPath> parentDataPaths = new ArrayList<>();
     if (foreignKeys.size() > 0) {
 
       for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-
         parentDataPaths.add(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath());
       }
+
     }
     return parentDataPaths;
 
   }
+
 }

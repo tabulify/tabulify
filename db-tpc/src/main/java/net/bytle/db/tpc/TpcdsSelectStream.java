@@ -12,7 +12,6 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
 
 import java.sql.Clob;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -78,12 +77,7 @@ public class TpcdsSelectStream implements SelectStream {
     return new TpcdsSelectStream(dataPath);
   }
 
-  @Override
-  public List<DataPath> getParents() {
-    List<DataPath> parents = new ArrayList<>();
-    parents.add(dataPath.getSibling(table.getParent().getName()));
-    return parents;
-  }
+
 
   @Override
   public boolean next() {

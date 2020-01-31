@@ -1,7 +1,6 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
@@ -44,11 +43,6 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
     }
   }
 
-
-  @Override
-  public List<DataPath> getParents() {
-    throw new RuntimeException("Not implemented");
-  }
 
   @Override
   public boolean next() {

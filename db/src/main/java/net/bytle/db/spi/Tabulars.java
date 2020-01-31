@@ -2,7 +2,7 @@ package net.bytle.db.spi;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.stream.InsertStream;
@@ -71,7 +71,7 @@ public class Tabulars {
    */
   public static void createIfNotExist(List<DataPath> dataPaths) {
 
-    Dag<DataPath> dag = DagDataPath.get(dataPaths);
+    Dag dag = ForeignKeyDag.get(dataPaths);
     dataPaths = dag.getCreateOrderedTables();
     for (DataPath dataPath : dataPaths) {
       createIfNotExist(dataPath);
@@ -109,7 +109,7 @@ public class Tabulars {
     allDataPaths.addAll(Arrays.asList(dataPaths));
 
     // A dag will build the data def and we may not want want it when dropping only one table
-    Dag<DataPath> dag = DagDataPath.get(allDataPaths);
+    Dag dag = ForeignKeyDag.get(allDataPaths);
     for (DataPath dataPath : dag.getDropOrderedTables()) {
       dataPath.getDataSystem().drop(dataPath);
     }
@@ -173,7 +173,7 @@ public class Tabulars {
         drop(dataPaths.get(0));
       }
     } else {
-      for (DataPath dataPath : DagDataPath.get(dataPaths).getDropOrderedTables()) {
+      for (DataPath dataPath : ForeignKeyDag.get(dataPaths).getDropOrderedTables()) {
         if (exists(dataPath)) {
           drop(dataPath);
         }
@@ -207,7 +207,7 @@ public class Tabulars {
   public static List<DataPath> move(List<DataPath> sources, DataPath target) {
 
     List<DataPath> targetDataPaths = new ArrayList<>();
-    for (DataPath sourceDataPath : DagDataPath.get(sources).getCreateOrderedTables()) {
+    for (DataPath sourceDataPath : ForeignKeyDag.get(sources).getCreateOrderedTables()) {
       DataPath targetDataPath = target.getDataSystem().getDataPath(sourceDataPath.getName());
       Tabulars.move(sourceDataPath, targetDataPath);
       targetDataPaths.add(targetDataPath);
@@ -264,7 +264,7 @@ public class Tabulars {
   }
 
   public static void create(List<DataPath> dataPaths) {
-    Dag<DataPath> dag = DagDataPath.get(dataPaths);
+    Dag dag = ForeignKeyDag.get(dataPaths);
     dataPaths = dag.getCreateOrderedTables();
     for (DataPath dataPath : dataPaths) {
       create(dataPath);

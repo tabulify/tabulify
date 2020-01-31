@@ -2,6 +2,8 @@ package net.bytle.db.transfer;
 
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.engine.Dag;
+import net.bytle.db.engine.DataGenerationDag;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
@@ -40,13 +42,14 @@ public class TransferManager {
 
   /**
    * An utility function to start only one transfer
+   *
    * @param source
    * @param target
    * @param transferProperties
    * @return
    */
   public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    return of().addTransfer(source,target,transferProperties).start().get(0);
+    return of().addTransfer(source, target, transferProperties).start().get(0);
   }
 
 
@@ -282,10 +285,10 @@ public class TransferManager {
 
 
   public List<TransferListener> start() {
-    List<SelectStream> selectStreams = transfers.stream().map(
-      t -> Tabulars.getSelectStream(t.getSourceDataPath())
-    ).collect(Collectors.toList());
-//    List<SelectStream> dag = SelectStreamDag.get(selectStreams);
+    List<DataPath> dataPaths = transfers.stream()
+      .map(Transfer::getSourceDataPath)
+      .collect(Collectors.toList());
+    Dag dag = DataGenerationDag.get(dataPaths);
     return transferListeners;
   }
 

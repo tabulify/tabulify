@@ -6,7 +6,7 @@ import net.bytle.cli.Clis;
 import net.bytle.log.Log;
 import net.bytle.db.DatabasesStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.model.SchemaDef;
@@ -102,7 +102,7 @@ public class DbTableTruncate {
         }
 
         // Truncating
-        for (TableDef tableDef : DagDataPath.get(tablesToTruncate).getDropOrderedTables()) {
+        for (TableDef tableDef : ForeignKeyDag.get(tablesToTruncate).getDropOrderedTables()) {
             Tables.truncate(tableDef);
         }
         LOGGER.info("Bye !");

@@ -2,7 +2,7 @@ package net.bytle.db.gen;
 
 
 import net.bytle.log.Log;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
@@ -266,7 +266,7 @@ public class DataGeneration {
         }
 
         // Load
-        final List<DataPath> createOrderedTables = DagDataPath.get(tablesLoaded).getCreateOrderedTables();
+        final List<DataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables();
         for (DataPath dataPath: createOrderedTables) {
 
 

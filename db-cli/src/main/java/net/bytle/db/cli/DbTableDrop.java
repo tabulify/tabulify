@@ -6,7 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatabasesStore;
-import net.bytle.db.engine.DagDataPath;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
@@ -95,7 +95,7 @@ public class DbTableDrop {
         // Doing the work
         System.out.println();
 
-        for (DataPath dataPathToDrop : DagDataPath.get(selectedDataPaths).getDropOrderedTables()) {
+        for (DataPath dataPathToDrop : ForeignKeyDag.get(selectedDataPaths).getDropOrderedTables()) {
 
             List<DataPath> referenceDataPaths = Tabulars.getReferences(dataPathToDrop);
             for (DataPath referenceDataPath : referenceDataPaths) {
