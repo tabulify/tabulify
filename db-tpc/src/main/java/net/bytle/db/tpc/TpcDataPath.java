@@ -76,13 +76,13 @@ public class TpcDataPath extends DataPath {
 
   @Override
   public List<DataPath> getSelectStreamDependencies() {
-    Table table = Table.getTable(this.getName());
-
-    if (table.isChild()) {
-      return Arrays.asList(getSibling(table.getParent().getName()));
-    } else {
-      return new ArrayList<>();
+    List<DataPath> dependencies = new ArrayList<>();
+    if (!this.getName().toLowerCase().startsWith("s_")) {
+      Table table = Table.getTable(this.getName());
+      if (table.isChild()) {
+        dependencies = Arrays.asList(getSibling(table.getParent().getName()));
+      }
     }
-
+    return dependencies;
   }
 }

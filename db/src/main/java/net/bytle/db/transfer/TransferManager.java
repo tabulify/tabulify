@@ -89,23 +89,21 @@ public class TransferManager {
       transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
     }
 
-    SelectStream firstStream = (SelectStream) streamTransfers.get(0).get(0);
-    while (firstStream.next()) {
+    boolean showMustGoOn = true;
+    while (showMustGoOn) {
+      showMustGoOn = false;
       for (int i = 0; i < streamTransfers.size(); i++) {
 
-        SelectStream sourceSelectStream;
-        if (i == 0) {
-          sourceSelectStream = firstStream;
-        } else {
-          sourceSelectStream = (SelectStream) streamTransfers.get(i).get(0);
-          sourceSelectStream.next();
+        SelectStream sourceSelectStream = (SelectStream) streamTransfers.get(i).get(0);
+        Boolean next = sourceSelectStream.next();
+        if (next){
+          showMustGoOn = true;
+          InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
+            .mapToObj(sourceSelectStream::getObject)
+            .collect(Collectors.toList());
+          targetInsertStream.insert(objects);
         }
-        InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
-
-        List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
-          .mapToObj(sourceSelectStream::getObject)
-          .collect(Collectors.toList());
-        targetInsertStream.insert(objects);
       }
     }
 
@@ -405,6 +403,10 @@ public class TransferManager {
     return this;
   }
 
+  public TransferManager addTransfers(List<DataPath> sources, DataPath target) {
+    sources.forEach(s->this.addTransfer(s,target));
+    return this;
+  }
 }
 
 
