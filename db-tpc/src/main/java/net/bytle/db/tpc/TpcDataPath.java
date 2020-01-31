@@ -56,13 +56,13 @@ public class TpcDataPath extends DataPath {
 
   @Override
   public DataPath getSibling(String name) {
-    return of(this.dataStore, name);
+    return this.dataStore.getDataModel().getAndCreateDataPath(name);
   }
 
   @Override
   public DataPath getChild(String name) {
     if (this.name == null) {
-      return of(this.dataStore, name);
+      return this.dataStore.getDataModel().getAndCreateDataPath(name);
     } else {
       throw new RuntimeException("You can get a child from the table (" + name + ")");
     }
@@ -77,7 +77,6 @@ public class TpcDataPath extends DataPath {
   @Override
   public List<DataPath> getSelectStreamDependencies() {
     Table table = Table.getTable(this.getName());
-
 
     if (table.isChild()) {
       return Arrays.asList(getSibling(table.getParent().getName()));

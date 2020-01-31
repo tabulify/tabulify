@@ -4,7 +4,7 @@ import net.bytle.db.spi.DataPath;
 
 public class Transfer {
 
-    private TransferProperties transferProperties;
+    private TransferProperties transferProperties = TransferProperties.of();
     private DataPath sourceDataPath;
     private DataPath targetDataPath;
 

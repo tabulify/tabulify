@@ -316,7 +316,8 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    throw new RuntimeException("not yet implemented");
+    Path path = ((FsDataPath) dataPath).getNioPath();
+    return !Files.isDirectory(path);
   }
 
   @Override

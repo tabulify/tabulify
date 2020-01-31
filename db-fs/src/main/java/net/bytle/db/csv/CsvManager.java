@@ -53,7 +53,7 @@ public class CsvManager extends FsFileManager {
     return new CsvDataPath(getFsTableSystem(),path);
   }
 
-  public static FsFileManager of(FsTableSystem fsTableSystem) {
+  public static CsvManager of(FsTableSystem fsTableSystem) {
     CsvManager csvManager = csvManagers.get(fsTableSystem);
     if (csvManager == null){
       csvManager = new CsvManager(fsTableSystem);

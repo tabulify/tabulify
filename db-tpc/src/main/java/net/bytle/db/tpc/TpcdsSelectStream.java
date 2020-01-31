@@ -64,7 +64,7 @@ public class TpcdsSelectStream implements SelectStream {
 
     // If this is a child table and not the only table being generated, it will be generated when its parent is generated, so move on.
     if (table.isChild() && !session.generateOnlyOneTable()) {
-      throw new RuntimeException("This table is a child table and should be loaded with its parent. Not yet supported");
+      LOGGER.warning("This table is a child table and should be loaded with its parent. Not yet supported");
     }
 
     if (table.hasChild()) {

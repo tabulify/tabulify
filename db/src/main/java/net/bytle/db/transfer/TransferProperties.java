@@ -76,11 +76,6 @@ public class TransferProperties {
    */
   private Set<TransferOptions> transferOptions = new HashSet<>(Arrays.asList(TransferOptions.CREATE_IF_NOT_EXIST));
 
-  /**
-   * If the select stream can only be generated
-   * after another, this select stream is dependent
-   */
-  private boolean loadDependent = false;
 
 
   /**
@@ -256,14 +251,5 @@ public class TransferProperties {
     return this;
   }
 
-  /**
-   * If we try to load from a select stream that is dependent on another
-   * the dependent select stream will also be loaded, created
-   * @param b
-   * @return
-   */
-  public TransferProperties setSelectStreamDependent(boolean b) {
-    this.loadDependent = b;
-    return this;
-  }
+
 }

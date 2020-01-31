@@ -313,18 +313,23 @@ public class DataDefs {
       DataPath targetForeignDataPath = target.getDataPath().getSibling(sourceForeignDataPath.getName());
       // Does the table exist in the target
       if (Tabulars.exists(targetForeignDataPath)) {
-        List<String> targetForeignPrimaryKeyColumns = targetForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
-        List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
-        // Do they have the same primary key columns
-        if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
-          // Create it then
-          target.addForeignKey(targetForeignDataPath,
-            foreignKeyDef.getChildColumns().stream()
-              .map(ColumnDef::getColumnName)
-              .toArray(String[]::new)
-          );
+        PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getDataDef().getPrimaryKey();
+        if (targetPrimaryKey != null) {
+          List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+          List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+          // Do they have the same primary key columns
+          if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
+            // Create it then
+            target.addForeignKey(targetForeignDataPath,
+              foreignKeyDef.getChildColumns().stream()
+                .map(ColumnDef::getColumnName)
+                .toArray(String[]::new)
+            );
+          } else {
+            logger.warn("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
+          }
         } else {
-          logger.warn("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
+          logger.warn("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") exists but does not have any primary key");
         }
       } else {
         logger.warn("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") does not exist");
