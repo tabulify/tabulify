@@ -262,7 +262,7 @@ public class TransferProperties {
    * @param b
    * @return
    */
-  public TransferProperties setLoadDependent(boolean b) {
+  public TransferProperties setSelectStreamDependent(boolean b) {
     this.loadDependent = b;
     return this;
   }

@@ -151,7 +151,7 @@ public class MemoryDataPath extends DataPath {
   }
 
   @Override
-  public List getForeignSelectDataPaths() {
+  public List getSelectStreamDependencies() {
     return new ArrayList(); // Nothing to see here
   }
 }

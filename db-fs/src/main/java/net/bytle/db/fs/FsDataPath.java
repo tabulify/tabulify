@@ -85,4 +85,9 @@ public class FsDataPath extends DataPath {
   public String getPath() {
     return this.path.toString();
   }
+
+  @Override
+  public List getSelectStreamDependencies() {
+    throw new RuntimeException("No select stream dependencies here");
+  }
 }

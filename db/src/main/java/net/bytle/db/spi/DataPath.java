@@ -121,7 +121,7 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
    * @return the parent (ie the foreign key relationship)
    *
    */
-  public List<DataPath> getForeignDataPaths() {
+  public List<DataPath> getForeignKeyDependencies() {
 
     List<ForeignKeyDef> foreignKeys = this.getDataDef() != null ? this.getDataDef().getForeignKeys() : new ArrayList<>();
     List<DataPath> parentDataPaths = new ArrayList<>();

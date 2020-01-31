@@ -9,15 +9,15 @@ public class ForeignKeyDag {
 
   public static Dag get(DataPath dataPath) {
     if (Tabulars.isContainer(dataPath)) {
-      return (new Dag(Dag.FOREIGN_KEY_RELATIONSHIP)).addRelations(Tabulars.getChildren(dataPath));
+      return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelations(Tabulars.getChildren(dataPath));
     } else {
-      return (new Dag(Dag.FOREIGN_KEY_RELATIONSHIP)).addRelation(dataPath);
+      return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelation(dataPath);
     }
   }
 
   public static Dag get(List<DataPath> dataPaths) {
 
-    return (new Dag(Dag.FOREIGN_KEY_RELATIONSHIP)).addRelations(dataPaths);
+    return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelations(dataPaths);
 
   }
 

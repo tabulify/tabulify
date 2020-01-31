@@ -15,7 +15,7 @@ public class Dag {
   /**
    * A foreign key relationship is defined by a foreign key
    */
-  protected static final String FOREIGN_KEY_RELATIONSHIP = "FK";
+  protected static final String FOREIGN_KEY_DEPENDENCY = "Foreign Key";
 
   /**
    * A data generation relationship is needed when transferring (generating) data
@@ -31,12 +31,12 @@ public class Dag {
    *   * the data is generated in tandem (as TPCDS does for instance, it generate the returns at the same time that the sales)
    *   * of we are loading an tree like file (xml, ..) that contains several data path in one file.
    */
-  protected static final String DATA_GENERATION_RELATIONSHIP = "DG";
+  protected static final String SELECT_STREAM_DEPENDENCY = "Select Stream";
 
   /**
    * A variable to hold the relationship value
    */
-  private final String relationType;
+  private final String dependencyType;
 
   /**
    * The tables to start building the graph with
@@ -48,13 +48,13 @@ public class Dag {
   /**
    * If set to true, the dag will add the foreign tables
    */
-  private Boolean withForeignTable = false;
+  private Boolean withDependency = false;
 
   /**
    * You may also use the {@link ForeignKeyDag#get(DataPath)} function
    */
-  Dag(String relationType) {
-    this.relationType = relationType;
+  Dag(String dependencyType) {
+    this.dependencyType = dependencyType;
   }
 
 
@@ -111,11 +111,22 @@ public class Dag {
     }
 
     // Add the edges
-    List<DataPath> parents = relation.getForeignDataPaths();
-    for (DataPath parent : parents) {
+    List<DataPath> dependencies;
+    switch (this.dependencyType){
+      case FOREIGN_KEY_DEPENDENCY:
+        dependencies = relation.getForeignKeyDependencies();
+        break;
+      case SELECT_STREAM_DEPENDENCY:
+        dependencies = relation.getSelectStreamDependencies();
+        break;
+      default:
+        throw new RuntimeException("This dependency type ("+this.dependencyType +") is unknown");
+    }
+
+    for (DataPath parent : dependencies) {
       // Only if the table is in the list
       // or we take also the parent
-      if (relationalList.contains(parent) || withForeignTable) {
+      if (relationalList.contains(parent) || withDependency) {
 
         // Because we don't have any cache the object in the dataPathList
         // may not be the same than foreignDataPath (ie the properties for instance may differ)
@@ -149,8 +160,8 @@ public class Dag {
    * @param aBoolean
    * @return the dag for chaining initialization
    */
-  public Dag setWithForeignTable(Boolean aBoolean) {
-    this.withForeignTable = aBoolean;
+  public Dag setWithDependency(Boolean aBoolean) {
+    this.withDependency = aBoolean;
     return this;
   }
 
@@ -183,7 +194,7 @@ public class Dag {
     while (orderIterator.hasNext()) {
       currentDataPath = orderIterator.next();
 
-      final List<DataPath> parents = currentDataPath.getForeignDataPaths();
+      final List<DataPath> parents = currentDataPath.getForeignKeyDependencies();
       if (parents.size() == 0) {
         dataPaths.add(currentDataPath);
       } else {

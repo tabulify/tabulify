@@ -2,8 +2,7 @@ package net.bytle.db.transfer;
 
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.engine.Dag;
-import net.bytle.db.engine.DataGenerationDag;
+import net.bytle.db.engine.SelectStreamDag;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
@@ -14,8 +13,12 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.log.Log;
 
 import java.sql.Types;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -288,7 +291,8 @@ public class TransferManager {
     List<DataPath> dataPaths = transfers.stream()
       .map(Transfer::getSourceDataPath)
       .collect(Collectors.toList());
-    Dag dag = DataGenerationDag.get(dataPaths);
+    List<DataPath> dataPath = SelectStreamDag.get(dataPaths).getCreateOrderedTables();
+
     return transferListeners;
   }
 

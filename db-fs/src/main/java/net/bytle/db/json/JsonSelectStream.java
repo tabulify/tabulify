@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Clob;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -38,10 +36,6 @@ public class JsonSelectStream extends SelectStreamAbs {
     return new JsonSelectStream(dataPath);
   }
 
-  @Override
-  public List<DataPath> getParents() {
-    throw new RuntimeException("Not yet implemented");
-  }
 
   @Override
   public boolean next() {

@@ -1,9 +1,12 @@
 package net.bytle.db.tpc;
 
+import com.teradata.tpcds.Table;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,4 +74,16 @@ public class TpcDataPath extends DataPath {
   }
 
 
+  @Override
+  public List<DataPath> getSelectStreamDependencies() {
+    Table table = Table.getTable(this.getName());
+
+
+    if (table.isChild()) {
+      return Arrays.asList(getSibling(table.getParent().getName()));
+    } else {
+      return new ArrayList<>();
+    }
+
+  }
 }

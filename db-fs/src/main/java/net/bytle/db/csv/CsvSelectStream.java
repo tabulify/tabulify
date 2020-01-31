@@ -1,7 +1,6 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.SelectStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Clob;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CsvSelectStream extends SelectStreamAbs  {
@@ -47,10 +45,6 @@ public class CsvSelectStream extends SelectStreamAbs  {
 
     }
 
-  @Override
-  public List<DataPath> getParents() {
-    throw new RuntimeException("Not yet implemented");
-  }
 
   @Override
     public boolean next() {
