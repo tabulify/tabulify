@@ -12,6 +12,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * To generate the query
+ */
 public class TpcdsQgen {
 
 

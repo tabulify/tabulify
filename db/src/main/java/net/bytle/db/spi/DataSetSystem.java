@@ -1,6 +1,5 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.database.Database;
 import net.bytle.db.model.DataType;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -9,8 +8,11 @@ import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
 
 import java.util.List;
-import java.util.Objects;
 
+/**
+ * A data set system does not have all table system because it's only a read system
+ * This abstract method takes care of this
+ */
 public abstract class DataSetSystem extends TableSystem {
 
 
@@ -19,7 +21,7 @@ public abstract class DataSetSystem extends TableSystem {
   /**
    * @param names
    * @return the data path (can be absolute or relative)
-   *
+   * <p>
    * There is no need of a first parameter because on a data system, the first
    * parameter can not be an URI as the URI was already used to build the data system
    */
@@ -29,17 +31,12 @@ public abstract class DataSetSystem extends TableSystem {
 
   public abstract SelectStream getSelectStream(DataPath dataPath);
 
-  public abstract Database getFileDataStore();
-
-  public abstract boolean isContainer(DataPath dataPath);
 
   public void create(DataPath dataPath) {
     throw new RuntimeException("A data set cannot create a data path. It can only read it");
   }
 
-  // The product name (for a jdbc database: sql server, oracle, hive ...
-  public abstract String getProductName();
-
+  @Override
   public DataType getDataType(Integer typeCode) {
     throw new RuntimeException("Not implemented");
   }
@@ -64,8 +61,9 @@ public abstract class DataSetSystem extends TableSystem {
   }
 
 
-  public abstract List<DataPath> getChildrenDataPath(DataPath dataPath);
 
+
+  @Override
   public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
     throw new RuntimeException("A data set cannot move its data paths. It can only read them");
   }
@@ -73,6 +71,7 @@ public abstract class DataSetSystem extends TableSystem {
   /**
    * @return The number of thread that can be created against the data system
    */
+  @Override
   public Integer getMaxWriterConnection() {
     throw new RuntimeException("A data set source cannot write.");
   }
@@ -90,38 +89,21 @@ public abstract class DataSetSystem extends TableSystem {
   public abstract boolean isDocument(DataPath dataPath);
 
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    DataSetSystem that = (DataSetSystem) o;
-    return Objects.equals(getFileDataStore(), that.getFileDataStore());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getFileDataStore());
-  }
-
-  /**
-   * @return the current data path
-   */
-  public DataPath getCurrentPath() {
-    return getDataPath(".");
-  }
-
   /**
    * @param dataPath
    * @return the content of a data path in a string format
    */
+  @Override
   public String getString(DataPath dataPath) {
     throw new RuntimeException("Not implemented had this time");
   }
 
+  @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
-    throw new RuntimeException("A data set cannot copy its data paths. It can only read them");
+    throw new RuntimeException("A data set cannot copy (write) data. It can only read them");
   }
 
+  @Override
   public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
     throw new RuntimeException("A data set cannot insert into its data paths. It can only read them");
   }
@@ -145,14 +127,12 @@ public abstract class DataSetSystem extends TableSystem {
    */
   public abstract List<DataPath> getReferences(DataPath dataPath);
 
+  @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("A data set does not implements a processing engine. It can only read records one at a time");
   }
 
 
-  public DataPath getChildOf(DataPath dataPath, String part) {
-    throw new RuntimeException("This is a data set, we cannot create a data path, only read operations.");
-  }
 
 
 }

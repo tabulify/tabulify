@@ -34,6 +34,7 @@ public class Tabular implements AutoCloseable {
    */
   public static final String LOCAL_FILE_SCHEME = "file";
   public static final String MEMORY_DATASTORE = "memory";
+  public static final String TPCDS_DATASTORE = "tpcds";
 
   /**
    * The memory database
@@ -48,14 +49,21 @@ public class Tabular implements AutoCloseable {
 
   public Tabular() {
 
-    // This one are always on
+    // Intern datastore
+
+    // Local file System
     FileDataStore fileDataStore = FileDataStore.LOCAL_FILE_STORE;
     dataStores.put(fileDataStore.getName(), fileDataStore);
 
-
+    // Memory
     Database memoryDataBase = Databases.of(MEMORY_DATASTORE)
       .setConnectionString(MemorySystemProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
+
+    // TpcDs
+    Database tpcDs = Databases.of(TPCDS_DATASTORE)
+      .setConnectionString(TPCDS_DATASTORE);
+    dataStores.put(tpcDs.getName(), tpcDs);
 
   }
 
@@ -93,10 +101,9 @@ public class Tabular implements AutoCloseable {
   }
 
   /**
-   *
    * @param dataStoreName
    * @return a datastore
-   *
+   * <p>
    * There is two specials data store always available (namely file and memory that store data respectively on the local file system and in memory)
    */
   private DataStore getDataStore(String dataStoreName) {

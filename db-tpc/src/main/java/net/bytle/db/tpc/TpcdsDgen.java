@@ -13,6 +13,9 @@ import net.bytle.db.spi.TableSystem;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Backup old code to generate tpcds data
+ */
 public class TpcdsDgen {
 
     public static final Log LOGGER = Tpc.LOGGER_TPC;

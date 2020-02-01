@@ -15,6 +15,10 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A class that is used with {@link TpcdsDgen}
+ * that represents a table
+ */
 public class TpcdsDgenTable {
 
     public static final Log LOGGER = Tpc.LOGGER_TPC;

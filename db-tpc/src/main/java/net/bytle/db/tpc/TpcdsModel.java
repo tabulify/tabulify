@@ -140,8 +140,12 @@ public class TpcdsModel implements SchemaSample {
             STORE,
             STORE_SALES
     );
+  /**
+   * An utility field to old the number of tables
+   */
+  public static int TOTAL_NUMBERS_OF_TABLES = 46;
 
-    private final TpcDataSetSystem tableSystem;
+  private final TpcDataSetSystem tableSystem;
 
     // A map containing all TPCDS tables
     private Map<String, DataPath> tables = new HashMap<String, DataPath>();

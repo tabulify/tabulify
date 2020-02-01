@@ -1,7 +1,6 @@
 package net.bytle.db.tpc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSetSystem;
 import net.bytle.db.spi.TableSystemProvider;
@@ -15,19 +14,20 @@ import java.util.stream.Collectors;
 
 public class TpcDataSetSystem extends DataSetSystem {
 
-  private static final String PRODUCT_NAME = "tpcds";
   private static TpcDataSetSystem tpcDataSetSystem;
+  private final TpcTableSystemProvider tpcTableSystemProvider;
   private TpcdsModel tpcModel;
-  private final Database database;
+  private final DataStore dataStore;
 
 
-  private TpcDataSetSystem() {
-    this.database = Database.of(PRODUCT_NAME);
+  private TpcDataSetSystem(TpcTableSystemProvider tpcTableSystemProvider, DataStore dataStore) {
+    this.tpcTableSystemProvider = tpcTableSystemProvider;
+    this.dataStore = dataStore;
   }
 
-  public static TpcDataSetSystem of() {
+  public static TpcDataSetSystem of(TpcTableSystemProvider tpcTableSystemProvider, DataStore dataStore) {
     if (tpcDataSetSystem == null) {
-      tpcDataSetSystem = new TpcDataSetSystem();
+      tpcDataSetSystem = new TpcDataSetSystem(tpcTableSystemProvider,dataStore);
     }
     return tpcDataSetSystem;
   }
@@ -78,14 +78,10 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   @Override
   public DataStore getDataStore() {
-    return database;
+    return dataStore;
   }
 
 
-  @Override
-  public Database getFileDataStore() {
-    return this.database;
-  }
 
 
   @Override
@@ -95,7 +91,7 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   @Override
   public String getProductName() {
-    return PRODUCT_NAME;
+    return TpcTableSystemProvider.TPCDS_SCHEME;
   }
 
 
@@ -132,6 +128,11 @@ public class TpcDataSetSystem extends DataSetSystem {
     } else {
       return true;
     }
+  }
+
+  @Override
+  public DataPath getCurrentPath() {
+    return getDataPath(".");
   }
 
   @Override
