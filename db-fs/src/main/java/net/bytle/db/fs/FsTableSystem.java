@@ -258,7 +258,21 @@ public class FsTableSystem extends TableSystem {
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
-    throw new RuntimeException("not yet implemented");
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    Path path = fsDataPath.getNioPath();
+    if (!Files.isDirectory(path)){
+      throw new RuntimeException("The data path ("+dataPath+") is not a directory and therefore has no child");
+    }
+
+    try {
+
+      List<DataPath> children = new ArrayList<>();
+      Files.newDirectoryStream(path).forEach(p->children.add(dataPath.getChild(p.getFileName().toString())));
+      return children;
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
   }
 

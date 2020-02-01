@@ -6,6 +6,7 @@ import net.bytle.db.database.Databases;
 import net.bytle.db.database.FileDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
@@ -160,7 +161,11 @@ public class Tabular implements AutoCloseable {
   public void close() {
     for (DataStore dataStore : dataStores.values()) {
       try {
-        dataStore.getDataSystem().close();
+        TableSystem dataSystem = dataStore.getDataSystem();
+        // A data store that was not used will have no data system
+        if (dataSystem!=null){
+          dataSystem.close();
+        }
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
