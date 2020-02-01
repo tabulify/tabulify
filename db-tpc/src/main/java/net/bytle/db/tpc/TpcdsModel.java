@@ -71,7 +71,8 @@ public class TpcdsModel implements SchemaSample {
     public static final String S_WEB_RETURNS = "s_web_returns";
     public static final String S_INVENTORY = "s_inventory";
 
-    static final List<String> dwhTables = Arrays.asList(
+
+  static final List<String> dwhTables = Arrays.asList(
             DBGEN_VERSION,
             CUSTOMER_ADDRESS,
             CUSTOMER_DEMOGRAPHICS,
@@ -143,7 +144,8 @@ public class TpcdsModel implements SchemaSample {
   /**
    * An utility field to old the number of tables
    */
-  public static int TOTAL_NUMBERS_OF_TABLES = 46;
+  public static final int TOTAL_NUMBERS_OF_TABLES = 46;
+  public static final int TOTAL_NUMBERS_OF_DWH_TABLES = 25;
 
   private final TpcDataSetSystem tableSystem;
 
