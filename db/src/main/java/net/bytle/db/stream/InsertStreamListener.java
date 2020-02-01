@@ -20,7 +20,7 @@ public class InsertStreamListener extends ThreadListenerAbs implements ThreadLis
     private InsertStream insertStream;
 
     private Integer commits = 0;
-    private Integer rows = 0;
+    private Long rows = 0L;
     private Integer batches = 0;
     private List<RuntimeException> exceptions = new ArrayList<>();
 
@@ -82,7 +82,7 @@ public class InsertStreamListener extends ThreadListenerAbs implements ThreadLis
         return commits;
     }
 
-    public Integer getRowCount() {
+    public Long getRowCount() {
         return rows;
     }
 

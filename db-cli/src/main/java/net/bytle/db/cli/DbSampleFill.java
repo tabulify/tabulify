@@ -17,7 +17,6 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.stream.MemorySelectStream;
 import net.bytle.db.stream.Streams;
-import net.bytle.db.tpc.TpcdsDgen;
 
 import java.nio.file.Path;
 import java.sql.Types;

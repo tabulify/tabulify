@@ -10,6 +10,8 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Clob;
 import java.util.Collections;
@@ -17,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static net.bytle.db.tpc.TpcdsDgenTable.LOGGER;
 
 public class TpcdsSelectStream implements SelectStream {
 
@@ -32,6 +33,7 @@ public class TpcdsSelectStream implements SelectStream {
    * The table representation in the tpcds library
    */
   private Table table;
+  private Logger LOGGER = LoggerFactory.getLogger(TpcdsSelectStream.class);;
 
 
   public TpcdsSelectStream(DataPath dataPath) {
@@ -52,7 +54,7 @@ public class TpcdsSelectStream implements SelectStream {
       table = Table.getTable(dataPath.getName());
     } else {
       String msg = "The staging table are not yet supported. Data Path (" + dataPath + ") cannot be read.";
-      LOGGER.severe(msg);
+      LOGGER.error(msg);
       throw new RuntimeException(msg);
       // Ter info
       //                    table = Table.getSourceTables()
@@ -64,11 +66,11 @@ public class TpcdsSelectStream implements SelectStream {
 
     // If this is a child table and not the only table being generated, it will be generated when its parent is generated, so move on.
     if (table.isChild() && !session.generateOnlyOneTable()) {
-      LOGGER.warning("This table is a child table and should be loaded with its parent. Not yet supported");
+      LOGGER.warn("This table is a child table and should be loaded with its parent. Not yet supported");
     }
 
     if (table.hasChild()) {
-      LOGGER.warning("The table (" + dataPath + ") is a parent table and should be loaded with its children (" + Tabulars.getReferences(dataPath) + ")");
+      LOGGER.warn("The table (" + dataPath + ") is a parent table and should be loaded with its children (" + Tabulars.getReferences(dataPath) + ")");
     }
     results = Results.constructResults(table, session).iterator();
   }

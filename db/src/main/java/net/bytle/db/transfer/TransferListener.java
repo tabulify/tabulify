@@ -81,8 +81,8 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
         return null;
     }
 
-    public Integer getRowCount() {
-        return null;
+    public Long getRowCount() {
+        return insertListener.stream().mapToLong(l->l.getRowCount()).sum();
     }
 
     public Integer getBatchCount() {

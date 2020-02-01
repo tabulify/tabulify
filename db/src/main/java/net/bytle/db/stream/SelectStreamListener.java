@@ -20,8 +20,6 @@ public class SelectStreamListener extends ThreadListenerAbs implements ThreadLis
     private SelectStream selectStream;
 
 
-    private Integer rows = 0;
-
     private List<RuntimeException> exceptions = new ArrayList<>();
 
     private SelectStreamListener(SelectStream selectStream) {
@@ -52,20 +50,8 @@ public class SelectStreamListener extends ThreadListenerAbs implements ThreadLis
     }
 
 
-    /**
-     * The number of rows processed
-     *
-     * @param rows The number of records processed
-     */
-    public void addRows(int rows) {
-
-        this.rows = this.rows + rows;
-
-    }
-
-
     public Integer getRowCount() {
-        return rows;
+        return selectStream.getRow();
     }
 
     public SelectStream getSelectStream() {

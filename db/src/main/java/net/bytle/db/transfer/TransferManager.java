@@ -37,7 +37,7 @@ public class TransferManager {
    * If the select stream can only be generated
    * after another, this select stream is dependent
    */
-  private boolean withSelectStreamDependencies = false;
+  private boolean withDependencies = false;
 
   private final List<Integer> typesNotSupported = Arrays.asList(
     Types.ARRAY,
@@ -50,9 +50,8 @@ public class TransferManager {
 
   private Map<DataPath, TransferSourceTarget> transfers = new HashMap<>();
 
-  List<TransferListener> transferListeners = new ArrayList<>();
 
-  private TransferProperties transferProperties;
+  private TransferProperties transferProperties = TransferProperties.of();
 
   /**
    * An utility function to start only one transfer
@@ -63,7 +62,7 @@ public class TransferManager {
    * @return
    */
   public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-        return of().addTransfer(source, target).setTransferProperties(transferProperties).start().get(0);
+    return of().addTransfer(source, target).setTransferProperties(transferProperties).start().get(0);
   }
 
   private TransferManager setTransferProperties(TransferProperties transferProperties) {
@@ -131,7 +130,7 @@ public class TransferManager {
     }
   }
 
-  public TransferListener atomicTransfer(Transfer transfer) {
+  private TransferListener atomicTransfer(Transfer transfer) {
 
     assert transfer.getSourceTargets().size() == 1 : "This is not a transfer of only one source/target";
 
@@ -156,7 +155,7 @@ public class TransferManager {
     /**
      * Single thread ?
      */
-    int targetWorkerCount = transferProperties.getTargetWorkerCount();
+    int targetWorkerCount = transfer.getTransferProperties().getTargetWorkerCount();
     if (targetWorkerCount == 1) {
       try (
         SelectStream sourceSelectStream = Tabulars.getSelectStream(sourceDataPath);
@@ -317,8 +316,24 @@ public class TransferManager {
     // Get the source datapath by child/parent orders
     List<DataPath> dagDataPaths = ForeignKeyDag
       .get(sourceDataPaths)
-      .setWithDependency(this.withSelectStreamDependencies)
+      .setWithDependency(this.withDependencies)
       .getCreateOrderedTables();
+
+    // If this with dependencies, we may miss some transfer
+    // we add them here
+    if (this.withDependencies) {
+      // The target is the first one defined
+      DataPath target = transfers.values().iterator().next().getTargetDataPath();
+      for (DataPath sourceDataPath : dagDataPaths) {
+        TransferSourceTarget transferSourceTarget = transfers.get(sourceDataPath);
+        if (transferSourceTarget == null) {
+          if (Tabulars.isDocument(target)) {
+            target = target.getSibling(sourceDataPath.getName());
+          }
+          transfers.put(sourceDataPath, TransferSourceTarget.of(sourceDataPath, target));
+        }
+      }
+    }
 
     // Building the transfers that we are finally going to execute
     List<Transfer> finalTransfers = new ArrayList<>();
@@ -328,7 +343,7 @@ public class TransferManager {
         finalTransfers.stream().forEach(
           t -> {
             if (t.getSources().contains(selectStreamDependency)) {
-              t.addSourceTargetDataPath(transfers.get(selectStreamDependency));
+              t.addSourceTargetDataPath(transfers.get(dataPath));
             }
           }
         );
@@ -344,6 +359,7 @@ public class TransferManager {
 
   }
 
+
   public List<TransferListener> start() {
 
     List<Transfer> transfers = getTransfersToBeExecuted();
@@ -352,7 +368,8 @@ public class TransferManager {
       if (transfer.sourceTargets.size() > 1) {
         transferListeners.addAll(dependantTransfer(transfer));
       } else {
-        transferListeners.add(atomicTransfer(transfer));
+        TransferListener transferlistener = atomicTransfer(transfer);
+        transferListeners.add(transferlistener);
       }
     }
     return transferListeners;
@@ -369,8 +386,8 @@ public class TransferManager {
    * @param b
    * @return
    */
-  public TransferManager withSelectStreamDependency(boolean b) {
-    this.withSelectStreamDependencies = b;
+  public TransferManager withDependency(boolean b) {
+    this.withDependencies = b;
     return this;
   }
 

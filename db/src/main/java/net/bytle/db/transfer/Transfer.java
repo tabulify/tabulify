@@ -42,11 +42,16 @@ public class Transfer {
   }
 
   public List<DataPath> getSources() {
-    return sourceTargets.stream().map(st -> st.getSourceDataPath()).collect(Collectors.toList());
+    return sourceTargets.stream().map(TransferSourceTarget::getSourceDataPath).collect(Collectors.toList());
   }
 
   public Transfer addSourceTargetDataPath(TransferSourceTarget transferSourceTarget) {
     this.sourceTargets.add(transferSourceTarget);
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return sourceTargets.toString();
   }
 }

@@ -27,4 +27,9 @@ public class TransferSourceTarget {
   public DataPath getTargetDataPath() {
     return target;
   }
+
+  @Override
+  public String toString() {
+    return " "+source + " > "+target+" ";
+  }
 }
