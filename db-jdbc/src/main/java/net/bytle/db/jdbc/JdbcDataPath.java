@@ -373,7 +373,7 @@ public class JdbcDataPath extends DataPath {
 
 
   @Override
-  public List getSelectStreamDependencies() {
+  public DataPath getSelectStreamDependency() {
     throw new RuntimeException("No select stream dependencies in jdbc");
   }
 }

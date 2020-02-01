@@ -5,8 +5,6 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -75,14 +73,14 @@ public class TpcDataPath extends DataPath {
 
 
   @Override
-  public List<DataPath> getSelectStreamDependencies() {
-    List<DataPath> dependencies = new ArrayList<>();
+  public DataPath getSelectStreamDependency() {
+    DataPath dependency = null;
     if (!this.getName().toLowerCase().startsWith("s_")) {
       Table table = Table.getTable(this.getName());
       if (table.isChild()) {
-        dependencies = Arrays.asList(getSibling(table.getParent().getName()));
+        dependency = getSibling(table.getParent().getName());
       }
     }
-    return dependencies;
+    return dependency;
   }
 }

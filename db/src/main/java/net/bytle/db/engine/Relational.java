@@ -34,7 +34,18 @@ public interface Relational {
    *   * web_returns and web_sales
    * The data for sales must be generated (with sales_stream.next) then immediately the data for returns (with returns_stream.next)
    *
+   * A data generation relationship is needed when transferring (generating) data
+   *
+   * If this method is returning data paths,
+   * this data path are children that should be loaded synchronously
+   * ie a call to
+   *    SelectStream.getRow
+   * should be executed after a
+   *    ParentSelectStream.getRow
+   * because:
+   *    * the data is generated in tandem (as TPCDS does for instance, it generate the returns at the same time that the sales)
+   *    * of we are loading an tree like file (xml, ..) that contains several data path in one file.
    */
-  List<DataPath> getSelectStreamDependencies();
+  DataPath getSelectStreamDependency();
 
 }

@@ -72,7 +72,7 @@ public class TpcdsModel implements SchemaSample {
     public static final String S_INVENTORY = "s_inventory";
 
 
-  static final List<String> dwhTables = Arrays.asList(
+  public static final List<String> DWH_TABLES = Arrays.asList(
             DBGEN_VERSION,
             CUSTOMER_ADDRESS,
             CUSTOMER_DEMOGRAPHICS,
@@ -1206,7 +1206,7 @@ public class TpcdsModel implements SchemaSample {
                 return getAndCreateDataPaths();
             case TPCDS_SCHEMA_DWH:
                 return getAndCreateDataPaths().stream()
-                        .filter(s -> dwhTables.contains(s.getName()))
+                        .filter(s -> DWH_TABLES.contains(s.getName()))
                         .collect(Collectors.toList());
             case TPCDS_SCHEMA_STG:
                 return getAndCreateDataPaths().stream()

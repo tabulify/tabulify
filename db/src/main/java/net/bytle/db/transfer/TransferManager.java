@@ -2,7 +2,7 @@ package net.bytle.db.transfer;
 
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.engine.SelectStreamDag;
+import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
@@ -26,6 +26,8 @@ import static net.bytle.db.memory.MemoryDataPathType.TYPE_BLOCKED_QUEUE;
 
 /**
  * A class to transfer a tabular data document content from a data source to another
+ * <p>
+ * One source can have only one target otherwise this is too complicated
  */
 public class TransferManager {
 
@@ -45,15 +47,12 @@ public class TransferManager {
     Types.BIT
   );
 
-  /**
-   * A map between the source data path and the transfer
-   * This is an utility structure to :
-   *   * retrieve the transfer by data path source
-   *   * and makes sure that there is only one transfer by source
-   */
-  private Map<DataPath, Transfer> transfers = new HashMap<>();
+
+  private Map<DataPath, TransferSourceTarget> transfers = new HashMap<>();
 
   List<TransferListener> transferListeners = new ArrayList<>();
+
+  private TransferProperties transferProperties;
 
   /**
    * An utility function to start only one transfer
@@ -64,30 +63,41 @@ public class TransferManager {
    * @return
    */
   public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    return of().addTransfer(source, target, transferProperties).start().get(0);
+        return of().addTransfer(source, target).setTransferProperties(transferProperties).start().get(0);
+  }
+
+  private TransferManager setTransferProperties(TransferProperties transferProperties) {
+    this.transferProperties = transferProperties;
+    return this;
   }
 
 
-  public TransferListener dependantTransfer(List<Transfer> transfers) {
+  public List<TransferListener> dependantTransfer(Transfer transfer) {
 
-    for (Transfer transfer : transfers) {
-      TransferManager.checkSource(transfer.getSourceDataPath());
-      TransferManager.createOrCheckTargetFromSource(transfer.getSourceDataPath(), transfer.getTargetDataPath());
+
+    for (TransferSourceTarget transferSourceTarget : transfer.getSourceTargets()) {
+      TransferManager.checkSource(transferSourceTarget.getSourceDataPath());
+      TransferManager.createOrCheckTargetFromSource(transferSourceTarget.getSourceDataPath(), transferSourceTarget.getTargetDataPath());
     }
-    TransferListener transferListener = TransferListener.of();
-    transferListener.startTimer();
+
+    List<TransferListener> transferListeners = new ArrayList<>();
 
     List<List<Object>> streamTransfers = new ArrayList<>();
-    for (Transfer transfer : transfers) {
-      SelectStream sourceSelectStream = Tabulars.getSelectStream(transfer.getSourceDataPath());
-      InsertStream targetInsertStream = Tabulars.getInsertStream(transfer.getTargetDataPath());
+    for (TransferSourceTarget transferSourceTarget : transfer.getSourceTargets()) {
+      TransferListener transferListener = TransferListener.of();
+      transferListeners.add(transferListener);
+      transferListener.startTimer();
+      SelectStream sourceSelectStream = Tabulars.getSelectStream(transferSourceTarget.getSourceDataPath());
+      InsertStream targetInsertStream = Tabulars.getInsertStream(transferSourceTarget.getTargetDataPath());
       List<Object> mapStream = new ArrayList<>();
       mapStream.add(sourceSelectStream);
       mapStream.add(targetInsertStream);
       streamTransfers.add(mapStream);
       transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
       transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
+
     }
+
 
     boolean showMustGoOn = true;
     while (showMustGoOn) {
@@ -96,7 +106,7 @@ public class TransferManager {
 
         SelectStream sourceSelectStream = (SelectStream) streamTransfers.get(i).get(0);
         Boolean next = sourceSelectStream.next();
-        if (next){
+        if (next) {
           showMustGoOn = true;
           InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
           List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
@@ -107,8 +117,8 @@ public class TransferManager {
       }
     }
 
-    transferListener.stopTimer();
-    return transferListener;
+    transferListeners.forEach(TransferListener::stopTimer);
+    return transferListeners;
   }
 
   public static void checkSource(DataPath sourceDataPath) {
@@ -123,8 +133,11 @@ public class TransferManager {
 
   public TransferListener atomicTransfer(Transfer transfer) {
 
-    DataPath sourceDataPath = transfer.getSourceDataPath();
-    DataPath targetDataPath = transfer.getTargetDataPath();
+    assert transfer.getSourceTargets().size() == 1 : "This is not a transfer of only one source/target";
+
+    TransferSourceTarget transferSourceTarget = transfer.getSourceTargets().get(0);
+    DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
+    DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
     TransferProperties transferProperties = transfer.getTransferProperties();
 
     // Check source
@@ -163,6 +176,7 @@ public class TransferManager {
       }
       transferListener.stopTimer();
       return transferListener;
+
     }
 
     /**
@@ -297,60 +311,48 @@ public class TransferManager {
   }
 
 
-  public List<TransferListener> start() {
-
-    List<DataPath> sourceDataPaths = transfers.values().stream()
-      .map(Transfer::getSourceDataPath)
-      .collect(Collectors.toList());
+  public List<Transfer> getTransfersToBeExecuted() {
+    List<DataPath> sourceDataPaths = new ArrayList<>(transfers.keySet());
 
     // Get the source datapath by child/parent orders
-    List<DataPath> dagDataPaths = SelectStreamDag
+    List<DataPath> dagDataPaths = ForeignKeyDag
       .get(sourceDataPaths)
       .setWithDependency(this.withSelectStreamDependencies)
-      .getDropOrderedTables();
+      .getCreateOrderedTables();
 
-    Set<DataPath> sourceDataPathsProcessed = new HashSet<>();
+    // Building the transfers that we are finally going to execute
+    List<Transfer> finalTransfers = new ArrayList<>();
+    for (DataPath dataPath : dagDataPaths) {
+      DataPath selectStreamDependency = dataPath.getSelectStreamDependency();
+      if (selectStreamDependency != null) {
+        finalTransfers.stream().forEach(
+          t -> {
+            if (t.getSources().contains(selectStreamDependency)) {
+              t.addSourceTargetDataPath(transfers.get(selectStreamDependency));
+            }
+          }
+        );
+      } else {
+        finalTransfers.add(
+          Transfer.of()
+            .addSourceTargetDataPath(transfers.get(dataPath))
+            .setTransferProperties(transferProperties)
+        );
+      }
+    }
+    return finalTransfers;
 
-    for (DataPath dataPath: dagDataPaths){
-      if (!sourceDataPathsProcessed.contains(dataPath)) {
-        List<DataPath> selectStreamDependencies = dataPath.getSelectStreamDependencies();
-        if (selectStreamDependencies.size() == 0) {
-          sourceDataPathsProcessed.add(dataPath);
-          transferListeners.add(atomicTransfer(transfers.get(dataPath)));
-        } else {
+  }
 
-          // Parent (Dependency) first
-          List<DataPath> dependentDataPaths = new ArrayList<>();
-          dependentDataPaths.addAll(selectStreamDependencies);
-          dependentDataPaths.add(dataPath);
-          sourceDataPathsProcessed.addAll(dependentDataPaths);
+  public List<TransferListener> start() {
 
-          // Transfer
-          List<Transfer> sourceTransfers = dependentDataPaths
-            .stream()
-            .map(d-> {
-              Transfer transfer = transfers.get(d);
-              // The case if the parent/dependency transfer was not added
-              if (transfer==null){
-                Transfer childTransfer = transfers.get(dataPath);
-                DataPath childTarget = childTransfer.getTargetDataPath();
-                DataPath target;
-                if (Tabulars.isDocument(childTarget)) {
-                  target = childTarget.getSibling(d.getName());
-                } else {
-                  target = childTarget;
-                }
-                transfer = Transfer.of()
-                  .setSourceDataPath(d)
-                  .setTargetDataPath(target)
-                  .setTransferProperties(childTransfer.getTransferProperties());
-              }
-              return transfer;
-            })
-            .collect(Collectors.toList());
-          transferListeners.add(dependantTransfer(sourceTransfers));
-
-        }
+    List<Transfer> transfers = getTransfersToBeExecuted();
+    List<TransferListener> transferListeners = new ArrayList<>();
+    for (Transfer transfer : transfers) {
+      if (transfer.sourceTargets.size() > 1) {
+        transferListeners.addAll(dependantTransfer(transfer));
+      } else {
+        transferListeners.add(atomicTransfer(transfer));
       }
     }
     return transferListeners;
@@ -363,6 +365,7 @@ public class TransferManager {
    * If we try to load from a select stream that is dependent on another
    * the dependent select stream will also be loaded, created
    * otherwise an error is thrown
+   *
    * @param b
    * @return
    */
@@ -376,35 +379,24 @@ public class TransferManager {
   }
 
   /**
-   *
    * @param source
    * @param target if the target is a container, the target will become a child of it with the name of the source
-   * @param transferProperties
    * @return
    */
-  public TransferManager addTransfer(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferManager addTransfer(DataPath source, DataPath target) {
 
-    if (Tabulars.isContainer(target)){
+    if (Tabulars.isContainer(target)) {
       target = target.getChild(source.getName());
     }
 
-    Transfer transfer = Transfer.of()
-      .setSourceDataPath(source)
-      .setTargetDataPath(target);
-    if (transferProperties!=null){
-      transfer.setTransferProperties(transferProperties);
-    }
-    transfers.put(source,transfer);
+    transfers.put(source, TransferSourceTarget.of(source, target));
+
     return this;
   }
 
-  public TransferManager addTransfer(DataPath source, DataPath target) {
-    addTransfer(source,target,null);
-    return this;
-  }
 
   public TransferManager addTransfers(List<DataPath> sources, DataPath target) {
-    sources.forEach(s->this.addTransfer(s,target));
+    sources.forEach(s -> this.addTransfer(s, target));
     return this;
   }
 }
