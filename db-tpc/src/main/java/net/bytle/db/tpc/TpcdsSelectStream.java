@@ -43,9 +43,12 @@ public class TpcdsSelectStream implements SelectStream {
   }
 
   private void init() {
+
     // Teradata
     Options options = new Options();
+    options.scale=0.1;
     Session session = options.toSession();
+
     // Could be parallized with
     // session.withChunkNumber(chunkNumber)
     options.table = dataPath.getName();

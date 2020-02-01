@@ -22,16 +22,6 @@ public class Transfer {
     return new Transfer();
   }
 
-  public Transfer addSourceTargetDataPath(DataPath sourceDataPath, DataPath targetDataPath) {
-    this.sourceTargets.add(TransferSourceTarget.of(sourceDataPath, targetDataPath));
-    return this;
-  }
-
-
-  public Transfer setTransferProperties(TransferProperties transferProperties) {
-    this.transferProperties = transferProperties;
-    return this;
-  }
 
   public List<TransferSourceTarget> getSourceTargets() {
     return sourceTargets;
@@ -54,4 +44,5 @@ public class Transfer {
   public String toString() {
     return sourceTargets.toString();
   }
+
 }

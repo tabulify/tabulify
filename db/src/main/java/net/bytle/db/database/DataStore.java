@@ -175,8 +175,12 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   }
 
   @Override
-  public void close() throws Exception {
-    tableSystem.close();
+  public void close()  {
+    try {
+      tableSystem.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

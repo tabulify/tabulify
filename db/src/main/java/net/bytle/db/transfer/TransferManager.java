@@ -351,7 +351,6 @@ public class TransferManager {
         finalTransfers.add(
           Transfer.of()
             .addSourceTargetDataPath(transfers.get(dataPath))
-            .setTransferProperties(transferProperties)
         );
       }
     }

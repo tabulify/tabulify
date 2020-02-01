@@ -193,7 +193,7 @@ public class JdbcDataSystem extends TableSystem {
    * @throws Exception if this resource cannot be closed
    */
   @Override
-  public void close() throws Exception {
+  public void close()  {
 
 
     if (this.connection != null) {
