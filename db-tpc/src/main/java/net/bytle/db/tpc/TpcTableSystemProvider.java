@@ -40,7 +40,7 @@ public class TpcTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public TpcDataSetSystem getTableSystem(DataStore dataStore) {
-        return TpcDataSetSystem.of(this, dataStore);
+        return TpcDataSetSystem.of(dataStore);
     }
 
 

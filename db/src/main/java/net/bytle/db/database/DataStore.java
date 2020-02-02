@@ -4,6 +4,8 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public abstract class DataStore implements Comparable<DataStore>, AutoCloseable {
+
+  private final static Logger logger = LoggerFactory.getLogger(DataStore.class);
 
   // The database name
   private final String name;
@@ -183,4 +187,17 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     }
   }
 
+  public Double getPropertyAsDouble(String property) {
+    String value = properties.get(property);
+    if (value==null) {
+      return null;
+    } else {
+      try {
+        return Double.valueOf(value);
+      } catch (Exception e){
+        logger.error("The value for the property ("+property+") of the data store ("+this.getName()+") is not in a double format ("+value+")");
+        throw new RuntimeException(e);
+      }
+    }
+  }
 }

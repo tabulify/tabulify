@@ -7,7 +7,6 @@ import com.teradata.tpcds.Table;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
 import org.slf4j.Logger;
@@ -23,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class TpcdsSelectStream implements SelectStream {
 
   private final DataPath dataPath;
-  // Tpcdsd data
+  // Tpcds data
   private Iterator<List<List<String>>> results;
   private List<String> values;
   private int row = 0;
@@ -44,37 +43,27 @@ public class TpcdsSelectStream implements SelectStream {
 
   private void init() {
 
-    // Teradata
+    // Teradata options
     Options options = new Options();
-    options.scale=0.1;
+    Double scale = dataPath.getDataSystem().getDataStore().getPropertyAsDouble(TpcDataSetSystem.SCALE);
+    if (scale==null){
+      scale = 0.01;
+    }
+    options.scale=scale;
     Session session = options.toSession();
 
-    // Could be parallized with
+    // Could be parallelize with
     // session.withChunkNumber(chunkNumber)
     options.table = dataPath.getName();
 
     if (!dataPath.getName().startsWith("s_")) {
       table = Table.getTable(dataPath.getName());
     } else {
-      String msg = "The staging table are not yet supported. Data Path (" + dataPath + ") cannot be read.";
+      String msg = "The tpcds staging table (ie table that start with a s) are not yet supported. Data Path (" + dataPath + ") cannot be read.";
       LOGGER.error(msg);
       throw new RuntimeException(msg);
-      // Ter info
-      //                    table = Table.getSourceTables()
-      //                            .stream()
-      //                            .filter(s -> s.getName().toLowerCase().equals(tableDef.getName().toLowerCase()))
-      //                            .collect(Collectors.toList())
-      //                            .of(0);
     }
 
-    // If this is a child table and not the only table being generated, it will be generated when its parent is generated, so move on.
-    if (table.isChild() && !session.generateOnlyOneTable()) {
-      LOGGER.warn("This table is a child table and should be loaded with its parent. Not yet supported");
-    }
-
-    if (table.hasChild()) {
-      LOGGER.warn("The table (" + dataPath + ") is a parent table and should be loaded with its children (" + Tabulars.getReferences(dataPath) + ")");
-    }
     results = Results.constructResults(table, session).iterator();
   }
 

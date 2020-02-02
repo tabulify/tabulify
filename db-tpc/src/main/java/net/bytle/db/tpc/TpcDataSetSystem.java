@@ -14,22 +14,21 @@ import java.util.stream.Collectors;
 
 public class TpcDataSetSystem extends DataSetSystem {
 
-  private static TpcDataSetSystem tpcDataSetSystem;
-  private final TpcTableSystemProvider tpcTableSystemProvider;
+  // A property in the datastore that give the scale used
+  public static final String SCALE = "scale";
+
+
   private TpcdsModel tpcModel;
   private final DataStore dataStore;
 
 
-  private TpcDataSetSystem(TpcTableSystemProvider tpcTableSystemProvider, DataStore dataStore) {
-    this.tpcTableSystemProvider = tpcTableSystemProvider;
+  private TpcDataSetSystem(DataStore dataStore) {
     this.dataStore = dataStore;
   }
 
-  public static TpcDataSetSystem of(TpcTableSystemProvider tpcTableSystemProvider, DataStore dataStore) {
-    if (tpcDataSetSystem == null) {
-      tpcDataSetSystem = new TpcDataSetSystem(tpcTableSystemProvider,dataStore);
-    }
-    return tpcDataSetSystem;
+  public static TpcDataSetSystem of(DataStore dataStore) {
+
+    return new TpcDataSetSystem(dataStore);
   }
 
   public TpcdsModel getDataModel() {

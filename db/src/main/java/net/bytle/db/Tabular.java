@@ -62,8 +62,9 @@ public class Tabular implements AutoCloseable {
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
     // TpcDs
-    Database tpcDs = Databases.of(TPCDS_DATASTORE)
-      .setConnectionString(TPCDS_DATASTORE);
+    DataStore tpcDs = Databases.of(TPCDS_DATASTORE)
+      .setConnectionString(TPCDS_DATASTORE)
+      .addProperty("scale","0.01");
     dataStores.put(tpcDs.getName(), tpcDs);
 
   }
