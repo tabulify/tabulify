@@ -24,7 +24,6 @@ import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.serviceproxy.ServiceBinder;
 import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
@@ -94,7 +93,8 @@ public class DatabaseVerticle extends AbstractVerticle {
 
       // Load meta
       String dataStoreName = "ip";
-      DataPath ipTable = Tabular.tabular()
+      Tabular tabular = Tabular.tabular();
+      DataPath ipTable = tabular
         .getOrCreateDataStore(dataStoreName)
         .setConnectionString(url)
         .getDataPath("ip");
@@ -118,7 +118,7 @@ public class DatabaseVerticle extends AbstractVerticle {
           }
         }
         try {
-          DataPath csvDataPath = DataPaths.of(csvPath);
+          DataPath csvDataPath = tabular.getDataPath(csvPath);
           Tabulars.transfer(csvDataPath, ipTable);
         } catch (Exception e) {
           LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
@@ -127,7 +127,7 @@ public class DatabaseVerticle extends AbstractVerticle {
 
       }
       future.complete(true);
-      Tabular.tabular().close();
+      tabular.close();
     }, res -> {
 
       if (res.succeeded()) {

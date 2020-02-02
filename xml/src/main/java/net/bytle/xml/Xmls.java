@@ -1,8 +1,8 @@
 package net.bytle.xml;
 
 
+import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -10,7 +10,10 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +43,7 @@ public class Xmls {
             // CSV
             LOGGER.info("Batch check mode");
 
-            DataPath csvTable = DataPaths.of(csvPath);
+            DataPath csvTable = Tabular.tabular().getDataPath(csvPath);
             SelectStream selectStream = Tabulars.getSelectStream(csvTable);
             while (selectStream.next()) {
                 String csvXpath = selectStream.getString(0);
@@ -101,7 +104,7 @@ public class Xmls {
         } else {
             // CSV
             printWriter.println("Batch check mode");
-            DataPath csvDataPath = DataPaths.of(csvPath);
+            DataPath csvDataPath = Tabular.tabular().getDataPath(csvPath);
             try (
                     SelectStream csvStream = Tabulars.getSelectStream(csvDataPath);
             ) {
@@ -243,7 +246,7 @@ public class Xmls {
 
         String lastXPathPart = xpath.substring(xpath.lastIndexOf("/") + 1);
         Path csvFileName = Paths.get(lastXPathPart + ".csv");
-        DataPath dataPath = DataPaths.of(csvFileName);
+        DataPath dataPath = Tabular.tabular().getDataPath(csvFileName);
         try (
                 InsertStream insertStream = Tabulars.getInsertStream(dataPath)
         ) {
