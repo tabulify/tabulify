@@ -30,6 +30,9 @@ public class Tabulars {
   }
 
   public static SelectStream getSelectStream(DataPath dataPath) {
+    if (isContainer(dataPath)){
+      throw new RuntimeException("The data path ("+dataPath+") is a container (ie directory) of data path. It has therefore no content and you can't read or select it. If you want to read a container, you first list its childrens");
+    }
     if (Tabulars.exists(dataPath)) {
       return dataPath.getDataSystem().getSelectStream(dataPath);
     } else {
