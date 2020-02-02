@@ -3,17 +3,17 @@
  */
 
 dependencies {
-    compile project(':bytle-db')
-    compile project(':bytle-db-transfer')
-    compile project(':bytle-cli')
-    compile project(':bytle-db-tpc')
-    compile project(':bytle-db-gen')
-    compile project(':bytle-db-sqlite')
-    compile project(':bytle-regexp')
-    compile project(':bytle-log')
-    compile project(':bytle-fs')
-    compile project(':bytle-xml')
-    compile project(':bytle-timer')
+  compile project(':bytle-db')
+  compile project(':bytle-cli')
+  compile project(':bytle-db-gen')
+  compile project(':bytle-regexp')
+  compile project(':bytle-log')
+  compile project(':bytle-fs')
+  compile project(':bytle-xml')
+  compile project(':bytle-timer')
+  runtimeOnly project(':bytle-db-fs')
+  runtimeOnly project(':bytle-db-sqlite')
+  runtimeOnly project(':bytle-db-tpc')
 }
 
 description = 'Db Cli'
