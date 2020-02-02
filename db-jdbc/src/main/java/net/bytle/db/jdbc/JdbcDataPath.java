@@ -347,8 +347,12 @@ public class JdbcDataPath extends DataPath {
   }
 
 
-  public boolean isDataUnit() {
-    return name != null;
+  public boolean isDocument() {
+    if (type.equals(QUERY_TYPE)){
+      return true;
+    } else {
+      return name != null;
+    }
   }
 
   public JdbcDataPath setType(String type) {
