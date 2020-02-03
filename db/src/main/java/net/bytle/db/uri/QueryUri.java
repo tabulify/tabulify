@@ -1,6 +1,10 @@
 package net.bytle.db.uri;
 
-import java.nio.file.Files;
+import net.bytle.fs.Fs;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class QueryUri {
@@ -17,7 +21,14 @@ public class QueryUri {
   }
 
   Map<String, String> getQueries(){
-    Files.newDirectoryStream(dataUri.getPath(),)
+    Map<String, String> queries = new HashMap<>();
+    List<Path> paths = Fs.getFilesByGlob(dataUri.getPath());
+    for (Path path:paths){
+      String query = Fs.getFileContent(path);
+      queries.put(path.toString(),query);
+    }
+    return queries;
+
   }
 
 

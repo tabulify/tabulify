@@ -532,7 +532,7 @@ public class Fs {
    * /tmp/*.md
    * will return all md file in the tmp directory
    */
-  static public List<Path> selectFile(String glob) {
+  static public List<Path> getFilesByGlob(String glob) {
 
     // Get the file system
     FileSystem fileSystem = Paths.get(".").getFileSystem();
