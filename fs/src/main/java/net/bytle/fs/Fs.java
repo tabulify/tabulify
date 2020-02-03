@@ -2,6 +2,7 @@ package net.bytle.fs;
 
 
 import net.bytle.os.Oss;
+import net.bytle.regexp.Globs;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -521,5 +522,79 @@ public class Fs {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * @param glob - a glob
+   * @return a list of file that matches the glob
+   * <p>
+   * ex: the following glob
+   * /tmp/*.md
+   * will return all md file in the tmp directory
+   */
+  static public List<Path> selectFile(String glob) {
+
+    // Get the file system
+    FileSystem fileSystem = Paths.get(".").getFileSystem();
+
+    // Start path
+    Path startPath = Paths.get(".");
+    for (Path root: fileSystem.getRootDirectories()){
+      if (glob.startsWith(root.toString())){
+        startPath = Paths.get(root.toString());
+      }
+    }
+
+    String separator = fileSystem.getSeparator();
+    if (separator.equals("\\")){
+      separator = "\\\\";
+    }
+    String[] globNames = glob.split(separator);
+    List<Path> currentMatchesPaths = new ArrayList<>();
+    currentMatchesPaths.add(startPath);
+
+    for (String globPattern: globNames) {
+
+      String pattern = Globs.toRegexPattern(globPattern);
+
+      // The list where the actual matches path will be stored
+      List<Path> matchesPath = new ArrayList<>();
+      for (Path currentPath : currentMatchesPaths) {
+        // There is also newDirectoryStream
+        // https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html#newDirectoryStream-java.nio.file.Path-java.lang.String-
+        // but yeah ...
+        if (Files.isDirectory(currentPath)) {
+          List<Path> paths = Fs.getChildrenFiles(currentPath);
+          for (Path childrenPath : paths) {
+            if (childrenPath.getFileName().toString().matches(pattern)) {
+              matchesPath.add(childrenPath);
+            }
+          }
+        } else {
+          if (currentPath.getFileName().toString().matches(pattern)) {
+            matchesPath.add(currentPath);
+          }
+        }
+      }
+      // Recursion
+      currentMatchesPaths = matchesPath;
+      // Break if there is not match
+      if (matchesPath.size() == 0) {
+        break;
+      }
+    }
+
+    return currentMatchesPaths;
+
+  }
+
+  /**
+   * A path cannot have special character such as a star
+   * This utility function creates a glob path pattern with the file separator of the local system
+   * @param names - glob patterns
+   * @return a glob path pattern for the local file system
+   */
+  public static String createGlobPath(String... names) {
+    return String.join(System.getProperty("file.separator"), names);
   }
 }

@@ -61,6 +61,16 @@ public class FsTableSystem extends TableSystem {
   }
 
 
+
+
+
+  @Override
+  public DataPath getDataPath(DataUri dataUri) {
+
+    return getDataPath(dataUri.getPath());
+
+  }
+
   /**
    * @param dataUri - a data Uri
    * @return a list of file that matches the uri segments
@@ -106,14 +116,6 @@ public class FsTableSystem extends TableSystem {
     return currentMatchesPaths.stream()
       .map(s -> FsDataPath.of(this, s))
       .collect(Collectors.toList());
-  }
-
-
-  @Override
-  public DataPath getDataPath(DataUri dataUri) {
-
-    return getDataPath(dataUri.getPath());
-
   }
 
   @Override
