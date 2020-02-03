@@ -32,7 +32,6 @@ public class Db {
     public static final String CLI_DATABASE_NAME_SOURCE = "source";
 
 
-    public static final String TPCDS_DATASTORE = "tpcds";
 
     // To store  the data
     public static List<Map<String, String>> records = new ArrayList<>();
@@ -40,12 +39,6 @@ public class Db {
 
     public static void main(String[] args) {
 
-      // TODO: TpcDs (The default data store vault should bre created here
-      // if we want to add a TPCDS store because tpcds is a plugin
-      // DataStore tpcDs = Database.of(TPCDS_DATASTORE)
-      //    .setConnectionString(TPCDS_DATASTORE)
-      //    .addProperty("scale","0.01");
-      // dataStores.put(tpcDs.getName(), tpcDs);
 
         // A client command example
         String example = "To load data from a csv file you would type:\n" +

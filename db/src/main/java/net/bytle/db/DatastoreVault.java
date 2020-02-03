@@ -86,6 +86,7 @@ public class DatastoreVault {
    * @return
    */
   private DatastoreVault save(DataStore dataStore, Boolean internalPassphrase) {
+    assert dataStore.getConnectionString()!=null:"You cannot store a data store without a connection string (url)";
 
     Ini ini = getIniFile();
     ini.put(dataStore.getName(), URL, dataStore.getConnectionString());

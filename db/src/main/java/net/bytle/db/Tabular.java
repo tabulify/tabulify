@@ -36,6 +36,7 @@ public class Tabular implements AutoCloseable {
    */
   public static final String LOCAL_FILE_SCHEME = "file";
   public static final String MEMORY_DATASTORE = "memory";
+  public static final String TPCDS_DATASTORE = "tpcds";
 
 
   /**
@@ -64,6 +65,11 @@ public class Tabular implements AutoCloseable {
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
 
+
+     DataStore tpcDs = Database.of(TPCDS_DATASTORE)
+        .setConnectionString(TPCDS_DATASTORE)
+        .addProperty("scale","0.01");
+     dataStores.put(tpcDs.getName(), tpcDs);
 
   }
 

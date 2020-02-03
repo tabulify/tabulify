@@ -60,7 +60,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
 
   public DataStore setConnectionString(String connectionString) {
-    assert connectionString != null : "A connection string cannot be null";
+    assert connectionString != null : "A connection string cannot be null (for the data store "+this.name+")";
 
     if (this.connectionString == null || this.connectionString.equals(connectionString)) {
 
