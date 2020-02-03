@@ -1,7 +1,7 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.model.TableDef;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 public class DbQueryExecute {
@@ -45,7 +45,7 @@ public class DbQueryExecute {
                 .setDescription("The query defines as a command line argument, a query file or a directory of query files.")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         cliCommand.setDescription("Execute one or several queries. \n" + "" +
                 "For one query, the data is shown. For multiple queries, the performance result is shown.");
@@ -61,11 +61,11 @@ public class DbQueryExecute {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         DataUri dataUri = DataUri.of(cliParser.getString(DATA_URI));
-        DataPath dataPath = DataPaths.of(databasesStore, dataUri);
+        DataPath dataPath = DataPaths.of(datastoreVault, dataUri);
 
         List<String> argValues = cliParser.getStrings(ARG_NAME);
 

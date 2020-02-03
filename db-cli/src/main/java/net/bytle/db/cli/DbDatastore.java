@@ -12,7 +12,7 @@ import java.util.List;
 import static net.bytle.db.cli.Words.*;
 
 
-public class DbDatabase {
+public class DbDatastore {
 
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
@@ -43,22 +43,22 @@ public class DbDatabase {
             for (CliCommand command : commands) {
                 switch (command.getName()) {
                     case ADD_COMMAND:
-                        DbDatabaseAdd.run(command, args);
+                        DbDatastoreAdd.run(command, args);
                         break;
                     case UPSERT_COMMAND:
-                        DbDatabaseUpsert.run(command, args);
+                        DbDatastoreUpsert.run(command, args);
                         break;
                     case LIST_COMMAND:
-                        DbDatabaseList.run(command, args);
+                        DbDatastoreList.run(command, args);
                         break;
                     case REMOVE_COMMAND:
-                        DbDatabaseRemove.run(command, args);
+                        DbDatastoreRemove.run(command, args);
                         break;
                     case INFO_COMMAND:
-                        DbDatabaseInfo.run(command, args);
+                        DbDatastoreInfo.run(command, args);
                         break;
                     case SHOW_COMMAND:
-                        DbDatabaseInfo.run(command, args);
+                        DbDatastoreInfo.run(command, args);
                         break;
                     default:
                         LOGGER.severe("The command (" + command + ") is unknown");

@@ -5,7 +5,7 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
@@ -59,13 +59,13 @@ public class DbTableDrop {
                 .setDescription("if set, it will not throw an error if a table is not found")
                 .setDefaultValue(false);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
 
         // Bring the of statement out of the output zone
@@ -78,7 +78,7 @@ public class DbTableDrop {
         List<String> tableUris = cliParser.getStrings(TABLE_URIS);
         List<DataPath> selectedDataPaths = new ArrayList<>();
         for (String dataUri : tableUris) {
-            List<DataPath> select = DataPaths.select(databasesStore, DataUri.of(dataUri));
+            List<DataPath> select = DataPaths.select(datastoreVault, DataUri.of(dataUri));
             if (select.size() == 0) {
                 final String msg = "No tables found with the data Uri (" + dataUri + ")";
                 if (notStrict) {

@@ -4,7 +4,7 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.log.Log;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.uri.TableDataUri;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 public class DbTableTruncate {
@@ -36,7 +36,7 @@ public class DbTableTruncate {
 
         cliCommand.argOf(TABLE_URIS)
                 .setDescription("one or more table URI (@database[/schema]/table).");
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
         cliCommand.flagOf(Words.FORCE)
                 .setDescription("truncate also the tables that references the truncated tables")
                 .setDefaultValue(false);
@@ -46,15 +46,15 @@ public class DbTableTruncate {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tablesSelectedToTruncate = new ArrayList<>();
         for (String stringTableUri : stringTablesUris) {
             TableDataUri tableUri = TableDataUri.of(stringTableUri);
-            Database database = databasesStore.getDataStore(tableUri.getDataStore());
+            Database database = datastoreVault.getDataStore(tableUri.getDataStore());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableUri.getSchemaName() != null) {
                 schemaDef = database.getSchema(tableUri.getSchemaName());

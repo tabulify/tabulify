@@ -200,7 +200,7 @@ public class FsTableSystem extends TableSystem {
           case "html":
             return HtmlManager.of(this);
           default:
-            throw new RuntimeException("No file manager could be found for the extension (" + switchKey + ")");
+            return FsFileManager.of(this);
         }
     }
 

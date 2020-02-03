@@ -5,7 +5,7 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.log.Log;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
@@ -18,7 +18,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 /**
@@ -40,7 +40,7 @@ public class DbTableList {
                 .setDescription("One or more name table uri (ie @database[/schema]/table)")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         cliCommand.flagOf(Words.NO_COUNT)
                 .setDescription("suppress the column showing the table count")
@@ -49,15 +49,15 @@ public class DbTableList {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         List<String> stringTableUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tableDefs = new ArrayList<>();
 
         for (String stringTableUri : stringTableUris) {
             TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
-            Database database = databasesStore.getDataStore(tableDataUri.getDataStore());
+            Database database = datastoreVault.getDataStore(tableDataUri.getDataStore());
             SchemaDef schemaDef = database.getCurrentSchema();
             if (tableDataUri.getSchemaName()!=null) {
                 schemaDef = database.getSchema(tableDataUri.getSchemaName());

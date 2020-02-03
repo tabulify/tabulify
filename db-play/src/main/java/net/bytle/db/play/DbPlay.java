@@ -1,6 +1,6 @@
 package net.bytle.db.play;
 
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.ForeignKeyDag;
@@ -25,7 +25,7 @@ public class DbPlay {
   private static Path playDir;
   static private Path dataDir;
   static private Path outDir;
-  private static DatabasesStore databasesStore;
+  private static DatastoreVault datastoreVault;
   private static Path workingDir;
 
 
@@ -56,7 +56,7 @@ public class DbPlay {
 
     sqlDir = workingPath.resolve("sql");
     Path dsnDir = workingPath.resolve("dsn");
-    databasesStore = DatabasesStore.of(dsnDir.resolve("dsn.ini"));
+    datastoreVault = DatastoreVault.of(dsnDir.resolve("dsn.ini"));
 
 
     // The Yaml entry class
@@ -120,7 +120,7 @@ public class DbPlay {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the clean operations: " + desc);
     String target = (String) Maps.getPropertyCaseIndependent(task, "target");
-    Database database = databasesStore.getDataStore(target);
+    Database database = datastoreVault.getDataStore(target);
     DataPath dataPath = DataPaths.of(database, ".");
     List<DataPath> children = DataPaths.getChildren(dataPath);
     ForeignKeyDag.get(children).getDropOrderedTables()
@@ -156,7 +156,7 @@ public class DbPlay {
       // A query
       Map<String,Object> targetValues = (Map<String, Object>) sourceValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      database = databasesStore.getDataStore(dsn);
+      database = datastoreVault.getDataStore(dsn);
       targetPath = (String) Maps.getPropertyCaseIndependent(targetValues, "sql");
       Path targetSqlFile = sqlDir.resolve(targetPath);
       sourceDataPath = DataPaths.ofQuery(database,Fs.getFileContent(targetSqlFile));
@@ -166,14 +166,14 @@ public class DbPlay {
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     DataPath targetDataPath;
     if (targetValue.getClass().equals(String.class)){
-      database = databasesStore.getDataStore((String) targetValue);
+      database = datastoreVault.getDataStore((String) targetValue);
       String sourceFileName = sourcePath.getFileName().toString();
       targetPath = Fs.getFileName(sourceFileName);
       targetDataPath = DataPaths.of(database, targetPath);
     } else {
       Map<String,Object> targetValues = (Map<String, Object>) targetValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      database = databasesStore.getDataStore(dsn);
+      database = datastoreVault.getDataStore(dsn);
       String targetPathValue = (String) Maps.getPropertyCaseIndependent(targetValues, "name");
       if (dsn.equals("file")){
         Path targetValueAsPath = workingDir.resolve(targetPathValue);
@@ -193,8 +193,8 @@ public class DbPlay {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the sql operations: " + desc);
     String sourceValue = (String) Maps.getPropertyCaseIndependent(task, "source");
-    DatabasesStore databasesStore = DatabasesStore.of(dataDir.resolve("dsn.ini"));
-    Database sourceDatabase = databasesStore.getDataStore(sourceValue);
+    DatastoreVault datastoreVault = DatastoreVault.of(dataDir.resolve("dsn.ini"));
+    Database sourceDatabase = datastoreVault.getDataStore(sourceValue);
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     String targetDsn = null;
     String targetName = null;
@@ -203,7 +203,7 @@ public class DbPlay {
       targetDsn = (String) Maps.getPropertyCaseIndependent(targetMap, "dsn");
       targetName = (String) Maps.getPropertyCaseIndependent(targetMap, "name");
     }
-    Database targetDatabase = databasesStore.getDataStore(targetDsn);
+    Database targetDatabase = datastoreVault.getDataStore(targetDsn);
     String sqlValue = (String) Maps.getPropertyCaseIndependent(task, "sql");
     if (targetName == null) {
       targetName = Fs.getFileName(sqlValue);

@@ -4,7 +4,7 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
@@ -54,14 +54,14 @@ public class DbQueryDownload {
                 .setDescription("if this flag is present, the source target mode will be used (ie a succession of source/target data uri as argument)");
         String example = cliCommand.getName() + CliParser.PREFIX_LONG_OPTION + SOURCE_DATA_URI + " @sqlite QueryToDownload.sql \n";
         cliCommand.addExample(example);
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         // Parse
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // The data with the transfers
         List<Transfer> transfers;
@@ -77,7 +77,7 @@ public class DbQueryDownload {
                 throw new RuntimeException("In the default mode, the option (" + SOURCE_DATA_URI + ") is mandatory");
             }
             DataUri sourceDataUri = DataUri.of(stringSourceDataUri);
-            DataPath sourceDataPath = DataPaths.of(databasesStore, sourceDataUri);
+            DataPath sourceDataPath = DataPaths.of(datastoreVault, sourceDataUri);
 
             // Output
             DataPath dataPathDownloadLocation;
@@ -101,7 +101,7 @@ public class DbQueryDownload {
 
                 // Source
                 DataUri sqlFileUri = DataUri.of(stringSqlFileUri);
-                List<DataPath> sqlDataPaths = DataPaths.select(databasesStore, sqlFileUri);
+                List<DataPath> sqlDataPaths = DataPaths.select(datastoreVault, sqlFileUri);
                 for (DataPath sqlDataPath : sqlDataPaths) {
                     String sourceFileQuery = Tabulars.getString(sqlDataPath);
                     if (!Queries.isQuery(sourceFileQuery)) {

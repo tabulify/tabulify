@@ -2,7 +2,7 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
+import static net.bytle.db.cli.DbDatastore.BYTLE_DB_DATABASES_STORE;
 
 /**
  * Created by gerard on 20-06-2017.
@@ -21,7 +21,7 @@ public class Words {
     static final String CONFIG_FILE_PATH = "conf";
 
     // Module
-    static final String DATABASE_COMMAND = "database";
+    static final String DATASTORE_COMMAND = "database";
     static final String TABLE_COMMAND = "table";
     static final String SCHEMA_COMMAND = "schema";
     static final String QUERY_COMMAND = "query";
@@ -94,7 +94,7 @@ public class Words {
     static final String OUTPUT_DATA_URI = "output";
     static final String FILE_FORMAT = "format";
     // Options used in all sub actions
-    static final String DATABASE_STORE = "database-store";
+    static final String DATASTORE_VAULT_PATH = "database-store";
 
 
     public static String TARGET_DATA_URI = "target-data-uri";
@@ -108,17 +108,16 @@ public class Words {
                 .setDescription("Define the file format");
 
 
-
         cliCommand.globalWordOf(OUTPUT_DATA_URI)
                 .setTypeAsOption()
                 .setShortName("o")
                 .setValueName("path")
                 .setDescription("defines the path of the output file");
 
-        cliCommand.globalWordOf(DATABASE_STORE)
+        cliCommand.globalWordOf(DATASTORE_VAULT_PATH)
                 .setTypeAsOption()
                 .setDescription("The path where the database information are stored")
-                .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
+                .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
 
         cliCommand.globalWordOf(Words.DEFINITION_FILE)

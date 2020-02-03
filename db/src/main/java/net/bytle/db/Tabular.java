@@ -2,11 +2,9 @@ package net.bytle.db;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.database.FileDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 
 import java.nio.file.Path;
@@ -19,7 +17,7 @@ import java.util.Map;
  * A tabular is a global domain.
  * It's the entry point of every tabular/data application
  * It has knowledge of:
- * * the {@link DatabasesStore}
+ * * the {@link DatastoreVault}
  * * and of the {@link net.bytle.db.database.Database}
  * and therefore is the main entry to create a data path from an URI
  * * a datastore object
@@ -29,13 +27,16 @@ import java.util.Map;
 public class Tabular implements AutoCloseable {
 
 
+  // Named used to create default path
+  public static final String APP_NAME = "BytleDb";
+
   /**
    * The local file database name as also stated
    * by the {@link Path#getFileSystem()}
    */
   public static final String LOCAL_FILE_SCHEME = "file";
   public static final String MEMORY_DATASTORE = "memory";
-  public static final String TPCDS_DATASTORE = "tpcds";
+
 
   /**
    * The memory database
@@ -43,9 +44,10 @@ public class Tabular implements AutoCloseable {
   public static final String DEFAULT_DATASTORE = MEMORY_DATASTORE;
 
 
-  DatabasesStore databaseStore = null;
+  DatastoreVault dataStoreVault = null;
 
   Map<String, DataStore> dataStores = new HashMap<>();
+  private String passphrase;
 
 
   public Tabular() {
@@ -57,15 +59,11 @@ public class Tabular implements AutoCloseable {
     dataStores.put(fileDataStore.getName(), fileDataStore);
 
     // Memory
-    Database memoryDataBase = Databases.of(MEMORY_DATASTORE)
+    Database memoryDataBase = Database.of(MEMORY_DATASTORE)
       .setConnectionString(MemorySystemProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
-    // TpcDs
-    DataStore tpcDs = Databases.of(TPCDS_DATASTORE)
-      .setConnectionString(TPCDS_DATASTORE)
-      .addProperty("scale","0.01");
-    dataStores.put(tpcDs.getName(), tpcDs);
+
 
   }
 
@@ -108,19 +106,22 @@ public class Tabular implements AutoCloseable {
    * <p>
    * There is two specials data store always available (namely file and memory that store data respectively on the local file system and in memory)
    */
-  private DataStore getDataStore(String dataStoreName) {
+  public DataStore getDataStore(String dataStoreName) {
 
     return dataStores.get(dataStoreName);
 
   }
 
-  public DatabasesStore getDataStoreVault() {
-    return this.databaseStore;
+  public DatastoreVault getDataStoreVault() {
+    return this.dataStoreVault;
   }
 
   public Tabular setDataStoreVault(Path storagePath) {
-    databaseStore = DatabasesStore.of(storagePath);
-    databaseStore.getDataStores().forEach(
+    dataStoreVault = DatastoreVault.of(storagePath);
+    if (passphrase!=null){
+      dataStoreVault.setPassphrase(passphrase);
+    }
+    dataStoreVault.getDataStores().forEach(
       ds -> {
         dataStores.put(ds.getName(), ds);
       }
@@ -131,7 +132,7 @@ public class Tabular implements AutoCloseable {
   public DataStore getOrCreateDataStore(String dataStoreName) {
     DataStore dataStore = dataStores.get(dataStoreName);
     if (dataStore == null) {
-      dataStore = Database.of(dataStoreName);
+      dataStore = DataStore.of(dataStoreName);
       dataStores.put(dataStore.getName(), dataStore);
     }
     return dataStore;
@@ -162,10 +163,9 @@ public class Tabular implements AutoCloseable {
   public void close() {
     for (DataStore dataStore : dataStores.values()) {
       try {
-        TableSystem dataSystem = dataStore.getDataSystem();
         // A data store that was not used will have no data system
-        if (dataSystem!=null){
-          dataSystem.close();
+        if (dataStore.isOpen()){
+          dataStore.close();
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -191,7 +191,17 @@ public class Tabular implements AutoCloseable {
    * @return
    */
   public Tabular withDefaultStorage() {
-    setDataStoreVault(DatabasesStore.DEFAULT_STORAGE_FILE);
+    setDataStoreVault(DatastoreVault.DEFAULT_STORAGE_FILE);
     return this;
   }
+
+  public Tabular setPassphrase(String passphrase) {
+    this.passphrase = passphrase;
+    if (dataStoreVault!=null){
+      dataStoreVault.setPassphrase(passphrase);
+    }
+    return this;
+  }
+
+
 }

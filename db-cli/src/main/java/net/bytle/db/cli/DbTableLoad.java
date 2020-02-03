@@ -2,7 +2,7 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Relations;
 import net.bytle.db.uri.SchemaDataUri;
@@ -19,7 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 import static net.bytle.db.cli.Words.*;
 
 
@@ -42,7 +42,7 @@ public class DbTableLoad {
         cliCommand
                 .setDescription("Load one ore more files into a database.");
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         cliCommand.getGroup("Load option")
                 .setLevel(2)
@@ -95,8 +95,8 @@ public class DbTableLoad {
         }
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // Is there a path
         final IDataUri IDataUri = SchemaDataUri.of(cliParser.getString(SCHEMA_URI));
@@ -109,7 +109,7 @@ public class DbTableLoad {
             LOGGER.info("The table name was not defined. The table name (" + targetTableName + ") was taken from the input file (" + fileName + ").");
             tableDataUri = TableDataUri.of(IDataUri.get(IDataUri.toString(),targetTableName));
         }
-        Database targetDatabase = databasesStore.getDataStore(tableDataUri.getDataStore());
+        Database targetDatabase = datastoreVault.getDataStore(tableDataUri.getDataStore());
 
         // Schema
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();

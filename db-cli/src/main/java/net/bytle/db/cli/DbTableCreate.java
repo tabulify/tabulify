@@ -1,7 +1,7 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.uri.SchemaDataUri;
 import net.bytle.db.uri.TableDataUri;
@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 public class DbTableCreate {
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
@@ -27,27 +27,25 @@ public class DbTableCreate {
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-
         cliCommand
                 .setDescription("Create a table from data definition file(s)");
 
         cliCommand.argOf(TABLE_URIS)
-                .setDescription("one or more Table Uri (@database[/schema]/table)")
+                .setDescription("one or more Table Uri (schema.table@database)")
                 .setMandatory(true);
-
 
         cliCommand.optionOf(DATA_DEF_PATH)
                 .setDescription("A path to a data definition file (DataDef.yml) or a parent directory")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // Schema
         String arg = cliParser.getString(TABLE_URIS);
@@ -71,7 +69,7 @@ public class DbTableCreate {
             LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
 
             SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
-            Database database = databasesStore.getDataStore(schemaDataUri.getDataStore());
+            Database database = datastoreVault.getDataStore(schemaDataUri.getDataStore());
             final String schemaName = schemaDataUri.getSchemaName();
             SchemaDef schemaDef = database.getCurrentSchema();
             if (schemaName != null) {

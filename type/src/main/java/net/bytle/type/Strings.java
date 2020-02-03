@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -137,4 +136,10 @@ public class Strings {
                 .count());
 
     }
+
+  public static String multiline(String... s) {
+    return String.join(
+      System.getProperty("line.separator"),
+      s);
+  }
 }

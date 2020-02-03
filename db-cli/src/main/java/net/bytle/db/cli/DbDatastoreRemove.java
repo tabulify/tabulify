@@ -4,21 +4,21 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
+import net.bytle.db.DatastoreVault;
+import net.bytle.db.database.DataStore;
 import net.bytle.log.Log;
-import net.bytle.db.DatabasesStore;
-import net.bytle.db.database.Database;
 
 import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatabase.BYTLE_DB_DATABASES_STORE;
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.DbDatastore.BYTLE_DB_DATABASES_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 /**
  * <p>
  */
-public class DbDatabaseRemove {
+public class DbDatastoreRemove {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
     private static final String DATABASE_PATTERN = "name";
@@ -36,9 +36,9 @@ public class DbDatabaseRemove {
                 .setDescription("the database name or a glob pattern")
                 .setMandatory(true);
 
-        cliCommand.optionOf(Words.DATABASE_STORE)
+        cliCommand.optionOf(Words.DATASTORE_VAULT_PATH)
                 .setDescription("The path where the database information are stored")
-                .setDefaultValue(DbDatabase.DEFAULT_STORAGE_PATH)
+                .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
 
         cliCommand.flagOf(Words.NO_STRICT)
@@ -47,16 +47,16 @@ public class DbDatabaseRemove {
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
 
 
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         final Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
         for (String name : names) {
-            final List<Database> databases = databasesStore.getDataStores(name);
-            if (databases.size() == 0) {
+            final List<DataStore> dataStores = datastoreVault.getDataStores(name);
+            if (dataStores.size() == 0) {
                 final String msg = "There is no database called (" + name + ")";
                 if (noStrictMode){
                     LOGGER.warning(msg);
@@ -67,11 +67,11 @@ public class DbDatabaseRemove {
                 System.exit(1);
                 }
             } else {
-                LOGGER.info(databases.size() + " databases were found");
+                LOGGER.info(dataStores.size() + " databases were found");
             }
-            for (Database database : databases) {
-                databasesStore.removeDatabase(database.getName());
-                LOGGER.info("The database (" + database.getName() + ") was removed");
+            for (DataStore dataStore : dataStores) {
+                datastoreVault.removeDataStore(dataStore.getName());
+                LOGGER.info("The database (" + dataStore.getName() + ") was removed");
             }
 
         }

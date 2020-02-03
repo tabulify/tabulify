@@ -4,6 +4,7 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
+import net.bytle.db.uri.Uris;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class DataStore implements Comparable<DataStore>, AutoCloseable {
+public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   private final static Logger logger = LoggerFactory.getLogger(DataStore.class);
 
@@ -21,6 +22,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   // Connection Url
   protected String connectionString;
+
 
   protected DataStore(String name) {
     this.name = name;
@@ -39,6 +41,15 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   private String user;
   private String password;
 
+  // Creating a data store from a data store
+  public DataStore(DataStore dataStore) {
+    this.name = dataStore.getName();
+    this.setUser(dataStore.getUser());
+    this.setPassword(dataStore.getPassword());
+    this.setConnectionString(dataStore.getConnectionString());
+    this.setProperties(dataStore.getProperties());
+  }
+
   public String getName() {
     return name;
   }
@@ -49,17 +60,20 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
 
   public DataStore setConnectionString(String connectionString) {
+    assert connectionString != null : "A connection string cannot be null";
 
     if (this.connectionString == null || this.connectionString.equals(connectionString)) {
 
       this.connectionString = connectionString;
+      return this;
 
     } else {
 
       throw new RuntimeException("The connection string cannot be changed. It has already the value (" + this.connectionString + ") and cannot be set to (" + connectionString + ")");
 
     }
-    return this;
+
+
   }
 
   @Override
@@ -111,16 +125,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    * * ...
    */
   public String getScheme() {
-    if (connectionString == null) {
-      throw new RuntimeException("The connection string is null");
-    } else {
-      int endIndex = getConnectionString().indexOf(":");
-      if (endIndex == -1) {
-        return getConnectionString();
-      } else {
-        return getConnectionString().substring(0, endIndex);
-      }
-    }
+    return connectionString != null ? Uris.getScheme(connectionString) : "";
   }
 
   public DataStore setWorkingPath(String path) {
@@ -133,7 +138,14 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     return this;
   }
 
+  public static DataStore of(String name) {
+    return new DataStore(name);
+  }
+
   public TableSystem getDataSystem() {
+    if (tableSystem == null) {
+      tableSystem = getTableSystem();
+    }
     return tableSystem;
   }
 
@@ -151,7 +163,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
           }
         }
       }
-      if (tableSystem==null) {
+      if (tableSystem == null) {
         final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + this.getName() + ") with the Url (" + this.getConnectionString() + ")";
         DbLoggers.LOGGER_DB_ENGINE.severe(message);
         throw new RuntimeException(message);
@@ -166,7 +178,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    */
   public DataPath getDataPath(String... parts) {
 
-    return getTableSystem().getDataPath(parts);
+    return getDataSystem().getDataPath(parts);
 
   }
 
@@ -175,11 +187,11 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    * @return the current/working path of this data store
    */
   public DataPath getCurrentDataPath() {
-    return getTableSystem().getCurrentPath();
+    return getDataSystem().getCurrentPath();
   }
 
   @Override
-  public void close()  {
+  public void close() {
     try {
       tableSystem.close();
     } catch (Exception e) {
@@ -189,15 +201,46 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   public Double getPropertyAsDouble(String property) {
     String value = properties.get(property);
-    if (value==null) {
+    if (value == null) {
       return null;
     } else {
       try {
         return Double.valueOf(value);
-      } catch (Exception e){
-        logger.error("The value for the property ("+property+") of the data store ("+this.getName()+") is not in a double format ("+value+")");
+      } catch (Exception e) {
+        logger.error("The value for the property (" + property + ") of the data store (" + this.getName() + ") is not in a double format (" + value + ")");
         throw new RuntimeException(e);
       }
     }
   }
+
+
+  protected String getProperty(String propertyKey) {
+    return properties.get(propertyKey);
+  }
+
+  public Map<String, String> getProperties() {
+    return this.properties;
+  }
+
+  protected DataStore setProperties(Map<String, String> properties) {
+    this.properties = properties;
+    return this;
+  }
+
+  /**
+   * Return true if this data store is open
+   *
+   * This is to prevent a close error when a data store is:
+   *   * not used
+   *   * in the list
+   *   * its data system is not in the classpath
+   *
+   * Example: the file datastore will have no provider when developing the db-jdbc module
+   *
+   * @return true if this data system was build
+   */
+  public boolean isOpen() {
+    return tableSystem !=null;
+  }
+
 }

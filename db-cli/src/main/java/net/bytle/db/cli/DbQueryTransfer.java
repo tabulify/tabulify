@@ -48,7 +48,7 @@ public class DbQueryTransfer {
       .setDescription("Transfer the result of query from one source database to a target database")
       .setFooter(footer);
 
-    command.optionOf(DATABASE_STORE);
+    command.optionOf(DATASTORE_VAULT_PATH);
 
     CliOptions.addMoveOptions(command);
 
@@ -69,7 +69,7 @@ public class DbQueryTransfer {
     CliParser cliParser = Clis.getParser(command, args);
 
     // Database Store
-    final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
     Tabular tabular = Tabular.tabular();
     tabular.setDataStoreVault(storagePathValue);
 

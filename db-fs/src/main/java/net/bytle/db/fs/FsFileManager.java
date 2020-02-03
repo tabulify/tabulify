@@ -2,9 +2,11 @@ package net.bytle.db.fs;
 
 import net.bytle.db.spi.DataPath;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
-public abstract class FsFileManager {
+public class FsFileManager {
 
   private final FsTableSystem fsTableSystem;
 
@@ -12,11 +14,30 @@ public abstract class FsFileManager {
     this.fsTableSystem = fsTableSystem;
   }
 
-  public abstract void create(DataPath dataPath);
+  public static FsFileManager of(FsTableSystem fsTableSystem) {
+    return new FsFileManager(fsTableSystem);
+  }
 
-  public abstract FsDataPath getDataPath(Path path);
+  public void create(DataPath dataPath) {
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    Path path = fsDataPath.getNioPath();
+    try {
+      if (Files.isDirectory(path)) {
+        Files.createDirectory(path);
+      } else {
+        Files.createFile(path);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public FsDataPath getDataPath(Path path) {
+    return new FsDataPath(fsTableSystem, path);
+  }
 
   protected FsTableSystem getFsTableSystem() {
     return fsTableSystem;
   }
+
 }

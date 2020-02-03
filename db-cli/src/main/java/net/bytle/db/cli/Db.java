@@ -1,6 +1,9 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.*;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
 import net.bytle.log.Log;
 
 import java.util.ArrayList;
@@ -17,7 +20,7 @@ public class Db {
 
 
     /**
-     * The database name is an identifiant
+     * The database name is an identifier
      * It's used by:
      * * every appHome command
      * * every test command
@@ -29,12 +32,20 @@ public class Db {
     public static final String CLI_DATABASE_NAME_SOURCE = "source";
 
 
+    public static final String TPCDS_DATASTORE = "tpcds";
 
     // To store  the data
     public static List<Map<String, String>> records = new ArrayList<>();
 
 
     public static void main(String[] args) {
+
+      // TODO: TpcDs (The default data store vault should bre created here
+      // if we want to add a TPCDS store because tpcds is a plugin
+      // DataStore tpcDs = Database.of(TPCDS_DATASTORE)
+      //    .setConnectionString(TPCDS_DATASTORE)
+      //    .addProperty("scale","0.01");
+      // dataStores.put(tpcDs.getName(), tpcDs);
 
         // A client command example
         String example = "To load data from a csv file you would type:\n" +
@@ -61,9 +72,9 @@ public class Db {
 
 
         cli.commandOf(Words.TABLE_COMMAND)
-                .setDescription("operations on one or several tables");
-        cli.commandOf(Words.DATABASE_COMMAND)
-                .setDescription("operations on database");
+                .setDescription("operations on one or several relational tables");
+        cli.commandOf(Words.DATASTORE_COMMAND)
+                .setDescription("operations on datastore");
         cli.commandOf(Words.SCHEMA_COMMAND)
                 .setDescription("operations on a schema");
         cli.commandOf(Words.QUERY_COMMAND)
@@ -87,8 +98,8 @@ public class Db {
 
         CliCommand firstCommand = cliCommands.get(0);
         switch (firstCommand.getName()) {
-            case Words.DATABASE_COMMAND:
-                DbDatabase.run(firstCommand, args);
+            case Words.DATASTORE_COMMAND:
+                DbDatastore.run(firstCommand, args);
                 break;
             case Words.TABLE_COMMAND:
                 DbTable.run(firstCommand, args);
@@ -101,9 +112,6 @@ public class Db {
                 break;
             case Words.FKEY_COMMAND:
                 DbForeignKey.run(firstCommand, args);
-                break;
-            case Words.SAMPLE_COMMAND:
-                DbSample.run(firstCommand, args);
                 break;
             default:
                 System.err.println("The command (" + firstCommand + ") is unknown or not yet implemented.");

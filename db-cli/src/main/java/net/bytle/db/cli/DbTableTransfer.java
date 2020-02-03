@@ -2,7 +2,7 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.engine.Tables;
 import net.bytle.db.transfer.TransferManager;
@@ -65,7 +65,7 @@ public class DbTableTransfer {
                 .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
                 .setDefaultValue(false);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         // Load options
         cliCommand.optionOf(TARGET_WORKER_OPTION);
@@ -92,8 +92,8 @@ public class DbTableTransfer {
         Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // Command option
         final Boolean notStrict = cliParser.getBoolean(NO_STRICT);
@@ -103,7 +103,7 @@ public class DbTableTransfer {
         List<TableDef> tablesToTransfer = new ArrayList<>();
         for (String tableUri : tableUris) {
             TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            Database database = databasesStore.getDataStore(tableDataUri.getDataStore());
+            Database database = datastoreVault.getDataStore(tableDataUri.getDataStore());
             List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
             if (schemaDefs.size() == 0) {
                 schemaDefs = Arrays.asList(database.getCurrentSchema());
@@ -135,7 +135,7 @@ public class DbTableTransfer {
         // Target
         String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
         SchemaDataUri tableDataUri = SchemaDataUri.of(targetTableUriOpt);
-        Database targetDatabase = databasesStore.getDataStore(tableDataUri.getDataStore());
+        Database targetDatabase = datastoreVault.getDataStore(tableDataUri.getDataStore());
         SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
         if (tableDataUri.getSchemaName() != null) {
             targetSchemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());

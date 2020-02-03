@@ -3,7 +3,6 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.*;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.model.SchemaDef;
 import net.bytle.log.Log;
 

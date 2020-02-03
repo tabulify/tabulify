@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class TpcDataSetSystem extends DataSetSystem {
 
   // A property in the datastore that give the scale used
+  // The size of the generated data in Gb (works only for tpc schema)
   public static final String SCALE = "scale";
 
 

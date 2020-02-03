@@ -2,8 +2,8 @@ package net.bytle.db;
 
 
 import net.bytle.crypto.Protector;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -19,17 +19,16 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
-import static net.bytle.db.database.Databases.MODULE_NAME;
 
 /**
  * A database store implementation based on ini file
  * If a password is saved a passphrase should be provided
  */
-public class DatabasesStore {
+public class DatastoreVault {
 
-  protected static final Logger logger = LoggerFactory.getLogger(DatabasesStore.class);
+  protected static final Logger logger = LoggerFactory.getLogger(DatastoreVault.class);
 
 
 
@@ -42,16 +41,14 @@ public class DatabasesStore {
   private String passphrase;
   private Path path;
 
-  public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(MODULE_NAME).toString(), "dsn.ini");
+  public static final Path DEFAULT_STORAGE_FILE = Paths.get(Fs.getAppData(Tabular.APP_NAME).toString(), "dsn.ini");
 
   /**
    * Constant
    */
   private static final String URL = "url";
   private static final String USER = "user";
-  private static final String DRIVER = "driver";
   private static final String PASSWORD = "password";
-  private static final String STATEMENT = "statement";
 
 
   /**
@@ -59,7 +56,7 @@ public class DatabasesStore {
    */
   private Ini ini;
 
-  private DatabasesStore(Path path) {
+  private DatastoreVault(Path path) {
 
     if (path != null) {
       this.path = path;
@@ -69,54 +66,55 @@ public class DatabasesStore {
     }
   }
 
-  public static DatabasesStore of(Path path) {
-    return new DatabasesStore(path);
+  public static DatastoreVault of(Path path) {
+    return new DatastoreVault(path);
   }
 
-  public static DatabasesStore ofDefault() {
+  public static DatastoreVault ofDefault() {
     return of(DEFAULT_STORAGE_FILE);
   }
 
 
-  public DatabasesStore setPassphrase(String passphrase) {
+  public DatastoreVault setPassphrase(String passphrase) {
     this.passphrase = passphrase;
     return this;
   }
 
   /**
-   * @param database
+   * @param dataStore
    * @param internalPassphrase - to indicate that this is an built-in database and that the internal passphrase should be used - only called from this class
    * @return
    */
-  private DatabasesStore save(Database database, Boolean internalPassphrase) {
+  private DatastoreVault save(DataStore dataStore, Boolean internalPassphrase) {
 
     Ini ini = getIniFile();
-    ini.put(database.getName(), URL, database.getConnectionString());
-    ini.put(database.getName(), DRIVER, database.getDriver());
-    ini.put(database.getName(), USER, database.getUser());
+    ini.put(dataStore.getName(), URL, dataStore.getConnectionString());
+    ini.put(dataStore.getName(), USER, dataStore.getUser());
     String localPassphrase;
-    if (database.getPassword() != null) {
+    if (dataStore.getPassword() != null) {
       if (this.passphrase == null) {
         if (internalPassphrase) {
           localPassphrase = INTERNAL_PASSPHRASE;
-          ini.put(database.getName(), INTERNAL_PASSPHRASE_KEY, true);
+          ini.put(dataStore.getName(), INTERNAL_PASSPHRASE_KEY, true);
         } else {
           throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
         }
       } else {
         localPassphrase = this.passphrase;
       }
-      String password = Protector.get(localPassphrase).encrypt(database.getPassword());
-      ini.put(database.getName(), PASSWORD, password);
+      String password = Protector.get(localPassphrase).encrypt(dataStore.getPassword());
+      ini.put(dataStore.getName(), PASSWORD, password);
     }
-    ini.put(database.getName(), STATEMENT, database.getConnectionStatement());
+    for (Map.Entry<String, String> property: dataStore.getProperties().entrySet()) {
+      ini.put(dataStore.getName(), property.getKey(), property.getValue());
+    }
     flush();
     return this;
   }
 
-  public DatabasesStore save(Database database) {
+  public DatastoreVault save(DataStore dataStore) {
 
-    return save(database, false);
+    return save(dataStore, false);
   }
 
 
@@ -175,7 +173,7 @@ public class DatabasesStore {
   /**
    * @return all databases
    */
-  public List<Database> getDataStores() {
+  public List<DataStore> getDataStores() {
     return getDataStores("*");
   }
 
@@ -183,11 +181,11 @@ public class DatabasesStore {
    * @param globPatterns
    * @return all databases that match this glob patterns
    */
-  public List<Database> getDataStores(String... globPatterns) {
-    List<Database> databases = new ArrayList<>();
+  public List<DataStore> getDataStores(String... globPatterns) {
+    List<DataStore> dataStores = new ArrayList<>();
     for (String globPattern : globPatterns) {
       String regexpPattern = Globs.toRegexPattern(globPattern);
-      databases.addAll(
+      dataStores.addAll(
         getIniFile().keySet()
           .stream()
           .filter(s -> s.matches(regexpPattern))
@@ -195,11 +193,11 @@ public class DatabasesStore {
           .collect(Collectors.toList())
       );
     }
-    Collections.sort(databases);
-    return databases;
+    Collections.sort(dataStores);
+    return dataStores;
   }
 
-  public List<Database> getDataStores(List<String> globPatterns) {
+  public List<DataStore> getDataStores(List<String> globPatterns) {
     return getDataStores(globPatterns.toArray(new String[0]));
   }
 
@@ -207,15 +205,16 @@ public class DatabasesStore {
    * @param name
    * @return a database by its name or NULL
    */
-  public Database getDataStore(String name) {
-    assert name != null : "The name of the database cannot be null";
+  public DataStore getDataStore(String name) {
+    assert name != null : "The name of the data store cannot be null";
 
-    Database database = null;
+    DataStore dataStore = null;
     Wini.Section iniSection = getIniFile().get(name);
     if (iniSection != null) {
-      database = Databases.of(name);
-      database.setConnectionString(iniSection.get(URL));
-      database.setUser(iniSection.get(USER));
+      dataStore = DataStore.of(name);
+      String connectionString = iniSection.get(URL);
+      dataStore.setConnectionString(connectionString);
+      dataStore.setUser(iniSection.get(USER));
       if (iniSection.get(PASSWORD) != null) {
         String localPassphrase;
         if (this.passphrase != null) {
@@ -229,25 +228,28 @@ public class DatabasesStore {
               throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
             }
           } else {
-            throw new RuntimeException("The database (" + database + ") has a password. A passphrase should be provided");
+            throw new RuntimeException("The data store (" + dataStore + ") has a password. A passphrase should be provided");
           }
         }
-        database.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+        dataStore.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
       }
-      database.setDriver(iniSection.get(DRIVER));
-      database.setStatement(iniSection.get(STATEMENT));
+      if (dataStore.getScheme().equals(Database.JDBC_SCHEME)) {
+        dataStore = Database.of(dataStore)
+          .setDriver(iniSection.get(Database.DRIVER_PROPERTY_KEY))
+          .setPostConnectionStatement(iniSection.get(Database.POST_STATEMENT_PROPERTY_KEY));
+      }
     } else {
-      logger.warn("The database {} was not found. A null database was returned", name);
+      logger.warn("The database ({}) was not found. A null database was returned", name);
     }
 
-    return database;
+    return dataStore;
 
   }
 
   /**
    * Reread the file
    */
-  public DatabasesStore reload() {
+  public DatastoreVault reload() {
     load();
     return this;
   }
@@ -269,34 +271,34 @@ public class DatabasesStore {
         if (bytle_db_databases_store != null) {
           dbFile = Paths.get(bytle_db_databases_store);
         } else {
-          dbFile = Paths.get(Fs.getAppData(DbDefaultValue.LIBRARY_NAME).toAbsolutePath().toString(), DbDefaultValue.LIBRARY_NAME + ".db");
+          dbFile = Paths.get(Fs.getAppData(Tabular.APP_NAME).toAbsolutePath().toString(), Tabular.APP_NAME + ".db");
         }
         Files.createDirectories(dbFile.getParent());
         String rootWindows = "///";
-        Database database = Databases.of("sqlite")
+        Database database = Database.of("sqlite")
           .setDriver("org.sqlite.JDBC")
           .setConnectionString("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
         save(database);
 
-        database = Databases.of("oracle")
+        database = Database.of("oracle")
           .setDriver("oracle.jdbc.OracleDriver")
           .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
         save(database);
 
-        database = Databases.of("sqlserver")
+        database = Database.of("sqlserver")
           .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
           .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
           .setUser("sa")
           .setPassword("TheSecret1!");
         save(database, true);
 
-        database = Databases.of("mysql")
+        database = Database.of("mysql")
           .setDriver("com.mysql.jdbc.Driver")
           .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
         save(database);
 
         // jdbc:postgresql://host:port/database?prop=value
-        database = Databases.of("postgresql")
+        database = Database.of("postgresql")
           .setDriver("org.postgresql.Driver")
           .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
         save(database);
@@ -309,7 +311,7 @@ public class DatabasesStore {
     }
   }
 
-  public void removeDatabase(String name) {
+  public void removeDataStore(String name) {
     Profile.Section deletedSection = getIniFile().remove(name);
     if (deletedSection == null) {
       throw new RuntimeException("The database (" + name + ") is non existent and therefore cannot be removed.");
@@ -321,9 +323,9 @@ public class DatabasesStore {
     return this.path;
   }
 
-  public void removeDatabaseIfExists(String name) {
+  public void removeDataStoreIfExists(String name) {
     if (exists(name)) {
-      removeDatabase(name);
+      removeDataStore(name);
     }
   }
 
@@ -347,4 +349,37 @@ public class DatabasesStore {
   }
 
 
+
+
+  public void update(DataStore dataStore) {
+    DataStore dataStoreToUpdate = this.getDataStore(dataStore.getName());
+    if (dataStore.getConnectionString() !=null && !dataStore.getConnectionString().equals(dataStoreToUpdate.getConnectionString())) dataStoreToUpdate.setConnectionString(dataStore.getConnectionString());
+    if (dataStore.getUser() !=null && !dataStore.getUser().equals(dataStoreToUpdate.getUser())) dataStoreToUpdate.setUser(dataStore.getUser());
+    if (dataStore.getPassword() !=null && !dataStore.getPassword().equals(dataStoreToUpdate.getPassword())) dataStoreToUpdate.setPassword(dataStore.getPassword());
+    if (dataStore.getScheme().equals(Database.JDBC_SCHEME)){
+      Database database = (Database) dataStore;
+      Database databaseToUpdate = (Database) dataStoreToUpdate;
+      if (database.getDriver() !=null && !database.getDriver().equals(databaseToUpdate.getDriver())) databaseToUpdate.setDriver(database.getDriver());
+      if (database.getPostConnectionStatement() !=null && !database.getPostConnectionStatement().equals(databaseToUpdate.getPostConnectionStatement())) databaseToUpdate.setPostConnectionStatement(database.getPostConnectionStatement());
+      save(databaseToUpdate);
+    } else {
+      save(dataStoreToUpdate);
+    }
+  }
+
+  public void add(DataStore dataStore) {
+    assert getDataStore(dataStore.getName())==null:"The data store ("+dataStore.getName()+") exists already and cannot be added";
+    if (dataStore.getConnectionString()==null){
+      throw new RuntimeException("A connection string (url) is mandatory to add a datastore, the data store ("+dataStore.getName()+") does not have any.");
+    }
+    save(dataStore);
+  }
+
+  public DataStore getOrCreateDataStore(String name) {
+    DataStore dataStore = getDataStore(name);
+    if (dataStore==null){
+      dataStore = DataStore.of(name);
+    }
+    return dataStore;
+  }
 }

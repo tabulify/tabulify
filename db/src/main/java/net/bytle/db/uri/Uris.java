@@ -58,4 +58,17 @@ public class Uris {
       throw new RuntimeException(e);
     }
   }
+
+  public static String getScheme(String s) {
+    if (s == null) {
+      throw new RuntimeException("The connection string is null");
+    } else {
+      int endIndex = s.indexOf(":");
+      if (endIndex == -1) {
+        return s;
+      } else {
+        return s.substring(0, endIndex);
+      }
+    }
+  }
 }

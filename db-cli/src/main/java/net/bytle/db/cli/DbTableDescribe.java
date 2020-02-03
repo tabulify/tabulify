@@ -5,7 +5,7 @@ import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.log.Log;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.uri.TableDataUri;
@@ -15,7 +15,7 @@ import net.bytle.db.model.TableDef;
 import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 public class DbTableDescribe {
@@ -35,19 +35,19 @@ public class DbTableDescribe {
         cliCommand.argOf(DATABASE_PATH)
                 .setDescription("One ore more table data uri (@database[/schema]/table")
                 .setMandatory(true);
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         //
         List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
         for (String databasePathString :databasePaths){
             TableDataUri databasePath = TableDataUri.of(databasePathString);
-            Database database = databasesStore.getDataStore(databasePath.getDataStore());
+            Database database = datastoreVault.getDataStore(databasePath.getDataStore());
 
             SchemaDef schemaDef;
             if (databasePath.getSchemaName()!=null) {

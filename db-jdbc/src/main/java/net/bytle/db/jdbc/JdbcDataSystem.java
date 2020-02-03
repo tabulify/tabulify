@@ -1,10 +1,9 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.DbDefaultValue;
+import net.bytle.db.Tabular;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
 import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;
@@ -217,8 +216,9 @@ public class JdbcDataSystem extends TableSystem {
    */
   public Connection getCurrentConnection() {
 
+    String location = "initial";
     if (this.connection == null) {
-      this.connection = getNewConnection(Databases.MODULE_NAME);
+      this.connection = getNewConnection(location);
     }
     try {
       if (this.connection.isClosed()) {
@@ -226,7 +226,7 @@ public class JdbcDataSystem extends TableSystem {
         // With the database id being the database name, this is not true anymore ?
         // throw new RuntimeException("The connection was closed ! We cannot reopen it otherwise the object id will not be the same anymore");
         JdbcDataSystemLog.LOGGER_DB_JDBC.severe("The database connection was closed ! We reopen it.");
-        this.connection = getNewConnection("main");
+        this.connection = getNewConnection(location);
 
       }
     } catch (SQLException e) {
@@ -241,7 +241,7 @@ public class JdbcDataSystem extends TableSystem {
    *
    * @return return a new connection object
    */
-  public synchronized Connection getNewConnection(String appName) {
+  public synchronized Connection getNewConnection(String purpose) {
 
 
     URIExtended uriExtended = new URIExtended(this.database.getConnectionString());
@@ -266,7 +266,7 @@ public class JdbcDataSystem extends TableSystem {
       // Sql Server
       // https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties?view=sql-server-2017
       //https://docs.microsoft.com/en-us/sql/t-sql/functions/context-info-transact-sql?view=sql-server-2017
-      connectionProperties.put("applicationName", DbDefaultValue.LIBRARY_NAME + " " + appName);
+      connectionProperties.put("applicationName", Tabular.APP_NAME + " " + getDataStore().getName()+" "+purpose);
       if (database.getUser() != null) {
         connectionProperties.put("user", database.getUser());
         if (database.getPassword() != null) {
@@ -283,8 +283,8 @@ public class JdbcDataSystem extends TableSystem {
 
 
     // Post Connection statement (such as alter session set current_schema)
-    if (this.database.getConnectionStatement() != null) {
-      try (CallableStatement callableStatement = connection.prepareCall(this.database.getConnectionStatement())) {
+    if (this.database.getPostConnectionStatement() != null) {
+      try (CallableStatement callableStatement = connection.prepareCall(this.database.getPostConnectionStatement())) {
 
         callableStatement.execute();
 

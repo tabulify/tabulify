@@ -3,68 +3,69 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.Tabular;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
-import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 public class DbForeignKeyCount {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String DATA_URIS = "DataUri...";
+  private static final Log LOGGER = Db.LOGGER_DB_CLI;
+  private static final String DATA_URI_PATTERNS = "DataUriPattern...";
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand
-                .setDescription("Count links (foreign keys)");
+    cliCommand
+      .setDescription("Count links (foreign keys)");
 
-        cliCommand.argOf(DATA_URIS)
-                .setDescription("One or more name table uri (ie @database[/schema]/table)")
-                .setMandatory(true);
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("One or more name data uri pattern (ie glob@datastore)")
+      .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
+    // Args
+    CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> dataUris = cliParser.getStrings(DATA_URI_PATTERNS);
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-        List<String> dataUris = cliParser.getStrings(DATA_URIS);
-        List<ForeignKeyDef> foreignKeys = new ArrayList<>();
+      // Collect the foreign keys
+      List<ForeignKeyDef> foreignKeys = dataUris.stream()
+        .flatMap(du -> tabular.select(du).stream())
+        .flatMap(dp -> dp.getDataDef().getForeignKeys().stream())
+        .collect(Collectors.toList());
 
-        for (String dataUri : dataUris) {
+      System.out.println();
+      if (foreignKeys.size() == 0) {
 
-            DataPath tableDataUri = DataPaths.of(databasesStore, DataUri.of(dataUri));
-            foreignKeys.addAll(tableDataUri.getDataDef().getForeignKeys());
+        System.out.println("No foreign key found");
 
-        }
+      } else {
 
-        System.out.println();
-        if (foreignKeys.size() == 0) {
+        System.out.println(foreignKeys.size() + " ForeignKeys");
 
-            System.out.println("No foreign key found");
-
-        } else {
-
-            System.out.println(foreignKeys.size() + " ForeignKeys");
-
-        }
-        System.out.println();
-        LOGGER.info("Bye !");
-
+      }
+      System.out.println();
+      LOGGER.info("Bye !");
 
     }
+
+  }
 
 }

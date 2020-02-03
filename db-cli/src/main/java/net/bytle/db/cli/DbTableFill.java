@@ -2,7 +2,7 @@ package net.bytle.db.cli;
 
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.Database;
 import net.bytle.db.uri.TableDataUri;
 import net.bytle.db.engine.Tables;
@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 /**
@@ -51,7 +51,7 @@ public class DbTableFill {
                 .setDescription("One or more table URI (@database[/schema]/table) from the same schema.")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
         cliCommand.optionOf(Words.FORCE)
             .setDescription("The FORCE mode will not emit an error if a table is not found for a Table URI");
 
@@ -73,8 +73,8 @@ public class DbTableFill {
         Boolean loadParent = cliParser.getBoolean(LOAD_PARENT);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
 
         // Data Definition
@@ -109,7 +109,7 @@ public class DbTableFill {
         for (String tableDataUriString : dataUris) {
 
             TableDataUri tableDataUri = TableDataUri.of(tableDataUriString);
-            final Database databaseinUri = databasesStore.getDataStore(tableDataUri.getDataStore());
+            final Database databaseinUri = datastoreVault.getDataStore(tableDataUri.getDataStore());
             if (database == null) {
                 database = databaseinUri;
             } else {

@@ -1,7 +1,7 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.*;
-import net.bytle.db.DatabasesStore;
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.Database;
 
@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.Words.DATABASE_STORE;
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
 public class DbTableShow {
@@ -39,7 +39,7 @@ public class DbTableShow {
                 .setDescription("A table URI (@database[/schema]/table")
                 .setMandatory(true);
 
-        cliCommand.optionOf(DATABASE_STORE);
+        cliCommand.optionOf(DATASTORE_VAULT_PATH);
         cliCommand.optionOf(LIMIT)
                 .setDescription("Limit the number of rows returned");
 
@@ -47,8 +47,8 @@ public class DbTableShow {
         CliParser cliParser = Clis.getParser(cliCommand, args);
 
         // Database Store
-        final Path storagePathValue = cliParser.getPath(DATABASE_STORE);
-        DatabasesStore databasesStore = DatabasesStore.of(storagePathValue);
+        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // Timer
         CliTimer cliTimer = CliTimer.getTimer("execute").start();
@@ -61,7 +61,7 @@ public class DbTableShow {
         List<String> tableURIs = cliParser.getStrings(TABLE_URI);
         for (String tableUri: tableURIs) {
             TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            List<Database> databases = databasesStore.getDatabases(tableDataUri.getDataStore());
+            List<Database> databases = datastoreVault.getDatabases(tableDataUri.getDataStore());
             for (Database database: databases) {
                 //TODO: The schema name may be a pattern
                 SchemaDef schemaDef = database.getCurrentSchema();

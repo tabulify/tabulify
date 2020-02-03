@@ -2,8 +2,6 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
-import net.bytle.db.database.Databases;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -30,7 +28,7 @@ public class MemoryDataSystem extends TableSystem {
   private static MemoryDataSystem staticMemoryDataSystem;
   private final MemorySystemProvider memoryStoreProvider;
   private final MemoryStore memoryStore;
-  private Database dataStore = Databases.of("memory");
+  private DataStore dataStore = DataStore.of("memory");
 
   public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
     this.memoryStoreProvider = memorySystemProvider;
