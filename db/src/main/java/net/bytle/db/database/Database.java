@@ -1,7 +1,5 @@
 package net.bytle.db.database;
 
-import net.bytle.db.spi.DataPath;
-
 /**
  * An object with all meta information about a JDBC data store
  *
@@ -65,15 +63,7 @@ public class Database extends DataStore  {
   }
 
 
-  /**
-   * @param query          - the query
-   * @return a data path query
-   */
-  public DataPath getQueryDataPath(String query) {
 
-    return  getTableSystem().getProcessingEngine().getQuery(query);
-
-  }
 
   @Override
   public Database setConnectionString(String connectionString) {

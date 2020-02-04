@@ -74,7 +74,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     try {
       if (getResultSet().getType() == ResultSet.TYPE_FORWARD_ONLY) {
         getResultSet().close();
-        init();
+        execute();
       } else {
         getResultSet().beforeFirst();
       }
@@ -84,7 +84,8 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   }
 
 
-  private void init() {
+  @Override
+  public void execute() {
 
     switch (jdbcDataPath.getType()) {
       case QUERY_TYPE:
@@ -115,7 +116,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
   private ResultSet getResultSet() {
     if (resultSet == null) {
-      init();
+      execute();
     }
     return resultSet;
   }
@@ -146,7 +147,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public TableDef getSelectDataDef() {
     if (this.selectDataDef == null) {
-      init();
+      execute();
     }
     return this.selectDataDef;
   }

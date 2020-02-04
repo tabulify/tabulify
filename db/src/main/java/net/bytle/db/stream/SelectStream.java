@@ -52,4 +52,18 @@ public interface SelectStream extends AutoCloseable {
   void beforeFirst();
 
 
+  /**
+   *
+   * If the select stream execute a request before serving the stream
+   * you can execute it explicitly with this function
+   *
+   * This is the case for instance with a query
+   *
+   * Some implementation may have a lazy execution (which means that it's only executed if needed)
+   * but in case of long query, you may want to execute it explicitly in thread for instance.
+   * This function is a good candidate for.
+   */
+  void execute();
+
+
 }

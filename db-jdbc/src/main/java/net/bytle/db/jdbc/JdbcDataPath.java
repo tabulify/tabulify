@@ -366,7 +366,7 @@ public class JdbcDataPath extends DataPath {
 
   public SelectStream getSelectStream() {
 
-    // When it's a query, the select stream has already been created to
+    // When it's a query, the select stream may have been already created to
     // get the data def
     if (selectStream == null) {
       selectStream = SqlSelectStream.of(this);

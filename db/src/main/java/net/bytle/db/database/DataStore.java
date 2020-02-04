@@ -243,4 +243,14 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     return tableSystem !=null;
   }
 
+  /**
+   * @param query - the query
+   * @return a data path query
+   */
+  public DataPath getQueryDataPath(String query) {
+
+    return  getTableSystem().getProcessingEngine().getQuery(query);
+
+  }
+
 }
