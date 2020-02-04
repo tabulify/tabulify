@@ -7,7 +7,6 @@ import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.resultSetDiff.DataSetDiff;
-import net.bytle.db.resultSetDiff.ExecuteQueryThread;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
@@ -17,9 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.*;
@@ -153,47 +150,9 @@ public class DbQueryDiff {
           .getQueryDataPath(secondQuery);
 
 
-        ExecuteQueryThread executeQueryThread1 = new ExecuteQueryThread(firstQueryDataPath);
-        ExecuteQueryThread executeQueryThread2 = new ExecuteQueryThread(secondQueryDataPath);
 
-
-        Thread t1 = new Thread(executeQueryThread1);
-        Thread t2 = new Thread(executeQueryThread2);
-        t1.start();
-        t2.start();
-        try {
-          t1.join();
-        } catch (InterruptedException e) {
-          LOGGER.error("An exception has occurred during the execution of the first query", e);
-          System.exit(1);
-        }
-        try {
-          t2.join();
-
-        } catch (InterruptedException e) {
-          LOGGER.error("An exception has occurred during the execution of the second query", e);
-          System.exit(1);
-        }
-
-        // Check for any errors in the thread
-
-        ResultSet resultSet1 = null;
-        Boolean error = false;
-        StringBuilder error_message = new StringBuilder();
-        if (!executeQueryThread1.isError()) {
-          resultSet1 = executeQueryThread1.getSelectStream();
-        } else {
-          error = true;
-          error_message.append("The connection 1 gives the following error:").append(executeQueryThread1.getError().getMessage());
-        }
-
-        ResultSet resultSet2 = null;
-        if (!executeQueryThread1.isError()) {
-          resultSet2 = executeQueryThread2.getSelectStream();
-        } else {
-          error = true;
-          error_message.append("The connection 1 gives the following error:").append(executeQueryThread1.getError().getMessage());
-        }
+        // Diff
+        DataSetDiff dataSetDiff = new DataSetDiff(resultSet1, resultSet2, null, query.getOutputPath());
 
         List<Object> csvRow = new ArrayList<>();
         csvRow.add(query.getName());
@@ -201,74 +160,25 @@ public class DbQueryDiff {
         csvRow.add(error_message.toString());
 
 
-        if (!error) {
 
-          DataSetDiff dataSetDiff = new DataSetDiff(resultSet1, resultSet2, null, query.getOutputPath());
-          Boolean diff = dataSetDiff.diff();
-          //TODO: create a feedback object
-          LOGGER.info("The Diff on the query (" + query.getName() + ") has ended");
-          if (diff) {
-            LOGGER.info("There was a diff");
-          } else {
-            LOGGER.info("No diff found");
-          }
-
-          csvRow.add(diff);
-
-
+        Boolean diff = dataSetDiff.diff();
+        //TODO: create a feedback object
+        LOGGER.info("The Diff on the query (" + query.getName() + ") has ended");
+        if (diff) {
+          LOGGER.info("There was a diff");
         } else {
-
-          csvRow.add(null);
-
+          LOGGER.info("No diff found");
         }
 
-        if (batchOutputPrinter != null) {
-
-          batchOutputPrinter.printRecord(csvRow);
-          batchOutputPrinter.flush();
-
-        }
+        csvRow.add(diff);
 
 
-        // Close
-        statement1.close();
-        connection1.close();
-        statement2.close();
-        connection2.close();
-
-
-        Date endTime = new Date();
-        long totalDiff = endTime.getTime() - startTime.getTime();
-
-        long secondsInMilli = 1000;
-        long minutesInMilli = 1000 * 60;
-        long hoursInMilli = 1000 * 60 * 60;
-
-        long elapsedHours = totalDiff / hoursInMilli;
-
-        long diff = totalDiff % hoursInMilli;
-        long elapsedMinutes = diff / minutesInMilli;
-
-        diff = diff % minutesInMilli;
-        long elapsedSeconds = diff / secondsInMilli;
-
-        diff = diff % secondsInMilli;
-        long elapsedMilliSeconds = diff;
+        cliTimer.stop();
 
         LOGGER.info("The diff session has ended");
         LOGGER.info(String.format("Response Time for the load of the table  target workers: %d:%d:%d.%d (hour:minutes:seconds:milli)", elapsedHours, elapsedMinutes, elapsedSeconds, elapsedMilliSeconds));
         LOGGER.info(String.format("       Ie (%d) milliseconds%n", totalDiff));
 
-        // Close the batch output
-        if (batchOutputPrinter != null) {
-
-          batchOutputPrinter.close();
-
-        }
-      } catch(SQLException e){
-        throw new RuntimeException(e);
-      } catch(IOException e){
-        throw new RuntimeException(e);
       }
 
     }

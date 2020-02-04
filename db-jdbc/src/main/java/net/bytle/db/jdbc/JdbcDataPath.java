@@ -364,10 +364,18 @@ public class JdbcDataPath extends DataPath {
     return this.type;
   }
 
+
+  /**
+   *
+   * @return a select stream
+   *
+   * The {@link #getDataDef()} function may have initialized this select stream
+   * when the data path is a query
+   */
   public SelectStream getSelectStream() {
 
     // When it's a query, the select stream may have been already created to
-    // get the data def
+    // get the data def. See {@link #getDataDef}
     if (selectStream == null) {
       selectStream = SqlSelectStream.of(this);
     }

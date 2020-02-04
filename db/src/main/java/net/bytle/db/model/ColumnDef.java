@@ -88,8 +88,8 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
      * DatabaseMetaData.columnNoNulls,
      * DatabaseMetaData.columnNullableUnknown
      */
-    public int getNullable() {
-        return nullable;
+    public Boolean getNullable() {
+        return nullable != DatabaseMetaData.columnNoNulls;
     }
 
     public String getIsAutoincrement() {

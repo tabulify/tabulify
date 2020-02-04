@@ -7,9 +7,9 @@ import net.bytle.db.stream.SelectStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExecuteQueryThread implements Runnable {
+public class OpenSelectStreamThread implements Runnable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteQueryThread.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(OpenSelectStreamThread.class);
 
 
   private final DataPath dataPath;
@@ -17,7 +17,7 @@ public class ExecuteQueryThread implements Runnable {
   private SelectStream selectStream;
   private Exception exception;
 
-  public ExecuteQueryThread(DataPath dataPath) {
+  public OpenSelectStreamThread(DataPath dataPath) {
 
     this.dataPath = dataPath;
 
