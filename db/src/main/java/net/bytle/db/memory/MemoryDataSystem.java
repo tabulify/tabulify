@@ -3,10 +3,7 @@ package net.bytle.db.memory;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.DataType;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystemProvider;
+import net.bytle.db.spi.*;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
@@ -167,7 +164,8 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public MemoryDataPath getDataPath(String... names) {
     DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDataStore().getName());
-    return MemoryDataPath.of(this, dataUri);
+    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri);
+    return memoryDataPath;
   }
 
   @Override

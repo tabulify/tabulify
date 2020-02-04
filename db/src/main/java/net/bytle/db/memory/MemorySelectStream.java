@@ -171,6 +171,10 @@ public class MemorySelectStream extends SelectStreamAbs implements SelectStream 
     }
   }
 
+  @Override
+  public void execute() {
+    // nothing to do here
+  }
 
 
 }

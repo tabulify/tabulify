@@ -18,14 +18,13 @@ import net.bytle.db.stream.SelectStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Created by gerard on 6/16/2014.
- * All function to perform a data set diff
+ *
+ * All function to perform a data path diff
  */
 public class DataSetDiff {
 
@@ -52,7 +51,7 @@ public class DataSetDiff {
   private int rowInDifFile = 0; // To feedback the number of row in the file
   private int counterDiffLoop = 0; // To Feedback the number of loop performed
 
-  // Global for processing
+  // Global variable for easy processing
   private SelectStream selectFirstStream;
   private InsertStream diffInsertStream;
   private SelectStream selectSecondStream;
@@ -78,7 +77,7 @@ public class DataSetDiff {
     return this;
   }
 
-  DataSetDiff of(DataPath firstDataPath, DataPath secondDataPath){
+  static public DataSetDiff of(DataPath firstDataPath, DataPath secondDataPath){
     return new DataSetDiff(firstDataPath, secondDataPath);
   }
 
@@ -103,7 +102,7 @@ public class DataSetDiff {
    * The key column can not be null, otherwise a DataSet exception is thrown
    * The data set key values are supposed to be in an Ascendant order
    */
-  public Boolean diff() throws SQLException {
+  public Boolean diff()  {
 
     // Executing the select stream in a thread
     openSelectStream(firstDataPath, secondDataPath);
@@ -236,10 +235,6 @@ public class DataSetDiff {
       }
     }
 
-    // Close
-    diffInsertStream.close();
-    selectFirstStream.close();
-    selectSecondStream.close();
 
     LOGGER.info("Counter info: number of row in the diff file: (" + this.rowInDifFile + ")");
     LOGGER.info("Counter info: number of diff loop: (" + this.counterDiffLoop + ")");
@@ -289,11 +284,11 @@ public class DataSetDiff {
     }
   }
 
-  private void addRowData(int type) throws SQLException {
+  private void addRowData(int type) {
     addRowData(type, null, null);
   }
 
-  private void addRowData(int type, String equalMinPlus, List<Diff> columnPositionWithDiff) throws SQLException {
+  private void addRowData(int type, String equalMinPlus, List<Diff> columnPositionWithDiff) {
 
     if (resultDataPath != null) {
 
@@ -356,7 +351,7 @@ public class DataSetDiff {
   /*
    * Compare a whole row and
    */
-  private void compareAndAddRowData() throws SQLException {
+  private void compareAndAddRowData()  {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
@@ -419,7 +414,7 @@ public class DataSetDiff {
    * @param secondDataPath
    * @return
    */
-  static public String compareMetaData(DataPath firstDataPath, DataPath secondDataPath) {
+  static String compareMetaData(DataPath firstDataPath, DataPath secondDataPath) {
 
     StringBuilder reason = new StringBuilder();
 
@@ -437,7 +432,7 @@ public class DataSetDiff {
 
 
     // Type
-    for (int i = 1; i <= sourceSize; i++) {
+    for (int i = 0; i < sourceSize; i++) {
       ColumnDef sourceColumn = firstDataPath.getDataDef().getColumnDef(i);
       ColumnDef targetColumn = secondDataPath.getDataDef().getColumnDef(i);
       if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {

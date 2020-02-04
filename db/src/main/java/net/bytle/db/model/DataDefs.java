@@ -273,7 +273,7 @@ public class DataDefs {
         columnDef.getColumnName(),
         columnDef.getDataType().getTypeName(),
         (tableDef.getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
-        (columnDef.getNullable() == 0 ? "x" : ""),
+        (columnDef.getNullable() ? "x" : ""),
         columnDef.getDefault(),
         columnDef.getIsAutoincrement(),
         columnDef.getDescription()
