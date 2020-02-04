@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- *
  * All function to perform a data path diff
  */
 public class DataSetDiff {
@@ -39,6 +38,7 @@ public class DataSetDiff {
 
   private final DataPath firstDataPath;
   private final DataPath secondDataPath;
+  private final DataSetDiffResult dataSetDiffResult;
   private Integer keyColumnIndex; // The index of the key column
   private final Locale locale = Locale.getDefault(); // The locale used for String comparison
 
@@ -47,37 +47,34 @@ public class DataSetDiff {
   // Represent the type of record inserted in the result
   private final int SOURCE_TYPE = 0;
   private final int TARGET_TYPE = 1;
-  private Boolean dataSetDiffFound = false;
-  private int rowInDifFile = 0; // To feedback the number of row in the file
-  private int counterDiffLoop = 0; // To Feedback the number of loop performed
+
+
 
   // Global variable for easy processing
   private SelectStream selectFirstStream;
   private InsertStream diffInsertStream;
   private SelectStream selectSecondStream;
-  private String reason; // if there is a diff, this is a summary of the reason
+
 
   /**
-   *
    * @param keyColumnIndex - the key column is a column where the diff occurs (bu default, this is the row id). It must be a column where the data is ordered ascendant.
    * @return this data set diff for chaining initialization
    */
-  DataSetDiff setKeyColumnIndex(Integer keyColumnIndex){
+  DataSetDiff setKeyColumnIndex(Integer keyColumnIndex) {
     this.keyColumnIndex = keyColumnIndex;
     return this;
   }
 
   /**
-   *
    * @param resultDataPath - the location of the result for this diff (by default, the console)
    * @return this data set diff for chaining initialization
    */
-  DataSetDiff setResultDataPath(DataPath resultDataPath){
-    this.resultDataPath = resultDataPath;
+  DataSetDiff setResultDataPath(DataPath resultDataPath) {
+    this.dataSetDiffResult.setDataPath(resultDataPath);
     return this;
   }
 
-  static public DataSetDiff of(DataPath firstDataPath, DataPath secondDataPath){
+  static public DataSetDiff of(DataPath firstDataPath, DataPath secondDataPath) {
     return new DataSetDiff(firstDataPath, secondDataPath);
   }
 
@@ -88,6 +85,7 @@ public class DataSetDiff {
 
     this.firstDataPath = firstDataPath;
     this.secondDataPath = secondDataPath;
+    this.dataSetDiffResult = DataSetDiffResult.of(this);
 
   }
 
@@ -102,22 +100,27 @@ public class DataSetDiff {
    * The key column can not be null, otherwise a DataSet exception is thrown
    * The data set key values are supposed to be in an Ascendant order
    */
-  public Boolean diff()  {
+  public DataSetDiffResult diff() {
+
+
 
     // Executing the select stream in a thread
     openSelectStream(firstDataPath, secondDataPath);
 
     // Have the data sets the same structure
-    reason = compareMetaData(firstDataPath, secondDataPath);
-
+    String reason = compareMetaData(firstDataPath, secondDataPath);
 
     // Can we diff the data set
     if (!reason.equals("")) {
 
-      this.setDataSetDiffFound(true);
-
+      dataSetDiffResult
+        .setDataDefDiff(true)
+        .setReason(reason);
 
     } else {
+
+      // No data def diff
+      dataSetDiffResult.setDataDefDiff(false);
 
       // Building the data definition of the result data path
       resultDataPath.getDataDef()
@@ -136,24 +139,24 @@ public class DataSetDiff {
           columnDef.getComment());
       }
 
+
       // Get the stream
       diffInsertStream = Tabulars.getInsertStream(resultDataPath);
       selectFirstStream = Tabulars.getSelectStream(firstDataPath);
       selectSecondStream = Tabulars.getSelectStream(secondDataPath);
 
       // Should we of the next row for the source or the target
-      Boolean sourceNext = true;
-      Boolean targetNext = true;
+      boolean sourceNext = true;
+      boolean targetNext = true;
 
       // Does the source and target set has still row
       Boolean moreSourceRow = false;
       Boolean moreTargetRow = false;
 
-      // No key, will come
-      // We break the loop
+      // Loop until no rows anymore
       while (true) {
 
-        this.counterDiffLoop++;
+        dataSetDiffResult.incrementRowComparison();
 
         if (sourceNext) {
           moreSourceRow = selectFirstStream.next();
@@ -188,12 +191,14 @@ public class DataSetDiff {
 
             if (keySourceValue.equals(keyTargetValue)) {
 
-              compareAndAddRowData();
+              Boolean result = this.compareAndAddRowData();
+              dataSetDiffResult.addLineComparisonResult(result);
               targetNext = true;
               sourceNext = true;
 
             } else if (keySourceValue.toString().compareTo(keyTargetValue.toString()) > 0) {
 
+              dataSetDiffResult.addLineComparisonResult(true);
               addRowData(TARGET_TYPE);
               targetNext = true;
               sourceNext = false;
@@ -201,6 +206,7 @@ public class DataSetDiff {
             } else {
 
               //less than
+              dataSetDiffResult.addLineComparisonResult(true);
               addRowData(SOURCE_TYPE);
               targetNext = false;
               sourceNext = true;
@@ -211,22 +217,25 @@ public class DataSetDiff {
           } else {
 
             // No primary key
-            compareAndAddRowData();
+            Boolean result = this.compareAndAddRowData();
+            dataSetDiffResult.addLineComparisonResult(result);
             targetNext = true;
             sourceNext = true;
 
           }
-        } else if (moreSourceRow == false || moreTargetRow == false) {
+        } else {
+
           // There is still a source row of a target row
+          dataSetDiffResult.addLineComparisonResult(true);
           if (moreSourceRow) {
 
-            //addRowData(SOURCE_TYPE);
+            addRowData(SOURCE_TYPE);
             targetNext = false;
             sourceNext = true;
 
           } else {
 
-            //addRowData(TARGET_TYPE);
+            addRowData(TARGET_TYPE);
             targetNext = true;
             sourceNext = false;
 
@@ -236,9 +245,9 @@ public class DataSetDiff {
     }
 
 
-    LOGGER.info("Counter info: number of row in the diff file: (" + this.rowInDifFile + ")");
-    LOGGER.info("Counter info: number of diff loop: (" + this.counterDiffLoop + ")");
-    return this.dataSetDiffFound;
+    LOGGER.info("Counter info: number of row in the diff file: (" + dataSetDiffResult.getRows() + ")");
+    LOGGER.info("Counter info: number of diff loop: (" + dataSetDiffResult.getNumberOfRowComparison() + ")");
+    return dataSetDiffResult;
 
   }
 
@@ -292,7 +301,7 @@ public class DataSetDiff {
 
     if (resultDataPath != null) {
 
-      this.rowInDifFile++;
+      dataSetDiffResult.addRow();
 
       SelectStream dataSet;
       if (type == SOURCE_TYPE) {
@@ -350,8 +359,9 @@ public class DataSetDiff {
 
   /*
    * Compare a whole row and
+   * @return
    */
-  private void compareAndAddRowData()  {
+  private Boolean compareAndAddRowData() {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
@@ -400,10 +410,10 @@ public class DataSetDiff {
     if (diffFound) {
       addRowData(SOURCE_TYPE, null, columnPositionWithDiff);
       addRowData(TARGET_TYPE, null, columnPositionWithDiff);
-      this.setDataSetDiffFound(true);
     } else {
       addRowData(SOURCE_TYPE, EQUAL, null);
     }
+    return diffFound;
 
   }
 
@@ -454,10 +464,6 @@ public class DataSetDiff {
 
   }
 
-
-  public void setDataSetDiffFound(Boolean dataSetDiffFound) {
-    this.dataSetDiffFound = dataSetDiffFound;
-  }
 
   private class Diff {
 
