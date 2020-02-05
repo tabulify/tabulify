@@ -228,32 +228,32 @@ public class TableDef implements RelationDef {
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, int precision) {
+  public TableDef addColumn(String columnName, Integer type, Integer precision) {
     meta.addColumn(columnName, type, precision);
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, boolean nullable) {
+  public TableDef addColumn(String columnName, Integer type, Boolean nullable) {
     meta.addColumn(columnName, type, nullable);
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, int precision, int scale) {
+  public TableDef addColumn(String columnName, Integer type, Integer precision, Integer scale) {
     meta.addColumn(columnName, type, precision, scale);
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, int precision, int scale, boolean nullable) {
+  public TableDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable) {
     meta.addColumn(columnName, type, precision, scale, nullable, null);
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, int precision, int scale, boolean nullable, String comment) {
+  public TableDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
     meta.addColumn(columnName, type, precision, scale, nullable, comment);
     return this;
   }
 
-  public TableDef addColumn(String columnName, int type, int precision, boolean nullable) {
+  public TableDef addColumn(String columnName, Integer type, Integer precision, Boolean nullable) {
     meta.addColumn(columnName, type, precision, nullable);
     return this;
   }

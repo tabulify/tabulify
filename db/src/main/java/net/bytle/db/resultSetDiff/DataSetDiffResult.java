@@ -30,7 +30,7 @@ public class DataSetDiffResult {
   }
 
 
-  public DataSetDiffResult addLineComparisonResult(Boolean dataSetDiffFound) {
+  public DataSetDiffResult addLineEqualResult(Boolean dataSetDiffFound) {
     if (dataSetDiffFound){
       this.numberOfSameRows++;
     } else {
@@ -55,7 +55,7 @@ public class DataSetDiffResult {
     return this;
   }
 
-  public DataSetDiffResult setDataDefDiff(boolean b) {
+  public DataSetDiffResult setDataDefDiffFound(boolean b) {
     this.isDataDefDiff = b;
     return this;
   }
@@ -68,7 +68,7 @@ public class DataSetDiffResult {
     return this.numberOfRows;
   }
 
-  public DataSetDiffResult addRow() {
+  public DataSetDiffResult rowAdded() {
     this.numberOfRows++;
     return this;
   }
@@ -79,5 +79,9 @@ public class DataSetDiffResult {
 
   public boolean isDataDefEquals() {
     return !isDataDefDiff;
+  }
+
+  public DataPath getDataPath() {
+    return this.dataPath;
   }
 }
