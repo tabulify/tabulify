@@ -63,7 +63,7 @@ public class DataSetDiff {
    * @param resultDataPath - the location of the result for this diff (by default, the console)
    * @return this data set diff for chaining initialization
    */
-  DataSetDiff setResultDataPath(DataPath resultDataPath) {
+  public DataSetDiff setResultDataPath(DataPath resultDataPath) {
     this.dataSetDiffResult.setDataPath(resultDataPath);
     return this;
   }

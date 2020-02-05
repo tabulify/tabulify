@@ -7,7 +7,9 @@ import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.resultSetDiff.DataSetDiff;
+import net.bytle.db.resultSetDiff.DataSetDiffResult;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.timer.Timer;
@@ -16,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.*;
@@ -81,15 +82,18 @@ public class DbQueryDiff {
       }
 
       // A structure to get the feedback
-      Tabular.tabular().getDataPath("feedback")
+      DataPath feedback = tabular.getDataPath("feedback")
         .getDataDef()
         .addColumn("Query Diff Name")
+        .addColumn("Result")
         .addColumn("Error")
         .addColumn("Error Message")
-        .addColumn("Diff");
+        .getDataPath();
+      Tabulars.create(feedback);
 
       // Loop through the files
       for (int i = 0; i < firstQueryUriFiles.size(); i++) {
+
         Path firstFile = firstQueryUriFiles.get(i);
         Path secondFile = secondQueryUriFiles.get(i);
         String firstQuery = Queries.getQuery(firstFile);
@@ -125,7 +129,7 @@ public class DbQueryDiff {
           queryDiffNameBuilder.append(" and ");
           queryDiffNameBuilder.append(secondFileDesc);
         }
-        String queryDiffName = queryDiffNameBuilder.toString();
+        String diffName = queryDiffNameBuilder.toString();
 
         // Feedback
         LOGGER.info("Diff between the first query against the data store `" + firstQueryUri.getDataStore() + "`(from the file " + firstFile.normalize().toAbsolutePath().toString() + ")");
@@ -141,43 +145,31 @@ public class DbQueryDiff {
 
         // TODO: statement1.setQueryTimeout(300);
 
-        LOGGER.info("A Diff on the query (" + queryDiffName + ") was started");
-        Timer cliTimer = Timer.getTimer(queryDiffName).start();
+        LOGGER.info("A Diff on the query (" + diffName + ") was started");
+        Timer cliTimer = Timer.getTimer(diffName).start();
 
         DataPath firstQueryDataPath = tabular.getDataStore(firstQueryUri.getDataStore())
           .getQueryDataPath(firstQuery);
         DataPath secondQueryDataPath = tabular.getDataStore(secondQueryUri.getDataStore())
           .getQueryDataPath(secondQuery);
 
-
-
         // Diff
-        DataSetDiff dataSetDiff = new DataSetDiff(resultSet1, resultSet2, null, query.getOutputPath());
-
-        List<Object> csvRow = new ArrayList<>();
-        csvRow.add(query.getName());
-        csvRow.add(error);
-        csvRow.add(error_message.toString());
-
-
-
-        Boolean diff = dataSetDiff.diff();
-        //TODO: create a feedback object
-        LOGGER.info("The Diff on the query (" + query.getName() + ") has ended");
-        if (diff) {
-          LOGGER.info("There was a diff");
-        } else {
-          LOGGER.info("No diff found");
+        LOGGER.info("The Diff (" + diffName + ") has started");
+        DataSetDiff dataSetDiff = new DataSetDiff(firstQueryDataPath, secondQueryDataPath);
+        if (outputPathArg!=null){
+          dataSetDiff.setResultDataPath(tabular.getDataPath(outputPathArg));
         }
-
-        csvRow.add(diff);
-
+        DataSetDiffResult result = dataSetDiff.diff();
+        LOGGER.info("The Diff (" + diffName + ") has ended");
+        if (result.isEquals()) {
+          LOGGER.info("The result of the queries are NOT equals");
+        } else {
+          LOGGER.info("The result of the queries are equals");
+        }
 
         cliTimer.stop();
 
-        LOGGER.info("The diff session has ended");
-        LOGGER.info(String.format("Response Time for the load of the table  target workers: %d:%d:%d.%d (hour:minutes:seconds:milli)", elapsedHours, elapsedMinutes, elapsedSeconds, elapsedMilliSeconds));
-        LOGGER.info(String.format("       Ie (%d) milliseconds%n", totalDiff));
+        LOGGER.info(String.format("Response Time for the comparison: %s (hour:minutes:seconds:milli), %d (milliseconds)%n", cliTimer.getResponseTime(), cliTimer.getResponseTimeInMilliSeconds()));
 
       }
 
