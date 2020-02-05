@@ -504,7 +504,7 @@ public class Fs {
   public static String getExtension(String fullFileName) {
     int i = fullFileName.lastIndexOf('.');
     if (i==-1){
-      return null;
+      return "";
     } else {
       return fullFileName.substring(i + 1);
     }

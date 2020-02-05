@@ -101,6 +101,7 @@ public class MemoryDataPath extends DataPath {
     throw new RuntimeException("Not yet implemented");
   }
 
+
   public MemoryDataPathType getType() {
     return type;
   }

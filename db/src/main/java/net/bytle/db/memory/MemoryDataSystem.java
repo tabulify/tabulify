@@ -21,8 +21,6 @@ public class MemoryDataSystem extends TableSystem {
 
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-
-  private static MemoryDataSystem staticMemoryDataSystem;
   private final MemorySystemProvider memoryStoreProvider;
   private final MemoryStore memoryStore;
   private DataStore dataStore = DataStore.of("memory");
@@ -32,12 +30,8 @@ public class MemoryDataSystem extends TableSystem {
     this.memoryStore = new MemoryStore();
   }
 
-
   public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider) {
-    if (staticMemoryDataSystem == null) {
-      staticMemoryDataSystem = new MemoryDataSystem(memorySystemProvider);
-    }
-    return staticMemoryDataSystem;
+    return new MemoryDataSystem(memorySystemProvider);
   }
 
   public static MemoryDataSystem of() {

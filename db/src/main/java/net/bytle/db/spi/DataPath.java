@@ -22,11 +22,16 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
   private String query;
 
   protected TableDef dataDef;
+  private String description;
 
 
   public abstract TableSystem getDataSystem();
 
 
+  /**
+   * A name is part of the path (if this is not the case, you can set a {@link #setDescription(String)}
+   * @return
+   */
   public abstract String getName();
 
   public abstract List<String> getNames();
@@ -135,5 +140,17 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
     return parentDataPaths;
 
   }
+
+  /**
+   *
+   * @param description - set a description (to be able to label queries)
+   * @return
+   */
+  public DataPath setDescription(String description) {
+    this.description = description;
+    return this;
+  };
+
+
 
 }

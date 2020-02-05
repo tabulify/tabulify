@@ -6,12 +6,9 @@ import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.Tabular;
-import net.bytle.db.engine.Queries;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.uri.DataUri;
-import net.bytle.fs.Fs;
 import net.bytle.log.Log;
 import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
@@ -20,9 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.sql.Types;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
@@ -86,54 +82,25 @@ public class DbQueryExecute {
         tabular.withDefaultStorage();
       }
 
-
-
-
       // Arguments checks
       // Collecting the queries
-      Map<String, DataPath> queries = new HashMap<>();
+      List<DataPath> queries = new ArrayList<>();
       for (int i = 0; i < queryUriArgs.size(); i++) {
         String queryUriArg = queryUriArgs.get(i);
-        DataUri queryUri = DataUri.of(queryUriArg);
-
-        String pathInUri = queryUri.getPath();
-        if (Queries.isQuery(pathInUri)){
-          DataPath inlineQueryDataPath = tabular
-            .getDataStore(queryUri.getDataStore())
-            .getQueryDataPath(pathInUri);
-          String queryName = "Inline Query " + i;
-          queries.put(queryName, inlineQueryDataPath);
-        } else {
-          // Pattern
-          List<Path> files = Fs.getFilesByGlob(pathInUri);
-          if (files.size()==0){
-            String msg = "The query uri (" + queryUriArg + ") is not a query nor a pattern that select files";
-            if (notStrict) {
-              LOGGER.warn(msg);
-            } else {
-              LOGGER.error(msg);
-              CliUsage.print(cliCommand);
-              System.exit(1);
-            }
-          }
-          for (Path path: files) {
-            String query = Fs.getFileContent(path);
-            if (Queries.isQuery(query)) {
-              String queryName = path.getFileName().toString();
-              DataPath queryDataPath = tabular
-                .getDataStore(queryUri.getDataStore())
-                .getQueryDataPath(query);
-              queries.put(queryName, queryDataPath);
-            } else {
-              LOGGER.error("The query uri pattern ({}) has selected the file ({} )that seems to not contain a query", queryUriArg, path);
-              LOGGER.error("The file content is: ");
-              LOGGER.error(Strings.toStringNullSafe(query));
-              CliUsage.print(cliCommand);
-              System.exit(1);
-            }
+        List<DataPath> queriesForUri = tabular.getDataPathsFromDataUriPattern(queryUriArg);
+        if (queriesForUri.size()==0) {
+          String msg = "The query uri (" + queryUriArg + ") is not a query nor a pattern that select files";
+          if (notStrict) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            CliUsage.print(cliCommand);
+            System.exit(1);
           }
         }
       }
+
+
 
       LOGGER.info("{} queries were found",queries.size());
       LOGGER.info("Executing {} queries",queries.size());

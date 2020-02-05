@@ -18,7 +18,7 @@ public class CliOptions {
      *
      * @param command
      */
-    public static void addMoveOptions(CliCommand command) {
+    public static void addTransferOptions(CliCommand command) {
 
         command.optionOf(SOURCE_FETCH_SIZE_OPTION)
                 .setGroup("Move Options")

@@ -3,9 +3,12 @@ package net.bytle.db;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.FileDataStore;
+import net.bytle.db.engine.Queries;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
+import net.bytle.fs.Fs;
+import net.bytle.type.Strings;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -65,11 +68,10 @@ public class Tabular implements AutoCloseable {
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
 
-
-     DataStore tpcDs = Database.of(TPCDS_DATASTORE)
-        .setConnectionString(TPCDS_DATASTORE)
-        .addProperty("scale","0.01");
-     dataStores.put(tpcDs.getName(), tpcDs);
+    DataStore tpcDs = Database.of(TPCDS_DATASTORE)
+      .setConnectionString(TPCDS_DATASTORE)
+      .addProperty("scale", "0.01");
+    dataStores.put(tpcDs.getName(), tpcDs);
 
   }
 
@@ -124,7 +126,7 @@ public class Tabular implements AutoCloseable {
 
   public Tabular setDataStoreVault(Path storagePath) {
     dataStoreVault = DatastoreVault.of(storagePath);
-    if (passphrase!=null){
+    if (passphrase != null) {
       dataStoreVault.setPassphrase(passphrase);
     }
     dataStoreVault.getDataStores().forEach(
@@ -144,33 +146,12 @@ public class Tabular implements AutoCloseable {
     return dataStore;
   }
 
-  /**
-   * @param dataUri - a pattern data uri (ie the path is a glob pattern)
-   * @return a list of path that match the pattern
-   * Example dim*@db will return all object with a name that start with `dim` for the data store `db`
-   */
-  public List<DataPath> select(String dataUri) {
-
-    if (!dataUri.contains(DataUri.AT_STRING)) {
-      dataUri = dataUri + DataUri.AT_STRING + DEFAULT_DATASTORE;
-    }
-
-    DataUri dataUriObj = DataUri.of(dataUri);
-    String dataStoreName = dataUriObj.getDataStore();
-    DataPath currentDataPath = getDataStore(dataStoreName)
-      .getCurrentDataPath();
-
-    String glob = dataUriObj.getPath();
-
-    return currentDataPath.getDataSystem().getDescendants(currentDataPath, glob);
-
-  }
 
   public void close() {
     for (DataStore dataStore : dataStores.values()) {
       try {
         // A data store that was not used will have no data system
-        if (dataStore.isOpen()){
+        if (dataStore.isOpen()) {
           dataStore.close();
         }
       } catch (Exception e) {
@@ -203,11 +184,71 @@ public class Tabular implements AutoCloseable {
 
   public Tabular setPassphrase(String passphrase) {
     this.passphrase = passphrase;
-    if (dataStoreVault!=null){
+    if (dataStoreVault != null) {
       dataStoreVault.setPassphrase(passphrase);
     }
     return this;
   }
 
 
+  /**
+   * An utility function that returns data paths selected from a data uri pattern (ie glob_pattern@datastore)
+   *
+   * This function takes into account:
+   *   * the query uri pattern (ie queryPattern*.sql@datastore, `select 1@datastore`)
+   *   * and a entity uri pattern (ie table*@datastore)
+   *
+   * @param dataUriPattern
+   * @return the data paths that the data uri pattern selects
+   */
+  public List<DataPath> select(String dataUriPattern) {
+    List<DataPath> dataPathsToReturn = new ArrayList<>();
+    if (!dataUriPattern.contains(DataUri.AT_STRING)) {
+      dataUriPattern = dataUriPattern + DataUri.AT_STRING + DEFAULT_DATASTORE;
+    }
+    DataUri dataUri = DataUri.of(dataUriPattern);
+    String pathInUri = dataUri.getPath();
+
+    // Query URI with an inline query ?
+    if (Queries.isQuery(pathInUri)) {
+      DataPath inlineQueryDataPath = this
+        .getDataStore(dataUri.getDataStore())
+        .getQueryDataPath(pathInUri)
+        .setDescription("Inline Query");
+      dataPathsToReturn.add(inlineQueryDataPath);
+    } else {
+      // Query URI with a path that defines Sql File ?
+      if (Fs.getExtension(pathInUri).equals("sql")) {
+        List<Path> files = Fs.getFilesByGlob(pathInUri);
+        if (files.size() == 0) {
+          return dataPathsToReturn;
+        }
+        for (Path path : files) {
+          String query = Fs.getFileContent(path);
+          if (Queries.isQuery(query)) {
+            String queryName = path.getFileName().toString();
+            DataPath queryDataPath = this
+              .getDataStore(dataUri.getDataStore())
+              .getQueryDataPath(query)
+              .setDescription(queryName);
+            dataPathsToReturn.add(queryDataPath);
+          } else {
+            String msg = Strings.multiline("The query uri pattern (" + dataUriPattern + ") has selected the file (" + path + ") that seems to not contain a query",
+              "The file content is: ",
+              Strings.toStringNullSafe(query)
+            );
+            throw new RuntimeException(msg);
+          }
+        }
+      } else {
+        // Normal data uri pattern
+        String dataStoreName = dataUri.getDataStore();
+        DataPath currentDataPath = getDataStore(dataStoreName)
+          .getCurrentDataPath();
+        String glob = dataUri.getPath();
+        dataPathsToReturn = currentDataPath.getDataSystem().getDescendants(currentDataPath, glob);
+      }
+    }
+    return dataPathsToReturn;
+  }
 }
