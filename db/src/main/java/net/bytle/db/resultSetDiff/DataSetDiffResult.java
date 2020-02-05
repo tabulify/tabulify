@@ -30,7 +30,7 @@ public class DataSetDiffResult {
   }
 
 
-  public DataSetDiffResult addLineEqualResult(Boolean dataSetDiffFound) {
+  public DataSetDiffResult areLinesEquals(Boolean dataSetDiffFound) {
     if (dataSetDiffFound){
       this.numberOfSameRows++;
     } else {

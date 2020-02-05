@@ -44,9 +44,10 @@ public class DataSetDiff {
   private final Locale locale = Locale.getDefault(); // The locale used for String comparison
 
 
-  // Represent the type of record inserted in the result
-  private final int SOURCE_TYPE = 0;
-  private final int TARGET_TYPE = 1;
+  // Represent the source of the stream inserted in the result
+  private final int FIRST_DATA_PATH = 0;
+  private final int SECOND_DATA_PATH = 1;
+  private final int BOTH_DATA_PATH = 2;
 
 
   /**
@@ -122,7 +123,8 @@ public class DataSetDiff {
       }
       resultDataPath.getDataDef()
         .addColumn("+/-") // Add the diff result for the row
-        .addColumn("DiffId");  // Add the id of the row
+        .addColumn("DiffRowId")  // Add the id of the row
+        .addColumn("Reason");  // Add the id of the row
       TableDef sourceDataDef = firstDataPath.getDataDef();
       // Add the data
       for (int i = 0; i < sourceDataDef.getColumnDefs().size(); i++) {
@@ -140,9 +142,9 @@ public class DataSetDiff {
 
       // Get the stream
       try (
-        InsertStream diffInsertStream = Tabulars.getInsertStream(resultDataPath);
-        SelectStream selectFirstStream = Tabulars.getSelectStream(firstDataPath);
-        SelectStream selectSecondStream = Tabulars.getSelectStream(secondDataPath);
+        InsertStream resultStream = Tabulars.getInsertStream(resultDataPath);
+        SelectStream firstStream = Tabulars.getSelectStream(firstDataPath);
+        SelectStream secondStream = Tabulars.getSelectStream(secondDataPath);
       ) {
 
         // Should we of the next row for the source or the target
@@ -156,13 +158,12 @@ public class DataSetDiff {
         // Loop until no rows anymore
         while (true) {
 
-          dataSetDiffResult.incrementRowComparison();
 
           if (sourceNext) {
-            moreSourceRow = selectFirstStream.next();
+            moreSourceRow = firstStream.next();
           }
           if (targetNext) {
-            moreTargetRow = selectSecondStream.next();
+            moreTargetRow = secondStream.next();
           }
 
           if (!moreSourceRow && !moreTargetRow) {
@@ -170,20 +171,22 @@ public class DataSetDiff {
             break;
           } else if (moreSourceRow && moreTargetRow) {
 
+            dataSetDiffResult.incrementRowComparison();
+
             if (keyColumnIndex != null) {
 
-              Object keySourceValue = selectFirstStream.getObject(keyColumnIndex);
-              Object keyTargetValue = selectSecondStream.getObject(keyColumnIndex);
+              Object keySourceValue = firstStream.getObject(keyColumnIndex);
+              Object keyTargetValue = secondStream.getObject(keyColumnIndex);
 
               if (keySourceValue == null || keyTargetValue == null) {
 
                 String typeDataSet;
                 SelectStream dataset;
                 if (keySourceValue == null) {
-                  dataset = selectFirstStream;
+                  dataset = firstStream;
                   typeDataSet = "source";
                 } else {
-                  dataset = selectSecondStream;
+                  dataset = secondStream;
                   typeDataSet = "target";
                 }
                 throw new RuntimeException("The value of the primary key column (col: " + keyColumnIndex + ", row:" + dataset.getRow() + ") in the " + typeDataSet + " data set can not be null");
@@ -191,23 +194,23 @@ public class DataSetDiff {
 
               if (keySourceValue.equals(keyTargetValue)) {
 
-                Boolean result = this.compareAndAddRowData(selectFirstStream, selectSecondStream, diffInsertStream);
-                dataSetDiffResult.addLineEqualResult(result);
+                Boolean result = this.compareAndAddRowData(firstStream, secondStream, resultStream);
+                dataSetDiffResult.areLinesEquals(result);
                 targetNext = true;
                 sourceNext = true;
 
               } else if (keySourceValue.toString().compareTo(keyTargetValue.toString()) > 0) {
 
-                dataSetDiffResult.addLineEqualResult(true);
-                addRowData(selectFirstStream, selectSecondStream, diffInsertStream, TARGET_TYPE);
+                dataSetDiffResult.areLinesEquals(false);
+                addRowData(resultStream, secondStream, SECOND_DATA_PATH, null);
                 targetNext = true;
                 sourceNext = false;
 
               } else {
 
                 //less than
-                dataSetDiffResult.addLineEqualResult(true);
-                addRowData(selectFirstStream, selectSecondStream, diffInsertStream, SOURCE_TYPE);
+                dataSetDiffResult.areLinesEquals(false);
+                addRowData(resultStream, firstStream, FIRST_DATA_PATH, null);
                 targetNext = false;
                 sourceNext = true;
 
@@ -217,8 +220,8 @@ public class DataSetDiff {
             } else {
 
               // No primary key
-              Boolean result = this.compareAndAddRowData(selectFirstStream, selectSecondStream, diffInsertStream);
-              dataSetDiffResult.addLineEqualResult(result);
+              Boolean result = this.compareAndAddRowData(firstStream, secondStream, resultStream);
+              dataSetDiffResult.areLinesEquals(result);
               targetNext = true;
               sourceNext = true;
 
@@ -226,16 +229,16 @@ public class DataSetDiff {
           } else {
 
             // There is still a source row of a target row
-            dataSetDiffResult.addLineEqualResult(true);
+            dataSetDiffResult.areLinesEquals(false);
             if (moreSourceRow) {
 
-              addRowData(selectFirstStream, selectSecondStream, diffInsertStream, SOURCE_TYPE);
+              addRowData(resultStream, firstStream, FIRST_DATA_PATH, null);
               targetNext = false;
               sourceNext = true;
 
             } else {
 
-              addRowData(selectFirstStream, selectSecondStream, diffInsertStream, TARGET_TYPE);
+              addRowData(resultStream, secondStream, SECOND_DATA_PATH, null);
               targetNext = true;
               sourceNext = false;
 
@@ -252,9 +255,6 @@ public class DataSetDiff {
 
   }
 
-  private void addRowData(SelectStream selectFirstStream, SelectStream selectSecondStream, InsertStream diffInsertStream, int target_type) {
-    addRowData(selectFirstStream, selectSecondStream, diffInsertStream, target_type, null, null);
-  }
 
   /**
    * Opening the select stream in a thread (ie execute a request to get the data if needed)
@@ -299,21 +299,62 @@ public class DataSetDiff {
   }
 
 
-  private void addRowData(SelectStream selectFirstStream, SelectStream selectSecondStream, InsertStream diffInsertStream, int type, String equalMinPlus, List<Diff> columnPositionWithDiff) {
+  /**
+   * Add a row in the diff result data
+   *
+   * There is only 4 cases:
+   * <p>
+   * A row is present only in the first data path, one insert of
+   * * selectStream is the first stream
+   * * type {@link #FIRST_DATA_PATH}
+   * <p>
+   * A row is present only in the second data path, one insert of
+   * * selectStream is the second stream
+   * * type {@link #SECOND_DATA_PATH}
+   * <p>
+   * A row is the same, one insert of
+   * * selectStream is the first or second stream
+   * * type {@link #BOTH_DATA_PATH}
+   * * no coordinates cell
+   * <p>
+   * A row is not the same: two inserts
+   * <p>
+   * First:
+   * * first selectStream
+   * * type {@link #FIRST_DATA_PATH}
+   * * coordinates cell of the diff
+   * and
+   * Second:
+   * * second selectStream
+   * * type {@link #SECOND_DATA_PATH}
+   * * coordinates cell of the diff
+   *
+   *
+   * @param resultStream            - the stream of the result data path
+   * @param selectStream            - the stream where the data comes from
+   * @param type                    - the type of insertion (only present in source, only present in target, or present in both)
+   * @param cellWithDiffCoordinates - the coordinates of the cells with a diff
+   */
+  private void addRowData(InsertStream resultStream, SelectStream selectStream, int type, List<Diff> cellWithDiffCoordinates) {
 
+    String reason = "";
+    String equalMinPlus = "";
+    switch (type) {
 
-    SelectStream dataSet;
-    if (type == SOURCE_TYPE) {
-      dataSet = selectFirstStream;
-      if (equalMinPlus == null) {
+      case (FIRST_DATA_PATH):
         equalMinPlus = MIN;
-      }
-
-    } else {
-      dataSet = selectSecondStream;
-      if (equalMinPlus == null) {
+        reason = "Not present in the second data path";
+        break;
+      case (SECOND_DATA_PATH):
         equalMinPlus = PLUS;
-      }
+        reason = "Not present in the first data path";
+        break;
+      case (BOTH_DATA_PATH):
+        reason = "";
+        equalMinPlus = EQUAL;
+        break;
+      default:
+        throw new RuntimeException("Type of insertion is unknown");
     }
 
 
@@ -324,18 +365,21 @@ public class DataSetDiff {
 
     // Key Column
     if (keyColumnIndex != null) {
-      row.add(keyColumnIndex);
+      row.add(selectStream.getObject(keyColumnIndex-1));
     } else {
-      row.add(dataSet.getRow());
+      row.add(selectStream.getRow());
     }
+
+    // Reason
+    row.add(reason);
 
     List<Integer> columnPositions = new ArrayList<>();
-    if (columnPositionWithDiff != null) {
-      columnPositionWithDiff.forEach(diff -> columnPositions.add(diff.getPosition()));
+    if (cellWithDiffCoordinates != null) {
+      cellWithDiffCoordinates.forEach(diff -> columnPositions.add(diff.getPosition()));
     }
 
-    for (int i = 0; i < dataSet.getSelectDataDef().getColumnDefs().size(); i++) {
-      Object object = dataSet.getObject(i);
+    for (int i = 0; i < selectStream.getSelectDataDef().getColumnDefs().size(); i++) {
+      Object object = selectStream.getObject(i);
 
       if (columnPositions.contains(i)) {
         if (object != null) {
@@ -348,7 +392,7 @@ public class DataSetDiff {
       row.add(object);
     }
 
-    diffInsertStream.insert(row);
+    resultStream.insert(row);
 
 
     dataSetDiffResult.rowAdded();
@@ -360,16 +404,16 @@ public class DataSetDiff {
    * Compare a whole row
    * @return if they are equals
    */
-  private Boolean compareAndAddRowData(SelectStream selectFirstStream, SelectStream selectSecondStream, InsertStream diffInsertStream) {
+  private Boolean compareAndAddRowData(SelectStream firstStream, SelectStream secondStream, InsertStream resultStream) {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
-    for (int i = 0; i < selectFirstStream.getSelectDataDef().getColumnDefs().size(); i++) {
+    for (int i = 0; i < firstStream.getSelectDataDef().getColumnDefs().size(); i++) {
 
-      String cellCoordinates = "Cell(Row,Col)(" + selectFirstStream.getRow() + "," + i + ")";
+      String cellCoordinates = "Cell(Row,Col)(" + firstStream.getRow() + "," + i + ")";
 
-      Object sourceDataPoint = selectFirstStream.getObject(i);
-      Object targetDataPoint = selectSecondStream.getObject(i);
+      Object sourceDataPoint = firstStream.getObject(i);
+      Object targetDataPoint = secondStream.getObject(i);
       if (sourceDataPoint != null) {
         if (targetDataPoint == null) {
           diffFound = true;
@@ -407,10 +451,10 @@ public class DataSetDiff {
     }
 
     if (diffFound) {
-      addRowData(selectFirstStream, selectSecondStream, diffInsertStream, SOURCE_TYPE, null, columnPositionWithDiff);
-      addRowData(selectFirstStream, selectSecondStream, diffInsertStream, TARGET_TYPE, null, columnPositionWithDiff);
+      addRowData(resultStream, firstStream, FIRST_DATA_PATH, columnPositionWithDiff);
+      addRowData(resultStream, secondStream, SECOND_DATA_PATH, columnPositionWithDiff);
     } else {
-      addRowData(selectFirstStream, selectSecondStream, diffInsertStream, SOURCE_TYPE, EQUAL, null);
+      addRowData(resultStream, firstStream, BOTH_DATA_PATH, null);
     }
     return !diffFound;
 
