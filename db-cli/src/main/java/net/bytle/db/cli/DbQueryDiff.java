@@ -2,7 +2,6 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
-import net.bytle.cli.CliWord;
 import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.Queries;
@@ -30,6 +29,8 @@ import static net.bytle.db.cli.Words.*;
 public class DbQueryDiff {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DbQueryDiff.class);
+  public static final String FIRST_QUERY_URI = "QueryUri";
+  public static final String SECOND_QUERY_URI = "QueryUri";
 
 
   public static void run(CliCommand cliCommand, String[] args) {
@@ -39,9 +40,9 @@ public class DbQueryDiff {
       .setDescription("Performs a diff between two queries.")
       .addExample(Strings.multiline("Diff between two different queries:", DIFF_COMMAND + " queryFile1.sql@sqlite queryFile2.sql@sqlite"))
       .addExample(Strings.multiline("Diff between two different datastore:", DIFF_COMMAND + " queryFile.sql@sqlite queryFile.sql@postgres"));
-    CliWord firstQueryWord = cliCommand.argOf("QueryUri").setDescription("A query URI pattern (Example: dim*.sql@datastore)")
+    cliCommand.argOf(FIRST_QUERY_URI).setDescription("A query URI pattern that define the first query(ies) to compare (Example: dim*.sql@datastore)")
       .setMandatory(true);
-    CliWord secondQueryWord = cliCommand.argOf("QueryUri").setDescription("A query URI pattern (Example: dim*.sql@datastore)")
+    cliCommand.argOf(SECOND_QUERY_URI).setDescription("A query URI pattern that define the second query(ies) to compare (Example: dim*.sql@datastore)")
       .setMandatory(true);
     cliCommand.optionOf(OUTPUT_DATA_URI)
       .setDescription("defines the destination of the diff as a data uri");
@@ -49,8 +50,8 @@ public class DbQueryDiff {
 
     // Args
     CliParser cliParser = Clis.getParser(cliCommand, args);
-    final String firstQueryArg = cliParser.getString(firstQueryWord);
-    final String secondQueryArg = cliParser.getString(secondQueryWord);
+    final String firstQueryArg = cliParser.getString(FIRST_QUERY_URI);
+    final String secondQueryArg = cliParser.getString(SECOND_QUERY_URI);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
 
     // Main
@@ -60,7 +61,7 @@ public class DbQueryDiff {
     // Files selected
     List<Path> firstQueryUriFiles = Fs.getFilesByGlob(firstQueryUri.getPath());
     if (firstQueryUriFiles.size() == 0) {
-      LOGGER.error("There was not file selected for the first query uri ({})", firstQueryArg);
+      LOGGER.error("There was no sql file selected with the first query uri pattern ({})", firstQueryArg);
     }
     List<Path> secondQueryUriFiles = Fs.getFilesByGlob(secondQueryUri.getPath());
     if (secondQueryUriFiles.size() == 0) {
