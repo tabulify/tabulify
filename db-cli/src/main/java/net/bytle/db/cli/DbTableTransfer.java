@@ -61,7 +61,7 @@ public class DbTableTransfer {
                 .setMandatory(false);
 
 
-        cliCommand.flagOf(NO_STRICT)
+        cliCommand.flagOf(NOT_STRICT)
                 .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
                 .setDefaultValue(false);
 
@@ -96,7 +96,7 @@ public class DbTableTransfer {
         DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
         // Command option
-        final Boolean notStrict = cliParser.getBoolean(NO_STRICT);
+        final Boolean notStrict = cliParser.getBoolean(NOT_STRICT);
 
         // Get the tables to transfer
         List<String> tableUris = cliParser.getStrings(SOURCE_TABLE_URIS);

@@ -74,7 +74,7 @@ public class Words {
 
     // Options
     public static final String DEFINITION_FILE = "data-def";
-    public static final String NO_STRICT = "no-strict";
+    public static final String NOT_STRICT = "no-strict";
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
 

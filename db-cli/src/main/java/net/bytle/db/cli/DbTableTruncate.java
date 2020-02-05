@@ -40,7 +40,7 @@ public class DbTableTruncate {
         cliCommand.flagOf(Words.FORCE)
                 .setDescription("truncate also the tables that references the truncated tables")
                 .setDefaultValue(false);
-        cliCommand.flagOf(Words.NO_STRICT)
+        cliCommand.flagOf(Words.NOT_STRICT)
                 .setDescription("if set, it will not throw an error if a table is not found")
                 .setDefaultValue(false);
 
@@ -49,7 +49,7 @@ public class DbTableTruncate {
         final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
         DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
-        Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
+        Boolean noStrictMode = cliParser.getBoolean(Words.NOT_STRICT);
         final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
         List<TableDef> tablesSelectedToTruncate = new ArrayList<>();
         for (String stringTableUri : stringTablesUris) {
@@ -66,7 +66,7 @@ public class DbTableTruncate {
                     LOGGER.warning(msg);
                 } else {
                     LOGGER.severe(msg);
-                    LOGGER.severe("If you don't want to exit when a table is not found, you can use the no-strict flag (" + Words.NO_STRICT + ")");
+                    LOGGER.severe("If you don't want to exit when a table is not found, you can use the no-strict flag (" + Words.NOT_STRICT + ")");
                     LOGGER.severe("Exiting");
                     System.exit(1);
                 }

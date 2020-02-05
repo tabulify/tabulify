@@ -56,7 +56,7 @@ public class DbTableLoad {
                 .addWordOf(METRICS_DATA_URI_OPTION);
 
 
-        cliCommand.flagOf(NO_STRICT)
+        cliCommand.flagOf(NOT_STRICT)
                 .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
                 .setDefaultValue(false);
 

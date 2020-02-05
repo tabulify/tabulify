@@ -41,7 +41,7 @@ public class DbDatastoreRemove {
                 .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
 
-        cliCommand.flagOf(Words.NO_STRICT)
+        cliCommand.flagOf(Words.NOT_STRICT)
                 .setDescription("If the removed database does not exist, the command will not exit with a failure code.")
                 .setDefaultValue(false);
 
@@ -52,7 +52,7 @@ public class DbDatastoreRemove {
 
         DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
 
-        final Boolean noStrictMode = cliParser.getBoolean(Words.NO_STRICT);
+        final Boolean noStrictMode = cliParser.getBoolean(Words.NOT_STRICT);
         final List<String> names = cliParser.getStrings(DATABASE_PATTERN);
         for (String name : names) {
             final List<DataStore> dataStores = datastoreVault.getDataStores(name);
@@ -62,7 +62,7 @@ public class DbDatastoreRemove {
                     LOGGER.warning(msg);
                 } else {
                     LOGGER.severe(msg);
-                    LOGGER.severe("If you don't want the process to continue without failure, you can set the no strict flag ("+CliParser.PREFIX_LONG_OPTION+Words.NO_STRICT+").");
+                    LOGGER.severe("If you don't want the process to continue without failure, you can set the no strict flag ("+CliParser.PREFIX_LONG_OPTION+Words.NOT_STRICT +").");
                     LOGGER.severe("Exiting");
                 System.exit(1);
                 }

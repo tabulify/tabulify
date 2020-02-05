@@ -1,23 +1,24 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.*;
-import net.bytle.db.DatastoreVault;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.Tabular;
 import net.bytle.db.engine.Queries;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.log.Log;
+import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
@@ -25,182 +26,200 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 public class DbQueryExecute {
 
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbQueryExecute.class);;
 
-    private static final String ARG_NAME = "(Query|File.sql|Directory)";
-    private static final String DATA_URI = "DataUri";
-
-
-    public static void run(CliCommand cliCommand, String[] args) {
-
-        cliCommand.argOf(DATA_URI)
-                .setDescription("A data Uri that define where the execution will take place.")
-                .setMandatory(true);
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("The query defines as a command line argument, a query file or a directory of query files.")
-                .setMandatory(true);
-
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
-
-        cliCommand.setDescription("Execute one or several queries. \n" + "" +
-                "For one query, the data is shown. For multiple queries, the performance result is shown.");
-
-        String footer = "\nExample:\n" +
-                Words.CLI_NAME + " " + cliCommand.getName() + " QueryToExecute.sql QueryToExecute2.sql\n" +
-                Words.CLI_NAME + " " + cliCommand.getName() + " \"select year, count(1) from sales group by year\"\n" +
-                Words.CLI_NAME + " " + cliCommand.getName() + " ./directory/withQueries1 QueryToExecute.sql\n";
-
-        cliCommand.setFooter(footer);
+  private static final String QUERY_URI_PATTERNS = "QueryUriPattern...";
 
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
+    cliCommand.setDescription(Strings.multiline(
+      "Execute one or several queries. ",
+      "  * For one query, the data is shown.",
+      "  * For multiple queries, the performance result is shown."
+    ));
+    cliCommand.argOf(QUERY_URI_PATTERNS)
+      .setDescription("One or several query uri glob pattern that defines a query (inline or in a sql file) and defines the data store")
+      .setMandatory(true);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error if a query is not found ")
+      .setDefaultValue(false);
 
-        DataUri dataUri = DataUri.of(cliParser.getString(DATA_URI));
-        DataPath dataPath = DataPaths.of(datastoreVault, dataUri);
+    // Examples
+    cliCommand.addExample(Strings.multiline(
+      "Execute all the queries written in the sql files that begins with `dim`",
+      Words.CLI_NAME + " " + cliCommand.getName() + " dim*.sql@sqlite"
+    ));
+    cliCommand.addExample(Strings.multiline(
+      "Execute the query written in the file `Query1.sql` against the `sqlite` datastore and ...",
+      "execute the query written in the file `Query2.sql` against the `oracle` datastore ",
+      Words.CLI_NAME + " " + cliCommand.getName() + " Query1.sql@sqlite Query2.sql@oracle"
+    ));
+    cliCommand.addExample(Strings.multiline(
+      "Execute an inline query against the `sqlite` datastore",
+      Words.CLI_NAME + " " + cliCommand.getName() + " \"select year, count(1) from sales group by year@sqlite\""
+    ));
+    cliCommand.addExample(Strings.multiline(
+      "Execute all sql files present in the directory `directory/withQueries` against the `postgres` data store",
+      Words.CLI_NAME + " " + cliCommand.getName() + " ./directory/withQueries/*.sql@postgres"
+    ));
 
-        List<String> argValues = cliParser.getStrings(ARG_NAME);
+    // Parse and Args
+    CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> queryUriArgs = cliParser.getStrings(QUERY_URI_PATTERNS);
+    final Boolean notStrict = cliParser.getBoolean(NOT_STRICT);
+
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
+
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
 
-        // Arguments checks
-        // Collecting the queries
-        Map<String, DataPath> queries = new HashMap<>();
-        for (int i = 0; i < argValues.size(); i++) {
-            String s = argValues.get(i);
-            if (Fs.isFile(s)) {
-                final Path path = Paths.get(s);
-                String query = Fs.getFileContent(path);
-                if (Queries.isQuery(query)) {
-                    String queryName = path.getFileName().toString();
-                    DataPath dataQueryPath = DataPaths.ofQuery(dataPath, query);
-                    queries.put(queryName, dataQueryPath);
-                } else {
-                    System.err.println("The first argument is a file (" + s + ") that seems to not contain a query");
-                    System.err.println("The file content is: ");
-                    System.err.println(Strings.toStringNullSafe(query));
-                    CliUsage.print(cliCommand);
-                    System.exit(1);
-                }
-            } else if (Fs.isDirectory(s)) {
-                try {
-                    LOGGER.info("Scanning the directory (" + s + ")");
-                    for (Path path : Files.newDirectoryStream(Paths.get(s))) {
-                        // Not sub-directory yet
-                        if (Files.isRegularFile(path) && path.toString().endsWith("sql")) {
-                            String query = Fs.getFileContent(path);
-                            if (Queries.isQuery(query)) {
-                                String queryName = path.getFileName().toString();
-                                DataPath dataQueryPath = DataPaths.ofQuery(dataPath, query);
-                                queries.put(queryName, dataQueryPath);
-                            } else {
-                                System.err.println("The execution of the directory (" + s + ") was asked but");
-                                System.err.println("the content of the file (" + path + ") is not a query");
-                                System.err.println("The content is: ");
-                                System.err.println(Strings.toStringNullSafe(query));
-                                CliUsage.print(cliCommand);
-                                System.exit(1);
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else if (Queries.isQuery(s)) {
-                DataPath dataQueryPath = DataPaths.ofQuery(dataPath, s);
-                String queryName = "Inline Query " + i;
-                queries.put(queryName, dataQueryPath);
+
+
+      // Arguments checks
+      // Collecting the queries
+      Map<String, DataPath> queries = new HashMap<>();
+      for (int i = 0; i < queryUriArgs.size(); i++) {
+        String queryUriArg = queryUriArgs.get(i);
+        DataUri queryUri = DataUri.of(queryUriArg);
+
+        String pathInUri = queryUri.getPath();
+        if (Queries.isQuery(pathInUri)){
+          DataPath inlineQueryDataPath = tabular
+            .getDataStore(queryUri.getDataStore())
+            .getQueryDataPath(pathInUri);
+          String queryName = "Inline Query " + i;
+          queries.put(queryName, inlineQueryDataPath);
+        } else {
+          // Pattern
+          List<Path> files = Fs.getFilesByGlob(pathInUri);
+          if (files.size()==0){
+            String msg = "The query uri (" + queryUriArg + ") is not a query nor a pattern that select files";
+            if (notStrict) {
+              LOGGER.warn(msg);
             } else {
-                System.err.println("The value of the argument (" + i + ") is not file, a directory or a query");
-                System.err.println("The argument value is: ");
-                System.err.println(Strings.toStringNullSafe(s));
-                CliUsage.print(cliCommand);
-                System.exit(1);
+              LOGGER.error(msg);
+              CliUsage.print(cliCommand);
+              System.exit(1);
             }
+          }
+          for (Path path: files) {
+            String query = Fs.getFileContent(path);
+            if (Queries.isQuery(query)) {
+              String queryName = path.getFileName().toString();
+              DataPath queryDataPath = tabular
+                .getDataStore(queryUri.getDataStore())
+                .getQueryDataPath(query);
+              queries.put(queryName, queryDataPath);
+            } else {
+              LOGGER.error("The query uri pattern ({}) has selected the file ({} )that seems to not contain a query", queryUriArg, path);
+              LOGGER.error("The file content is: ");
+              LOGGER.error(Strings.toStringNullSafe(query));
+              CliUsage.print(cliCommand);
+              System.exit(1);
+            }
+          }
         }
+      }
 
+      LOGGER.info("{} queries were found",queries.size());
+      LOGGER.info("Executing {} queries",queries.size());
+      switch (queries.size()) {
+        case 0:
 
-        LOGGER.info("Processing the request");
-        switch (queries.size()) {
-            case 0:
-                System.err.println();
-                System.err.println("No query found");
-                System.exit(1);
-                break;
+          String msg = "No query found";
+          if (notStrict){
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
 
-            case 1:
+          break;
 
-                // Prep
-                CliTimer cliTimer = CliTimer.getTimer("execute").start();
+        case 1:
 
-                // Begin output
-                DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
-                System.out.println();
-                Tabulars.print(queries.entrySet().iterator().next().getValue());
-                System.out.println();
-                DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
+          // Prep
+          Timer cliTimer = Timer.getTimer("execute").start();
 
-                // Feedback
-                cliTimer.stop();
-                LOGGER.info("Response Time to query the data: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-                LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
-                break;
+          // Begin output
+          DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
+          System.out.println();
+          Tabulars.print(queries.entrySet().iterator().next().getValue());
+          System.out.println();
+          DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
 
-            default:
+          // Feedback
+          cliTimer.stop();
+          LOGGER.info("Response Time to query the data: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+          LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
+          break;
 
-                TableDef executionTable = DataPaths.of("executions")
-                        .getDataDef()
-                        .addColumn("Query Name", Types.VARCHAR)
-                        .addColumn("Latency (ms)", Types.INTEGER)
-                        .addColumn("Row Count", Types.INTEGER)
-                        .addColumn("Error", Types.VARCHAR)
-                        .addColumn("Message", Types.VARCHAR);
+        default:
 
-                int errorCounter = 0;
-                try (
-                        InsertStream exeInput = Tabulars.getInsertStream(executionTable.getDataPath());
-                ) {
+          DataPath executionTable = tabular.getDataPath("executions")
+            .getDataDef()
+            .addColumn("Query Name", Types.VARCHAR)
+            .addColumn("Latency (ms)", Types.INTEGER)
+            .addColumn("Row Count", Types.INTEGER)
+            .addColumn("Error", Types.VARCHAR)
+            .addColumn("Message", Types.VARCHAR)
+            .getDataPath();
 
-                    for (DataPath queryDef : queries.values()) {
+          int errorCounter = 0;
+          try (
+            InsertStream exeInput = Tabulars.getInsertStream(executionTable);
+          ) {
 
-                        cliTimer = CliTimer.getTimer("execute").start();
-                        Integer rowCount = null;
-                        String status = "";
-                        String message = "";
-                        try {
-                            rowCount = Tabulars.getSize(queryDef);
-                        } catch (Exception e) {
-                            errorCounter++;
-                            status = "Err";
-                            message = Log.onOneLine(e.getMessage());
-                            LOGGER.severe(e.getMessage());
-                        }
+            for (DataPath queryDef : queries.values()) {
 
-                        cliTimer.stop();
-                        exeInput.insert(queryDef.getName(), cliTimer.getResponseTimeInMilliSeconds(), rowCount, status, message);
-
-                    }
+              cliTimer = Timer.getTimer("execute").start();
+              Integer rowCount = null;
+              String status = "";
+              String message = "";
+              try {
+                rowCount = Tabulars.getSize(queryDef);
+              } catch (Exception e) {
+                errorCounter++;
+                status = "Err";
+                message = Log.onOneLine(e.getMessage());
+                LOGGER.error(e.getMessage());
+                if(!notStrict){
+                  System.exit(1);
                 }
-                System.out.println();
-                Tabulars.print(executionTable.getDataPath());
-                System.out.println();
+              }
 
-                if (errorCounter > 0) {
-                    System.err.println(errorCounter + " Errors during Query executions were seen");
-                    System.exit(1);
-                }
-                break;
-        }
+              cliTimer.stop();
+              exeInput.insert(queryDef.getName(), cliTimer.getResponseTimeInMilliSeconds(), rowCount, status, message);
 
-        LOGGER.info("Bye !");
+            }
+          }
+          System.out.println();
+          Tabulars.print(executionTable);
+          System.out.println();
 
+          if (errorCounter > 0) {
+            System.err.println(errorCounter + " Errors during Query executions were seen");
+            System.exit(1);
+          }
+          break;
+      }
+
+      LOGGER.info("Bye !");
     }
+  }
 
 }

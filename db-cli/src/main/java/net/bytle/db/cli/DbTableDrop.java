@@ -55,7 +55,7 @@ public class DbTableDrop {
         cliCommand.flagOf(FORCE)
                 .setDescription("if set, the foreign keys referencing the tables to drop will be dropped");
 
-        cliCommand.flagOf(NO_STRICT)
+        cliCommand.flagOf(NOT_STRICT)
                 .setDescription("if set, it will not throw an error if a table is not found")
                 .setDefaultValue(false);
 
@@ -71,7 +71,7 @@ public class DbTableDrop {
         // Bring the of statement out of the output zone
         // Otherwise we will not see them their log in the output stream
         final Boolean withForce = cliParser.getBoolean(FORCE);
-        final Boolean notStrict = cliParser.getBoolean(NO_STRICT);
+        final Boolean notStrict = cliParser.getBoolean(NOT_STRICT);
 
 
         // Get the tables asked
