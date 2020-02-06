@@ -21,15 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
-import static net.bytle.db.cli.Words.NOT_STRICT;
+import static net.bytle.db.cli.Words.*;
 
 
 public class DbQueryExecute {
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbQueryExecute.class);;
-
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbQueryExecute.class);
   private static final String QUERY_URI_PATTERNS = "QueryUriPattern...";
 
 
@@ -47,6 +45,8 @@ public class DbQueryExecute {
     cliCommand.flagOf(NOT_STRICT)
       .setDescription("if set, it will not throw an error if a query is not found ")
       .setDefaultValue(false);
+    cliCommand.optionOf(OUTPUT_DATA_URI)
+      .setDescription("defines the destination of the output as a data uri. If set the output will be also saved into this data store (Example: perf@mysql or perf.csv@file)");
 
     // Examples
     cliCommand.addExample(Strings.multiline(
@@ -63,15 +63,16 @@ public class DbQueryExecute {
       Words.CLI_NAME + " " + cliCommand.getName() + " \"select year, count(1) from sales group by year@sqlite\""
     ));
     cliCommand.addExample(Strings.multiline(
-      "Execute all sql files present in the directory `directory/withQueries` against the `postgres` data store",
-      Words.CLI_NAME + " " + cliCommand.getName() + " ./directory/withQueries/*.sql@postgres"
+      "Execute all sql files present in the directory `directory/withQueries` against the `postgres` data store and store the result in the `perf` table.",
+      Words.CLI_NAME + " " + cliCommand.getName() + " " + CliParser.PREFIX_LONG_OPTION + OUTPUT_DATA_URI + "perf@postgres ./directory/withQueries/*.sql@postgres"
     ));
 
     // Parse and Args
     CliParser cliParser = Clis.getParser(cliCommand, args);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
     final List<String> queryUriArgs = cliParser.getStrings(QUERY_URI_PATTERNS);
-    final Boolean notStrict = cliParser.getBoolean(NOT_STRICT);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final String outputDataUri = cliParser.getString(OUTPUT_DATA_URI);
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {
@@ -87,10 +88,11 @@ public class DbQueryExecute {
       List<DataPath> queries = new ArrayList<>();
       for (int i = 0; i < queryUriArgs.size(); i++) {
         String queryUriArg = queryUriArgs.get(i);
-        List<DataPath> queriesForUri = tabular.getDataPathsFromDataUriPattern(queryUriArg);
-        if (queriesForUri.size()==0) {
-          String msg = "The query uri (" + queryUriArg + ") is not a query nor a pattern that select files";
-          if (notStrict) {
+        List<DataPath> dataPaths = tabular.select(queryUriArg);
+        queries.addAll(dataPaths);
+        if (dataPaths.size() == 0) {
+          String msg = "The query uri (" + queryUriArg + ") is not a query nor a pattern that select files/table";
+          if (notStrictRun) {
             LOGGER.warn(msg);
           } else {
             LOGGER.error(msg);
@@ -99,16 +101,28 @@ public class DbQueryExecute {
           }
         }
       }
+      DataPath outputDataPath = null;
+      if (outputDataUri != null) {
+        outputDataPath = tabular.getDataPath(outputDataUri);
+        if (Tabulars.exists(outputDataPath)) {
+          String msg = "The output table (" + outputDataUri + ") exists already.";
+          if (notStrictRun) {
+            LOGGER.error(msg);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
+        }
+      }
 
 
-
-      LOGGER.info("{} queries were found",queries.size());
-      LOGGER.info("Executing {} queries",queries.size());
+      LOGGER.info("{} queries were found", queries.size());
+      LOGGER.info("Executing {} queries", queries.size());
       switch (queries.size()) {
         case 0:
 
           String msg = "No query found";
-          if (notStrict){
+          if (notStrictRun) {
             LOGGER.warn(msg);
           } else {
             LOGGER.error(msg);
@@ -124,9 +138,7 @@ public class DbQueryExecute {
 
           // Begin output
           DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.WARNING);
-          System.out.println();
-          Tabulars.print(queries.entrySet().iterator().next().getValue());
-          System.out.println();
+          print(outputDataPath, queries.get(0));
           DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
 
           // Feedback
@@ -140,10 +152,12 @@ public class DbQueryExecute {
           DataPath executionTable = tabular.getDataPath("executions")
             .getDataDef()
             .addColumn("Query Name", Types.VARCHAR)
+            .addColumn("Start Time", Types.DATE)
+            .addColumn("End Time", Types.DATE)
             .addColumn("Latency (ms)", Types.INTEGER)
             .addColumn("Row Count", Types.INTEGER)
             .addColumn("Error", Types.VARCHAR)
-            .addColumn("Message", Types.VARCHAR)
+            .addColumn("Error Message", Types.VARCHAR)
             .getDataPath();
 
           int errorCounter = 0;
@@ -151,32 +165,35 @@ public class DbQueryExecute {
             InsertStream exeInput = Tabulars.getInsertStream(executionTable);
           ) {
 
-            for (DataPath queryDef : queries.values()) {
+            for (DataPath dataPath : queries) {
 
               cliTimer = Timer.getTimer("execute").start();
               Integer rowCount = null;
               String status = "";
               String message = "";
               try {
-                rowCount = Tabulars.getSize(queryDef);
+                rowCount = Tabulars.getSize(dataPath);
               } catch (Exception e) {
                 errorCounter++;
                 status = "Err";
                 message = Log.onOneLine(e.getMessage());
                 LOGGER.error(e.getMessage());
-                if(!notStrict){
+                if (!notStrictRun) {
                   System.exit(1);
                 }
               }
 
               cliTimer.stop();
-              exeInput.insert(queryDef.getName(), cliTimer.getResponseTimeInMilliSeconds(), rowCount, status, message);
+              String description = dataPath.getDescription();
+              if (description == null) {
+                description = dataPath.getName();
+              }
+              exeInput.insert(description, cliTimer.getStartTime(), cliTimer.getEndTime(), cliTimer.getResponseTimeInMilliSeconds(), rowCount, status, message);
 
             }
           }
-          System.out.println();
-          Tabulars.print(executionTable);
-          System.out.println();
+
+          print(outputDataPath, executionTable);
 
           if (errorCounter > 0) {
             System.err.println(errorCounter + " Errors during Query executions were seen");
@@ -186,6 +203,21 @@ public class DbQueryExecute {
       }
 
       LOGGER.info("Bye !");
+    }
+  }
+
+  /**
+   * Print the output
+   *
+   * @param outputDataPath
+   * @param executionTable
+   */
+  private static void print(DataPath outputDataPath, DataPath executionTable) {
+    System.out.println();
+    Tabulars.print(executionTable);
+    System.out.println();
+    if (outputDataPath != null) {
+      Tabulars.copy(executionTable, outputDataPath);
     }
   }
 

@@ -75,4 +75,12 @@ public class Timer {
         return elapsedHours + ":" + elapsedMinutes + ":" + elapsedSeconds + "." + elapsedMilliSeconds;
 
     }
+
+  public Date getStartTime() {
+    return startTime;
+  }
+
+  public Date getEndTime() {
+    return endTime;
+  }
 }

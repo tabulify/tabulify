@@ -30,6 +30,7 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
 
   /**
    * A name is part of the path (if this is not the case, you can set a {@link #setDescription(String)}
+   *
    * @return
    */
   public abstract String getName();
@@ -122,9 +123,7 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
   public abstract DataPath resolve(String... names);
 
   /**
-   *
    * @return the parent (ie the foreign key relationship)
-   *
    */
   public List<DataPath> getForeignKeyDependencies() {
 
@@ -142,15 +141,22 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
   }
 
   /**
-   *
    * @param description - set a description (to be able to label queries)
    * @return
    */
   public DataPath setDescription(String description) {
     this.description = description;
     return this;
-  };
+  }
 
+
+  /**
+   *
+   * @return the description
+   */
+  public String getDescription() {
+    return  this.description;
+  }
 
 
 }
