@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 
@@ -37,7 +36,7 @@ public class JdbcDataSystemProvider extends TableSystemProvider {
     @Override
     public TableSystem getTableSystem(DataStore database) {
 
-      return JdbcDataSystem.of((Database) database);
+      return JdbcDataSystem.of(database);
 
     }
 }

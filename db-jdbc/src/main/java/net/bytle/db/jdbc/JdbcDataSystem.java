@@ -1,6 +1,7 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.Tabular;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
@@ -76,12 +77,12 @@ public class JdbcDataSystem extends TableSystem {
     return sqlDatabase;
   }
 
-  public JdbcDataSystem(Database database) {
-    this.database = database;
+  public JdbcDataSystem(DataStore datastore) {
+    this.database = Database.of(datastore);
     this.connection = null;
   }
 
-  public static JdbcDataSystem of(Database database) {
+  public static JdbcDataSystem of(DataStore database) {
     return new JdbcDataSystem(database);
   }
 
