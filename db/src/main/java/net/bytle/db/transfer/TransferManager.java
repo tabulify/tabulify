@@ -65,7 +65,7 @@ public class TransferManager {
     return of().addTransfer(source, target).setTransferProperties(transferProperties).start().get(0);
   }
 
-  private TransferManager setTransferProperties(TransferProperties transferProperties) {
+  public TransferManager setTransferProperties(TransferProperties transferProperties) {
     this.transferProperties = transferProperties;
     return this;
   }
@@ -402,7 +402,11 @@ public class TransferManager {
   public TransferManager addTransfer(DataPath source, DataPath target) {
 
     if (Tabulars.isContainer(target)) {
-      target = target.getChild(source.getName());
+      String name = source.getName();
+      if (name == null) { // Query case
+        name = source.getDescription();
+      }
+      target = target.getChild(name);
     }
 
     transfers.put(source, TransferSourceTarget.of(source, target));

@@ -409,7 +409,7 @@ public class Fs {
    * @param path
    * @return the file name without the extension
    */
-  public static String getFileName(Path path) {
+  public static String getFileNameWithoutExtension(Path path) {
     final String fileName = path.getFileName().toString();
     final int endIndex = fileName.indexOf(".");
     if (endIndex == -1) {
@@ -510,7 +510,12 @@ public class Fs {
     }
   }
 
-  public static String getFileName(String fullFileName) {
+  /**
+   * Return the part of the file without its extension
+   * @param fullFileName
+   * @return
+   */
+  public static String getFileNameWithoutExtension(String fullFileName) {
     return fullFileName.substring(0, fullFileName.lastIndexOf('.'));
   }
 

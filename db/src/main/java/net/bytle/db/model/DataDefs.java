@@ -51,7 +51,7 @@ public class DataDefs {
     for (Path filePath : fileDiscovered) {
 
       List<String> names = Fs.getDirectoryNamesInBetween(filePath, path);
-      names.add(Fs.getFileName(filePath).replace("--datadef", ""));
+      names.add(Fs.getFileNameWithoutExtension(filePath).replace("--datadef", ""));
       DataPath dataPath = Tabular.tabular().getDataPath(names.get(0), names.subList(1, names.size()).toArray(new String[0]));
       dataPath = readFile(dataPath, filePath);
       dataPaths.add(dataPath);

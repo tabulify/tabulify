@@ -226,7 +226,7 @@ public class Tabular implements AutoCloseable {
         for (Path path : files) {
           String query = Fs.getFileContent(path);
           if (Queries.isQuery(query)) {
-            String queryName = path.getFileName().toString();
+            String queryName = Fs.getFileNameWithoutExtension(path);
             DataPath queryDataPath = this
               .getDataStore(dataUri.getDataStore())
               .getQueryDataPath(query)

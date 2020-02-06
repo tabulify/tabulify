@@ -168,7 +168,7 @@ public class DbPlay {
     if (targetValue.getClass().equals(String.class)){
       database = datastoreVault.getDataStore((String) targetValue);
       String sourceFileName = sourcePath.getFileName().toString();
-      targetPath = Fs.getFileName(sourceFileName);
+      targetPath = Fs.getFileNameWithoutExtension(sourceFileName);
       targetDataPath = DataPaths.of(database, targetPath);
     } else {
       Map<String,Object> targetValues = (Map<String, Object>) targetValue;
@@ -206,7 +206,7 @@ public class DbPlay {
     Database targetDatabase = datastoreVault.getDataStore(targetDsn);
     String sqlValue = (String) Maps.getPropertyCaseIndependent(task, "sql");
     if (targetName == null) {
-      targetName = Fs.getFileName(sqlValue);
+      targetName = Fs.getFileNameWithoutExtension(sqlValue);
     }
     DataPath targetDataPath = DataPaths.of(targetDatabase, targetName);
     Path sqlFile = sqlDir.resolve(sqlValue);

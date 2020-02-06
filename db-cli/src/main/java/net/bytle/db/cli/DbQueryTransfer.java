@@ -6,21 +6,15 @@ import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.log.Log;
-import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static net.bytle.db.cli.Words.*;
 
@@ -32,7 +26,8 @@ import static net.bytle.db.cli.Words.*;
 public class DbQueryTransfer {
 
 
-  private static final Log LOGGER = Db.LOGGER_DB_CLI;
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbQueryTransfer.class);
+  ;
 
   public static void run(CliCommand command, String[] args) {
 
@@ -44,18 +39,23 @@ public class DbQueryTransfer {
       ));
     command.optionOf(DATASTORE_VAULT_PATH);
     command.argOf(Words.SOURCE_DATA_URI)
-      .setDescription("A query Uri pattern (filePattern.sql@dataStore) that defines the queries to transfer")
+      .setDescription("A query Uri pattern (fileGlobPattern.sql@dataStore) that defines the queries to transfer")
       .setMandatory(true);
+    command.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error if a query is not found ")
+      .setDefaultValue(false);
     command.argOf(TARGET_DATA_URI)
-      .setDescription("A target data Uri ([name]@dataStore) (by default, the target name will be the name of the query file)")
+      .setDescription("A target data Uri ([name]@dataStore) (if the target name is not present, it will be the name of the query file)")
       .setMandatory(true);
+
     CliOptions.addTransferOptions(command);
 
     // Create the parser and get the args
     CliParser cliParser = Clis.getParser(command, args);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-    final String sourceUriArg = cliParser.getString(SOURCE_DATA_URI);
+    final String sourceUriPatternArg = cliParser.getString(SOURCE_DATA_URI);
     final String targetUriArg = cliParser.getString(TARGET_DATA_URI);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {
@@ -66,77 +66,38 @@ public class DbQueryTransfer {
         tabular.withDefaultStorage();
       }
 
-      // Query
-
-      List<DataPath> queryDataPaths = new ArrayList<>();
-      if (Tabulars.isContainer(queryDataPath)) {
-        queryDataPaths.addAll(DataPaths.getChildren(queryDataPath, "*.sql"));
-      } else {
-        queryDataPaths.add(queryDataPath);
-      }
-
-      // Source Data Path
-      DataPath sourceDataPath = tabular.getDataPath(cliParser.getString(SOURCE_DATA_URI));
-      Map<String, DataPath> sourceDataPaths = new HashMap<>();
-      if (Tabulars.isDocument(sourceDataPath)) {
-        throw new RuntimeException("The source data Uri (" + SOURCE_DATA_URI + " should represent a schema/catalog not a table");
-      } else {
-        sourceDataPaths = queryDataPaths.stream()
-          .collect(Collectors.toMap(
-            d -> d.getName(),
-            d -> DataPaths.ofQuery(sourceDataPath, Tabulars.getString(d))
-          ));
-      }
-
-      // Target Table
-      DataPath targetDataPath = tabular.getDataPath(cliParser.getString(TARGET_DATA_URI));
-      List<DataPath> targetDataPaths = new ArrayList<>();
-      if (Tabulars.isContainer(targetDataPath)) {
-        targetDataPaths = queryDataPaths.stream()
-          .map(d -> DataPaths.childOf(targetDataPath, d.getName()))
-          .collect(Collectors.toList());
-      } else {
-        if (queryDataPaths.size() != 1) {
-          LOGGER.warning("All (" + queryDataPaths.size() + ") queries will be loaded in one table (" + targetDataPath.toString() + ")");
-          targetDataPaths = IntStream.of(queryDataPaths.size())
-            .mapToObj(s -> targetDataPath)
-            .collect(Collectors.toList());
-        } else {
-          targetDataPaths = queryDataPaths
-            .stream()
-            .map(s -> DataPaths.childOf(targetDataPath, s.getName()))
-            .collect(Collectors.toList());
-        }
-      }
-
+      // Args
+      List<DataPath> queryDataPaths = tabular.select(sourceUriPatternArg);
+      DataPath targetDataPath = tabular.getDataPath(targetUriArg);
       TransferProperties transferProperties = CliOptions.getMoveOptions(cliParser);
-      List<TransferListener> resultSetListener = new ArrayList<>();
-      int i = 0;
-      for (Map.Entry<String, DataPath> entry : sourceDataPaths.entrySet()) {
 
-        String queryName = entry.getKey();
-        Timer cliTimer = Timer.getTimer("query " + queryName).start();
-        DataPath source = entry.getValue();
-        DataPath target = targetDataPaths.get(0);
-        LOGGER.info("Loading the query (" + queryName + ") from the source (" + sourceDataPath + ") into the table (" + target.toString());
+      // Transfer
+      switch (queryDataPaths.size()) {
+        case 0:
+          String msg = "No query found";
+          if (notStrictRun) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
+          break;
 
+        default:
 
-        TransferListener transferListener = Tabulars.move(source, target, transferProperties);
-        resultSetListener.add(transferListener);
+          List<TransferListener> resultSetListener  = TransferManager.of()
+            .addTransfers(queryDataPaths, targetDataPath)
+            .setTransferProperties(transferProperties)
+            .start();
 
-        LOGGER.info("Response Time for the load of the table (" + source + ") with (" + transferProperties.getTargetWorkerCount() + ") target workers: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
+          int exitStatus = resultSetListener.stream().mapToInt(TransferListener::getExitStatus).sum();
+          if (exitStatus != 0) {
+            LOGGER.error("Error ! (" + exitStatus + ") errors were seen.");
+            System.exit(exitStatus);
+          } else {
+            LOGGER.info("Success ! No errors were seen.");
+          }
 
-        cliTimer.stop();
-
-      }
-
-
-      int exitStatus = resultSetListener.stream().mapToInt(s -> s.getExitStatus()).sum();
-      if (exitStatus != 0) {
-        LOGGER.severe("Error ! (" + exitStatus + ") errors were seen.");
-      } else {
-        LOGGER.info("Success ! No errors were seen.");
       }
     }
 
