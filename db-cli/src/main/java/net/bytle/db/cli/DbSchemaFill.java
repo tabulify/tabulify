@@ -27,9 +27,8 @@ import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 /**
- * Created by gerard on 08-12-2016.
- * <p>
- * load data in a db
+ *
+ * load data in a schema
  */
 public class DbSchemaFill {
 
@@ -83,7 +82,6 @@ public class DbSchemaFill {
         }
       });
     }
-
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {
@@ -148,8 +146,6 @@ public class DbSchemaFill {
         }
       }
 
-      Timer cliTimer = Timer.getTimer("schema fill").start();
-
       // Data Generation object build
       DataGeneration dataGeneration = DataGeneration.of()
         .addTables(dataPaths);
@@ -165,17 +161,23 @@ public class DbSchemaFill {
         withOrWithoutDataDef="with ("+dataGenYmls.size()+") data definitions defined by the glob pattern (" + dataDefGlobArg + ") ";
       }
       LOGGER.info("Loading generated data "+withOrWithoutDataDef + withOrWithoutDependencies + " the dependencies (foreign tables)");
-      List<DataPath> loadedDataPaths = dataGeneration.load();
 
+      // Start loading
+      Timer cliTimer = Timer.getTimer("schema fill").start();
+      List<DataPath> loadedDataPaths = dataGeneration.load();
       cliTimer.stop();
+
+      // Feedback
       LOGGER.info("Response Time for the loading of generated data : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
       LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
-      LOGGER.info("Success ! No errors were seen.");
+
 
       LOGGER.info("The following tables where loaded:");
       for (DataPath dataPath : loadedDataPaths) {
         LOGGER.info("  * " + dataPath + ", Size (" + Tabulars.getSize(dataPath) + ")");
       }
+
+      LOGGER.info("Success ! No errors were seen.");
 
     }
 

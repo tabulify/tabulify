@@ -3,57 +3,75 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.model.SchemaDef;
+import net.bytle.db.Tabular;
+import net.bytle.db.spi.DataPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 public class DbTableCount {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String TABLE_URIS = "TableUri...";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableCount.class);
+  ;
+  private static final String DATA_URI_PATTERNS = "DataUriPattern...";
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Count the number of tables";
 
-        // Create the parser
-        cliCommand
-                .setDescription(description);
+    // Create the parser
+    cliCommand.setDescription("Count the number of tables");
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("one or more data URI glob pattern (Example: `*@datastore`)");
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error for minor problem (example if a table was not found with a pattern) ")
+      .setDefaultValue(false);
 
-        cliCommand.argOf(TABLE_URIS)
-                .setDescription("one or more table URI (@database[/schema]/table).");
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    // Args
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValueArg = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
+    final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
-        Integer count = 0;
-        for (String stringTableUri : stringTablesUris) {
-            TableDataUri tableUri = TableDataUri.of(stringTableUri);
-            Database database = datastoreVault.getDataStore(tableUri.getDataStore());
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (tableUri.getSchemaName() != null) {
-                schemaDef = database.getSchema(tableUri.getSchemaName());
+      if (storagePathValueArg != null) {
+        tabular.setDataStoreVault(storagePathValueArg);
+      } else {
+        tabular.withDefaultStorage();
+      }
+
+      int count = dataUriPatterns.stream()
+        .mapToInt(p->{
+          List<DataPath> dataPaths = tabular.select(p);
+          if (dataPaths.size()==0){
+            String msg = "The data uri pattern ("+p+") has selected no table (no data paths)";
+            if (notStrictRunArg) {
+              LOGGER.warn(msg);
+            } else {
+              LOGGER.error(msg);
+              System.exit(1);
             }
-            count += schemaDef.getTables(tableUri.getTableName()).size();
-        }
-        System.out.println(count + " tables");
+          }
+          return dataPaths.size();
+        })
+        .sum();
 
-        LOGGER.info("Bye !");
+      System.out.println(count + " tables (data paths) were found");
+
+      LOGGER.info("Bye !");
 
     }
+
+  }
 
 
 }

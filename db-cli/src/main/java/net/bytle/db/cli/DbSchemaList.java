@@ -1,71 +1,121 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
-import net.bytle.db.database.Database;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.log.Log;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.Clis;
+import net.bytle.db.Tabular;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
+import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 /**
- * Created by gerard on 08-12-2016.
- * <p>
+ *
  */
 public class DbSchemaList {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String ARG_NAME = "schemaNameTest|pattern...";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbSchemaList.class);
+  private static final String DATA_URI_PATTERNS = "DataUriPattern";
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "List schemas";
+    // Create the Command
+    cliCommand.setDescription("List schemas");
 
-        // Create the parser
-        cliCommand
-                .setDescription(description);
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("One or more schema data uri glob pattern (example: `../*@datastore`) ")
+      .setMandatory(true);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error for minor problem (example if a schema was not found) ")
+      .setDefaultValue(false);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
 
-        cliCommand.argOf(ARG_NAME)
-                .setDescription("Names of a schema or a glob patterns")
-                .setMandatory(true)
-                .setDefaultValue("*");
+    // Args
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
+    final Path storagePathValueArg = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        Database database = Databases.of(Db.CLI_DATABASE_NAME_TARGET);
+      if (storagePathValueArg != null) {
+        tabular.setDataStoreVault(storagePathValueArg);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-
-        List<String> patterns = cliParser.getStrings(ARG_NAME);
-
-        Map<SchemaDef, Integer> schemasInfo = new HashMap<>();
-        for (String pattern : patterns) {
-            List<SchemaDef> schemas = database.getSchemas(pattern);
-            for (SchemaDef schemaDef : schemas) {
-                schemasInfo.put(schemaDef, schemaDef.getTables().size());
-            }
+      // Target
+      List<DataPath> allSelectedDataPaths = new ArrayList<>();
+      for (String globPattern : dataUriPatterns) {
+        List<DataPath> selectedDataPaths = tabular.select(globPattern);
+        if (selectedDataPaths.size() == 0) {
+          String msg = "The schema data uri pattern has selected no schema (no data paths)";
+          if (notStrictRunArg) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
         }
+        selectedDataPaths.forEach(d -> {
+          if (!Tabulars.isContainer(d)) {
+            String msg = "The schema data uri pattern has selected a data path (" + d + ") that is not a schema (not a container)";
+            if (notStrictRunArg) {
+              LOGGER.warn(msg);
+            } else {
+              LOGGER.error(msg);
+              System.exit(1);
+            }
+          }
+        });
+        allSelectedDataPaths.addAll(selectedDataPaths);
+      }
 
-        if (schemasInfo.size() == 0) {
-
-            System.out.println("No schemas found");
-
+      if (allSelectedDataPaths.size() == 0) {
+        String msg = "The data uri patterns (" + dataUriPatterns + ") has selected no schema (no data path)";
+        if (notStrictRunArg) {
+          LOGGER.warn(msg);
         } else {
-
-            System.out.println("Schema" + CliUsage.TAB + "Number of tables");
-            for (SchemaDef schemaDef : schemasInfo.keySet()) {
-                System.out.println(schemaDef + CliUsage.TAB + schemasInfo.get(schemaDef));
-            }
-
+          LOGGER.error(msg);
+          System.exit(1);
         }
-        LOGGER.info("Bye !");
+      } else {
+        DataPath output = tabular.getDataPath("output")
+          .getDataDef()
+          .addColumn("Name")
+          .addColumn("NumberOfChildren")
+          .getDataPath();
+        Tabulars.create(output);
+
+        Collections.sort(allSelectedDataPaths);
+
+        try (InsertStream insertStream = Tabulars.getInsertStream(output)) {
+          allSelectedDataPaths.forEach(dataPath -> {
+            int children = Tabulars.getChildren(dataPath).size();
+            insertStream.insert(dataPath.getName(), children);
+          });
+        }
+
+        Tabulars.print(output);
+      }
+      LOGGER.info("Bye !");
 
 
     }
 
 
+  }
 }
