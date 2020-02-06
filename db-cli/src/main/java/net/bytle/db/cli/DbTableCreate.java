@@ -1,110 +1,99 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.*;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
-import net.bytle.db.uri.SchemaDataUri;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.DataDefs;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
-import net.bytle.log.Log;
-import net.bytle.regexp.Globs;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.Clis;
+import net.bytle.db.Tabular;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.timer.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 public class DbTableCreate {
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableCreate.class);
 
-    static final String TABLE_URIS = "TableUri...";
-    private static final String DATA_DEF_PATH = "data-def";
+  private static final String DATADEF_URI_PATTERN = "DataDefUriPattern...";
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand
-                .setDescription("Create a table from data definition file(s)");
+    // The command
+    cliCommand.setDescription("Create table(s) from data definition file(s)");
+    cliCommand.argOf(DATADEF_URI_PATTERN)
+      .setDescription("one or more data definition Uri patterns (Example: `*--datadef.yml@database`)")
+      .setMandatory(true);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error for minor problem (example if a data def was not found with a pattern) ")
+      .setDefaultValue(false);
 
-        cliCommand.argOf(TABLE_URIS)
-                .setDescription("one or more Table Uri (schema.table@database)")
-                .setMandatory(true);
+    // Args
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValueArg = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> dataDefUriPatterns = cliParser.getStrings(DATADEF_URI_PATTERN);
+    final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
 
-        cliCommand.optionOf(DATA_DEF_PATH)
-                .setDescription("A path to a data definition file (DataDef.yml) or a parent directory")
-                .setMandatory(true);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
+      if (storagePathValueArg != null) {
+        tabular.setDataStoreVault(storagePathValueArg);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
-
-        // Schema
-        String arg = cliParser.getString(TABLE_URIS);
-
-
-        Path dataDefPath = cliParser.getPath(DATA_DEF_PATH);
-        if (!Files.exists(dataDefPath)) {
-            LOGGER.severe("The file/directory (" + dataDefPath.toAbsolutePath().toString() + ") does not exist");
-            System.exit(1);
-        }
-        List<TableDef> tables = DataDefs.of().load(dataDefPath);
-
-        if (tables.size() == 0) {
-            LOGGER.warning("The data definition file location (" + dataDefPath.toAbsolutePath().toString() + ") contains no data definition.");
-        }
-
-        CliTimer cliTimer = CliTimer.getTimer(arg).start();
-        List<String> tableUris = cliParser.getStrings(TABLE_URIS);
-        for (String tableUriAsString : tableUris) {
-
-            LOGGER.info("Processing the table(s) for the table URI (" + tableUriAsString + ")");
-
-            SchemaDataUri schemaDataUri = SchemaDataUri.of(arg);
-            Database database = datastoreVault.getDataStore(schemaDataUri.getDataStore());
-            final String schemaName = schemaDataUri.getSchemaName();
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (schemaName != null) {
-                schemaDef = database.getSchema(schemaName);
-            }
-
-
-            TableDataUri tableUri = TableDataUri.of(tableUriAsString);
-            SchemaDef finalSchemaDef = schemaDef;
-            List<TableDef> tableDefs = tables.stream()
-                    .filter(t -> Globs.matches(t.getName(),tableUri.getTableName()))
-                    .map(t->t.setSchema(finalSchemaDef))
-                    .collect(Collectors.toList());
-
-            if (tableDefs.size()==0){
-                LOGGER.severe("No tables data definition was found for the table name pattern ("+tableUri+")");
-                System.exit(1);
+      // Get the data path
+      List<DataPath> dataPaths = dataDefUriPatterns
+        .stream().flatMap(p -> {
+          List<DataPath> paths = tabular.select(p);
+          if (paths.size() == 0) {
+            String msg = "The data def uri pattern (" + p + ") has selected no data def files.";
+            if (notStrictRunArg) {
+              LOGGER.warn(msg);
             } else {
-                for (TableDef tableDef : tableDefs) {
-                    LOGGER.info("Creating the table (" + tableDef.getFullyQualifiedName() + ")");
-                    Tables.create(tableDef);
-                    LOGGER.info("Table (" + tableDef.getFullyQualifiedName() + ") created.");
-                }
+              LOGGER.error(msg);
+              System.exit(1);
             }
+          }
+          return paths.stream();
+        })
+        .collect(Collectors.toList());
 
+
+      Timer cliTimer = Timer.getTimer("Table Creation").start();
+
+      int created = dataPaths.stream().mapToInt(dp -> {
+        if (Tabulars.exists(dp)) {
+          String msg = "Table (" + dp.getName() + " exists already in the data store (" + dp.getDataSystem().getDataStore().getName() + ") and was not created";
+          if (notStrictRunArg) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
+        } else {
+          Tabulars.create(dp);
+          LOGGER.info("Table ("+dp+") was created");
         }
+        return 1;
+      }).sum();
+      cliTimer.stop();
 
-        cliTimer.stop();
+      LOGGER.info("On a total of ("+dataPaths.size()+") tables, ("+created+") were created");
+      LOGGER.info("Response Time for the creation of the tables : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)%n");
+      LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
 
-        LOGGER.info("Response Time for the creation of the tables : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)%n");
-        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
 
-
-        LOGGER.info("Success ! No errors were seen.");
+      LOGGER.info("Success ! No errors were seen.");
 
     }
+  }
 
 }

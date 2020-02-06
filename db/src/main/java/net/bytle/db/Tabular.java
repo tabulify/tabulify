@@ -1,24 +1,16 @@
 package net.bytle.db;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.Database;
 import net.bytle.db.database.FileDataStore;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.memory.MemorySystemProvider;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
-import net.bytle.type.Maps;
 import net.bytle.type.Strings;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -202,10 +194,10 @@ public class Tabular implements AutoCloseable {
 
   /**
    * An utility function that returns data paths selected from a data uri pattern (ie glob_pattern@datastore)
-   *
+   * <p>
    * This function takes into account:
-   *   * the query uri pattern (ie queryPattern*.sql@datastore, `select 1@datastore`)
-   *   * and a entity uri pattern (ie table*@datastore)
+   * * the query uri pattern (ie queryPattern*.sql@datastore, `select 1@datastore`)
+   * * and a entity uri pattern (ie table*@datastore)
    *
    * @param dataUriPattern
    * @return the data paths that the data uri pattern selects
@@ -227,26 +219,37 @@ public class Tabular implements AutoCloseable {
       dataPathsToReturn.add(inlineQueryDataPath);
     } else {
       // Query URI with a path that defines Sql File ?
-      if (Fs.getExtension(pathInUri).equals("sql")) {
+      if (pathInUri.endsWith(".sql") || pathInUri.endsWith(TableDef.DATA_DEF_SUFFIX)) {
+
         List<Path> files = Fs.getFilesByGlob(pathInUri);
         if (files.size() == 0) {
           return dataPathsToReturn;
         }
+
+
         for (Path path : files) {
-          String query = Fs.getFileContent(path);
-          if (Queries.isQuery(query)) {
-            String queryName = Fs.getFileNameWithoutExtension(path);
-            DataPath queryDataPath = this
+          if (pathInUri.endsWith(".sql")) {
+            String query = Fs.getFileContent(path);
+            if (Queries.isQuery(query)) {
+              String queryName = Fs.getFileNameWithoutExtension(path);
+              DataPath queryDataPath = this
+                .getDataStore(dataUri.getDataStore())
+                .getQueryDataPath(query)
+                .setDescription(queryName);
+              dataPathsToReturn.add(queryDataPath);
+            } else {
+              String msg = Strings.multiline("The query uri pattern (" + dataUriPattern + ") has selected the file (" + path + ") that seems to not contain a query",
+                "The file content is: ",
+                Strings.toStringNullSafe(query)
+              );
+              throw new RuntimeException(msg);
+            }
+
+          } else if (pathInUri.endsWith(TableDef.DATA_DEF_SUFFIX)) {
+            DataPath dataDefDataPath = this
               .getDataStore(dataUri.getDataStore())
-              .getQueryDataPath(query)
-              .setDescription(queryName);
-            dataPathsToReturn.add(queryDataPath);
-          } else {
-            String msg = Strings.multiline("The query uri pattern (" + dataUriPattern + ") has selected the file (" + path + ") that seems to not contain a query",
-              "The file content is: ",
-              Strings.toStringNullSafe(query)
-            );
-            throw new RuntimeException(msg);
+              .getDataPathOfDataDef(path);
+            dataPathsToReturn.add(dataDefDataPath);
           }
         }
       } else {
@@ -262,131 +265,13 @@ public class Tabular implements AutoCloseable {
   }
 
   /**
-   *
-   * Return a data path from a data def file.
-   * The name of the data path is the file name without the {@link TableDef#DATA_DEF_EXTENSION data def extension}
+   * Return a data path from a data def file with the default data store
+   * The name of the data path is the file name without the {@link TableDef#DATA_DEF_SUFFIX data def extension}
    *
    * @param dataDefPath
    * @return the data path with its meta
    */
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
-
-    assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
-    assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
-    assert dataDefPath.getFileName().toString().contains(TableDef.DATA_DEF_EXTENSION): "The file ("+dataDefPath.getFileName().toString()+") has not the data def extension ("+TableDef.DATA_DEF_EXTENSION+")";
-
-    String name = dataDefPath.getFileName().toString().replace(TableDef.DATA_DEF_EXTENSION, "");
-    DataPath dataPath = this.getDataPath(name);
-
-    InputStream input;
-    try {
-      input = Files.newInputStream(dataDefPath);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    // Transform the file in properties
-    Yaml yaml = new Yaml();
-
-    // Every document is one dataDef
-    List<Map<String, Object>> documents = new ArrayList<>();
-    for (Object data : yaml.loadAll(input)) {
-      Map<String, Object> document;
-      try {
-        document = (Map<String, Object>) data;
-      } catch (ClassCastException e) {
-        String message = "A data Def must be in a map format. ";
-        if (data.getClass().equals(java.util.ArrayList.class)) {
-          message += "They are in a list format. You should suppress the minus if they are present.";
-        }
-        message += "The Bad Data Def Values are: " + data;
-        throw new RuntimeException(message, e);
-      }
-      documents.add(document);
-    }
-
-    switch (documents.size()) {
-      case 0:
-        break;
-      case 1:
-
-        Map<String, Object> document = documents.get(0);
-
-        // Loop through all other properties
-        for (Map.Entry<String, Object> entry : document.entrySet()) {
-
-          switch (entry.getKey().toLowerCase()) {
-            case "name":
-              continue;
-            case "columns":
-              Map<String, Object> columns;
-              try {
-                columns = (Map<String, Object>) entry.getValue();
-              } catch (ClassCastException e) {
-                String message = "The columns of the data def file (" + dataDefPath.toString() + ") must be in a map format. ";
-                if (entry.getValue().getClass().equals(java.util.ArrayList.class)) {
-                  message += "They are in a list format. You should suppress the minus if they are present.";
-                }
-                message += "Bad Columns Values are: " + entry.getValue();
-                throw new RuntimeException(message, e);
-              }
-              for (Map.Entry<String, Object> column : columns.entrySet()) {
-
-                try {
-                  Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
-
-                  String type = "varchar";
-                  Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
-                  if (oType != null) {
-                    type = (String) oType;
-                  }
-
-                  DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
-
-                  ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getClass());
-                  for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
-                    switch (columnProperty.getKey().toLowerCase()) {
-                      case "type":
-                        columnDef.typeCode(dataTypeJdbc.getTypeCode());
-                        break;
-                      case "precision":
-                        columnDef.precision((Integer) columnProperty.getValue());
-                        break;
-                      case "scale":
-                        columnDef.scale((Integer) columnProperty.getValue());
-                        break;
-                      case "comment":
-                        columnDef.comment((String) columnProperty.getValue());
-                        break;
-                      case "nullable":
-                        columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
-                        break;
-                      default:
-                        columnDef.addProperty(columnProperty.getKey(), columnProperty.getValue());
-                        break;
-                    }
-                  }
-
-                } catch (ClassCastException e) {
-                  String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataPath.toString() + ") must be in a map format. ";
-                  if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
-                    message += "They are in a list format. You should suppress the minus if they are present.";
-                  }
-                  message += "Bad Columns Properties Values are: " + column.getValue();
-                  throw new RuntimeException(message, e);
-                }
-              }
-              break;
-            default:
-              dataPath.getDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
-              break;
-          }
-        }
-        break;
-      default:
-        throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + dataDefPath.toString() + ") for the dataPath (" + dataPath.toString() + ")");
-    }
-    return dataPath;
-
+    return this.getDataStore(DEFAULT_DATASTORE).getDataPathOfDataDef(dataDefPath);
   }
 }
