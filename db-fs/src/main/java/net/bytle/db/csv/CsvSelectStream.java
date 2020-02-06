@@ -12,173 +12,178 @@ import java.sql.Clob;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-public class CsvSelectStream extends SelectStreamAbs  {
+public class CsvSelectStream extends SelectStreamAbs {
 
 
-    private final CsvDataPath csvDataPath;
-    private Iterator<CSVRecord> recordIterator;
-    private CSVParser csvParser;
-    private CSVRecord currentRecord;
+  private final CsvDataPath csvDataPath;
+  private Iterator<CSVRecord> recordIterator;
+  private CSVParser csvParser;
+  private CSVRecord currentRecord;
 
-    /**
-     * The record number (0=first)
-     */
-    private int rowNum = 0;
+  /**
+   * The record number (0=first)
+   */
+  private int rowNum = 0;
 
 
-    /**
-     * The line number in the file
-     */
-    private long lineNumberInTextFile = 0;
+  /**
+   * The line number in the file
+   */
+  private long lineNumberInTextFile = 0;
 
-    CsvSelectStream(CsvDataPath csvDataPath) {
+  CsvSelectStream(CsvDataPath csvDataPath) {
 
-        super(csvDataPath);
-        this.csvDataPath = csvDataPath;
-        beforeFirst();
+    super(csvDataPath);
+    this.csvDataPath = csvDataPath;
+    beforeFirst();
 
-    }
+  }
 
-    public static CsvSelectStream of(CsvDataPath csvDataPath) {
+  public static CsvSelectStream of(CsvDataPath csvDataPath) {
 
-        return new CsvSelectStream(csvDataPath);
+    return new CsvSelectStream(csvDataPath);
 
-    }
+  }
 
 
   @Override
-    public boolean next() {
-        boolean recordWasFetched = safeIterate();
-        if (recordWasFetched){
-            rowNum++;
-        }
-        return recordWasFetched;
+  public boolean next() {
+    boolean recordWasFetched = safeIterate();
+    if (recordWasFetched) {
+      rowNum++;
     }
+    return recordWasFetched;
+  }
 
-    /**
-     * The file may empty, it throws then exception,
-     * this utility method encapsulates it
-     *
-     * @return true if there is another record, false otherwise
-     */
-    private boolean safeIterate() {
+  /**
+   * The file may empty, it throws then exception,
+   * this utility method encapsulates it
+   *
+   * @return true if there is another record, false otherwise
+   */
+  private boolean safeIterate() {
 
-        currentRecord = Csvs.safeIterate(recordIterator);
-        if (currentRecord == null) {
-            return false;
+    currentRecord = Csvs.safeIterate(recordIterator);
+    if (currentRecord == null) {
+      return false;
+    } else {
+      lineNumberInTextFile++;
+      if (currentRecord.size() == 1) {
+        // Empty line
+        if (currentRecord.get(0).equals("") && csvDataPath.getDataDef().isIgnoreEmptyLine()) {
+          return safeIterate();
         } else {
-            lineNumberInTextFile++;
-            if (currentRecord.size() == 1) {
-                // Empty line
-                if (currentRecord.get(0).equals("") && csvDataPath.getDataDef().isIgnoreEmptyLine()) {
-                    return safeIterate();
-                } else {
-                    return true;
-                }
-            } else {
-                return true;
-            }
+          return true;
         }
-
+      } else {
+        return true;
+      }
     }
 
-    @Override
-    public void close() {
-        try {
-            csvParser.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+  }
+
+  @Override
+  public void close() {
+    try {
+      csvParser.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    @Override
-    public String getString(int columnIndex) {
-        return currentRecord.get(columnIndex);
+  @Override
+  public String getString(int columnIndex) {
+    return currentRecord.get(columnIndex);
+  }
+
+  @Override
+  public void beforeFirst() {
+    try {
+
+      CsvDataDef csvDataDef = this.csvDataPath.getDataDef();
+      CSVFormat csvFormat = csvDataDef.getCsvFormat();
+      Path nioPath = csvDataPath.getNioPath();
+      csvParser = CSVParser.parse(nioPath, csvDataDef.getCharset(), csvFormat);
+      recordIterator = csvParser.iterator();
+      lineNumberInTextFile = 0;
+
+      // Pass the header
+      while (lineNumberInTextFile < csvDataDef.getHeaderRowCount()) {
+        safeIterate();
+      }
+
+      rowNum = 0;
+
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+  }
 
-    @Override
-    public void beforeFirst() {
-        try {
-
-            CsvDataDef csvDataDef = this.csvDataPath.getDataDef();
-            CSVFormat csvFormat = csvDataDef.getCsvFormat();
-            Path nioPath = csvDataPath.getNioPath();
-            csvParser = CSVParser.parse(nioPath, csvDataDef.getCharset(), csvFormat);
-            recordIterator = csvParser.iterator();
-            lineNumberInTextFile=0;
-
-            // Pass the header
-            while (lineNumberInTextFile<csvDataDef.getHeaderRowCount()) {
-                safeIterate();
-            }
-
-            rowNum = 0;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+  @Override
+  public void execute() {
+    // no external request, nothing to do
+  }
 
 
   @Override
-    public int getRow() {
-        return rowNum;
+  public int getRow() {
+    return rowNum;
+  }
+
+
+  @Override
+  public Object getObject(int columnIndex) {
+    if (columnIndex > currentRecord.size() - 1) {
+      final int size = csvDataPath.getDataDef().getColumnDefs().size();
+      if (currentRecord.size() > size) {
+        throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
+      } else {
+        return null;
+      }
     }
+    return currentRecord.get(columnIndex);
+  }
+
+  @Override
+  public TableDef getSelectDataDef() {
+    return csvDataPath.getDataDef();
+  }
 
 
-    @Override
-    public Object getObject(int columnIndex) {
-        if (columnIndex > currentRecord.size() - 1) {
-            final int size = csvDataPath.getDataDef().getColumnDefs().size();
-            if (currentRecord.size() > size) {
-                throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
-            } else {
-                return null;
-            }
-        }
-        return currentRecord.get(columnIndex);
-    }
+  @Override
+  public double getDouble(int columnIndex) {
 
-    @Override
-    public TableDef getSelectDataDef() {
-        return csvDataPath.getDataDef();
-    }
+    return Double.parseDouble(currentRecord.get(columnIndex));
+
+  }
+
+  @Override
+  public Clob getClob(int columnIndex) {
+    throw new RuntimeException("Not Yet implemented");
+  }
 
 
-    @Override
-    public double getDouble(int columnIndex) {
+  /**
+   * Retrieves and removes the head of this data path, or returns false if this queue is empty.
+   *
+   * @param timeout  - the time out before returning null
+   * @param timeUnit - the time unit of the time out
+   * @return true if there is a new element, otherwise false
+   */
+  @Override
+  public boolean next(Integer timeout, TimeUnit timeUnit) {
+    throw new RuntimeException("Not yet implemented");
+  }
 
-        return Double.parseDouble(currentRecord.get(columnIndex));
+  @Override
+  public Integer getInteger(int columnIndex) {
+    return Integer.parseInt(currentRecord.get(columnIndex));
+  }
 
-    }
-
-    @Override
-    public Clob getClob(int columnIndex) {
-        throw new RuntimeException("Not Yet implemented");
-    }
-
-
-    /**
-     * Retrieves and removes the head of this data path, or returns false if this queue is empty.
-     *
-     * @param timeout  - the time out before returning null
-     * @param timeUnit - the time unit of the time out
-     * @return true if there is a new element, otherwise false
-     */
-    @Override
-    public boolean next(Integer timeout, TimeUnit timeUnit) {
-        throw new RuntimeException("Not yet implemented");
-    }
-
-    @Override
-    public Integer getInteger(int columnIndex) {
-        return Integer.parseInt(currentRecord.get(columnIndex));
-    }
-
-    @Override
-    public Object getObject(String columnName) {
-        return currentRecord.get(columnName);
-    }
+  @Override
+  public Object getObject(String columnName) {
+    return currentRecord.get(columnName);
+  }
 
 
 }

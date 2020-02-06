@@ -5,7 +5,6 @@ import net.bytle.db.jdbc.spi.SqlDatabaseI;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -190,7 +189,7 @@ public class DbDdl {
 
         // NOT NULL
         String notNullStatement = "";
-        if (columnDef.getNullable() == DatabaseMetaData.columnNoNulls) {
+        if (!columnDef.getNullable()) {
             // Hack because hive is read only, it does not support Not Null
             if (!columnDef.getRelationDef().getDataPath().getDataSystem().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
                 notNullStatement = " NOT NULL";

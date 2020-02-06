@@ -73,7 +73,7 @@ public class Words {
     static final String HELP = "help";
 
     // Options
-    public static final String DEFINITION_FILE = "data-def";
+    public static final String GLOB_PATERN_DATADEF_FILE = "data-def";
     public static final String NOT_STRICT = "no-strict";
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
@@ -120,7 +120,7 @@ public class Words {
                 .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
                 .setEnvName(BYTLE_DB_DATABASES_STORE);
 
-        cliCommand.globalWordOf(Words.DEFINITION_FILE)
+        cliCommand.globalWordOf(Words.GLOB_PATERN_DATADEF_FILE)
                 .setTypeAsOption()
                 .setDescription("A path to a data definition file (DataDef.yml) or a directory containing multiple data definition files.")
                 .setEnvName("BYTLE_DB_DATA_DEF");

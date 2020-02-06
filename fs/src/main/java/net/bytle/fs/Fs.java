@@ -3,6 +3,7 @@ package net.bytle.fs;
 
 import net.bytle.os.Oss;
 import net.bytle.regexp.Globs;
+import net.bytle.type.Arrayss;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -599,7 +600,12 @@ public class Fs {
    * @param names - glob patterns
    * @return a glob path pattern for the local file system
    */
-  public static String createGlobPath(String... names) {
+  public static String createGlobPath(String name, String... names) {
+    names = Arrayss.concat(name, names);
     return String.join(System.getProperty("file.separator"), names);
+  }
+
+  public static List<Path> getFilesByGlob(String name, String... names) {
+    return getFilesByGlob(createGlobPath(name,names));
   }
 }

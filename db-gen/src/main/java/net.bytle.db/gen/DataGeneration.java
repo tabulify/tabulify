@@ -269,7 +269,6 @@ public class DataGeneration {
         final List<DataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables();
         for (DataPath dataPath: createOrderedTables) {
 
-
             // The load
             LOGGER.info("Loading the table (" + dataPath.toString() + ")");
             LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
@@ -305,6 +304,7 @@ public class DataGeneration {
                             values.add(columnValues.get(columnDef));
                         }
                         inputStream.insert(values);
+
                     }
                 }
 
@@ -383,7 +383,7 @@ public class DataGeneration {
 
     }
 
-    public DataGeneration loadParentTable(Boolean loadParent) {
+    public DataGeneration loadDependencies(Boolean loadParent) {
         this.loadParent = loadParent;
         return this;
     }

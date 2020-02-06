@@ -134,5 +134,10 @@ public class JsonSelectStream extends SelectStreamAbs {
     }
   }
 
+  @Override
+  public void execute() {
+    // no external request, nothing to do
+  }
+
 
 }

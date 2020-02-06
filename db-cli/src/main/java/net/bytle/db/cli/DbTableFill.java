@@ -40,7 +40,7 @@ public class DbTableFill {
 
         String description = "Load generated data into one or more tables\n\n" +
                 "By default, the data would be randomly generated.\n" +
-                "You should use the data definition file option (" + Words.DEFINITION_FILE + ") to define the data generation behaviors.";
+                "You should use the data definition file option (" + Words.GLOB_PATERN_DATADEF_FILE + ") to define the data generation behaviors.";
 
 
         final String TABLE_URIS = "TableUri...";
@@ -60,7 +60,7 @@ public class DbTableFill {
                 .setDefaultValue(true);
 
 
-        cliCommand.optionOf(Words.DEFINITION_FILE)
+        cliCommand.optionOf(Words.GLOB_PATERN_DATADEF_FILE)
                 .setDescription("A path to a data definition file (DataDef.yml) or a directory containing several data definition file.");
 
         cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
@@ -78,7 +78,7 @@ public class DbTableFill {
 
 
         // Data Definition
-        Path dataDefPath = cliParser.getPath(Words.DEFINITION_FILE);
+        Path dataDefPath = cliParser.getPath(Words.GLOB_PATERN_DATADEF_FILE);
         if (dataDefPath == null) {
             LOGGER.info("Loading generated data without data definition file");
         } else {
@@ -172,7 +172,7 @@ public class DbTableFill {
 
         List<TableDef> tablesLoaded = DataGeneration.of()
                 .addTables(new ArrayList<>(tablesToLoad), totalNumberOfRows)
-                .loadParentTable(loadParent)
+                .loadDependencies(loadParent)
                 .load();
 
         LOGGER.info("The following tables where loaded:");

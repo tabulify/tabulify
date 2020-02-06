@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
  */
 public class TableDef implements RelationDef {
 
+  public static final String DATA_DEF_EXTENSION = "--datadef.yml";
+
   protected final DataPath dataPath;
   protected RelationMeta meta = new RelationMeta(this);
 

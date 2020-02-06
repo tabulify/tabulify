@@ -1,12 +1,10 @@
 package net.bytle.db.gen;
 
-import net.bytle.db.model.DataDefs;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
 
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +18,7 @@ import java.util.List;
 public class BytleSchemaDataDefs {
 
 
-    public static List<DataPath> getDataDefs(){
+    public static List<DataPath> getDataDefs(Tabular tabular){
 
         try {
             List<DataPath> dataPaths = new ArrayList<>();
@@ -30,7 +28,7 @@ public class BytleSchemaDataDefs {
             urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/D_TIME--datadef.yml"));
 
             for (URL url: urls) {
-                dataPaths.addAll(DataDefs.load(Paths.get(url.toURI())));
+                dataPaths.add(tabular.getDataPathOfDataDef(Paths.get(url.toURI())));
             }
             return dataPaths;
         } catch (URISyntaxException e) {
