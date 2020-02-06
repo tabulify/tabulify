@@ -17,8 +17,8 @@ import java.util.List;
 import static net.bytle.db.cli.Words.*;
 
 /**
- * Created by gerard on 08-12-2016.
- * To download data
+ *
+ * To download data on the local file system
  */
 public class DbTableDownload {
 

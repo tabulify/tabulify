@@ -80,13 +80,13 @@ public class DbTableCreate {
           }
         } else {
           Tabulars.create(dp);
-          LOGGER.info("Table ("+dp+") was created");
+          LOGGER.info("Table (" + dp + ") was created");
         }
         return 1;
       }).sum();
       cliTimer.stop();
 
-      LOGGER.info("On a total of ("+dataPaths.size()+") tables, ("+created+") were created");
+      LOGGER.info("On a total of (" + dataPaths.size() + ") tables, (" + created + ") were created");
       LOGGER.info("Response Time for the creation of the tables : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)%n");
       LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
 

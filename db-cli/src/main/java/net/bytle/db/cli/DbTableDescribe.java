@@ -4,90 +4,93 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
+import net.bytle.db.Tabular;
 import net.bytle.db.model.DataDefs;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 public class DbTableDescribe {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String DATABASE_PATH = "(name|pattern)..";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableDescribe.class);
+  ;
+  private static final String DATA_URI_PATTERNS = "DataUriPattern...";
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        String description = "Show the structure of a table";
+    // The command
+    cliCommand.setDescription("Show the structure of a table");
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("One ore more table data uri (@database[/schema]/table")
+      .setMandatory(true);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error for minor problem (example if a table was not found with a pattern) ")
+      .setDefaultValue(false);
 
+    // Args
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
+    final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
 
-        // The arguments
-        cliCommand
-                .setDescription(description);
-        cliCommand.argOf(DATABASE_PATH)
-                .setDescription("One ore more table data uri (@database[/schema]/table")
-                .setMandatory(true);
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
-
-        //
-        List<String> databasePaths = cliParser.getStrings(DATABASE_PATH);
-        for (String databasePathString :databasePaths){
-            TableDataUri databasePath = TableDataUri.of(databasePathString);
-            Database database = datastoreVault.getDataStore(databasePath.getDataStore());
-
-            SchemaDef schemaDef;
-            if (databasePath.getSchemaName()!=null) {
-                schemaDef = database.getSchema(databasePath.getSchemaName());
+      List<DataPath> dataPaths = dataUriPatterns
+        .stream().flatMap(p -> {
+          List<DataPath> paths = tabular.select(p);
+          if (paths.size() == 0) {
+            String msg = "The data def uri pattern (" + p + ") has selected no data def files.";
+            if (notStrictRunArg) {
+              LOGGER.warn(msg);
             } else {
-                schemaDef = database.getCurrentSchema();
+              LOGGER.error(msg);
+              System.exit(1);
             }
-            List<TableDef> tableDefList = schemaDef.getTables(databasePath.getTableName());
-            System.out.println();
+          }
+          return paths.stream();
+        })
+        .sorted()
+        .collect(Collectors.toList());
 
-            if (tableDefList.size() != 0) {
-
-                switch (tableDefList.size()) {
-                    case 1:
-                        net.bytle.db.model.DataDefs.printColumns(tableDefList.get(0));
-                        break;
-                    default:
-
-                        for (TableDef tableDef : tableDefList) {
-                            System.out.println();
-                            System.out.println("  * " + tableDef.getName() + " columns:");
-                            DataDefs.printColumns(tableDef);
-                        }
-
-
-                }
-            } else {
-
-                System.out.println("No tables found");
-
-            }
-            System.out.println();
+      if (dataPaths.size() == 0) {
+        String msg = "The data def uri patterns (" + dataUriPatterns + ") have selected no tables.";
+        if (notStrictRunArg) {
+          LOGGER.warn(msg);
+          System.exit(0);
+        } else {
+          LOGGER.error(msg);
+          System.exit(1);
         }
-
-
-
-        LOGGER.info("Bye !");
-
-
+      } else {
+        DataPath columns = DataDefs.getColumnsDataPath(tabular, dataPaths);
+        Tabulars.print(columns);
+      }
+      System.out.println();
     }
+
+
+    LOGGER.info("Bye !");
+
+
+  }
 
 
 }

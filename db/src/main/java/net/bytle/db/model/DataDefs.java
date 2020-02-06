@@ -5,6 +5,7 @@ import net.bytle.db.Tabular;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.type.Arrayss;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,41 +83,55 @@ public class DataDefs {
 
   }
 
-  public static void printColumns(TableDef tableDef) {
+  public static DataPath getColumnsDataPath(Tabular tabular, List<DataPath> dataPaths) {
 
-    DataPath tableStructure = Tabular.tabular().getDataPath("structure");
-    tableStructure
+    DataPath columnsInfoDataPath = tabular.getDataPath("columns")
       .getDataDef()
-      .addColumn("#")
-      .addColumn("Colum Name")
+      .getDataPath();
+
+    if (dataPaths.size() >= 1) {
+      columnsInfoDataPath.getDataDef()
+        .addColumn("#")
+        .addColumn("Table Name");
+    }
+    columnsInfoDataPath.getDataDef()
+      .addColumn("Position")
+      .addColumn("Column Name")
       .addColumn("Data Type")
-      .addColumn("Key")
+      .addColumn("Primary Key")
       .addColumn("Not Null")
       .addColumn("Default")
       .addColumn("Auto Increment")
       .addColumn("Description");
 
-    InsertStream insertStream = Tabulars.getInsertStream(tableStructure);
-    int i = 0;
-    for (ColumnDef columnDef : tableDef.getColumnDefs()) {
-      i++;
-      insertStream.insert(
-        i,
-        columnDef.getColumnName(),
-        columnDef.getDataType().getTypeName(),
-        (tableDef.getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
-        (columnDef.getNullable() ? "x" : ""),
-        columnDef.getDefault(),
-        columnDef.getIsAutoincrement(),
-        columnDef.getDescription()
+    try (
+      InsertStream insertStream = Tabulars.getInsertStream(columnsInfoDataPath);
+    ) {
+      int i = 0;
+      for (DataPath dataPath : dataPaths) {
+        for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
 
-      );
+          Object[] columnsColumns = {
+            columnDef.getColumnPosition(),
+            columnDef.getColumnName(),
+            columnDef.getDataType().getTypeName(),
+            (dataPath.getDataDef().getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
+            (columnDef.getNullable() ? "x" : ""),
+            columnDef.getDefault(),
+            columnDef.getIsAutoincrement(),
+            columnDef.getDescription()};
+
+          if (dataPaths.size() >= 1) {
+            i++;
+            Object[] tablesColumns = {i, dataPath.getName()};
+            columnsColumns = Arrayss.concat(tablesColumns, columnsColumns);
+          }
+
+          insertStream.insert(columnsColumns);
+        }
+      }
     }
-    insertStream.close();
-
-
-    Tabulars.print(tableStructure);
-    Tabulars.drop(tableStructure);
+    return columnsInfoDataPath;
   }
 
 
