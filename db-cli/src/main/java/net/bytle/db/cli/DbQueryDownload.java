@@ -2,17 +2,13 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
-import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
-import net.bytle.db.database.DataStore;
-import net.bytle.db.engine.Queries;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.uri.DataUri;
-import net.bytle.fs.Fs;
+import net.bytle.db.transfer.TransferOptions;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
@@ -20,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 /**
  * Created by gerard on 08-12-2016.
@@ -53,10 +49,13 @@ public class DbQueryDownload {
       .setDescription("The source query URI pattern");
     cliCommand.argOf(TARGET_DATA_URI)
       .setDescription("A data URI that defines the destination (a file or a directory)");
-
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will replace the files existing and not throw an errors for minor problem (example if a table was not found with a pattern) ")
+      .setDefaultValue(false);
 
     // Parse and args
     CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
     final String sourceQueryUriArg = cliParser.getString(SOURCE_QUERY_URI_PATTERN);
     final String targetDataUriArg = cliParser.getString(TARGET_DATA_URI);
@@ -70,39 +69,31 @@ public class DbQueryDownload {
         tabular.withDefaultStorage();
       }
 
-      // Source Files selected
-      DataUri firstQueryUri = DataUri.of(sourceQueryUriArg);
-      List<Path> firstQueryUriFiles = Fs.getFilesByGlob(firstQueryUri.getPath());
-      if (firstQueryUriFiles.size() == 0) {
-        LOGGER.error("There was no sql file selected with the first query uri pattern ({})", sourceQueryUriArg);
-      }
-      DataStore sourceDataStore = tabular.getDataStore(firstQueryUri.getDataStore());
-      List<DataPath> queryDataPaths = firstQueryUriFiles.stream()
-        .map(p -> {
-          String sourceFileQuery = Queries.getQuery(p);
-          if (sourceFileQuery == null) {
-            LOGGER.error("The path (" + p + ") does not contains a query.");
-            CliUsage.print(cliParser.getCommand());
-            System.exit(1);
-          }
-          return sourceDataStore.getQueryDataPath(sourceFileQuery);
-        })
-        .collect(Collectors.toList());
-
-      // Target
-      DataPath targetDataPath = tabular.getDataPath(targetDataUriArg);
-      if (Tabulars.isDocument(targetDataPath) && firstQueryUriFiles.size() > 1) {
-        LOGGER.error("The Query URI pattern ({}) has selected more than one query files ({}), the target data uri should be a container (directory) but is a document (file) {} ", sourceQueryUriArg, firstQueryUriFiles, targetDataPath);
+      // Source
+      List<DataPath> queryDataPaths = tabular.select(sourceQueryUriArg);
+      if (queryDataPaths.size() == 0) {
+        LOGGER.error("There was no sql file selected with the query uri pattern ({})", sourceQueryUriArg);
         System.exit(1);
       }
+      // Target
+      DataPath targetDataPath = tabular.getDataPath(targetDataUriArg);
 
-      LOGGER.info("Starting download process");
+      // Transfer Properties
+      TransferProperties transferProperties = TransferProperties.of();
+      if (notStrictRunArg) {
+        transferProperties
+          .addTargetOperations(TransferOptions.CREATE_IF_NOT_EXIST)
+          .addTargetOperations(TransferOptions.DROP_IF_EXIST);
+      }
+
+      // Transfer
+      LOGGER.info("Starting the download process");
       Timer totalTimer = Timer.getTimer("total").start();
       List<TransferListener> transferListeners = TransferManager.of()
         .addTransfers(queryDataPaths, targetDataPath)
+        .setTransferProperties(transferProperties)
         .start();
       totalTimer.stop();
-
       System.out.printf("Response Time to download the data: %s (hour:minutes:seconds:milli)%n", totalTimer.getResponseTime());
       System.out.printf("       Ie (%d) milliseconds%n", totalTimer.getResponseTimeInMilliSeconds());
 

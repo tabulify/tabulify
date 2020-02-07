@@ -47,7 +47,6 @@ public class DbQueryTransfer {
     command.argOf(TARGET_DATA_URI)
       .setDescription("A target data Uri ([name]@dataStore) (if the target name is not present, it will be the name of the query file)")
       .setMandatory(true);
-
     CliOptions.addTransferOptions(command);
 
     // Create the parser and get the args

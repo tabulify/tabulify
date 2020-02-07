@@ -72,7 +72,7 @@ public class TransferProperties {
 
   /**
    * The target operation
-   * See {@link #setTargetOperations(TransferOptions...)}
+   * See {@link #addTargetOperations(TransferOptions...)}
    */
   private Set<TransferOptions> transferOptions = new HashSet<>(Arrays.asList(TransferOptions.CREATE_IF_NOT_EXIST));
 
@@ -202,7 +202,7 @@ public class TransferProperties {
    * @param transferOptions - an enum of {@link TransferOptions}
    * @return the {@link TransferProperties} instance itself for chaining instantiation
    */
-  public TransferProperties setTargetOperations(TransferOptions... transferOptions) {
+  public TransferProperties addTargetOperations(TransferOptions... transferOptions) {
     this.transferOptions.addAll(Arrays.asList(transferOptions));
     return this;
   }

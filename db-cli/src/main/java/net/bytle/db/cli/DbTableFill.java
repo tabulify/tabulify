@@ -1,24 +1,26 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
+import net.bytle.db.Tabular;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.gen.DataGeneration;
-import net.bytle.db.model.DataDefs;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
-import net.bytle.log.Log;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.timer.Timer;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
+import static org.slf4j.LoggerFactory.getLogger;
 
 
 /**
@@ -28,167 +30,128 @@ import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
  */
 public class DbTableFill {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
+  private static final Logger LOGGER = getLogger(DbTableFill.class);
 
 
-    static final String NUMBER_OF_ROWS_OPTION = "rows";
-    static final String LOAD_PARENT = "load-parent";
+  static final String NUMBER_OF_ROWS_OPTION = "rows";
+  static final String LOAD_PARENT = "load-parent";
+  static final String DATA_URI_PATTERNS = "DataUriPattern...";
 
 
-
-    public static void run(CliCommand cliCommand, String[] args) {
-
-        String description = "Load generated data into one or more tables\n\n" +
-                "By default, the data would be randomly generated.\n" +
-                "You should use the data definition file option (" + Words.GLOB_PATERN_DATADEF_FILE + ") to define the data generation behaviors.";
+  public static void run(CliCommand cliCommand, String[] args) {
 
 
-        final String TABLE_URIS = "TableUri...";
-        cliCommand
-                .setDescription(description);
+    cliCommand.setDescription(Strings.multiline(
+      "Load generated data into one or more tables",
+      "By default, the data would be randomly generated.",
+      "You should use a data definition file to define the data generation behaviors."
+    ))
+      .addExample(Strings.multiline("To load the tables `D_TIME` and the table `F_SALES` from the datastore `sqlite` with random data:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME@sqlite F_SALES@sqlite"))
+      .addExample(Strings.multiline("To load the table `D_TIME` with the data definition file `D_TIME--datadef.yml` present in the current directory:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datadef.yml@datastore"))
+      .addExample(Strings.multiline("To load all the tables that have a data definition file in the current directory:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "*--datadef.yml@datastore"));
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("One or more data URI patterns (Example: table@database or table--datadef.yml@database)")
+      .setMandatory(true);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("If set, it will not throw an error if a table, file is not found")
+      .setDefaultValue(false);
+    cliCommand.flagOf(LOAD_PARENT)
+      .setDescription("If this flag is present, the foreign table(s) of the selected tables will be also filled with data")
+      .setDefaultValue(false);
+    cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
+      .setDescription("This option defines the total number of rows that the table(s) must have. For a number of rows defined by table, you should set it in a datadef file.");
 
-        cliCommand.argOf(TABLE_URIS)
-                .setDescription("One or more table URI (@database[/schema]/table) from the same schema.")
-                .setMandatory(true);
+    // Args
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Boolean loadParent = cliParser.getBoolean(LOAD_PARENT);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
 
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
-        cliCommand.optionOf(Words.FORCE)
-            .setDescription("The FORCE mode will not emit an error if a table is not found for a Table URI");
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        cliCommand.flagOf(LOAD_PARENT)
-                .setDescription("If this flag is present, the foreign table(s) will not be loaded if not present in the table Uri selection.")
-                .setDefaultValue(true);
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = new HashMap<>();
+      for (String dataUriPattern : dataUriPatterns) {
+        List<DataPath> dataPathsByPattern = tabular.select(dataUriPattern);
 
-        cliCommand.optionOf(Words.GLOB_PATERN_DATADEF_FILE)
-                .setDescription("A path to a data definition file (DataDef.yml) or a directory containing several data definition file.");
-
-        cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
-                .setDescription("defines the total number of rows that the table(s) must have")
-                .setMandatory(false);
-
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-
-        // Load parent
-        Boolean loadParent = cliParser.getBoolean(LOAD_PARENT);
-
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
-
-
-        // Data Definition
-        Path dataDefPath = cliParser.getPath(Words.GLOB_PATERN_DATADEF_FILE);
-        if (dataDefPath == null) {
-            LOGGER.info("Loading generated data without data definition file");
+        if (dataPathsByPattern.size() == 0) {
+          String msg = "The data uri pattern (" + dataUriPattern + ") is not a pattern that select tables";
+          if (notStrictRun) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
+            CliUsage.print(cliCommand);
+            System.exit(1);
+          }
         } else {
-            LOGGER.info("Loading generated data with the data definition file option (" + dataDefPath + ")");
-            if (!(Files.exists(dataDefPath))) {
-                LOGGER.severe("The file (" + dataDefPath.toAbsolutePath().toString() + " does not exist");
-                System.exit(1);
-            }
-        }
 
-        // Force
-        Boolean force = cliParser.getBoolean(Words.FORCE);
+          DataStore dataStore = dataPathsByPattern.get(0).getDataSystem().getDataStore();
 
-        // Number of rows
-        Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
-
-        LOGGER.info("Starting filling the tables");
-        CliTimer cliTimer = CliTimer.getTimer("Fill table").start();
-
-
-        // Data Uri (same schema) to table to load
-        // The tables to load
-        Set<TableDef> tablesToLoad = new TreeSet<>();
-        // The data URI
-        List<String> dataUris = cliParser.getStrings(TABLE_URIS);
-        Database database = null;
-        SchemaDef schemaDef = null;
-        for (String tableDataUriString : dataUris) {
-
-            TableDataUri tableDataUri = TableDataUri.of(tableDataUriString);
-            final Database databaseinUri = datastoreVault.getDataStore(tableDataUri.getDataStore());
-            if (database == null) {
-                database = databaseinUri;
-            } else {
-
-                if (!database.equals(databaseinUri)) {
-                    LOGGER.severe("The table uri's should define the same database");
-                    LOGGER.severe("We have found that the database ("+database+") and the database ("+databaseinUri+") are not the same.");
-                    System.exit(1);
-                }
-            }
-            final String schemaName = tableDataUri.getSchemaName();
-            if (schemaName != null) {
-                final SchemaDef schemaInUri = database.getSchema(schemaName);
-                if (schemaDef==null) {
-                    schemaDef = schemaInUri;
-                } else {
-                    if (!schemaDef.equals(schemaInUri)){
-                        LOGGER.severe("The table uri's should define in the same schema");
-                        LOGGER.severe("We have found that the schema ("+schemaDef.getFullyQualifiedName()+") and the schema ("+schemaInUri.getFullyQualifiedName()+") are not the same.");
-                        System.exit(1);
-                    }
-                }
-            } else {
-                schemaDef = database.getCurrentSchema();
-            }
-
-            LOGGER.info("Searching the table for the table Uri (" + tableDataUriString + ")");
-            List<TableDef> tableDefs = schemaDef.getTables(tableDataUri.getTableName());
-            if (tableDefs.size() == 0) {
-
-                final String msg = "No table(s) were found with the table Uri (" + tableDataUri + ")";
-                if (!force) {
-                    LOGGER.severe(msg);
-                    System.exit(1);
-                } else {
-                    LOGGER.warning(msg);
-                }
-
-            }
-
-            // Get the tables to load for a certain database
-            for (TableDef tableDef : tableDefs) {
-                tablesToLoad.add(tableDef);
-                LOGGER.info("The table (" + tableDef.getFullyQualifiedName() + ") has been added to the table to be loaded.");
-            }
+          List<DataPath> dataPathsByDataStore = dataPathsByDataStores.computeIfAbsent(dataStore, k -> new ArrayList<>());
+          dataPathsByDataStore.addAll(dataPathsByPattern);
 
         }
+      }
 
-        // Merge the properties
-        if (dataDefPath!=null) {
-            // Create a map of the dataDef use in the next merge step
-            Map<String, TableDef> dataDefTableDefs = DataDefs.of().load(dataDefPath)
-                    .stream()
-                    .collect(Collectors.toMap(TableDef::getName, Function.identity()));
-            // Merge
-            tablesToLoad = tablesToLoad.stream()
-                    .map(s -> dataDefTableDefs.containsKey(s.getName()) ? Tables.mergeProperties(s, dataDefTableDefs.get(s.getName())) : s)
-                    .collect(Collectors.toSet());
+      Timer cliTimer = Timer.getTimer("Fill table").start();
+      Map<DataStore, List<DataPath>> dataPathsLoadedByDataStore = new HashMap<>();
+      for (DataStore dataStore : dataPathsByDataStores.keySet()) {
+
+        List<DataPath> dataPathsByDataStore = dataPathsByDataStores.get(dataStore);
+        LOGGER.info("Starting filling the tables for the data store "+dataStore);
+        List<DataPath> dataPathsLoaded = DataGeneration.of()
+          .addTables(dataPathsByDataStore, totalNumberOfRows)
+          .loadDependencies(loadParent)
+          .load();
+        dataPathsLoadedByDataStore.put(dataStore, dataPathsLoaded);
+
+      }
+      cliTimer.stop();
+
+      LOGGER.info("Response Time for the loading of generated data : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)%n");
+      LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
+
+      LOGGER.info("Calculating the size of the tables loaded ...");
+
+      DataPath tablesFilled = tabular.getDataPath("tables_filled")
+        .getDataDef()
+        .addColumn("DataStore")
+        .addColumn("Table")
+        .addColumn("Size")
+        .getDataPath();
+
+      try(InsertStream insertStream = Tabulars.getInsertStream(tablesFilled)) {
+        List<DataStore> dataStores = new ArrayList<>(dataPathsLoadedByDataStore.keySet());
+        Collections.sort(dataStores);
+        for (DataStore dataStore : dataStores) {
+          List<DataPath> dataPathsByDataStoreLoaded = dataPathsByDataStores.get(dataStore);
+          Collections.sort(dataPathsByDataStoreLoaded);
+          for (DataPath dataPath : dataPathsByDataStoreLoaded) {
+            insertStream.insert(dataStore.getName(),dataPath.getName(),Tabulars.getSize(dataPath));
+          }
         }
+      }
 
-        List<TableDef> tablesLoaded = DataGeneration.of()
-                .addTables(new ArrayList<>(tablesToLoad), totalNumberOfRows)
-                .loadDependencies(loadParent)
-                .load();
+      LOGGER.info("The following tables where loaded:");
+      Tabulars.print(tablesFilled);
 
-        LOGGER.info("The following tables where loaded:");
-        for (TableDef tableDef : tablesLoaded) {
-            LOGGER.info("  * " + tableDef.getFullyQualifiedName() + ", Size (" + Tables.getSize(tableDef) + ")");
-        }
-
-        cliTimer.stop();
-
-        LOGGER.info("Response Time for the loading of generated data : " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)%n");
-        LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds%n");
-
-
-        LOGGER.info("Success ! No errors were seen.");
+      LOGGER.info("Success ! No errors were seen.");
 
     }
+
+  }
 
 
 }
