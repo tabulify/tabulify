@@ -16,8 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,28 +71,7 @@ public class DbTableDrop {
         tabular.withDefaultStorage();
       }
 
-      Map<DataStore, List<DataPath>> dataPathsByDataStores = new HashMap<>();
-      for (String dataUriPattern : dataUriPatterns) {
-        List<DataPath> dataPathsByPattern = tabular.select(dataUriPattern);
-
-        if (dataPathsByPattern.size() == 0) {
-          String msg = "The data uri pattern (" + dataUriPattern + ") is not a pattern that select tables";
-          if (notStrictRun) {
-            LOGGER.warn(msg);
-          } else {
-            LOGGER.error(msg);
-            CliUsage.print(cliCommand);
-            System.exit(1);
-          }
-        } else {
-
-          DataStore dataStore = dataPathsByPattern.get(0).getDataSystem().getDataStore();
-
-          List<DataPath> dataPathsByDataStore = dataPathsByDataStores.computeIfAbsent(dataStore, k -> new ArrayList<>());
-          dataPathsByDataStore.addAll(dataPathsByPattern);
-
-        }
-      }
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPaths(tabular, dataUriPatterns, notStrictRun, cliCommand);
 
       // Doing the work
       for (DataStore dataStore : dataPathsByDataStores.keySet()) {

@@ -3,102 +3,135 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.Tabular;
+import net.bytle.db.database.DataStore;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 /**
- * Created by gerard on 08-12-2016.
- * <p>
+ *
  */
 public class DbTableList {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String TABLE_URIS = "TableUri...";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableList.class);
+  private static final String DATA_URI_PATTERN = "DataUriPattern...";
 
 
-        public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand
-                .setDescription("Print a list of tables.");
+    // Command
+    cliCommand.setDescription("Print a list of tables")
+      .addExample(Strings.multiline("List all the tables of the current schema of the `oracle` data store",
+        CliUsage.getFullChainOfCommand(cliCommand) + "*@oracle"))
+      .addExample(Strings.multiline("List all the tables that begins with `D` of the `sqlite` data store",
+        CliUsage.getFullChainOfCommand(cliCommand) + "D*@sqlite"));
+    cliCommand.argOf(DATA_URI_PATTERN)
+      .setDescription("One or more name data uri pattern (ie pattern@datastore")
+      .setMandatory(true);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(Words.NO_COUNT)
+      .setDescription("suppress the column showing the table count")
+      .setShortName("c");
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error if a table is not found")
+      .setDefaultValue(false);
 
-        cliCommand.argOf(TABLE_URIS)
-                .setDescription("One or more name table uri (ie @database[/schema]/table)")
-                .setMandatory(true);
+    // Arguments
+    final CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERN);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final Boolean noCountColumn = cliParser.getBoolean(Words.NO_COUNT);
 
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
+// Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        cliCommand.flagOf(Words.NO_COUNT)
-                .setDescription("suppress the column showing the table count")
-                .setShortName("c");
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPaths(tabular, dataUriPatterns, notStrictRun, cliCommand);
 
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
+      List<DataStore> dataStores = new ArrayList<>(dataPathsByDataStores.keySet());
+      Collections.sort(dataStores);
 
-        List<String> stringTableUris = cliParser.getStrings(TABLE_URIS);
-        List<TableDef> tableDefs = new ArrayList<>();
-
-        for (String stringTableUri : stringTableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(stringTableUri);
-            Database database = datastoreVault.getDataStore(tableDataUri.getDataStore());
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (tableDataUri.getSchemaName()!=null) {
-                schemaDef = database.getSchema(tableDataUri.getSchemaName());
+      DataPath tables = tabular.getDataPath("tables");
+      switch (dataStores.size()) {
+        case 0:
+          String msg = "No data path found (no tables found)";
+          if (notStrictRun) {
+            LOGGER.warn(msg);
+            System.exit(0);
+          } else {
+            LOGGER.error(msg);
+            System.exit(1);
+          }
+          break;
+        case 1:
+          tables
+            .getDataDef()
+            .addColumn("Table Name");
+          if (!noCountColumn) {
+            tables.getDataDef().addColumn("Rows Count", Types.INTEGER);
+          }
+          try (InsertStream insertStream = Tabulars.getInsertStream(tables)) {
+            List<DataPath> dataPathsByDataStore = dataPathsByDataStores.entrySet().iterator().next().getValue();
+            Collections.sort(dataPathsByDataStore);
+            for (DataPath dataPath : dataPathsByDataStore) {
+              if (!noCountColumn) {
+                Integer count = Tabulars.getSize(dataPath);
+                insertStream.insert(dataPath.getName(), count);
+              } else {
+                insertStream.insert(dataPath.getName());
+              }
             }
-            tableDefs.addAll(schemaDef.getTables(tableDataUri.getTableName()));
-
-        }
-        if (tableDefs.size() == 0) {
-            LOGGER.info("No tables found");
-        }
-
-        // Construct the table result
-        // The table result structure
-        final Boolean noCountColumn = cliParser.getBoolean(Words.NO_COUNT);
-        TableDef printTable = Tables.get("tables")
-                .addColumn("Table Name");
-        if (!noCountColumn) {
-            printTable.addColumn("Rows Count", Types.INTEGER);
-        }
-
-        InsertStream insertStream = Tables.getTableInsertStream(printTable);
-        for (TableDef tableDef : tableDefs) {
-
-            if (!noCountColumn) {
-                Integer count = Tables.getSize(tableDef);
-                insertStream.insert(tableDef.getName(), count);
-            } else {
-                insertStream.insert(tableDef.getName());
+          }
+          break;
+        default:
+          tables
+            .getDataDef()
+            .addColumn("Data Store")
+            .addColumn("Table Name")
+            .getDataPath();
+          if (!noCountColumn) {
+            tables.getDataDef().addColumn("Rows Count", Types.INTEGER);
+          }
+          try (InsertStream insertStream = Tabulars.getInsertStream(tables)) {
+            for (DataStore dataStore : dataStores) {
+              List<DataPath> dataPathsByDataStore = dataPathsByDataStores.get(dataStore);
+              Collections.sort(dataPathsByDataStore);
+              for (DataPath dataPath : dataPathsByDataStore) {
+                if (!noCountColumn) {
+                  Integer count = Tabulars.getSize(dataPath);
+                  insertStream.insert(dataStore.getName(), dataPath.getName(), count);
+                } else {
+                  insertStream.insert(dataStore.getName(), dataPath.getName());
+                }
+              }
             }
-        }
-        insertStream.close();
-
-        System.out.println();
-        Tables.print(printTable);
-        Tables.drop(printTable);
-        System.out.println();
-
-        LOGGER.info("Bye !");
-
-
-}
-
-
+          }
+          break;
+      }
+      Tabulars.print(tables);
+    }
+  }
 }
