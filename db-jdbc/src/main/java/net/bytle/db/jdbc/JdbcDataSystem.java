@@ -48,7 +48,7 @@ public class JdbcDataSystem extends TableSystem {
   private JdbcDataProcessingEngine processingEngine;
 
 
-  public SqlDatabaseI getSqlDatabase() {
+  public SqlDatabaseI getExtension() {
 
     if (sqlDatabase == null) {
 
@@ -303,8 +303,8 @@ public class JdbcDataSystem extends TableSystem {
    */
   public Integer getMaxWriterConnection() {
     Integer maxWriterConnection = null;
-    if (this.getSqlDatabase() != null) {
-      maxWriterConnection = this.getSqlDatabase().getMaxWriterConnection();
+    if (this.getExtension() != null) {
+      maxWriterConnection = this.getExtension().getMaxWriterConnection();
     }
     if (maxWriterConnection != null) {
       return maxWriterConnection;
@@ -465,7 +465,7 @@ public class JdbcDataSystem extends TableSystem {
 
     if (dataType == null) {
       DataTypeDatabase dataTypeDatabase = null;
-      SqlDatabaseI sqlDatabaseI = this.getSqlDatabase();
+      SqlDatabaseI sqlDatabaseI = this.getExtension();
       if (sqlDatabaseI != null) {
         dataTypeDatabase = sqlDatabaseI.dataTypeOf(typeCode);
       }
@@ -542,7 +542,7 @@ public class JdbcDataSystem extends TableSystem {
   @Override
   public void truncate(DataPath dataPath) {
 
-    final SqlDatabaseI sqlDatabase = getSqlDatabase();
+    final SqlDatabaseI sqlDatabase = getExtension();
     String truncateStatement;
     if (sqlDatabase != null) {
       truncateStatement = sqlDatabase.getTruncateStatement(dataPath);
@@ -656,8 +656,8 @@ public class JdbcDataSystem extends TableSystem {
   public Object getLoadObject(int targetColumnType, Object sourceObject) {
 
     Object object = null;
-    if (this.getSqlDatabase() != null) {
-      object = this.getSqlDatabase().getLoadObject(targetColumnType, sourceObject);
+    if (this.getExtension() != null) {
+      object = this.getExtension().getLoadObject(targetColumnType, sourceObject);
     }
     if (object == null) {
       return sourceObject;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.SelectStreamAbs;
+import net.bytle.db.stream.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
 import java.io.BufferedReader;

@@ -5,6 +5,7 @@ import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.resultSetDiff.DataSetDiff;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
@@ -23,6 +24,12 @@ import java.util.stream.Collectors;
 public class Tabulars {
 
 
+  /**
+   * Used in the {@link #getSubSet(String, DataPath, Integer, int) subset function}
+   */
+  public final static int TAIL = 1;
+  public final static int HEAD = 2;
+
   public synchronized static Boolean exists(DataPath dataPath) {
 
     return dataPath.getDataSystem().exists(dataPath);
@@ -30,8 +37,8 @@ public class Tabulars {
   }
 
   public static SelectStream getSelectStream(DataPath dataPath) {
-    if (isContainer(dataPath)){
-      throw new RuntimeException("The data path ("+dataPath+") is a container (ie directory) of data path. It has therefore no content and you can't read or select it. If you want to read a container, you first list its childrens");
+    if (isContainer(dataPath)) {
+      throw new RuntimeException("The data path (" + dataPath + ") is a container (ie directory) of data path. It has therefore no content and you can't read or select it. If you want to read a container, you first list its childrens");
     }
     if (Tabulars.exists(dataPath)) {
       return dataPath.getDataSystem().getSelectStream(dataPath);
@@ -222,14 +229,13 @@ public class Tabulars {
 
 
   /**
-   *
    * @param source - the source to move
    * @param target - a target data path container or document
-   * If the target is a container, the target will have the name of the source
+   *               If the target is a container, the target will have the name of the source
    */
   public static void move(DataPath source, DataPath target) {
 
-    if (Tabulars.isContainer(target)){
+    if (Tabulars.isContainer(target)) {
       target = target.getChild(source.getName());
     }
     move(source, target, TransferProperties.of());
@@ -253,6 +259,9 @@ public class Tabulars {
 
 
   public static int getSize(DataPath dataPath) {
+    if (!Tabulars.exists(dataPath)){
+      throw new RuntimeException("The data path ("+dataPath+") does not exist, you can't ask for its size");
+    }
     return dataPath.getDataSystem().size(dataPath);
   }
 
@@ -301,7 +310,6 @@ public class Tabulars {
   }
 
 
-
   /**
    * @param dataPath - a data path container (a directory, a schema or a catalog)
    * @return the descendant data paths representing sql tables, schema or files
@@ -314,7 +322,6 @@ public class Tabulars {
     return dataPath.getDataSystem().getDescendants(dataPath);
 
   }
-
 
 
   /**
@@ -388,15 +395,14 @@ public class Tabulars {
   }
 
   /**
-   *
    * @param source
-   * @param target - the target document or a container (if this is a container, the target will be a document with the name of the source)
+   * @param target             - the target document or a container (if this is a container, the target will be a document with the name of the source)
    * @param transferProperties
    * @return
    */
   public static TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
 
-    if (Tabulars.isContainer(target)){
+    if (Tabulars.isContainer(target)) {
       target = target.getChild(source.getName());
     }
 
@@ -416,11 +422,9 @@ public class Tabulars {
   }
 
   /**
-   *
    * @param source - a source document data path
    * @param target - a target document or container (If this is a container, the target document will get the name of the source document)
    * @return
-   *
    */
   public static TransferListener copy(DataPath source, DataPath target) {
     return copy(source, target, TransferProperties.of());
@@ -461,5 +465,39 @@ public class Tabulars {
 
   public static void copyDataDef(DataPath source, DataPath target) {
     DataDefs.copy(source.getDataDef(), target.getDataDef());
+  }
+
+  /**
+   * @param name - the name of the subset
+   * @param dataPath
+   * @param limit
+   * @param limitOrderTail
+   * @return a subset of the data path
+   */
+  public static DataPath getSubSet(String name, DataPath dataPath, Integer limit, int limitOrderTail) {
+
+    assert name != dataPath.getName(): "The name of the subset data path cannot be the name of the original path ("+name+")";
+    DataPath subset = dataPath.getDataSystem().getDataStore().getDataPathOfDataDef(name, dataPath.getDataDef());
+    assert !Tabulars.exists(subset):"The name of the subset should not exist. The data path ("+name+") already exists and has "+Tabulars.getSize(subset)+" rows";
+
+    // Head Logic
+    if (limitOrderTail==Tabulars.HEAD) {
+      try (
+        SelectStream selectStream = Tabulars.getSelectStream(dataPath);
+        InsertStream insertStream = Tabulars.getInsertStream(subset)
+      ) {
+        int i = 0;
+        while (selectStream.next() && i < limit) {
+          i++;
+          insertStream.insert(selectStream.getObjects());
+        }
+      }
+    }
+
+    return subset;
+  }
+
+  public static Boolean areEquals(DataPath first, DataPath second) {
+    return DataSetDiff.of(first, second).diff().areEquals();
   }
 }

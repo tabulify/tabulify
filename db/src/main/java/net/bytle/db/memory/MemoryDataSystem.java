@@ -23,20 +23,19 @@ public class MemoryDataSystem extends TableSystem {
 
   private final MemorySystemProvider memoryStoreProvider;
   private final MemoryStore memoryStore;
-  private DataStore dataStore = DataStore.of("memory");
+  private final DataStore dataStore;
 
-  public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
+  public MemoryDataSystem(MemorySystemProvider memorySystemProvider, DataStore dataStore) {
     this.memoryStoreProvider = memorySystemProvider;
     this.memoryStore = new MemoryStore();
+    this.dataStore = dataStore;
   }
 
-  public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider) {
-    return new MemoryDataSystem(memorySystemProvider);
+  public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider, DataStore dataStore) {
+    return new MemoryDataSystem(memorySystemProvider, dataStore);
+
   }
 
-  public static MemoryDataSystem of() {
-    return MemoryDataSystem.of(MemorySystemProvider.of());
-  }
 
   public void delete(DataPath memoryTable) {
     Object values = memoryStore.remove(memoryTable);

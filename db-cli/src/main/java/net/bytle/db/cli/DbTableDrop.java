@@ -71,7 +71,7 @@ public class DbTableDrop {
         tabular.withDefaultStorage();
       }
 
-      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPaths(tabular, dataUriPatterns, notStrictRun, cliCommand);
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);
 
       // Doing the work
       for (DataStore dataStore : dataPathsByDataStores.keySet()) {

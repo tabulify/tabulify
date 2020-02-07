@@ -43,8 +43,8 @@ public class JdbcDataSystemSql {
         String identifierQuoteString = DbSql.getIdentifierQuote(dataSystem);
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
-        if (dataSystem.getSqlDatabase() != null) {
-            String objectNameExtension = dataSystem.getSqlDatabase().getNormativeSchemaObjectName(tableName);
+        if (dataSystem.getExtension() != null) {
+            String objectNameExtension = dataSystem.getExtension().getNormativeSchemaObjectName(tableName);
             if (objectNameExtension != null) {
                 normativeObjectName = objectNameExtension;
             }

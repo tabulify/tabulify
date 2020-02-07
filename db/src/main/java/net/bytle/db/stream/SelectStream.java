@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public interface SelectStream extends AutoCloseable {
 
-
   boolean next();
 
   void close();
@@ -64,6 +63,7 @@ public interface SelectStream extends AutoCloseable {
    * This function is a good candidate for.
    */
   void execute();
+
 
 
 }

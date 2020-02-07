@@ -26,7 +26,7 @@ public class DbDdl {
 
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         List<String> statements;
-        final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataSystem().getSqlDatabase();
+        final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataSystem().getExtension();
 
         // If the databaseDefault implements its own logic, we return it.
         try {

@@ -73,7 +73,7 @@ public class DataSetDiffResult {
     return this;
   }
 
-  public boolean isEquals() {
+  public boolean areEquals() {
     return numberOfDiffRows == 0 && isDataDefEquals();
   }
 

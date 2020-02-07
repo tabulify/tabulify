@@ -162,7 +162,7 @@ public class DbQueryDiff {
         }
         DataSetDiffResult result = dataSetDiff.diff();
         LOGGER.info("The Diff (" + diffName + ") has ended");
-        if (result.isEquals()) {
+        if (result.areEquals()) {
           LOGGER.info("The result of the queries are NOT equals");
         } else {
           LOGGER.info("The result of the queries are equals");

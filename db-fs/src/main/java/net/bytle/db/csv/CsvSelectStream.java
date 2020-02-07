@@ -1,7 +1,7 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.SelectStreamAbs;
+import net.bytle.db.stream.SelectStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;

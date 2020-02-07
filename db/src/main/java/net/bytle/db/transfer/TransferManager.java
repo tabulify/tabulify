@@ -2,6 +2,7 @@ package net.bytle.db.transfer;
 
 
 import net.bytle.db.DbLoggers;
+import net.bytle.db.Tabular;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.model.ColumnDef;
@@ -199,7 +200,7 @@ public class TransferManager {
 
     // The queue between the producer (source) and the consumer (target)
     long timeout = transferProperties.getTimeOut();
-    MemoryDataPath queue = MemoryDataPath.of("Transfer")
+    MemoryDataPath queue = ((MemoryDataPath) Tabular.tabular().getDataPath("Transfer"))
       .setType(TYPE_BLOCKED_QUEUE)
       .setTimeout(timeout)
       .setCapacity(transferProperties.getQueueSize());

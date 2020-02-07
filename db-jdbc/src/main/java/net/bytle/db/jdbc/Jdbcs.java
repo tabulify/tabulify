@@ -89,7 +89,7 @@ public class Jdbcs {
     // that doesn't return the good primary ley
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getSqlDatabase();
+    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addPrimaryKey(tableDef);
     }
@@ -202,7 +202,7 @@ public class Jdbcs {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean added = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getSqlDatabase();
+    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
     if (sqlDatabase != null) {
       added = sqlDatabase.addColumns(tableDef);
     }
@@ -272,7 +272,7 @@ public class Jdbcs {
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getSqlDatabase();
+    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addForeignKey(tableDef);
     }

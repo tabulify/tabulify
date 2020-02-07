@@ -45,17 +45,7 @@ public class MemoryDataPath extends DataPath {
     assert dataUri.getPath() != null : "Path should not be null";
     return new MemoryDataPath(memoryDataSystem, dataUri);
   }
-
-  /**
-   * A shortcut to create a memory datapath
-   *
-   * @param name
-   * @return
-   */
-  public static MemoryDataPath of(String name) {
-    return MemoryDataSystem.of().getDataPath(name);
-  }
-
+  
 
   @Override
   public MemoryDataSystem getDataSystem() {

@@ -1,7 +1,7 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.SelectStreamAbs;
+import net.bytle.db.stream.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
 
 import java.sql.Clob;

@@ -1,143 +1,119 @@
 package net.bytle.db.cli;
 
-import net.bytle.cli.*;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.DbLoggers;
-import net.bytle.db.database.Database;
-
-import net.bytle.db.engine.Queries;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.model.QueryDef;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
-import net.bytle.log.Log;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
+import net.bytle.db.Tabular;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.timer.Timer;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.logging.Level;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 public class DbTableShow {
 
-    public static final Log LOGGER_DB_ENGINE = DbLoggers.LOGGER_DB_ENGINE;
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String TABLE_URI = "TableUri..";
-    protected static final String LIMIT = "limit";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableShow.class);
+  private static final String DATA_URI_PATTERNS = "TableUri..";
+  protected static final String LIMIT = "limit";
+  private static final String HEAD = "head";
+  private static final String TAIL = "tail";
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
+    // Command
+    cliCommand.setDescription(Strings.multiline("Show the data of a table",
+      "This command was designed to render data properly aligned.",
+      "This is why there is a limit on the data to render by default.",
+      "If you want to get more data, you can always use the `download` or `transfer` command."));
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("One or more data URI patterns (Example: glob@datastore)")
+      .setMandatory(true);
+    cliCommand.addExample(Strings.multiline("Show the data of the table `sales` from the data store `sqlite`:",
+      CliUsage.getFullChainOfCommand(cliCommand) + "sales@sqlite"));
+    cliCommand.addExample(Strings.multiline("Show the last 100 rows of the table `time` from the data store `postgres`:",
+      CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + TAIL + " " + CliParser.PREFIX_LONG_OPTION + LIMIT + " 100 sales@postgres"));
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.optionOf(LIMIT)
+      .setDescription("Limit the number of rows returned")
+      .setDefaultValue(10);
+    cliCommand.flagOf(HEAD)
+      .setDescription("Select the number rows from the head")
+      .setDefaultValue(false);
+    cliCommand.flagOf(TAIL)
+      .setDescription("Select the number of rows from the tail")
+      .setDefaultValue(false);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("If set, it will not throw an error but a warning if the command may continue (example: if a table is not found)")
+      .setDefaultValue(false);
 
-        String description = "Show the data of a table";
+    // Args
+    CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final Integer limit = cliParser.getInteger(LIMIT);
+    final List<String> tableURIs = cliParser.getStrings(DATA_URI_PATTERNS);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final Boolean tail = cliParser.getBoolean(TAIL);
+    final Boolean head = cliParser.getBoolean(TAIL);
 
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        // Create the parser
-        cliCommand
-                .setDescription(description);
-        cliCommand.argOf(TABLE_URI)
-                .setDescription("A table URI (@database[/schema]/table")
-                .setMandatory(true);
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
-        cliCommand.optionOf(LIMIT)
-                .setDescription("Limit the number of rows returned");
-
-
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
-
-        // Timer
-        CliTimer cliTimer = CliTimer.getTimer("execute").start();
-        LOGGER_DB_ENGINE.setLevel(Level.WARNING);
-        System.out.println();
-
-        Integer limit = cliParser.getInteger(LIMIT);
-
-        // Start
-        List<String> tableURIs = cliParser.getStrings(TABLE_URI);
-        for (String tableUri: tableURIs) {
-            TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            List<Database> databases = datastoreVault.getDatabases(tableDataUri.getDataStore());
-            for (Database database: databases) {
-                //TODO: The schema name may be a pattern
-                SchemaDef schemaDef = database.getCurrentSchema();
-                if(tableDataUri.getSchemaName()!=null){
-                    schemaDef = database.getSchema(tableDataUri.getSchemaName());
-                }
-                List<TableDef> tableDefList = schemaDef.getTables(tableDataUri.getTableName());
-                System.out.println();
-                if (tableDefList.size() != 0) {
-
-                    switch (tableDefList.size()) {
-                        case 1:
-                            queryPrint(tableDefList.get(0),limit);
-                            System.out.println();
-                            break;
-
-                        default:
-
-                            for (TableDef tableDef : tableDefList) {
-
-                                System.out.println("Data from the table (" + tableDef.getName() + "): ");
-                                queryPrint(tableDef,limit);
-                                System.out.println();
-
-                            }
-                            break;
-
-                    }
+      List<DataPath> tableDefList = Dbs.collectDataPaths(tabular, tableURIs, notStrictRun, cliCommand);
+      // Timer
+      Timer cliTimer = Timer.getTimer("execute").start();
 
 
-                } else {
-
-                    System.out.println("No tables found in the database ("+database+").");
-
-                }
-
-            }
+      if (tableDefList.size() == 0) {
+        String msg = "No data path found (no tables found)";
+        if (notStrictRun) {
+          LOGGER.warn(msg);
+          System.exit(0);
+        } else {
+          LOGGER.error(msg);
+          System.exit(1);
         }
+      } else {
+
+
+        for (DataPath dataPath : tableDefList) {
+
+
+          System.out.println("Data from the table (" + dataPath.getName() + "): ");
+          DataPath subset = Tabulars.getSubSet(dataPath,limit, Tabulars.TAIL);
+
+          Tabulars.print(subset);
+
+
+        }
+
 
         // Feedback
         cliTimer.stop();
-        DbLoggers.LOGGER_DB_ENGINE.setLevel(Level.INFO);
         LOGGER.info("Response Time to query the data: " + cliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
         LOGGER.info("       Ie (" + cliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
 
         System.out.println();
         LOGGER.info("Bye !");
 
-
-    }
-
-    /**
-     * So a query should also be an object with metadata
-     * and should be generated by the database implementation.
-     * See:
-     * https://stackoverflow.com/questions/595123/is-there-an-ansi-sql-alternative-to-the-mysql-limit-keyword
-     *
-     * @param tableDef
-     * @param limit
-     */
-    protected static void queryPrint(TableDef tableDef, Integer limit) {
-
-        Database database = tableDef.getDatabase();
-
-        StringBuilder query = new StringBuilder();
-        query.append("select * from " + tableDef.getFullyQualifiedName());
-        if (limit!=null){
-            // sqlite
-            query.append(" limit "+limit);
-        }
-        QueryDef queryDef = database.getQuery(query.toString());
-        Queries.print(queryDef);
+      }
 
     }
 
 
-
-
+  }
 }

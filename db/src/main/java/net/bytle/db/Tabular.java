@@ -274,4 +274,8 @@ public class Tabular implements AutoCloseable {
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
     return this.getDataStore(DEFAULT_DATASTORE).getDataPathOfDataDef(dataDefPath);
   }
+
+  public DataPath getDataPathOfDataDef(String name, TableDef datadef) {
+    return this.getDataStore(DEFAULT_DATASTORE).getDataPathOfDataDef(name, datadef);
+  }
 }

@@ -3,26 +3,18 @@ package net.bytle.db.cli;
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
-import net.bytle.db.Tabular;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.transfer.TransferOptions;
-import net.bytle.db.transfer.TransferProperties;
-import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.List;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 import static net.bytle.db.cli.Words.NOT_STRICT;
 
 /**
- * Created by gerard on 08-12-2016.
- * To download data
+ *
+ * To download the data of a query
  */
 public class DbQueryDownload {
 
@@ -61,55 +53,8 @@ public class DbQueryDownload {
     final String targetDataUriArg = cliParser.getString(TARGET_DATA_URI);
 
     // Main
-    try (Tabular tabular = Tabular.tabular()) {
+    Dbs.transfers(sourceQueryUriArg, targetDataUriArg, storagePathValue, notStrictRunArg);
 
-      if (storagePathValue != null) {
-        tabular.setDataStoreVault(storagePathValue);
-      } else {
-        tabular.withDefaultStorage();
-      }
-
-      // Source
-      List<DataPath> queryDataPaths = tabular.select(sourceQueryUriArg);
-      if (queryDataPaths.size() == 0) {
-        LOGGER.error("There was no sql file selected with the query uri pattern ({})", sourceQueryUriArg);
-        System.exit(1);
-      }
-      // Target
-      DataPath targetDataPath = tabular.getDataPath(targetDataUriArg);
-
-      // Transfer Properties
-      TransferProperties transferProperties = TransferProperties.of();
-      if (notStrictRunArg) {
-        transferProperties
-          .addTargetOperations(TransferOptions.CREATE_IF_NOT_EXIST)
-          .addTargetOperations(TransferOptions.DROP_IF_EXIST);
-      }
-
-      // Transfer
-      LOGGER.info("Starting the download process");
-      Timer totalTimer = Timer.getTimer("total").start();
-      List<TransferListener> transferListeners = TransferManager.of()
-        .addTransfers(queryDataPaths, targetDataPath)
-        .setTransferProperties(transferProperties)
-        .start();
-      totalTimer.stop();
-      System.out.printf("Response Time to download the data: %s (hour:minutes:seconds:milli)%n", totalTimer.getResponseTime());
-      System.out.printf("       Ie (%d) milliseconds%n", totalTimer.getResponseTimeInMilliSeconds());
-
-      // Exit
-      long exitStatus = transferListeners
-        .stream()
-        .mapToInt(TransferListener::getExitStatus)
-        .count();
-
-      if (exitStatus != 0) {
-        LOGGER.error("Error ! (" + exitStatus + ") errors were seen.");
-        System.exit(Math.toIntExact(exitStatus));
-      } else {
-        LOGGER.info("Success ! No errors were seen.");
-      }
-    }
   }
 
 

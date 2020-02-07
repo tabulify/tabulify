@@ -3,6 +3,7 @@ package net.bytle.db.database;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -380,6 +381,12 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
       default:
         throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + dataDefPath.toString() + ") for the dataPath (" + dataPath.toString() + ")");
     }
+    return dataPath;
+  }
+
+  public DataPath getDataPathOfDataDef(String name, TableDef datadef) {
+    DataPath dataPath = this.getDataPath(name);
+    DataDefs.copy(datadef,dataPath.getDataDef());
     return dataPath;
   }
 }

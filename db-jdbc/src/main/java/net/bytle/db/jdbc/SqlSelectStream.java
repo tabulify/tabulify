@@ -1,8 +1,8 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.SelectStreamAbs;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.stream.SelectStreamAbs;
 
 import java.sql.Clob;
 import java.sql.ResultSet;
@@ -87,13 +87,13 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public void execute() {
 
+
     switch (jdbcDataPath.getType()) {
       case QUERY_TYPE:
         query = jdbcDataPath.getQuery();
         break;
       default:
         query = "select * from " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
-
     }
 
     try {

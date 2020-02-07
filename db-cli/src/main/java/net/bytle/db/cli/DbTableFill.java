@@ -80,7 +80,7 @@ public class DbTableFill {
         tabular.withDefaultStorage();
       }
 
-      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPaths(tabular, dataUriPatterns, notStrictRun, cliCommand);
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);
 
       Timer cliTimer = Timer.getTimer("Fill tables").start();
       Map<DataStore, List<DataPath>> dataPathsLoadedByDataStore = new HashMap<>();
