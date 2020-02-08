@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import static net.bytle.db.cli.Words.*;
 
-public class DbTransfersOptions {
+public class DbStaticTransfersOptions {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbTransfersOptions.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbStaticTransfersOptions.class);
 
   /**
    * Add the copy options to the command

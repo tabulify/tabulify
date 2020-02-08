@@ -272,10 +272,14 @@ public class Tabular implements AutoCloseable {
    * @return the data path with its meta
    */
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
-    return this.getDataStore(DEFAULT_DATASTORE).getDataPathOfDataDef(dataDefPath);
+    return getDefaultDataStore().getDataPathOfDataDef(dataDefPath);
   }
 
   public DataPath getDataPathOfDataDef(String name, TableDef datadef) {
-    return this.getDataStore(DEFAULT_DATASTORE).getDataPathOfDataDef(name, datadef);
+    return getDefaultDataStore().getDataPathOfDataDef(name, datadef);
+  }
+
+  public DataStore getDefaultDataStore() {
+    return this.getDataStore(DEFAULT_DATASTORE);
   }
 }

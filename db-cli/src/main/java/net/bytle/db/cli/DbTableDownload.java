@@ -55,7 +55,7 @@ public class DbTableDownload {
     final String targetDataUriArg = cliParser.getString(TARGET_DATA_URI);
 
     // Main
-    Dbs.transfers(sourceDataUriPatternArg, targetDataUriArg, storagePathValue, notStrictRunArg);
+    DbStatic.transfers(sourceDataUriPatternArg, targetDataUriArg, storagePathValue, notStrictRunArg);
 
   }
 }

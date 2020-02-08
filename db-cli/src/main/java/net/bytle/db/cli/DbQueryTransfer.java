@@ -47,7 +47,7 @@ public class DbQueryTransfer {
     command.argOf(TARGET_DATA_URI)
       .setDescription("A target data Uri ([name]@dataStore) (if the target name is not present, it will be the name of the query file)")
       .setMandatory(true);
-    DbTransfersOptions.addTransferOptions(command);
+    DbStaticTransfersOptions.addTransferOptions(command);
 
     // Create the parser and get the args
     CliParser cliParser = Clis.getParser(command, args);
@@ -55,7 +55,7 @@ public class DbQueryTransfer {
     final String sourceUriPatternArg = cliParser.getString(SOURCE_DATA_URI);
     final String targetUriArg = cliParser.getString(TARGET_DATA_URI);
     final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
-    final TransferProperties transferProperties = DbTransfersOptions.getTransferProperties(cliParser);
+    final TransferProperties transferProperties = DbStaticTransfersOptions.getTransferProperties(cliParser);
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {

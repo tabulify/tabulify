@@ -219,7 +219,7 @@ public class TransferManager {
         targetWorkExecutor.execute(
           new TransferTargetWorker(
             queue,
-            targetDataPath,
+            transferSourceTarget,
             transferProperties,
             producerWorkIsDone)
         );

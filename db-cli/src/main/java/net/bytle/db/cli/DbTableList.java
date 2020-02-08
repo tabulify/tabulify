@@ -69,7 +69,7 @@ public class DbTableList {
         tabular.withDefaultStorage();
       }
 
-      Map<DataStore, List<DataPath>> dataPathsByDataStores = Dbs.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = DbStatic.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);
 
       List<DataStore> dataStores = new ArrayList<>(dataPathsByDataStores.keySet());
       Collections.sort(dataStores);

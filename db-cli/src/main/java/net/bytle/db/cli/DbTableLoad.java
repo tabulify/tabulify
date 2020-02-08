@@ -36,7 +36,7 @@ public class DbTableLoad {
     final String targetDataUriArg = cliParser.getString(TARGET_DATA_URI);
 
 
-    Dbs.transfers(dataUriPattern, targetDataUriArg, storagePathValue, notStrictRun);
+    DbStatic.transfers(dataUriPattern, targetDataUriArg, storagePathValue, notStrictRun);
 
   }
 

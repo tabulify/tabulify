@@ -68,7 +68,7 @@ public class DbTableShow {
         tabular.withDefaultStorage();
       }
 
-      List<DataPath> tableDefList = Dbs.collectDataPaths(tabular, tableURIs, notStrictRun, cliCommand);
+      List<DataPath> tableDefList = DbStatic.collectDataPaths(tabular, tableURIs, notStrictRun, cliCommand);
       // Timer
       Timer cliTimer = Timer.getTimer("execute").start();
 

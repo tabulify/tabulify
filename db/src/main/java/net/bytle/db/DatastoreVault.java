@@ -31,13 +31,18 @@ public class DatastoreVault {
   protected static final Logger logger = LoggerFactory.getLogger(DatastoreVault.class);
 
 
-
   /**
    * This is a passphrase used to encrypt the sample database password
    * Don't change this value
    */
   private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
   private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase";
+  public static final String SQLITE = "sqlite";
+  public static final String ORACLE = "oracle";
+  public static final String SQLSERVER = "sqlserver";
+  public static final String MYSQL = "mysql";
+  public static final String POSTGRESQL = "postgresql";
+  public static final String SQLITE_TARGET = "sqlite_target";
   private String passphrase;
   private Path path;
 
@@ -86,7 +91,7 @@ public class DatastoreVault {
    * @return
    */
   private DatastoreVault save(DataStore dataStore, Boolean internalPassphrase) {
-    assert dataStore.getConnectionString()!=null:"You cannot store a data store without a connection string (url)";
+    assert dataStore.getConnectionString() != null : "You cannot store a data store without a connection string (url)";
 
     Ini ini = getIniFile();
     ini.put(dataStore.getName(), URL, dataStore.getConnectionString());
@@ -106,7 +111,7 @@ public class DatastoreVault {
       String password = Protector.get(localPassphrase).encrypt(dataStore.getPassword());
       ini.put(dataStore.getName(), PASSWORD, password);
     }
-    for (Map.Entry<String, String> property: dataStore.getProperties().entrySet()) {
+    for (Map.Entry<String, String> property : dataStore.getProperties().entrySet()) {
       ini.put(dataStore.getName(), property.getKey(), property.getValue());
     }
     flush();
@@ -259,57 +264,73 @@ public class DatastoreVault {
    * Read the file
    */
   private void load() {
+
+    if (!(Files.exists(this.path))) {
+      Fs.createFile(this.path);
+
+      DataStore database = Database.of(SQLITE)
+        .setDriver("org.sqlite.JDBC")
+        .setDescription("The sqlite default data store connection")
+        .setConnectionString(getSqliteConnectionString(SQLITE));
+      save(database);
+
+      database = Database.of(SQLITE_TARGET)
+        .setDriver("org.sqlite.JDBC")
+        .setDescription("The default sqlite target data store (Sqlite cannot read and write with the same connection)")
+        .setConnectionString(getSqliteConnectionString(SQLITE_TARGET));
+      save(database);
+
+      database = Database.of(ORACLE)
+        .setDriver("oracle.jdbc.OracleDriver")
+        .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
+      save(database);
+
+      database = Database.of(SQLSERVER)
+        .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
+        .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+        .setUser("sa")
+        .setPassword("TheSecret1!");
+      save(database, true);
+
+      database = Database.of(MYSQL)
+        .setDriver("com.mysql.jdbc.Driver")
+        .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
+      save(database);
+
+      // jdbc:postgresql://host:port/database?prop=value
+      database = Database.of(POSTGRESQL)
+        .setDriver("org.postgresql.Driver")
+        .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
+      save(database);
+
+    }
+
     try {
-      if (!(Files.exists(this.path))) {
-        Fs.createFile(this.path);
-        ini = new Ini(this.path.toFile());
-
-        // Add a Sqlite
-        Path dbFile;
-        // Trick to not have the user name in the output ie C:\Users\Username\...
-        // The env value have a fake account
-        final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
-        if (bytle_db_databases_store != null) {
-          dbFile = Paths.get(bytle_db_databases_store);
-        } else {
-          dbFile = Paths.get(Fs.getAppData(Tabular.APP_NAME).toAbsolutePath().toString(), Tabular.APP_NAME + ".db");
-        }
-        Files.createDirectories(dbFile.getParent());
-        String rootWindows = "///";
-        Database database = Database.of("sqlite")
-          .setDriver("org.sqlite.JDBC")
-          .setConnectionString("jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/"));
-        save(database);
-
-        database = Database.of("oracle")
-          .setDriver("oracle.jdbc.OracleDriver")
-          .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
-        save(database);
-
-        database = Database.of("sqlserver")
-          .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
-          .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
-          .setUser("sa")
-          .setPassword("TheSecret1!");
-        save(database, true);
-
-        database = Database.of("mysql")
-          .setDriver("com.mysql.jdbc.Driver")
-          .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
-        save(database);
-
-        // jdbc:postgresql://host:port/database?prop=value
-        database = Database.of("postgresql")
-          .setDriver("org.postgresql.Driver")
-          .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
-        save(database);
-
-      } else {
-        ini = new Ini(this.path.toFile());
-      }
+      ini = new Ini(this.path.toFile());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * @param dataStoreName
+   * @return a JDBC connection string for the default data vault
+   */
+  private String getSqliteConnectionString(String dataStoreName) {
+
+    Path dbFile;
+    // Trick to not have the user name in the output ie C:\Users\Username\...
+    // The env value have a fake account
+    final String bytle_db_databases_store = System.getenv("BYTLE_DB_SQLITE_PATH");
+    if (bytle_db_databases_store != null) {
+      dbFile = Paths.get(bytle_db_databases_store);
+    } else {
+      dbFile = Paths.get(Fs.getAppData(Tabular.APP_NAME).toAbsolutePath().toString(), dataStoreName + ".db");
+    }
+    Fs.createDirectoryIfNotExists(dbFile.getParent());
+    String rootWindows = "///";
+    return "jdbc:sqlite:" + rootWindows + dbFile.toString().replace("\\", "/");
+
   }
 
   public void removeDataStore(String name) {
@@ -350,18 +371,21 @@ public class DatastoreVault {
   }
 
 
-
-
   public void update(DataStore dataStore) {
     DataStore dataStoreToUpdate = this.getDataStore(dataStore.getName());
-    if (dataStore.getConnectionString() !=null && !dataStore.getConnectionString().equals(dataStoreToUpdate.getConnectionString())) dataStoreToUpdate.setConnectionString(dataStore.getConnectionString());
-    if (dataStore.getUser() !=null && !dataStore.getUser().equals(dataStoreToUpdate.getUser())) dataStoreToUpdate.setUser(dataStore.getUser());
-    if (dataStore.getPassword() !=null && !dataStore.getPassword().equals(dataStoreToUpdate.getPassword())) dataStoreToUpdate.setPassword(dataStore.getPassword());
-    if (dataStore.getScheme().equals(Database.JDBC_SCHEME)){
+    if (dataStore.getConnectionString() != null && !dataStore.getConnectionString().equals(dataStoreToUpdate.getConnectionString()))
+      dataStoreToUpdate.setConnectionString(dataStore.getConnectionString());
+    if (dataStore.getUser() != null && !dataStore.getUser().equals(dataStoreToUpdate.getUser()))
+      dataStoreToUpdate.setUser(dataStore.getUser());
+    if (dataStore.getPassword() != null && !dataStore.getPassword().equals(dataStoreToUpdate.getPassword()))
+      dataStoreToUpdate.setPassword(dataStore.getPassword());
+    if (dataStore.getScheme().equals(Database.JDBC_SCHEME)) {
       Database database = (Database) dataStore;
       Database databaseToUpdate = (Database) dataStoreToUpdate;
-      if (database.getDriver() !=null && !database.getDriver().equals(databaseToUpdate.getDriver())) databaseToUpdate.setDriver(database.getDriver());
-      if (database.getPostConnectionStatement() !=null && !database.getPostConnectionStatement().equals(databaseToUpdate.getPostConnectionStatement())) databaseToUpdate.setPostConnectionStatement(database.getPostConnectionStatement());
+      if (database.getDriver() != null && !database.getDriver().equals(databaseToUpdate.getDriver()))
+        databaseToUpdate.setDriver(database.getDriver());
+      if (database.getPostConnectionStatement() != null && !database.getPostConnectionStatement().equals(databaseToUpdate.getPostConnectionStatement()))
+        databaseToUpdate.setPostConnectionStatement(database.getPostConnectionStatement());
       save(databaseToUpdate);
     } else {
       save(dataStoreToUpdate);
@@ -369,16 +393,16 @@ public class DatastoreVault {
   }
 
   public void add(DataStore dataStore) {
-    assert getDataStore(dataStore.getName())==null:"The data store ("+dataStore.getName()+") exists already and cannot be added";
-    if (dataStore.getConnectionString()==null){
-      throw new RuntimeException("A connection string (url) is mandatory to add a datastore, the data store ("+dataStore.getName()+") does not have any.");
+    assert getDataStore(dataStore.getName()) == null : "The data store (" + dataStore.getName() + ") exists already and cannot be added";
+    if (dataStore.getConnectionString() == null) {
+      throw new RuntimeException("A connection string (url) is mandatory to add a datastore, the data store (" + dataStore.getName() + ") does not have any.");
     }
     save(dataStore);
   }
 
   public DataStore getOrCreateDataStore(String name) {
     DataStore dataStore = getDataStore(name);
-    if (dataStore==null){
+    if (dataStore == null) {
       dataStore = DataStore.of(name);
     }
     return dataStore;

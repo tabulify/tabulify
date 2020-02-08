@@ -19,6 +19,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
@@ -353,7 +354,7 @@ public class FsTableSystem extends TableSystem {
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
     FsDataPath fsSource = (FsDataPath) source;
     FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListener = TransferListener.of(transferSourceTarget)
+    TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource,fsTarget))
       .startTimer();
     try {
       Files.copy(fsSource.getNioPath(), fsTarget.getNioPath());

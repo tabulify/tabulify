@@ -29,6 +29,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   // Connection Url
   protected String connectionString;
+  private String description;
 
 
   protected DataStore(String name) {
@@ -221,7 +222,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
   }
 
 
-  protected String getProperty(String propertyKey) {
+  public String getProperty(String propertyKey) {
     return properties.get(propertyKey);
   }
 
@@ -388,5 +389,10 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     DataPath dataPath = this.getDataPath(name);
     DataDefs.copy(datadef,dataPath.getDataDef());
     return dataPath;
+  }
+
+  public DataStore setDescription(String description) {
+    this.description = description;
+    return this;
   }
 }

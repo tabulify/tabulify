@@ -19,9 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Dbs {
+public class DbStatic {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Dbs.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbStatic.class);
 
   public static Map<DataStore, List<DataPath>> collectDataPathsByDataStore(Tabular tabular, List<String> dataUriPatterns, Boolean notStrictRun, CliCommand cliCommand){
     Map<DataStore, List<DataPath>> dataPathsByDataStores = new HashMap<>();

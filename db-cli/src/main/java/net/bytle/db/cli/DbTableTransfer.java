@@ -52,7 +52,7 @@ public class DbTableTransfer {
       .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
       .setDefaultValue(false);
     cliCommand.optionOf(DATASTORE_VAULT_PATH);
-    DbTransfersOptions.addTransferOptions(cliCommand);
+    DbStaticTransfersOptions.addTransferOptions(cliCommand);
 
     // Args
     CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -60,7 +60,7 @@ public class DbTableTransfer {
     final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
     final String sourceUriPatternArg = cliParser.getString(SOURCE_DATA_URI);
     final String targetUriArg = cliParser.getString(TARGET_DATA_URI);
-    final TransferProperties transferProperties = DbTransfersOptions.getTransferProperties(cliParser);
+    final TransferProperties transferProperties = DbStaticTransfersOptions.getTransferProperties(cliParser);
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {
@@ -131,7 +131,7 @@ public class DbTableTransfer {
 
           int errors = resultSetListeners.stream().mapToInt(TransferListener::getExitStatus).sum();
           if (errors > 0) {
-            System.err.println(errors + " errors during table transfer executions were seen");
+            LOGGER.error(errors + " errors during table transfer executions were seen");
             System.exit(1);
           } else {
             LOGGER.info("Success !");

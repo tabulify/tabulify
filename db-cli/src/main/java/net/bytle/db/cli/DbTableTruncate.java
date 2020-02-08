@@ -2,113 +2,111 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
-import net.bytle.log.Log;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
+import net.bytle.db.Tabular;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.ForeignKeyDag;
-import net.bytle.db.uri.TableDataUri;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
+import static net.bytle.db.cli.Words.*;
 
 
 public class DbTableTruncate {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-    private static final String TABLE_URIS = "TableUri...";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableTruncate.class);
+  private static final String DATA_URI_PATTERNS = "dataUriPattern...";
+
+  public static void run(CliCommand cliCommand, String[] args) {
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+    // Create the command
+    cliCommand.setDescription(Strings.multiline("Truncate table(s) - ie remove all records from a table",
+      "!!!!!! Warning !!!!!!",
+      "Due to the data uri concept, if the data uri pattern is a valid one and defines other data type such as one or more files, this command will truncate them (ie delete the content).",
+      "!!!!!!!!!!!!!!!!!!!!!"))
+      .addExample(Strings.multiline("To truncate the tables D_TIME and F_SALES:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME@datastore F_SALES@datastore"))
+      .addExample(Strings.multiline("To truncate only the table D_TIME with force (ie deleting the foreign keys constraint):" +
+        CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + FORCE + "D_TIME@database"))
+      .addExample(Strings.multiline("To truncate all dimension tables that begins with (D_):",
+        CliUsage.getFullChainOfCommand(cliCommand) + " D_*@datastore"))
+      .addExample(Strings.multiline("To truncate all tables from the current schema:",
+        CliUsage.getFullChainOfCommand(cliCommand) + " *@database"));
+    cliCommand.argOf(DATA_URI_PATTERNS)
+      .setDescription("one or more data URI glob pattern (glob@database");
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.flagOf(Words.FORCE)
+      .setDescription("truncate also the tables that references the truncated tables")
+      .setDefaultValue(false);
+    cliCommand.flagOf(Words.NOT_STRICT)
+      .setDescription("if set, it will not throw an error if a table is not found")
+      .setDefaultValue(false);
 
-        String description = "Truncate table(s) - ie remove all records from a table";
+    // Args
+    CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final Boolean withForce = cliParser.getBoolean(FORCE);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
 
-        // Create the parser
-        cliCommand
-                .setDescription(description);
 
-        cliCommand.argOf(TABLE_URIS)
-                .setDescription("one or more table URI (@database[/schema]/table).");
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
-        cliCommand.flagOf(Words.FORCE)
-                .setDescription("truncate also the tables that references the truncated tables")
-                .setDefaultValue(false);
-        cliCommand.flagOf(Words.NOT_STRICT)
-                .setDescription("if set, it will not throw an error if a table is not found")
-                .setDefaultValue(false);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
-        Boolean noStrictMode = cliParser.getBoolean(Words.NOT_STRICT);
-        final List<String> stringTablesUris = cliParser.getStrings(TABLE_URIS);
-        List<TableDef> tablesSelectedToTruncate = new ArrayList<>();
-        for (String stringTableUri : stringTablesUris) {
-            TableDataUri tableUri = TableDataUri.of(stringTableUri);
-            Database database = datastoreVault.getDataStore(tableUri.getDataStore());
-            SchemaDef schemaDef = database.getCurrentSchema();
-            if (tableUri.getSchemaName() != null) {
-                schemaDef = database.getSchema(tableUri.getSchemaName());
+      Map<DataStore, List<DataPath>> dataPathsByDataStores = DbStatic.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);
+
+      // Doing the work
+      for (DataStore dataStore : dataPathsByDataStores.keySet()) {
+        List<DataPath> dataPathsByDataStore = dataPathsByDataStores.get(dataStore);
+        for (DataPath dataPathToTruncate : ForeignKeyDag.get(dataPathsByDataStore).getDropOrderedTables()) {
+
+          List<DataPath> referenceDataPaths = Tabulars.getReferences(dataPathToTruncate);
+          for (DataPath referenceDataPath : referenceDataPaths) {
+            if (!dataPathsByDataStore.contains(referenceDataPath)) {
+              if (withForce) {
+
+                List<ForeignKeyDef> droppedForeignKeys = Tabulars.dropOneToManyRelationship(referenceDataPath, dataPathToTruncate);
+                droppedForeignKeys
+                  .forEach(fk -> LOGGER.warn("ForeignKey (" + fk.getName() + ") was dropped from the table (" + fk.getTableDef().getDataPath() + ")"));
+
+              } else {
+
+                LOGGER.error("The table (" + referenceDataPath + ") is referencing the table (" + dataPathToTruncate + ") and is not in the tables to truncate");
+                LOGGER.error("To drop the foreign keys referencing the tables to drop, you can add the force flag (" + CliParser.PREFIX_LONG_OPTION + Words.FORCE + ").");
+                LOGGER.error("Exiting");
+                System.exit(1);
+
+              }
             }
-            final List<TableDef> tables = schemaDef.getTables(tableUri.getTableName());
-            if (tables.size() == 0) {
-                String msg = "No tables was found for the pattern (" + tableUri.getTableName() + ")";
-                if (noStrictMode) {
-                    LOGGER.warning(msg);
-                } else {
-                    LOGGER.severe(msg);
-                    LOGGER.severe("If you don't want to exit when a table is not found, you can use the no-strict flag (" + Words.NOT_STRICT + ")");
-                    LOGGER.severe("Exiting");
-                    System.exit(1);
-                }
-            }
-            tablesSelectedToTruncate.addAll(tables);
-        }
+          }
 
-        Boolean forceMode = cliParser.getBoolean(Words.FORCE);
-        // Do we have also the child/external table ?
-        // sqlite is not enforcing the foreign keys, we need then to do it in the code
-        List<TableDef> tablesToTruncate = new ArrayList<>(tablesSelectedToTruncate);
-        for (
-                TableDef tableDef : tablesSelectedToTruncate) {
-            List<TableDef> childTables = tableDef.getExternalForeignKeys()
-                    .stream()
-                    .map(d -> d.getTableDef())
-                    .collect(Collectors.toList());
-            for (TableDef childTable : childTables) {
-                if (!(tablesSelectedToTruncate.contains(childTable))) {
-                    final String msg = "The table (" + childTable + ") has a foreign key into the table to truncate (" + tableDef + ") but is not selected";
-                    if (!forceMode) {
-                        LOGGER.severe(msg);
-                        LOGGER.severe("If you want to truncate also the tables that reference the selected tables, you can set the force flag (" + Words.FORCE + ")");
-                        LOGGER.severe("exiting");
-                        System.exit(1);
-                    } else {
-                        LOGGER.warning(msg);
-                        LOGGER.warning("We are running in force mode, the table (" + childTable + ") was added to the tables to truncate");
-                        tablesToTruncate.add(childTable);
-                    }
-                }
-            }
-        }
+          Tabulars.truncate(dataPathToTruncate);
+          LOGGER.info("Table (" + dataPathToTruncate + ") was truncated.");
 
-        // Truncating
-        for (TableDef tableDef : ForeignKeyDag.get(tablesToTruncate).getDropOrderedTables()) {
-            Tables.truncate(tableDef);
         }
-        LOGGER.info("Bye !");
+      }
+
+      LOGGER.info("Bye !");
+
 
     }
 
-
+  }
 }
 

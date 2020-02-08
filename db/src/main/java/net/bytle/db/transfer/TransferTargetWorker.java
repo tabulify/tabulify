@@ -17,16 +17,16 @@ public class TransferTargetWorker implements Runnable {
 
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
-    private final DataPath targetDataPath;
+    private final TransferSourceTarget transferSourceTarget;
     private final TransferProperties transferProperties;
 
     public TransferTargetWorker(
-            DataPath sourceDataPath,
-            DataPath targetDataPath,
+            DataPath queue,
+            TransferSourceTarget transferSourceTarget,
             TransferProperties transferProperties,
             AtomicBoolean producerWorkIsDone) {
-        this.queue = sourceDataPath;
-        this.targetDataPath = targetDataPath;
+        this.queue = queue;
+        this.transferSourceTarget = transferSourceTarget;
         this.producerWorkIsDone = producerWorkIsDone;
         this.transferProperties = transferProperties;
 
@@ -38,7 +38,7 @@ public class TransferTargetWorker implements Runnable {
         TransferListener transferListener = TransferListener.of(transferSourceTarget);
         try (
 
-            InsertStream insertStream = Tabulars.getInsertStream(targetDataPath)
+            InsertStream insertStream = Tabulars.getInsertStream(transferSourceTarget.getTargetDataPath())
                     .setName(name)
                     .setCommitFrequency(transferProperties.getCommitFrequency())
                     .setBatchSize(transferProperties.getBatchSize());

@@ -53,7 +53,7 @@ public class DbQueryDownload {
     final String targetDataUriArg = cliParser.getString(TARGET_DATA_URI);
 
     // Main
-    Dbs.transfers(sourceQueryUriArg, targetDataUriArg, storagePathValue, notStrictRunArg);
+    DbStatic.transfers(sourceQueryUriArg, targetDataUriArg, storagePathValue, notStrictRunArg);
 
   }
 
