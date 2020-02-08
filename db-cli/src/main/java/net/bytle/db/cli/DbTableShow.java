@@ -25,13 +25,12 @@ public class DbTableShow {
   private static final String DATA_URI_PATTERNS = "TableUri..";
   protected static final String LIMIT = "limit";
   private static final String HEAD = "head";
-  private static final String TAIL = "tail";
 
   public static void run(CliCommand cliCommand, String[] args) {
 
     // Command
-    cliCommand.setDescription(Strings.multiline("Show the data of a table",
-      "This command was designed to render data properly aligned.",
+    cliCommand.setDescription(Strings.multiline("Show the last data of a table",
+      "This command was designed to render data properly aligned on the console.",
       "This is why there is a limit on the data to render by default.",
       "If you want to get more data, you can always use the `download` or `transfer` command."));
     cliCommand.argOf(DATA_URI_PATTERNS)
@@ -39,17 +38,14 @@ public class DbTableShow {
       .setMandatory(true);
     cliCommand.addExample(Strings.multiline("Show the data of the table `sales` from the data store `sqlite`:",
       CliUsage.getFullChainOfCommand(cliCommand) + "sales@sqlite"));
-    cliCommand.addExample(Strings.multiline("Show the last 100 rows of the table `time` from the data store `postgres`:",
-      CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + TAIL + " " + CliParser.PREFIX_LONG_OPTION + LIMIT + " 100 sales@postgres"));
+    cliCommand.addExample(Strings.multiline("Show the first 100 rows of the table `time` from the data store `postgres`:",
+      CliUsage.getFullChainOfCommand(cliCommand) + CliParser.PREFIX_LONG_OPTION + HEAD + " " + CliParser.PREFIX_LONG_OPTION + LIMIT + " 100 sales@postgres"));
     cliCommand.optionOf(DATASTORE_VAULT_PATH);
     cliCommand.optionOf(LIMIT)
       .setDescription("Limit the number of rows returned")
       .setDefaultValue(10);
     cliCommand.flagOf(HEAD)
-      .setDescription("Select the number rows from the head")
-      .setDefaultValue(false);
-    cliCommand.flagOf(TAIL)
-      .setDescription("Select the number of rows from the tail")
+      .setDescription("Select the rows from the head")
       .setDefaultValue(false);
     cliCommand.flagOf(NOT_STRICT)
       .setDescription("If set, it will not throw an error but a warning if the command may continue (example: if a table is not found)")
@@ -61,8 +57,7 @@ public class DbTableShow {
     final Integer limit = cliParser.getInteger(LIMIT);
     final List<String> tableURIs = cliParser.getStrings(DATA_URI_PATTERNS);
     final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
-    final Boolean tail = cliParser.getBoolean(TAIL);
-    final Boolean head = cliParser.getBoolean(TAIL);
+    final Boolean head = cliParser.getBoolean(HEAD);
 
     // Main
     try (Tabular tabular = Tabular.tabular()) {
@@ -92,12 +87,17 @@ public class DbTableShow {
 
         for (DataPath dataPath : tableDefList) {
 
-
-          System.out.println("Data from the table (" + dataPath.getName() + "): ");
-          DataPath subset = Tabulars.getSubSet(dataPath,limit, Tabulars.TAIL);
-
+          DataPath subset = tabular.getDataPath("subset" + dataPath.getName());
+          Tabulars.createIfNotExist(subset);
+          if (head) {
+            System.out.println("The first " + limit + " rows of the table (" + dataPath.getName() + "): ");
+            Tabulars.extractHead(dataPath, subset, limit);
+          } else {
+            System.out.println("The last " + limit + " rows of the table (" + dataPath.getName() + "): ");
+            Tabulars.extractTail(dataPath, subset, limit);
+          }
           Tabulars.print(subset);
-
+          Tabulars.drop(subset);
 
         }
 

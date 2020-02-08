@@ -14,6 +14,7 @@ import net.bytle.db.transfer.TransferLoadOperation;
 import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.regexp.Globs;
+import net.bytle.type.TailQueue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,12 +24,6 @@ import java.util.stream.Collectors;
 
 public class Tabulars {
 
-
-  /**
-   * Used in the {@link #getSubSet(String, DataPath, Integer, int) subset function}
-   */
-  public final static int TAIL = 1;
-  public final static int HEAD = 2;
 
   public synchronized static Boolean exists(DataPath dataPath) {
 
@@ -259,8 +254,8 @@ public class Tabulars {
 
 
   public static int getSize(DataPath dataPath) {
-    if (!Tabulars.exists(dataPath)){
-      throw new RuntimeException("The data path ("+dataPath+") does not exist, you can't ask for its size");
+    if (!Tabulars.exists(dataPath)) {
+      throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
     }
     return dataPath.getDataSystem().size(dataPath);
   }
@@ -468,36 +463,83 @@ public class Tabulars {
   }
 
   /**
-   * @param name - the name of the subset
-   * @param dataPath
-   * @param limit
-   * @param limitOrderTail
-   * @return a subset of the data path
+   * @param source - the source data path
+   * @param target - the target data path that will get the elements
+   * @param limit  - the number of element returned
+   * @return extract the head element of source into target for a size of limit
    */
-  public static DataPath getSubSet(String name, DataPath dataPath, Integer limit, int limitOrderTail) {
+  public static DataPath extractHead(DataPath source, DataPath target, Integer limit) {
 
-    assert name != dataPath.getName(): "The name of the subset data path cannot be the name of the original path ("+name+")";
-    DataPath subset = dataPath.getDataSystem().getDataStore().getDataPathOfDataDef(name, dataPath.getDataDef());
-    assert !Tabulars.exists(subset):"The name of the subset should not exist. The data path ("+name+") already exists and has "+Tabulars.getSize(subset)+" rows";
-
-    // Head Logic
-    if (limitOrderTail==Tabulars.HEAD) {
-      try (
-        SelectStream selectStream = Tabulars.getSelectStream(dataPath);
-        InsertStream insertStream = Tabulars.getInsertStream(subset)
-      ) {
-        int i = 0;
-        while (selectStream.next() && i < limit) {
-          i++;
-          insertStream.insert(selectStream.getObjects());
-        }
-      }
+    // Structure
+    if (target.getDataDef().getColumnDefs().size() == 0) {
+      DataDefs.copy(source.getDataDef(), target.getDataDef());
+    } else {
+      assertEqualsColumnsDefinition(source, target);
     }
 
-    return subset;
+    // Head
+    try (
+      SelectStream selectStream = Tabulars.getSelectStream(source);
+      InsertStream insertStream = Tabulars.getInsertStream(target)
+    ) {
+      int i = 0;
+      while (selectStream.next() && i < limit) {
+        i++;
+        insertStream.insert(selectStream.getObjects());
+      }
+    }
+    return target;
+
+  }
+
+  /**
+   * @param source - the source data path
+   * @param target - the target data path that will get the elements
+   * @param limit  - the number of element returned
+   * @return extract the tail element of source into target for a size of limit
+   */
+  public static DataPath extractTail(DataPath source, DataPath target, Integer limit) {
+
+    // Structure
+    if (target.getDataDef().getColumnDefs().size() == 0) {
+      DataDefs.copy(source.getDataDef(), target.getDataDef());
+    } else {
+      assertEqualsColumnsDefinition(source, target);
+    }
+
+    // Tail
+    TailQueue<List<Object>> queue = new TailQueue<>(limit);
+    // First collect the tail
+    try (
+      SelectStream selectStream = Tabulars.getSelectStream(source);
+    ) {
+      while (selectStream.next()) {
+        queue.add(selectStream.getObjects());
+      }
+    }
+    // Then insert
+    try (
+      InsertStream insertStream = Tabulars.getInsertStream(target);
+    ) {
+      queue.forEach(insertStream::insert);
+    }
+    return target;
+
   }
 
   public static Boolean areEquals(DataPath first, DataPath second) {
     return DataSetDiff.of(first, second).diff().areEquals();
   }
+
+  /**
+   * Produce an assertion error if the columns definitions are not the same
+   *
+   * @param first
+   * @param second
+   */
+  public static void assertEqualsColumnsDefinition(DataPath first, DataPath second) {
+    String reason = DataSetDiff.compareMetaData(first, second);
+    assert reason.equals("") : "The columns definition between the data path (" + first + ") and (" + second + ") are not the same for the following reason " + reason;
+  }
+
 }

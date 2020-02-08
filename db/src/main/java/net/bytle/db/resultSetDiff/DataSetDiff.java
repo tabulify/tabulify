@@ -467,7 +467,7 @@ public class DataSetDiff {
    * @param secondDataPath
    * @return
    */
-  static String compareMetaData(DataPath firstDataPath, DataPath secondDataPath) {
+  public static String compareMetaData(DataPath firstDataPath, DataPath secondDataPath) {
 
     StringBuilder reason = new StringBuilder();
 
