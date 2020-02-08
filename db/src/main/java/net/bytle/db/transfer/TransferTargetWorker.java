@@ -1,8 +1,5 @@
 package net.bytle.db.transfer;
 
-import net.bytle.db.stream.InsertStreamListener;
-import net.bytle.log.Log;
-import net.bytle.db.DbLoggers;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -38,7 +35,7 @@ public class TransferTargetWorker implements Runnable {
     @Override
     public void run() {
         String name = "Consumer: " + Thread.currentThread().getName();
-        TransferListener transferListener = TransferListener.of();
+        TransferListener transferListener = TransferListener.of(transferSourceTarget);
         try (
 
             InsertStream insertStream = Tabulars.getInsertStream(targetDataPath)

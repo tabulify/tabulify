@@ -1,28 +1,27 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
-import net.bytle.db.DatastoreVault;
-import net.bytle.db.database.Database;
-import net.bytle.db.engine.Tables;
-import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.model.QueryDef;
-import net.bytle.db.model.SchemaDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.Clis;
+import net.bytle.db.Tabular;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.stream.MemoryInsertStream;
-import net.bytle.db.uri.SchemaDataUri;
-import net.bytle.db.uri.TableDataUri;
+import net.bytle.db.transfer.TransferManager;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
+import net.bytle.timer.Timer;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import static java.lang.System.exit;
 import static net.bytle.db.cli.Words.*;
 
 
@@ -33,190 +32,113 @@ import static net.bytle.db.cli.Words.*;
  */
 public class DbTableTransfer {
 
-    private static final Log LOGGER = Db.LOGGER_DB_CLI;
-
-    private static final String SOURCE_TABLE_URIS = "SOURCE_TABLE_URIS";
-    private static final String TARGET_SCHEMA_URI = "TARGET_SCHEMA_URI";
-    private static final String TARGET_TABLE_NAMES = "TargetTableNames";
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbTableTransfer.class);
 
 
-    public static void run(CliCommand cliCommand, String[] args) {
+  public static void run(CliCommand cliCommand, String[] args) {
 
 
-        String description = "Transfer a table from a database to another database.\n\n" +
-                "If the target table does not exist, it will be created";
-        cliCommand
-                .setDescription(description);
+    cliCommand.setDescription(Strings.multiline(
+      "Transfer one or more tables from a database to another.",
+      "If the target table does not exist, it will be created."
+    ));
+    cliCommand.argOf(SOURCE_DATA_URI)
+      .setDescription("A data uri glob patterns that define the table(s) to transfer")
+      .setMandatory(true);
+    cliCommand.argOf(TARGET_DATA_URI)
+      .setDescription("A data URI that defines the destination (Example: [table]@datastore) If the data uri has no name, the name will be the name of the source.")
+      .setMandatory(false);
+    cliCommand.flagOf(NOT_STRICT)
+      .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
+      .setDefaultValue(false);
+    cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    DbTransfersOptions.addTransferOptions(cliCommand);
 
-        cliCommand.argOf(TARGET_SCHEMA_URI)
-                .setDescription("A schema URI that defines the destination")
-                .setMandatory(false);
+    // Args
+    CliParser cliParser = Clis.getParser(cliCommand, args);
+    final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
+    final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
+    final String sourceUriPatternArg = cliParser.getString(SOURCE_DATA_URI);
+    final String targetUriArg = cliParser.getString(TARGET_DATA_URI);
+    final TransferProperties transferProperties = DbTransfersOptions.getTransferProperties(cliParser);
 
-        cliCommand.argOf(SOURCE_TABLE_URIS)
-                .setDescription("One or more table URIs that define the table(s) to transfer")
-                .setMandatory(true);
+    // Main
+    try (Tabular tabular = Tabular.tabular()) {
 
-        cliCommand.optionOf(TARGET_TABLE_NAMES)
-                .setDescription("One or more table names separated by a comma (The target table name default to the source table name)")
-                .setMandatory(false);
-
-
-        cliCommand.flagOf(NOT_STRICT)
-                .setDescription("if set, it will not throw an error if a table is not found with the source table Uri")
-                .setDefaultValue(false);
-
-        cliCommand.optionOf(DATASTORE_VAULT_PATH);
-
-        // Load options
-        cliCommand.optionOf(TARGET_WORKER_OPTION);
-        cliCommand.optionOf(BUFFER_SIZE_OPTION);
-        cliCommand.optionOf(COMMIT_FREQUENCY_OPTION);
-        cliCommand.optionOf(TARGET_BATCH_SIZE_OPTION);
-        cliCommand.optionOf(TARGET_CONNECTION_SCRIPT_OPTION);
-        cliCommand.optionOf(METRICS_DATA_URI_OPTION);
-
-        CliParser cliParser = Clis.getParser(cliCommand, args);
-
-
-        // Load options
-        String metricsFilePath = cliParser.getString(METRICS_DATA_URI_OPTION);
-        Integer targetWorkerCount = cliParser.getInteger(TARGET_WORKER_OPTION);
-        String bufferSizeString = cliParser.getString(BUFFER_SIZE_OPTION);
-        Integer bufferSize = 2 * targetWorkerCount * 10000;
-        if (bufferSizeString != null) {
-            bufferSize = Integer.valueOf(bufferSizeString);
-        } else {
-            LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
-        }
-        Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
-        Integer commitFrequency = cliParser.getInteger(COMMIT_FREQUENCY_OPTION);
-
-        // Database Store
-        final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-        DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue);
-
-        // Command option
-        final Boolean notStrict = cliParser.getBoolean(NOT_STRICT);
-
-        // Get the tables to transfer
-        List<String> tableUris = cliParser.getStrings(SOURCE_TABLE_URIS);
-        List<TableDef> tablesToTransfer = new ArrayList<>();
-        for (String tableUri : tableUris) {
-            TableDataUri tableDataUri = TableDataUri.of(tableUri);
-            Database database = datastoreVault.getDataStore(tableDataUri.getDataStore());
-            List<SchemaDef> schemaDefs = database.getSchemas(tableDataUri.getSchemaName());
-            if (schemaDefs.size() == 0) {
-                schemaDefs = Arrays.asList(database.getCurrentSchema());
-            }
-            for (SchemaDef schemaDef : schemaDefs) {
-                List<TableDef> tablesFound = schemaDef.getTables(tableDataUri.getTableName());
-                if (tablesFound.size() != 0) {
-
-                    tablesToTransfer.addAll(tablesFound);
-
-                } else {
-
-                    final String msg = "No tables found with the name/pattern (" + tableUri + ")";
-                    if (notStrict) {
-
-                        LOGGER.warning(msg);
-
-                    } else {
-
-                        LOGGER.severe(msg);
-                        exit(1);
-
-                    }
-
-                }
-            }
-        }
-
-        // Target
-        String targetTableUriOpt = cliParser.getString(TARGET_SCHEMA_URI);
-        SchemaDataUri tableDataUri = SchemaDataUri.of(targetTableUriOpt);
-        Database targetDatabase = datastoreVault.getDataStore(tableDataUri.getDataStore());
-        SchemaDef targetSchemaDef = targetDatabase.getCurrentSchema();
-        if (tableDataUri.getSchemaName() != null) {
-            targetSchemaDef = targetDatabase.getSchema(tableDataUri.getSchemaName());
-        }
+      if (storagePathValue != null) {
+        tabular.setDataStoreVault(storagePathValue);
+      } else {
+        tabular.withDefaultStorage();
+      }
 
 
-        CliTimer totalCliTimer = CliTimer.getTimer("total").start();
+      // Args
+      List<DataPath> dataPaths = tabular.select(sourceUriPatternArg);
+      DataPath targetDataPath = tabular.getDataPath(targetUriArg);
 
-
-        LOGGER.info("Processing the request");
-
-        TableDef executionTable = Tables.get("executions");
-        executionTable
-                .addColumn("Source Table Name", Types.VARCHAR)
-                .addColumn("Target Table Name", Types.VARCHAR)
-                .addColumn("Latency (ms)", Types.INTEGER)
-                .addColumn("Row Count", Types.INTEGER)
-                .addColumn("Error", Types.VARCHAR)
-                .addColumn("Message", Types.VARCHAR);
-        InsertStream exeInput = MemoryInsertStream.get(executionTable);
-
-        int errorCounter = 0;
-        for (TableDef tableDef : tablesToTransfer) {
-
-            CliTimer cliTimer = CliTimer.getTimer(tableDef.getFullyQualifiedName()).start();
-            Integer rowCount = null;
-            String status = "";
-            String message = "";
-            TableDef targetTableDef = targetSchemaDef.getTableOf(tableDef.getName());
-            try {
-
-                QueryDef queryDef = targetSchemaDef.getQuery("select * from " + tableDef.getFullyQualifiedName());
-
-                List<TransferListener> streamListeners = new TransferManager(targetTableDef, queryDef)
-                        .targetWorkerCount(targetWorkerCount)
-                        .bufferSize(bufferSize)
-                        .batchSize(batchSize)
-                        .commitFrequency(commitFrequency)
-                        .metricsFilePath(metricsFilePath)
-                        .load();
-
-
-                int exitStatus = streamListeners.stream().mapToInt(TransferListener::getExitStatus).sum();
-                errorCounter += exitStatus;
-                if (exitStatus != 0) {
-                    status = "Err";
-                }
-
-                rowCount = streamListeners.stream().mapToInt(TransferListener::getRowCount).sum();
-            } catch (Exception e) {
-                errorCounter++;
-                status = "Err";
-                message = Log.onOneLine(e.getMessage());
-                LOGGER.severe(e.getMessage());
-            }
-
-            cliTimer.stop();
-            exeInput.insert(
-                    tableDef.getFullyQualifiedName(),
-                    targetTableDef.getFullyQualifiedName(),
-                    cliTimer.getResponseTimeInMilliSeconds(),
-                    rowCount,
-                    status,
-                    message);
-
-        }
-        exeInput.close();
-        System.out.println();
-        Tables.print(executionTable);
-        System.out.println();
-
-        totalCliTimer.stop();
-        LOGGER.info("Response Time to query the data: " + totalCliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
-        LOGGER.info("       Ie (" + totalCliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
-
-        if (errorCounter > 0) {
-            System.err.println(errorCounter + " Errors during table transfer executions were seen");
+      // Transfer
+      switch (dataPaths.size()) {
+        case 0:
+          String msg = "No data path (table) found";
+          if (notStrictRun) {
+            LOGGER.warn(msg);
+          } else {
+            LOGGER.error(msg);
             System.exit(1);
-        }
+          }
+          break;
 
+        default:
+
+          LOGGER.info("Processing the request");
+          Timer totalCliTimer = Timer.getTimer("total").start();
+
+          List<TransferListener> resultSetListeners = TransferManager.of()
+            .addTransfers(dataPaths, targetDataPath)
+            .setTransferProperties(transferProperties)
+            .start();
+
+          Collections.sort(resultSetListeners);
+
+          DataPath result = tabular.getDataPath("result_table_transfer")
+            .getDataDef()
+            .addColumn("Source Table Name", Types.VARCHAR)
+            .addColumn("Target Table Name", Types.VARCHAR)
+            .addColumn("Latency (ms)", Types.INTEGER)
+            .addColumn("Row Count", Types.INTEGER)
+            .addColumn("Error", Types.VARCHAR)
+            .addColumn("Message", Types.VARCHAR)
+            .getDataPath();
+
+          try (InsertStream insertStream = Tabulars.getInsertStream(result)) {
+            resultSetListeners.forEach(l -> {
+                insertStream.insert(
+                  l.getSourceTarget().getSourceDataPath().toString(),
+                  l.getSourceTarget().getTargetDataPath().toString(),
+                  l.getResponseTime(),
+                  l.getRowCount(),
+                  l.getExitStatus() != 0 ? l.getExitStatus() : "",
+                  Log.onOneLine(l.getErrorMessage())
+                );
+              }
+            );
+          }
+
+          totalCliTimer.stop();
+
+          LOGGER.info("Response Time to transfer the data: " + totalCliTimer.getResponseTime() + " (hour:minutes:seconds:milli)");
+          LOGGER.info("       Ie (" + totalCliTimer.getResponseTimeInMilliSeconds() + ") milliseconds");
+
+          int errors = resultSetListeners.stream().mapToInt(TransferListener::getExitStatus).sum();
+          if (errors > 0) {
+            System.err.println(errors + " errors during table transfer executions were seen");
+            System.exit(1);
+          } else {
+            LOGGER.info("Success !");
+          }
+
+      }
     }
 
-
+  }
 }

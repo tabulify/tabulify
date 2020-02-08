@@ -353,7 +353,7 @@ public class FsTableSystem extends TableSystem {
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
     FsDataPath fsSource = (FsDataPath) source;
     FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListener = TransferListener.of()
+    TransferListener transferListener = TransferListener.of(transferSourceTarget)
       .startTimer();
     try {
       Files.copy(fsSource.getNioPath(), fsTarget.getNioPath());

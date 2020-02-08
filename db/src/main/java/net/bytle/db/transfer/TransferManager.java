@@ -84,7 +84,7 @@ public class TransferManager {
 
     List<List<Object>> streamTransfers = new ArrayList<>();
     for (TransferSourceTarget transferSourceTarget : transfer.getSourceTargets()) {
-      TransferListener transferListener = TransferListener.of();
+      TransferListener transferListener = TransferListener.of(transferSourceTarget);
       transferListeners.add(transferListener);
       transferListener.startTimer();
       SelectStream sourceSelectStream = Tabulars.getSelectStream(transferSourceTarget.getSourceDataPath());
@@ -150,7 +150,7 @@ public class TransferManager {
      * The listener is passed to the consumers and producers threads
      * to ultimately ends in the view thread to report life on the process
      */
-    TransferListener transferListener = TransferListener.of();
+    TransferListener transferListener = TransferListener.of(transferSourceTarget);
     transferListener.startTimer();
 
     /**
