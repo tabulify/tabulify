@@ -44,12 +44,14 @@ public class DbTableFill {
         "Load generated data into one or more tables",
         "By default, the data would be randomly generated.",
         "You should use a data definition file to define a data generation behaviors that is not random."))
-      .addExample(Strings.multiline("To load the tables `D_TIME` and the table `F_SALES` from the datastore `sqlite` with random data:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME@sqlite F_SALES@sqlite"))
+      .addExample(Strings.multiline("To load the tables from the database `sqlite` with random data:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "random  *@sqlite"))
+      .addExample(Strings.multiline("To load the tables `D_TIME` from the datastore `sqlite` with random data:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "random  D_TIME@sqlite"))
       .addExample(Strings.multiline("To load the table `D_TIME` with the data definition file `D_TIME--datadef.yml` present in the current directory:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datadef.yml@datastore"))
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datadef.yml  D_TIME@datastore"))
       .addExample(Strings.multiline("To load all the tables that have a data definition file in the current directory:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "*--datadef.yml@datastore"));
+        CliUsage.getFullChainOfCommand(cliCommand) + "*--datadef.yml   *@datastore"));
     cliCommand.argOf(DATA_URI_PATTERNS)
       .setDescription("One or more data URI patterns (Example: table@database, glob@datastore or table--datadef.yml@database)")
       .setMandatory(true);
