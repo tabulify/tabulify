@@ -255,10 +255,8 @@ public class Tabular implements AutoCloseable {
       } else {
         // Normal data uri pattern
         String dataStoreName = dataUri.getDataStore();
-        DataPath currentDataPath = getDataStore(dataStoreName)
-          .getCurrentDataPath();
-        String glob = dataUri.getPath();
-        dataPathsToReturn = currentDataPath.getDataSystem().getDescendants(currentDataPath, glob);
+        dataPathsToReturn = getDataStore(dataStoreName).select(pathInUri);
+
       }
     }
     return dataPathsToReturn;

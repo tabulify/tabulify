@@ -13,7 +13,8 @@ public class Words {
 
 
     public static final String XPATH = "xpath";
-    // CliName Bytle Db bdb
+  public static final String CASCADE = "cascade";
+  // CliName Bytle Db bdb
     static final String CLI_NAME = "db";
 
     public static final String DB_NAME = "db.name";

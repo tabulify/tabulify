@@ -395,4 +395,9 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     this.description = description;
     return this;
   }
+
+  public List<DataPath> select(String pattern) {
+    return getDataSystem().getDescendants(getCurrentDataPath(), pattern);
+  }
+
 }
