@@ -14,6 +14,7 @@ dependencies {
   runtimeOnly project(':bytle-db-fs')
   runtimeOnly project(':bytle-db-sqlite')
   runtimeOnly project(':bytle-db-tpc')
+  testCompile project(':bytle-db-tpc')
 }
 
 description = 'Db Cli'

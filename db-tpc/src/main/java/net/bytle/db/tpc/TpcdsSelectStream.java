@@ -158,4 +158,9 @@ public class TpcdsSelectStream implements SelectStream {
   public void beforeFirst() {
     init();
   }
+
+  @Override
+  public void execute() {
+    // nothing to do here
+  }
 }
