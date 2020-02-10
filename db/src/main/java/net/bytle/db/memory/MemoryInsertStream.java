@@ -24,7 +24,7 @@ public class MemoryInsertStream extends InsertStreamAbs implements InsertStream 
         super(memoryDataPath);
         this.memoryDataPath = memoryDataPath;
 
-        final MemoryStore memoryStore = memoryDataPath.getDataSystem().getMemoryStore();
+        final MemoryStore memoryStore = memoryDataPath.getDataStore().getMemoryStore();
         tabular = memoryStore.getValues(memoryDataPath);
         if (tabular==null){
             switch (memoryDataPath.getType()) {

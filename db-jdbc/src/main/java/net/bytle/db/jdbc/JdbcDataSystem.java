@@ -335,7 +335,7 @@ public class JdbcDataSystem extends TableSystem {
   public Integer size(DataPath dataPath) {
 
     Integer size = 0;
-    DataPath queryDataPath = dataPath.getDataSystem().getProcessingEngine().getQuery("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+    DataPath queryDataPath = dataPath.getDataStore().getProcessingEngine().getQuery("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     try (
       SelectStream selectStream = getSelectStream(queryDataPath)
     ) {
@@ -530,7 +530,7 @@ public class JdbcDataSystem extends TableSystem {
       statement.execute(deleteStatement);
       // Without commit, the database is locked for sqlite (if the connection is no more in autocommit mode)
       getCurrentConnection().commit();
-      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table " + dataPath.getDataSystem() + " deleted");
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table " + dataPath.getDataStore() + " deleted");
     } catch (SQLException e) {
 
       throw new RuntimeException(e);

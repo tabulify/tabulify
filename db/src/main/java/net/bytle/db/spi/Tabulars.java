@@ -27,7 +27,7 @@ public class Tabulars {
 
   public synchronized static Boolean exists(DataPath dataPath) {
 
-    return dataPath.getDataSystem().exists(dataPath);
+    return dataPath.getDataStore().getDataSystem().exists(dataPath);
 
   }
 
@@ -36,7 +36,7 @@ public class Tabulars {
       throw new RuntimeException("The data path (" + dataPath + ") is a container (ie directory) of data path. It has therefore no content and you can't read or select it. If you want to read a container, you first list its childrens");
     }
     if (Tabulars.exists(dataPath)) {
-      return dataPath.getDataSystem().getSelectStream(dataPath);
+      return dataPath.getDataStore().getDataSystem().getSelectStream(dataPath);
     } else {
       throw new RuntimeException("The data unit (" + dataPath.toString() + ") does not exist. You can't therefore ask for a select stream.");
     }
@@ -45,7 +45,7 @@ public class Tabulars {
 
   public static void create(DataPath dataPath) {
 
-    dataPath.getDataSystem().create(dataPath);
+    dataPath.getDataStore().getDataSystem().create(dataPath);
 
   }
 
@@ -85,7 +85,8 @@ public class Tabulars {
   }
 
   public static boolean isContainer(DataPath dataPath) {
-    return dataPath.getDataSystem().isContainer(dataPath);
+
+    return dataPath.getDataStore().getDataSystem().isContainer(dataPath);
   }
 
   /**
@@ -116,7 +117,7 @@ public class Tabulars {
     // A dag will build the data def and we may not want want it when dropping only one table
     Dag dag = ForeignKeyDag.get(allDataPaths);
     for (DataPath dataPath : dag.getDropOrderedTables()) {
-      dataPath.getDataSystem().drop(dataPath);
+      dataPath.getDataStore().getDataSystem().drop(dataPath);
     }
 
 
@@ -151,7 +152,7 @@ public class Tabulars {
    */
   public static void delete(DataPath dataPath) {
 
-    dataPath.getDataSystem().delete(dataPath);
+    dataPath.getDataStore().getDataSystem().delete(dataPath);
 
   }
 
@@ -188,7 +189,7 @@ public class Tabulars {
   }
 
   public static void truncate(DataPath dataPath) {
-    dataPath.getDataSystem().truncate(dataPath);
+    dataPath.getDataStore().getDataSystem().truncate(dataPath);
   }
 
 
@@ -206,14 +207,14 @@ public class Tabulars {
   }
 
   public static InsertStream getInsertStream(DataPath dataPath) {
-    return dataPath.getDataSystem().getInsertStream(dataPath);
+    return dataPath.getDataStore().getDataSystem().getInsertStream(dataPath);
   }
 
   public static List<DataPath> move(List<DataPath> sources, DataPath target) {
 
     List<DataPath> targetDataPaths = new ArrayList<>();
     for (DataPath sourceDataPath : ForeignKeyDag.get(sources).getCreateOrderedTables()) {
-      DataPath targetDataPath = target.getDataSystem().getDataPath(sourceDataPath.getName());
+      DataPath targetDataPath = target.getDataStore().getDataPath(sourceDataPath.getName());
       Tabulars.move(sourceDataPath, targetDataPath);
       targetDataPaths.add(targetDataPath);
     }
@@ -249,7 +250,7 @@ public class Tabulars {
 
 
   public static boolean isEmpty(DataPath queue) {
-    return queue.getDataSystem().isEmpty(queue);
+    return queue.getDataStore().getDataSystem().isEmpty(queue);
   }
 
 
@@ -258,7 +259,7 @@ public class Tabulars {
     if (!Tabulars.exists(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
     }
-    return dataPath.getDataSystem().size(dataPath);
+    return dataPath.getDataStore().getDataSystem().size(dataPath);
   }
 
   /**
@@ -268,7 +269,7 @@ public class Tabulars {
    * The counter part is {@link #isContainer(DataPath)}
    */
   public static boolean isDocument(DataPath dataPath) {
-    return dataPath.getDataSystem().isDocument(dataPath);
+    return dataPath.getDataStore().getDataSystem().isDocument(dataPath);
   }
 
   public static void create(List<DataPath> dataPaths) {
@@ -288,7 +289,7 @@ public class Tabulars {
     if (Tabulars.isDocument(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
     }
-    return dataPath.getDataSystem().getChildrenDataPath(dataPath);
+    return dataPath.getDataStore().getDataSystem().getChildrenDataPath(dataPath);
 
   }
 
@@ -315,7 +316,7 @@ public class Tabulars {
     if (Tabulars.isDocument(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
     }
-    return dataPath.getDataSystem().getDescendants(dataPath);
+    return dataPath.getDataStore().getDataSystem().getDescendants(dataPath);
 
   }
 
@@ -330,7 +331,7 @@ public class Tabulars {
     if (Tabulars.isDocument(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
     }
-    return dataPath.getDataSystem().getDescendants(dataPath, glob);
+    return dataPath.getDataStore().getDataSystem().getDescendants(dataPath, glob);
 
   }
 
@@ -359,7 +360,7 @@ public class Tabulars {
    * @return the content of a data path in a string format
    */
   public static String getString(DataPath dataPath) {
-    return dataPath.getDataSystem().getString(dataPath);
+    return dataPath.getDataStore().getDataSystem().getString(dataPath);
   }
 
   /**
@@ -377,8 +378,8 @@ public class Tabulars {
 
     TransferListener transferListener = null;
 
-    final TableSystem sourceDataSystem = source.getDataSystem();
-    if (sourceDataSystem.equals(target.getDataSystem())) {
+    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
+    if (sourceDataSystem.equals(target.getDataStore())) {
       // same provider (fs or jdbc)
       sourceDataSystem.move(source, target, transferProperties);
     } else {
@@ -404,8 +405,8 @@ public class Tabulars {
 
     TransferListener transferListener;
 
-    final TableSystem sourceDataSystem = source.getDataSystem();
-    if (sourceDataSystem.getClass().equals(target.getDataSystem().getClass())) {
+    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
+    if (sourceDataSystem.getClass().equals(target.getDataStore().getClass())) {
       // same provider (fs or jdbc)
       transferListener = sourceDataSystem.copy(source, target, transferProperties);
     } else {
@@ -431,8 +432,8 @@ public class Tabulars {
 
     TransferListener transferListener = null;
     transferProperties.setLoadOperation(TransferLoadOperation.INSERT);
-    final TableSystem sourceDataSystem = source.getDataSystem();
-    if (sourceDataSystem.equals(target.getDataSystem())) {
+    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
+    if (sourceDataSystem.equals(target.getDataStore())) {
       // same provider (fs or jdbc)
       sourceDataSystem.insert(source, target, transferProperties);
     } else {
@@ -452,7 +453,7 @@ public class Tabulars {
    * @return data paths that references the data path primary via a foreign key
    */
   public static List<DataPath> getReferences(DataPath dataPath) {
-    return dataPath.getDataSystem().getReferences(dataPath);
+    return dataPath.getDataStore().getDataSystem().getReferences(dataPath);
   }
 
   public static void dropOneToManyRelationship(ForeignKeyDef foreignKeyDef) {

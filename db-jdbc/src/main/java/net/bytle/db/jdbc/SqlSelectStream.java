@@ -31,7 +31,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
-    this.jdbcDataSystem = jdbcDataPath.getDataSystem();
+    this.jdbcDataSystem = jdbcDataPath.getDataStore();
 
 
   }

@@ -39,7 +39,7 @@ public class DbStatic {
         }
       } else {
 
-        DataStore dataStore = dataPathsByPattern.get(0).getDataSystem().getDataStore();
+        DataStore dataStore = dataPathsByPattern.get(0).getDataStore().getDataStore();
 
         List<DataPath> dataPathsByDataStore = dataPathsByDataStores.computeIfAbsent(dataStore, k -> new ArrayList<>());
         dataPathsByDataStore.addAll(dataPathsByPattern);

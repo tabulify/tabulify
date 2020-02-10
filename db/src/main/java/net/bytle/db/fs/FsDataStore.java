@@ -1,11 +1,12 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 
 import java.net.URI;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
 
@@ -22,8 +23,13 @@ public class FsDataStore extends DataStore {
 
     super(name, url);
     this.fsDataSystem = fsTableSystem;
+
   }
 
+
+  FileSystem getFileSystem() {
+    return Paths.get(this.getUri()).getFileSystem();
+  }
 
   /**
    * @param uri
@@ -59,7 +65,7 @@ public class FsDataStore extends DataStore {
 
   @Override
   public void close() {
-      this.fsDataSystem.close();
+    this.fsDataSystem.close();
   }
 
   @Override
@@ -68,23 +74,36 @@ public class FsDataStore extends DataStore {
   }
 
 
-
-
   public URI getUri() {
 
-    switch (getScheme()) {
-      case "jdbc":
-        throw new RuntimeException("Jdbc connection string cannot be casted to a URI");
-      default:
-        return URI.create(connectionString);
-    }
+    return URI.create(connectionString);
 
   }
 
-  public DataPath getDataPath(Path path) {
+  public FsDataPath getDataPath(Path path) {
 
-    return this.fsDataSystem.getDataPath(path.toString());
+    return new FsDataPath(this,path);
 
+  }
+
+  @Override
+  public FsDataPath getDataPath(String... names) {
+
+    // Rebuild the path
+    Path currentPath = Paths.get(this.getUri());
+    Path path = currentPath;
+    for (String name : names) {
+      path = path.resolve(name);
+    }
+
+    return getDataPath(path);
+
+  }
+
+  @Override
+  public FsDataPath getCurrentPath() {
+    Path currentPath = Paths.get(this.getUri());
+    return new FsDataPath(this, currentPath);
   }
 
 }

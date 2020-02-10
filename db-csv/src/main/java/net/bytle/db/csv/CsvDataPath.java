@@ -12,12 +12,11 @@ public class CsvDataPath extends FsDataPath {
     super(fsTableSystem, path);
   }
 
-  public CsvDataPath(Path path) {
-    super(FsTableSystem.getDefault(), path);
-  }
 
-  public static CsvDataPath of(Path path) {
-    return new CsvDataPath(path);
+  public static CsvDataPath of(FsTableSystem fsTableSystem, Path path) {
+
+    return new CsvDataPath(fsTableSystem, path);
+
   }
 
   @Override

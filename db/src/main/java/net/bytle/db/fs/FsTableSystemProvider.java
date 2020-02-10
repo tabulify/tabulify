@@ -48,7 +48,9 @@ public class FsTableSystemProvider extends TableSystemProvider {
      */
     @Override
     public FsTableSystem getTableSystem() {
-        return FsTableSystem.of(this);
+
+      return FsTableSystem.of();
+
     }
 
 

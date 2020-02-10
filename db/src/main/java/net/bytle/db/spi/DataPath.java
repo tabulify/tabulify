@@ -26,7 +26,7 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
   private String description;
 
 
-  public abstract TableSystem getDataSystem();
+  public abstract DataStore getDataStore();
 
 
   /**
@@ -41,7 +41,7 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
   private String getId() {
     final String path = getPath();
     assert path != null : "Path cannot be null";
-    final DataStore dataStore = getDataSystem().getDataStore();
+    final DataStore dataStore = getDataStore();
     final String databaseName = dataStore.getName();
     return path + "@" + databaseName;
   }

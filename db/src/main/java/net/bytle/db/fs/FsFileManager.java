@@ -3,6 +3,8 @@ package net.bytle.db.fs;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -36,8 +38,21 @@ public class FsFileManager  {
     throw new RuntimeException("This file ("+ fsDataPath + ") has no known structure and/or manager and therefore can't return an insert stream");
   }
 
-  public FsDataPath createDataPath(FsTableSystem fsTableSystem, Path path) {
-    return FsDataPath.of(fsTableSystem, path);
+  public FsDataPath createDataPath(FsDataStore fsDataStore, Path path) {
+    return FsDataPath.of(fsDataStore, path);
+  }
+
+  /**
+   * Create the file
+   * For instance, if it's a CSV, you may need to create the headers
+   * @param fsDataPath
+   */
+  public void create(FsDataPath fsDataPath){
+    try {
+      Files.createFile(fsDataPath.getNioPath());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

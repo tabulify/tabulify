@@ -43,7 +43,7 @@ public class MemorySystemProvider extends TableSystemProvider {
      */
     @Override
     public TableSystem getTableSystem() {
-        return MemoryDataSystem.of(this);
+        return MemoryDataSystem.of();
     }
 
 }

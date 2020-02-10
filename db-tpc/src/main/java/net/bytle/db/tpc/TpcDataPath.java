@@ -28,7 +28,7 @@ public class TpcDataPath extends DataPath {
   }
 
   @Override
-  public TableSystem getDataSystem() {
+  public TableSystem getDataStore() {
     return this.dataStore;
   }
 

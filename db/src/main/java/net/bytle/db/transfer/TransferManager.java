@@ -188,8 +188,8 @@ public class TransferManager {
      *     * and that the database does not support multiple connection (such as Sqlite)
      **/
     // One connection is already used in the construction of the database
-    if (targetWorkerCount > targetDataPath.getDataSystem().getMaxWriterConnection()) {
-      throw new IllegalArgumentException("The database (" + targetDataPath.getDataSystem().getProductName() + ") does not support more than (" + targetDataPath.getDataSystem().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
+    if (targetWorkerCount > targetDataPath.getDataStore().getMaxWriterConnection()) {
+      throw new IllegalArgumentException("The database (" + targetDataPath.getDataStore().getProductName() + ") does not support more than (" + targetDataPath.getDataStore().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
     }
 
 

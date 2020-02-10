@@ -3,11 +3,12 @@ package net.bytle.db.memory;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.DataType;
-import net.bytle.db.spi.*;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.uri.DataUri;
 import net.bytle.log.Log;
 
 import java.io.Closeable;
@@ -17,27 +18,28 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 
+/**
+ * Static memory system
+ * No data in their please
+ */
 public class MemoryDataSystem extends TableSystem {
 
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-  private final MemorySystemProvider memoryStoreProvider;
-  private final MemoryStore memoryStore;
-  private MemoryDataStore dataStore;
 
-  public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
-    this.memoryStoreProvider = memorySystemProvider;
-    this.memoryStore = new MemoryStore();
-  }
+  static MemoryDataSystem memoryDataSystem;
 
-  public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider) {
-    return new MemoryDataSystem(memorySystemProvider);
 
+  public static MemoryDataSystem of() {
+    if (memoryDataSystem == null) {
+      memoryDataSystem = new MemoryDataSystem();
+    }
+    return memoryDataSystem;
   }
 
 
   public void delete(DataPath memoryTable) {
-    Object values = memoryStore.remove(memoryTable);
+    Object values = memoryTable.getDataStore().getMemoryStore().remove(memoryTable);
     if (values == null) {
       LOGGER.warning("The table (" + memoryTable + ") had no values. Nothing removed.");
     }
@@ -48,13 +50,7 @@ public class MemoryDataSystem extends TableSystem {
   }
 
   public void truncate(DataPath memoryTable) {
-    memoryStore.put(memoryTable, new ArrayList<>());
-  }
-
-
-  @Override
-  public TableSystemProvider getProvider() {
-    return this.memoryStoreProvider;
+    memoryTable.getDataStore().getMemoryStore().put(memoryTable, new ArrayList<>());
   }
 
 
@@ -75,15 +71,6 @@ public class MemoryDataSystem extends TableSystem {
     throw new RuntimeException("Not yet implemented");
   }
 
-  /**
-   * @return The number of thread that can be created against the data system
-   */
-  @Override
-  public Integer getMaxWriterConnection() {
-
-    throw new RuntimeException("Not yet implemented");
-
-  }
 
   @Override
   public Boolean isEmpty(DataPath queue) {
@@ -96,18 +83,13 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public Integer size(DataPath dataPath) {
 
-      return ((MemoryDataPath) dataPath).getDataSystem().getMemoryStore().getValues(dataPath).size();
+    return ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().getValues(dataPath).size();
 
   }
 
   @Override
   public boolean isDocument(DataPath dataPath) {
     throw new RuntimeException("Not implemented");
-  }
-
-  @Override
-  public DataPath getCurrentPath() {
-    return getDataPath("");
   }
 
 
@@ -148,27 +130,13 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public DataStore createDataStore(String name, String url) {
-    this.dataStore = new MemoryDataStore(name, url, this);
-    return this.dataStore;
+    return new MemoryDataStore(name, url, this);
   }
 
-
-  @Override
-  public DataPath getDataPath(DataUri dataUri) {
-    return MemoryDataPath.of(this, dataUri.getPath());
-  }
-
-
-  @Override
-  public MemoryDataPath getDataPath(String... names) {
-    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDataStore().getName());
-    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri.getPath());
-    return memoryDataPath;
-  }
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return memoryStore.containsKey(dataPath);
+    return ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().containsKey(dataPath);
   }
 
   @Override
@@ -187,11 +155,6 @@ public class MemoryDataSystem extends TableSystem {
 
   }
 
-  @Override
-  public DataStore getDataStore() {
-    return dataStore;
-  }
-
 
   @Override
   public boolean isContainer(DataPath dataPath) {
@@ -207,20 +170,16 @@ public class MemoryDataSystem extends TableSystem {
       case TYPE_BLOCKED_QUEUE:
         int bufferSize = 10000;
         BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
-        memoryStore.put(dataPath, queue);
+        memoryDataPath.getDataStore().getMemoryStore().put(dataPath, queue);
         break;
       case TYPE_LIST:
-        memoryStore.put(dataPath, new ArrayList<ArrayList<Object>>());
+        memoryDataPath.getDataStore().getMemoryStore().put(dataPath, new ArrayList<ArrayList<Object>>());
         break;
       default:
         throw new RuntimeException("Type (" + memoryDataPath.getType() + " is unknown");
     }
   }
 
-  @Override
-  public String getProductName() {
-    return "memory";
-  }
 
   @Override
   public DataType getDataType(Integer typeCode) {
@@ -277,7 +236,5 @@ public class MemoryDataSystem extends TableSystem {
 
   }
 
-  public MemoryStore getMemoryStore() {
-    return this.memoryStore;
-  }
+
 }

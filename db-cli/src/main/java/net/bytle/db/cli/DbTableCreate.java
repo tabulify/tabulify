@@ -71,7 +71,7 @@ public class DbTableCreate {
 
       int created = dataPaths.stream().mapToInt(dp -> {
         if (Tabulars.exists(dp)) {
-          String msg = "Table (" + dp.getName() + " exists already in the data store (" + dp.getDataSystem().getDataStore().getName() + ") and was not created";
+          String msg = "Table (" + dp.getName() + " exists already in the data store (" + dp.getDataStore().getDataStore().getName() + ") and was not created";
           if (notStrictRunArg) {
             LOGGER.warn(msg);
           } else {

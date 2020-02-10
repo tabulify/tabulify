@@ -1,5 +1,6 @@
 package net.bytle.db.fs;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
@@ -17,26 +18,21 @@ public class FsDataPath extends DataPath {
 
 
   protected final Path path;
-  private final FsTableSystem tableSystem;
+  private final FsDataStore fsDataStore;
 
-  public FsDataPath(FsTableSystem fsTableSystem, Path path) {
+  public FsDataPath(FsDataStore fsDataStore, Path path) {
 
-    this.tableSystem = fsTableSystem;
+    this.fsDataStore = fsDataStore;
     this.path = path;
 
   }
 
-  protected static FsDataPath of(FsTableSystem fsTableSystem, Path path) {
+  protected static FsDataPath of(FsDataStore fsDataStore, Path path) {
 
-    return new FsDataPath(fsTableSystem, path);
+    return new FsDataPath(fsDataStore, path);
 
   }
 
-
-  @Override
-  public FsTableSystem getDataSystem() {
-    return tableSystem;
-  }
 
 
   @Override
@@ -47,7 +43,7 @@ public class FsDataPath extends DataPath {
   @Override
   public FsDataPath getSibling(String name) {
     Path siblingPath = path.resolveSibling(name);
-    return getDataSystem().getFileManager(siblingPath).createDataPath(getDataSystem(),siblingPath);
+    return FsTableSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore,siblingPath);
   }
 
   @Override
@@ -62,7 +58,12 @@ public class FsDataPath extends DataPath {
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return getDataSystem().getFileManager(resolvedPath).createDataPath(getDataSystem(), resolvedPath);
+    return FsTableSystem.of().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
+  }
+
+  @Override
+  public DataStore getDataStore() {
+    return fsDataStore;
   }
 
   @Override

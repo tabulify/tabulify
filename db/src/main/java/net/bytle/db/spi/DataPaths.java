@@ -18,7 +18,7 @@ public class DataPaths {
     List<String> pathSegments = new ArrayList<>();
     pathSegments.addAll(dataPath.getNames().subList(0, dataPath.getNames().size() - 2));
     pathSegments.add(name);
-    return dataPath.getDataSystem().getDataPath(pathSegments.toArray(new String[0]));
+    return dataPath.getDataStore().getDataPath(pathSegments.toArray(new String[0]));
   }
 
 

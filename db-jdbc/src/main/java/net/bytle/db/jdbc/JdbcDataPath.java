@@ -170,7 +170,7 @@ public class JdbcDataPath extends DataPath {
   }
 
   @Override
-  public JdbcDataSystem getDataSystem() {
+  public JdbcDataSystem getDataStore() {
     return jdbcDataSystem;
   }
 
@@ -184,7 +184,7 @@ public class JdbcDataPath extends DataPath {
         selectStream = SqlSelectStream.of(this);
         dataDef = selectStream.getSelectDataDef();
         // sqlite for instance
-        if (this.getDataSystem().getMaxWriterConnection() == 1) {
+        if (this.getDataStore().getMaxWriterConnection() == 1) {
           selectStream.close();
           selectStream = null;
         }

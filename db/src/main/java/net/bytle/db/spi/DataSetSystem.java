@@ -68,13 +68,6 @@ public abstract class DataSetSystem extends TableSystem {
     throw new RuntimeException("A data set cannot move its data paths. It can only read them");
   }
 
-  /**
-   * @return The number of thread that can be created against the data system
-   */
-  @Override
-  public Integer getMaxWriterConnection() {
-    throw new RuntimeException("A data set source cannot write.");
-  }
 
   public abstract Boolean isEmpty(DataPath queue);
 

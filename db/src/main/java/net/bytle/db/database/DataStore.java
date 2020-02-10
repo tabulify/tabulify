@@ -2,6 +2,7 @@ package net.bytle.db.database;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.memory.MemoryStore;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -29,6 +30,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
   // Connection Url
   protected String connectionString;
   private String description;
+  private MemoryStore memoryStore;
 
   public DataStore(String name, String connectionString) {
     this.name = name;
@@ -171,7 +173,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    */
   public DataPath getDataPath(String... parts) {
 
-    return getDataSystem().getDataPath(parts);
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
 
   }
 
@@ -180,7 +182,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    * @return the current/working path of this data store
    */
   public DataPath getCurrentDataPath() {
-    return getDataSystem().getCurrentPath();
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
   }
 
   @Override
@@ -374,4 +376,27 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     return getDataSystem().getDescendants(getCurrentDataPath(), pattern);
   }
 
+  public DataPath getCurrentPath(){
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
+  }
+
+  /**
+   * @return The number of thread that can be created against the data store
+   */
+  public Integer getMaxWriterConnection(){
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
+  }
+
+  // The product name (for a jdbc database: sql server, oracle, hive ...
+  public String getProductName(){
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
+  }
+
+
+  public MemoryStore getMemoryStore() {
+    if (memoryStore == null){
+      memoryStore = new MemoryStore();
+    }
+    return memoryStore;
+  }
 }

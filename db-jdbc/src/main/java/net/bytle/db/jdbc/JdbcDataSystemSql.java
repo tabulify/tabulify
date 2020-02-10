@@ -39,7 +39,7 @@ public class JdbcDataSystemSql {
     public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
 
 
-        final JdbcDataSystem dataSystem = jdbcDataPath.getDataSystem();
+        final JdbcDataSystem dataSystem = jdbcDataPath.getDataStore();
         String identifierQuoteString = DbSql.getIdentifierQuote(dataSystem);
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
@@ -56,7 +56,7 @@ public class JdbcDataSystemSql {
 
     public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
         final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getRelationDef().getDataPath();
-        String identifier = DbSql.getIdentifierQuote(dataPath.getDataSystem());
+        String identifier = DbSql.getIdentifierQuote(dataPath.getDataStore());
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }
 
@@ -170,7 +170,7 @@ public class JdbcDataSystemSql {
         String statementString = "select count(1) from " + getFullyQualifiedSqlName(jdbcDataPath);
 
         try (
-                ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().createStatement().executeQuery(statementString);
+          ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().createStatement().executeQuery(statementString);
         ) {
             while (resultSet.next()) {
                 returnValue += resultSet.getInt(1);

@@ -16,7 +16,7 @@ public class ListInsertStreamOld extends InsertStreamAbs implements InsertStream
     ListInsertStreamOld(MemoryDataPath memoryDataPath) {
         super(memoryDataPath);
         this.memoryTable = memoryDataPath;
-        final MemoryStore memoryStore = memoryDataPath.getDataSystem().getMemoryStore();
+        final MemoryStore memoryStore = memoryDataPath.getDataStore().getMemoryStore();
         Collection collection = memoryStore.getValues(memoryDataPath);
         if (collection==null){
             tableValues = new ArrayList<>();

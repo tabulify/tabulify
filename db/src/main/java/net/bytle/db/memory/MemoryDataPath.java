@@ -14,7 +14,7 @@ public class MemoryDataPath extends DataPath {
   public static final Integer DEFAULT_TIME_OUT = 10;
   public static final String PATH_SEPARATOR = "/";
 
-  private final MemoryDataSystem memoryDataSystem;
+  private final MemoryDataStore memoryDataStore;
 
   /**
    * Default type
@@ -36,19 +36,19 @@ public class MemoryDataPath extends DataPath {
   private String path;
 
 
-  private MemoryDataPath(MemoryDataSystem memoryDataSystem, String path) {
-    this.memoryDataSystem = memoryDataSystem;
+  private MemoryDataPath(MemoryDataStore memoryDataStore, String path) {
+    this.memoryDataStore = memoryDataStore;
     this.path = path;
   }
 
-  protected static MemoryDataPath of(MemoryDataSystem memoryDataSystem, String path) {
-    return new MemoryDataPath(memoryDataSystem, path);
+  protected static MemoryDataPath of(MemoryDataStore memoryDataStore, String path) {
+    return new MemoryDataPath(memoryDataStore, path);
   }
 
 
   @Override
-  public MemoryDataSystem getDataSystem() {
-    return memoryDataSystem;
+  public MemoryDataStore getDataStore() {
+    return memoryDataStore;
   }
 
 
@@ -72,7 +72,7 @@ public class MemoryDataPath extends DataPath {
 
   @Override
   public DataUri getDataUri() {
-    return DataUri.of().setDataStore(this.memoryDataSystem.getDataStore().getName()).setPath(path);
+    return DataUri.of().setDataStore(this.memoryDataStore.getName()).setPath(path);
   }
 
   @Override
@@ -84,9 +84,9 @@ public class MemoryDataPath extends DataPath {
   public MemoryDataPath getChild(String name) {
 
     if (this.path ==null) {
-      return new MemoryDataPath(memoryDataSystem, name);
+      return new MemoryDataPath(memoryDataStore, name);
     } else {
-      return new MemoryDataPath(memoryDataSystem, this.path + PATH_SEPARATOR + name);
+      return new MemoryDataPath(memoryDataStore, this.path + PATH_SEPARATOR + name);
     }
 
   }

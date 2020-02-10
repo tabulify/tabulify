@@ -167,7 +167,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
     public Boolean addPrimaryKey(TableDef tableDef) {
 
         final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-        Connection connection = dataPath.getDataSystem().getCurrentConnection();
+        Connection connection = dataPath.getDataStore().getCurrentConnection();
         List<String> columns = new ArrayList<>();
         final String sql = "PRAGMA table_info('" + dataPath.getName() + "')";
         try (
@@ -195,7 +195,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
     public Boolean addForeignKey(TableDef tableDef) {
 
         final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-        Connection connection = dataPath.getDataSystem().getCurrentConnection();
+        Connection connection = dataPath.getDataStore().getCurrentConnection();
         Map<Integer, List<String>> foreignKeys = new HashMap<>();
         final String sql = "PRAGMA foreign_key_list('" + dataPath.getName() + "')";
         try (
@@ -222,7 +222,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
             final List<String> foreignKey = foreignKeys.get(i);
             final String foreignTableName = foreignKey.get(0);
             final String nativeTableColumn = foreignKey.get(1);
-            JdbcDataPath foreignDataPath = dataPath.getDataSystem().getDataPath(foreignTableName);
+            JdbcDataPath foreignDataPath = dataPath.getDataStore().getDataPath(foreignTableName);
 
             // This is possible in Sqlite to have foreign key on table that does not exist
             if (Tabulars.exists(foreignDataPath)){
@@ -253,8 +253,8 @@ public class SqliteSqlDatabase extends SqlDatabase {
         // Because the driver returns 20000000 and no data type name
         final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
         try (
-                Statement statement = dataPath.getDataSystem().getCurrentConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + dataPath.getName() + "')");
+          Statement statement = dataPath.getDataStore().getCurrentConnection().createStatement();
+          ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + dataPath.getName() + "')");
         ) {
             while (resultSet.next()) {
                 // ie INTEGER(50)

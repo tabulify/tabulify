@@ -146,10 +146,10 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   private void init() {
 
-    if (jdbcDataPath.getDataSystem().getMaxWriterConnection() == 1) {
-      connection = jdbcDataPath.getDataSystem().getCurrentConnection();
+    if (jdbcDataPath.getDataStore().getMaxWriterConnection() == 1) {
+      connection = jdbcDataPath.getDataStore().getCurrentConnection();
     } else {
-      connection = jdbcDataPath.getDataSystem().getNewConnection("InsertStream Table " + jdbcDataPath);
+      connection = jdbcDataPath.getDataStore().getNewConnection("InsertStream Table " + jdbcDataPath);
     }
     if (sourceMetaDef == null) {
       sourceMetaDef = targetMetaDef;
@@ -311,7 +311,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       }
 
       final JdbcDataPath dataPath = (JdbcDataPath) targetMetaDef.getDataPath();
-      if (dataPath.getDataSystem().getMaxWriterConnection() > 1) {
+      if (dataPath.getDataStore().getMaxWriterConnection() > 1) {
         if (connection != null) {
           connection.close();
         }

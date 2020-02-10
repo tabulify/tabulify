@@ -26,7 +26,7 @@ public class DbDdl {
 
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         List<String> statements;
-        final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataSystem().getExtension();
+        final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataStore().getExtension();
 
         // If the databaseDefault implements its own logic, we return it.
         try {
@@ -191,14 +191,14 @@ public class DbDdl {
         String notNullStatement = "";
         if (!columnDef.getNullable()) {
             // Hack because hive is read only, it does not support Not Null
-            if (!columnDef.getRelationDef().getDataPath().getDataSystem().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
+            if (!columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
                 notNullStatement = " NOT NULL";
             }
         }
 
         // Hack for Hive
         String encloseString = "\"";
-        if (columnDef.getRelationDef().getDataPath().getDataSystem().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
+        if (columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
             encloseString = "`";
         }
 
@@ -302,7 +302,7 @@ public class DbDdl {
      */
     public static String getAlterTableForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
 
-        JdbcDataSystem jdbcDataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataSystem();
+        JdbcDataSystem jdbcDataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataStore();
 
         // Constraint are supported from 2.1
         // https://issues.apache.org/jira/browse/HIVE-13290
@@ -361,7 +361,7 @@ public class DbDdl {
         // TODO: Move to Hive
         // Constraint are supported from 2.1
         // https://issues.apache.org/jira/browse/HIVE-13290
-        final JdbcDataSystem dataSystem = jdbcDataPath.getDataSystem();
+        final JdbcDataSystem dataSystem = jdbcDataPath.getDataStore();
         if (dataSystem.getProductName().equals(JdbcDataSystem.DB_HIVE)) {
             if (dataSystem.getDatabaseMajorVersion() < 2) {
                 return null;
@@ -399,7 +399,7 @@ public class DbDdl {
 
         try {
             String dropTableStatement = "truncate table " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
-            dataPath.getDataSystem().getCurrentConnection().createStatement().execute(dropTableStatement);
+            dataPath.getDataStore().getCurrentConnection().createStatement().execute(dropTableStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -409,7 +409,7 @@ public class DbDdl {
 
         try {
             String dropTableStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
-            dataPath.getDataSystem().getCurrentConnection().createStatement().execute(dropTableStatement);
+            dataPath.getDataStore().getCurrentConnection().createStatement().execute(dropTableStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -420,7 +420,7 @@ public class DbDdl {
             final JdbcDataPath dataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
             String dropTableStatement = "ALTER TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath)
                     + " DROP CONSTRAINT " + foreignKeyDef.getName();
-            dataPath.getDataSystem().getCurrentConnection().createStatement().execute(dropTableStatement);
+            dataPath.getDataStore().getCurrentConnection().createStatement().execute(dropTableStatement);
             LOGGER.info("Foreign Key: " + foreignKeyDef.getName() + " on the table " + dataPath.toString() + " were deleted.");
         } catch (SQLException e) {
             throw new RuntimeException(e);

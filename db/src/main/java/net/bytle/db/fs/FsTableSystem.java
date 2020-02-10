@@ -6,7 +6,6 @@ import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -14,42 +13,38 @@ import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
-import net.bytle.regexp.Globs;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
  */
 public class FsTableSystem extends TableSystem {
 
+  // Static file system (Don't store state)
+  private static FsTableSystem fsTableSystem;
 
-  private FsDataStore fsDataStore;
-  private final FsTableSystemProvider fsTableSystemProvider;
-  private FileSystem fileSystem;
 
-  private FsTableSystem(FsTableSystemProvider fsTableSystemProvider ) {
 
-    this.fsTableSystemProvider = fsTableSystemProvider;
+  // private FsDataStore fsDataStore;
+  // private final FsTableSystemProvider fsTableSystemProvider;
+  // private FileSystem fileSystem;
 
+
+  protected static FsTableSystem of() {
+    if (fsTableSystem == null){
+      fsTableSystem = new FsTableSystem();
+    }
+    return fsTableSystem;
   }
 
-  protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider) {
-    return new FsTableSystem(fsTableSystemProvider);
-  }
 
-
-  @Override
-  public DataPath getDataPath(DataUri dataUri) {
-
-    return getDataPath(dataUri.getPath());
-
-  }
 
   /**
    * @param dataUri - a data Uri
@@ -60,57 +55,44 @@ public class FsTableSystem extends TableSystem {
    * will return all md file in the tmp directory
    */
   public List<DataPath> getDataPaths(DataUri dataUri) {
-
-    String[] pathSegments = dataUri.getPath().split(this.fileSystem.getSeparator());
+    throw new RuntimeException("Never used ?");
+    //String[] pathSegments = dataUri.getPath().split(this.fileSystem.getSeparator());
 
     // Start
-    Path startPath = Paths.get(".");
-    List<Path> currentMatchesPaths = new ArrayList<>();
-    currentMatchesPaths.add(startPath);
-
-    for (String s : pathSegments) {
-
-      // Glob to regex Pattern
-      String pattern = Globs.toRegexPattern(s);
-
-      // The list where the actual matches path will be stored
-      List<Path> matchesPath = new ArrayList<>();
-      for (Path currentPath : currentMatchesPaths) {
-        List<Path> paths = Fs.getChildrenFiles(currentPath);
-        for (Path childrenPath : paths) {
-          if (childrenPath.getFileName().toString().matches(pattern)) {
-            matchesPath.add(childrenPath);
-          }
-        }
-      }
-
-      if (matchesPath.size() == 0) {
-        break;
-      } else {
-        // Recursion
-        currentMatchesPaths = matchesPath;
-      }
-
-    }
-
-    return currentMatchesPaths.stream()
-      .map(path -> getFileManager(path).createDataPath(this,path))
-      .collect(Collectors.toList());
+//    Path startPath = Paths.get(".");
+//    List<Path> currentMatchesPaths = new ArrayList<>();
+//    currentMatchesPaths.add(startPath);
+//
+//    for (String s : pathSegments) {
+//
+//      // Glob to regex Pattern
+//      String pattern = Globs.toRegexPattern(s);
+//
+//      // The list where the actual matches path will be stored
+//      List<Path> matchesPath = new ArrayList<>();
+//      for (Path currentPath : currentMatchesPaths) {
+//        List<Path> paths = Fs.getChildrenFiles(currentPath);
+//        for (Path childrenPath : paths) {
+//          if (childrenPath.getFileName().toString().matches(pattern)) {
+//            matchesPath.add(childrenPath);
+//          }
+//        }
+//      }
+//
+//      if (matchesPath.size() == 0) {
+//        break;
+//      } else {
+//        // Recursion
+//        currentMatchesPaths = matchesPath;
+//      }
+//
+//    }
+//
+//    return currentMatchesPaths.stream()
+//      .map(path -> getFileManager(path).createDataPath(this,path))
+//      .collect(Collectors.toList());
   }
 
-  @Override
-  public FsDataPath getDataPath(String... names) {
-
-    // Rebuild the path
-    Path currentPath = Paths.get(this.fsDataStore.getUri());
-    Path path = currentPath;
-    for (String name : names) {
-      path = path.resolve(name);
-    }
-
-    return getDataPath(path);
-
-  }
 
   @Override
   public Boolean exists(DataPath dataPath) {
@@ -155,10 +137,6 @@ public class FsTableSystem extends TableSystem {
     return fileManager;
   }
 
-  @Override
-  public DataStore getDataStore() {
-    return this.fsDataStore;
-  }
 
 
   @Override
@@ -175,7 +153,7 @@ public class FsTableSystem extends TableSystem {
         if (Files.isDirectory(path)) {
           Files.createDirectory(path);
         } else {
-          Files.createFile(path);
+          getFileManager(path).create(fsDataPath);
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -185,12 +163,6 @@ public class FsTableSystem extends TableSystem {
     }
   }
 
-
-  @Override
-  public String getProductName() {
-
-    throw new RuntimeException("not yet implemented");
-  }
 
   @Override
   public DataType getDataType(Integer typeCode) {
@@ -219,13 +191,6 @@ public class FsTableSystem extends TableSystem {
     delete(dataPath);
   }
 
-
-  @Override
-  public TableSystemProvider getProvider() {
-
-    return fsTableSystemProvider;
-
-  }
 
   @Override
   public InsertStream getInsertStream(DataPath dataPath) {
@@ -288,13 +253,6 @@ public class FsTableSystem extends TableSystem {
 
   }
 
-  /**
-   * @return The number of thread that can be created against the data system
-   */
-  @Override
-  public Integer getMaxWriterConnection() {
-    throw new RuntimeException("not yet implemented");
-  }
 
   @Override
   public Boolean isEmpty(DataPath queue) {
@@ -316,12 +274,6 @@ public class FsTableSystem extends TableSystem {
   public boolean isDocument(DataPath dataPath) {
     Path path = ((FsDataPath) dataPath).getNioPath();
     return !Files.isDirectory(path);
-  }
-
-  @Override
-  public FsDataPath getCurrentPath() {
-    Path currentPath = Paths.get(this.fsDataStore.getUri());
-    return new FsDataPath(this, currentPath);
   }
 
 
@@ -373,9 +325,8 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public DataStore createDataStore(String name, String url) {
-    this.fsDataStore = new FsDataStore(name, url, this);
-    this.fileSystem = Paths.get(this.fsDataStore.getUri()).getFileSystem();
-    return fsDataStore;
+
+    return new FsDataStore(name, url, this);
   }
 
 
@@ -428,14 +379,5 @@ public class FsTableSystem extends TableSystem {
   }
 
 
-  /**
-   * A convenient method for the test
-   *
-   * @param path
-   * @return
-   */
-  public FsDataPath getDataPath(Path path) {
-    return getFileManager(path).createDataPath(this, path);
-  }
 
 }

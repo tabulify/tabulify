@@ -34,13 +34,13 @@ public class Jdbcs {
       String catalog = jdbcDataPath.getCatalog();
       String tableName = null;
 
-      ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, null);
+      ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, null);
       while (tableResultSet.next()) {
         final String table_name = tableResultSet.getString("TABLE_NAME");
         final String schema_name = tableResultSet.getString("TABLE_SCHEM");
         final String cat_name = tableResultSet.getString("TABLE_CAT");
         final String type_name = tableResultSet.getString("TABLE_TYPE");
-        JdbcDataPath childDataPath = JdbcDataPath.of(jdbcDataPath.getDataSystem(), cat_name, schema_name, table_name)
+        JdbcDataPath childDataPath = JdbcDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name)
           .setType(type_name);
         jdbcDataPaths.add(childDataPath);
       }
@@ -66,12 +66,12 @@ public class Jdbcs {
       String catalog = jdbcDataPath.getCatalog();
       String tableName = jdbcDataPath.getName();
 
-      ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getExportedKeys(catalog, schema, tableName);
+      ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getExportedKeys(catalog, schema, tableName);
       while (tableResultSet.next()) {
         final String table_name = tableResultSet.getString("FKTABLE_NAME");
         final String schema_name = tableResultSet.getString("FKTABLE_SCHEM");
         final String cat_name = tableResultSet.getString("FKTABLE_CAT");
-        JdbcDataPath fkDataPath = JdbcDataPath.of(jdbcDataPath.getDataSystem(), cat_name, schema_name, table_name);
+        JdbcDataPath fkDataPath = JdbcDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name);
         jdbcDataPaths.add(fkDataPath);
       }
 
@@ -89,7 +89,7 @@ public class Jdbcs {
     // that doesn't return the good primary ley
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
+    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addPrimaryKey(tableDef);
     }
@@ -110,7 +110,7 @@ public class Jdbcs {
     if (dataPath.getSchema()!=null){
       schemaName = dataPath.getSchema().getName();
     }
-    ResultSet pkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
+    ResultSet pkResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
     // Collect all the data because we don't known if they will be in order
     // and because in a recursive call, the result set may be closed
     List<Map<String, String>> pkColumns = new ArrayList<>();
@@ -164,7 +164,7 @@ public class Jdbcs {
       String catalog = jdbcDataPath.getCatalog();
       String tableName = jdbcDataPath.getName();
 
-      ResultSet tableResultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
+      ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
       boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
 
       if (!tableExist) {
@@ -202,7 +202,7 @@ public class Jdbcs {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean added = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
+    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase != null) {
       added = sqlDatabase.addColumns(tableDef);
     }
@@ -212,7 +212,7 @@ public class Jdbcs {
       if (dataPath.getSchema()!=null){
         schemaName = dataPath.getSchema().getName();
       }
-      ResultSet columnResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
+      ResultSet columnResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
 
       while (columnResultSet.next()) {
 
@@ -272,7 +272,7 @@ public class Jdbcs {
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataSystem().getExtension();
+    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addForeignKey(tableDef);
     }
@@ -326,7 +326,7 @@ public class Jdbcs {
     }
     try (
       // ImportedKey = the primary keys imported by a table
-      ResultSet fkResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
+      ResultSet fkResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
     ) {
 
       while (fkResultSet.next()) {
@@ -354,7 +354,7 @@ public class Jdbcs {
 
     // How much foreign key (ie how much foreign key tables)
     List<JdbcDataPath> foreignTableNames = fkDatas.stream()
-      .map(s -> JdbcDataPath.of(dataPath.getDataSystem(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
+      .map(s -> JdbcDataPath.of(dataPath.getDataStore(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
       .collect(Collectors.toList());
 
 
@@ -401,7 +401,7 @@ public class Jdbcs {
     final String schema = dataPath.getSchema() != null ? dataPath.getSchema().getName() : null;
     try (
       // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges
-      ResultSet indexResultSet = dataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(dataPath.getCatalog(), schema, dataPath.getName(), true, true);
+      ResultSet indexResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getIndexInfo(dataPath.getCatalog(), schema, dataPath.getName(), true, true);
     ) {
       while (indexResultSet.next()) {
 
@@ -462,7 +462,7 @@ public class Jdbcs {
   public void printPrimaryKey(JdbcDataPath jdbcDataPath) {
 
     try (
-      ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getPrimaryKeys(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName())
+      ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getPrimaryKeys(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName())
     ) {
       while (resultSet.next()) {
         System.out.println("Primary Key Column: " + resultSet.getString("COLUMN_NAME"));
@@ -476,7 +476,7 @@ public class Jdbcs {
   public void printUniqueKey(JdbcDataPath jdbcDataPath) {
 
     try (
-      ResultSet resultSet = jdbcDataPath.getDataSystem().getCurrentConnection().getMetaData().getIndexInfo(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName(), true, false)
+      ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getIndexInfo(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName(), true, false)
     ) {
       while (resultSet.next()) {
         System.out.println("Unique Key Column: " + resultSet.getString("COLUMN_NAME"));
@@ -691,7 +691,7 @@ public class Jdbcs {
      * for now a hack
      * because Sqlite does not support alter table drop foreign keys
      */
-    JdbcDataSystem dataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataSystem();
+    JdbcDataSystem dataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataSystem.getProductName().equals(DB_SQLITE)) {
       JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();

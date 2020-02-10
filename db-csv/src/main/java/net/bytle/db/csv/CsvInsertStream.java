@@ -1,6 +1,5 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 import org.apache.commons.csv.CSVFormat;
@@ -8,10 +7,7 @@ import org.apache.commons.csv.CSVPrinter;
 
 import java.io.*;
 import java.nio.file.*;
-import java.sql.Clob;
-import java.sql.Types;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 

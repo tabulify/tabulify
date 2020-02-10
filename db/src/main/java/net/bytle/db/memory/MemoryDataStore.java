@@ -1,7 +1,8 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.uri.DataUri;
 
 public class MemoryDataStore extends DataStore {
 
@@ -14,9 +15,16 @@ public class MemoryDataStore extends DataStore {
   }
 
   @Override
-  public TableSystem getDataSystem() {
+  public MemoryDataSystem getDataSystem() {
     return memoryDataSystem;
   }
 
+  @Override
+  public DataPath getDataPath(String... parts) {
 
+    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR, parts) + DataUri.AT_STRING + this.getName());
+    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri.getPath());
+    return memoryDataPath;
+
+  }
 }
