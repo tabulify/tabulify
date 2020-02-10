@@ -37,7 +37,7 @@ public class FsTableSystem extends TableSystem {
   // private FileSystem fileSystem;
 
 
-  protected static FsTableSystem of() {
+  public static FsTableSystem of() {
     if (fsTableSystem == null){
       fsTableSystem = new FsTableSystem();
     }
@@ -326,7 +326,8 @@ public class FsTableSystem extends TableSystem {
   @Override
   public DataStore createDataStore(String name, String url) {
 
-    return new FsDataStore(name, url, this);
+    return new FsDataStore(name, url);
+
   }
 
 

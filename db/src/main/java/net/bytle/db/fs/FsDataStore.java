@@ -1,14 +1,11 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.TableSystem;
 
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
 
 /**
  * A file data store (ie a store that is instantiated with a file system path or a uri)
@@ -16,13 +13,12 @@ import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
 public class FsDataStore extends DataStore {
 
 
-  private final FsTableSystem fsDataSystem;
-  private String workingPath;
+  public static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
 
-  public FsDataStore(String name, String url, FsTableSystem fsTableSystem) {
+
+  public FsDataStore(String name, String url) {
 
     super(name, url);
-    this.fsDataSystem = fsTableSystem;
 
   }
 
@@ -31,27 +27,6 @@ public class FsDataStore extends DataStore {
     return Paths.get(this.getUri()).getFileSystem();
   }
 
-  /**
-   * @param uri
-   * @return a unique database name from an Uri (ie path.toUri)
-   */
-  public static String getDataStoreName(URI uri) {
-    String databaseName;
-    switch (uri.getScheme()) {
-      case LOCAL_FILE_SCHEME:
-        databaseName = LOCAL_FILE_SCHEME;
-        break;
-      default:
-        databaseName = uri.getScheme() + "://" + uri.getHost();
-        break;
-    }
-    return databaseName;
-  }
-
-  public FsDataStore setWorkingPath(String path) {
-    this.workingPath = path;
-    return this;
-  }
 
   public FsDataStore setConnectionString(String connectionString) {
     super.setConnectionString(connectionString);
@@ -59,13 +34,13 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
-  public TableSystem getDataSystem() {
-    return this.fsDataSystem;
+  public FsTableSystem getDataSystem() {
+    return FsTableSystem.of();
   }
 
   @Override
   public void close() {
-    this.fsDataSystem.close();
+    FsTableSystem.of();
   }
 
   @Override
@@ -76,13 +51,13 @@ public class FsDataStore extends DataStore {
 
   public URI getUri() {
 
-    return URI.create(connectionString);
+    return Paths.get(connectionString).toUri();
 
   }
 
   public FsDataPath getDataPath(Path path) {
 
-    return new FsDataPath(this,path);
+    return this.getDataSystem().getFileManager(path).createDataPath(this,path);
 
   }
 
@@ -90,7 +65,7 @@ public class FsDataStore extends DataStore {
   public FsDataPath getDataPath(String... names) {
 
     // Rebuild the path
-    Path currentPath = Paths.get(this.getUri());
+    Path currentPath = Paths.get(connectionString);
     Path path = currentPath;
     for (String name : names) {
       path = path.resolve(name);
@@ -102,7 +77,7 @@ public class FsDataStore extends DataStore {
 
   @Override
   public FsDataPath getCurrentDataPath() {
-    Path currentPath = Paths.get(this.getUri());
+    Path currentPath = Paths.get(connectionString);
     return new FsDataPath(this, currentPath);
   }
 

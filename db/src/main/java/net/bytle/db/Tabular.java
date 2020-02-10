@@ -11,7 +11,6 @@ import net.bytle.fs.Fs;
 import net.bytle.type.Strings;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,14 +35,11 @@ public class Tabular implements AutoCloseable {
    * The local file database name as also stated
    * by the {@link Path#getFileSystem()}
    */
-  public static final String LOCAL_FILE_SCHEME = "file";
   public static final String MEMORY_DATASTORE = "memory";
   public static final String TPCDS_DATASTORE = "tpcds";
 
   public static final String DEFAUT_URL = MemorySystemProvider.SCHEME;
 
-  // A shortcut that can be used only when the bytle-db-fs system is in the class path
-  FsDataStore localFileSystem;
 
   /**
    * The memory database
@@ -61,10 +57,14 @@ public class Tabular implements AutoCloseable {
 
     // Intern datastore
 
+    // Local Fs
+    dataStores.put(FsDataStore.LOCAL_FILE_SYSTEM.getName(), FsDataStore.LOCAL_FILE_SYSTEM);
+
     // Memory
     DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE,MemorySystemProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
+    // TpcsDs
     DataStore tpcDs = DataStore.of(TPCDS_DATASTORE,TPCDS_DATASTORE)
       .addProperty("scale", "0.01");
     dataStores.put(tpcDs.getName(), tpcDs);
@@ -158,17 +158,10 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    return (getFileDataStore()).getDataPath(path);
+    return FsDataStore.LOCAL_FILE_SYSTEM.getDataPath(path);
 
   }
 
-  private FsDataStore getFileDataStore() {
-    if (this.localFileSystem==null) {
-      String connectionString = Paths.get(".").toAbsolutePath().toUri().toString();
-      this.localFileSystem = (FsDataStore) FsDataStore.of("file", connectionString);
-    }
-    return this.localFileSystem;
-  }
 
   /**
    * Use the default storage location

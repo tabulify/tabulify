@@ -1,6 +1,7 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.model.ColumnDef;
@@ -17,9 +18,9 @@ public class CsvManager extends FsFileManager {
 
 
   @Override
-  public CsvDataPath createDataPath(FsTableSystem fsTableSystem, Path path) {
+  public CsvDataPath createDataPath(FsDataStore fsDataStore, Path path) {
 
-    return new CsvDataPath(fsTableSystem, path);
+    return new CsvDataPath(fsDataStore, path);
 
   }
 
