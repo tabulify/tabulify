@@ -1,4 +1,4 @@
-package net.bytle.db.spi;
+package net.bytle.db.fs.struct;
 
 
 import java.security.AccessController;
@@ -31,13 +31,13 @@ import java.util.*;
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
-public abstract class TableSystemProvider {
+public abstract class FsStructProvider {
 
     // lock using when loading providers
     private static final Object lock = new Object();
 
     // installed providers
-    private static volatile List<TableSystemProvider> installedTableSystemProviders;
+    private static volatile List<FsStructProvider> installedStructProviders;
 
     // Used to avoid recursive loading of installed providers
     private static boolean loadingProviders = false;
@@ -45,11 +45,11 @@ public abstract class TableSystemProvider {
     private static Void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
-            sm.checkPermission(new RuntimePermission("TableSystemProvider"));
+            sm.checkPermission(new RuntimePermission("FsStructProvider"));
         return null;
     }
 
-    private TableSystemProvider(Void ignore) {
+    private FsStructProvider(Void ignore) {
     }
 
     /**
@@ -63,29 +63,26 @@ public abstract class TableSystemProvider {
      * @throws SecurityException If a security manager has been installed and it denies
      *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
      */
-    protected TableSystemProvider() {
+    protected FsStructProvider() {
         this(checkPermission());
     }
 
     // loads all installed providers
-    private static List<TableSystemProvider> loadInstalledProviders() {
+    private static List<FsStructProvider> loadInstalledProviders() {
 
-        List<TableSystemProvider> tableSystemProviders = new ArrayList<>();
+        List<FsStructProvider> fsStructProviders = new ArrayList<>();
 
-        ServiceLoader<TableSystemProvider> loadedTableSystemProviders = ServiceLoader
-                .load(TableSystemProvider.class, ClassLoader.getSystemClassLoader());
+        ServiceLoader<FsStructProvider> loadedTableSystemProviders = ServiceLoader
+                .load(FsStructProvider.class, ClassLoader.getSystemClassLoader());
 
-        // TODO: validate the provider ?
         // ServiceConfigurationError may be throw here
-        for (TableSystemProvider provider : loadedTableSystemProviders) {
+        for (FsStructProvider provider : loadedTableSystemProviders) {
 
-            // Validate the provider ?
-            // List<String> schemes = provider.getSchemes();
-            tableSystemProviders.add(provider);
+            fsStructProviders.add(provider);
 
         }
 
-        return tableSystemProviders;
+        return fsStructProviders;
     }
 
     /**
@@ -97,24 +94,24 @@ public abstract class TableSystemProvider {
      * @return An unmodifiable list of the installed service providers.
      * @throws ServiceConfigurationError When an error occurs while loading a service provider
      */
-    public static List<TableSystemProvider> installedProviders() {
-        if (installedTableSystemProviders == null) {
+    public static List<FsStructProvider> installedProviders() {
+        if (installedStructProviders == null) {
 
             synchronized (lock) {
-                if (installedTableSystemProviders == null) {
+                if (installedStructProviders == null) {
                     if (loadingProviders) {
                         throw new Error("Circular loading of installed providers detected");
                     }
                     loadingProviders = true;
 
-                    List<TableSystemProvider> list = AccessController
-                            .doPrivileged((PrivilegedAction<List<TableSystemProvider>>) () -> loadInstalledProviders());
+                    List<FsStructProvider> list = AccessController
+                            .doPrivileged((PrivilegedAction<List<FsStructProvider>>) () -> loadInstalledProviders());
 
-                    installedTableSystemProviders = Collections.unmodifiableList(list);
+                    installedStructProviders = Collections.unmodifiableList(list);
                 }
             }
         }
-        return installedTableSystemProviders;
+        return installedStructProviders;
     }
 
     /**
@@ -122,7 +119,7 @@ public abstract class TableSystemProvider {
      *
      * @return The URI scheme
      */
-    public abstract List<String> getSchemes();
+    public abstract String getContentType();
 
     /**
      * Returns an existing {@code work} created by this provider.
@@ -138,7 +135,7 @@ public abstract class TableSystemProvider {
      * @throws SecurityException           If a security manager is installed and it denies an unspecified
      *                                     permission.
      */
-    public abstract TableSystem getTableSystem();
+    public abstract FsFileManager getFsFileManager();
 
 
     /**

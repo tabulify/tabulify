@@ -23,16 +23,15 @@ public class MemoryDataSystem extends TableSystem {
 
   private final MemorySystemProvider memoryStoreProvider;
   private final MemoryStore memoryStore;
-  private final DataStore dataStore;
+  private MemoryDataStore dataStore;
 
-  public MemoryDataSystem(MemorySystemProvider memorySystemProvider, DataStore dataStore) {
+  public MemoryDataSystem(MemorySystemProvider memorySystemProvider) {
     this.memoryStoreProvider = memorySystemProvider;
     this.memoryStore = new MemoryStore();
-    this.dataStore = dataStore;
   }
 
-  public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider, DataStore dataStore) {
-    return new MemoryDataSystem(memorySystemProvider, dataStore);
+  public static MemoryDataSystem of(MemorySystemProvider memorySystemProvider) {
+    return new MemoryDataSystem(memorySystemProvider);
 
   }
 
@@ -147,17 +146,23 @@ public class MemoryDataSystem extends TableSystem {
     throw new RuntimeException("Not implemented");
   }
 
+  @Override
+  public DataStore createDataStore(String name, String url) {
+    this.dataStore = new MemoryDataStore(name, url, this);
+    return this.dataStore;
+  }
+
 
   @Override
   public DataPath getDataPath(DataUri dataUri) {
-    return MemoryDataPath.of(this, dataUri);
+    return MemoryDataPath.of(this, dataUri.getPath());
   }
 
 
   @Override
   public MemoryDataPath getDataPath(String... names) {
     DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR,names) + DataUri.AT_STRING + this.getDataStore().getName());
-    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri);
+    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri.getPath());
     return memoryDataPath;
   }
 

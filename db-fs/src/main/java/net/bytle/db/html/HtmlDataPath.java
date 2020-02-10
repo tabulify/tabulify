@@ -1,6 +1,6 @@
 package net.bytle.db.html;
 
-import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.struct.FsDataPath;
 import net.bytle.db.fs.FsTableSystem;
 
 import java.nio.file.Path;

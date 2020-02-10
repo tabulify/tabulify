@@ -4,7 +4,6 @@ import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
 import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;

@@ -17,23 +17,23 @@ public class DbDatastore {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    static final String BYTLE_DB_DATABASES_STORE = "BYTLE_DB_DATABASES_STORE";
-    static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"databases.ini");
+    static final String BYTLE_DB_datastoreS_STORE = "BYTLE_DB_datastoreS_STORE";
+    static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"datastores.ini");
 
     public static void run(CliCommand cliCommand, String[] args) {
 
-        cliCommand.setDescription("Database management");
+        cliCommand.setDescription("Datastore management");
 
         cliCommand.commandOf(Words.ADD_COMMAND)
-                .setDescription("add a database");
+                .setDescription("Add a datastore");
         cliCommand.commandOf(Words.UPSERT_COMMAND)
-                .setDescription("update or add a database if it does't exist");
+                .setDescription("Update or add a datastore if it does't exist");
         cliCommand.commandOf(Words.LIST_COMMAND)
-                .setDescription("list the databases");
+                .setDescription("List the datastores");
         cliCommand.commandOf(Words.INFO_COMMAND)
-                .setDescription("show database information");
+                .setDescription("Show datastore information");
         cliCommand.commandOf(Words.REMOVE_COMMAND)
-                .setDescription("Remove a database")
+                .setDescription("Remove a datastore")
                 .setAliasName(REMOVE_COMMAND_ALIAS);
 
         CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -55,9 +55,6 @@ public class DbDatastore {
                         DbDatastoreRemove.run(command, args);
                         break;
                     case INFO_COMMAND:
-                        DbDatastoreInfo.run(command, args);
-                        break;
-                    case SHOW_COMMAND:
                         DbDatastoreInfo.run(command, args);
                         break;
                     default:

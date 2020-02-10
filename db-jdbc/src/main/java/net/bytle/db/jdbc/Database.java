@@ -1,10 +1,12 @@
-package net.bytle.db.database;
+package net.bytle.db.jdbc;
+
+import net.bytle.db.database.DataStore;
 
 /**
  * An object with all meta information about a JDBC data store
  *
  */
-public class Database extends DataStore  {
+public class Database extends DataStore {
 
 
   public static final String JDBC_SCHEME = "jdbc";

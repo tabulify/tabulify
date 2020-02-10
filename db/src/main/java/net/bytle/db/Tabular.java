@@ -1,9 +1,8 @@
 package net.bytle.db;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
-import net.bytle.db.database.FileDataStore;
 import net.bytle.db.engine.Queries;
+import net.bytle.db.fs.FileDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -12,6 +11,7 @@ import net.bytle.fs.Fs;
 import net.bytle.type.Strings;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,9 +20,7 @@ import java.util.Map;
 /**
  * A tabular is a global domain.
  * It's the entry point of every tabular/data application
- * It has knowledge of:
- * * the {@link DatastoreVault}
- * * and of the {@link net.bytle.db.database.Database}
+ * It has knowledge of the {@link DatastoreVault}
  * and therefore is the main entry to create a data path from an URI
  * * a datastore object
  * * a connection
@@ -42,6 +40,10 @@ public class Tabular implements AutoCloseable {
   public static final String MEMORY_DATASTORE = "memory";
   public static final String TPCDS_DATASTORE = "tpcds";
 
+  public static final String DEFAUT_URL = MemorySystemProvider.SCHEME;
+
+  // A shortcut that can be used only when the bytle-db-fs system is in the class path
+  DataStore localFileSystem;
 
   /**
    * The memory database
@@ -59,18 +61,11 @@ public class Tabular implements AutoCloseable {
 
     // Intern datastore
 
-    // Local file System
-    FileDataStore fileDataStore = FileDataStore.LOCAL_FILE_STORE;
-    dataStores.put(fileDataStore.getName(), fileDataStore);
-
     // Memory
-    Database memoryDataBase = Database.of(MEMORY_DATASTORE)
-      .setConnectionString(MemorySystemProvider.SCHEME);
+    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE,MemorySystemProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
 
-
-    DataStore tpcDs = Database.of(TPCDS_DATASTORE)
-      .setConnectionString(TPCDS_DATASTORE)
+    DataStore tpcDs = DataStore.of(TPCDS_DATASTORE,TPCDS_DATASTORE)
       .addProperty("scale", "0.01");
     dataStores.put(tpcDs.getName(), tpcDs);
 
@@ -141,7 +136,7 @@ public class Tabular implements AutoCloseable {
   public DataStore getOrCreateDataStore(String dataStoreName) {
     DataStore dataStore = dataStores.get(dataStoreName);
     if (dataStore == null) {
-      dataStore = DataStore.of(dataStoreName);
+      dataStore = DataStore.of(dataStoreName,DEFAUT_URL );
       dataStores.put(dataStore.getName(), dataStore);
     }
     return dataStore;
@@ -163,14 +158,16 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    String databaseName = FileDataStore.getDataStoreName(path.toUri());
-    FileDataStore dataStore = (FileDataStore) this.dataStores.get(databaseName);
-    if (dataStore == null) {
-      dataStore = FileDataStore.of(path);
-      this.dataStores.put(dataStore.getName(), dataStore);
-    }
-    return dataStore.getDataPath(path);
+    return (getFileDataStore()).getDataPath(path);
 
+  }
+
+  private FileDataStore getFileDataStore() {
+    if (this.localFileSystem==null) {
+      String connectionString = Paths.get(".").toAbsolutePath().toUri().toString();
+      this.localFileSystem = DataStore.of("file", connectionString);
+    }
+    return (FileDataStore) this.localFileSystem;
   }
 
   /**

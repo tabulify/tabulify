@@ -15,7 +15,6 @@ public class MemoryDataPath extends DataPath {
   public static final String PATH_SEPARATOR = "/";
 
   private final MemoryDataSystem memoryDataSystem;
-  private final DataUri dataUri;
 
   /**
    * Default type
@@ -34,18 +33,18 @@ public class MemoryDataPath extends DataPath {
    * See {@link #setCapacity(Integer)}
    */
   private Integer capacity = Integer.MAX_VALUE;
+  private String path;
 
 
-  private MemoryDataPath(MemoryDataSystem memoryDataSystem, DataUri dataUri) {
+  private MemoryDataPath(MemoryDataSystem memoryDataSystem, String path) {
     this.memoryDataSystem = memoryDataSystem;
-    this.dataUri = dataUri;
+    this.path = path;
   }
 
-  protected static MemoryDataPath of(MemoryDataSystem memoryDataSystem, DataUri dataUri) {
-    assert dataUri.getPath() != null : "Path should not be null";
-    return new MemoryDataPath(memoryDataSystem, dataUri);
+  protected static MemoryDataPath of(MemoryDataSystem memoryDataSystem, String path) {
+    return new MemoryDataPath(memoryDataSystem, path);
   }
-  
+
 
   @Override
   public MemoryDataSystem getDataSystem() {
@@ -61,19 +60,19 @@ public class MemoryDataPath extends DataPath {
   @Override
   public List<String> getNames() {
 
-    return Arrays.asList(dataUri.getPath().split(PATH_SEPARATOR));
+    return Arrays.asList(this.path.split(PATH_SEPARATOR));
   }
 
   @Override
   public String getPath() {
 
-    return dataUri.getPath();
+    return path;
 
   }
 
   @Override
   public DataUri getDataUri() {
-    return dataUri;
+    return DataUri.of().setDataStore(this.memoryDataSystem.getDataStore().getName()).setPath(path);
   }
 
   @Override
@@ -83,7 +82,13 @@ public class MemoryDataPath extends DataPath {
 
   @Override
   public MemoryDataPath getChild(String name) {
-    throw new RuntimeException("Not yet implemented");
+
+    if (this.path ==null) {
+      return new MemoryDataPath(memoryDataSystem, name);
+    } else {
+      return new MemoryDataPath(memoryDataSystem, this.path + PATH_SEPARATOR + name);
+    }
+
   }
 
   @Override

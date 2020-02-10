@@ -1,15 +1,10 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.csv.CsvInsertStream;
-import net.bytle.db.csv.CsvManager;
-import net.bytle.db.csv.CsvSelectStream;
+import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.FileDataStore;
-import net.bytle.db.html.HtmlManager;
-import net.bytle.db.json.JsonDataPath;
-import net.bytle.db.json.JsonManager;
-import net.bytle.db.json.JsonSelectStream;
+import net.bytle.db.fs.struct.FsDataPath;
+import net.bytle.db.fs.struct.FsFileManager;
+import net.bytle.db.fs.struct.FsStructProvider;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -37,32 +32,19 @@ import java.util.stream.Collectors;
 public class FsTableSystem extends TableSystem {
 
 
-  private final FileDataStore fileDataStore;
+  private FileDataStore fileDataStore;
   private final FsTableSystemProvider fsTableSystemProvider;
-  private final FileSystem fileSystem;
+  private FileSystem fileSystem;
 
-  private FsTableSystem(FsTableSystemProvider fsTableSystemProvider, FileDataStore fileDataStore) {
-    assert fileDataStore != null;
-    this.fileDataStore = fileDataStore;
+  private FsTableSystem(FsTableSystemProvider fsTableSystemProvider ) {
+
     this.fsTableSystemProvider = fsTableSystemProvider;
-    this.fileSystem = Paths.get(this.fileDataStore.getUri()).getFileSystem();
+
   }
 
-  protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider, FileDataStore database) {
-    return new FsTableSystem(fsTableSystemProvider, database);
+  protected static FsTableSystem of(FsTableSystemProvider fsTableSystemProvider) {
+    return new FsTableSystem(fsTableSystemProvider);
   }
-
-
-  /**
-   * @return the default table system provider (ie the local file system)
-   */
-  public static FsTableSystem getDefault() {
-    FileDataStore defaultDatabase = FileDataStore.of(Paths.get("."));
-    return FsTableSystemProvider.getDefault().getTableSystem(defaultDatabase);
-  }
-
-
-
 
 
   @Override
@@ -115,7 +97,7 @@ public class FsTableSystem extends TableSystem {
     }
 
     return currentMatchesPaths.stream()
-      .map(s -> FsDataPath.of(this, s))
+      .map(path -> getFileManager(path).createDataPath(this,path))
       .collect(Collectors.toList());
   }
 
@@ -143,15 +125,37 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
-    // TODO: We need to get it from the path ?
-    if (CsvDataPath.class.equals(dataPath.getClass())) {
-      return CsvSelectStream.of((CsvDataPath) dataPath);
-    } else if (JsonDataPath.class.equals(dataPath.getClass())) {
-      return JsonSelectStream.of((JsonDataPath) dataPath);
-    } else {
-      throw new RuntimeException("We cannot give a select stream because this data path type (" + dataPath.getClass() + ") has no known select stream.");
-    }
 
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    return getFileManager(fsDataPath).getSelectStream(fsDataPath);
+
+  }
+
+
+  /**
+   * The service provider
+   *
+   * @param path
+   * @return
+   */
+  public FsFileManager getFileManager(Path path) {
+    String contentType = Fs.getExtension(path.toString());
+    FsFileManager fileManager = null;
+    List<FsStructProvider> installedProviders = FsStructProvider.installedProviders();
+    for (FsStructProvider structProvider : installedProviders) {
+      if (structProvider.getContentType().contains(contentType)) {
+        fileManager = structProvider.getFsFileManager();
+        if (fileManager == null) {
+          String message = "The returned file manager is null for the provider (" + structProvider.getClass().toString() + ")";
+          DbLoggers.LOGGER_DB_ENGINE.severe(message);
+          throw new RuntimeException(message);
+        }
+      }
+    }
+    if (fileManager == null) {
+      fileManager = FsFileManager.of();
+    }
+    return fileManager;
   }
 
   @Override
@@ -167,47 +171,23 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public void create(DataPath dataPath) {
-    Path nioPath = ((FsDataPath) dataPath).getNioPath();
-    if (!Files.exists(nioPath)) {
-      getFileManager(nioPath).create(dataPath);
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    if (!exists(dataPath)) {
+      Path path = fsDataPath.getNioPath();
+      try {
+        if (Files.isDirectory(path)) {
+          Files.createDirectory(path);
+        } else {
+          Files.createFile(path);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     } else {
-      throw new RuntimeException("The data path (" + nioPath + ") already exists");
+      throw new RuntimeException("The data path (" + fsDataPath.getNioPath() + ") already exists");
     }
   }
 
-  /**
-   * @param path
-   * @return the manager of a file (ie if this is a CSV, it will return the CSV  manager)
-   */
-  public FsFileManager getFileManager(Path path) {
-
-    // Give the good implementation
-    String scheme = path.toUri().getScheme();
-    switch (scheme) {
-      case "https":
-      case "http":
-        return HtmlManager.of(this);
-      default:
-        String extension = Fs.getExtension(path.getFileName().toString());
-        if (extension==null){
-          return CsvManager.of(this);
-        }
-        String switchKey = extension.toLowerCase();
-        switch (switchKey) {
-          case "csv":
-            return CsvManager.of(this);
-          case "jsonl":
-          case "json":
-            return JsonManager.of(this);
-          case "htm":
-          case "html":
-            return HtmlManager.of(this);
-          default:
-            return FsFileManager.of(this);
-        }
-    }
-
-  }
 
   @Override
   public String getProductName() {
@@ -253,9 +233,13 @@ public class FsTableSystem extends TableSystem {
   @Override
   public InsertStream getInsertStream(DataPath dataPath) {
 
-    final CsvDataPath fsDataPath = (CsvDataPath) dataPath;
-    return CsvInsertStream.of(fsDataPath);
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    return getFileManager(fsDataPath).getInsertStream(fsDataPath);
 
+  }
+
+  private FsFileManager getFileManager(FsDataPath fsDataPath) {
+    return getFileManager(fsDataPath.getNioPath());
   }
 
   @Override
@@ -263,14 +247,14 @@ public class FsTableSystem extends TableSystem {
 
     FsDataPath fsDataPath = (FsDataPath) dataPath;
     Path path = fsDataPath.getNioPath();
-    if (!Files.isDirectory(path)){
-      throw new RuntimeException("The data path ("+dataPath+") is not a directory and therefore has no child");
+    if (!Files.isDirectory(path)) {
+      throw new RuntimeException("The data path (" + dataPath + ") is not a directory and therefore has no child");
     }
 
     try {
 
       List<DataPath> children = new ArrayList<>();
-      Files.newDirectoryStream(path).forEach(p->children.add(dataPath.getChild(p.getFileName().toString())));
+      Files.newDirectoryStream(path).forEach(p -> children.add(dataPath.getChild(p.getFileName().toString())));
       return children;
 
     } catch (IOException e) {
@@ -354,7 +338,7 @@ public class FsTableSystem extends TableSystem {
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
     FsDataPath fsSource = (FsDataPath) source;
     FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource,fsTarget))
+    TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
       .startTimer();
     try {
       Files.copy(fsSource.getNioPath(), fsTarget.getNioPath());
@@ -388,6 +372,13 @@ public class FsTableSystem extends TableSystem {
   @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public DataStore createDataStore(String name, String url) {
+    this.fileDataStore = new FileDataStore(name, url, this);
+    this.fileSystem = Paths.get(this.fileDataStore.getUri()).getFileSystem();
+    return fileDataStore;
   }
 
 
@@ -447,7 +438,7 @@ public class FsTableSystem extends TableSystem {
    * @return
    */
   public FsDataPath getDataPath(Path path) {
-    return getFileManager(path).getDataPath(path);
+    return getFileManager(path).createDataPath(this, path);
   }
 
 }

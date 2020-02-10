@@ -3,7 +3,6 @@ package net.bytle.db;
 
 import net.bytle.crypto.Protector;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
 import org.ini4j.Ini;
@@ -195,7 +194,7 @@ public class DatastoreVault {
         getIniFile().keySet()
           .stream()
           .filter(s -> s.matches(regexpPattern))
-          .map(s -> getDataStore(s))
+          .map(this::getDataStore)
           .collect(Collectors.toList())
       );
     }
@@ -217,9 +216,8 @@ public class DatastoreVault {
     DataStore dataStore = null;
     Wini.Section iniSection = getIniFile().get(name);
     if (iniSection != null) {
-      dataStore = DataStore.of(name);
       String connectionString = iniSection.get(URL);
-      dataStore.setConnectionString(connectionString);
+      dataStore = DataStore.of(name, connectionString);
       dataStore.setUser(iniSection.get(USER));
       if (iniSection.get(PASSWORD) != null) {
         String localPassphrase;
@@ -239,13 +237,8 @@ public class DatastoreVault {
         }
         dataStore.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
       }
-      if (dataStore.getScheme().equals(Database.JDBC_SCHEME)) {
-        dataStore = Database.of(dataStore)
-          .setDriver(iniSection.get(Database.DRIVER_PROPERTY_KEY))
-          .setPostConnectionStatement(iniSection.get(Database.POST_STATEMENT_PROPERTY_KEY));
-      }
     } else {
-      logger.warn("The database ({}) was not found. A null database was returned", name);
+      logger.warn("The datastore ({}) was not found. A null datastore was returned", name);
     }
 
     return dataStore;
@@ -265,47 +258,44 @@ public class DatastoreVault {
    */
   private void load() {
 
-    if (!(Files.exists(this.path))) {
-      Fs.createFile(this.path);
-
-      DataStore database = Database.of(SQLITE)
-        .setDriver("org.sqlite.JDBC")
-        .setDescription("The sqlite default data store connection")
-        .setConnectionString(getSqliteConnectionString(SQLITE));
-      save(database);
-
-      database = Database.of(SQLITE_TARGET)
-        .setDriver("org.sqlite.JDBC")
-        .setDescription("The default sqlite target data store (Sqlite cannot read and write with the same connection)")
-        .setConnectionString(getSqliteConnectionString(SQLITE_TARGET));
-      save(database);
-
-      database = Database.of(ORACLE)
-        .setDriver("oracle.jdbc.OracleDriver")
-        .setConnectionString("jdbc:oracle:thin:@[host]:[port]/[servicename]");
-      save(database);
-
-      database = Database.of(SQLSERVER)
-        .setDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver")
-        .setConnectionString("jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
-        .setUser("sa")
-        .setPassword("TheSecret1!");
-      save(database, true);
-
-      database = Database.of(MYSQL)
-        .setDriver("com.mysql.jdbc.Driver")
-        .setConnectionString("jdbc:mysql://[host]:[port]/[database]");
-      save(database);
-
-      // jdbc:postgresql://host:port/database?prop=value
-      database = Database.of(POSTGRESQL)
-        .setDriver("org.postgresql.Driver")
-        .setConnectionString("jdbc:postgresql://host:port/test?ssl=true");
-      save(database);
-
-    }
 
     try {
+      if (!Files.exists(this.path)) {
+        Fs.createFile(this.path);
+        DataStore database = DataStore.of(SQLITE,getSqliteConnectionString(SQLITE))
+          .addProperty("driver","org.sqlite.JDBC")
+          .setDescription("The sqlite default data store connection");
+        save(database);
+
+        database = DataStore.of(SQLITE_TARGET,getSqliteConnectionString(SQLITE_TARGET))
+          .addProperty("driver","org.sqlite.JDBC")
+          .setDescription("The default sqlite target data store (Sqlite cannot read and write with the same connection)");
+        save(database);
+
+        database = DataStore.of(ORACLE,"jdbc:oracle:thin:@[host]:[port]/[servicename]")
+          .setDescription("The default oracle data store")
+          .addProperty("driver","oracle.jdbc.OracleDriver");
+        save(database);
+
+        database = DataStore.of(SQLSERVER,"jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+          .setDescription("The default sqlserver data store")
+          .addProperty("driver","com.microsoft.sqlserver.jdbc.SQLServerDriver")
+          .setUser("sa")
+          .setPassword("TheSecret1!");
+        save(database, true);
+
+        database = DataStore.of(MYSQL,"jdbc:mysql://[host]:[port]/[database]")
+          .setDescription("The default mysql data store")
+          .addProperty("driver","com.mysql.jdbc.Driver");
+        save(database);
+
+        // jdbc:postgresql://host:port/database?prop=value
+        database = DataStore.of(POSTGRESQL,"jdbc:postgresql://host:port/test?ssl=true")
+          .setDescription("The default postgres data store")
+          .addProperty("driver","org.postgresql.Driver");
+        save(database);
+
+      }
       ini = new Ini(this.path.toFile());
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -379,17 +369,8 @@ public class DatastoreVault {
       dataStoreToUpdate.setUser(dataStore.getUser());
     if (dataStore.getPassword() != null && !dataStore.getPassword().equals(dataStoreToUpdate.getPassword()))
       dataStoreToUpdate.setPassword(dataStore.getPassword());
-    if (dataStore.getScheme().equals(Database.JDBC_SCHEME)) {
-      Database database = (Database) dataStore;
-      Database databaseToUpdate = (Database) dataStoreToUpdate;
-      if (database.getDriver() != null && !database.getDriver().equals(databaseToUpdate.getDriver()))
-        databaseToUpdate.setDriver(database.getDriver());
-      if (database.getPostConnectionStatement() != null && !database.getPostConnectionStatement().equals(databaseToUpdate.getPostConnectionStatement()))
-        databaseToUpdate.setPostConnectionStatement(database.getPostConnectionStatement());
-      save(databaseToUpdate);
-    } else {
-      save(dataStoreToUpdate);
-    }
+    save(dataStoreToUpdate);
+
   }
 
   public void add(DataStore dataStore) {
@@ -400,11 +381,5 @@ public class DatastoreVault {
     save(dataStore);
   }
 
-  public DataStore getOrCreateDataStore(String name) {
-    DataStore dataStore = getDataStore(name);
-    if (dataStore == null) {
-      dataStore = DataStore.of(name);
-    }
-    return dataStore;
-  }
+
 }

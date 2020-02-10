@@ -1,11 +1,11 @@
-package net.bytle.db.database;
+package net.bytle.db.fs;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.uri.Uris;
+import net.bytle.db.spi.TableSystem;
 
 import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
 
@@ -14,19 +14,16 @@ import static net.bytle.db.Tabular.LOCAL_FILE_SCHEME;
  */
 public class FileDataStore extends DataStore {
 
-  final public static FileDataStore LOCAL_FILE_STORE = new FileDataStore("file")
-    .setConnectionString(Paths.get(".").toAbsolutePath().toUri().toString())
-    .setWorkingPath(Paths.get(".").toAbsolutePath().toUri().toString());
 
-  public FileDataStore(String name) {
+  private final FsTableSystem fsDataSystem;
+  private String workingPath;
 
-    super(name);
+  public FileDataStore(String name, String url, FsTableSystem fsTableSystem) {
 
+    super(name, url);
+    this.fsDataSystem = fsTableSystem;
   }
 
-  public static FileDataStore of(Path path) {
-    return of(path.toUri());
-  }
 
   /**
    * @param uri
@@ -46,7 +43,7 @@ public class FileDataStore extends DataStore {
   }
 
   public FileDataStore setWorkingPath(String path) {
-    super.setWorkingPath(path);
+    this.workingPath = path;
     return this;
   }
 
@@ -55,24 +52,22 @@ public class FileDataStore extends DataStore {
     return this;
   }
 
-  private static FileDataStore of(URI uri) {
-
-    FileDataStore fileDataStore;
-    String databaseName = getDataStoreName(uri);
-    switch (databaseName) {
-      case LOCAL_FILE_SCHEME:
-        return LOCAL_FILE_STORE;
-      default:
-        // Http or https gives always absolute path
-        fileDataStore = new FileDataStore(databaseName)
-          .setConnectionString(uri.toString())
-          .setWorkingPath(uri.getPath());
-        Uris.getQueryAsMap(uri.getQuery()).forEach(fileDataStore::addProperty);
-        break;
-
-    }
-    return fileDataStore;
+  @Override
+  public TableSystem getDataSystem() {
+    return this.fsDataSystem;
   }
+
+  @Override
+  public void close() {
+      this.fsDataSystem.close();
+  }
+
+  @Override
+  public boolean isOpen() {
+    return false;
+  }
+
+
 
 
   public URI getUri() {
@@ -88,7 +83,7 @@ public class FileDataStore extends DataStore {
 
   public DataPath getDataPath(Path path) {
 
-    return getTableSystem().getDataPath(path.toString());
+    return this.fsDataSystem.getDataPath(path.toString());
 
   }
 

@@ -2,7 +2,7 @@ package net.bytle.db.play;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.database.Database;
+import net.bytle.db.jdbc.Database;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;

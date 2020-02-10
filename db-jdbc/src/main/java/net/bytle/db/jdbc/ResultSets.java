@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.Database;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.RelationDef;
 

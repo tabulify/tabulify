@@ -2,7 +2,7 @@ package net.bytle.db.jdbc.spi;
 
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.database.Database;
+import net.bytle.db.jdbc.Database;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.model.TableDef;

@@ -30,32 +30,19 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
   protected String connectionString;
   private String description;
 
-
-  protected DataStore(String name) {
+  public DataStore(String name, String connectionString) {
     this.name = name;
+    this.connectionString = connectionString;
   }
-
-  // Path
-  private String workingPath;
 
   // Env (equivalent Url query)
   Map<String, String> properties = new HashMap<>();
 
-  // The equivalent of a connection with actions implementation
-  private TableSystem tableSystem;
 
   // Authority
   private String user;
   private String password;
 
-  // Creating a data store from a data store
-  public DataStore(DataStore dataStore) {
-    this.name = dataStore.getName();
-    this.setUser(dataStore.getUser());
-    this.setPassword(dataStore.getPassword());
-    this.setConnectionString(dataStore.getConnectionString());
-    this.setProperties(dataStore.getProperties());
-  }
 
   public String getName() {
     return name;
@@ -135,47 +122,46 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     return connectionString != null ? Uris.getScheme(connectionString) : "";
   }
 
-  public DataStore setWorkingPath(String path) {
-    this.workingPath = path;
-    return this;
-  }
 
   public DataStore addProperty(String key, String value) {
     properties.put(key, value);
     return this;
   }
 
-  public static DataStore of(String name) {
-    return new DataStore(name);
-  }
+  public static DataStore of(String name, String url) {
 
-  public TableSystem getDataSystem() {
+    String scheme = Uris.getScheme(url);
+    TableSystem tableSystem = createTableSystem(scheme);
     if (tableSystem == null) {
-      tableSystem = getTableSystem();
+      final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + name + ") with the Url (" + url + ")";
+      DbLoggers.LOGGER_DB_ENGINE.warning(message);
+      return new DataStore(name, url);
+    } else {
+      return tableSystem.createDataStore(name, url);
     }
-    return tableSystem;
+
   }
 
-  protected TableSystem getTableSystem() {
-    if (tableSystem == null) {
-      List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
-      String scheme = this.getScheme();
-      for (TableSystemProvider tableSystemProvider : installedProviders) {
-        if (tableSystemProvider.getSchemes().contains(scheme)) {
-          tableSystem = tableSystemProvider.getTableSystem(this);
-          if (tableSystem == null) {
-            String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
-            DbLoggers.LOGGER_DB_ENGINE.severe(message);
-            throw new RuntimeException(message);
-          }
+  public TableSystem getDataSystem(){
+    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
+  }
+
+
+  static protected TableSystem createTableSystem(String scheme) {
+
+    TableSystem tableSystem = null;
+    List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
+    for (TableSystemProvider tableSystemProvider : installedProviders) {
+      if (tableSystemProvider.getSchemes().contains(scheme)) {
+        tableSystem = tableSystemProvider.getTableSystem();
+        if (tableSystem == null) {
+          String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
+          DbLoggers.LOGGER_DB_ENGINE.severe(message);
+          throw new RuntimeException(message);
         }
       }
-      if (tableSystem == null) {
-        final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + this.getName() + ") with the Url (" + this.getConnectionString() + ")";
-        DbLoggers.LOGGER_DB_ENGINE.severe(message);
-        throw new RuntimeException(message);
-      }
     }
+
     return tableSystem;
   }
 
@@ -198,14 +184,8 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
   }
 
   @Override
-  public void close() {
-    if (tableSystem != null) {
-      try {
-        tableSystem.close();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
+  public void close(){
+    // Nothing to do here
   }
 
   public Double getPropertyAsDouble(String property) {
@@ -248,8 +228,8 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    *
    * @return true if this data system was build
    */
-  public boolean isOpen() {
-    return tableSystem != null;
+  public boolean isOpen(){
+    return false;
   }
 
   /**
@@ -258,7 +238,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    */
   public DataPath getQueryDataPath(String query) {
 
-    return getTableSystem().getProcessingEngine().getQuery(query);
+    return getDataSystem().getProcessingEngine().getQuery(query);
 
   }
 

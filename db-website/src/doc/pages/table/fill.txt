@@ -1,7 +1,7 @@
 ====== Bytle Db - Fill a table with generated data ======
 
 
-===== About ===== 
+===== About =====
 The Bytle Db ''table fill'' [[..:action|action]] from the [[start|table module]] will insert generated data into a [[table|relational table]].
 
 
@@ -43,7 +43,7 @@ where:
   * Let's recreate the [[sample:tpcds|Tpc-Ds Store Sales schema]] with the [[sample:drop|sample drop]] and [[sample:create|sample create]] actions against the [[database:default|default sqlite database]].
 <unit>
 <code dos>
-db sample drop --no-strict tpcds-store-sales @sqlite 
+db sample drop --no-strict tpcds-store-sales @sqlite
 </code>
 </unit>
 <unit>
@@ -84,17 +84,17 @@ db table fill --rows 10 @sqlite/date_dim
 db table show @sqlite/date_dim
 </code>
 <console>
-d_date_sk   d_date_id   d_date          d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year   
----------   ---------   -------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------   
-        1   hello       1563400800000             6            9               8        5       7       8       7       8           9                  4               2   hello        hello            h           h           h                               5            1               7               7   h               h                h                 h                   h                
-        2   hello       1562623200000             5            5               6        5       3       5       8       3           6                  8               7   hello        hello            h           h           h                               4            4               3               8   h               h                h                 h                   h                
-        3   hello       1562796000000             2            0               2        2       2       1       2       9           6                  0               0   hello        hello            h           h           h                               0            0               4               9   h               h                h                 h                   h                
-        4   hello       1562968800000             8            8               7        3       2       1       3       7           0                  3               5   hello        hello            h           h           h                               0            5               7               7   h               h                h                 h                   h                
-        5   hello       1562709600000             4            1               5        1       9       8       9       5           8                  8               6   hello        hello            h           h           h                               8            9               7               0   h               h                h                 h                   h                
-        6   hello       1563228000000             1            4               5        8       7       1       4       4           3                  5               0   hello        hello            h           h           h                               8            8               0               0   h               h                h                 h                   h                
-        7   hello       1562796000000             3            4               8        6       6       4       9       4           0                  5               2   hello        hello            h           h           h                               8            3               1               0   h               h                h                 h                   h                
-        8   hello       1563141600000             5            9               0        4       9       7       8       0           1                  2               2   hello        hello            h           h           h                               0            3               6               9   h               h                h                 h                   h                
-        9   hello       1562968800000             5            6               2        2       7       8       9       4           3                  6               0   hello        hello            h           h           h                               5            1               1               9   h               h                h                 h                   h                
+d_date_sk   d_date_id   d_date          d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year
+---------   ---------   -------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------
+        1   hello       1563400800000             6            9               8        5       7       8       7       8           9                  4               2   hello        hello            h           h           h                               5            1               7               7   h               h                h                 h                   h
+        2   hello       1562623200000             5            5               6        5       3       5       8       3           6                  8               7   hello        hello            h           h           h                               4            4               3               8   h               h                h                 h                   h
+        3   hello       1562796000000             2            0               2        2       2       1       2       9           6                  0               0   hello        hello            h           h           h                               0            0               4               9   h               h                h                 h                   h
+        4   hello       1562968800000             8            8               7        3       2       1       3       7           0                  3               5   hello        hello            h           h           h                               0            5               7               7   h               h                h                 h                   h
+        5   hello       1562709600000             4            1               5        1       9       8       9       5           8                  8               6   hello        hello            h           h           h                               8            9               7               0   h               h                h                 h                   h
+        6   hello       1563228000000             1            4               5        8       7       1       4       4           3                  5               0   hello        hello            h           h           h                               8            8               0               0   h               h                h                 h                   h
+        7   hello       1562796000000             3            4               8        6       6       4       9       4           0                  5               2   hello        hello            h           h           h                               8            3               1               0   h               h                h                 h                   h
+        8   hello       1563141600000             5            9               0        4       9       7       8       0           1                  2               2   hello        hello            h           h           h                               0            3               6               9   h               h                h                 h                   h
+        9   hello       1562968800000             5            6               2        2       7       8       9       4           3                  6               0   hello        hello            h           h           h                               5            1               1               9   h               h                h                 h                   h
        10   hello       1563228000000             1            1               4        7       9       1       8       7           5                  7               9   hello        hello            h           h           h                               7            5               8               7   h               h                h                 h                   h
 </console>
 </unit>
@@ -109,7 +109,7 @@ db table fill --rows 10000 @sqlite/date_dim
 08:00:21 - INFO - Loading the table ("date_dim")
 08:00:21 - INFO - The size of the table ("date_dim") before insertion is : 10
 08:00:21 - INFO - Inserting 9990.0 rows into the table ("date_dim")
-08:00:21 - INFO - The driver is supporting batch update. 
+08:00:21 - INFO - The driver is supporting batch update.
 08:00:21 - INFO - The driver is supporting named parameters.
 08:00:21 - INFO - Insert Statement:INSERT INTO "date_dim" ("d_date_sk", "d_date_id", "d_date", "d_month_seq", "d_week_seq", "d_quarter_seq", "d_year", "d_dow", "d_moy", "d_dom", "d_qoy", "d_fy_year", "d_fy_quarter_seq", "d_fy_week_seq", "d_day_name", "d_quarter_name", "d_holiday", "d_weekend", "d_following_holiday", "d_first_dom", "d_last_dom", "d_same_day_ly", "d_same_day_lq", "d_current_day", "d_current_week", "d_current_month", "d_current_quarter", "d_current_year") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 08:00:22 - INFO - commit in the table "date_dim"
@@ -130,8 +130,8 @@ db table fill --rows 10000 @sqlite/date_dim
 db table list @sqlite/date_dim
 </code>
 <console>
-Table Name   Rows Count   
-----------   ----------   
+Table Name   Rows Count
+----------   ----------
 date_dim          10000
 </console>
 </unit>
@@ -141,7 +141,7 @@ date_dim          10000
   * Let's recreate the [[sample:tpcds|Tpc-Ds Store Sales schema]] with the [[sample:drop|sample drop]] and [[sample:create|sample create]] actions against the [[database:default|default sqlite database]].
 <unit>
 <code dos>
-db sample drop --no-strict tpcds-store-sales @sqlite 
+db sample drop --no-strict tpcds-store-sales @sqlite
 </code>
 </unit>
 <unit>
@@ -211,7 +211,7 @@ db table fill --data-def %BYTLE_DB_HOME%\doc\files\date_dim_def.yml @sqlite/date
 22:57:21 - INFO - Loading the table ("date_dim")
 22:57:21 - INFO - The size of the table ("date_dim") before insertion is : 0
 22:57:22 - INFO - Inserting 10000.0 rows into the table ("date_dim")
-22:57:22 - INFO - The driver is supporting batch update. 
+22:57:22 - INFO - The driver is supporting batch update.
 22:57:22 - INFO - The driver is supporting named parameters.
 22:57:22 - INFO - Insert Statement:INSERT INTO "date_dim" ("d_date_sk", "d_date_id", "d_date", "d_month_seq", "d_week_seq", "d_quarter_seq", "d_year", "d_dow", "d_moy", "d_dom", "d_qoy", "d_fy_year", "d_fy_quarter_seq", "d_fy_week_seq", "d_day_name", "d_quarter_name", "d_holiday", "d_weekend", "d_following_holiday", "d_first_dom", "d_last_dom", "d_same_day_ly", "d_same_day_lq", "d_current_day", "d_current_week", "d_current_month", "d_current_quarter", "d_current_year") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 22:58:24 - INFO - commit in the table "date_dim"
@@ -234,17 +234,17 @@ db table fill --data-def %BYTLE_DB_HOME%\doc\files\date_dim_def.yml @sqlite/date
 db table show --limit 10 @sqlite/date_dim
 </code>
 <console>
-d_date_sk   d_date_id    d_date           d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year   
----------   ----------   --------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------   
-        1   1900-02-02   -2206231200000             1            9               0        2       2       2       0       0        1900                  3               0   Thursday     hello            h           h           h                               9            2               8               7   h               h                h                 h                   h                
-        2   1900-02-03   -2206144800000             1            9               8        3       1       2       6       5        1900                  7               0   Friday       hello            h           h           h                               1            6               1               0   h               h                h                 h                   h                
-        3   1900-02-04   -2206058400000             1            1               2        3       8       2       2       6        1900                  6               7   Saturday     hello            h           h           h                               2            7               5               1   h               h                h                 h                   h                
-        4   1900-02-05   -2205972000000             1            5               1        4       5       2       5       9        1900                  2               9   Sunday       hello            h           h           h                               9            4               8               9   h               h                h                 h                   h                
-        5   1900-02-06   -2205885600000             1            1               9        4       4       2       4       9        1900                  5               7   Monday       hello            h           h           h                               5            7               0               9   h               h                h                 h                   h                
-        6   1900-02-07   -2205799200000             1            3               5        1       1       2       6       4        1900                  3               3   Tuesday      hello            h           h           h                               6            9               2               4   h               h                h                 h                   h                
-        7   1900-02-08   -2205712800000             1            8               9        1       2       2       3       7        1900                  7               0   Wednesday    hello            h           h           h                               8            9               0               5   h               h                h                 h                   h                
-        8   1900-02-09   -2205626400000             1            8               5        6       0       2       0       7        1900                  1               6   Thursday     hello            h           h           h                               0            9               3               1   h               h                h                 h                   h                
-        9   1900-02-10   -2205540000000             1            7               5        6       4       2       1       6        1900                  7               2   Friday       hello            h           h           h                               6            2               3               3   h               h                h                 h                   h                
+d_date_sk   d_date_id    d_date           d_month_seq   d_week_seq   d_quarter_seq   d_year   d_dow   d_moy   d_dom   d_qoy   d_fy_year   d_fy_quarter_seq   d_fy_week_seq   d_day_name   d_quarter_name   d_holiday   d_weekend   d_following_holiday   d_first_dom   d_last_dom   d_same_day_ly   d_same_day_lq   d_current_day   d_current_week   d_current_month   d_current_quarter   d_current_year
+---------   ----------   --------------   -----------   ----------   -------------   ------   -----   -----   -----   -----   ---------   ----------------   -------------   ----------   --------------   ---------   ---------   -------------------   -----------   ----------   -------------   -------------   -------------   --------------   ---------------   -----------------   --------------
+        1   1900-02-02   -2206231200000             1            9               0        2       2       2       0       0        1900                  3               0   Thursday     hello            h           h           h                               9            2               8               7   h               h                h                 h                   h
+        2   1900-02-03   -2206144800000             1            9               8        3       1       2       6       5        1900                  7               0   Friday       hello            h           h           h                               1            6               1               0   h               h                h                 h                   h
+        3   1900-02-04   -2206058400000             1            1               2        3       8       2       2       6        1900                  6               7   Saturday     hello            h           h           h                               2            7               5               1   h               h                h                 h                   h
+        4   1900-02-05   -2205972000000             1            5               1        4       5       2       5       9        1900                  2               9   Sunday       hello            h           h           h                               9            4               8               9   h               h                h                 h                   h
+        5   1900-02-06   -2205885600000             1            1               9        4       4       2       4       9        1900                  5               7   Monday       hello            h           h           h                               5            7               0               9   h               h                h                 h                   h
+        6   1900-02-07   -2205799200000             1            3               5        1       1       2       6       4        1900                  3               3   Tuesday      hello            h           h           h                               6            9               2               4   h               h                h                 h                   h
+        7   1900-02-08   -2205712800000             1            8               9        1       2       2       3       7        1900                  7               0   Wednesday    hello            h           h           h                               8            9               0               5   h               h                h                 h                   h
+        8   1900-02-09   -2205626400000             1            8               5        6       0       2       0       7        1900                  1               6   Thursday     hello            h           h           h                               0            9               3               1   h               h                h                 h                   h
+        9   1900-02-10   -2205540000000             1            7               5        6       4       2       1       6        1900                  7               2   Friday       hello            h           h           h                               6            2               3               3   h               h                h                 h                   h
        10   1900-02-11   -2205453600000             1            8               5        8       6       2       1       4        1900                  2               9   Saturday     hello            h           h           h                               6            3               6               8   h               h                h                 h                   h
 </console>
 </unit>
@@ -292,10 +292,10 @@ java.security.AccessControlException: access denied ("javax.management.MBeanTrus
 	at org.sqlite.JDBC.<clinit>(JDBC.java:31)
 	at java.lang.Class.forName0(Native Method)
 	at java.lang.Class.forName(Class.java:264)
-	at net.bytle.db.database.Database.getNewConnection(Database.java:478)
-	at net.bytle.db.database.Database.getCurrentConnection(Database.java:389)
-	at net.bytle.db.database.Database.getDatabaseProductName(Database.java:422)
-	at net.bytle.db.database.Database.getCurrentSchema(Database.java:688)
+	at net.bytle.db.jdbc.Database.getNewConnection(Database.java:478)
+	at net.bytle.db.jdbc.Database.getCurrentConnection(Database.java:389)
+	at net.bytle.db.jdbc.Database.getDatabaseProductName(Database.java:422)
+	at net.bytle.db.jdbc.Database.getCurrentSchema(Database.java:688)
 	at net.bytle.db.cli.DbTableFill.run(DbTableFill.java:82)
 	at net.bytle.db.cli.DbTable.run(DbTable.java:60)
 	at net.bytle.db.cli.Db.main(Db.java:97)

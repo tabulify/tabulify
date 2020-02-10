@@ -127,6 +127,5 @@ public abstract class TableSystem implements AutoCloseable {
   public abstract ProcessingEngine getProcessingEngine();
 
 
-
-
+  public abstract DataStore createDataStore(String name, String url);
 }

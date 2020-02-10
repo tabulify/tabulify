@@ -11,7 +11,6 @@ import net.bytle.log.Log;
 import java.nio.file.Path;
 import java.util.List;
 
-import static net.bytle.db.cli.DbDatastore.BYTLE_DB_DATABASES_STORE;
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 
 
@@ -36,10 +35,7 @@ public class DbDatastoreRemove {
                 .setDescription("the database name or a glob pattern")
                 .setMandatory(true);
 
-        cliCommand.optionOf(Words.DATASTORE_VAULT_PATH)
-                .setDescription("The path where the database information are stored")
-                .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_STORE);
+        cliCommand.optionOf(Words.DATASTORE_VAULT_PATH);
 
         cliCommand.flagOf(Words.NOT_STRICT)
                 .setDescription("If the removed database does not exist, the command will not exit with a failure code.")

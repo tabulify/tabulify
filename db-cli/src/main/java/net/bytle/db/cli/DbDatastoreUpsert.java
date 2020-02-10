@@ -6,7 +6,6 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
@@ -27,7 +26,6 @@ public class DbDatastoreUpsert {
   protected static final String PASSPHRASE = "passphrase";
   protected static final String PASSWORD = "password";
 
-  protected static final String STATEMENT = "statement";
   private static final Log LOGGER = Db.LOGGER_DB_CLI;
   private static final String DATABASE_NAME = "name";
 
@@ -74,17 +72,12 @@ public class DbDatastoreUpsert {
       .setDescription("The jdbc driver (for a jdbc connection)");
 
 
-    cliCommand.optionOf(STATEMENT)
-      .setShortName("s")
-      .setDescription("A inline statement to be executed after a connection");
-
     cliCommand.getGroup("Database Properties")
       .addWordOf(URL)
       .addWordOf(LOGIN)
       .addWordOf(PASSWORD)
       .addWordOf(DRIVER)
       .addWordOf(PASSPHRASE)
-      .addWordOf(STATEMENT)
       .addWordOf(DATASTORE_VAULT_PATH);
 
     // Args control
@@ -96,7 +89,6 @@ public class DbDatastoreUpsert {
     final String userValue = cliParser.getString(LOGIN);
     final String pwdValue = cliParser.getString(PASSWORD);
     final String driverValue = cliParser.getString(DRIVER);
-    final String statementValue = cliParser.getString(STATEMENT);
 
     if (pwdValue != null && passphrase == null) {
       LOGGER.severe("A passphrase is mandatory to store a password");
@@ -108,13 +100,11 @@ public class DbDatastoreUpsert {
       .setPassphrase(passphrase);
 
     DataStore dataStore = DataStore.of(datastoreName);
-    if (driverValue != null) dataStore.setConnectionString(urlValue);
+    if (urlValue != null) dataStore.setConnectionString(urlValue);
     if (userValue != null) dataStore.setUser(userValue);
     if (pwdValue != null ) dataStore.setPassword(pwdValue);
-    Database database = ((Database) dataStore);
-    if (driverValue!=null) database.setDriver(driverValue);
-    if (statementValue!=null) database.setDriver(statementValue);
-    if (datastoreVault.getDataStore(dataStore.getName())== null) {
+    if (driverValue!=null) dataStore.addProperty("driver",driverValue);
+    if (datastoreVault.getDataStore(dataStore.getName())!= null) {
       datastoreVault.update(dataStore);
       LOGGER.info("The datastore (" + datastoreName + ") was updated.");
     } else {

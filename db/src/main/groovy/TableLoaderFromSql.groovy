@@ -9,7 +9,7 @@
 
 import net.bytle.table.TableLoader.QueryDataLoader
 import net.bytle.table.TableLoader.TableLoaderOptions
-import net.bytle.db.database.Database
+import Database
 
 println "Source Database: "+args[0];
 println "Target Database: "+args[1];

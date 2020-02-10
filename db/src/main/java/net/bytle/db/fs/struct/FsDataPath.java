@@ -1,5 +1,6 @@
-package net.bytle.db.fs;
+package net.bytle.db.fs.struct;
 
+import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
@@ -11,8 +12,7 @@ import java.util.stream.IntStream;
 /**
  * A wrapper around a {@link Path} that adds the data def
  * <p>
- * If you want to use a local file, use {@link FsTableSystem#getDefault() the default file system} to instantiate
- * a data path with the function {@link FsTableSystem#getDataPath(Path)}
+ *
  */
 public class FsDataPath extends DataPath {
 
@@ -20,7 +20,7 @@ public class FsDataPath extends DataPath {
   protected final Path path;
   private final FsTableSystem tableSystem;
 
-  protected FsDataPath(FsTableSystem fsTableSystem, Path path) {
+  public FsDataPath(FsTableSystem fsTableSystem, Path path) {
 
     this.tableSystem = fsTableSystem;
     this.path = path;
@@ -48,7 +48,7 @@ public class FsDataPath extends DataPath {
   @Override
   public FsDataPath getSibling(String name) {
     Path siblingPath = path.resolveSibling(name);
-    return getDataSystem().getFileManager(siblingPath).getDataPath(siblingPath);
+    return getDataSystem().getFileManager(siblingPath).createDataPath(getDataSystem(),siblingPath);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class FsDataPath extends DataPath {
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return getDataSystem().getFileManager(resolvedPath).getDataPath(resolvedPath);
+    return getDataSystem().getFileManager(resolvedPath).createDataPath(getDataSystem(), resolvedPath);
   }
 
   @Override

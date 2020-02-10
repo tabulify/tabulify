@@ -27,11 +27,12 @@ public class DbDatastoreAdd {
   protected static final String PASSPHRASE = "passphrase";
   protected static final String PASSWORD = "password";
 
-  protected static final String STATEMENT = "statement";
 
   private static final String DATASTORE_NAME = "name";
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbDatastoreAdd.class);;
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbDatastoreAdd.class);
+  ;
+
   public static void run(CliCommand cliCommand, String[] args) {
 
 
@@ -75,17 +76,13 @@ public class DbDatastoreAdd {
       .setShortName("d")
       .setDescription("The jdbc driver (JDBC URL only)");
 
-    cliCommand.optionOf(STATEMENT)
-      .setShortName("s")
-      .setDescription("A SQL statement to be executed after a connection (JDBC URL only)");
 
-    cliCommand.getGroup("datastore Properties")
+    cliCommand.getGroup("Datastore Properties")
       .addWordOf(URL)
       .addWordOf(LOGIN)
       .addWordOf(PASSWORD)
       .addWordOf(DRIVER)
       .addWordOf(PASSPHRASE)
-      .addWordOf(STATEMENT)
       .addWordOf(DATASTORE_VAULT_PATH);
 
     // Args control
@@ -95,7 +92,6 @@ public class DbDatastoreAdd {
     final String driverValue = cliParser.getString(DRIVER);
     final String userValue = cliParser.getString(LOGIN);
     final String pwdValue = cliParser.getString(PASSWORD);
-    final String statementValue = cliParser.getString(STATEMENT);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
     final String passphrase = cliParser.getString(PASSPHRASE);
 
@@ -118,25 +114,20 @@ public class DbDatastoreAdd {
       dataStore = Database.of(datastoreName)
         .setConnectionString(urlValue)
         .setUser(userValue)
-        .setPassword(pwdValue);
-      if (dataStore.getScheme().equals(Database.JDBC_SCHEME)){
-        ((Database) dataStore)
-          .setPostConnectionStatement(statementValue)
-          .setDriver(driverValue);
-      }
-      datastoreVault.save(dataStore);
-      LOGGER.info("The datastore ({}) was saved.", datastoreName);
-
-      // Ping test ?
-      try {
-        dataStore.getDataSystem();
-      } catch (Exception e) {
-        LOGGER.warn("We were unable to make a connection to the datastore {}", datastoreName);
-      }
-      System.out.println("Connection pinged");
-      dataStore.close();
-
+        .setPassword(pwdValue)
+        .addProperty(Database.DRIVER_PROPERTY_KEY, driverValue);
     }
+    datastoreVault.save(dataStore);
+    LOGGER.info("The datastore ({}) was saved.", datastoreName);
+
+    // Ping test ?
+    try {
+      dataStore.getDataSystem();
+    } catch (Exception e) {
+      LOGGER.warn("We were unable to make a connection to the datastore {}", datastoreName);
+    }
+    System.out.println("Connection pinged");
+    dataStore.close();
 
     LOGGER.info("Bye !");
 

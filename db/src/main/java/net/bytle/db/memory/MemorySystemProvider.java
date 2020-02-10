@@ -1,6 +1,5 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 
@@ -38,14 +37,13 @@ public class MemorySystemProvider extends TableSystemProvider {
      * may require to check a permission before returning a reference to an
      * existing work.
      *
-     * @param dataStore : an object that got all Uri information
      * @return The sql database
      * @throws SecurityException If a security manager is installed and it denies an unspecified
      *                           permission.
      */
     @Override
-    public TableSystem getTableSystem(DataStore dataStore) {
-        return MemoryDataSystem.of(this, dataStore);
+    public TableSystem getTableSystem() {
+        return MemoryDataSystem.of(this);
     }
 
 }

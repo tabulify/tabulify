@@ -2,8 +2,6 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 
-import static net.bytle.db.cli.DbDatastore.BYTLE_DB_DATABASES_STORE;
-
 /**
  * Created by gerard on 20-06-2017.
  * Define the global options
@@ -17,7 +15,9 @@ public class Words {
   // CliName Bytle Db bdb
     static final String CLI_NAME = "db";
 
-    public static final String DB_NAME = "db.name";
+  public static final String ENV_DATASTORE_VAULT_PATH = Words.CLI_NAME + "_DATASTORE_VAULT";
+
+  public static final String DB_NAME = "db.name";
     // Config file words
     static final String CONFIG_FILE_PATH = "conf";
 
@@ -42,8 +42,6 @@ public class Words {
 
     static final String EXECUTE_COMMAND = "execute";
     static final String COUNT = "count";
-
-
 
     // Delete command
     static final String DROP_COMMAND = "drop";
@@ -108,7 +106,6 @@ public class Words {
                 .setTypeAsOption()
                 .setDescription("Define the file format");
 
-
         cliCommand.globalWordOf(OUTPUT_DATA_URI)
                 .setTypeAsOption()
                 .setShortName("o")
@@ -119,12 +116,7 @@ public class Words {
                 .setTypeAsOption()
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
-                .setEnvName(BYTLE_DB_DATABASES_STORE);
-
-        cliCommand.globalWordOf(Words.GLOB_PATERN_DATADEF_FILE)
-                .setTypeAsOption()
-                .setDescription("A path to a data definition file (DataDef.yml) or a directory containing multiple data definition files.")
-                .setEnvName("BYTLE_DB_DATA_DEF");
+                .setEnvName(ENV_DATASTORE_VAULT_PATH);
 
     }
 
