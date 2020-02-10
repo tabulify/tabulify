@@ -1,6 +1,6 @@
 package net.bytle.db.html;
 
-import net.bytle.db.fs.struct.FsFileManager;
+import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.spi.DataPath;
 

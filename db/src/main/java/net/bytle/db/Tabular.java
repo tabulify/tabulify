@@ -2,7 +2,7 @@ package net.bytle.db;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
-import net.bytle.db.fs.FileDataStore;
+import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -43,7 +43,7 @@ public class Tabular implements AutoCloseable {
   public static final String DEFAUT_URL = MemorySystemProvider.SCHEME;
 
   // A shortcut that can be used only when the bytle-db-fs system is in the class path
-  DataStore localFileSystem;
+  FsDataStore localFileSystem;
 
   /**
    * The memory database
@@ -162,12 +162,12 @@ public class Tabular implements AutoCloseable {
 
   }
 
-  private FileDataStore getFileDataStore() {
+  private FsDataStore getFileDataStore() {
     if (this.localFileSystem==null) {
       String connectionString = Paths.get(".").toAbsolutePath().toUri().toString();
-      this.localFileSystem = DataStore.of("file", connectionString);
+      this.localFileSystem = (FsDataStore) FsDataStore.of("file", connectionString);
     }
-    return (FileDataStore) this.localFileSystem;
+    return this.localFileSystem;
   }
 
   /**

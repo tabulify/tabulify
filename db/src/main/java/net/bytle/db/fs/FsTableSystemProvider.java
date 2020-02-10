@@ -1,6 +1,5 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.TableSystemProvider;
 
 import java.util.Arrays;
@@ -10,8 +9,6 @@ public class FsTableSystemProvider extends TableSystemProvider {
 
 
     public static final String LOCAL_FILE_SCHEME = "file";
-
-    // TODO: get them from the NIOS implementation
     public static final String HTTP_SCHEME = "http";
     public static final String HTTP_SCHEMES = "https";
 
@@ -27,7 +24,7 @@ public class FsTableSystemProvider extends TableSystemProvider {
 
     /**
      * Returns the URI scheme that identifies this provider.
-     *
+     * TODO: get them dynamically from the NIOFS implementation
      * @return The URI scheme
      */
     @Override

@@ -8,6 +8,7 @@ import net.bytle.db.model.TableDef;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public class JsonDataDef extends TableDef {
@@ -46,7 +47,11 @@ public class JsonDataDef extends TableDef {
     if (super.getColumnDefs().size() == 0) {
       try {
         JsonFactory jsonFactory = new JsonFactory();
-        Files.newBufferedReader(jsonDataPath.getNioPath()).lines().forEach(
+        Path nioPath = jsonDataPath.getNioPath();
+        if (!Files.exists(nioPath)){
+          throw new RuntimeException("The file "+nioPath+" does not exist, we can't read it");
+        }
+        Files.newBufferedReader(nioPath).lines().forEach(
           s-> {
             try {
               JsonParser jsonParser = jsonFactory.createParser(s);

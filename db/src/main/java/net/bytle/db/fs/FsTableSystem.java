@@ -2,9 +2,6 @@ package net.bytle.db.fs;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.fs.struct.FsDataPath;
-import net.bytle.db.fs.struct.FsFileManager;
-import net.bytle.db.fs.struct.FsStructProvider;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -32,7 +29,7 @@ import java.util.stream.Collectors;
 public class FsTableSystem extends TableSystem {
 
 
-  private FileDataStore fileDataStore;
+  private FsDataStore fsDataStore;
   private final FsTableSystemProvider fsTableSystemProvider;
   private FileSystem fileSystem;
 
@@ -105,7 +102,7 @@ public class FsTableSystem extends TableSystem {
   public FsDataPath getDataPath(String... names) {
 
     // Rebuild the path
-    Path currentPath = Paths.get(this.fileDataStore.getUri());
+    Path currentPath = Paths.get(this.fsDataStore.getUri());
     Path path = currentPath;
     for (String name : names) {
       path = path.resolve(name);
@@ -141,8 +138,8 @@ public class FsTableSystem extends TableSystem {
   public FsFileManager getFileManager(Path path) {
     String contentType = Fs.getExtension(path.toString());
     FsFileManager fileManager = null;
-    List<FsStructProvider> installedProviders = FsStructProvider.installedProviders();
-    for (FsStructProvider structProvider : installedProviders) {
+    List<FsFileManagerProvider> installedProviders = FsFileManagerProvider.installedProviders();
+    for (FsFileManagerProvider structProvider : installedProviders) {
       if (structProvider.getContentType().contains(contentType)) {
         fileManager = structProvider.getFsFileManager();
         if (fileManager == null) {
@@ -160,7 +157,7 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public DataStore getDataStore() {
-    return this.fileDataStore;
+    return this.fsDataStore;
   }
 
 
@@ -323,7 +320,7 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public FsDataPath getCurrentPath() {
-    Path currentPath = Paths.get(this.fileDataStore.getUri());
+    Path currentPath = Paths.get(this.fsDataStore.getUri());
     return new FsDataPath(this, currentPath);
   }
 
@@ -376,9 +373,9 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public DataStore createDataStore(String name, String url) {
-    this.fileDataStore = new FileDataStore(name, url, this);
-    this.fileSystem = Paths.get(this.fileDataStore.getUri()).getFileSystem();
-    return fileDataStore;
+    this.fsDataStore = new FsDataStore(name, url, this);
+    this.fileSystem = Paths.get(this.fsDataStore.getUri()).getFileSystem();
+    return fsDataStore;
   }
 
 

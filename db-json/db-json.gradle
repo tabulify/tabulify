@@ -3,3 +3,8 @@
  */
 
 description = 'Db Json'
+
+dependencies {
+  compile project(':bytle-db')
+  compile 'com.fasterxml.jackson.core:jackson-core:2.10.1'
+}

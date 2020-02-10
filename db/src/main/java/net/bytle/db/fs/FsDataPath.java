@@ -1,6 +1,5 @@
-package net.bytle.db.fs.struct;
+package net.bytle.db.fs;
 
-import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 

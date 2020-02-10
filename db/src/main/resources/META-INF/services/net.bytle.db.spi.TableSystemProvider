@@ -1,1 +1,2 @@
 net.bytle.db.memory.MemorySystemProvider
+net.bytle.db.fs.FsTableSystemProvider

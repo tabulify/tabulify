@@ -1,13 +1,19 @@
-package net.bytle.db.fs.struct;
+package net.bytle.db.fs;
 
-import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
 import java.nio.file.Path;
 
 /**
- * A wrapper around a FsDataPath to give the implementation specific structure function
+ * A file manager is responsible for:
+ *   * the instantiation of a file with a structure
+ *   * the retrieving of a select and insert stream
+ *
+ * This file manager is the default one when the content is not known
+ *
+ * A file manager for a defined type (Csv, ...) can be defined via the {@link FsFileManagerProvider}
+ *
  */
 public class FsFileManager  {
 

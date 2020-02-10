@@ -1,4 +1,4 @@
-package net.bytle.db.fs.struct;
+package net.bytle.db.fs;
 
 
 import java.security.AccessController;
@@ -31,13 +31,13 @@ import java.util.*;
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
-public abstract class FsStructProvider {
+public abstract class FsFileManagerProvider {
 
     // lock using when loading providers
     private static final Object lock = new Object();
 
     // installed providers
-    private static volatile List<FsStructProvider> installedStructProviders;
+    private static volatile List<FsFileManagerProvider> installedStructProviders;
 
     // Used to avoid recursive loading of installed providers
     private static boolean loadingProviders = false;
@@ -49,7 +49,7 @@ public abstract class FsStructProvider {
         return null;
     }
 
-    private FsStructProvider(Void ignore) {
+    private FsFileManagerProvider(Void ignore) {
     }
 
     /**
@@ -63,26 +63,26 @@ public abstract class FsStructProvider {
      * @throws SecurityException If a security manager has been installed and it denies
      *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
      */
-    protected FsStructProvider() {
+    protected FsFileManagerProvider() {
         this(checkPermission());
     }
 
     // loads all installed providers
-    private static List<FsStructProvider> loadInstalledProviders() {
+    private static List<FsFileManagerProvider> loadInstalledProviders() {
 
-        List<FsStructProvider> fsStructProviders = new ArrayList<>();
+        List<FsFileManagerProvider> fsFileManagerProviders = new ArrayList<>();
 
-        ServiceLoader<FsStructProvider> loadedTableSystemProviders = ServiceLoader
-                .load(FsStructProvider.class, ClassLoader.getSystemClassLoader());
+        ServiceLoader<FsFileManagerProvider> loadedTableSystemProviders = ServiceLoader
+                .load(FsFileManagerProvider.class, ClassLoader.getSystemClassLoader());
 
         // ServiceConfigurationError may be throw here
-        for (FsStructProvider provider : loadedTableSystemProviders) {
+        for (FsFileManagerProvider provider : loadedTableSystemProviders) {
 
-            fsStructProviders.add(provider);
+            fsFileManagerProviders.add(provider);
 
         }
 
-        return fsStructProviders;
+        return fsFileManagerProviders;
     }
 
     /**
@@ -94,7 +94,7 @@ public abstract class FsStructProvider {
      * @return An unmodifiable list of the installed service providers.
      * @throws ServiceConfigurationError When an error occurs while loading a service provider
      */
-    public static List<FsStructProvider> installedProviders() {
+    public static List<FsFileManagerProvider> installedProviders() {
         if (installedStructProviders == null) {
 
             synchronized (lock) {
@@ -104,8 +104,8 @@ public abstract class FsStructProvider {
                     }
                     loadingProviders = true;
 
-                    List<FsStructProvider> list = AccessController
-                            .doPrivileged((PrivilegedAction<List<FsStructProvider>>) () -> loadInstalledProviders());
+                    List<FsFileManagerProvider> list = AccessController
+                            .doPrivileged((PrivilegedAction<List<FsFileManagerProvider>>) () -> loadInstalledProviders());
 
                     installedStructProviders = Collections.unmodifiableList(list);
                 }
@@ -119,7 +119,7 @@ public abstract class FsStructProvider {
      *
      * @return The URI scheme
      */
-    public abstract String getContentType();
+    public abstract List<String> getContentType();
 
     /**
      * Returns an existing {@code work} created by this provider.
