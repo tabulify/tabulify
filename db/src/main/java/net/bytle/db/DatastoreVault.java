@@ -218,25 +218,35 @@ public class DatastoreVault {
     if (iniSection != null) {
       String connectionString = iniSection.get(URL);
       dataStore = DataStore.of(name, connectionString);
-      dataStore.setUser(iniSection.get(USER));
-      if (iniSection.get(PASSWORD) != null) {
-        String localPassphrase;
-        if (this.passphrase != null) {
-          localPassphrase = this.passphrase;
-        } else {
-          final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-          if (s != null) {
-            if (s.equals("true")) {
-              localPassphrase = INTERNAL_PASSPHRASE;
+      for (String propertyName : iniSection.keySet())
+        switch (propertyName) {
+          case (URL):
+            break;
+          case (USER):
+            dataStore.setUser(iniSection.get(USER));
+            break;
+          case (PASSWORD):
+            String localPassphrase;
+            if (this.passphrase != null) {
+              localPassphrase = this.passphrase;
             } else {
-              throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+              final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
+              if (s != null) {
+                if (s.equals("true")) {
+                  localPassphrase = INTERNAL_PASSPHRASE;
+                } else {
+                  throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
+                }
+              } else {
+                throw new RuntimeException("The data store (" + dataStore + ") has a password. A passphrase should be provided");
+              }
             }
-          } else {
-            throw new RuntimeException("The data store (" + dataStore + ") has a password. A passphrase should be provided");
-          }
+            dataStore.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+            break;
+          default:
+            dataStore.addProperty(propertyName, iniSection.get(propertyName));
+            break;
         }
-        dataStore.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
-      }
     } else {
       logger.warn("The datastore ({}) was not found. A null datastore was returned", name);
     }
@@ -262,37 +272,37 @@ public class DatastoreVault {
     try {
       if (!Files.exists(this.path)) {
         Fs.createFile(this.path);
-        DataStore database = DataStore.of(SQLITE,getSqliteConnectionString(SQLITE))
-          .addProperty("driver","org.sqlite.JDBC")
+        DataStore database = DataStore.of(SQLITE, getSqliteConnectionString(SQLITE))
+          .addProperty("driver", "org.sqlite.JDBC")
           .setDescription("The sqlite default data store connection");
         save(database);
 
-        database = DataStore.of(SQLITE_TARGET,getSqliteConnectionString(SQLITE_TARGET))
-          .addProperty("driver","org.sqlite.JDBC")
+        database = DataStore.of(SQLITE_TARGET, getSqliteConnectionString(SQLITE_TARGET))
+          .addProperty("driver", "org.sqlite.JDBC")
           .setDescription("The default sqlite target data store (Sqlite cannot read and write with the same connection)");
         save(database);
 
-        database = DataStore.of(ORACLE,"jdbc:oracle:thin:@[host]:[port]/[servicename]")
+        database = DataStore.of(ORACLE, "jdbc:oracle:thin:@[host]:[port]/[servicename]")
           .setDescription("The default oracle data store")
-          .addProperty("driver","oracle.jdbc.OracleDriver");
+          .addProperty("driver", "oracle.jdbc.OracleDriver");
         save(database);
 
-        database = DataStore.of(SQLSERVER,"jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+        database = DataStore.of(SQLSERVER, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
           .setDescription("The default sqlserver data store")
-          .addProperty("driver","com.microsoft.sqlserver.jdbc.SQLServerDriver")
+          .addProperty("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
           .setUser("sa")
           .setPassword("TheSecret1!");
         save(database, true);
 
-        database = DataStore.of(MYSQL,"jdbc:mysql://[host]:[port]/[database]")
+        database = DataStore.of(MYSQL, "jdbc:mysql://[host]:[port]/[database]")
           .setDescription("The default mysql data store")
-          .addProperty("driver","com.mysql.jdbc.Driver");
+          .addProperty("driver", "com.mysql.jdbc.Driver");
         save(database);
 
         // jdbc:postgresql://host:port/database?prop=value
-        database = DataStore.of(POSTGRESQL,"jdbc:postgresql://host:port/test?ssl=true")
+        database = DataStore.of(POSTGRESQL, "jdbc:postgresql://host:port/test?ssl=true")
           .setDescription("The default postgres data store")
-          .addProperty("driver","org.postgresql.Driver");
+          .addProperty("driver", "org.postgresql.Driver");
         save(database);
 
       }
