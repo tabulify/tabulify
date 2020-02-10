@@ -110,7 +110,7 @@ public class DbDatastoreAdd {
 
     DataStore dataStore = datastoreVault.getDataStore(datastoreName);
 
-    if (dataStore == null) {
+    if (dataStore != null) {
       LOGGER.error("The datastore ({}) exist already. It can't then be added (Data store vault location: {}). ", datastoreName, storagePathValue);
       System.exit(1);
     } else {

@@ -67,7 +67,7 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
 
   public DataStore setConnectionString(String connectionString) {
-    assert connectionString != null : "A connection string cannot be null (for the data store "+this.name+")";
+    assert connectionString != null : "A connection string cannot be null (for the data store " + this.name + ")";
 
     if (this.connectionString == null || this.connectionString.equals(connectionString)) {
 
@@ -199,10 +199,12 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   @Override
   public void close() {
-    try {
-      tableSystem.close();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    if (tableSystem != null) {
+      try {
+        tableSystem.close();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 
@@ -236,18 +238,18 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   /**
    * Return true if this data store is open
-   *
+   * <p>
    * This is to prevent a close error when a data store is:
-   *   * not used
-   *   * in the list
-   *   * its data system is not in the classpath
-   *
+   * * not used
+   * * in the list
+   * * its data system is not in the classpath
+   * <p>
    * Example: the file datastore will have no provider when developing the db-jdbc module
    *
    * @return true if this data system was build
    */
   public boolean isOpen() {
-    return tableSystem !=null;
+    return tableSystem != null;
   }
 
   /**
@@ -256,19 +258,18 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    */
   public DataPath getQueryDataPath(String query) {
 
-    return  getTableSystem().getProcessingEngine().getQuery(query);
+    return getTableSystem().getProcessingEngine().getQuery(query);
 
   }
 
   /**
-   *
    * @param dataDefPath - the path of a data def file
    * @return a data path from a data def path
    */
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
     assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
-    assert dataDefPath.getFileName().toString().contains(TableDef.DATA_DEF_SUFFIX): "The file ("+dataDefPath.getFileName().toString()+") has not the data def extension ("+TableDef.DATA_DEF_SUFFIX +")";
+    assert dataDefPath.getFileName().toString().contains(TableDef.DATA_DEF_SUFFIX) : "The file (" + dataDefPath.getFileName().toString() + ") has not the data def extension (" + TableDef.DATA_DEF_SUFFIX + ")";
 
     String name = dataDefPath.getFileName().toString().replace(TableDef.DATA_DEF_SUFFIX, "");
     DataPath dataPath = this.getDataPath(name);
