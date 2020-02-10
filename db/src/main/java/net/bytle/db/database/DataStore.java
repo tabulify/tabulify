@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class DataStore implements Comparable<DataStore>, AutoCloseable {
+public abstract class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   private final static Logger logger = LoggerFactory.getLogger(DataStore.class);
 
@@ -137,16 +137,15 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
     if (tableSystem == null) {
       final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + name + ") with the Url (" + url + ")";
       DbLoggers.LOGGER_DB_ENGINE.warning(message);
-      return new DataStore(name, url);
+      return new DefaultDataStore(name, url);
     } else {
       return tableSystem.createDataStore(name, url);
     }
 
   }
 
-  public TableSystem getDataSystem(){
-    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
-  }
+  public abstract TableSystem getDataSystem();
+
 
 
   static protected TableSystem createTableSystem(String scheme) {
@@ -171,19 +170,13 @@ public class DataStore implements Comparable<DataStore>, AutoCloseable {
    * @param parts
    * @return a data path from the current database and its path
    */
-  public DataPath getDataPath(String... parts) {
-
-    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
-
-  }
+  public abstract DataPath getDataPath(String... parts);
 
 
   /**
    * @return the current/working path of this data store
    */
-  public DataPath getCurrentDataPath() {
-    throw new RuntimeException("No provider was found for the dataStore (" + name + ") with the Url (" + connectionString + ")");
-  }
+  public abstract DataPath getCurrentDataPath();
 
   @Override
   public void close(){

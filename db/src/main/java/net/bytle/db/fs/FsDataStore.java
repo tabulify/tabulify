@@ -101,7 +101,7 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
-  public FsDataPath getCurrentPath() {
+  public FsDataPath getCurrentDataPath() {
     Path currentPath = Paths.get(this.getUri());
     return new FsDataPath(this, currentPath);
   }

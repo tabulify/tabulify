@@ -27,4 +27,9 @@ public class MemoryDataStore extends DataStore {
     return memoryDataPath;
 
   }
+
+  @Override
+  public MemoryDataPath getCurrentDataPath() {
+    return MemoryDataPath.of(this,"");
+  }
 }
