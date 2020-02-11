@@ -238,16 +238,6 @@ public class Tabulars {
 
   }
 
-  public static TransferListener transfer(DataPath source, DataPath target) {
-
-    return transfer(source, target, TransferProperties.of());
-  }
-
-  public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-
-    return TransferManager.transfer(source, target, transferProperties);
-  }
-
 
   public static boolean isEmpty(DataPath queue) {
     return queue.getDataStore().getDataSystem().isEmpty(queue);
@@ -378,9 +368,10 @@ public class Tabulars {
 
     TransferListener transferListener = null;
 
-    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
-    if (sourceDataSystem.equals(target.getDataStore())) {
+
+    if (sameDataSystem(source,target)) {
       // same provider (fs or jdbc)
+      final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
       sourceDataSystem.move(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
@@ -389,6 +380,10 @@ public class Tabulars {
     }
 
     return transferListener;
+  }
+
+  private static boolean sameDataSystem(DataPath source, DataPath target) {
+    return source.getDataStore().getDataSystem().equals(target.getDataStore().getDataSystem());
   }
 
   /**
@@ -405,10 +400,10 @@ public class Tabulars {
 
     TransferListener transferListener;
 
-    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
-    if (sourceDataSystem.getClass().equals(target.getDataStore().getClass())) {
+
+    if (sameDataSystem(source,target)) {
       // same provider (fs or jdbc)
-      transferListener = sourceDataSystem.copy(source, target, transferProperties);
+      transferListener = source.getDataStore().getDataSystem().copy(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
       transferListener = TransferManager.transfer(source, target, transferProperties);

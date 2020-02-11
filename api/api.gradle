@@ -29,7 +29,6 @@ dependencies {
   compile "org.flywaydb:flyway-core:6.1.1"
   compile project(':bytle-db')
   compile project(':bytle-db-jdbc')
-  compile project(':bytle-db-fs')
   compile project(':bytle-fs')
   // File system
   compile project(':bytle-http')

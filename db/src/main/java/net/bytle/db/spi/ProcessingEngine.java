@@ -8,6 +8,5 @@ public abstract class ProcessingEngine {
 
     public abstract <T> T getMin(ColumnDef<T> columnDef);
 
-    public abstract DataPath getQuery(String query);
 
 }

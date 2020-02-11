@@ -9,7 +9,6 @@ dependencies {
     implementation 'io.airlift.tpch:tpch:0.9'
     implementation 'com.teradata.tpcds:tpcds:1.3-SNAPSHOT'
     implementation 'com.google.guava:guava:28.1-jre'
-    testImplementation project(':bytle-db-fs')
     testImplementation project(':bytle-fs')
     testImplementation project(':bytle-db-jdbc')
     testImplementation project(':bytle-db-sqlite')

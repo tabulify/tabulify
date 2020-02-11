@@ -7,7 +7,6 @@ dependencies {
   implementation project(':bytle-type')
   implementation project(':bytle-db')
   implementation project(':bytle-fs')
-  implementation project(':bytle-db-fs')
   implementation project(':bytle-db-jdbc')
   implementation project(':bytle-db-sqlite')
 }

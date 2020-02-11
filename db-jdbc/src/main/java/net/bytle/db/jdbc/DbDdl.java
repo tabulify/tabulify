@@ -191,14 +191,14 @@ public class DbDdl {
         String notNullStatement = "";
         if (!columnDef.getNullable()) {
             // Hack because hive is read only, it does not support Not Null
-            if (!columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
+            if (!columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
                 notNullStatement = " NOT NULL";
             }
         }
 
         // Hack for Hive
         String encloseString = "\"";
-        if (columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataSystem.DB_HIVE)) {
+        if (columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
             encloseString = "`";
         }
 
@@ -302,11 +302,11 @@ public class DbDdl {
      */
     public static String getAlterTableForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
 
-        JdbcDataSystem jdbcDataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+        JdbcDataStore jdbcDataSystem = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
 
         // Constraint are supported from 2.1
         // https://issues.apache.org/jira/browse/HIVE-13290
-        if (jdbcDataSystem.getProductName().equals(JdbcDataSystem.DB_HIVE)) {
+        if (jdbcDataSystem.getProductName().equals(JdbcDataStore.DB_HIVE)) {
             if (jdbcDataSystem.getDatabaseMajorVersion() < 2) {
                 return null;
             } else {
@@ -361,12 +361,12 @@ public class DbDdl {
         // TODO: Move to Hive
         // Constraint are supported from 2.1
         // https://issues.apache.org/jira/browse/HIVE-13290
-        final JdbcDataSystem dataSystem = jdbcDataPath.getDataStore();
-        if (dataSystem.getProductName().equals(JdbcDataSystem.DB_HIVE)) {
-            if (dataSystem.getDatabaseMajorVersion() < 2) {
+        final JdbcDataStore dataStore = jdbcDataPath.getDataStore();
+        if (dataStore.getProductName().equals(JdbcDataStore.DB_HIVE)) {
+            if (dataStore.getDatabaseMajorVersion() < 2) {
                 return null;
             } else {
-                if (dataSystem.getDatabaseMinorVersion() < 1) {
+                if (dataStore.getDatabaseMinorVersion() < 1) {
                     return null;
                 }
             }

@@ -2,7 +2,7 @@ package net.bytle.db.play;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.jdbc.Database;
+import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
@@ -120,8 +120,8 @@ public class DbPlay {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the clean operations: " + desc);
     String target = (String) Maps.getPropertyCaseIndependent(task, "target");
-    Database database = datastoreVault.getDataStore(target);
-    DataPath dataPath = DataPaths.of(database, ".");
+    JdbcDataStore jdbcDataStore = datastoreVault.getDataStore(target);
+    DataPath dataPath = DataPaths.of(jdbcDataStore, ".");
     List<DataPath> children = DataPaths.getChildren(dataPath);
     ForeignKeyDag.get(children).getDropOrderedTables()
       .stream().forEach(
@@ -137,7 +137,7 @@ public class DbPlay {
     System.out.println("Starting the load operations: " + desc);
 
     // Source
-    Database database;
+    JdbcDataStore jdbcDataStore;
     String targetPath;
     DataPath sourceDataPath;
     Path sourcePath = null;
@@ -156,30 +156,30 @@ public class DbPlay {
       // A query
       Map<String,Object> targetValues = (Map<String, Object>) sourceValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      database = datastoreVault.getDataStore(dsn);
+      jdbcDataStore = datastoreVault.getDataStore(dsn);
       targetPath = (String) Maps.getPropertyCaseIndependent(targetValues, "sql");
       Path targetSqlFile = sqlDir.resolve(targetPath);
-      sourceDataPath = DataPaths.ofQuery(database,Fs.getFileContent(targetSqlFile));
+      sourceDataPath = DataPaths.ofQuery(jdbcDataStore,Fs.getFileContent(targetSqlFile));
     }
 
     // Target
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     DataPath targetDataPath;
     if (targetValue.getClass().equals(String.class)){
-      database = datastoreVault.getDataStore((String) targetValue);
+      jdbcDataStore = datastoreVault.getDataStore((String) targetValue);
       String sourceFileName = sourcePath.getFileName().toString();
       targetPath = Fs.getFileNameWithoutExtension(sourceFileName);
-      targetDataPath = DataPaths.of(database, targetPath);
+      targetDataPath = DataPaths.of(jdbcDataStore, targetPath);
     } else {
       Map<String,Object> targetValues = (Map<String, Object>) targetValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      database = datastoreVault.getDataStore(dsn);
+      jdbcDataStore = datastoreVault.getDataStore(dsn);
       String targetPathValue = (String) Maps.getPropertyCaseIndependent(targetValues, "name");
       if (dsn.equals("file")){
         Path targetValueAsPath = workingDir.resolve(targetPathValue);
         targetDataPath = DataPaths.of(targetValueAsPath);
       } else {
-        targetDataPath = DataPaths.of(database, targetPathValue);
+        targetDataPath = DataPaths.of(jdbcDataStore, targetPathValue);
       }
     }
 
@@ -194,7 +194,7 @@ public class DbPlay {
     System.out.println("Starting the sql operations: " + desc);
     String sourceValue = (String) Maps.getPropertyCaseIndependent(task, "source");
     DatastoreVault datastoreVault = DatastoreVault.of(dataDir.resolve("dsn.ini"));
-    Database sourceDatabase = datastoreVault.getDataStore(sourceValue);
+    JdbcDataStore sourceJdbcDataStore = datastoreVault.getDataStore(sourceValue);
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     String targetDsn = null;
     String targetName = null;
@@ -203,14 +203,14 @@ public class DbPlay {
       targetDsn = (String) Maps.getPropertyCaseIndependent(targetMap, "dsn");
       targetName = (String) Maps.getPropertyCaseIndependent(targetMap, "name");
     }
-    Database targetDatabase = datastoreVault.getDataStore(targetDsn);
+    JdbcDataStore targetJdbcDataStore = datastoreVault.getDataStore(targetDsn);
     String sqlValue = (String) Maps.getPropertyCaseIndependent(task, "sql");
     if (targetName == null) {
       targetName = Fs.getFileNameWithoutExtension(sqlValue);
     }
-    DataPath targetDataPath = DataPaths.of(targetDatabase, targetName);
+    DataPath targetDataPath = DataPaths.of(targetJdbcDataStore, targetName);
     Path sqlFile = sqlDir.resolve(sqlValue);
-    DataPath dataPath = DataPaths.ofQuery(sourceDatabase, Fs.getFileContent(sqlFile));
+    DataPath dataPath = DataPaths.ofQuery(sourceJdbcDataStore, Fs.getFileContent(sqlFile));
     Tabulars.transfer(dataPath, targetDataPath);
   }
 

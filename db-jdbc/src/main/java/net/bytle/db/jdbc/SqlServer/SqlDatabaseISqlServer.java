@@ -1,10 +1,10 @@
 package net.bytle.db.jdbc.SqlServer;
 
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.jdbc.spi.SqlDatabase;
-import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.spi.DataPath;
 
 import java.util.HashMap;
@@ -32,12 +32,12 @@ public class SqlDatabaseISqlServer extends SqlDatabase {
         dataTypeDatabaseSet.put(SlqServerDbSmallIntType.TYPE_CODE, new SlqServerDbSmallIntType());
     }
 
-    public SqlDatabaseISqlServer(JdbcDataSystem jdbcDataSystem) {
-        super(jdbcDataSystem);
-    }
+  public SqlDatabaseISqlServer(JdbcDataStore jdbcDataStore) {
+    super(jdbcDataStore);
+  }
 
 
-    @Override
+  @Override
     public DataTypeDatabase dataTypeOf(Integer typeCode) {
         return dataTypeDatabaseSet.get(typeCode);
     }

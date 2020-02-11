@@ -39,12 +39,12 @@ public class JdbcDataSystemSql {
     public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
 
 
-        final JdbcDataSystem dataSystem = jdbcDataPath.getDataStore();
-        String identifierQuoteString = DbSql.getIdentifierQuote(dataSystem);
+        final JdbcDataStore dataStore = jdbcDataPath.getDataStore();
+        String identifierQuoteString = DbSql.getIdentifierQuote(dataStore);
         final String tableName = jdbcDataPath.getName();
         String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
-        if (dataSystem.getExtension() != null) {
-            String objectNameExtension = dataSystem.getExtension().getNormativeSchemaObjectName(tableName);
+        if (dataStore.getExtension() != null) {
+            String objectNameExtension = dataStore.getExtension().getNormativeSchemaObjectName(tableName);
             if (objectNameExtension != null) {
                 normativeObjectName = objectNameExtension;
             }

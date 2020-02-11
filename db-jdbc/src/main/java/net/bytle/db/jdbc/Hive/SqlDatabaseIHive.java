@@ -1,9 +1,9 @@
 package net.bytle.db.jdbc.Hive;
 
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.jdbc.spi.SqlDatabase;
-import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.spi.DataPath;
 
 import java.util.HashMap;
@@ -26,12 +26,12 @@ public class SqlDatabaseIHive extends SqlDatabase {
         dataTypeDatabaseSet.put(HiveSmallIntType.TYPE_CODE, new HiveSmallIntType());
     }
 
-    public SqlDatabaseIHive(JdbcDataSystem jdbcDataSystem) {
-        super(jdbcDataSystem);
-    }
+  public SqlDatabaseIHive(JdbcDataStore jdbcDataStore) {
+      super(jdbcDataStore);
+  }
 
 
-    @Override
+  @Override
     public DataTypeDatabase dataTypeOf(Integer typeCode) {
         return dataTypeDatabaseSet.get(typeCode);
     }

@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.type.Typess;
 
@@ -12,10 +11,10 @@ import java.sql.Types;
 
 public class JdbcDataProcessingEngine extends ProcessingEngine {
 
-    private final JdbcDataSystem jdbcDataSystem;
+    private final JdbcDataStore jdbcDataStore;
 
-    public JdbcDataProcessingEngine(JdbcDataSystem jdbcDataSystem) {
-        this.jdbcDataSystem = jdbcDataSystem;
+    public JdbcDataProcessingEngine(JdbcDataStore jdbcDataStore) {
+        this.jdbcDataStore = jdbcDataStore;
     }
 
     @Override
@@ -25,8 +24,8 @@ public class JdbcDataProcessingEngine extends ProcessingEngine {
 
         String statementString = "select max(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
         try (
-                Statement statement = this.jdbcDataSystem.getCurrentConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
+          Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement();
+          ResultSet resultSet = statement.executeQuery(statementString);
         ) {
             Object returnValue = null;
             if (resultSet.next()) {
@@ -49,8 +48,8 @@ public class JdbcDataProcessingEngine extends ProcessingEngine {
         String statementString = "select min(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
 
         try (
-                Statement statement = this.jdbcDataSystem.getCurrentConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(statementString);
+          Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement();
+          ResultSet resultSet = statement.executeQuery(statementString);
         ) {
             Object returnValue = null;
 
@@ -82,9 +81,6 @@ public class JdbcDataProcessingEngine extends ProcessingEngine {
 
     }
 
-    @Override
-    public DataPath getQuery(String query) {
-        return JdbcDataPath.ofQuery(this.jdbcDataSystem, query);
-    }
+
 
 }

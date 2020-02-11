@@ -14,7 +14,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.JdbcDataSystem.DB_SQLITE;
+import static net.bytle.db.jdbc.JdbcDataStore.DB_SQLITE;
 
 /**
  * Static method
@@ -490,14 +490,14 @@ public class Jdbcs {
   /**
    * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
    */
-  public static void printDatabaseInformation(JdbcDataSystem jdbcDataSystem) {
+  public static void printDatabaseInformation(JdbcDataStore jdbcDataStore) {
 
-    System.out.println("Information about the database (" + jdbcDataSystem.getDataStore().getName() + "):");
+    System.out.println("Information about the database (" + jdbcDataStore.getName() + "):");
 
     System.out.println();
     System.out.println("Driver Information:");
     DatabaseMetaData databaseMetadata = null;
-    final Connection currentConnection = jdbcDataSystem.getCurrentConnection();
+    final Connection currentConnection = jdbcDataStore.getCurrentConnection();
     try {
 
       databaseMetadata = currentConnection.getMetaData();
@@ -543,7 +543,7 @@ public class Jdbcs {
       System.out.println();
       URI url;
       try {
-        url = new URI(jdbcDataSystem.getDataStore().getConnectionString());
+        url = new URI(jdbcDataStore.getConnectionString());
         URIExtended uriExtended = new URIExtended(url);
         System.out.println("URL (" + url + ")");
         System.out.println("Authority: " + url.getAuthority());
@@ -691,7 +691,7 @@ public class Jdbcs {
      * for now a hack
      * because Sqlite does not support alter table drop foreign keys
      */
-    JdbcDataSystem dataSystem = (JdbcDataSystem) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    JdbcDataStore dataSystem = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataSystem.getProductName().equals(DB_SQLITE)) {
       JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();

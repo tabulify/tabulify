@@ -21,10 +21,10 @@ public class JdbcDataPath extends DataPath {
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
   private static final String SEPARATOR = ".";
-  private final JdbcDataSystem jdbcDataSystem;
   private final String name;
   private final String schema;
   private final String catalog;
+  private final JdbcDataStore jdbcDataStore;
 
 
   /**
@@ -47,18 +47,18 @@ public class JdbcDataPath extends DataPath {
    * @param table_name
    * @return
    */
-  public static JdbcDataPath of(JdbcDataSystem dataSystem, String cat_name, String schema_name, String table_name) {
+  public static JdbcDataPath of(JdbcDataStore dataSystem, String cat_name, String schema_name, String table_name) {
     return new JdbcDataPath(dataSystem, cat_name, schema_name, table_name);
   }
 
   /**
    * Constructor from an data Uri string
    *
-   * @param jdbcDataSystem
+   * @param jdbcDataStore
    * @param dataUri
    * @return
    */
-  public static JdbcDataPath of(JdbcDataSystem jdbcDataSystem, DataUri dataUri) {
+  public static JdbcDataPath of(JdbcDataStore jdbcDataStore, DataUri dataUri) {
 
     String path = dataUri.getPath();
     List<String> pathSegments = new ArrayList<>();
@@ -75,17 +75,17 @@ public class JdbcDataPath extends DataPath {
       pathSegments.add(path);
     }
 
-    String catalog = jdbcDataSystem.getCurrentCatalog();
-    String schema = jdbcDataSystem.getCurrentSchema();
+    String catalog = jdbcDataStore.getCurrentCatalog();
+    String schema = jdbcDataStore.getCurrentSchema();
     String first = pathSegments.get(0);
     switch (first) {
       case ".":
         switch (pathSegments.size()) {
           case 1:
-            return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
+            return new JdbcDataPath(jdbcDataStore, catalog, schema, null);
           case 2:
             String name = pathSegments.get(pathSegments.size() - 1);
-            return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
+            return new JdbcDataPath(jdbcDataStore, catalog, schema, name);
           default:
             throw new RuntimeException("The working context is the schema and have no children, it's then not possible to have following path (" + String.join("/", pathSegments) + ")");
         }
@@ -93,22 +93,22 @@ public class JdbcDataPath extends DataPath {
         switch (pathSegments.size()) {
           case 1:
             // A catalog
-            return new JdbcDataPath(jdbcDataSystem, catalog, null, null);
+            return new JdbcDataPath(jdbcDataStore, catalog, null, null);
           case 2:
             switch (pathSegments.get(1)) {
               case "..":
                 // the root
-                return new JdbcDataPath(jdbcDataSystem, null, null, null);
+                return new JdbcDataPath(jdbcDataStore, null, null, null);
               case ".":
-                return new JdbcDataPath(jdbcDataSystem, catalog, null, null);
+                return new JdbcDataPath(jdbcDataStore, catalog, null, null);
               default:
                 schema = pathSegments.get(1);
-                return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
+                return new JdbcDataPath(jdbcDataStore, catalog, schema, null);
             }
           case 3:
             schema = pathSegments.get(1);
             String name = pathSegments.get(2);
-            return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
+            return new JdbcDataPath(jdbcDataStore, catalog, schema, name);
           default:
             throw new RuntimeException("A Jdbc path knows max only three parts (catalog, schema, name). This path is then not possible (" + String.join("/", pathSegments) + ")");
         }
@@ -120,58 +120,58 @@ public class JdbcDataPath extends DataPath {
         if (pathSegments.size() > 2) {
           catalog = pathSegments.get(pathSegments.size() - 3);
         } else {
-          catalog = jdbcDataSystem.getCurrentCatalog();
+          catalog = jdbcDataStore.getCurrentCatalog();
         }
 
         if (pathSegments.size() > 1) {
           schema = pathSegments.get(pathSegments.size() - 2);
         } else {
-          schema = jdbcDataSystem.getCurrentSchema();
+          schema = jdbcDataStore.getCurrentSchema();
         }
 
         String name = pathSegments.get(pathSegments.size() - 1);
-        return new JdbcDataPath(jdbcDataSystem, catalog, schema, name);
+        return new JdbcDataPath(jdbcDataStore, catalog, schema, name);
 
     }
 
 
   }
 
-  public JdbcDataPath(JdbcDataSystem jdbcDataSystem, String query) {
-    this.jdbcDataSystem = jdbcDataSystem;
+  public JdbcDataPath(JdbcDataStore jdbcDataStore, String query) {
+    this.jdbcDataStore = jdbcDataStore;
     this.setType(QUERY_TYPE);
     this.setQuery(query);
     this.name = null;
-    this.schema = jdbcDataSystem.getCurrentSchema();
-    this.catalog = jdbcDataSystem.getCurrentCatalog();
+    this.schema = jdbcDataStore.getCurrentSchema();
+    this.catalog = jdbcDataStore.getCurrentCatalog();
   }
 
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #ofQuery(JdbcDataSystem, String)}
+   * Query has another one, See {@link #ofQuery(JdbcDataStore, String)}
    * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
    *
-   * @param jdbcDataSystem
+   * @param jdbcDataStore
    * @param catalog
    * @param schema
    * @param name
    */
-  private JdbcDataPath(JdbcDataSystem jdbcDataSystem, String catalog, String schema, String name) {
-    this.jdbcDataSystem = jdbcDataSystem;
+  private JdbcDataPath(JdbcDataStore jdbcDataStore, String catalog, String schema, String name) {
+    this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
     this.schema = schema;
     this.name = name;
   }
 
 
-  public static JdbcDataPath ofQuery(JdbcDataSystem jdbcDataSystem, String query) {
-    return new JdbcDataPath(jdbcDataSystem, query);
+  public static JdbcDataPath ofQuery(JdbcDataStore jdbcDataStore, String query) {
+    return new JdbcDataPath(jdbcDataStore, query);
   }
 
   @Override
-  public JdbcDataSystem getDataStore() {
-    return jdbcDataSystem;
+  public JdbcDataStore getDataStore() {
+    return jdbcDataStore;
   }
 
   @Override
@@ -213,7 +213,7 @@ public class JdbcDataPath extends DataPath {
     if (name != null) {
       stringBuilder.append(name).append(".");
     }
-    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataSystem.getDataStore().getName());
+    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataStore.getName());
 
     return DataUri.of(stringBuilder.toString());
 
@@ -221,7 +221,7 @@ public class JdbcDataPath extends DataPath {
 
   @Override
   public DataPath getSibling(String name) {
-    return new JdbcDataPath(this.jdbcDataSystem, catalog, schema, name);
+    return new JdbcDataPath(this.jdbcDataStore, catalog, schema, name);
   }
 
   @Override
@@ -264,19 +264,19 @@ public class JdbcDataPath extends DataPath {
       }
     }
     if (this.catalog != null) {
-      return new JdbcDataPath(this.jdbcDataSystem,
+      return new JdbcDataPath(this.jdbcDataStore,
         actualPath.size() >= 1 ? actualPath.get(0) : null,
         actualPath.size() >= 2 ? actualPath.get(1) : null,
         actualPath.size() >= 3 ? actualPath.get(2) : null);
     } else {
       if (this.schema != null) {
-        return new JdbcDataPath(this.jdbcDataSystem,
+        return new JdbcDataPath(this.jdbcDataStore,
           null,
           actualPath.size() >= 1 ? actualPath.get(0) : null,
           actualPath.size() >= 2 ? actualPath.get(1) : null
         );
       } else {
-        return new JdbcDataPath(this.jdbcDataSystem,
+        return new JdbcDataPath(this.jdbcDataStore,
           null,
           null,
           actualPath.size() >= 1 ? actualPath.get(0) : null
@@ -294,7 +294,7 @@ public class JdbcDataPath extends DataPath {
     if (schema == null) {
       return null;
     } else {
-      return new JdbcDataPath(jdbcDataSystem, catalog, schema, null);
+      return new JdbcDataPath(jdbcDataStore, catalog, schema, null);
     }
 
   }

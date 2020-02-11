@@ -1,11 +1,12 @@
 package net.bytle.db.database;
 
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
 
-public class DefaultDataStore extends DataStore {
+public class DataStoreWithoutProvider extends DataStore {
 
-  public DefaultDataStore(String name, String url) {
+  public DataStoreWithoutProvider(String name, String url) {
     super(name, url);
   }
 
@@ -21,6 +22,16 @@ public class DefaultDataStore extends DataStore {
 
   @Override
   public DataPath getCurrentDataPath() {
+    throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
+  }
+
+  @Override
+  public DataPath getQueryDataPath(String query) {
+    throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
+  }
+
+  @Override
+  public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
   }
 

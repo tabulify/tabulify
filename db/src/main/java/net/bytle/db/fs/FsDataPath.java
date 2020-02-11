@@ -88,6 +88,7 @@ public class FsDataPath extends DataPath {
 
   @Override
   public DataPath getSelectStreamDependency() {
-    throw new RuntimeException("No select stream dependencies here");
+    return null;
   }
+
 }

@@ -3,7 +3,6 @@ package net.bytle.db.csv;
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
-import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;

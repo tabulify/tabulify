@@ -60,15 +60,18 @@ Extract, transform, load (ETL) is the general procedure of copying data from one
 
 ## Method
 
-Short-cut alias of the `move` method that we may find in `Tabulars`:
+Short-cut alias of the `transfer` method that we may find in `Tabulars`:
 
- 
+`atomic` operations (meaning that the data set stay the same between source and target)
+  * move - get all source data, verify that the target is empty or create the target, insert them to the target and delete the source
+  * copy - get all source data, verify that the target is empty or create the target and insert the data to the target
+  * replace - get all source data, same structure, truncate otherwise recreate the target, and insert the data to the target
+
+`etl` operations (meaning that the data set does not stay the same between source and target):
   * merge - get all source data and upsert the data to the target
-  * copy (a copy operations) - get all source data, verify that the target is empty and insert the data to the target
-  * cut (a cut operations) - get all source data, verify that the target is empty, insert them to the target and delete the source
-  * insert - get all source data and insert the data to the target
-  * replace - get all source data, recreate or truncate the target, and insert the data to the target
-  * move (default to a non-strict merge operations)
+  * insert/append - get all source data and insert the data to the target
+
+
 
 ## Strict mode impact
 

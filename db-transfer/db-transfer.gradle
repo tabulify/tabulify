@@ -5,7 +5,6 @@ dependencies {
   testCompile project(':bytle-log')
   testCompile project(':bytle-db-sqlite')
   testCompile project(':bytle-db-jdbc')
-  testCompile project(':bytle-db-fs')
   testCompile project(':bytle-fs')
   testCompile project(':bytle-db-tpc')
 }

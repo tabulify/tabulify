@@ -2,9 +2,8 @@ package net.bytle.db.jdbc.spi;
 
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.jdbc.Database;
 import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataSystem;
+import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 
@@ -21,16 +20,12 @@ public abstract class SqlDatabase implements SqlDatabaseI {
   // TODO: Should be replace by the protected constructor above when all SqlDatabase
   // are implemented as extension
   // 20190624
-  private Database database = null;
-  private SqlDatabaseProvider sqlDatabaseProvider = null;
+  private JdbcDataStore jdbcDataStore = null;
 
-  public SqlDatabase(JdbcDataSystem jdbcDataSystem) {
-    this.database = jdbcDataSystem.getDataStore();
+  public SqlDatabase(JdbcDataStore jdbcDataSystem) {
+    this.jdbcDataStore = jdbcDataSystem;
   }
 
-  public SqlDatabase(SqlDatabaseProvider databaseProvider) {
-    this.sqlDatabaseProvider = databaseProvider;
-  }
 
 
   /**

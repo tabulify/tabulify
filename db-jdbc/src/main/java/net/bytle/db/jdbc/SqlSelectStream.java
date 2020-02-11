@@ -15,7 +15,7 @@ import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-  private final JdbcDataSystem jdbcDataSystem;
+  private final JdbcDataStore jdbcDataStore;
 
   private JdbcDataPath jdbcDataPath;
 
@@ -31,7 +31,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
-    this.jdbcDataSystem = jdbcDataPath.getDataStore();
+    this.jdbcDataStore = jdbcDataPath.getDataStore();
 
 
   }
@@ -97,7 +97,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
 
     try {
-      this.resultSet = jdbcDataSystem.getCurrentConnection().createStatement().executeQuery(query);
+      this.resultSet = jdbcDataStore.getCurrentConnection().createStatement().executeQuery(query);
       if (selectDataDef == null) {
         ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
         selectDataDef = TableDef.of(jdbcDataPath);

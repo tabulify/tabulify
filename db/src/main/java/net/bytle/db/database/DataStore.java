@@ -6,6 +6,7 @@ import net.bytle.db.memory.MemoryStore;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.uri.Uris;
@@ -137,7 +138,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     if (tableSystem == null) {
       final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + name + ") with the Url (" + url + ")";
       DbLoggers.LOGGER_DB_ENGINE.warning(message);
-      return new DefaultDataStore(name, url);
+      return new DataStoreWithoutProvider(name, url);
     } else {
       return tableSystem.createDataStore(name, url);
     }
@@ -231,11 +232,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    * @param query - the query
    * @return a data path query
    */
-  public DataPath getQueryDataPath(String query) {
-
-    return getDataSystem().getProcessingEngine().getQuery(query);
-
-  }
+  public abstract DataPath getQueryDataPath(String query);
 
   /**
    * @param dataDefPath - the path of a data def file
@@ -392,4 +389,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     }
     return memoryStore;
   }
+
+  public abstract ProcessingEngine getProcessingEngine();
 }

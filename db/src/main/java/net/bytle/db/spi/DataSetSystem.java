@@ -120,12 +120,6 @@ public abstract class DataSetSystem extends TableSystem {
    */
   public abstract List<DataPath> getReferences(DataPath dataPath);
 
-  @Override
-  public ProcessingEngine getProcessingEngine() {
-    throw new RuntimeException("A data set does not implements a processing engine. It can only read records one at a time");
-  }
-
-
 
 
 }

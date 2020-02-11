@@ -1,6 +1,8 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.ProcessingEngine;
 
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -46,6 +48,16 @@ public class FsDataStore extends DataStore {
   @Override
   public boolean isOpen() {
     return false;
+  }
+
+  @Override
+  public DataPath getQueryDataPath(String query) {
+    throw new RuntimeException("Query is not yet supported on file");
+  }
+
+  @Override
+  public ProcessingEngine getProcessingEngine() {
+    throw new RuntimeException("A processing engine is not yet supported on file");
   }
 
 

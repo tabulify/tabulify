@@ -11,7 +11,6 @@ dependencies {
   compile project(':bytle-fs')
   compile project(':bytle-xml')
   compile project(':bytle-timer')
-  runtimeOnly project(':bytle-db-fs')
   runtimeOnly project(':bytle-db-sqlite')
   runtimeOnly project(':bytle-db-tpc')
   testCompile project(':bytle-db-tpc')

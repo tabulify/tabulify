@@ -9,7 +9,7 @@ import net.bytle.db.transfer.TransferProperties;
 
 import java.util.List;
 
-public abstract class TableSystem implements AutoCloseable {
+public abstract class TableSystem {
 
 
   public abstract Boolean exists(DataPath dataPath);
@@ -80,8 +80,6 @@ public abstract class TableSystem implements AutoCloseable {
    */
   public abstract List<DataPath> getReferences(DataPath dataPath);
 
-  public abstract ProcessingEngine getProcessingEngine();
-
-
   public abstract DataStore createDataStore(String name, String url);
+
 }

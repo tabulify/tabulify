@@ -131,10 +131,10 @@ public class ResultSets {
      * All method used when starting the software
      *
      * @param resultSetMetaData
-     * @param database
+     * @param jdbcDataStore
      * @throws SQLException
      */
-    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, Database database) throws SQLException {
+    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, JdbcDataStore jdbcDataStore) throws SQLException {
 
         // Headers
         System.out.println("ColumnId\t" +
