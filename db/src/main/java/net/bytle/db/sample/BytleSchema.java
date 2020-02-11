@@ -115,7 +115,7 @@ public class BytleSchema implements SchemaSample {
 
   @Override
   public DataPath getAndCreateDataPath(String tableName) {
-    DataPath dataPath = bytleTables.get(tableName);
+    DataPath dataPath = getDataPath(tableName);
     Tabulars.create(dataPath);
     return dataPath;
   }
@@ -126,4 +126,7 @@ public class BytleSchema implements SchemaSample {
   }
 
 
+  public DataPath getDataPath(String name) {
+    return bytleTables.get(name);
+  }
 }
