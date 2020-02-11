@@ -6,10 +6,6 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +36,7 @@ public class FkDataGenerator implements DataGenerator {
                 values.add(selectStream.getObject(foreignColumnDef.getColumnName()));
             }
             if (values.size() == 0) {
-                throw new RuntimeException("The foreign table (" + foreignColumnDef.getRelationDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
+                throw new RuntimeException("The foreign table (" + foreignColumnDef.getDataDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
             }
         }
 

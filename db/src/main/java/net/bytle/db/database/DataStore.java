@@ -3,6 +3,7 @@ package net.bytle.db.database;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataType;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -147,7 +148,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public abstract TableSystem getDataSystem();
 
 
-
   static protected TableSystem createTableSystem(String scheme) {
 
     TableSystem tableSystem = null;
@@ -179,7 +179,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public abstract DataPath getCurrentDataPath();
 
   @Override
-  public void close(){
+  public void close() {
     // Nothing to do here
   }
 
@@ -223,7 +223,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    *
    * @return true if this data system was build
    */
-  public boolean isOpen(){
+  public boolean isOpen() {
     return false;
   }
 
@@ -371,6 +371,14 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    */
   public abstract Integer getMaxWriterConnection();
 
+
+  public DataType getDataType(Integer typeCode) {
+
+    return new DataType.DataTypeBuilder(typeCode)
+      .JdbcDataType(DataTypesJdbc.of(typeCode))
+      .build();
+
+  }
 
   public abstract ProcessingEngine getProcessingEngine();
 

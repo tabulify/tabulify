@@ -55,7 +55,7 @@ public class JdbcDataSystemSql {
     }
 
     public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
-        final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getRelationDef().getDataPath();
+        final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getDataDef().getDataPath();
         String identifier = DbSql.getIdentifierQuote(dataPath.getDataStore());
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }

@@ -1,6 +1,8 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.uri.DataUri;
@@ -43,6 +45,7 @@ public class MemoryDataStore extends DataStore {
   public Integer getMaxWriterConnection() {
     return 1;
   }
+
 
   @Override
   public ProcessingEngine getProcessingEngine() {

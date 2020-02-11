@@ -22,7 +22,7 @@ public class JdbcDataProcessingEngine extends ProcessingEngine {
 
         String columnStatement = columnDef.getColumnName();
 
-        String statementString = "select max(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
+        String statementString = "select max(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getDataDef().getDataPath());
         try (
           Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement();
           ResultSet resultSet = statement.executeQuery(statementString);
@@ -45,7 +45,7 @@ public class JdbcDataProcessingEngine extends ProcessingEngine {
     public <T> T getMin(ColumnDef<T> columnDef) {
 
         String columnStatement = columnDef.getColumnName();
-        String statementString = "select min(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getRelationDef().getDataPath());
+        String statementString = "select min(" + columnStatement + ") from " + JdbcDataSystemSql.getFullyQualifiedSqlName(columnDef.getDataDef().getDataPath());
 
         try (
           Statement statement = this.jdbcDataStore.getCurrentConnection().createStatement();

@@ -202,7 +202,7 @@ public class DataGeneration {
         // A data generator was not yet fund, we will find one with the column constraint
         if (primaryColumns.contains(columnDef)) {
 
-            final List<ColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getRelationDef().equals(columnDef.getRelationDef())).collect(Collectors.toList());
+            final List<ColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getDataDef().equals(columnDef.getDataDef())).collect(Collectors.toList());
             UniqueDataGenerator uniqueDataGenerator = new UniqueDataGenerator(primaryColumnsForColumnDefTable);
             for (ColumnDef pkColumns : primaryColumnsForColumnDefTable) {
                 dataGenerators.put(pkColumns, uniqueDataGenerator);
@@ -338,7 +338,7 @@ public class DataGeneration {
                 dataGenerators
                         .values()
                         .stream()
-                        .filter(t -> t.getColumn().getRelationDef().getDataPath().equals(dataPath))
+                        .filter(t -> t.getColumn().getDataDef().getDataPath().equals(dataPath))
                         .collect(Collectors.toList());
 
         for (DataGenerator dataGenerator : dataGeneratorsForTable) {

@@ -335,6 +335,7 @@ public class JdbcDataStore extends DataStore {
    *
    * @param typeCode
    */
+  @Override
   public DataType getDataType(Integer typeCode) {
 
     DataType dataType = dataTypeMap.get(typeCode);

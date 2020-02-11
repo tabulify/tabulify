@@ -190,14 +190,14 @@ public class DbDdl {
         String notNullStatement = "";
         if (!columnDef.getNullable()) {
             // Hack because hive is read only, it does not support Not Null
-            if (! ((JdbcDataPath) columnDef.getRelationDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+            if (! ((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
                 notNullStatement = " NOT NULL";
             }
         }
 
         // Hack for Hive
         String encloseString = "\"";
-        if (((JdbcDataPath) columnDef.getRelationDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+        if (((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
             encloseString = "`";
         }
 

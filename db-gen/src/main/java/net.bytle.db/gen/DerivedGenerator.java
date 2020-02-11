@@ -176,7 +176,7 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
         if (columnName == null) {
             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
         }
-        ColumnDef columnParent = columnDef.getRelationDef().getColumnDef(columnName);
+        ColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnName);
         DataGenerator parentGenerator = dataGeneration.getDataGenerator(columnParent);
         if (parentGenerator == null) {
             if (columnDef.equals(columnParent)) {

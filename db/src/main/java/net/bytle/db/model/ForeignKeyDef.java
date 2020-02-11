@@ -49,7 +49,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef> {
             throw new RuntimeException(msg);
         }
         // Columns Table check
-        List<RelationDef> relationDefs = columnDefs.stream().map(ColumnDef::getRelationDef).distinct().collect(Collectors.toList());
+        List<RelationDef> relationDefs = columnDefs.stream().map(ColumnDef::getDataDef).distinct().collect(Collectors.toList());
         if (relationDefs.size()!=1){
             final String msg = "The columns ("+columnDefs+") has no table or different tables ("+relationDefs+") and this is not possible for a foreign key definition.";
             DbLoggers.LOGGER_DB_ENGINE.severe(msg);
@@ -121,7 +121,7 @@ public class ForeignKeyDef implements Comparable<ForeignKeyDef> {
 
     public TableDef getTableDef() {
         // Bad cast but yeah ...
-        return (TableDef) columnDefs.get(0).getRelationDef();
+        return (TableDef) columnDefs.get(0).getDataDef();
     }
 
     @Override
