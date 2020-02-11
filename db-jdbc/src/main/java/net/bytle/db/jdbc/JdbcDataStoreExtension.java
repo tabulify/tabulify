@@ -1,24 +1,25 @@
-package net.bytle.db.jdbc.spi;
+package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.Tabulars;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by gerard on 28-11-2015.
- * Represents a database vendor.
- * <p>
- * <p>
- * The term "database" is used generically to refer to both the driver and the DBMS.
- * <p>
- * Within a pattern String in the databaseMetadata function, "%" means match any substring of 0 or more characters, and "_" means match any one character.
+ *
+ * This class is a hookup for database when:
+ *   * the driver is failing us
+ *   * and when the SQL is not ISO
  */
-public interface SqlDatabaseI {
+public abstract class JdbcDataStoreExtension {
 
+
+  private final JdbcDataStore jdbcDataStore;
+
+  public JdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
+    this.jdbcDataStore = jdbcDataStore;
+  }
 
   /**
    * Return a DataTypeDatabase for the corresponding typeCode
@@ -26,7 +27,7 @@ public interface SqlDatabaseI {
    * @param typeCode
    * @return DataTypeDatabase
    */
-  DataTypeDatabase dataTypeOf(Integer typeCode);
+  public abstract DataTypeDatabase dataTypeOf(Integer typeCode);
 
   /**
    * Returns statement to create the table
@@ -34,7 +35,9 @@ public interface SqlDatabaseI {
    * @param dataPath
    * @return
    */
-  List<String> getCreateTableStatements(JdbcDataPath dataPath);
+  protected List<String> getCreateTableStatements(JdbcDataPath dataPath){
+    return new ArrayList<>();
+  }
 
 
   /**
@@ -44,7 +47,9 @@ public interface SqlDatabaseI {
    * @param sourceObject     an Java Object to be loaded
    * @return an Object generally ready to be loaded by the driver
    */
-  Object getLoadObject(int targetColumnType, Object sourceObject);
+  protected Object getLoadObject(int targetColumnType, Object sourceObject){
+    return this.jdbcDataStore.getLoadObject(targetColumnType,sourceObject);
+  }
 
   /**
    * Return a normative object name (if _ is not authorized it will be replace by another term for instance)
@@ -52,14 +57,14 @@ public interface SqlDatabaseI {
    * @param objectName
    * @return
    */
-  String getNormativeSchemaObjectName(String objectName);
+  protected abstract String getNormativeSchemaObjectName(String objectName);
 
   /**
    * @return the number of concurrent writer connection
    * Example: Sqlite database can only writen by one connection but can be read by many.
    * In this case, {@link #getMaxWriterConnection} will return 1
    */
-  Integer getMaxWriterConnection();
+  protected abstract Integer getMaxWriterConnection();
 
 
   /**
@@ -71,7 +76,9 @@ public interface SqlDatabaseI {
    * @param tableDef
    * @return true if implemented / false or null if not implemented
    */
-  Boolean addPrimaryKey(TableDef tableDef);
+  protected Boolean addPrimaryKey(TableDef tableDef) {
+    return false;
+  }
 
 
   /**
@@ -85,7 +92,9 @@ public interface SqlDatabaseI {
    * @param tableDef
    * @return true if implemented / false or null if not implemented
    */
-  Boolean addForeignKey(TableDef tableDef);
+  protected Boolean addForeignKey(TableDef tableDef) {
+    return false;
+  }
 
   /**
    * Add columns to a table
@@ -95,21 +104,11 @@ public interface SqlDatabaseI {
    * @param tableDef
    * @return true if the columns were added to the table
    */
-  boolean addColumns(TableDef tableDef);
+  protected boolean addColumns(TableDef tableDef){
+    return false;
+  }
 
-  String getTruncateStatement(DataPath dataPath);
+  public abstract String getTruncateStatement(JdbcDataPath dataPath);
 
-  /**
-   * This function wraps a data path to limit the number of rows returned because the limit clause is not universal
-   *
-   * See: https://stackoverflow.com/questions/595123/is-there-an-ansi-sql-alternative-to-the-mysql-limit-keyword
-   *
-   * @param query - the query returned - this is the variable that will get the query with the limit clause
-   * @param dataPath - the data path
-   * @param limit - the number of rows to return
-   * @param limitOrder - the order ({@link Tabulars#HEAD} or {@link Tabulars#TAIL})
-   * @return true if the query was changed, false otherwise
-   **/
-  Boolean getLimitStatement(String query, DataPath dataPath, Integer limit, Integer limitOrder);
 
 }

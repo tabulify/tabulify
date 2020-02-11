@@ -31,6 +31,11 @@ public class DataStoreWithoutProvider extends DataStore {
   }
 
   @Override
+  public Integer getMaxWriterConnection() {
+    throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
+  }
+
+  @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
   }

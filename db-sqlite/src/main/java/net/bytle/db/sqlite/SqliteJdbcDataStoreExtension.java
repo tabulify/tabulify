@@ -1,19 +1,15 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.log.Log;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.jdbc.spi.SqlDatabase;
-import net.bytle.db.jdbc.DbDdl;
-import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataSystemSql;
+import net.bytle.db.jdbc.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +18,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SqliteSqlDatabase extends SqlDatabase {
+public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
 
     private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
 
@@ -32,7 +28,11 @@ public class SqliteSqlDatabase extends SqlDatabase {
         dataTypeDatabaseSet.put(SqliteTypeText.TYPE_CODE, new SqliteTypeText());
     }
 
-    public static String getDriver() {
+  public SqliteJdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
+    super(jdbcDataStore);
+  }
+
+  public static String getDriver() {
         return "org.sqlite.JDBC";
     }
 
@@ -41,17 +41,6 @@ public class SqliteSqlDatabase extends SqlDatabase {
         return dataTypeDatabaseSet.get(typeCode);
     }
 
-    private final SqliteProvider sqliteProvider;
-
-    /**
-     * Returns the provider that created this work system.
-     *
-     * @return The provider that created this work
-     */
-    public SqliteSqlDatabase(SqliteProvider sqliteProvider) {
-        super(sqliteProvider);
-        this.sqliteProvider = sqliteProvider;
-    }
 
 
     @Override
@@ -284,7 +273,7 @@ public class SqliteSqlDatabase extends SqlDatabase {
     }
 
     @Override
-    public String getTruncateStatement(DataPath dataPath) {
+    public String getTruncateStatement(JdbcDataPath dataPath) {
         StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
         truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         return truncateStatementBuilder.toString();

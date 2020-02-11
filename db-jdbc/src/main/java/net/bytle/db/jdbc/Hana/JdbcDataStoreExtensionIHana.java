@@ -2,11 +2,9 @@ package net.bytle.db.jdbc.Hana;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.*;
-import net.bytle.db.jdbc.spi.SqlDatabase;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.db.model.UniqueKeyDef;
-import net.bytle.db.spi.DataPath;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,7 +14,7 @@ import java.util.Map;
 /**
  * Created by gerard on 11-01-2016.
  */
-public class SqlDatabaseIHana extends SqlDatabase {
+public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
 
 
   private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
@@ -25,7 +23,7 @@ public class SqlDatabaseIHana extends SqlDatabase {
     dataTypeDatabaseSet.put(HanaDbVarcharType.TYPE_CODE, new HanaDbVarcharType());
   }
 
-  public SqlDatabaseIHana(JdbcDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHana(JdbcDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 
@@ -92,7 +90,7 @@ public class SqlDatabaseIHana extends SqlDatabase {
   }
 
   @Override
-  public String getTruncateStatement(DataPath dataPath) {
+  public String getTruncateStatement(JdbcDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

@@ -2,8 +2,6 @@ package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.jdbc.spi.DataTypeDriver;
-import net.bytle.db.jdbc.spi.SqlDatabaseI;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
@@ -89,7 +87,7 @@ public class Jdbcs {
     // that doesn't return the good primary ley
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
+    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addPrimaryKey(tableDef);
     }
@@ -202,7 +200,7 @@ public class Jdbcs {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean added = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
+    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase != null) {
       added = sqlDatabase.addColumns(tableDef);
     }
@@ -272,7 +270,7 @@ public class Jdbcs {
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    SqlDatabaseI sqlDatabase = dataPath.getDataStore().getExtension();
+    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
     if (sqlDatabase!=null) {
       done = sqlDatabase.addForeignKey(tableDef);
     }
@@ -574,7 +572,7 @@ public class Jdbcs {
    */
   public static void printDataTypeInformation(Connection connection) {
 
-    List<DataTypeDriver> dataTypeDrivers = new ArrayList<>(getDataTypeDriver(connection).values());
+    List<JdbcDataTypeDriver> jdbcDataTypeDrivers = new ArrayList<>(getDataTypeDriver(connection).values());
 
     // Headers
     System.out.println("Data Type\t" +
@@ -593,7 +591,7 @@ public class Jdbcs {
       "maximumScale"
     );
 
-    for (DataTypeDriver typeInfo : dataTypeDrivers) {
+    for (JdbcDataTypeDriver typeInfo : jdbcDataTypeDrivers) {
       System.out.println(
         typeInfo.getTypeCode() + "\t" +
           typeInfo.getTypeName() + "\t" +
@@ -616,14 +614,14 @@ public class Jdbcs {
 
   }
 
-  public static Map<Integer, DataTypeDriver> getDataTypeDriver(Connection connection) {
+  public static Map<Integer, JdbcDataTypeDriver> getDataTypeDriver(Connection connection) {
 
-    Map<Integer, DataTypeDriver> dataTypeInfoMap = new HashMap<>();
+    Map<Integer, JdbcDataTypeDriver> dataTypeInfoMap = new HashMap<>();
     ResultSet typeInfoResultSet;
     try {
       typeInfoResultSet = connection.getMetaData().getTypeInfo();
       while (typeInfoResultSet.next()) {
-        DataTypeDriver.DataTypeInfoBuilder typeInfoBuilder = new DataTypeDriver.DataTypeInfoBuilder(typeInfoResultSet.getInt("DATA_TYPE"));
+        JdbcDataTypeDriver.DataTypeInfoBuilder typeInfoBuilder = new JdbcDataTypeDriver.DataTypeInfoBuilder(typeInfoResultSet.getInt("DATA_TYPE"));
         String typeName = typeInfoResultSet.getString("TYPE_NAME");
         typeInfoBuilder.typeName(typeName);
         int precision = typeInfoResultSet.getInt("PRECISION");
@@ -652,8 +650,8 @@ public class Jdbcs {
         typeInfoBuilder.minimumScale(minimumScale);
         Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
         typeInfoBuilder.maximumScale(maximumScale);
-        DataTypeDriver dataTypeDriver = typeInfoBuilder.build();
-        dataTypeInfoMap.put(dataTypeDriver.getTypeCode(), dataTypeDriver);
+        JdbcDataTypeDriver jdbcDataTypeDriver = typeInfoBuilder.build();
+        dataTypeInfoMap.put(jdbcDataTypeDriver.getTypeCode(), jdbcDataTypeDriver);
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -691,13 +689,13 @@ public class Jdbcs {
      * for now a hack
      * because Sqlite does not support alter table drop foreign keys
      */
-    JdbcDataStore dataSystem = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
-    if (!dataSystem.getProductName().equals(DB_SQLITE)) {
+    JdbcDataStore dataStore = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    if (!dataStore.getProductName().equals(DB_SQLITE)) {
       JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
       try {
 
-        Statement statement = dataSystem.getCurrentConnection().createStatement();
+        Statement statement = dataStore.getCurrentConnection().createStatement();
         statement.execute(dropStatement);
         statement.close();
 

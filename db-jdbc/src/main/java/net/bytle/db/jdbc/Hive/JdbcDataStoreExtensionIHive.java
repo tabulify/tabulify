@@ -1,10 +1,10 @@
 package net.bytle.db.jdbc.Hive;
 
 import net.bytle.db.database.DataTypeDatabase;
+import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataStore;
+import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
-import net.bytle.db.jdbc.spi.SqlDatabase;
-import net.bytle.db.spi.DataPath;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Created by gerard on 11-01-2016.
  */
-public class SqlDatabaseIHive extends SqlDatabase {
+public class JdbcDataStoreExtensionIHive extends JdbcDataStoreExtension {
 
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
@@ -26,7 +26,7 @@ public class SqlDatabaseIHive extends SqlDatabase {
         dataTypeDatabaseSet.put(HiveSmallIntType.TYPE_CODE, new HiveSmallIntType());
     }
 
-  public SqlDatabaseIHive(JdbcDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHive(JdbcDataStore jdbcDataStore) {
       super(jdbcDataStore);
   }
 
@@ -55,7 +55,7 @@ public class SqlDatabaseIHive extends SqlDatabase {
     }
 
     @Override
-    public String getTruncateStatement(DataPath dataPath) {
+    public String getTruncateStatement(JdbcDataPath dataPath) {
         StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
         truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
         return truncateStatementBuilder.toString();

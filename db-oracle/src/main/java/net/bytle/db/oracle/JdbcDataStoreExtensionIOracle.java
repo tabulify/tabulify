@@ -2,7 +2,6 @@ package net.bytle.db.oracle;
 
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
-import net.bytle.db.jdbc.spi.SqlDatabase;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataSystem;
 import net.bytle.db.spi.DataPath;
@@ -15,7 +14,7 @@ import java.util.Map;
 /**
  * Created by gerard on 28-11-2015.
  */
-public class SqlDatabaseIOracle extends SqlDatabase {
+public class JdbcDataStoreExtensionIOracle extends JdbcDataStoreExtension {
 
     private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer,DataTypeDatabase>();
 
@@ -30,7 +29,7 @@ public class SqlDatabaseIOracle extends SqlDatabase {
         dataTypeDatabaseSet.put(OraDbLongRawType.TYPE_CODE, new OraDbLongRawType());
     }
 
-    public SqlDatabaseIOracle(JdbcDataSystem jdbcDataSystem) {
+    public JdbcDataStoreExtensionIOracle(JdbcDataSystem jdbcDataSystem) {
         super(jdbcDataSystem);
     }
 

@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.jdbc.spi.SqlDatabaseI;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 
@@ -26,7 +25,7 @@ public class DbDdl {
 
         JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
         List<String> statements;
-        final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataStore().getExtension();
+        final JdbcDataStoreExtension sqlDatabase = jdbcDataPath.getDataStore().getExtension();
 
         // If the databaseDefault implements its own logic, we return it.
         try {
@@ -191,14 +190,14 @@ public class DbDdl {
         String notNullStatement = "";
         if (!columnDef.getNullable()) {
             // Hack because hive is read only, it does not support Not Null
-            if (!columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+            if (! ((JdbcDataPath) columnDef.getRelationDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
                 notNullStatement = " NOT NULL";
             }
         }
 
         // Hack for Hive
         String encloseString = "\"";
-        if (columnDef.getRelationDef().getDataPath().getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+        if (((JdbcDataPath) columnDef.getRelationDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
             encloseString = "`";
         }
 

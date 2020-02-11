@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.jdbc.spi.SqlDatabaseI;
 import net.bytle.db.model.DataType;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
@@ -241,10 +240,10 @@ public class JdbcDataSystem extends TableSystem {
   public void truncate(DataPath dataPath) {
 
     JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
-    final SqlDatabaseI sqlDatabase = jdbcDataPath.getDataStore().getExtension();
+    final JdbcDataStoreExtension sqlDatabase = jdbcDataPath.getDataStore().getExtension();
     String truncateStatement;
     if (sqlDatabase != null) {
-      truncateStatement = sqlDatabase.getTruncateStatement(dataPath);
+      truncateStatement = sqlDatabase.getTruncateStatement(jdbcDataPath);
     } else {
       StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
       truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));

@@ -189,7 +189,7 @@ public class TransferManager {
      **/
     // One connection is already used in the construction of the database
     if (targetWorkerCount > targetDataPath.getDataStore().getMaxWriterConnection()) {
-      throw new IllegalArgumentException("The database (" + targetDataPath.getDataStore().getProductName() + ") does not support more than (" + targetDataPath.getDataStore().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
+      throw new IllegalArgumentException("The database (" + targetDataPath.getDataStore().getName() + ") does not support more than (" + targetDataPath.getDataStore().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
     }
 
 

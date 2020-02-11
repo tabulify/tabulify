@@ -1,5 +1,5 @@
 
-package net.bytle.db.jdbc.spi;
+package net.bytle.db.jdbc;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -16,7 +16,7 @@ import java.util.*;
  * A service provider is a concrete implementation of this class that
  * implements the abstract methods defined by this class.
  * <p/>
- * A provider is identified by a {@code URI} {@link #getServer() scheme}.
+ * A provider is identified by a {@code URI} {@link #getProductName() scheme}.
  * <p/>
  * A factory method class defines how providers are located
  * and loaded.
@@ -32,18 +32,18 @@ import java.util.*;
  * <p/>
  * A provider is a factory for one or more (service) object instances.
  * Each service is identified by a {@code URI} where the URI's scheme matches
- * the provider's {@link #getServer scheme}.
+ * the provider's {@link #getProductName scheme}.
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
 
-public abstract class SqlDatabaseProvider {
+public abstract class JdbcDataStoreExtensionProvider {
 
     // lock using when loading providers
     private static final Object lock = new Object();
 
     // installed providers
-    private static volatile List<SqlDatabaseProvider> installedProviders;
+    private static volatile List<JdbcDataStoreExtensionProvider> installedProviders;
 
     // used to avoid recursive loading of installed providers
     private static boolean loadingProviders = false;
@@ -55,7 +55,7 @@ public abstract class SqlDatabaseProvider {
         return null;
     }
 
-    private SqlDatabaseProvider(Void ignore) {
+    private JdbcDataStoreExtensionProvider(Void ignore) {
     }
 
     /**
@@ -69,24 +69,24 @@ public abstract class SqlDatabaseProvider {
      * @throws SecurityException If a security manager has been installed and it denies
      *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
      */
-    protected SqlDatabaseProvider() {
+    protected JdbcDataStoreExtensionProvider() {
         this(checkPermission());
     }
 
     // loads all installed providers
-    private static List<SqlDatabaseProvider> loadInstalledProviders() {
-        List<SqlDatabaseProvider> list = new ArrayList<SqlDatabaseProvider>();
+    private static List<JdbcDataStoreExtensionProvider> loadInstalledProviders() {
+        List<JdbcDataStoreExtensionProvider> list = new ArrayList<JdbcDataStoreExtensionProvider>();
 
-        ServiceLoader<SqlDatabaseProvider> sl = ServiceLoader
-                .load(SqlDatabaseProvider.class, ClassLoader.getSystemClassLoader());
+        ServiceLoader<JdbcDataStoreExtensionProvider> sl = ServiceLoader
+                .load(JdbcDataStoreExtensionProvider.class, ClassLoader.getSystemClassLoader());
 
         // ServiceConfigurationError may be throw here
-        for (SqlDatabaseProvider provider : sl) {
-            String scheme = provider.getServer();
+        for (JdbcDataStoreExtensionProvider provider : sl) {
+            String scheme = provider.getProductName();
 
             boolean found = false;
-            for (SqlDatabaseProvider p : list) {
-                if (p.getServer().equalsIgnoreCase(scheme)) {
+            for (JdbcDataStoreExtensionProvider p : list) {
+                if (p.getProductName().equalsIgnoreCase(scheme)) {
                     found = true;
                     break;
                 }
@@ -108,7 +108,7 @@ public abstract class SqlDatabaseProvider {
      * @return An unmodifiable list of the installed service providers.
      * @throws ServiceConfigurationError When an error occurs while loading a service provider
      */
-    public static List<SqlDatabaseProvider> installedProviders() {
+    public static List<JdbcDataStoreExtensionProvider> installedProviders() {
         if (installedProviders == null) {
 
             synchronized (lock) {
@@ -118,10 +118,10 @@ public abstract class SqlDatabaseProvider {
                     }
                     loadingProviders = true;
 
-                    List<SqlDatabaseProvider> list = AccessController
-                            .doPrivileged(new PrivilegedAction<List<SqlDatabaseProvider>>() {
+                    List<JdbcDataStoreExtensionProvider> list = AccessController
+                            .doPrivileged(new PrivilegedAction<List<JdbcDataStoreExtensionProvider>>() {
                                 @Override
-                                public List<SqlDatabaseProvider> run() {
+                                public List<JdbcDataStoreExtensionProvider> run() {
                                     return loadInstalledProviders();
                                 }
                             });
@@ -134,56 +134,21 @@ public abstract class SqlDatabaseProvider {
     }
 
     /**
-     * Returns the URI scheme that identifies this provider.
+     * Returns the product name that identifies this provider.
      *
      * @return The URI scheme
      */
-    public abstract String getServer();
+    public abstract String getProductName();
+
+
 
     /**
-     * Constructs a new {@code Work} object identified by a URI. This
-     * method is invoked by the {@link #getSqlDatabase(String, Map)}
-     * method to open a new work identified by a URI.
-     * <p/>
-     * <p> The {@code uri} parameter is an absolute, hierarchical URI, with a
-     * scheme equal (without regard to case) to the scheme supported by this
-     * provider. The exact form of the URI is highly provider dependent. The
-     * {@code env} parameter is a map of provider specific properties to configure
-     * the work.
-     * <p/>
-     * <p> This method may throws an exception if the
-     * work already exists because it was previously created by an
-     * invocation of this method.
      *
-     * @param uri URI reference
-     * @param env A map of provider specific properties to configure the file system;
-     *            may be empty
-     * @return A new work
-     */
-    public abstract SqlDatabase getSqlDatabase(String uri, Map<String, ?> env);
-
-    /**
-     * Returns an existing {@code work} created by this provider.
-     * <p/>
-     * <p> This method returns a reference to a {@code work} that was
-     * created by invoking the {@link #getSqlDatabase(String, Map)}
-     * method.
-     * The work is identified by its {@code URI}. Its exact form
-     * is highly provider dependent.
-     * <p/>
-     * <p> If a security manager is installed then a provider implementation
-     * may require to check a permission before returning a reference to an
-     * existing work.
-     *
-     * @param uri URI reference
+     * @param jdbcDataStore URI reference
      * @return The sql database
-     * @throws SecurityException           If a security manager is installed and it denies an unspecified
-     *                                     permission.
      */
-    public abstract SqlDatabase getSqlDatabase(String uri);
+    public abstract JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcDataStore);
 
 
-    /**
-     * Others providers methods if needed
-     */
+
 }

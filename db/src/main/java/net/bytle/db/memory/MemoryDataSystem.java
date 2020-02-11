@@ -25,6 +25,7 @@ public class MemoryDataSystem extends TableSystem {
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
 
+
   static MemoryDataSystem memoryDataSystem;
 
 
@@ -36,10 +37,10 @@ public class MemoryDataSystem extends TableSystem {
   }
 
 
-  public void delete(DataPath memoryTable) {
-    Object values = memoryTable.getDataStore().getMemoryStore().remove(memoryTable);
+  public void delete(DataPath memoryDataPath) {
+    Object values = ((MemoryDataPath) memoryDataPath).getDataStore().getMemoryStore().remove(memoryDataPath);
     if (values == null) {
-      LOGGER.warning("The table (" + memoryTable + ") had no values. Nothing removed.");
+      LOGGER.warning("The table (" + memoryDataPath + ") had no values. Nothing removed.");
     }
   }
 
@@ -47,8 +48,8 @@ public class MemoryDataSystem extends TableSystem {
     delete(memoryTable);
   }
 
-  public void truncate(DataPath memoryTable) {
-    memoryTable.getDataStore().getMemoryStore().put(memoryTable, new ArrayList<>());
+  public void truncate(DataPath dataPath) {
+    ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().put(dataPath, new ArrayList<>());
   }
 
 
@@ -179,7 +180,6 @@ public class MemoryDataSystem extends TableSystem {
   public DataType getDataType(Integer typeCode) {
     return null;
   }
-
 
 
 }

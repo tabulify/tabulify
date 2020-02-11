@@ -56,6 +56,11 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
+  public Integer getMaxWriterConnection() {
+    return 1;
+  }
+
+  @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("A processing engine is not yet supported on file");
   }

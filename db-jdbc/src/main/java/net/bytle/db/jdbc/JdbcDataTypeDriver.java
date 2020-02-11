@@ -1,4 +1,4 @@
-package net.bytle.db.jdbc.spi;
+package net.bytle.db.jdbc;
 
 
 
@@ -14,7 +14,7 @@ import java.sql.DatabaseMetaData;
  * that comes from
  * {@link DatabaseMetaData#getTypeInfo()}
  */
-public class DataTypeDriver implements DataTypeInterface {
+public class JdbcDataTypeDriver implements DataTypeInterface {
 
 
     /**
@@ -37,7 +37,7 @@ public class DataTypeDriver implements DataTypeInterface {
     private final Integer maximumScale;
     private final DataTypeJdbc dataTypeJdbcExtension;
 
-    public DataTypeDriver(DataTypeInfoBuilder dataTypeInfoBuilder) {
+    public JdbcDataTypeDriver(DataTypeInfoBuilder dataTypeInfoBuilder) {
         this.dataType = dataTypeInfoBuilder.dataType;
         this.typeName = dataTypeInfoBuilder.typeName;
         this.precision = dataTypeInfoBuilder.precision;
@@ -260,8 +260,8 @@ public class DataTypeDriver implements DataTypeInterface {
             this.maximumScale = maximumScale;
         }
 
-        public DataTypeDriver build() {
-            return new DataTypeDriver(this);
+        public JdbcDataTypeDriver build() {
+            return new JdbcDataTypeDriver(this);
         }
 
     }

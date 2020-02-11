@@ -5,12 +5,6 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.database.DataTypeJdbc;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.jdbc.Hana.SqlDatabaseIHana;
-import net.bytle.db.jdbc.Hive.SqlDatabaseIHive;
-import net.bytle.db.jdbc.SqlServer.SqlDatabaseISqlServer;
-import net.bytle.db.jdbc.spi.DataTypeDriver;
-import net.bytle.db.jdbc.spi.SqlDatabaseI;
-import net.bytle.db.jdbc.spi.SqlDatabases;
 import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -49,7 +43,7 @@ public class JdbcDataStore extends DataStore {
   public static final String DRIVER_PROPERTY_KEY = "driver";
   public static final String POST_STATEMENT_PROPERTY_KEY = "post_statement";
   private final JdbcDataSystem jdbcDataSystem;
-  private SqlDatabaseI sqlDatabase;
+  private JdbcDataStoreExtension sqlDatabase;
   private JdbcDataProcessingEngine processingEngine;
 
 
@@ -121,43 +115,41 @@ public class JdbcDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getDataPath(String... names) {
-    return getCurrentPath().resolve(names);
+  public JdbcDataPath getDataPath(String... names) {
+    return this.getCurrentDataPath().resolve(names);
   }
 
   @Override
-  public DataPath getCurrentDataPath() {
+  public JdbcDataPath getCurrentDataPath() {
     return JdbcDataPath.of(this, getCurrentCatalog(), getCurrentSchema(), null);
   }
 
-  public SqlDatabaseI getExtension() {
-
-    if (sqlDatabase == null) {
-
-      String name;
-      try {
-        name = getCurrentConnection().getMetaData().getDatabaseProductName();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-      switch (name) {
-        case DB_HANA:
-          sqlDatabase = new SqlDatabaseIHana(this);
-          break;
-        case DB_SQL_SERVER:
-          sqlDatabase = new SqlDatabaseISqlServer(this);
-          break;
-        case DB_HIVE:
-          sqlDatabase = new SqlDatabaseIHive(this);
-          break;
-        default:
-          sqlDatabase = SqlDatabases.getSqlDatabase(this.getConnectionString());
-          break;
-      }
-
+  public String getProductName() {
+    try {
+      return getCurrentConnection().getMetaData().getDatabaseProductName();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
     }
-    return sqlDatabase;
+
   }
+
+  public JdbcDataStoreExtension getExtension() {
+
+    if (sqlDatabase==null) {
+      // check installed providers
+      for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
+        if (this.getProductName().equalsIgnoreCase(provider.getProductName())) {
+          sqlDatabase = provider.getJdbcDataStoreExtension(this);
+        }
+      }
+    }
+
+    return sqlDatabase;
+
+  }
+
+
+
 
   @Override
   public void close() {
@@ -343,7 +335,7 @@ public class JdbcDataStore extends DataStore {
   }
 
   // A cache object
-  // integer is data type id
+// integer is data type id
   private Map<Integer, DataType> dataTypeMap = new HashMap<>();
 
   /**
@@ -357,12 +349,12 @@ public class JdbcDataStore extends DataStore {
 
     if (dataType == null) {
       DataTypeDatabase dataTypeDatabase = null;
-      SqlDatabaseI sqlDatabaseI = this.getExtension();
-      if (sqlDatabaseI != null) {
-        dataTypeDatabase = sqlDatabaseI.dataTypeOf(typeCode);
+      JdbcDataStoreExtension jdbcDataStoreExtension = this.getExtension();
+      if (jdbcDataStoreExtension != null) {
+        dataTypeDatabase = jdbcDataStoreExtension.dataTypeOf(typeCode);
       }
 
-      DataTypeDriver dataTypeDriver = this.getDataTypeDriver(typeCode);
+      JdbcDataTypeDriver jdbcDataTypeDriver = this.getDataTypeDriver(typeCode);
 
       // Get the data type Jdbc
       DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(typeCode);
@@ -385,7 +377,7 @@ public class JdbcDataStore extends DataStore {
    * @param typeCode the type code
    * @return
    */
-  private DataTypeDriver getDataTypeDriver(Integer typeCode) {
+  private JdbcDataTypeDriver getDataTypeDriver(Integer typeCode) {
 
     if (dataTypeInfoMap == null) {
       dataTypeInfoMap = Jdbcs.getDataTypeDriver(getCurrentConnection());
@@ -395,9 +387,9 @@ public class JdbcDataStore extends DataStore {
   }
 
   // The map that contains the data type
-  private Map<Integer, DataTypeDriver> dataTypeDriverMap = new HashMap<>();
+  private Map<Integer, JdbcDataTypeDriver> dataTypeDriverMap = new HashMap<>();
 
-  private Collection<DataTypeDriver> getDataTypeInfos() {
+  private Collection<JdbcDataTypeDriver> getDataTypeInfos() {
     if (dataTypeDriverMap.size() == 0) {
       // Initialize it by passing a dummy type code - ie 0
       getDataTypeDriver(0);
@@ -429,7 +421,7 @@ public class JdbcDataStore extends DataStore {
   }
 
   // The map that will contain the driver data type
-  private Map<Integer, DataTypeDriver> dataTypeInfoMap;
+  private Map<Integer, JdbcDataTypeDriver> dataTypeInfoMap;
 
   @Override
   public ProcessingEngine getProcessingEngine() {
