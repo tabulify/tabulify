@@ -7,6 +7,7 @@ import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import oracle.jdbc.OracleTypes;
 
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,11 +19,11 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
   private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer, DataTypeDatabase>();
 
   static {
-    dataTypeDatabaseSet.put(OraDbDoubleType.TYPE_CODE, new OraDbDoubleType());
+    dataTypeDatabaseSet.put(Types.DOUBLE, new OraDbNumberType());
+    dataTypeDatabaseSet.put(Types.NUMERIC, new OraDbNumberType());
     dataTypeDatabaseSet.put(OraDbIntervalDsType.TYPE_CODE, new OraDbIntervalDsType());
     dataTypeDatabaseSet.put(OraDbIntervalYmType.TYPE_CODE, new OraDbIntervalYmType());
     dataTypeDatabaseSet.put(OraDbRawType.TYPE_CODE, new OraDbRawType());
-    dataTypeDatabaseSet.put(OraDbNumberType.TYPE_CODE, new OraDbNumberType());
     dataTypeDatabaseSet.put(OraDbLongType.TYPE_CODE, new OraDbLongType());
     dataTypeDatabaseSet.put(OraDbNVarchar2Type.TYPE_CODE, new OraDbNVarchar2Type());
     dataTypeDatabaseSet.put(OraDbLongRawType.TYPE_CODE, new OraDbLongRawType());

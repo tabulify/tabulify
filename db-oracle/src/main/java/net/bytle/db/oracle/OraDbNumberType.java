@@ -27,7 +27,10 @@ class OraDbNumberType extends DataTypeDatabaseAbs {
             return "FLOAT("+precision+")";
         } else {
             // Default will take over
-            return null;
+            if (precision>38){
+              precision = 38;
+            }
+            return getTypeName()+"("+precision+","+scale+")";
         }
     }
 
