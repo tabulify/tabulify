@@ -323,10 +323,11 @@ public class DbDdl {
         final List<ColumnDef> nativeColumns = foreignKeyDef.getChildColumns();
         for (int i = 0; i < nativeColumns.size(); i++) {
             statement.append(nativeColumns.get(i).getColumnName());
-            if (i != nativeColumns.size()) {
+            if (i != nativeColumns.size() -1 ) {
                 statement.append(", ");
             }
         }
+        statement.append(") ");
 
 
         final DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
@@ -337,7 +338,7 @@ public class DbDdl {
         List<ColumnDef> foreignColumns = foreignDataPath.getDataDef().getPrimaryKey().getColumns();
         for (int i = 0; i < foreignColumns.size(); i++) {
             statement.append(foreignColumns.get(i).getColumnName());
-            if (i != foreignColumns.size()) {
+            if (i != foreignColumns.size() - 1) {
                 statement.append(", ");
             }
         }

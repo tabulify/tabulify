@@ -334,9 +334,11 @@ public class Jdbcs {
           .stream()
           .collect(Collectors.toMap(s -> s, s -> {
             try {
-              return fkResultSet.getString(s);
-            } catch (SQLException e) {
-              throw new RuntimeException(e);
+              String string = fkResultSet.getString(s);
+              return string == null ? "": string;
+            } catch (Exception e) {
+              String msg = "Error when retrieving the string value of " + s;
+              throw new RuntimeException(msg,e);
             }
           }));
         fkDatas.add(fkProperties);
@@ -360,14 +362,14 @@ public class Jdbcs {
       Map<Integer, String> cols = new HashMap<>();
       String fk_name = "";
       for (Map<String, String> fkData : fkDatas) {
-        if (fkData.get(col_pktable_name).equals(foreignTable)) {
+        if (fkData.get(col_pktable_name).equals(foreignTable.getName())) {
           cols.put(Integer.valueOf(fkData.get(col_key_seq)), fkData.get(col_fkcolumn_name));
           fk_name = fkData.get(col_fk_name);
         }
       }
       List<String> columns = cols.keySet().stream()
         .sorted()
-        .map(s -> cols.get(s))
+        .map(cols::get)
         .collect(Collectors.toList());
 
       final PrimaryKeyDef primaryKey = foreignTable.getDataDef().getPrimaryKey();

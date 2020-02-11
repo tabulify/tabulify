@@ -305,8 +305,7 @@ public class TableDef implements RelationDef {
 
 
   public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKey, List<String> columns) {
-
-    return null;
+    return foreignKeyOf(primaryKey, columns.toArray(new String[0]) );
   }
 
   public PrimaryKeyDef primaryKeyOf(String... columnNames) {
