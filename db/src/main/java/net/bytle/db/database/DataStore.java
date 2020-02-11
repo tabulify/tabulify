@@ -310,7 +310,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
                   DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
 
-                  ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getClass());
+                  ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getJavaDataType());
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
                     switch (columnProperty.getKey().toLowerCase()) {
                       case "type":

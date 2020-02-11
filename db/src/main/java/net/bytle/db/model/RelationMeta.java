@@ -55,7 +55,7 @@ public class RelationMeta {
      */
     public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
 
-        ColumnDef<T> columnDef = null;
+        ColumnDef<T> columnDef;
         ColumnDef columnDefGet = getColumnDef(columnName);
         if (columnDefGet == null) {
 
