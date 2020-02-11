@@ -9,6 +9,8 @@ import net.bytle.db.model.DataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -23,6 +25,8 @@ import java.util.Properties;
  * An object with all meta information about a JDBC data store
  */
 public class JdbcDataStore extends DataStore {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDataStore.class);
 
   @Override
   public JdbcDataStore addProperty(String key, String value) {
@@ -248,7 +252,7 @@ public class JdbcDataStore extends DataStore {
       try (CallableStatement callableStatement = connection.prepareCall(this.getPostConnectionStatement())) {
 
         callableStatement.execute();
-
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Post statement connection executed ("+this.getPostConnectionStatement()+")");
       } catch (SQLException e) {
         throw new RuntimeException("Post Connection error occurs: " + e.getMessage(), e);
       }
@@ -304,19 +308,7 @@ public class JdbcDataStore extends DataStore {
   public String getCurrentSchema() {
     try {
 
-      String schema;
-      switch (this.getCurrentConnection().getMetaData().getDatabaseProductName()) {
-
-        case DB_ORACLE:
-          // The function getSchema with the Oracle Driver throws an error (abstract ...)
-          schema = this.getCurrentConnection().getMetaData().getUserName();
-          break;
-        default:
-          schema = this.getCurrentConnection().getSchema();
-          break;
-      }
-
-      return schema;
+      return this.getCurrentConnection().getSchema();
 
     } catch (SQLException e) {
       throw new RuntimeException(e);

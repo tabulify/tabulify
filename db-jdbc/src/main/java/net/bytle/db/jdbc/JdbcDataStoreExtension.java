@@ -57,7 +57,9 @@ public abstract class JdbcDataStoreExtension {
    * @param objectName
    * @return
    */
-  protected abstract String getNormativeSchemaObjectName(String objectName);
+  protected String getNormativeSchemaObjectName(String objectName){
+    return null;
+  }
 
   /**
    * @return the number of concurrent writer connection
@@ -108,7 +110,9 @@ public abstract class JdbcDataStoreExtension {
     return false;
   }
 
-  public abstract String getTruncateStatement(JdbcDataPath dataPath);
+  public String getTruncateStatement(JdbcDataPath dataPath){
+    return null;
+  }
 
 
 }
