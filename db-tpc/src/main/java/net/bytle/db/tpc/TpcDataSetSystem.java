@@ -3,9 +3,7 @@ package net.bytle.db.tpc;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSetSystem;
-import net.bytle.db.spi.TableSystemProvider;
 import net.bytle.db.stream.SelectStream;
-import net.bytle.db.uri.DataUri;
 import net.bytle.regexp.Globs;
 
 import java.util.ArrayList;
@@ -19,48 +17,14 @@ public class TpcDataSetSystem extends DataSetSystem {
   public static final String SCALE = "scale";
 
 
-  private TpcdsModel tpcModel;
-  private final DataStore dataStore;
 
-
-  private TpcDataSetSystem(DataStore dataStore) {
-    this.dataStore = dataStore;
-  }
-
-  public static TpcDataSetSystem of(DataStore dataStore) {
-
-    return new TpcDataSetSystem(dataStore);
-  }
-
-  public TpcdsModel getDataModel() {
-    if (tpcModel == null) {
-      this.tpcModel = TpcdsModel.of(this);
-    }
-    return tpcModel;
-  }
-
-  @Override
-  public DataPath getDataPath(DataUri dataUri) {
-
-    return getDataPath(dataUri.getPath());
-
-  }
-
-  @Override
-  public DataPath getDataPath(String... names) {
-    DataPath dataPath = this.getDataModel().getAndCreateDataPath(names[0]);
-    // Case when it's the working directory
-    if (dataPath == null) {
-      dataPath = TpcDataPath.of(this, names[0]);
-    }
-    return dataPath;
-  }
 
 
   @Override
   public Boolean exists(DataPath dataPath) {
     assert dataPath != null : "A data path should not be null";
-    return tpcModel.getAndCreateDataPath(dataPath.getName()) != null;
+    TpcDataPath tpcDataPath = (TpcDataPath) dataPath;
+    return tpcDataPath.getDataStore().getDataModel().getAndCreateDataPath(dataPath.getName()) != null;
   }
 
   /**
@@ -76,35 +40,18 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   }
 
-  @Override
-  public DataStore getDataStore() {
-    return dataStore;
-  }
-
-
-
 
   @Override
   public boolean isContainer(DataPath dataPath) {
     return false;
   }
 
-  @Override
-  public String getProductName() {
-    return TpcTableSystemProvider.TPCDS_SCHEME;
-  }
 
-
-  @Override
-  public TableSystemProvider getProvider() {
-
-    throw new RuntimeException("Not yet implemented");
-  }
 
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
     if (dataPath.getPath().equals(TpcDataPath.CURRENT_WORKING_DIRECTORY)) {
-      return this.tpcModel.getAndCreateDataPaths();
+      return ((TpcDataStore) dataPath.getDataStore()).getDataModel().getAndCreateDataPaths();
     } else {
       return new ArrayList<>();
     }
@@ -130,10 +77,7 @@ public class TpcDataSetSystem extends DataSetSystem {
     }
   }
 
-  @Override
-  public DataPath getCurrentPath() {
-    return getDataPath(".");
-  }
+
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {
@@ -150,7 +94,8 @@ public class TpcDataSetSystem extends DataSetSystem {
 
   @Override
   public List<DataPath> getReferences(DataPath dataPath) {
-    return getDataModel().getAndCreateDataPaths().stream()
+    TpcDataPath  tpcDataPath = (TpcDataPath) dataPath;
+    return tpcDataPath.getDataStore().getDataModel().getAndCreateDataPaths().stream()
       .filter(
         s -> s.getDataDef()
           .getForeignKeys().stream()
@@ -160,9 +105,10 @@ public class TpcDataSetSystem extends DataSetSystem {
       .collect(Collectors.toList());
   }
 
-
   @Override
-  public void close() {
-
+  public DataStore createDataStore(String name, String url) {
+    return new TpcDataStore(name,url, this);
   }
+
+
 }

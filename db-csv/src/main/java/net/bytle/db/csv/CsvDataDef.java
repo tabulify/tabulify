@@ -40,6 +40,7 @@ public class CsvDataDef extends TableDef {
 
   /**
    * The number of header rows in the file
+   * Even without header, we create the structure (columns)
    */
   private int headerRowCount = 0;
 

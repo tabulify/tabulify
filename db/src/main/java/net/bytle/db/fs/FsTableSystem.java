@@ -16,7 +16,7 @@ import net.bytle.fs.Fs;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,19 +29,17 @@ public class FsTableSystem extends TableSystem {
   private static FsTableSystem fsTableSystem;
 
 
-
   // private FsDataStore fsDataStore;
   // private final FsTableSystemProvider fsTableSystemProvider;
   // private FileSystem fileSystem;
 
 
   public static FsTableSystem of() {
-    if (fsTableSystem == null){
+    if (fsTableSystem == null) {
       fsTableSystem = new FsTableSystem();
     }
     return fsTableSystem;
   }
-
 
 
   /**
@@ -130,11 +128,11 @@ public class FsTableSystem extends TableSystem {
       }
     }
     if (fileManager == null) {
+      DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") is unknown and got therefore the default file manager.");
       fileManager = FsFileManager.of();
     }
     return fileManager;
   }
-
 
 
   @Override
@@ -236,14 +234,14 @@ public class FsTableSystem extends TableSystem {
     FsDataPath fsTarget = (FsDataPath) target;
     try {
 
-      Files.write(
-        fsTarget.getNioPath(),
-        Files.readAllBytes(fsSource.getNioPath()),
-        StandardOpenOption.APPEND);
-
       // The below statement will delete the source file
-      // Files.move(fsSource.getNioPath(), fsTarget.getNioPath(), StandardCopyOption.REPLACE_EXISTING);
+      Files.move(fsSource.getNioPath(), fsTarget.getNioPath(), StandardCopyOption.REPLACE_EXISTING);
 
+      // This statement append
+      //      Files.write(
+      //        fsTarget.getNioPath(),
+      //        Files.readAllBytes(fsSource.getNioPath()),
+      //        StandardOpenOption.APPEND);
 
     } catch (IOException e) {
       throw new RuntimeException("Unable to move the file", e);

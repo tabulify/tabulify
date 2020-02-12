@@ -5,7 +5,6 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.uri.DataUri;
 
 import java.util.List;
 
@@ -16,16 +15,7 @@ import java.util.List;
 public abstract class DataSetSystem extends TableSystem {
 
 
-  public abstract DataPath getDataPath(DataUri dataUri);
 
-  /**
-   * @param names
-   * @return the data path (can be absolute or relative)
-   * <p>
-   * There is no need of a first parameter because on a data system, the first
-   * parameter can not be an URI as the URI was already used to build the data system
-   */
-  public abstract DataPath getDataPath(String... names);
 
   public abstract Boolean exists(DataPath dataPath);
 
@@ -54,7 +44,6 @@ public abstract class DataSetSystem extends TableSystem {
   }
 
 
-  public abstract TableSystemProvider getProvider();
 
   public InsertStream getInsertStream(DataPath dataPath) {
     throw new RuntimeException("A data set cannot insert into a data path. It can only read it");

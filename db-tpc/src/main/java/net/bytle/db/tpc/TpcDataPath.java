@@ -2,7 +2,6 @@ package net.bytle.db.tpc;
 
 import com.teradata.tpcds.Table;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
 import net.bytle.db.uri.DataUri;
 
 import java.util.Collections;
@@ -13,22 +12,22 @@ public class TpcDataPath extends DataPath {
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
 
-  private final TpcDataSetSystem dataStore;
+  private final TpcDataStore dataStore;
   private final String name;
 
   DataUri dataUri;
 
-  public TpcDataPath(TpcDataSetSystem dataStore, String name) {
+  public TpcDataPath(TpcDataStore dataStore, String name) {
     this.dataStore = dataStore;
     this.name = name;
   }
 
-  public static TpcDataPath of(TpcDataSetSystem dataStore, String name) {
+  public static TpcDataPath of(TpcDataStore dataStore, String name) {
     return new TpcDataPath(dataStore, name);
   }
 
   @Override
-  public TableSystem getDataStore() {
+  public TpcDataStore getDataStore() {
     return this.dataStore;
   }
 

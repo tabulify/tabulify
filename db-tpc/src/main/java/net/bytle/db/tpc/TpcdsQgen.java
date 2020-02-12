@@ -1,8 +1,7 @@
 package net.bytle.db.tpc;
 
 import net.bytle.command.Command;
-import net.bytle.db.database.Database;
-
+import net.bytle.db.database.DataStore;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,19 +17,19 @@ import java.util.List;
 public class TpcdsQgen {
 
 
-    private final Database database;
+    private final DataStore dataStore;
     private Path outputDirectory;
 
     private String dsqgenExe = "dsqgen.exe";
     private Path queryTemplatesDirectory = Paths.get(".");
     private Path distributionFile = Paths.get(".");
 
-    public TpcdsQgen(Database database) {
-        this.database = database;
+    public TpcdsQgen(DataStore dataStore) {
+        this.dataStore = dataStore;
     }
 
-    public static TpcdsQgen get(Database database) {
-        return new TpcdsQgen(database);
+    public static TpcdsQgen get(DataStore dataStore) {
+        return new TpcdsQgen(dataStore);
     }
 
     public TpcdsQgen setOutputDirectory(Path path) {

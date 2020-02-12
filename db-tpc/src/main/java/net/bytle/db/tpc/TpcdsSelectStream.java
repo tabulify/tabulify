@@ -45,7 +45,7 @@ public class TpcdsSelectStream implements SelectStream {
 
     // Teradata options
     Options options = new Options();
-    Double scale = dataPath.getDataStore().getDataStore().getPropertyAsDouble(TpcDataSetSystem.SCALE);
+    Double scale = dataPath.getDataStore().getPropertyAsDouble(TpcDataSetSystem.SCALE);
     if (scale==null){
       scale = 0.01;
     }
