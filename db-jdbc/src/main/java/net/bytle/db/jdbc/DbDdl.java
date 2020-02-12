@@ -144,36 +144,36 @@ public class DbDdl {
 
         // Target data type from source data type is lost
         // It should be handle when the path is changing of database
-        DataType targetDataType = columnDef.getDataType();
+        SqlDataType targetSqlDataType = columnDef.getDataType();
 
         // Always passed to create the statement
         Integer precision = columnDef.getPrecision();
         if (precision == null) {
-            precision = targetDataType.getMaxPrecision();
+            precision = targetSqlDataType.getMaxPrecision();
         }
         Integer scale = columnDef.getScale();
         if (scale == null) {
-            scale = targetDataType.getMaximumScale();
+            scale = targetSqlDataType.getMaximumScale();
         }
 
         String dataTypeCreateStatement = null;
 
-        DataTypeDatabase dataTypeDatabase = targetDataType.getDataTypeDatabase();
+        DataTypeDatabase dataTypeDatabase = targetSqlDataType.getDataTypeDatabase();
         if (dataTypeDatabase != null) {
             dataTypeCreateStatement = dataTypeDatabase.getCreateStatement(precision, scale);
         }
 
         if (dataTypeCreateStatement == null) {
-            if (targetDataType.getTypeCode() == Types.DATE || targetDataType.getTypeCode() == Types.TIME) {
+            if (targetSqlDataType.getTypeCode() == Types.DATE || targetSqlDataType.getTypeCode() == Types.TIME) {
 
-                dataTypeCreateStatement = targetDataType.getTypeName();
+                dataTypeCreateStatement = targetSqlDataType.getTypeName();
 
 
             } else {
 
 
-                if (targetDataType != null) {
-                    dataTypeCreateStatement = getCreateDataTypeStatement(targetDataType, precision, scale);
+                if (targetSqlDataType != null) {
+                    dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType, precision, scale);
                 } else {
                     String columnTypeName;
                     try {
@@ -217,7 +217,7 @@ public class DbDdl {
      *
      * @return the create statement
      */
-    public static String getCreateDataTypeStatement(DataType dataType, Integer precision, Integer scale) {
+    public static String getCreateDataTypeStatement(SqlDataType sqlDataType, Integer precision, Integer scale) {
 
 //        Missing something here
 //        if (dataType.getDataTypeDriver() != null) {
@@ -248,7 +248,7 @@ public class DbDdl {
 //
 //        }
 
-        return getCreateDataTypeStatement(dataType.getTypeName(), precision, scale);
+        return getCreateDataTypeStatement(sqlDataType.getTypeName(), precision, scale);
 
 
     }

@@ -2,9 +2,9 @@ package net.bytle.db.database;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -333,8 +333,8 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                     if (oType != null) {
                       type = (String) oType;
                     }
-                    DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
-                    columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getJavaDataType());
+                    SqlDataType sqlDataType = SqlDataTypes.get(type);
+                    columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), sqlDataType.getClazz());
                   }
 
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
@@ -406,11 +406,9 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public abstract Integer getMaxWriterConnection();
 
 
-  public DataType getDataType(Integer typeCode) {
+  public SqlDataType getDataType(Integer typeCode) {
 
-    return new DataType.DataTypeBuilder(typeCode)
-      .JdbcDataType(DataTypesJdbc.of(typeCode))
-      .build();
+    return SqlDataTypes.get(typeCode);
 
   }
 

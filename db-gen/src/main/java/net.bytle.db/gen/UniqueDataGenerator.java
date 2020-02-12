@@ -3,7 +3,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.engine.Columns;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -31,14 +31,14 @@ public class UniqueDataGenerator implements DataGenerator {
         // and adding it to the data generator map variable
         for(ColumnDef columnDef: columnDefs) {
 
-            if (DataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
+            if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 // With date, we are going in the past
                 ColumnDef<Date> dateColumn = Columns.safeCast(columnDef,Date.class);
                 Date minDate = Columns.getMin(dateColumn);
                 dataGeneratorMap.put(columnDef,SequenceGenerator.of(dateColumn).start(minDate).step(-1));
 
-            } else if (DataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
+            } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 if (columnDef.getClazz()== BigDecimal.class){
                     ColumnDef<BigDecimal> bigDecimalColumnDef = Columns.safeCast(columnDef, BigDecimal.class);
@@ -50,7 +50,7 @@ public class UniqueDataGenerator implements DataGenerator {
                     dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter).step(1));
                 }
 
-            } else if ( DataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
+            } else if ( SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 ColumnDef<String> stringColumn = Columns.safeCast(columnDef,String.class);
                 String s = Columns.getMax(stringColumn);

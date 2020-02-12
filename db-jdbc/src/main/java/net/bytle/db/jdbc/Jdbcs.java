@@ -1,7 +1,7 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.SqlDataType;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
@@ -236,7 +236,7 @@ public class Jdbcs {
 
         final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
-        DataTypeJdbc dataType = DataTypesJdbc.of(sqlTypeCode);
+        SqlDataType dataType = SqlDataTypes.get(sqlTypeCode);
         tableDef.getColumnOf(column_name, dataType.getClass())
           .typeCode(sqlTypeCode)
           .precision(column_size)

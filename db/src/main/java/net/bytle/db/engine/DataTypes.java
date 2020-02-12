@@ -1,6 +1,6 @@
 package net.bytle.db.engine;
 
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 
 import java.sql.Types;
 import java.util.Arrays;
@@ -20,6 +20,6 @@ public class DataTypes {
      * @return the jdbc integer representation of the type name
      */
     public static Integer toInteger(String typeName) {
-        return DataTypesJdbc.of(typeName).getTypeCode();
+        return SqlDataTypes.get(typeName).getTypeCode();
     }
 }

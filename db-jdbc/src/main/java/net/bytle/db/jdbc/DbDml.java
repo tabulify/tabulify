@@ -73,7 +73,7 @@ public class DbDml {
             for (int i = 0; i < source.getColumnDefs().size(); i++) {
                 String colName = source.getColumnDef(i).getColumnName();
                 ColumnDef columnDef = target.getColumnDef(colName);
-                if (!columnDef.getIsAutoincrement().equals("YES")) {
+                if (!columnDef.getIsAutoincrement()) {
                     String fieldQuote = "\"";
                     if (dataPath.getDataStore().getCurrentConnection().getMetaData().getDatabaseProductName().equals(JdbcDataStore.DB_HIVE)) {
                         fieldQuote = "`";

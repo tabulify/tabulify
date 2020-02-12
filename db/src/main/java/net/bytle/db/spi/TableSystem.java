@@ -1,7 +1,7 @@
 package net.bytle.db.spi;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -21,7 +21,7 @@ public abstract class TableSystem {
   public abstract void create(DataPath dataPath);
 
 
-  public abstract DataType getDataType(Integer typeCode);
+  public abstract SqlDataType getDataType(Integer typeCode);
 
   public abstract void drop(DataPath dataPath);
 

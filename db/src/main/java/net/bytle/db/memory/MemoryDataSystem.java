@@ -2,7 +2,7 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
@@ -177,7 +177,7 @@ public class MemoryDataSystem extends TableSystem {
 
 
   @Override
-  public DataType getDataType(Integer typeCode) {
+  public SqlDataType getDataType(Integer typeCode) {
     return null;
   }
 

@@ -1,8 +1,7 @@
 package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.log.Log;
 import net.bytle.type.Maps;
 
@@ -45,8 +44,8 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   private final String columnName;
 
   private int nullable = DatabaseMetaData.columnNullable;
-  private String isAutoincrement;
-  private String isGeneratedColumn;
+  private Boolean isAutoincrement = false;
+  private Boolean isGeneratedColumn = false;
   private TableDef dataDef;
   private int columnPosition;
   private String fullyQualifiedName;
@@ -61,7 +60,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   private String comment;
 
 
-  public String getIsGeneratedColumn() {
+  public Boolean getIsGeneratedColumn() {
     return isGeneratedColumn;
   }
 
@@ -89,7 +88,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     return nullable != DatabaseMetaData.columnNoNulls;
   }
 
-  public String getIsAutoincrement() {
+  public Boolean getIsAutoincrement() {
     return isAutoincrement;
   }
 
@@ -109,8 +108,8 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
       if (this.typeCode != null) {
         return this.typeCode;
       } else {
-        DataTypeJdbc dataTypeJdbc = DataTypesJdbc.ofClass(clazz);
-        return dataTypeJdbc.getTypeCode();
+        SqlDataType sqlDataType = SqlDataTypes.ofClass(clazz);
+        return sqlDataType.getTypeCode();
       }
 
     }
@@ -134,7 +133,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     return dataDef;
   }
 
-  public DataType getDataType() {
+  public SqlDataType getDataType() {
 
     // The typecode of the clazz may be modified between two calls of datatype
     // It happens for instance with test
@@ -211,7 +210,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    * @return
    */
   public ColumnDef isAutoincrement(String is_autoincrement) {
-    this.isAutoincrement = is_autoincrement;
+    this.isAutoincrement = is_autoincrement.equals("YES");
     return this;
   }
 
@@ -222,7 +221,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    * @return
    */
   public ColumnDef isGeneratedColumn(String is_generatedcolumn) {
-    this.isGeneratedColumn = is_generatedcolumn;
+    this.isGeneratedColumn = is_generatedcolumn.equals("YES");
     return this;
   }
 
@@ -265,10 +264,10 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   /**
    * TODO: not yet implemented
    *
-   * @return
+   * @return the default value if any
    */
   public Object getDefault() {
-    return "";
+    throw new RuntimeException("Not yet implemented");
   }
 
   /**
@@ -333,4 +332,11 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   }
 
 
+  /**
+   *
+   * @return the precision or the max for this data type
+   */
+  public double getPrecisionOrMax() {
+    return precision ==null ? getDataType().getMaxPrecision() : precision;
+  }
 }

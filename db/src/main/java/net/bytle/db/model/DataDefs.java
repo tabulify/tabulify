@@ -100,7 +100,7 @@ public class DataDefs {
       .addColumn("Data Type")
       .addColumn("Primary Key")
       .addColumn("Not Null")
-      .addColumn("Default")
+      //.addColumn("Default")
       .addColumn("Auto Increment")
       .addColumn("Description");
 
@@ -117,7 +117,7 @@ public class DataDefs {
             columnDef.getDataType().getTypeName(),
             (dataPath.getDataDef().getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
             (columnDef.getNullable() ? "x" : ""),
-            columnDef.getDefault(),
+            // columnDef.getDefault(),
             columnDef.getIsAutoincrement(),
             columnDef.getDescription()};
 

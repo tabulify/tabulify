@@ -1,6 +1,6 @@
 package net.bytle.db.model;
 
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.engine.Columns;
 
 import java.sql.DatabaseMetaData;
@@ -156,7 +156,7 @@ public class RelationMeta {
             type=Types.VARCHAR;
         }
 
-        getColumnOf(columnName, DataTypesJdbc.of(type).getJavaDataType())
+        getColumnOf(columnName, SqlDataTypes.get(type).getClazz())
                 .typeCode(type)
                 .precision(precision)
                 .scale(scale)

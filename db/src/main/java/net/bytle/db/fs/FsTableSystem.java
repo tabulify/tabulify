@@ -2,7 +2,7 @@ package net.bytle.db.fs;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
@@ -161,7 +161,7 @@ public class FsTableSystem extends TableSystem {
 
 
   @Override
-  public DataType getDataType(Integer typeCode) {
+  public SqlDataType getDataType(Integer typeCode) {
 
     throw new RuntimeException("not yet implemented");
 

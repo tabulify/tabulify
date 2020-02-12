@@ -1,8 +1,8 @@
 package net.bytle.db.gen;
 
 
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.SqlDataType;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 
@@ -25,7 +25,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 public class DistributionGenerator<T> implements DataGenerator<T> {
 
     private final Class<T> clazz;
-    private final DataTypeJdbc type;
+    private final SqlDataType type;
     private Object o;
     private ColumnDef columnDef;
     private Object min;
@@ -37,7 +37,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
 
         this.columnDef = columnDef;
         clazz = columnDef.getClazz();
-        type = DataTypesJdbc.ofClass(clazz);
+        type = SqlDataTypes.ofClass(clazz);
         switch (type.getTypeCode()) {
             case (Types.DOUBLE):
                 range = 10.0;
@@ -108,6 +108,9 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
 
     private String getString() {
         Integer precision = this.columnDef.getPrecision();
+        if (precision==null){
+          precision = this.columnDef.getDataType().getMaxPrecision();
+        }
         String s = "hello";
         if (s.length() > precision) {
             s = s.substring(0, precision);

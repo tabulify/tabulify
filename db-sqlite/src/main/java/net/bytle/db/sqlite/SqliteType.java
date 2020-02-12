@@ -1,8 +1,8 @@
 package net.bytle.db.sqlite;
 
 
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.SqlDataType;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.log.Log;
 
 import java.util.regex.Matcher;
@@ -64,7 +64,7 @@ public class SqliteType {
     }
 
     public Integer getTypeCode() {
-        final DataTypeJdbc of = DataTypesJdbc.of(type);
+        final SqlDataType of = SqlDataTypes.get(type);
         if (of == null) {
             LOGGER.warning("The type code is unknown for the type (" + type + ")");
             return null;

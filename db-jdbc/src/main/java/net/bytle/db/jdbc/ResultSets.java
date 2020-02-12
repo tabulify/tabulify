@@ -1,7 +1,7 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.SqlDataType;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.model.RelationDef;
 
 import java.sql.ResultSet;
@@ -101,7 +101,7 @@ public class ResultSets {
             int columnCount = resultSetMetaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
                 final int columnType = resultSetMetaData.getColumnType(i);
-                DataTypeJdbc dataType = DataTypesJdbc.of(columnType);
+                SqlDataType dataType = SqlDataTypes.get(columnType);
                 relationDef.getColumnOf(resultSetMetaData.getColumnName(i),dataType.getClass())
                         .typeCode(columnType)
                         .precision(resultSetMetaData.getPrecision(i))

@@ -3,7 +3,7 @@ package net.bytle.db.jdbc;
 
 
 
-import net.bytle.db.database.DataTypeJdbc;
+import net.bytle.db.database.SqlDataType;
 import net.bytle.db.model.DataTypeInterface;
 
 import java.sql.DatabaseMetaData;
@@ -35,7 +35,7 @@ public class JdbcDataTypeDriver implements DataTypeInterface {
     private final String localTypeName;
     private final Integer minimumScale;
     private final Integer maximumScale;
-    private final DataTypeJdbc dataTypeJdbcExtension;
+    private final SqlDataType sqlDataTypeExtension;
 
     public JdbcDataTypeDriver(DataTypeInfoBuilder dataTypeInfoBuilder) {
         this.dataType = dataTypeInfoBuilder.dataType;
@@ -53,7 +53,7 @@ public class JdbcDataTypeDriver implements DataTypeInterface {
         this.localTypeName = dataTypeInfoBuilder.localTypeName;
         this.minimumScale = dataTypeInfoBuilder.minimumScale;
         this.maximumScale = dataTypeInfoBuilder.maximumScale;
-        this.dataTypeJdbcExtension = dataTypeInfoBuilder.dataTypeJdbcExtension;
+        this.sqlDataTypeExtension = dataTypeInfoBuilder.sqlDataTypeExtension;
     }
 
     public int getTypeCode() {
@@ -179,7 +179,7 @@ public class JdbcDataTypeDriver implements DataTypeInterface {
         private String localTypeName; // localized version of type name (may be null)
         private Integer minimumScale; // minimum scale supported
         private Integer maximumScale; // maximum scale supported
-        private DataTypeJdbc dataTypeJdbcExtension;
+        private SqlDataType sqlDataTypeExtension;
 
 
         public DataTypeInfoBuilder(int dataType) {

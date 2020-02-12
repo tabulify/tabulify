@@ -1,8 +1,8 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
+import net.bytle.db.database.SqlDataType;
+import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.jdbc.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -256,7 +256,7 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
                 }
                 // Not sure what to do with that
                 // Integer typeCode = type.getTypeCode();
-                DataTypeJdbc jdbcDataType = DataTypesJdbc.of(typeCodeName);
+                SqlDataType jdbcDataType = SqlDataTypes.get(typeCodeName);
 
                 tableDef.getColumnOf(resultSet.getString("name"), jdbcDataType.getJavaDataType())
                         .typeCode(jdbcDataType.getTypeCode())

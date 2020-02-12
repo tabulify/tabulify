@@ -3,9 +3,7 @@ package net.bytle.db.jdbc;
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.database.DataTypeDatabase;
-import net.bytle.db.database.DataTypeJdbc;
-import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
@@ -328,7 +326,7 @@ public class JdbcDataStore extends DataStore {
 
   // A cache object
 // integer is data type id
-  private Map<Integer, DataType> dataTypeMap = new HashMap<>();
+  private Map<Integer, SqlDataType> dataTypeMap = new HashMap<>();
 
   /**
    * Return a data type by JDBC Type code
@@ -336,11 +334,11 @@ public class JdbcDataStore extends DataStore {
    * @param typeCode
    */
   @Override
-  public DataType getDataType(Integer typeCode) {
+  public SqlDataType getDataType(Integer typeCode) {
 
-    DataType dataType = dataTypeMap.get(typeCode);
+    SqlDataType sqlDataType = dataTypeMap.get(typeCode);
 
-    if (dataType == null) {
+    if (sqlDataType == null) {
       DataTypeDatabase dataTypeDatabase = null;
       JdbcDataStoreExtension jdbcDataStoreExtension = this.getExtension();
       if (jdbcDataStoreExtension != null) {
@@ -349,18 +347,19 @@ public class JdbcDataStore extends DataStore {
 
       JdbcDataTypeDriver jdbcDataTypeDriver = this.getDataTypeDriver(typeCode);
 
-      // Get the data type Jdbc
-      DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(typeCode);
 
-      dataType = new DataType.DataTypeBuilder(typeCode)
-        .DatabaseDataType(dataTypeDatabase)
-        .JdbcDataType(dataTypeJdbc)
+
+
+      sqlDataType = new SqlDataType.DataTypeBuilder(typeCode)
+        .databaseDataType(dataTypeDatabase)
+        .jdbcDataType(dataTypeJdbc)
         .build();
 
-      dataTypeMap.put(typeCode, dataType);
+      dataTypeMap.put(typeCode, sqlDataType);
+
     }
 
-    return dataType;
+    return sqlDataType;
 
   }
 

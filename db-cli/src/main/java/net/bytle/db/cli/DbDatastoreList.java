@@ -7,7 +7,6 @@ import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;

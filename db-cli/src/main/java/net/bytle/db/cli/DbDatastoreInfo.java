@@ -7,7 +7,6 @@ import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

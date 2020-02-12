@@ -310,9 +310,9 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
             maxGeneratedValues = (double) (values.size() / step);
         } else {
             if (clazz == Integer.class || clazz == BigDecimal.class) {
-                maxGeneratedValues = Math.pow(10, columnDef.getPrecision());
+              maxGeneratedValues = Math.pow(10, columnDef.getPrecisionOrMax());
             } else if (clazz == String.class) {
-                maxGeneratedValues = Math.pow(StringGenerator.MAX_RADIX, columnDef.getPrecision());
+                maxGeneratedValues = Math.pow(StringGenerator.MAX_RADIX, columnDef.getPrecisionOrMax());
             } else if (clazz == Date.class) {
                 maxGeneratedValues = (double) DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
             } else {

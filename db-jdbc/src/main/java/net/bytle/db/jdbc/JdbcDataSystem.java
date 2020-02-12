@@ -1,7 +1,7 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.DataType;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
@@ -179,7 +179,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
   @Override
-  public DataType getDataType(Integer typeCode) {
+  public SqlDataType getDataType(Integer typeCode) {
     throw new RuntimeException("Should not be there clearly");
   }
 
