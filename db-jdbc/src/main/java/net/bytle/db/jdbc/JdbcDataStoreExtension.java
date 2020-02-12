@@ -66,7 +66,9 @@ public abstract class JdbcDataStoreExtension {
    * Example: Sqlite database can only writen by one connection but can be read by many.
    * In this case, {@link #getMaxWriterConnection} will return 1
    */
-  protected abstract Integer getMaxWriterConnection();
+  protected  Integer getMaxWriterConnection(){
+    return Integer.MAX_VALUE;
+  }
 
 
   /**

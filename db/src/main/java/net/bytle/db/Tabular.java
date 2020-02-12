@@ -238,7 +238,7 @@ public class Tabular implements AutoCloseable {
           } else if (pathInUri.endsWith(TableDef.DATA_DEF_SUFFIX)) {
             DataPath dataDefDataPath = this
               .getDataStore(dataUri.getDataStore())
-              .getDataPathOfDataDef(path);
+              .createOrMergeDataPathOfDataDef(path);
             dataPathsToReturn.add(dataDefDataPath);
           }
         }
@@ -260,7 +260,7 @@ public class Tabular implements AutoCloseable {
    * @return the data path with its meta
    */
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
-    return getDefaultDataStore().getDataPathOfDataDef(dataDefPath);
+    return getDefaultDataStore().createOrMergeDataPathOfDataDef(dataDefPath);
   }
 
   public DataPath getDataPathOfDataDef(String name, TableDef datadef) {

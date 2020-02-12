@@ -19,6 +19,7 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
   private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer, DataTypeDatabase>();
 
   static {
+    // Numeric: https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313
     dataTypeDatabaseSet.put(Types.DOUBLE, new OraDbNumberType());
     dataTypeDatabaseSet.put(Types.NUMERIC, new OraDbNumberType());
     dataTypeDatabaseSet.put(OraDbIntervalDsType.TYPE_CODE, new OraDbIntervalDsType());
@@ -55,16 +56,11 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
 
   }
 
-  @Override
-  public Integer getMaxWriterConnection() {
-    return 100;
-  }
 
   @Override
   public String getTruncateStatement(JdbcDataPath dataPath) {
-    StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
-    truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-    return truncateStatementBuilder.toString();
+    return "truncate from " +
+      JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
   }
 
 

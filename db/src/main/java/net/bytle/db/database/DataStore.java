@@ -236,8 +236,11 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   /**
    * @param dataDefPath - the path of a data def file
    * @return a data path from a data def path
+   * It will create or merge the data path from the data def file
+   *
+   * If the data document already exist in the data store, it will merge, otherwise it will create it.
    */
-  public DataPath getDataPathOfDataDef(Path dataDefPath) {
+  public DataPath createOrMergeDataPathOfDataDef(Path dataDefPath) {
     assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     assert dataDefPath.getFileName().toString().contains(TableDef.DATA_DEF_SUFFIX) : "The file (" + dataDefPath.getFileName().toString() + ") has not the data def extension (" + TableDef.DATA_DEF_SUFFIX + ")";
@@ -302,31 +305,42 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                 try {
                   Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
 
-                  String type = "varchar";
-                  Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
-                  if (oType != null) {
-                    type = (String) oType;
+                  ColumnDef columnDef = dataPath.getDataDef().getColumnDef(column.getKey());
+                  // If the columns does not exist
+                  if (columnDef==null) {
+                    String type = "varchar";
+                    Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
+                    if (oType != null) {
+                      type = (String) oType;
+                    }
+                    DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
+                    columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getJavaDataType());
                   }
 
-                  DataTypeJdbc dataTypeJdbc = DataTypesJdbc.of(type);
-
-                  ColumnDef columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), dataTypeJdbc.getJavaDataType());
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
                     switch (columnProperty.getKey().toLowerCase()) {
                       case "type":
-                        columnDef.typeCode(dataTypeJdbc.getTypeCode());
+                        // Already done during the creation
                         break;
                       case "precision":
-                        columnDef.precision((Integer) columnProperty.getValue());
+                        if (columnDef.getPrecision()==null) {
+                          columnDef.precision((Integer) columnProperty.getValue());
+                        }
                         break;
                       case "scale":
-                        columnDef.scale((Integer) columnProperty.getValue());
+                        if (columnDef.getScale()==null) {
+                          columnDef.scale((Integer) columnProperty.getValue());
+                        }
                         break;
                       case "comment":
-                        columnDef.comment((String) columnProperty.getValue());
+                        if (columnDef.getComment()==null) {
+                          columnDef.comment((String) columnProperty.getValue());
+                        }
                         break;
                       case "nullable":
-                        columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
+                        if (columnDef.getNullable()==null) {
+                          columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
+                        }
                         break;
                       default:
                         columnDef.addProperty(columnProperty.getKey(), columnProperty.getValue());
