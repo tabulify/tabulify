@@ -26,7 +26,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
-  public static final int DEFAULT_PRECISION = 50;
   private static Set<Integer> allowedNullableValues = new HashSet<>();
   private final Class<T> clazz;
 
@@ -91,11 +90,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   }
 
   public String getIsAutoincrement() {
-    if (isAutoincrement == null) {
-      return "";
-    } else {
-      return isAutoincrement;
-    }
+    return isAutoincrement;
   }
 
   /**
@@ -128,19 +123,11 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   }
 
   public Integer getPrecision() {
-    if (precision == null) {
-      return DEFAULT_PRECISION;
-    } else {
-      return precision;
-    }
+    return precision;
   }
 
   public Integer getScale() {
-    if (scale != null) {
-      return scale;
-    } else {
-      return null;
-    }
+    return scale;
   }
 
   public TableDef getDataDef() {

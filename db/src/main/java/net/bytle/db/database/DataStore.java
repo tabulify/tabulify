@@ -1,5 +1,6 @@
 package net.bytle.db.database;
 
+import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.JdbcDataType.DataTypesJdbc;
 import net.bytle.db.model.ColumnDef;
@@ -45,6 +46,25 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   // Authority
   private String user;
   private String password;
+
+  /**
+   * Deep copy
+   * @param ds
+   * @return a new reference
+   * Used in the {@link DatastoreVault#load() datastore vault load function} to create a deep copy of the
+   * internal data stores.
+   */
+  public static DataStore of(DataStore ds) {
+    return DataStore.of(ds.getName(),ds.getConnectionString())
+      .setPassword(ds.getPassword())
+      .setUser(ds.getUser())
+      .setProperties(ds.getProperties())
+      .setDescription(ds.getDescription());
+  }
+
+  public String getDescription() {
+    return description;
+  }
 
 
   public String getName() {

@@ -145,7 +145,12 @@ public class DatastoreVault implements AutoCloseable {
           String definitivePassphrase = this.passphrase;
           if (definitivePassphrase == null) {
             if (internalDataStores.contains(dataStore)) {
-              definitivePassphrase = INTERNAL_PASSPHRASE;
+              DataStore internalDataStore = internalDataStores.stream().filter(ds -> ds.getName().equals(dataStore.getName())).collect(Collectors.toList()).get(0);
+              if (dataStore.getPassword().equals(internalDataStore.getPassword())) {
+                definitivePassphrase = INTERNAL_PASSPHRASE;
+              } else {
+                throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
+              }
             } else {
               throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
             }
@@ -226,7 +231,7 @@ public class DatastoreVault implements AutoCloseable {
     if (!Files.exists(this.path)) {
 
       dataStores = internalDataStores.stream()
-        .collect(Collectors.toMap(DataStore::getName, ds -> ds));
+        .collect(Collectors.toMap(DataStore::getName, ds -> DataStore.of(ds)));
 
     } else {
 
