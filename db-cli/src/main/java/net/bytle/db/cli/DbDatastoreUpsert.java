@@ -96,23 +96,20 @@ public class DbDatastoreUpsert {
     }
 
     // Main
-    DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)
-      .setPassphrase(passphrase);
+    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)
+      ) {
+      DataStore dataStore = datastoreVault.getDataStore(datastoreName);
+      if (dataStore == null) {
+        dataStore = DataStore.of(datastoreName, urlValue);
+        datastoreVault.add(dataStore);
+        LOGGER.info("The datastore (" + datastoreName + ") was added");
+      } else {
+        datastoreVault.update(dataStore);
+        LOGGER.info("The datastore (" + datastoreName + ") was updated.");
 
-    DataStore dataStore = DataStore.of(datastoreName);
-    if (urlValue != null) dataStore.setConnectionString(urlValue);
-    if (userValue != null) dataStore.setUser(userValue);
-    if (pwdValue != null ) dataStore.setPassword(pwdValue);
-    if (driverValue!=null) dataStore.addProperty("driver",driverValue);
-    if (datastoreVault.getDataStore(dataStore.getName())!= null) {
-      datastoreVault.update(dataStore);
-      LOGGER.info("The datastore (" + datastoreName + ") was updated.");
-    } else {
-      datastoreVault.add(dataStore);
-      LOGGER.info("The datastore (" + datastoreName + ") was added");
+      }
+      LOGGER.info("Bye !");
     }
-
-    LOGGER.info("Bye !");
 
   }
 
