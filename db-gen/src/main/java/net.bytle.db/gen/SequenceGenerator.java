@@ -168,7 +168,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
                 }
                 returnValue = values.get((Integer) currentValue);
             } else {
-                returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, columnDef.getPrecision());
+                returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, columnDef.getPrecisionOrMax());
             }
         }
 

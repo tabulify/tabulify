@@ -116,15 +116,30 @@ public class SqlDataTypesManager {
   }
 
   public SqlDataType ofClass(Class clazz) {
-    final Integer sqlDataType = sqlDataTypeByJavaClass.get(clazz);
-    if (sqlDataType == null) {
-      throw new RuntimeException("The jdbc data type for the class (" + clazz + ") is unknown");
+    final Integer typeCode = sqlDataTypeByJavaClass.get(clazz);
+    SqlDataType sqlDataType = null;
+    if (typeCode != null) {
+      sqlDataType = sqlDataTypes
+        .stream()
+        .filter(dt -> dt.getTypeCode() == typeCode)
+        .findFirst()
+        .orElse(null);
     }
-    return sqlDataTypes
-      .stream()
-      .filter(dt -> dt.getTypeCode() == sqlDataType)
-      .findFirst()
-      .get();
+    if (sqlDataType == null) {
+      // trying to find it in the data type
+      sqlDataType = sqlDataTypes
+        .stream()
+        .filter(dt->dt.getClazz()!=null)
+        .filter(dt -> dt.getClazz().equals(clazz))
+        .findFirst()
+        .orElse(null);
+    }
+    if (sqlDataType == null){
+      throw new RuntimeException("The jdbc data type for the class ("+clazz+") is unknown");
+    } else {
+      return sqlDataType;
+    }
+
   }
 
 

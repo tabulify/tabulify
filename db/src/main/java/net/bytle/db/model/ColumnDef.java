@@ -335,7 +335,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    *
    * @return the precision or the max for this data type
    */
-  public double getPrecisionOrMax() {
+  public Integer getPrecisionOrMax() {
     return precision ==null ? getDataType().getMaxPrecision() : precision;
   }
 }

@@ -52,7 +52,7 @@ public class SqlDataType {
   // The sqlite driver is also giving TEXT to the VARCHAR sql type
   // but you may create a column with the VARCHAR keyword ...
   private List<String> typeNames = new ArrayList<>();
-  private int maxPrecision; // maximum precision
+  private Integer maxPrecision; // maximum precision
   private String literalPrefix; // prefix used to quote a literal (may be null)
   private String literalSuffix; // suffix used to quote a literal (may be null)
   private String createParams; // parameters used in creating the type (may be null)
@@ -121,7 +121,11 @@ public class SqlDataType {
    * Null is returned for data types where the column size is not applicable.
    */
   public Integer getMaxPrecision() {
-    return maxPrecision;
+    if (maxPrecision==null){
+      return Integer.MAX_VALUE;
+    } else {
+      return maxPrecision;
+    }
   }
 
   /**
@@ -246,7 +250,9 @@ public class SqlDataType {
   }
 
   public SqlDataType setMaxPrecision(int maxPrecision) {
-    this.maxPrecision = maxPrecision;
+    if (maxPrecision!=0) {
+      this.maxPrecision = maxPrecision;
+    }
     return this;
   }
 
