@@ -1,9 +1,8 @@
 package net.bytle.db.model;
 
-import net.bytle.db.database.DataTypeDatabase;
-
 import java.sql.Types;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -23,7 +22,7 @@ import java.util.Set;
  * * https://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.1 - Json schema
  * * https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#metadata-format - See data type description
  */
-public abstract class SqlDataType {
+public class SqlDataType {
 
   public static Set<Integer> numericTypes = new HashSet<>();
   public static Set<Integer> characterTypes = new HashSet<>();
@@ -50,40 +49,66 @@ public abstract class SqlDataType {
 
   }
 
+  private Integer typeCode;
+  private String typeName;
+  private int maxPrecision; // maximum precision
+  private String literalPrefix; // prefix used to quote a literal (may be null)
+  private String literalSuffix; // suffix used to quote a literal (may be null)
+  private String createParams; // parameters used in creating the type (may be null)
+  private Short nullable; // can you use null for this type
+  private Boolean caseSensitive; // is it case sensitive
+  private Short searchable; // can you use "WHERE" based on this type:
+  private Boolean unsignedAttribute; //  is it unsigned
+  private Boolean fixedPrecScale; // can it be a money value.
+  private Boolean autoIncrement; // can it be used for an auto-increment value.
+  private String localTypeName; // localized version of type name (may be null)
+  private Integer minimumScale; // minimum scale supported
+  private Integer maximumScale; // maximum scale supported
+  private Class<?> clazz; // The java class that can hold this data type
+  private String description;
 
-
-
-  private DataTypeDatabase dataTypeDatabase;
-
-
-  public DataTypeDatabase getDataTypeDatabase() {
-    return dataTypeDatabase;
+  public SqlDataType(int typeCode) {
+    this.typeCode = typeCode;
   }
 
+  public static SqlDataType of(int typeCode) {
+    return new SqlDataType(typeCode);
+  }
 
 
   /**
    * The Java class that corresponds to the SQL Types.
    *
-   * @return
+   * @return the java class that may contains this data
    */
-  public Class<?> getClazz() {
-
-    final DataTypeDatabase dataTypeDatabase = this.dataTypeDatabase;
-    if (this.dataTypeDatabase != null) {
-      if (dataTypeDatabase.getJavaDataType() != null) {
-        return dataTypeDatabase.getJavaDataType();
-      }
-    }
-
-    throw new RuntimeException("The data type" + getTypeName() + "(" + getTypeCode() + " has no class java defined");
-
+  public Class<?> getClazz(){
+    return this.clazz;
   }
 
 
-  public abstract int getTypeCode();
+  /**
+   * @return the sql create statement part
+   */
+  public String getCreateStatement(int precision, int scale) {
+    return null;
+  }
 
-  public abstract String getTypeName();
+  /**
+   * @return the vendor class data type implementation
+   */
+  Class<?> getVendorClass() {
+    return null;
+  }
+
+
+  public int getTypeCode(){
+    return typeCode;
+  }
+
+  public String getTypeName(){
+    return typeName;
+  }
+
 
   /**
    * The PRECISION column represents the maximum column size that the server supports for the given datatype.
@@ -92,25 +117,17 @@ public abstract class SqlDataType {
    * For datetime datatypes, this is the length in characters of the String representation (assuming the maximum allowed precision of the fractional seconds component).
    * For binary data, this is the length in bytes.
    * For the ROWID datatype, this is the length in bytes.
-   * 0 is returned for data types where the column size is not applicable or unknown
+   * Null is returned for data types where the column size is not applicable.
    */
   public Integer getMaxPrecision() {
-
-
-    // A character must have always a precision
-    // but not a number
-    // TODO: This may cause a problem if the driver returns null as maxPrecision ...
-    return 0;
-
+    return maxPrecision;
   }
 
   /**
    * @return prefix used to quote a literal (may be null)
    */
   public String getLiteralPrefix() {
-
-    return null;
-
+    return literalPrefix;
   }
 
   /**
@@ -118,104 +135,85 @@ public abstract class SqlDataType {
    * TODO: Is This the thing before a word in select "myColumn", ...
    */
   public String getLiteralSuffix() {
-
-
-    return null;
-
-
+    return literalSuffix;
   }
 
   /**
    * @return parameters used in creating the type (may be null)
    */
   public String getCreateParams() {
-
-    return null;
-
+    return createParams;
   }
 
   /**
    * @return can you use null for this type
+   *  * typeNoNulls - does not allow NULL values
+   *  * typeNullable - allows NULL values
+   *  * typeNullableUnknown - nullability unknown
    */
   public Short getNullable() {
-
-    return null;
-
+    return nullable;
   }
 
   /**
    * @return is it case sensitive
    */
   public Boolean getCaseSensitive() {
-
-    return null;
-
+    return caseSensitive;
   }
 
   /**
    * @return can you use "WHERE" based on this type:
+   *  * typePredNone - No support
+   *  * typePredChar - Only supported with WHERE .. LIKE
+   *  * typePredBasic - Supported except for WHERE .. LIKE
+   *  * typeSearchable - Supported for all WHERE ..
    */
   public Short getSearchable() {
-
-    return null;
-
+    return searchable;
   }
 
   /**
    * @return is it unsigned
    */
   public Boolean getUnsignedAttribute() {
-
-    return null;
-
+    return unsignedAttribute;
   }
 
   /**
    * @return can it be a money value.
    */
   public Boolean getFixedPrecScale() {
-
-    return null;
-
+    return fixedPrecScale;
   }
 
   /**
    * @return can it be used for an auto-increment value.
    */
   public Boolean getAutoIncrement() {
-
-    return null;
-
+    return autoIncrement;
   }
 
   /**
    * @return localized version of type name (may be null)
    */
   public String getLocalTypeName() {
-
-    return null;
-
+    return localTypeName;
   }
 
   /**
    * @return minimum scale supported
    */
   public Integer getMinimumScale() {
-
-    return null;
-
+    return minimumScale;
   }
 
   /**
    * @return maximum scale supported
-   * 0 if unknown
    */
   public Integer getMaximumScale() {
-
-    return 0;
-
+    return Integer.valueOf(maximumScale);
   }
-
 
 
   @Override
@@ -224,5 +222,98 @@ public abstract class SqlDataType {
       "typeName='" + getTypeName() + '\'' +
       ", typeCode=" + getTypeCode() +
       '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SqlDataType that = (SqlDataType) o;
+    return typeCode.equals(that.typeCode);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(typeCode);
+  }
+
+  public SqlDataType setTypeName(String typeName) {
+    this.typeName = typeName;
+    return this;
+  }
+
+  public SqlDataType setMaxPrecision(int maxPrecision) {
+    this.maxPrecision = maxPrecision;
+    return this;
+  }
+
+  public SqlDataType setLiteralPrefix(String literalPrefix){
+    this.literalPrefix = literalPrefix;
+    return this;
+  }
+
+  public SqlDataType setLiteralSuffix(String literalSuffix) {
+    this.literalSuffix = literalSuffix;
+    return this;
+  }
+
+  public SqlDataType setCreateParams(String createParams) {
+    this.createParams = createParams;
+    return this;
+  }
+
+  public SqlDataType setNullable(Short nullable) {
+    this.nullable = nullable;
+    return this;
+  }
+
+  public SqlDataType setCaseSensitive(Boolean caseSensitive) {
+    this.caseSensitive = caseSensitive;
+    return this;
+  }
+
+  public SqlDataType setSearchable(Short searchable) {
+    this.searchable = searchable;
+    return this;
+  }
+
+  public SqlDataType setUnsignedAttribute(Boolean unsignedAttribute){
+    this.unsignedAttribute = unsignedAttribute;
+    return this;
+  }
+
+  public SqlDataType setFixedPrecScale(Boolean fixedPrecScale) {
+    this.fixedPrecScale = fixedPrecScale;
+    return this;
+  }
+
+  public SqlDataType setAutoIncrement(Boolean autoIncrement) {
+    this.autoIncrement = autoIncrement;
+    return this;
+  }
+
+  public SqlDataType setLocalTypeName(String localTypeName){
+    this.localTypeName = localTypeName;
+    return this;
+  }
+
+  public SqlDataType setMinimumScale(Integer minimumScale) {
+    this.minimumScale = minimumScale;
+    return this;
+  }
+
+  public SqlDataType setMaximumScale(Integer maximumScale) {
+    this.minimumScale = minimumScale;
+    return this;
+  }
+
+  public SqlDataType setClazz(Class<?> clazz) {
+    this.clazz = clazz;
+    return this;
+  }
+
+  public SqlDataType setDescription(String description) {
+    this.description = description;
+    return this;
   }
 }

@@ -1,7 +1,6 @@
 package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.log.Log;
 import net.bytle.type.Maps;
 
@@ -97,22 +96,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    */
   private Integer getTypeCode() {
 
-    if (this.typeCode == null && this.clazz == null) {
-
-      // No data type defined, default to VARCHAR
-      return Types.VARCHAR;
-
-    } else {
-
-      // If the developer gave only the java data type (class)
-      if (this.typeCode != null) {
-        return this.typeCode;
-      } else {
-        SqlDataType sqlDataType = SqlDataTypes.ofClass(clazz);
-        return sqlDataType.getTypeCode();
-      }
-
-    }
+    return getDataType().getTypeCode();
 
   }
 
@@ -138,7 +122,21 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     // The typecode of the clazz may be modified between two calls of datatype
     // It happens for instance with test
     // See also  getDataTypeOf(, clazz)
-    return this.dataDef.getDataPath().getDataStore().getDataType(getTypeCode());
+    if (this.typeCode == null && this.clazz == null) {
+
+      // No data type defined, default to VARCHAR
+      return this.dataDef.getDataPath().getDataStore().getSqlDataType(Types.VARCHAR);
+
+    } else {
+
+      // If the developer gave only the java data type (class)
+      if (this.typeCode != null) {
+        return this.dataDef.getDataPath().getDataStore().getSqlDataType(this.typeCode);
+      } else {
+        return this.dataDef.getDataPath().getDataStore().getSqlDataType(clazz);
+      }
+    }
+
 
   }
 

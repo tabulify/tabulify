@@ -1,6 +1,5 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 

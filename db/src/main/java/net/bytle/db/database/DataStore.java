@@ -2,7 +2,6 @@ package net.bytle.db.database;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.JdbcDataType.SqlDataTypes;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
@@ -32,6 +31,9 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   // Connection Url
   protected String connectionString;
   private String description;
+
+  // An object that have all sql data type function
+  private SqlDataTypesManager sqlDataTypeManager;
 
 
   public DataStore(String name, String connectionString) {
@@ -333,7 +335,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                     if (oType != null) {
                       type = (String) oType;
                     }
-                    SqlDataType sqlDataType = SqlDataTypes.get(type);
+                    SqlDataType sqlDataType = getSqlDataTypeManager().get(type);
                     columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), sqlDataType.getClazz());
                   }
 
@@ -390,6 +392,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     return dataPath;
   }
 
+
   public DataStore setDescription(String description) {
     this.description = description;
     return this;
@@ -405,13 +408,54 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    */
   public abstract Integer getMaxWriterConnection();
 
+  /**
+   * An init function
+   * @return
+   */
+  private SqlDataTypesManager getSqlDataTypeManager() {
+    if (sqlDataTypeManager==null){
+      sqlDataTypeManager = new SqlDataTypesManager();
+    }
+    return sqlDataTypeManager;
+  }
 
-  public SqlDataType getDataType(Integer typeCode) {
+  /**
+   *
+   * @return all data types
+   */
+  public Set<SqlDataType> getSqlDataTypes() {
 
-    return SqlDataTypes.get(typeCode);
+    return getSqlDataTypeManager().getDataTypes();
+  }
 
+  /**
+   *
+   * @param typeCode
+   * @return the data type for one type
+   */
+  public SqlDataType getSqlDataType(Integer typeCode) {
+    return getSqlDataTypeManager().get(typeCode);
+  }
+
+  /**
+   *
+   * @param typeName
+   * @return the data type for one name
+   */
+  public SqlDataType getSqlDataType(String typeName) {
+    return getSqlDataTypeManager().get(typeName);
+  }
+
+  /**
+   *
+   * @param clazz
+   * @return @return the sql data type for a java class
+   */
+  public SqlDataType getSqlDataType(Class<?> clazz) {
+    return getSqlDataTypeManager().ofClass(clazz);
   }
 
   public abstract ProcessingEngine getProcessingEngine();
+
 
 }

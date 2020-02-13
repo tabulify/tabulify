@@ -1,7 +1,6 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.SqlDataType;
-import net.bytle.db.database.JdbcDataType.SqlDataTypes;
+import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
@@ -236,7 +235,7 @@ public class Jdbcs {
 
         final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
-        SqlDataType dataType = SqlDataTypes.get(sqlTypeCode);
+        net.bytle.db.model.SqlDataType dataType = SqlDataTypesManager.get(sqlTypeCode);
         tableDef.getColumnOf(column_name, dataType.getClass())
           .typeCode(sqlTypeCode)
           .precision(column_size)
@@ -572,9 +571,9 @@ public class Jdbcs {
   /**
    * Print data type given by the driver
    */
-  public static void printDataTypeInformation(Connection connection) {
+  public static void printDataTypeInformation(JdbcDataStore jdbcDataStore) {
 
-    List<JdbcDataTypeDriver> jdbcDataTypeDrivers = new ArrayList<>(getDataTypeDriver(connection).values());
+    Set<SqlDataType> sqlDataTypes = jdbcDataStore.getSqlDataTypes();
 
     // Headers
     System.out.println("Data Type\t" +
@@ -593,7 +592,7 @@ public class Jdbcs {
       "maximumScale"
     );
 
-    for (JdbcDataTypeDriver typeInfo : jdbcDataTypeDrivers) {
+    for (SqlDataType typeInfo : sqlDataTypes) {
       System.out.println(
         typeInfo.getTypeCode() + "\t" +
           typeInfo.getTypeName() + "\t" +
@@ -616,44 +615,48 @@ public class Jdbcs {
 
   }
 
-  public static Map<Integer, JdbcDataTypeDriver> getDataTypeDriver(Connection connection) {
+  public static Map<Integer, SqlDataType> getDataTypeDriver(JdbcDataStore jdbcDataStore) {
 
-    Map<Integer, JdbcDataTypeDriver> dataTypeInfoMap = new HashMap<>();
+
+    Map<Integer, SqlDataType> dataTypeInfoMap = new HashMap<>();
+
     ResultSet typeInfoResultSet;
     try {
-      typeInfoResultSet = connection.getMetaData().getTypeInfo();
+      typeInfoResultSet = jdbcDataStore.getCurrentConnection().getMetaData().getTypeInfo();
       while (typeInfoResultSet.next()) {
-        JdbcDataTypeDriver.DataTypeInfoBuilder typeInfoBuilder = new JdbcDataTypeDriver.DataTypeInfoBuilder(typeInfoResultSet.getInt("DATA_TYPE"));
+        int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
+        SqlDataType sqlDataType = dataTypeInfoMap.get(typeCode);
+        if (sqlDataType==null){
+          sqlDataType = JdbcDataType.of(typeCode);
+        }
         String typeName = typeInfoResultSet.getString("TYPE_NAME");
-        typeInfoBuilder.typeName(typeName);
+        sqlDataType.setTypeName(typeName);
         int precision = typeInfoResultSet.getInt("PRECISION");
-        typeInfoBuilder.maxPrecision(precision);
+        sqlDataType.setMaxPrecision(precision);
         String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
-        typeInfoBuilder.literalPrefix(literalPrefix);
+        sqlDataType.setLiteralPrefix(literalPrefix);
         String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
-        typeInfoBuilder.literalSuffix(literalSuffix);
+        sqlDataType.setLiteralSuffix(literalSuffix);
         String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
-        typeInfoBuilder.createParams(createParams);
+        sqlDataType.setCreateParams(createParams);
         Short nullable = typeInfoResultSet.getShort("NULLABLE");
-        typeInfoBuilder.nullable(nullable);
+        sqlDataType.setNullable(nullable);
         Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
-        typeInfoBuilder.caseSensitive(caseSensitive);
+        sqlDataType.setCaseSensitive(caseSensitive);
         Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
-        typeInfoBuilder.searchable(searchable);
+        sqlDataType.setSearchable(searchable);
         Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
-        typeInfoBuilder.unsignedAttribute(unsignedAttribute);
+        sqlDataType.setUnsignedAttribute(unsignedAttribute);
         Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
-        typeInfoBuilder.fixedPrecScale(fixedPrecScale);
+        sqlDataType.setFixedPrecScale(fixedPrecScale);
         Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
-        typeInfoBuilder.autoIncrement(autoIncrement);
+        sqlDataType.setAutoIncrement(autoIncrement);
         String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
-        typeInfoBuilder.localTypeName(localTypeName);
+        sqlDataType.setLocalTypeName(localTypeName);
         Integer minimumScale = Integer.valueOf(typeInfoResultSet.getShort("MINIMUM_SCALE"));
-        typeInfoBuilder.minimumScale(minimumScale);
+        sqlDataType.setMinimumScale(minimumScale);
         Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
-        typeInfoBuilder.maximumScale(maximumScale);
-        JdbcDataTypeDriver jdbcDataTypeDriver = typeInfoBuilder.build();
-        dataTypeInfoMap.put(jdbcDataTypeDriver.getTypeCode(), jdbcDataTypeDriver);
+        sqlDataType.setMaximumScale(maximumScale);
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);

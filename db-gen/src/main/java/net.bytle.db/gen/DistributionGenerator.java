@@ -2,7 +2,7 @@ package net.bytle.db.gen;
 
 
 import net.bytle.db.database.SqlDataType;
-import net.bytle.db.database.JdbcDataType.SqlDataTypes;
+import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 
@@ -37,7 +37,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
 
         this.columnDef = columnDef;
         clazz = columnDef.getClazz();
-        type = SqlDataTypes.ofClass(clazz);
+        type = SqlDataTypesManager.ofClass(clazz);
         switch (type.getTypeCode()) {
             case (Types.DOUBLE):
                 range = 10.0;

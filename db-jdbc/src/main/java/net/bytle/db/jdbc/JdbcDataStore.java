@@ -2,7 +2,6 @@ package net.bytle.db.jdbc;
 
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
@@ -14,7 +13,6 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -137,7 +135,7 @@ public class JdbcDataStore extends DataStore {
 
   public JdbcDataStoreExtension getExtension() {
 
-    if (sqlDatabase==null) {
+    if (sqlDatabase == null) {
       // check installed providers
       for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
         if (this.getProductName().equalsIgnoreCase(provider.getProductName())) {
@@ -149,8 +147,6 @@ public class JdbcDataStore extends DataStore {
     return sqlDatabase;
 
   }
-
-
 
 
   @Override
@@ -250,7 +246,7 @@ public class JdbcDataStore extends DataStore {
       try (CallableStatement callableStatement = connection.prepareCall(this.getPostConnectionStatement())) {
 
         callableStatement.execute();
-        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Post statement connection executed ("+this.getPostConnectionStatement()+")");
+        JdbcDataSystemLog.LOGGER_DB_JDBC.info("Post statement connection executed (" + this.getPostConnectionStatement() + ")");
       } catch (SQLException e) {
         throw new RuntimeException("Post Connection error occurs: " + e.getMessage(), e);
       }
@@ -334,59 +330,20 @@ public class JdbcDataStore extends DataStore {
    * @param typeCode
    */
   @Override
-  public SqlDataType getDataType(Integer typeCode) {
+  public SqlDataType getSqlDataType(Integer typeCode) {
 
+    if (dataTypeMap == null) {
+      // {@link DatabaseMetaData#getTypeInfo()}
+      dataTypeMap = Jdbcs.getDataTypeDriver(this);
+
+    }
     SqlDataType sqlDataType = dataTypeMap.get(typeCode);
-
-    if (sqlDataType == null) {
-      DataTypeDatabase dataTypeDatabase = null;
-      JdbcDataStoreExtension jdbcDataStoreExtension = this.getExtension();
-      if (jdbcDataStoreExtension != null) {
-        dataTypeDatabase = jdbcDataStoreExtension.dataTypeOf(typeCode);
-      }
-
-      JdbcDataTypeDriver jdbcDataTypeDriver = this.getDataTypeDriver(typeCode);
-
-
-
-
-      sqlDataType = new SqlDataType.DataTypeBuilder(typeCode)
-        .databaseDataType(dataTypeDatabase)
-        .jdbcDataType(dataTypeJdbc)
-        .build();
-
-      dataTypeMap.put(typeCode, sqlDataType);
-
+    if (sqlDataType != null) {
+      return sqlDataType;
+    } else {
+      return super.getSqlDataType(typeCode);
     }
 
-    return sqlDataType;
-
-  }
-
-  /**
-   * Return the data type (info) from the driver
-   *
-   * @param typeCode the type code
-   * @return
-   */
-  private JdbcDataTypeDriver getDataTypeDriver(Integer typeCode) {
-
-    if (dataTypeInfoMap == null) {
-      dataTypeInfoMap = Jdbcs.getDataTypeDriver(getCurrentConnection());
-    }
-    return dataTypeInfoMap.get(typeCode);
-
-  }
-
-  // The map that contains the data type
-  private Map<Integer, JdbcDataTypeDriver> dataTypeDriverMap = new HashMap<>();
-
-  private Collection<JdbcDataTypeDriver> getDataTypeInfos() {
-    if (dataTypeDriverMap.size() == 0) {
-      // Initialize it by passing a dummy type code - ie 0
-      getDataTypeDriver(0);
-    }
-    return dataTypeDriverMap.values();
   }
 
 
@@ -412,8 +369,6 @@ public class JdbcDataStore extends DataStore {
     }
   }
 
-  // The map that will contain the driver data type
-  private Map<Integer, JdbcDataTypeDriver> dataTypeInfoMap;
 
   @Override
   public ProcessingEngine getProcessingEngine() {

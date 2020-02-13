@@ -1,8 +1,8 @@
 package net.bytle.db.stream;
 
+import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.log.Log;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.engine.DataTypes;
 import net.bytle.db.model.TableDef;
 
 import java.util.HashMap;
@@ -63,7 +63,7 @@ public class Streams {
         StringBuilder formatString = new StringBuilder();
         for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
             formatString.append("%"); // Template start
-            if (!DataTypes.isNumeric(tableDef.getColumnDef(i).getDataType().getTypeCode())) {
+            if (!SqlDataTypesManager.isNumeric(tableDef.getColumnDef(i).getDataType().getTypeCode())) {
                 formatString.append("-"); // result left-justified. (Default is right)
             }
             formatString

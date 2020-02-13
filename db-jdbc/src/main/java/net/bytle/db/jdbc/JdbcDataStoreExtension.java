@@ -1,6 +1,5 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.model.TableDef;
 
 import java.util.ArrayList;
@@ -21,13 +20,6 @@ public abstract class JdbcDataStoreExtension {
     this.jdbcDataStore = jdbcDataStore;
   }
 
-  /**
-   * Return a DataTypeDatabase for the corresponding typeCode
-   *
-   * @param typeCode
-   * @return DataTypeDatabase
-   */
-  public abstract DataTypeDatabase dataTypeOf(Integer typeCode);
 
   /**
    * Returns statement to create the table
