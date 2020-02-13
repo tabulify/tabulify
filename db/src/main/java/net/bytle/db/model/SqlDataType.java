@@ -212,7 +212,7 @@ public class SqlDataType {
    * @return maximum scale supported
    */
   public Integer getMaximumScale() {
-    return Integer.valueOf(maximumScale);
+    return maximumScale == null ? null : Integer.valueOf(maximumScale);
   }
 
 

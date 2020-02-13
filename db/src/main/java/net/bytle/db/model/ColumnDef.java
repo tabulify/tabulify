@@ -219,7 +219,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    * @return
    */
   public ColumnDef isGeneratedColumn(String is_generatedcolumn) {
-    this.isGeneratedColumn = is_generatedcolumn.equals("YES");
+    this.isGeneratedColumn = is_generatedcolumn != null && is_generatedcolumn.equals("YES");
     return this;
   }
 

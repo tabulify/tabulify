@@ -1,44 +1,115 @@
 package net.bytle.db.oracle;
 
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.SqlDataType;
 import oracle.jdbc.OracleTypes;
 
 import java.sql.Types;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Created by gerard on 28-11-2015.
+ *
  */
 public class OraDataStoreExtension extends JdbcDataStoreExtension {
-
-  private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<Integer, DataTypeDatabase>();
-
-  static {
-    // Numeric: https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313
-    dataTypeDatabaseSet.put(Types.DOUBLE, new OraDbNumberType());
-    dataTypeDatabaseSet.put(Types.NUMERIC, new OraDbNumberType());
-    dataTypeDatabaseSet.put(OraDbIntervalDsType.TYPE_CODE, new OraDbIntervalDsType());
-    dataTypeDatabaseSet.put(OraDbIntervalYmType.TYPE_CODE, new OraDbIntervalYmType());
-    dataTypeDatabaseSet.put(OraDbRawType.TYPE_CODE, new OraDbRawType());
-    dataTypeDatabaseSet.put(OraDbLongType.TYPE_CODE, new OraDbLongType());
-    dataTypeDatabaseSet.put(OraDbNVarchar2Type.TYPE_CODE, new OraDbNVarchar2Type());
-    dataTypeDatabaseSet.put(OraDbLongRawType.TYPE_CODE, new OraDbLongRawType());
-    dataTypeDatabaseSet.put(OraDbIntegerType.TYPE_CODE, new OraDbIntegerType());
-  }
 
   public OraDataStoreExtension(JdbcDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 
+  // Numeric: https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT313
+  @Override
+  public void updateSqlDataType(SqlDataType sqlDataType) {
+
+    switch (sqlDataType.getTypeCode()) {
+      case OracleTypes.INTERVALDS:
+        sqlDataType
+          .setTypeName("INTERVALDS")
+          .setClazz(oracle.sql.INTERVALDS.class);
+        break;
+      case OracleTypes.INTERVALYM:
+        sqlDataType
+          .setTypeName("INTERVAL_YEAR_MONTH")
+          .setClazz(oracle.sql.INTERVALYM.class);
+        break;
+      case OracleTypes.LONGVARBINARY:
+        sqlDataType
+          .setTypeName("LONG RAW")
+          .setClazz(oracle.sql.RAW.class);
+        break;
+      case Types.LONGVARCHAR:
+        sqlDataType
+          .setTypeName("LONG");
+        break;
+      case OracleTypes.NUMBER:
+        // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
+        sqlDataType
+          .setTypeName("NUMBER")
+          .setClazz(oracle.sql.NUMBER.class)
+          .setMaxPrecision(38)
+          .setMaximumScale(127)
+          .setMinimumScale(-84);
+        break;
+      case Types.DOUBLE:
+        // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
+        sqlDataType
+          .setTypeName("NUMBER")
+          .setClazz(oracle.sql.NUMBER.class)
+          .setMaxPrecision(38)
+          .setMaximumScale(127)
+          .setMinimumScale(-84);
+        break;
+      case Types.NVARCHAR:
+        sqlDataType
+          .setTypeName("NVARCHAR2");
+        break;
+      case Types.VARBINARY:
+        sqlDataType
+          .setTypeName("VARBINARY")
+          .setClazz(oracle.sql.RAW.class);
+        break;
+    }
+  }
 
   @Override
-  public DataTypeDatabase dataTypeOf(Integer typeCode) {
-    return dataTypeDatabaseSet.get(typeCode);
+  public String getCreateColumnStatement(ColumnDef columnDef) {
+    SqlDataType dataType = columnDef.getDataType();
+    switch (dataType.getTypeCode()) {
+      case Types.INTEGER:
+        return "INTEGER";
+      case OracleTypes.INTERVALDS:
+        return "INTERVAL DAY (" + columnDef.getPrecision() + ") TO SECOND (" + columnDef.getScale() + ")";
+      case OracleTypes.INTERVALYM:
+        return "INTERVAL YEAR (" + columnDef.getPrecision() + ") TO MONTH";
+      case OracleTypes.LONGVARBINARY:
+        return "LONG RAW";
+      case Types.LONGNVARCHAR:
+        return "LONG";
+      case OracleTypes.NUMBER:
+        // Bug ? If the scale is -127, it's a float
+        Integer precision = columnDef.getPrecision();
+        Integer scale = columnDef.getScale();
+        if (scale == -127 && precision != 0) {
+          return "FLOAT(" + precision + ")";
+        } else {
+          // Default will take over
+          if (precision > 38) {
+            precision = 38;
+          }
+          return "NUMBER(" + precision + "," + scale + ")";
+        }
+      case Types.VARBINARY:
+        // Bug in a Oracle driver where precision is null in a resultSet
+        if (columnDef.getPrecision() == 0) {
+          return "RAW(2000)"; //TODO: of the max of the data type
+        } else {
+          return null;
+        }
+      default:
+        return null;
+    }
   }
 
 
@@ -62,7 +133,6 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
     return "truncate from " +
       JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
   }
-
 
 
 }

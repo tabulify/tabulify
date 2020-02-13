@@ -1,6 +1,5 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
@@ -235,7 +234,7 @@ public class Jdbcs {
 
         final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
-        net.bytle.db.model.SqlDataType dataType = SqlDataTypesManager.get(sqlTypeCode);
+        SqlDataType dataType = tableDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
         tableDef.getColumnOf(column_name, dataType.getClass())
           .typeCode(sqlTypeCode)
           .precision(column_size)
@@ -615,54 +614,7 @@ public class Jdbcs {
 
   }
 
-  public static Map<Integer, SqlDataType> getDataTypeDriver(JdbcDataStore jdbcDataStore) {
 
-
-    Map<Integer, SqlDataType> dataTypeInfoMap = new HashMap<>();
-
-    ResultSet typeInfoResultSet;
-    try {
-      typeInfoResultSet = jdbcDataStore.getCurrentConnection().getMetaData().getTypeInfo();
-      while (typeInfoResultSet.next()) {
-        int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
-        SqlDataType sqlDataType = dataTypeInfoMap.get(typeCode);
-        if (sqlDataType==null){
-          sqlDataType = JdbcDataType.of(typeCode);
-        }
-        String typeName = typeInfoResultSet.getString("TYPE_NAME");
-        sqlDataType.setTypeName(typeName);
-        int precision = typeInfoResultSet.getInt("PRECISION");
-        sqlDataType.setMaxPrecision(precision);
-        String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
-        sqlDataType.setLiteralPrefix(literalPrefix);
-        String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
-        sqlDataType.setLiteralSuffix(literalSuffix);
-        String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
-        sqlDataType.setCreateParams(createParams);
-        Short nullable = typeInfoResultSet.getShort("NULLABLE");
-        sqlDataType.setNullable(nullable);
-        Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
-        sqlDataType.setCaseSensitive(caseSensitive);
-        Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
-        sqlDataType.setSearchable(searchable);
-        Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
-        sqlDataType.setUnsignedAttribute(unsignedAttribute);
-        Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
-        sqlDataType.setFixedPrecScale(fixedPrecScale);
-        Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
-        sqlDataType.setAutoIncrement(autoIncrement);
-        String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
-        sqlDataType.setLocalTypeName(localTypeName);
-        Integer minimumScale = Integer.valueOf(typeInfoResultSet.getShort("MINIMUM_SCALE"));
-        sqlDataType.setMinimumScale(minimumScale);
-        Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
-        sqlDataType.setMaximumScale(maximumScale);
-      }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-    return dataTypeInfoMap;
-  }
 
   /**
    * Return an object to be set in a prepared statement (for instance)

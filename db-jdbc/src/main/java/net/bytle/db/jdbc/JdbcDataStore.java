@@ -9,13 +9,11 @@ import net.bytle.db.spi.TableSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.HashMap;
+import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An object with all meta information about a JDBC data store
@@ -33,9 +31,7 @@ public class JdbcDataStore extends DataStore {
 
   private Connection connection;
 
-  public static final String DB_ORACLE = "Oracle";
   public static final String DB_HANA = "HDB";
-  public static final String DB_SQL_SERVER = "Microsoft SQL Server";
   public static final String DB_SQLITE = "SQLite";
   public static final String DB_HIVE = "Apache Hive";
 
@@ -320,32 +316,94 @@ public class JdbcDataStore extends DataStore {
     }
   }
 
-  // A cache object
-// integer is data type id
-  private Map<Integer, SqlDataType> dataTypeMap = new HashMap<>();
-
-  /**
-   * Return a data type by JDBC Type code
-   *
-   * @param typeCode
-   */
   @Override
-  public SqlDataType getSqlDataType(Integer typeCode) {
-
-    if (dataTypeMap == null) {
-      // {@link DatabaseMetaData#getTypeInfo()}
-      dataTypeMap = Jdbcs.getDataTypeDriver(this);
-
-    }
-    SqlDataType sqlDataType = dataTypeMap.get(typeCode);
-    if (sqlDataType != null) {
-      return sqlDataType;
-    } else {
-      return super.getSqlDataType(typeCode);
-    }
-
+  public Set<SqlDataType> getSqlDataTypes() {
+    updateSqlDataTypeIfNeeded();
+    return super.getSqlDataTypes();
   }
 
+  @Override
+  public SqlDataType getSqlDataType(Integer typeCode) {
+    updateSqlDataTypeIfNeeded();
+    return super.getSqlDataType(typeCode);
+  }
+
+  @Override
+  public SqlDataType getSqlDataType(Class<?> clazz) {
+    updateSqlDataTypeIfNeeded();
+    return super.getSqlDataType(clazz);
+  }
+
+  @Override
+  public SqlDataType getSqlDataType(String typeName) {
+    updateSqlDataTypeIfNeeded();
+    return super.getSqlDataType(typeName);
+  }
+
+  // A breaker to not update the data type each time
+  Boolean sqlDataTypeWereUpdated = false;
+  private void updateSqlDataTypeIfNeeded() {
+    if (!sqlDataTypeWereUpdated){
+      // As soon as we have the connection, we update the sql data type
+      // This is because the credential are needed and they are not given at the constructor level
+      // because they are not always mandatory
+      Map<Integer, SqlDataType> dataTypeInfoMap =
+        super.
+          getSqlDataTypes()
+          .stream()
+          .collect(Collectors.toMap(SqlDataType::getTypeCode, dt->dt));
+
+      ResultSet typeInfoResultSet;
+      try {
+        typeInfoResultSet = this.getCurrentConnection().getMetaData().getTypeInfo();
+        while (typeInfoResultSet.next()) {
+          int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
+          SqlDataType sqlDataType = dataTypeInfoMap.get(typeCode);
+          if (sqlDataType==null){
+            sqlDataType = JdbcDataType.of(typeCode);
+            this.addSqlDataType(sqlDataType);
+          }
+          String typeName = typeInfoResultSet.getString("TYPE_NAME");
+          sqlDataType.setTypeName(typeName);
+          int precision = typeInfoResultSet.getInt("PRECISION");
+          sqlDataType.setMaxPrecision(precision);
+          String literalPrefix = typeInfoResultSet.getString("LITERAL_PREFIX");
+          sqlDataType.setLiteralPrefix(literalPrefix);
+          String literalSuffix = typeInfoResultSet.getString("LITERAL_SUFFIX");
+          sqlDataType.setLiteralSuffix(literalSuffix);
+          String createParams = typeInfoResultSet.getString("CREATE_PARAMS");
+          sqlDataType.setCreateParams(createParams);
+          Short nullable = typeInfoResultSet.getShort("NULLABLE");
+          sqlDataType.setNullable(nullable);
+          Boolean caseSensitive = typeInfoResultSet.getBoolean("CASE_SENSITIVE");
+          sqlDataType.setCaseSensitive(caseSensitive);
+          Short searchable = typeInfoResultSet.getShort("SEARCHABLE");
+          sqlDataType.setSearchable(searchable);
+          Boolean unsignedAttribute = typeInfoResultSet.getBoolean("UNSIGNED_ATTRIBUTE");
+          sqlDataType.setUnsignedAttribute(unsignedAttribute);
+          Boolean fixedPrecScale = typeInfoResultSet.getBoolean("FIXED_PREC_SCALE");
+          sqlDataType.setFixedPrecScale(fixedPrecScale);
+          Boolean autoIncrement = typeInfoResultSet.getBoolean("AUTO_INCREMENT");
+          sqlDataType.setAutoIncrement(autoIncrement);
+          String localTypeName = typeInfoResultSet.getString("LOCAL_TYPE_NAME");
+          sqlDataType.setLocalTypeName(localTypeName);
+          Integer minimumScale = Integer.valueOf(typeInfoResultSet.getShort("MINIMUM_SCALE"));
+          sqlDataType.setMinimumScale(minimumScale);
+          Integer maximumScale = Integer.valueOf(typeInfoResultSet.getShort("MAXIMUM_SCALE"));
+          sqlDataType.setMaximumScale(maximumScale);
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+
+      // Extension update
+      JdbcDataStoreExtension jdbcDataStoreExtension = getExtension();
+      if (jdbcDataStoreExtension!=null){
+        super.getSqlDataTypes().forEach(dt->jdbcDataStoreExtension.updateSqlDataType(dt));
+      }
+      sqlDataTypeWereUpdated = true;
+    }
+  }
 
   /**
    * Return an object to be set in a prepared statement (for instance)

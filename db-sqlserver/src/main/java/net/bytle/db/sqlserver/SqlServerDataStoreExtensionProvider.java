@@ -1,19 +1,19 @@
-package net.bytle.db.oracle;
+package net.bytle.db.sqlserver;
 
 import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
-public class OraDataStoreExtensionProvider extends JdbcDataStoreExtensionProvider {
+public class SqlServerDataStoreExtensionProvider extends JdbcDataStoreExtensionProvider {
 
   @Override
   public String getProductName() {
-    return "Oracle";
+    return "Microsoft SQL Server";
   }
 
   @Override
   public JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
-    return new OraDataStoreExtension(jdbcDataStore);
+    return new SqlServerDataStoreExtension(jdbcDataStore);
   }
 
 }

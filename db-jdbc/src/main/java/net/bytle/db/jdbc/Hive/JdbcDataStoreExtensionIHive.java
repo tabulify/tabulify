@@ -1,64 +1,85 @@
 package net.bytle.db.jdbc.Hive;
 
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.JdbcDataPath;
 import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.SqlDataType;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.Types;
 
 /**
- * Created by gerard on 11-01-2016.
+ *
  */
 public class JdbcDataStoreExtensionIHive extends JdbcDataStoreExtension {
 
 
-    private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
-
-    static {
-        dataTypeDatabaseSet.put(HiveIntegerType.TYPE_CODE, new HiveIntegerType());
-        dataTypeDatabaseSet.put(HiveCharType.TYPE_CODE, new HiveCharType());
-        dataTypeDatabaseSet.put(HiveVarCharType.TYPE_CODE, new HiveVarCharType());
-        dataTypeDatabaseSet.put(HiveTimeType.TYPE_CODE, new HiveTimeType());
-        dataTypeDatabaseSet.put(HiveNumericType.TYPE_CODE, new HiveNumericType());
-        dataTypeDatabaseSet.put(HiveSmallIntType.TYPE_CODE, new HiveSmallIntType());
-    }
-
   public JdbcDataStoreExtensionIHive(JdbcDataStore jdbcDataStore) {
-      super(jdbcDataStore);
+    super(jdbcDataStore);
+  }
+
+  @Override
+  public void updateSqlDataType(SqlDataType sqlDataType) {
+    switch (sqlDataType.getTypeCode()) {
+      case Types.NUMERIC:
+        sqlDataType
+          .setTypeName("DECIMAL");
+      case Types.TIME:
+        // Time doesn't exist, we try to make it a timestamp
+        sqlDataType
+          .setTypeName("TIMESTAMP");
+    }
+  }
+
+  @Override
+  public String getCreateColumnStatement(ColumnDef columnDef) {
+    SqlDataType dataType = columnDef.getDataType();
+    switch (dataType.getTypeCode()) {
+      case Types.CHAR:
+        return "CHAR("+columnDef.getPrecision()+")";
+      case Types.INTEGER:
+        // No precision
+        // https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-IntegralTypes(TINYINT,SMALLINT,INT/INTEGER,BIGINT)
+        return "INT";
+      case Types.NUMERIC:
+        return "DECIMAL("+columnDef.getPrecision()+","+columnDef.getScale()+")";
+      case Types.SMALLINT:
+        // No precision
+        // https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-IntegralTypes(TINYINT,SMALLINT,INT/INTEGER,BIGINT)
+        return "SMALLINT";
+      case Types.TIME:
+        // Time doesn't exist, we try to make it a timestamp
+        return "TIMESTAMP";
+      case Types.VARCHAR:
+        return "VARCHAR("+columnDef.getPrecision()+")";
+      default:
+        return null;
+    }
   }
 
 
   @Override
-    public DataTypeDatabase dataTypeOf(Integer typeCode) {
-        return dataTypeDatabaseSet.get(typeCode);
-    }
+  public Object getLoadObject(int targetColumnType, Object sourceObject) {
+    return null;
+  }
 
+  @Override
+  public String getNormativeSchemaObjectName(String objectName) {
+    return null;
+  }
 
+  @Override
+  public Integer getMaxWriterConnection() {
+    // The JDBCMetadata().getMaxConnections() method returns a Method Not Supported exception
+    return 5;
+  }
 
-    @Override
-    public Object getLoadObject(int targetColumnType, Object sourceObject) {
-        return null;
-    }
-
-    @Override
-    public String getNormativeSchemaObjectName(String objectName) {
-        return null;
-    }
-
-    @Override
-    public Integer getMaxWriterConnection() {
-        // The JDBCMetadata().getMaxConnections() method returns a Method Not Supported exception
-        return 5;
-    }
-
-    @Override
-    public String getTruncateStatement(JdbcDataPath dataPath) {
-        StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
-        truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-        return truncateStatementBuilder.toString();
-    }
+  @Override
+  public String getTruncateStatement(JdbcDataPath dataPath) {
+    StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
+    truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+    return truncateStatementBuilder.toString();
+  }
 
 }

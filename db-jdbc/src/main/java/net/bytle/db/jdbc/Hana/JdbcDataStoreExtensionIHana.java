@@ -1,37 +1,52 @@
 package net.bytle.db.jdbc.Hana;
 
-import net.bytle.db.database.DataTypeDatabase;
 import net.bytle.db.jdbc.*;
-import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.model.UniqueKeyDef;
+import net.bytle.db.model.*;
 
+import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Created by gerard on 11-01-2016.
- */
+ *
+ * */
 public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
 
 
-  private static Map<Integer, DataTypeDatabase> dataTypeDatabaseSet = new HashMap<>();
-
-  static {
-    dataTypeDatabaseSet.put(HanaDbVarcharType.TYPE_CODE, new HanaDbVarcharType());
-  }
 
   public JdbcDataStoreExtensionIHana(JdbcDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 
+  @Override
+  public void updateSqlDataType(SqlDataType sqlDataType) {
+    switch (sqlDataType.getTypeCode()) {
+      case Types.VARCHAR:
+        sqlDataType
+          .setTypeName("NVARCHAR");
+    }
+  }
 
   @Override
-  public DataTypeDatabase dataTypeOf(Integer typeCode) {
-    return dataTypeDatabaseSet.get(typeCode);
+  public String getCreateColumnStatement(ColumnDef columnDef) {
+    SqlDataType dataType = columnDef.getDataType();
+    switch (dataType.getTypeCode()) {
+      case Types.VARCHAR:
+      // VARCHAR is having length in bytes (not in CHAR !)
+      // The VARCHAR(n) data type specifies a variable-length character string, where n :
+      //    * indicates the maximum length in bytes
+      //    * and is an integer between 1 and 5000.
+      //        * https://help.sap.com/saphelp_hanaplatform/helpdata/en/20/a1569875191014b507cf392724b7eb/content.htm
+      //
+      // Example: The following doesn't fit in a VARCHAR(35)
+      //        * select length(TO_VARCHAR('TØJEKSPERTEN HØRSHOLM APS - NR. 252')) from dummy;
+        return "NVARCHAR ("+columnDef.getPrecision()+")";
+      default:
+      return null;
+    }
   }
+
+
 
   /**
    * Returns statement to create the table

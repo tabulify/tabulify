@@ -1,11 +1,11 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 
 import java.util.List;
 
-import static net.bytle.db.engine.DataTypes.isNumeric;
 
 public class DbDml {
 
@@ -86,7 +86,7 @@ public class DbDml {
                         if (value == null) {
                             insertStatementBindVariable += "null, ";
                         } else {
-                            if (isNumeric(columnDef.getDataType().getTypeCode())) {
+                            if (SqlDataTypesManager.isNumeric(columnDef.getDataType().getTypeCode())) {
                                 insertStatementBindVariable += value.toString() + ", ";
                             } else {
                                 insertStatementBindVariable += "'" + value.toString() + "', ";

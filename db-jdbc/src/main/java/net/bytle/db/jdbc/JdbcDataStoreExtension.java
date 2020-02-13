@@ -1,5 +1,7 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
 
 import java.util.ArrayList;
@@ -20,6 +22,10 @@ public abstract class JdbcDataStoreExtension {
     this.jdbcDataStore = jdbcDataStore;
   }
 
+
+  public abstract void updateSqlDataType(SqlDataType sqlDataType);
+
+  public abstract String getCreateColumnStatement(ColumnDef columnDef);
 
   /**
    * Returns statement to create the table

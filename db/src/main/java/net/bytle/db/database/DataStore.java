@@ -458,4 +458,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public abstract ProcessingEngine getProcessingEngine();
 
 
+  public void addSqlDataType(SqlDataType sqlDataType) {
+    getSqlDataTypeManager().addSqlDataType(sqlDataType);
+  }
 }

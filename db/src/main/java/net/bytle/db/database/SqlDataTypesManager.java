@@ -146,4 +146,8 @@ public class SqlDataTypesManager {
   public Set<SqlDataType> getDataTypes() {
     return sqlDataTypes;
   }
+
+  public void addSqlDataType(SqlDataType sqlDataType) {
+    sqlDataTypes.add(sqlDataType);
+  }
 }
