@@ -58,10 +58,10 @@ public class TpcDataPath extends DataPath {
 
   @Override
   public DataPath getChild(String name) {
-    if (this.name == null) {
+    if (this.name.equals(CURRENT_WORKING_DIRECTORY)) {
       return this.dataStore.getDataModel().getAndCreateDataPath(name);
     } else {
-      throw new RuntimeException("You can't get a child from the table (" + name + ")");
+      throw new RuntimeException("You can't get a child from the table (" + this.name + ")");
     }
   }
 
