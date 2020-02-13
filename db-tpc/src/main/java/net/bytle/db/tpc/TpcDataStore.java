@@ -25,7 +25,7 @@ public class TpcDataStore extends DataStore {
     if (parts.length>1){
       throw new RuntimeException("There is two much names to define the path. It should be only one of word such as "+TpcdsModel.storeSalesTables);
     }
-    return new TpcDataPath(this, parts[0]);
+    return getDataModel().getAndCreateDataPath(parts[0]);
   }
 
   @Override

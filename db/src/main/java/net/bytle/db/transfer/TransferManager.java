@@ -129,6 +129,9 @@ public class TransferManager {
         throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
       }
     }
+    if (sourceDataPath.getDataDef().getColumnDefs().size()==0){
+      throw new RuntimeException("We cannot move this tabular data path (" + sourceDataPath + ") because it has no columns.");
+    }
   }
 
   private TransferListener atomicTransfer(Transfer transfer) {
