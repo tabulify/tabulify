@@ -82,7 +82,7 @@ public class SqlDataType {
    *
    * @return the java class that may contains this data
    */
-  public Class<?> getClazz(){
+  public Class<?> getClazz() {
     return this.clazz;
   }
 
@@ -102,11 +102,11 @@ public class SqlDataType {
   }
 
 
-  public int getTypeCode(){
+  public int getTypeCode() {
     return typeCode;
   }
 
-  public List<String> getTypeNames(){
+  public List<String> getTypeNames() {
     return typeNames;
   }
 
@@ -121,11 +121,7 @@ public class SqlDataType {
    * Null is returned for data types where the column size is not applicable.
    */
   public Integer getMaxPrecision() {
-    if (maxPrecision==null){
-      return Integer.MAX_VALUE;
-    } else {
-      return maxPrecision;
-    }
+    return maxPrecision;
   }
 
   /**
@@ -152,9 +148,9 @@ public class SqlDataType {
 
   /**
    * @return can you use null for this type
-   *  * typeNoNulls - does not allow NULL values
-   *  * typeNullable - allows NULL values
-   *  * typeNullableUnknown - nullability unknown
+   * * typeNoNulls - does not allow NULL values
+   * * typeNullable - allows NULL values
+   * * typeNullableUnknown - nullability unknown
    */
   public Short getNullable() {
     return nullable;
@@ -169,10 +165,10 @@ public class SqlDataType {
 
   /**
    * @return can you use "WHERE" based on this type:
-   *  * typePredNone - No support
-   *  * typePredChar - Only supported with WHERE .. LIKE
-   *  * typePredBasic - Supported except for WHERE .. LIKE
-   *  * typeSearchable - Supported for all WHERE ..
+   * * typePredNone - No support
+   * * typePredChar - Only supported with WHERE .. LIKE
+   * * typePredBasic - Supported except for WHERE .. LIKE
+   * * typeSearchable - Supported for all WHERE ..
    */
   public Short getSearchable() {
     return searchable;
@@ -250,13 +246,13 @@ public class SqlDataType {
   }
 
   public SqlDataType setMaxPrecision(int maxPrecision) {
-    if (maxPrecision!=0) {
+    if (maxPrecision != 0) {
       this.maxPrecision = maxPrecision;
     }
     return this;
   }
 
-  public SqlDataType setLiteralPrefix(String literalPrefix){
+  public SqlDataType setLiteralPrefix(String literalPrefix) {
     this.literalPrefix = literalPrefix;
     return this;
   }
@@ -286,7 +282,7 @@ public class SqlDataType {
     return this;
   }
 
-  public SqlDataType setUnsignedAttribute(Boolean unsignedAttribute){
+  public SqlDataType setUnsignedAttribute(Boolean unsignedAttribute) {
     this.unsignedAttribute = unsignedAttribute;
     return this;
   }
@@ -301,7 +297,7 @@ public class SqlDataType {
     return this;
   }
 
-  public SqlDataType setLocalTypeName(String localTypeName){
+  public SqlDataType setLocalTypeName(String localTypeName) {
     this.localTypeName = localTypeName;
     return this;
   }

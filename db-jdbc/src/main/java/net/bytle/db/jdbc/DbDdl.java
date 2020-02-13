@@ -152,7 +152,7 @@ public class DbDdl {
     if (precision == null) {
       precision = maxPrecision;
     }
-    if (maxPrecision != 0 && precision > maxPrecision){
+    if (precision != null && maxPrecision !=null && precision > maxPrecision){
       DataStore dataStore = columnDef.getDataDef().getDataPath().getDataStore();
       String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed ("+maxPrecision+") for the datastore (" + dataStore.getName() + ")";
       if (dataStore.isStrict()) {
@@ -223,7 +223,7 @@ public class DbDdl {
   static String getCreateDataTypeStatement(String columnTypeName, Integer precision, Integer scale) {
 
     String dataTypeCreateStatement = columnTypeName;
-    if (precision > 0) {
+    if (precision != null && precision > 0) {
       dataTypeCreateStatement += "(" + precision;
       if (scale != null && scale != 0) {
         dataTypeCreateStatement += "," + scale;
