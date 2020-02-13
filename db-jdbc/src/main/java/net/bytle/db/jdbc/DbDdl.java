@@ -1,5 +1,6 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 
@@ -147,8 +148,19 @@ public class DbDdl {
 
     // Always passed to create the statement
     Integer precision = columnDef.getPrecision();
+    Integer maxPrecision = targetSqlDataType.getMaxPrecision();
     if (precision == null) {
-      precision = targetSqlDataType.getMaxPrecision();
+      precision = maxPrecision;
+    }
+    if (precision > maxPrecision){
+      DataStore dataStore = columnDef.getDataDef().getDataPath().getDataStore();
+      String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed for the datastore (" + dataStore.getName() + ")";
+      if (dataStore.isStrict()) {
+        throw new RuntimeException(message);
+      } else {
+        LOGGER.warning(message);
+        precision = maxPrecision;
+      }
     }
     Integer scale = columnDef.getScale();
     if (scale == null) {
@@ -172,7 +184,7 @@ public class DbDdl {
 
 
         if (targetSqlDataType != null) {
-          dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType, precision, scale);
+          dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType.getTypeName(), precision, scale);
         } else {
           String columnTypeName;
           try {
@@ -206,51 +218,7 @@ public class DbDdl {
   }
 
 
-  /**
-   * columnTypeName is needed as we can see inconsistency between
-   * the column type name and the column type int
-   * Ex: Oracle dataTypeInfo: 93 -> Timestamp
-   * resultSet: 93 -> Date
-   * This function returns always the resultSet value, the parameter value
-   * No no ! ... in a source target, the columnType are not the same
-   *
-   * @return the create statement
-   */
-  public static String getCreateDataTypeStatement(SqlDataType sqlDataType, Integer precision, Integer scale) {
 
-//        Missing something here
-//        if (dataType.getDataTypeDriver() != null) {
-//
-//            if (dataType.getTypeCode() == Types.VARCHAR) {
-//                if (precision == 0) {
-//                    precision = dataType.getMaxPrecision();
-//                }
-//            }
-//
-//
-//            final Integer maxPrecision = dataType.getMaxPrecision();
-//            if (precision > maxPrecision && maxPrecision !=0) {
-//                precision = dataType.getMaxPrecision();
-//            } else if (precision < 0) {
-//                precision = 0;
-//            }
-//
-//            if (scale != 0) {
-//                if (scale > dataType.getMaximumScale()) {
-//                    scale = dataType.getMaximumScale();
-//                } else if (scale < dataType.getMinimumScale()) {
-//                    scale = dataType.getMinimumScale();
-//                }
-//            }
-//
-//            return getCreateDataTypeStatement(dataType.getTypeName(), precision, scale);
-//
-//        }
-
-    return getCreateDataTypeStatement(sqlDataType.getTypeName(), precision, scale);
-
-
-  }
 
   static String getCreateDataTypeStatement(String columnTypeName, Integer precision, Integer scale) {
 

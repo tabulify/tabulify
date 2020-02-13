@@ -35,6 +35,9 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   // An object that have all sql data type function
   private SqlDataTypesManager sqlDataTypeManager;
 
+  // The run is strict
+  private boolean strict = true;
+
 
   public DataStore(String name, String connectionString) {
     this.name = name;
@@ -460,5 +463,14 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   public void addSqlDataType(SqlDataType sqlDataType) {
     getSqlDataTypeManager().addSqlDataType(sqlDataType);
+  }
+
+  public DataStore setStrict(boolean strict) {
+    this.strict = strict;
+    return this;
+  }
+
+  public boolean isStrict() {
+    return strict;
   }
 }
