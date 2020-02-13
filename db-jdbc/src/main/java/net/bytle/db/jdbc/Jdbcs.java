@@ -594,7 +594,7 @@ public class Jdbcs {
     for (SqlDataType typeInfo : sqlDataTypes) {
       System.out.println(
         typeInfo.getTypeCode() + "\t" +
-          typeInfo.getTypeName() + "\t" +
+          typeInfo.getTypeNames() + "\t" +
           typeInfo.getMaxPrecision() + "\t" +
           typeInfo.getLiteralPrefix() + "\t" +
           typeInfo.getLiteralSuffix() + "\t" +

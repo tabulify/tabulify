@@ -152,9 +152,9 @@ public class DbDdl {
     if (precision == null) {
       precision = maxPrecision;
     }
-    if (precision > maxPrecision){
+    if (maxPrecision != 0 && precision > maxPrecision){
       DataStore dataStore = columnDef.getDataDef().getDataPath().getDataStore();
-      String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed for the datastore (" + dataStore.getName() + ")";
+      String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed ("+maxPrecision+") for the datastore (" + dataStore.getName() + ")";
       if (dataStore.isStrict()) {
         throw new RuntimeException(message);
       } else {
@@ -177,18 +177,18 @@ public class DbDdl {
     if (dataTypeCreateStatement == null) {
       if (targetSqlDataType.getTypeCode() == Types.DATE || targetSqlDataType.getTypeCode() == Types.TIME) {
 
-        dataTypeCreateStatement = targetSqlDataType.getTypeName();
+        dataTypeCreateStatement = targetSqlDataType.getTypeNames().get(0);
 
 
       } else {
 
 
         if (targetSqlDataType != null) {
-          dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType.getTypeName(), precision, scale);
+          dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType.getTypeNames().get(0), precision, scale);
         } else {
           String columnTypeName;
           try {
-            columnTypeName = columnDef.getDataType().getTypeName();
+            columnTypeName = columnDef.getDataType().getTypeNames().get(0);
             dataTypeCreateStatement = getCreateDataTypeStatement(columnTypeName, precision, scale);
           } catch (Exception e) {
             throw new RuntimeException(e);

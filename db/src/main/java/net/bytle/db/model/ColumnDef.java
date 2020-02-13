@@ -52,6 +52,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   // Default type code is given in the getter function
   private Integer typeCode; // No typename please as we want to be able to maps type between database
   /* Precision = Length for string, Precision =  Precision for Fix Number */
+  /** JDBC returns a integer */
   private Integer precision;
   /* Only needed for number */
   private Integer scale;
@@ -238,7 +239,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
   @Override
   public String toString() {
-    return getFullyQualifiedName() + " " + getDataType().getTypeName() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
+    return getFullyQualifiedName() + " " + getDataType().getTypeNames() + '(' + precision + "," + scale + ") " + (nullable == DatabaseMetaData.columnNullable ? "null" : "not null");
   }
 
   @Override

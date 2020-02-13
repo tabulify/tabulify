@@ -100,8 +100,11 @@ public class SqlDataTypesManager {
   }
 
   public SqlDataType get(String typeName) {
-    List<SqlDataType> foundSqlDataType = sqlDataTypes.stream().filter(s -> s.getTypeName().toLowerCase().equals(typeName.toLowerCase()))
-      .collect(Collectors.toList());
+    List<SqlDataType> foundSqlDataType =
+      sqlDataTypes
+        .stream()
+        .filter(s -> s.getTypeNames().stream().anyMatch(ty -> ty.toLowerCase().equals(typeName.toLowerCase())))
+        .collect(Collectors.toList());
     switch (foundSqlDataType.size()) {
       case 0:
         return null;
@@ -137,7 +140,7 @@ public class SqlDataTypesManager {
       .getDataPath();
 
     try (InsertStream insertStream = Tabulars.getInsertStream(dataPath)) {
-      sqlDataTypes.forEach(typeInfo -> insertStream.insert(typeInfo.getTypeCode(), typeInfo.getTypeName()));
+      sqlDataTypes.forEach(typeInfo -> insertStream.insert(typeInfo.getTypeCode(), typeInfo.getTypeNames()));
     }
     Tabulars.print(dataPath);
 

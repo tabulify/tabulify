@@ -494,11 +494,11 @@ public class DataSetDiff {
         reason.append(") are not equals. The source column (");
         reason.append(sourceColumn.getColumnName());
         reason.append(") has the type (");
-        reason.append(sourceColumn.getDataType().getTypeName());
+        reason.append(sourceColumn.getDataType().getTypeNames());
         reason.append(") whereas the target column (");
         reason.append(targetColumn.getColumnName());
         reason.append(") has the column type (");
-        reason.append(targetColumn.getDataType().getTypeName());
+        reason.append(targetColumn.getDataType().getTypeNames());
         reason.append(").");
         reason.append(System.getProperty("line.separator"));
       }

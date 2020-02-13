@@ -28,6 +28,11 @@ public class JdbcDataStore extends DataStore {
     return this;
   }
 
+  @Override
+  public JdbcDataStore setStrict(boolean strict) {
+    super.setStrict(strict);
+    return this;
+  }
 
   private Connection connection;
 
@@ -360,7 +365,7 @@ public class JdbcDataStore extends DataStore {
           int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
           SqlDataType sqlDataType = dataTypeInfoMap.get(typeCode);
           if (sqlDataType==null){
-            sqlDataType = JdbcDataType.of(typeCode);
+            sqlDataType = SqlDataType.of(typeCode);
             this.addSqlDataType(sqlDataType);
           }
           String typeName = typeInfoResultSet.getString("TYPE_NAME");

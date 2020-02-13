@@ -1,9 +1,7 @@
 package net.bytle.db.model;
 
 import java.sql.Types;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The data type of a column.
@@ -50,7 +48,10 @@ public class SqlDataType {
   }
 
   private Integer typeCode;
-  private String typeName;
+  // Multiple strings (because for instance VARCHAR is called TEXT in Sqlite)
+  // The sqlite driver is also giving TEXT to the VARCHAR sql type
+  // but you may create a column with the VARCHAR keyword ...
+  private List<String> typeNames = new ArrayList<>();
   private int maxPrecision; // maximum precision
   private String literalPrefix; // prefix used to quote a literal (may be null)
   private String literalSuffix; // suffix used to quote a literal (may be null)
@@ -105,8 +106,8 @@ public class SqlDataType {
     return typeCode;
   }
 
-  public String getTypeName(){
-    return typeName;
+  public List<String> getTypeNames(){
+    return typeNames;
   }
 
 
@@ -219,7 +220,7 @@ public class SqlDataType {
   @Override
   public String toString() {
     return "DataType{" +
-      "typeName='" + getTypeName() + '\'' +
+      "typeName='" + getTypeNames() + '\'' +
       ", typeCode=" + getTypeCode() +
       '}';
   }
@@ -238,7 +239,9 @@ public class SqlDataType {
   }
 
   public SqlDataType setTypeName(String typeName) {
-    this.typeName = typeName;
+    if (!this.typeNames.contains(typeName.toUpperCase())) {
+      this.typeNames.add(typeName.toUpperCase());
+    }
     return this;
   }
 

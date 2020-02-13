@@ -85,14 +85,14 @@ public class RelationMeta {
     }
 
 
-    public RelationMeta addColumn(String columnName, int typeCode, int precision) {
+    public RelationMeta addColumn(String columnName, int typeCode, Integer precision) {
 
-        addColumn(columnName, typeCode,precision,null,null,null);
+        addColumn(columnName, typeCode, precision,null,null,null);
         return this;
 
     }
 
-    public RelationMeta addColumn(String columnName, int typeCode, int precision, int scale) {
+    public RelationMeta addColumn(String columnName, int typeCode, Integer precision, int scale) {
 
         addColumn(columnName, typeCode,precision,scale,null,null);
         return this;
@@ -106,7 +106,7 @@ public class RelationMeta {
 
     }
 
-    public RelationMeta addColumn(String columnName, int typeCode, int precision, boolean nullable) {
+    public RelationMeta addColumn(String columnName, int typeCode, Integer precision, boolean nullable) {
 
         addColumn(columnName, typeCode,precision,null,nullable,null);
         return this;

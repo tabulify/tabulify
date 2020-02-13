@@ -1,8 +1,8 @@
 package net.bytle.db.sqlite;
 
 
-import net.bytle.db.database.SqlDataType;
-import net.bytle.db.database.SqlDataTypesManager;
+import net.bytle.db.database.DataStore;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.log.Log;
 
 import java.util.regex.Matcher;
@@ -11,73 +11,84 @@ import java.util.regex.Pattern;
 /**
  * A class that takes the value of the column type from the PRAGMA table_info();
  * and return type information (typeName, Precision and scale)
- *
  */
 public class SqliteType {
 
-    private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
+  private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
+  private final DataStore datastore;
 
-    String type;
-    Integer scale;
-    Integer precision;
+  // https://www.sqlite.org/limits.html#max_length (2^31-1)
+  static protected int MAX_LENGTH = 2147483647;
 
-    private SqliteType(String type, Integer precision, Integer scale) {
-        this.type = type;
-        this.scale = scale;
-        this.precision = precision;
-    }
+  String type;
+  Integer scale;
+  Integer precision;
 
-    /**
-     * @param description - A datatype string definition in the form:
-     *                    * type(precision, scale)
-     *                    * type(precision)
-     *                    * type
-     * @return a data type
-     * <p>
-     * Example: INTEGER(50,2)
-     */
+  private SqliteType(DataStore dataStore, String type, Integer precision, Integer scale) {
+    this.type = type;
+    this.scale = scale;
+    this.precision = precision;
+    this.datastore = dataStore;
+  }
 
-    static public SqliteType get(String description) {
-        Pattern pattern = Pattern.compile("\\s*([a-zA-Z]+)\\s*(?:\\(([0-9,]+)\\))?\\s*");
-        Matcher matcher = pattern.matcher(description);
-        String typeName = null;
-        Integer scale = null;
-        Integer precision = null;
-        while (matcher.find()) {
+  /**
+   * @param dataStore
+   * @param description - A datatype string definition in the form:
+   *                    * type(precision, scale)
+   *                    * type(precision)
+   *                    * type
+   * @return a data type
+   * <p>
+   * Example: INTEGER(50,2)
+   */
 
-            typeName = matcher.group(1);
-            String scaleAndPrecision = matcher.group(2);
-            if (scaleAndPrecision != null) {
-                String[] array = scaleAndPrecision.split(",");
-                precision = Integer.valueOf(array[0]);
-                if (array.length == 2) {
-                    scale = Integer.valueOf(array[1]);
-                }
-            }
+  static public SqliteType get(DataStore dataStore, String description) {
+    Pattern pattern = Pattern.compile("\\s*([^(]+)\\s*(?:\\(([^)]+)\\))?\\s*");
+    Matcher matcher = pattern.matcher(description);
+    String typeName = null;
+    Integer scale = null;
+    Integer precision = null;
+    while (matcher.find()) {
 
+      typeName = matcher.group(1);
+      String scaleAndPrecision = matcher.group(2);
+      if (scaleAndPrecision != null) {
+        String[] array = scaleAndPrecision.split(",");
+        try {
+          precision = Integer.valueOf(array[0]);
+        } catch (Exception e){
+          // It's possible to get a double format here because of the pragma
+          precision = Double.valueOf(array[0]).intValue();
         }
-        return new SqliteType(typeName, precision, scale);
-    }
 
-    public String getTypeName() {
-        return type;
-    }
-
-    public Integer getTypeCode() {
-        final SqlDataType of = SqlDataTypesManager.get(type);
-        if (of == null) {
-            LOGGER.warning("The type code is unknown for the type (" + type + ")");
-            return null;
-        } else {
-            return of.getTypeCode();
+        if (array.length == 2) {
+          scale = Integer.valueOf(array[1]);
         }
-    }
+      }
 
-    public Integer getScale() {
-        return this.scale;
     }
+    return new SqliteType(dataStore, typeName, precision, scale);
+  }
 
-    public Integer getPrecision() {
-        return this.precision;
+  public String getTypeName() {
+    return type;
+  }
+
+  public Integer getTypeCode() {
+    final SqlDataType of = this.datastore.getSqlDataType(type);
+    if (of == null) {
+      LOGGER.warning("The type code is unknown for the type (" + type + ")");
+      return null;
+    } else {
+      return of.getTypeCode();
     }
+  }
+
+  public Integer getScale() {
+    return this.scale;
+  }
+
+  public Integer getPrecision() {
+    return this.precision;
+  }
 }

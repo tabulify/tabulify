@@ -114,7 +114,7 @@ public class DataDefs {
           Object[] columnsColumns = {
             columnDef.getColumnPosition(),
             columnDef.getColumnName(),
-            columnDef.getDataType().getTypeName(),
+            columnDef.getDataType().getTypeNames(),
             (dataPath.getDataDef().getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
             (columnDef.getNullable() ? "x" : ""),
             // columnDef.getDefault(),

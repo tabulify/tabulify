@@ -58,7 +58,7 @@ public class UniqueDataGenerator implements DataGenerator {
 
             } else {
 
-                throw new RuntimeException("The data type (" + columnDef.getDataType().getTypeCode() + "," + columnDef.getDataType().getTypeName() + ") is not yet implemented for the column " + columnDef.getFullyQualifiedName() + ").");
+                throw new RuntimeException("The data type (" + columnDef.getDataType().getTypeCode() + "," + columnDef.getDataType().getTypeNames() + ") is not yet implemented for the column " + columnDef.getFullyQualifiedName() + ").");
 
             }
 
