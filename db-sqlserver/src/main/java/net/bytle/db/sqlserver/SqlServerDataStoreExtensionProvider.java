@@ -16,4 +16,5 @@ public class SqlServerDataStoreExtensionProvider extends JdbcDataStoreExtensionP
     return new SqlServerDataStoreExtension(jdbcDataStore);
   }
 
+
 }

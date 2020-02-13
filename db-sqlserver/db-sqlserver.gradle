@@ -4,6 +4,7 @@
 
 dependencies {
     compile project(':bytle-db')
+    compile project(':bytle-db-jdbc')
     compile 'com.microsoft.sqlserver:mssql-jdbc:7.2.2.jre8'
 }
 
