@@ -61,7 +61,7 @@ public class TpcDataPath extends DataPath {
     if (this.name == null) {
       return this.dataStore.getDataModel().getAndCreateDataPath(name);
     } else {
-      throw new RuntimeException("You can get a child from the table (" + name + ")");
+      throw new RuntimeException("You can't get a child from the table (" + name + ")");
     }
   }
 

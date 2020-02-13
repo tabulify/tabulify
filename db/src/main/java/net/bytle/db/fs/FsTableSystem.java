@@ -128,7 +128,7 @@ public class FsTableSystem extends TableSystem {
       }
     }
     if (fileManager == null) {
-      DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") is unknown and got therefore the default file manager.");
+      DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") fo the file is unknown and got therefore the default file manager. Path ("+path+")");
       fileManager = FsFileManager.of();
     }
     return fileManager;

@@ -11,6 +11,7 @@ dependencies {
     implementation 'com.google.guava:guava:28.1-jre'
     testImplementation project(':bytle-fs')
     testImplementation project(':bytle-db-jdbc')
+    testImplementation project(':bytle-db-csv')
     testImplementation project(':bytle-db-sqlite')
 }
 
