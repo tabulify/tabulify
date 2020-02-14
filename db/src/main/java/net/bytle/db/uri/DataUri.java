@@ -158,8 +158,8 @@ public class DataUri implements Comparable<DataUri> {
     return this;
   }
 
-  public DataUri setDataStore(String datastore) {
-    this.dataStore = dataStore;
+  public DataUri setDataStore(String name) {
+    this.dataStore = name;
     return this;
   }
 }

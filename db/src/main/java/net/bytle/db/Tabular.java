@@ -130,9 +130,11 @@ public class Tabular implements AutoCloseable {
   }
 
   public Tabular setDataStoreVault(Path storagePath) {
-    dataStoreVault = DatastoreVault.of(storagePath);
+
     if (passphrase != null) {
-      dataStoreVault.setPassphrase(passphrase);
+      dataStoreVault = dataStoreVault.of(storagePath,passphrase);
+    } else {
+      dataStoreVault = dataStoreVault.of(storagePath);
     }
     dataStoreVault.getDataStores().forEach(
       ds -> {
@@ -189,9 +191,6 @@ public class Tabular implements AutoCloseable {
 
   public Tabular setPassphrase(String passphrase) {
     this.passphrase = passphrase;
-    if (dataStoreVault != null) {
-      dataStoreVault.setPassphrase(passphrase);
-    }
     return this;
   }
 
@@ -259,7 +258,11 @@ public class Tabular implements AutoCloseable {
       } else {
         // Normal data uri pattern
         String dataStoreName = dataUri.getDataStore();
-        dataPathsToReturn = getDataStore(dataStoreName).select(pathInUri);
+        DataStore dataStore = getDataStore(dataStoreName);
+        if (dataStore==null){
+          throw new RuntimeException("No data store was found with the name ("+dataStoreName+")");
+        }
+        dataPathsToReturn = dataStore.select(pathInUri);
 
       }
     }

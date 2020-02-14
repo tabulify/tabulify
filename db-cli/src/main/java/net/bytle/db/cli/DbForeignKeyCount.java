@@ -47,7 +47,10 @@ public class DbForeignKeyCount {
 
       // Collect the foreign keys
       List<ForeignKeyDef> foreignKeys = dataUris.stream()
-        .flatMap(du -> tabular.select(du).stream())
+        .flatMap(du -> {
+          return tabular.select(du).stream();
+        }
+        )
         .flatMap(dp -> dp.getDataDef().getForeignKeys().stream())
         .collect(Collectors.toList());
 

@@ -101,9 +101,7 @@ public class DbDatastoreAdd {
     }
 
     // Main
-    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)) {
-
-      datastoreVault.setPassphrase(passphrase);
+    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue,passphrase)) {
 
       DataStore dataStore = datastoreVault.getDataStore(datastoreName);
 

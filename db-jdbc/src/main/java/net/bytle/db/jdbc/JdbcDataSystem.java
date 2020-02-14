@@ -120,12 +120,16 @@ public class JdbcDataSystem extends TableSystem {
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {
-    throw new RuntimeException("Not yet implemented");
+
+    return Jdbcs.getDescendants((JdbcDataPath) dataPath,null);
+
   }
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath, String glob) {
-    throw new RuntimeException("Not yet implemented");
+
+    return Jdbcs.getDescendants((JdbcDataPath) dataPath, glob);
+
   }
 
   @Override

@@ -21,14 +21,17 @@ public class Jdbcs {
   private static final Log LOGGER = JdbcDataSystemLog.LOGGER_DB_JDBC;
 
 
-  public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath) {
+  public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath){
+    return getDescendants(jdbcDataPath,null);
+  }
+  public static List<DataPath> getDescendants(JdbcDataPath jdbcDataPath, String tableNamePattern) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
     try {
 
       String schema = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : null;
       String catalog = jdbcDataPath.getCatalog();
-      String tableName = null;
+      String tableName = tableNamePattern;
 
       ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, null);
       while (tableResultSet.next()) {

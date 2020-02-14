@@ -4,6 +4,8 @@ package net.bytle.fs;
 import net.bytle.os.Oss;
 import net.bytle.regexp.Globs;
 import net.bytle.type.Arrayss;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -17,8 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static net.bytle.os.Oss.LINUX;
 import static net.bytle.os.Oss.WIN;
@@ -27,6 +31,8 @@ import static net.bytle.type.Bytes.printHexBinary;
 
 public class Fs {
 
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Fs.class);
 
   /**
    * A safe method even if the string is not a path
@@ -543,12 +549,20 @@ public class Fs {
     // Get the file system
     FileSystem fileSystem = Paths.get(".").getFileSystem();
 
-    // Start path
-    Path startPath = Paths.get(".");
-    for (Path root: fileSystem.getRootDirectories()){
-      if (glob.startsWith(root.toString())){
-        startPath = Paths.get(root.toString());
-      }
+    // Absolute path
+    String finalGlob = glob;
+    Path matchedRootPath = StreamSupport
+      .stream(fileSystem.getRootDirectories().spliterator(), false)
+      .filter(s-> finalGlob.startsWith(s.toString()))
+      .findFirst()
+      .orElse(null);
+
+    Path startPath;
+    if (matchedRootPath!=null){
+      startPath = matchedRootPath;
+      glob = glob.replace(matchedRootPath.toString(),"");
+    } else {
+      startPath = Paths.get(".");
     }
 
     String separator = fileSystem.getSeparator();
@@ -556,12 +570,19 @@ public class Fs {
       separator = "\\\\";
     }
     String[] globNames = glob.split(separator);
+
+    // Init
     List<Path> currentMatchesPaths = new ArrayList<>();
     currentMatchesPaths.add(startPath);
-
     for (String globPattern: globNames) {
 
-      String pattern = Globs.toRegexPattern(globPattern);
+      FsShortFileName sfn = FsShortFileName.of(globPattern);
+      Pattern pattern = null;
+      if (!sfn.isShortFileName()) {
+        pattern = Pattern.compile(Globs.toRegexPattern(globPattern));
+      } else {
+        pattern = Pattern.compile(Globs.toRegexPattern(sfn.getShortName()+"*"),Pattern.CASE_INSENSITIVE);
+      }
 
       // The list where the actual matches path will be stored
       List<Path> matchesPath = new ArrayList<>();
@@ -570,14 +591,22 @@ public class Fs {
         // https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html#newDirectoryStream-java.nio.file.Path-java.lang.String-
         // but yeah ...
         if (Files.isDirectory(currentPath)) {
-          List<Path> paths = Fs.getChildrenFiles(currentPath);
-          for (Path childrenPath : paths) {
-            if (childrenPath.getFileName().toString().matches(pattern)) {
-              matchesPath.add(childrenPath);
+          try {
+            List<Path> paths = Fs.getChildrenFiles(currentPath);
+            for (Path childrenPath : paths) {
+              if (pattern.matcher(childrenPath.getFileName().toString()).find()) {
+                matchesPath.add(childrenPath);
+              }
+            }
+          } catch (Exception e){
+            if (e.getCause().getClass().equals(java.nio.file.AccessDeniedException.class)) {
+              LOGGER.warn("The path (" + currentPath + ") was denied");
+            } else {
+              throw e;
             }
           }
         } else {
-          if (currentPath.getFileName().toString().matches(pattern)) {
+          if (pattern.matcher(currentPath.getFileName().toString()).find()) {
             matchesPath.add(currentPath);
           }
         }

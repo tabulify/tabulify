@@ -129,4 +129,12 @@ public class BytleSchema implements SchemaSample {
   public DataPath getDataPath(String name) {
     return bytleTables.get(name);
   }
+
+  /**
+   * Drop all tables and recreate the schema
+   */
+  public void dropAllAndCreateDataPaths() {
+    Tabulars.drop(Tabulars.getChildren(datastore.getCurrentDataPath()));
+    getAndCreateDataPaths();
+  }
 }

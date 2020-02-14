@@ -99,10 +99,11 @@ public class DatastoreVault implements AutoCloseable {
   private static final String PASSWORD = "password";
 
 
-  private DatastoreVault(Path path) {
+  private DatastoreVault(Path path, String passphrase) {
 
     if (path != null) {
       this.path = path;
+      this.passphrase = passphrase;
       DbLoggers.LOGGER_DB_ENGINE.info("Opening the database store (" + path.toAbsolutePath().toString() + ")");
       load();
     } else {
@@ -111,7 +112,7 @@ public class DatastoreVault implements AutoCloseable {
   }
 
   public static DatastoreVault of(Path path) {
-    return new DatastoreVault(path);
+    return new DatastoreVault(path,null);
   }
 
   public static DatastoreVault ofDefault() {
@@ -119,10 +120,6 @@ public class DatastoreVault implements AutoCloseable {
   }
 
 
-  public DatastoreVault setPassphrase(String passphrase) {
-    this.passphrase = passphrase;
-    return this;
-  }
 
 
   /**
@@ -363,5 +360,9 @@ public class DatastoreVault implements AutoCloseable {
 
   public DataStore getDataStore(String name) {
     return this.dataStores.get(name);
+  }
+
+  static public DatastoreVault of(Path storagePath, String passphrase) {
+    return new DatastoreVault(storagePath,passphrase);
   }
 }

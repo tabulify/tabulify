@@ -34,6 +34,8 @@ public class JdbcDataStore extends DataStore {
     return this;
   }
 
+
+  // Current connection
   private Connection connection;
 
   public static final String DB_HANA = "HDB";
@@ -94,8 +96,18 @@ public class JdbcDataStore extends DataStore {
 
   @Override
   public JdbcDataStore setConnectionString(String connectionString) {
-    super.setConnectionString(connectionString);
+
+    if (isOpen()) {
+      throw new RuntimeException("The connection string cannot be changed while there is a connection. It has already the value (" + this.connectionString + ") and cannot be set to (" + connectionString + ")");
+    } else {
+      super.setConnectionString(connectionString);
+    }
     return this;
+  }
+
+  @Override
+  public boolean isOpen() {
+    return this.connection !=null;
   }
 
   @Override
@@ -347,8 +359,9 @@ public class JdbcDataStore extends DataStore {
 
   // A breaker to not update the data type each time
   Boolean sqlDataTypeWereUpdated = false;
+
   private void updateSqlDataTypeIfNeeded() {
-    if (!sqlDataTypeWereUpdated){
+    if (!sqlDataTypeWereUpdated) {
       // As soon as we have the connection, we update the sql data type
       // This is because the credential are needed and they are not given at the constructor level
       // because they are not always mandatory
@@ -356,7 +369,7 @@ public class JdbcDataStore extends DataStore {
         super.
           getSqlDataTypes()
           .stream()
-          .collect(Collectors.toMap(SqlDataType::getTypeCode, dt->dt));
+          .collect(Collectors.toMap(SqlDataType::getTypeCode, dt -> dt));
 
       ResultSet typeInfoResultSet;
       try {
@@ -364,7 +377,7 @@ public class JdbcDataStore extends DataStore {
         while (typeInfoResultSet.next()) {
           int typeCode = typeInfoResultSet.getInt("DATA_TYPE");
           SqlDataType sqlDataType = dataTypeInfoMap.get(typeCode);
-          if (sqlDataType==null){
+          if (sqlDataType == null) {
             sqlDataType = SqlDataType.of(typeCode);
             this.addSqlDataType(sqlDataType);
           }
@@ -403,8 +416,8 @@ public class JdbcDataStore extends DataStore {
 
       // Extension update
       JdbcDataStoreExtension jdbcDataStoreExtension = getExtension();
-      if (jdbcDataStoreExtension!=null){
-        super.getSqlDataTypes().forEach(dt->jdbcDataStoreExtension.updateSqlDataType(dt));
+      if (jdbcDataStoreExtension != null) {
+        super.getSqlDataTypes().forEach(dt -> jdbcDataStoreExtension.updateSqlDataType(dt));
       }
       sqlDataTypeWereUpdated = true;
     }

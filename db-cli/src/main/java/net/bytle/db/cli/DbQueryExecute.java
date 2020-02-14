@@ -51,20 +51,19 @@ public class DbQueryExecute {
     // Examples
     cliCommand.addExample(Strings.multiline(
       "Execute all the queries written in the sql files that begins with `dim`",
-      Words.CLI_NAME + " " + cliCommand.getName() + " dim*.sql@sqlite"
+      "    "+CliUsage.getFullChainOfCommand(cliCommand) + " dim*.sql@sqlite"
     ));
     cliCommand.addExample(Strings.multiline(
-      "Execute the query written in the file `Query1.sql` against the `sqlite` datastore and ...",
-      "execute the query written in the file `Query2.sql` against the `oracle` datastore ",
-      Words.CLI_NAME + " " + cliCommand.getName() + " Query1.sql@sqlite Query2.sql@oracle"
+      "Execute the query written in the file `Query1.sql` against the `sqlite` datastore and execute the query written in the file `Query2.sql` against the `oracle` datastore ",
+      "    "+CliUsage.getFullChainOfCommand(cliCommand) + " Query1.sql@sqlite Query2.sql@oracle"
     ));
     cliCommand.addExample(Strings.multiline(
       "Execute an inline query against the `sqlite` datastore",
-      Words.CLI_NAME + " " + cliCommand.getName() + " \"select year, count(1) from sales group by year@sqlite\""
+      "    "+CliUsage.getFullChainOfCommand(cliCommand) + " \"select year, count(1) from sales group by year@sqlite\""
     ));
     cliCommand.addExample(Strings.multiline(
       "Execute all sql files present in the directory `directory/withQueries` against the `postgres` data store and store the result in the `perf` table.",
-      Words.CLI_NAME + " " + cliCommand.getName() + " " + CliParser.PREFIX_LONG_OPTION + OUTPUT_DATA_URI + "perf@postgres ./directory/withQueries/*.sql@postgres"
+      "    "+CliUsage.getFullChainOfCommand(cliCommand) + " " + CliParser.PREFIX_LONG_OPTION + OUTPUT_DATA_URI + " perf@postgres ./directory/withQueries/*.sql@postgres"
     ));
 
     // Parse and Args

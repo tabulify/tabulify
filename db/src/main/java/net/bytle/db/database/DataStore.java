@@ -54,13 +54,14 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   /**
    * Deep copy
+   *
    * @param ds
    * @return a new reference
    * Used in the {@link DatastoreVault#load() datastore vault load function} to create a deep copy of the
    * internal data stores.
    */
   public static DataStore of(DataStore ds) {
-    return DataStore.of(ds.getName(),ds.getConnectionString())
+    return DataStore.of(ds.getName(), ds.getConnectionString())
       .setPassword(ds.getPassword())
       .setUser(ds.getUser())
       .setProperties(ds.getProperties())
@@ -84,17 +85,8 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public DataStore setConnectionString(String connectionString) {
     assert connectionString != null : "A connection string cannot be null (for the data store " + this.name + ")";
 
-    if (this.connectionString == null || this.connectionString.equals(connectionString)) {
-
-      this.connectionString = connectionString;
-      return this;
-
-    } else {
-
-      throw new RuntimeException("The connection string cannot be changed. It has already the value (" + this.connectionString + ") and cannot be set to (" + connectionString + ")");
-
-    }
-
+    this.connectionString = connectionString;
+    return this;
 
   }
 
@@ -262,7 +254,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    * @param dataDefPath - the path of a data def file
    * @return a data path from a data def path
    * It will create or merge the data path from the data def file
-   *
+   * <p>
    * If the data document already exist in the data store, it will merge, otherwise it will create it.
    */
   public DataPath createOrMergeDataPathOfDataDef(Path dataDefPath) {
@@ -332,7 +324,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
                   ColumnDef columnDef = dataPath.getDataDef().getColumnDef(column.getKey());
                   // If the columns does not exist
-                  if (columnDef==null) {
+                  if (columnDef == null) {
                     String type = "varchar";
                     Object oType = Maps.getPropertyCaseIndependent(columnProperties, "type");
                     if (oType != null) {
@@ -348,22 +340,22 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                         // Already done during the creation
                         break;
                       case "precision":
-                        if (columnDef.getPrecision()==null) {
+                        if (columnDef.getPrecision() == null) {
                           columnDef.precision((Integer) columnProperty.getValue());
                         }
                         break;
                       case "scale":
-                        if (columnDef.getScale()==null) {
+                        if (columnDef.getScale() == null) {
                           columnDef.scale((Integer) columnProperty.getValue());
                         }
                         break;
                       case "comment":
-                        if (columnDef.getComment()==null) {
+                        if (columnDef.getComment() == null) {
                           columnDef.comment((String) columnProperty.getValue());
                         }
                         break;
                       case "nullable":
-                        if (columnDef.getNullable()==null) {
+                        if (columnDef.getNullable() == null) {
                           columnDef.setNullable(Boolean.valueOf((String) columnProperty.getValue()));
                         }
                         break;
@@ -413,17 +405,17 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   /**
    * An init function
+   *
    * @return
    */
   private SqlDataTypesManager getSqlDataTypeManager() {
-    if (sqlDataTypeManager==null){
+    if (sqlDataTypeManager == null) {
       sqlDataTypeManager = new SqlDataTypesManager();
     }
     return sqlDataTypeManager;
   }
 
   /**
-   *
    * @return all data types
    */
   public Set<SqlDataType> getSqlDataTypes() {
@@ -432,7 +424,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   }
 
   /**
-   *
    * @param typeCode
    * @return the data type for one type
    */
@@ -441,7 +432,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   }
 
   /**
-   *
    * @param typeName
    * @return the data type for one name
    */
@@ -450,7 +440,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   }
 
   /**
-   *
    * @param clazz
    * @return @return the sql data type for a java class
    */

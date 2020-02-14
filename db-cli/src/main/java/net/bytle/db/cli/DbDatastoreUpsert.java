@@ -51,7 +51,8 @@ public class DbDatastoreUpsert {
 
     cliCommand.optionOf(URL)
       .setShortName("u")
-      .setDescription("The database url (if the database doesn't exist, this options is mandatory)");
+      .setDescription("The database url (if the database doesn't exist, this options is mandatory)")
+      .setMandatory(true);
 
     cliCommand.optionOf(LOGIN)
       .setShortName("l")
@@ -97,8 +98,8 @@ public class DbDatastoreUpsert {
     }
 
     // Main
-    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)) {
-      datastoreVault.setPassphrase(passphrase);
+    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue,passphrase)) {
+
       DataStore dataStore = datastoreVault.getDataStore(datastoreName);
       if (dataStore == null) {
         dataStore = DataStore.of(datastoreName, urlValue);
