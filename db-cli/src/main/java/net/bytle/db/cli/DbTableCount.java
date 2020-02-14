@@ -46,7 +46,7 @@ public class DbTableCount {
       if (storagePathValueArg != null) {
         tabular.setDataStoreVault(storagePathValueArg);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       int count = dataUriPatterns.stream()

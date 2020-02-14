@@ -79,7 +79,7 @@ public class DbQueryDiff {
       if (storagePathValue != null) {
         tabular.setDataStoreVault(storagePathValue);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       // A structure to get the feedback

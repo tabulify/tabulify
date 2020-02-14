@@ -46,7 +46,7 @@ public class DbTableCreate {
       if (storagePathValueArg != null) {
         tabular.setDataStoreVault(storagePathValueArg);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       // Get the data path

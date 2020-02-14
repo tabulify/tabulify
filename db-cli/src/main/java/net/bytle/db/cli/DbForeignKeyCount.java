@@ -42,7 +42,7 @@ public class DbForeignKeyCount {
       if (storagePathValue != null) {
         tabular.setDataStoreVault(storagePathValue);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       // Collect the foreign keys

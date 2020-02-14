@@ -66,7 +66,7 @@ public class DbTableTruncate {
       if (storagePathValue != null) {
         tabular.setDataStoreVault(storagePathValue);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       Map<DataStore, List<DataPath>> dataPathsByDataStores = DbStatic.collectDataPathsByDataStore(tabular, dataUriPatterns, notStrictRun, cliCommand);

@@ -65,7 +65,7 @@ public class DbTableShow {
       if (storagePathValue != null) {
         tabular.setDataStoreVault(storagePathValue);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       List<DataPath> tableDefList = DbStatic.collectDataPaths(tabular, tableURIs, notStrictRun, cliCommand);

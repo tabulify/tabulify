@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class DatastoreVault implements AutoCloseable {
 
-  protected static final Logger logger = LoggerFactory.getLogger(DatastoreVault.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(DatastoreVault.class);
 
   static Set<DataStore> internalDataStores = new HashSet<>();
 
@@ -83,7 +83,6 @@ public class DatastoreVault implements AutoCloseable {
    * Don't change this value
    */
   private static final String INTERNAL_PASSPHRASE = "r1zilGx22kRCUFjPGXbo";
-  private static final String INTERNAL_PASSPHRASE_KEY = "bdb_internal_passphrase";
   private String passphrase;
   private Path path;
 
@@ -155,8 +154,8 @@ public class DatastoreVault implements AutoCloseable {
               throw new RuntimeException("A passphrase is mandatory when a password must be saved.");
             }
           }
-          String password = Protector.get(definitivePassphrase).encrypt(dataStore.getPassword());
-          ini.put(dataStore.getName(), PASSWORD, password);
+          String cipher = Protector.get(definitivePassphrase).encrypt(dataStore.getPassword());
+          ini.put(dataStore.getName(), PASSWORD, cipher);
         }
         for (Map.Entry<String, String> property : dataStore.getProperties().entrySet()) {
           ini.put(dataStore.getName(), property.getKey(), property.getValue());
@@ -231,12 +230,12 @@ public class DatastoreVault implements AutoCloseable {
     if (!Files.exists(this.path)) {
 
       dataStores = internalDataStores.stream()
-        .collect(Collectors.toMap(DataStore::getName, ds -> DataStore.of(ds)));
+        .collect(Collectors.toMap(DataStore::getName, DataStore::of));
 
     } else {
 
 
-      Ini ini = null;
+      Ini ini;
       try {
         ini = new Ini(this.path.toFile());
       } catch (IOException e) {
@@ -255,22 +254,33 @@ public class DatastoreVault implements AutoCloseable {
               dataStore.setUser(iniSection.get(USER));
               break;
             case (PASSWORD):
-              String localPassphrase;
-              if (this.passphrase != null) {
-                localPassphrase = this.passphrase;
-              } else {
-                final String s = iniSection.get(INTERNAL_PASSPHRASE_KEY);
-                if (s != null) {
-                  if (s.equals("true")) {
-                    localPassphrase = INTERNAL_PASSPHRASE;
-                  } else {
-                    throw new RuntimeException("The internal passphrase key value (" + s + ") is unknown");
-                  }
-                } else {
-                  throw new RuntimeException("The data store (" + dataStore + ") has a password. A passphrase should be provided");
+              String password = null;
+              String ciphertext = iniSection.get(PASSWORD);
+
+              // Internal data store
+              if (internalDataStores.contains(dataStore)) {
+                try {
+                  String internalPassphrase = INTERNAL_PASSPHRASE;
+                  password = Protector.get(internalPassphrase).decrypt(ciphertext);
+                } catch (Exception e) {
+                  // If the password was changed, it can throw an error
+                  LOGGER.warn("The password of the internal data store (" + dataStore.getName() + ") seems to have been changed.");
                 }
               }
-              dataStore.setPassword(Protector.get(localPassphrase).decrypt(iniSection.get(PASSWORD)));
+
+              if (this.passphrase == null && password == null) {
+                throw new RuntimeException("To decrypt the password of the data store (" + dataStore + "), you need to give the passphrase.");
+              }
+
+              // Password still null
+              if (password == null) {
+                try {
+                  password = Protector.get(this.passphrase).decrypt(ciphertext);
+                } catch (Exception e) {
+                  throw new RuntimeException("Unable to decrypt the password for the data store (" + dataStore + ") with the given passphrase");
+                }
+              }
+              dataStore.setPassword(password);
               break;
             default:
               dataStore.addProperty(propertyName, iniSection.get(propertyName));

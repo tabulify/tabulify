@@ -76,7 +76,7 @@ public class DbStatic {
       if (storagePathValue != null) {
         tabular.setDataStoreVault(storagePathValue);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       // Source

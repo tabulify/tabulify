@@ -54,7 +54,7 @@ public class DbSchemaList {
       if (storagePathValueArg != null) {
         tabular.setDataStoreVault(storagePathValueArg);
       } else {
-        tabular.withDefaultStorage();
+        tabular.withDefaultDataStoreVault();
       }
 
       // Target

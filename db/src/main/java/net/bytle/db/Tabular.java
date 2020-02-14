@@ -145,7 +145,7 @@ public class Tabular implements AutoCloseable {
   public DataStore getOrCreateDataStore(String dataStoreName) {
     DataStore dataStore = dataStores.get(dataStoreName);
     if (dataStore == null) {
-      dataStore = DataStore.of(dataStoreName,DEFAUT_URL );
+      dataStore = DataStore.of(dataStoreName,DEFAUT_URL);
       dataStores.put(dataStore.getName(), dataStore);
     }
     return dataStore;
@@ -163,6 +163,11 @@ public class Tabular implements AutoCloseable {
         throw new RuntimeException(e);
       }
     }
+    // Not really needed has the tabular object does not add any data store to the data store value
+    // but this is a resource
+    if (dataStoreVault!=null) {
+      dataStoreVault.close();
+    }
   }
 
   public DataPath getDataPath(Path path) {
@@ -177,7 +182,7 @@ public class Tabular implements AutoCloseable {
    *
    * @return
    */
-  public Tabular withDefaultStorage() {
+  public Tabular withDefaultDataStoreVault() {
     setDataStoreVault(DatastoreVault.DEFAULT_STORAGE_FILE);
     return this;
   }

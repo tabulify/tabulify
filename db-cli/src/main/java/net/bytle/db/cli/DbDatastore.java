@@ -1,12 +1,12 @@
 package net.bytle.db.cli;
 
 
-import net.bytle.cli.*;
-import net.bytle.fs.Fs;
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.cli.Clis;
 import net.bytle.log.Log;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import static net.bytle.db.cli.Words.*;
@@ -17,8 +17,6 @@ public class DbDatastore {
 
     private static final Log LOGGER = Db.LOGGER_DB_CLI;
 
-    static final String BYTLE_DB_datastoreS_STORE = "BYTLE_DB_datastoreS_STORE";
-    static final Path DEFAULT_STORAGE_PATH = Paths.get(Fs.getAppData(Words.CLI_NAME).toString(),"datastores.ini");
 
     public static void run(CliCommand cliCommand, String[] args) {
 

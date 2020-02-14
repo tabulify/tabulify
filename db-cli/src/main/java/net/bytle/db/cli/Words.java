@@ -1,6 +1,7 @@
 package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
+import net.bytle.db.DatastoreVault;
 
 /**
  * Created by gerard on 20-06-2017.
@@ -115,7 +116,7 @@ public class Words {
         cliCommand.globalWordOf(DATASTORE_VAULT_PATH)
                 .setTypeAsOption()
                 .setDescription("The path where the database information are stored")
-                .setDefaultValue(DbDatastore.DEFAULT_STORAGE_PATH)
+                .setDefaultValue(DatastoreVault.DEFAULT_STORAGE_FILE)
                 .setEnvName(ENV_DATASTORE_VAULT_PATH);
 
     }
