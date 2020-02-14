@@ -6,6 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.DataStore;
+import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
@@ -96,18 +97,25 @@ public class DbDatastoreUpsert {
     }
 
     // Main
-    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)
-      ) {
+    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)) {
+      datastoreVault.setPassphrase(passphrase);
       DataStore dataStore = datastoreVault.getDataStore(datastoreName);
       if (dataStore == null) {
         dataStore = DataStore.of(datastoreName, urlValue);
         datastoreVault.add(dataStore);
         LOGGER.info("The datastore (" + datastoreName + ") was added");
       } else {
-        datastoreVault.update(dataStore);
-        LOGGER.info("The datastore (" + datastoreName + ") was updated.");
-
+        LOGGER.info("The datastore (" + datastoreName + ") will be updated.");
       }
+      dataStore
+        .setConnectionString(urlValue)
+        .setUser(userValue)
+        .setPassword(pwdValue);
+      if (driverValue!=null) {
+        dataStore.addProperty(JdbcDataStore.DRIVER_PROPERTY_KEY, driverValue);
+      }
+
+      LOGGER.info("Done");
       LOGGER.info("Bye !");
     }
 

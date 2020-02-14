@@ -21,7 +21,7 @@ public class CsvDataPath extends FsDataPath {
 
   public static CsvDataPath of(Path path) {
 
-    return new CsvDataPath(FsDataStore.LOCAL_FILE_SYSTEM, path);
+    return new CsvDataPath(FsDataStore.getLocalFileSystem(), path);
 
   }
 

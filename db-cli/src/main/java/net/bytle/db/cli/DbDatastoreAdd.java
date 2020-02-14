@@ -6,6 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.DataStore;
+import net.bytle.db.jdbc.JdbcDataStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,36 +101,36 @@ public class DbDatastoreAdd {
     }
 
     // Main
-    DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)
-      .setPassphrase(passphrase);
+    try (DatastoreVault datastoreVault = DatastoreVault.of(storagePathValue)) {
 
-    DataStore dataStore = datastoreVault.getDataStore(datastoreName);
+      datastoreVault.setPassphrase(passphrase);
 
-    if (dataStore != null) {
-      LOGGER.error("The datastore ({}) exist already. It can't then be added (Data store vault location: {}). ", datastoreName, storagePathValue);
-      System.exit(1);
-    } else {
+      DataStore dataStore = datastoreVault.getDataStore(datastoreName);
 
-      dataStore = Database.of(datastoreName)
-        .setConnectionString(urlValue)
-        .setUser(userValue)
-        .setPassword(pwdValue)
-        .addProperty(Database.DRIVER_PROPERTY_KEY, driverValue);
+      if (dataStore != null) {
+        LOGGER.error("The datastore ({}) exist already. It can't then be added (Data store vault location: {}). ", datastoreName, storagePathValue);
+        System.exit(1);
+      } else {
+
+        dataStore = DataStore.of(datastoreName, urlValue)
+          .setUser(userValue)
+          .setPassword(pwdValue)
+          .addProperty(JdbcDataStore.DRIVER_PROPERTY_KEY, driverValue);
+      }
+      datastoreVault.add(dataStore);
+      LOGGER.info("The datastore ({}) was saved.", datastoreName);
+
+      // Ping test ?
+      try {
+        dataStore.getDataSystem();
+      } catch (Exception e) {
+        LOGGER.warn("We were unable to make a connection to the datastore {}", datastoreName);
+      }
+      System.out.println("Connection pinged");
+      dataStore.close();
+
+      LOGGER.info("Bye !");
     }
-    datastoreVault.save(dataStore);
-    LOGGER.info("The datastore ({}) was saved.", datastoreName);
-
-    // Ping test ?
-    try {
-      dataStore.getDataSystem();
-    } catch (Exception e) {
-      LOGGER.warn("We were unable to make a connection to the datastore {}", datastoreName);
-    }
-    System.out.println("Connection pinged");
-    dataStore.close();
-
-    LOGGER.info("Bye !");
-
 
   }
 

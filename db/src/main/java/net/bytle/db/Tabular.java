@@ -8,13 +8,12 @@ import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
+import net.bytle.regexp.Globs;
 import net.bytle.type.Strings;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A tabular is a global domain.
@@ -58,7 +57,7 @@ public class Tabular implements AutoCloseable {
     // Intern datastore
 
     // Local Fs
-    dataStores.put(FsDataStore.LOCAL_FILE_SYSTEM.getName(), FsDataStore.LOCAL_FILE_SYSTEM);
+    dataStores.put(FsDataStore.getLocalFileSystem().getName(), FsDataStore.getLocalFileSystem());
 
     // Memory
     DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE,MemorySystemProvider.SCHEME);
@@ -78,6 +77,16 @@ public class Tabular implements AutoCloseable {
 
   public List<DataStore> getDataStores() {
     return new ArrayList<>(dataStores.values());
+  }
+
+  public List<DataStore> getDataStores(String... globPatterns) {
+    return this.dataStores.values()
+      .stream()
+      .filter(ds -> Arrays.stream(globPatterns).anyMatch(gp -> {
+        String pattern = Globs.toRegexPattern(gp);
+        return ds.getName().matches(pattern);
+      }))
+      .collect(Collectors.toList());
   }
 
   /**
@@ -158,7 +167,7 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    return FsDataStore.LOCAL_FILE_SYSTEM.getDataPath(path);
+    return FsDataStore.getLocalFileSystem().getDataPath(path);
 
   }
 
@@ -269,5 +278,9 @@ public class Tabular implements AutoCloseable {
 
   public DataStore getDefaultDataStore() {
     return this.getDataStore(DEFAULT_DATASTORE);
+  }
+
+  public FsDataStore getLocalFileDataStore() {
+    return FsDataStore.getLocalFileSystem();
   }
 }

@@ -225,7 +225,7 @@ public class DatastoreVault implements AutoCloseable {
   /**
    * @return a database by its name or NULL
    */
-  public void load() {
+  public DatastoreVault load() {
 
 
     if (!Files.exists(this.path)) {
@@ -278,6 +278,7 @@ public class DatastoreVault implements AutoCloseable {
           }
       }
     }
+    return this;
   }
 
   /**

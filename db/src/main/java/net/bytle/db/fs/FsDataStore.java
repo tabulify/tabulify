@@ -15,13 +15,20 @@ import java.nio.file.Paths;
 public class FsDataStore extends DataStore {
 
 
-  public static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
+  /**
+   * Accessible via {@link #getLocalFileSystem()}
+   */
+  static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
 
 
   public FsDataStore(String name, String url) {
 
     super(name, url);
 
+  }
+
+  public static FsDataStore getLocalFileSystem() {
+    return LOCAL_FILE_SYSTEM;
   }
 
 
