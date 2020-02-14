@@ -57,7 +57,6 @@ public class DbStaticTransfersOptions {
 
   public static TransferProperties getTransferProperties(CliParser cliParser) {
 
-    DataPath metricsDataPath = Tabular.tabular().getDataPath(cliParser.getString(METRICS_DATA_URI_OPTION));
 
     Integer batchSize = cliParser.getInteger(TARGET_BATCH_SIZE_OPTION);
     Integer fetchSize = cliParser.getInteger(SOURCE_FETCH_SIZE_OPTION);
@@ -69,13 +68,21 @@ public class DbStaticTransfersOptions {
       LOGGER.info(BUFFER_SIZE_OPTION + " parameter NOT found. Using default : " + bufferSize);
     }
 
-    return TransferProperties.of()
+    TransferProperties transferProperties = TransferProperties.of()
       .setQueueSize(bufferSize)
       .setTargetWorkerCount(targetWorkerCount)
-      .setMetricsPath(metricsDataPath)
       .setFetchSize(fetchSize)
       .setBatchSize(batchSize)
       .setCommitFrequency(commitFrequency);
+
+    String string = cliParser.getString(METRICS_DATA_URI_OPTION);
+    if (string != null) {
+      DataPath metricsDataPath = Tabular.tabular().getDataPath(string);
+      transferProperties.setMetricsPath(metricsDataPath);
+    }
+
+    return transferProperties;
+
   }
 
 

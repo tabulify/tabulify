@@ -95,6 +95,7 @@ public class Tabular implements AutoCloseable {
    * @return
    */
   public DataPath getDataPath(String dataUri, String... parts) {
+    assert dataUri!=null: "The first name of the data path should not be null";
 
     // First argument
     if (!dataUri.contains(DataUri.AT_STRING)) {
