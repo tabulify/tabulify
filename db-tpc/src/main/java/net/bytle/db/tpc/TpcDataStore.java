@@ -21,16 +21,21 @@ public class TpcDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getDataPath(String... parts) {
-    if (parts.length>1){
-      throw new RuntimeException("There is two much names to define the path. It should be only one of word such as "+TpcdsModel.storeSalesTables);
+  public DataPath getDataPath(String... names) {
+    if (names.length > 1) {
+      throw new RuntimeException("There is two much names to define the path. It should be only one of word such as " + TpcdsModel.storeSalesTables);
     }
-    return getDataModel().getAndCreateDataPath(parts[0]);
+    String name = names[0];
+    if (name.equals(CURRENT_WORKING_DIRECTORY)) {
+      return getCurrentDataPath();
+    } else {
+      return getDataModel().getAndCreateDataPath(name);
+    }
   }
 
   @Override
   public DataPath getCurrentDataPath() {
-    return  new TpcDataPath(this, CURRENT_WORKING_DIRECTORY);
+    return new TpcDataPath(this, CURRENT_WORKING_DIRECTORY);
   }
 
   @Override
@@ -49,6 +54,7 @@ public class TpcDataStore extends DataStore {
   }
 
   private TpcdsModel tpcModel;
+
   public TpcdsModel getDataModel() {
     if (tpcModel == null) {
       this.tpcModel = TpcdsModel.of(this);

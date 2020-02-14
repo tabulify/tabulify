@@ -171,4 +171,13 @@ public abstract class DataPath implements Comparable<DataPath>, Relational {
     return dataPath;
   }
 
+  /**
+   *
+   * @param name
+   * @return a data path with a tabular structure
+   * For instance:
+   *   * when you are in a file data system, you will get a csv
+   *   * when you are in a relational data system, you will get a table
+   */
+  public abstract DataPath getChildAsTabular(String name);
 }

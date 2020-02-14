@@ -70,6 +70,11 @@ public class TpcDataPath extends DataPath {
     throw new RuntimeException("Not implemented, TPC is a read only source with a fix structure. Resolving a path is not needed.");
   }
 
+  @Override
+  public DataPath getChildAsTabular(String name) {
+    return getChild(name);
+  }
+
 
   @Override
   public DataPath getSelectStreamDependency() {

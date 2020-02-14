@@ -128,8 +128,12 @@ public class FsTableSystem extends TableSystem {
       }
     }
     if (fileManager == null) {
-      DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") of the file is unknown and got therefore the default file manager. Path ("+path+")");
-      fileManager = FsFileManager.of();
+      if (Files.isRegularFile(path)) {
+        DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") of the file is unknown and got therefore the default file manager. Path (" + path + ")");
+        fileManager = FsFileManager.of();
+      } else {
+        fileManager = FsDirectoryManager.of();
+      }
     }
     return fileManager;
   }

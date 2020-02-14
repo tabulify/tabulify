@@ -62,6 +62,12 @@ public class FsDataPath extends DataPath {
   }
 
   @Override
+  public DataPath getChildAsTabular(String name) {
+    Path siblingPath = path.resolve(name+".csv");
+    return FsTableSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore,siblingPath);
+  }
+
+  @Override
   public DataStore getDataStore() {
     return fsDataStore;
   }

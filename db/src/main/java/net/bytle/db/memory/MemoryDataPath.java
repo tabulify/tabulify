@@ -96,6 +96,11 @@ public class MemoryDataPath extends DataPath {
     throw new RuntimeException("Not yet implemented");
   }
 
+  @Override
+  public DataPath getChildAsTabular(String name) {
+    return getChild(name);
+  }
+
 
   public MemoryDataPathType getType() {
     return type;

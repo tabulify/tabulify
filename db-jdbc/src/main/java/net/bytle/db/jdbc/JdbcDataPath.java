@@ -286,6 +286,11 @@ public class JdbcDataPath extends DataPath {
 
   }
 
+  @Override
+  public DataPath getChildAsTabular(String name) {
+    return getChild(name);
+  }
+
   /**
    * {@link DatabaseMetaData#getMaxSchemaNameLength()}
    */

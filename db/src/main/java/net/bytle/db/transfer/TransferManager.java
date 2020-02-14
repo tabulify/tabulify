@@ -410,7 +410,7 @@ public class TransferManager {
       if (name == null) { // Query case
         name = source.getDescription();
       }
-      target = target.getChild(name);
+      target = target.getChildAsTabular(name);
     }
 
     transfers.put(source, TransferSourceTarget.of(source, target));
