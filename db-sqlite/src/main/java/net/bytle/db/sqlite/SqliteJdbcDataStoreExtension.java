@@ -113,6 +113,7 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
     //                FOREIGN KEY(songartist, songalbum) REFERENCES album(albumartist, albumname)
     //        );
     final List<ForeignKeyDef> foreignKeyDefs = tableDef.getForeignKeys();
+    Collections.sort(foreignKeyDefs);
     for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
 
       statement.append(",\nFOREIGN KEY (");
@@ -181,7 +182,8 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
 
   }
 
-  public Boolean addForeignKey(TableDef tableDef) {
+  @Override
+  public Boolean addForeignKey(RelationDef tableDef) {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Connection connection = dataPath.getDataStore().getCurrentConnection();
