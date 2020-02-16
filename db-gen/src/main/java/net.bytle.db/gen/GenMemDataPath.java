@@ -31,4 +31,9 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath 
   public GenDataDef getDataDef() {
     return new GenDataDef(this);
   }
+
+  @Override
+  public String getType() {
+    return GenDataDef.TYPE;
+  }
 }

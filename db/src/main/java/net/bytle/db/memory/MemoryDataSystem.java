@@ -154,12 +154,12 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public void create(DataPath dataPath) {
 
-    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    MemoryDataPath memoryDataPath = (MemoryDataPathAbs) dataPath;
     getManager(memoryDataPath).create(memoryDataPath);
 
   }
 
-  public MemoryVariableManager getManager(MemoryDataPathAbs memoryDataPath) {
+  public MemoryVariableManager getManager(MemoryDataPath memoryDataPath) {
     MemoryVariableManager memoryVariableManager = null;
     List<MemoryVariableManagerProvider> installedProviders = MemoryVariableManagerProvider.installedProviders();
     for (MemoryVariableManagerProvider structProvider : installedProviders) {

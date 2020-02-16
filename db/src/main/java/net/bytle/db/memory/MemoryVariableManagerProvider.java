@@ -70,7 +70,7 @@ public abstract class MemoryVariableManagerProvider {
     // loads all installed providers
     private static List<MemoryVariableManagerProvider> loadInstalledProviders() {
 
-        List<MemoryVariableManagerProvider> fsFileManagerProviders = new ArrayList<>();
+        List<MemoryVariableManagerProvider> memoryVariableManagerProviders = new ArrayList<>();
 
         ServiceLoader<MemoryVariableManagerProvider> loadedTableSystemProviders = ServiceLoader
                 .load(MemoryVariableManagerProvider.class, ClassLoader.getSystemClassLoader());
@@ -78,11 +78,11 @@ public abstract class MemoryVariableManagerProvider {
         // ServiceConfigurationError may be throw here
         for (MemoryVariableManagerProvider provider : loadedTableSystemProviders) {
 
-            fsFileManagerProviders.add(provider);
+            memoryVariableManagerProviders.add(provider);
 
         }
 
-        return fsFileManagerProviders;
+        return memoryVariableManagerProviders;
     }
 
     /**

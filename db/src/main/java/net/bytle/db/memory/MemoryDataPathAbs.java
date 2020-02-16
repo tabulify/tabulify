@@ -1,8 +1,7 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.memory.list.MemoryListDataPath;
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.uri.DataUri;
 
 import java.util.Arrays;
@@ -86,10 +85,6 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
     return getChild(name);
   }
 
-  @Override
-  public String getType() {
-    return MemoryListDataPath.TYPE;
-  }
 
 
 }

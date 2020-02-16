@@ -26,27 +26,27 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
     switch (sqlDataType.getTypeCode()) {
       case OracleTypes.INTERVALDS:
         sqlDataType
-          .setTypeNames("INTERVALDS")
+          .setTypeName("INTERVALDS")
           .setClazz(oracle.sql.INTERVALDS.class);
         break;
       case OracleTypes.INTERVALYM:
         sqlDataType
-          .setTypeNames("INTERVAL_YEAR_MONTH")
+          .setTypeName("INTERVAL_YEAR_MONTH")
           .setClazz(oracle.sql.INTERVALYM.class);
         break;
       case OracleTypes.LONGVARBINARY:
         sqlDataType
-          .setTypeNames("LONG RAW")
+          .setTypeName("LONG RAW")
           .setClazz(oracle.sql.RAW.class);
         break;
       case Types.LONGVARCHAR:
         sqlDataType
-          .setTypeNames("LONG");
+          .setTypeName("LONG");
         break;
       case OracleTypes.NUMBER:
         // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
         sqlDataType
-          .setTypeNames("NUMBER")
+          .setTypeName("NUMBER")
           .setClazz(oracle.sql.NUMBER.class)
           .setMaxPrecision(38)
           .setMaximumScale(127)
@@ -55,7 +55,7 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
       case Types.DOUBLE:
         // https://docs.oracle.com/cd/B28359_01/server.111/b28285/sqlqr06.htm#CHDJJEEA
         sqlDataType
-          .setTypeNames("NUMBER")
+          .setTypeName("NUMBER")
           .setClazz(oracle.sql.NUMBER.class)
           .setMaxPrecision(38)
           .setMaximumScale(127)
@@ -63,11 +63,11 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
         break;
       case Types.NVARCHAR:
         sqlDataType
-          .setTypeNames("NVARCHAR2");
+          .setTypeName("NVARCHAR2");
         break;
       case Types.VARBINARY:
         sqlDataType
-          .setTypeNames("VARBINARY")
+          .setTypeName("VARBINARY")
           .setClazz(oracle.sql.RAW.class);
         break;
     }
