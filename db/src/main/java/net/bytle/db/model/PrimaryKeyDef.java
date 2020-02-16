@@ -7,68 +7,74 @@ import java.util.stream.Collectors;
 
 public class PrimaryKeyDef {
 
-    private final RelationDef tableDef;
-    private String name;
-    private String[] columnNames;
+  private final RelationDef tableDef;
+  private String name;
+  private String[] columnNames;
 
-    public static PrimaryKeyDef of(RelationDef tableDef, String... columnNames) {
-        assert tableDef != null;
-        assert columnNames.length > 0;
-        assert columnNames[0]!=null:"A column name must not be null";
+  public static PrimaryKeyDef of(RelationDef tableDef, String... columnNames) {
+    assert tableDef != null;
+    assert columnNames.length > 0;
+    assert columnNames[0] != null : "A column name must not be null";
 
-        return new PrimaryKeyDef(tableDef,columnNames);
-    }
+    return new PrimaryKeyDef(tableDef, columnNames);
+  }
 
-    public String getName() {
-        return name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    /**
-     * Use {@link #PrimaryKeyDef(RelationDef, String...)}
-     */
-    PrimaryKeyDef(){
-        throw new RuntimeException("Don't use this");
-    }
+  /**
+   * Use {@link #PrimaryKeyDef(RelationDef, String...)}
+   */
+  PrimaryKeyDef() {
+    throw new RuntimeException("Don't use this");
+  }
 
-    private PrimaryKeyDef(RelationDef tableDef, String... columnNames) {
-        this.columnNames = columnNames;
-        this.tableDef = tableDef;
-    }
+  private PrimaryKeyDef(RelationDef tableDef, String... columnNames) {
+    this.columnNames = columnNames;
+    this.tableDef = tableDef;
+    Arrays.stream(columnNames).forEach(cn -> {
+        if (tableDef.getColumnDef(cn) == null) {
+          throw new RuntimeException("The column ("+cn+") does not exist in the data path ("+tableDef.getDataPath()+"). This data path knows only the following columns ("+ Arrays.toString(tableDef.getColumnDefs()) +')');
+        }
+      }
+    );
+  }
 
-    public RelationDef getDataDef() {
-        return tableDef;
-    }
+  public RelationDef getDataDef() {
+    return tableDef;
+  }
 
-    public PrimaryKeyDef setName(String name) {
-        this.name = name;
-        return this;
-    }
+  public PrimaryKeyDef setName(String name) {
+    this.name = name;
+    return this;
+  }
 
 
-    public List<ColumnDef> getColumns() {
-        return Arrays.stream(columnNames)
-                .map(tableDef::getColumnDef)
-                .collect(Collectors.toList());
-    }
+  public List<ColumnDef> getColumns() {
+    return Arrays.stream(columnNames)
+      .map(tableDef::getColumnDef)
+      .collect(Collectors.toList());
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PrimaryKeyDef that = (PrimaryKeyDef) o;
-        return tableDef.getDataPath().equals(that.tableDef.getDataPath()) &&
-                Arrays.equals(columnNames, that.columnNames);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PrimaryKeyDef that = (PrimaryKeyDef) o;
+    return tableDef.getDataPath().equals(that.tableDef.getDataPath()) &&
+      Arrays.equals(columnNames, that.columnNames);
+  }
 
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(tableDef.getDataPath().toString());
-        result = 31 * result + Arrays.hashCode(columnNames);
-        return result;
-    }
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(tableDef.getDataPath().toString());
+    result = 31 * result + Arrays.hashCode(columnNames);
+    return result;
+  }
 
   @Override
   public String toString() {
-    return "PrimaryKey of " + tableDef.getDataPath() + " (" + Arrays.toString(columnNames) +")";
+    return "PrimaryKey of " + tableDef.getDataPath() + " (" + Arrays.toString(columnNames) + ")";
   }
 }

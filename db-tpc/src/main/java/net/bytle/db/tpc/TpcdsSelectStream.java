@@ -5,7 +5,7 @@ import com.teradata.tpcds.Results;
 import com.teradata.tpcds.Session;
 import com.teradata.tpcds.Table;
 import net.bytle.db.model.DataDefs;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamListener;
@@ -105,7 +105,7 @@ public class TpcdsSelectStream implements SelectStream {
   }
 
   @Override
-  public TableDef getSelectDataDef() {
+  public RelationDef getSelectDataDef() {
     return dataPath.getDataDef();
   }
 
@@ -162,5 +162,10 @@ public class TpcdsSelectStream implements SelectStream {
   @Override
   public void execute() {
     // nothing to do here
+  }
+
+  @Override
+  public DataPath getDataPath() {
+    return this.dataPath;
   }
 }

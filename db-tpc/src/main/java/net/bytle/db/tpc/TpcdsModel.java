@@ -1,8 +1,7 @@
 package net.bytle.db.tpc;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.sample.SchemaSample;
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 
@@ -1189,7 +1188,7 @@ public class TpcdsModel implements SchemaSample {
 
     }
 
-    private void addToTpcdsDataPaths(TableDef tableDef) {
+    private void addToTpcdsDataPaths(RelationDef tableDef) {
         addToTpcdsDataPaths(tableDef.getDataPath());
     }
 
@@ -1239,7 +1238,7 @@ public class TpcdsModel implements SchemaSample {
      * @param tableName - one of the static constant field that represents a table name
      * @return - the definition of this table
      */
-    public DataPathAbs getAndCreateDataPath(String tableName) {
+    public DataPath getAndCreateDataPath(String tableName) {
 
         return tables.get(tableName);
     }

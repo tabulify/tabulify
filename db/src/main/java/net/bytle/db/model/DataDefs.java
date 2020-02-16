@@ -162,7 +162,10 @@ public class DataDefs {
       if (Tabulars.exists(targetForeignDataPath)) {
         PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getDataDef().getPrimaryKey();
         if (targetPrimaryKey != null) {
-          List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+          List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
+            getColumns().stream()
+            .map(ColumnDef::getColumnName)
+            .collect(Collectors.toList());
           List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
           // Do they have the same primary key columns
           if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
@@ -184,7 +187,7 @@ public class DataDefs {
     }
   }
 
-  public static int getColumnIdFromName(TableDef dataDef, String columnName) {
+  public static int getColumnIdFromName(RelationDef dataDef, String columnName) {
     for (int i = 0; i < dataDef.getColumnsSize(); i++) {
       if (dataDef.getColumnDef(i).getColumnName().equals(columnName)) {
         return i;

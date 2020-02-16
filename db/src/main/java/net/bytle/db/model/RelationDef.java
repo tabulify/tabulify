@@ -85,7 +85,11 @@ public interface RelationDef {
 
   RelationDef addColumn(String columnName, Integer typeCode);
 
+  RelationDef addColumn(String columnName, Integer typeCode, Boolean nullable);
+
   RelationDef addColumn(String columnName, Integer typeCode, Integer precision);
+
+  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Boolean nullable);
 
   RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale);
 

@@ -1,6 +1,7 @@
 package net.bytle.db.tpc;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 
@@ -21,7 +22,7 @@ public class TpcDataStore extends DataStore {
   }
 
   @Override
-  public DataPathAbs getDataPath(String... names) {
+  public DataPath getDataPath(String... names) {
     if (names.length > 1) {
       throw new RuntimeException("There is two much names to define the path. It should be only one of word such as " + TpcdsModel.storeSalesTables);
     }

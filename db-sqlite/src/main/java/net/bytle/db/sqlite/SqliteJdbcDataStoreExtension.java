@@ -154,7 +154,8 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
    *
    * @param tableDef
    */
-  public Boolean addPrimaryKey(TableDef tableDef) {
+  @Override
+  public Boolean addPrimaryKey(RelationDef tableDef) {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Connection connection = dataPath.getDataStore().getCurrentConnection();

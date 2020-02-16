@@ -71,6 +71,9 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
    * @param dataDef
    */
   public ColumnDef(RelationDef dataDef, String columnName, Class<T> clazz) {
+    assert dataDef!=null: "The data def cannot be null";
+    assert columnName!=null: "The column name cannot be null";
+    assert clazz!=null: "The class cannot be null";
 
     this.dataDef = dataDef;
     this.columnName = columnName;

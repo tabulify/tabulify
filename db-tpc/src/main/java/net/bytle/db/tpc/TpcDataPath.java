@@ -76,6 +76,11 @@ public class TpcDataPath extends DataPathAbs {
     return getChild(name);
   }
 
+  @Override
+  public String getType() {
+    return "TABLE";
+  }
+
 
   @Override
   public DataPath getSelectStreamDependency() {
