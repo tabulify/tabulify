@@ -29,7 +29,7 @@ public class SqlServerDataStoreExtension extends JdbcDataStoreExtension {
   public void updateSqlDataType(SqlDataType sqlDataType) {
     switch (sqlDataType.getTypeCode()) {
       case Types.CLOB:
-        sqlDataType.setTypeNames("VARCHAR");
+        sqlDataType.setTypeName("VARCHAR");
         break;
     }
   }

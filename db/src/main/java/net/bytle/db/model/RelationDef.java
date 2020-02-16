@@ -1,18 +1,18 @@
 package net.bytle.db.model;
 
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  *
- * The structure of the data
+ * The relational structure of the data
  *
  */
 public interface RelationDef {
 
-
-    List<ColumnDef> getColumnDefs();
 
     /**
      *
@@ -36,5 +36,60 @@ public interface RelationDef {
      */
     <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
 
-    DataPath getDataPath();
+  PrimaryKeyDef getPrimaryKey();
+
+  List<ForeignKeyDef> getForeignKeys();
+
+  ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKeyDef, String... columnNames);
+
+  List<UniqueKeyDef> getUniqueKeys();
+
+  RelationDef setPrimaryKey(String... columnNames);
+
+  RelationDef addUniqueKey(String name, String... columnNames);
+
+  RelationDef addForeignKey(PrimaryKeyDef primaryKeyDef, String... columnNames);
+
+  RelationDef addForeignKey(PrimaryKeyDef primaryKeyDef, List<String> columnNames);
+
+  RelationDef addForeignKey(DataPath dataPath, String... columnNames);
+
+  RelationDef setPrimaryKey(List<String> columnNames);
+
+  void deleteForeignKey(ForeignKeyDef foreignKeyDef);
+
+  Object getProperty(String key);
+
+  DataDefAbs addProperty(String key, Object value);
+
+  Map<String, Object> getProperties();
+
+  ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKey, List<String> columns);
+
+  PrimaryKeyDef primaryKeyOf(String... columnNames);
+
+  abstract DataPathAbs getDataPath();
+
+
+  /**
+   *
+   * @return the number of columns
+   *
+   */
+  int getColumnsSize();
+
+  @Override
+  String toString();
+
+  RelationDef addColumn(String s);
+
+  RelationDef addColumn(String columnName, Integer typeCode);
+
+  RelationDef addColumn(String columnName, Integer typeCode, Integer precision);
+
+  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale);
+
+  RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale, Boolean nullable, String comment);
+
+  ColumnDef[] getColumnDefs();
 }

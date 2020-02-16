@@ -1,10 +1,10 @@
 package net.bytle.db.gen;
 
 
+import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.model.*;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.type.Maps;
@@ -30,12 +30,7 @@ public class DataGeneration {
      */
     public static final String TOTAL_ROWS_PROPERTY_KEY = "TotalRows";
 
-    /**
-     * The {@link TableDef#getProperty(String)} key giving the data generator data
-     */
-    public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
-
-    static final Log GEN_LOG = Log.getLog(DataGeneration.class);
+  static final Log GEN_LOG = Log.getLog(DataGeneration.class);
     private static final Log LOGGER = GEN_LOG;
 
 
@@ -158,19 +153,19 @@ public class DataGeneration {
         if (generator == null) {
 
             // When read from a data definition file into the column property
-            final Object generatorProperty = Maps.getPropertyCaseIndependent(columnDef.getProperties(), GENERATOR_PROPERTY_KEY);
+            final Object generatorProperty = Maps.getPropertyCaseIndependent(columnDef.getProperties(), GenColumnDef.GENERATOR_PROPERTY_KEY);
             if (generatorProperty != null) {
 
                 final Map<String, Object> generatorColumnProperties;
                 try {
                     generatorColumnProperties = (Map<String, Object>) generatorProperty;
                 } catch (ClassCastException e) {
-                    throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
+                    throw new RuntimeException("The values of the property (" + GenColumnDef.GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
                 }
 
                 final String nameProperty = (String) Maps.getPropertyCaseIndependent(generatorColumnProperties, "name");
                 if (nameProperty == null) {
-                    throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.toString() + ".");
+                    throw new RuntimeException("The name property of the generator was not found within the property (" + GenColumnDef.GENERATOR_PROPERTY_KEY + ") of the column " + columnDef.toString() + ".");
                 }
                 DataGenerator<T> dataGenerator;
                 String name = nameProperty.toLowerCase();
@@ -181,9 +176,9 @@ public class DataGeneration {
                     case "unique":
                         dataGenerator = SequenceGenerator.of(columnDef);
                         break;
-                    case "derived":
-                        dataGenerator = DerivedGenerator.of(columnDef, this);
-                        break;
+//                    case "derived":
+//                        //dataGenerator = DerivedGenerator.of(columnDef, this);
+//                        break;
                     case "random":
                         dataGenerator = DistributionGenerator.of(columnDef);
                         break;
@@ -430,13 +425,13 @@ public class DataGeneration {
      */
     public static <T> Map<String, Object> getProperties(ColumnDef<T> columnDef) {
         Map<String, Object> properties = columnDef.getProperties();
-        final Object generatorProperty = Maps.getPropertyCaseIndependent(properties, GENERATOR_PROPERTY_KEY);
+        final Object generatorProperty = Maps.getPropertyCaseIndependent(properties, GenColumnDef.GENERATOR_PROPERTY_KEY);
         Map<String, Object> generatorColumnProperties = null;
         if (generatorProperty != null) {
             try {
                 generatorColumnProperties = (Map<String, Object>) generatorProperty;
             } catch (ClassCastException e) {
-                throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
+                throw new RuntimeException("The values of the property (" + GenColumnDef.GENERATOR_PROPERTY_KEY + ") for the column (" + columnDef.toString() + ") should be a map value. Bad values:" + generatorProperty);
             }
         }
         return generatorColumnProperties;

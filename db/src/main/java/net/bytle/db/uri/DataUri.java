@@ -88,7 +88,11 @@ public class DataUri implements Comparable<DataUri> {
 
   public String toString() {
     // We miss the query and fragment parts but they are actually not used
-    return path+AT_STRING+dataStore;
+    if (path==null) {
+      return AT_STRING + dataStore;
+    } else {
+      return path + AT_STRING + dataStore;
+    }
   }
 
 

@@ -103,13 +103,13 @@ public class DbDdl {
   public static String getCreateTableStatementColumnsDefinition(DataPath dataPath) {
 
 
-    List<ColumnDef> columnDefs = dataPath.getDataDef().getColumnDefs();
     StringBuilder statementColumnPart = new StringBuilder();
-    for (int i = 0; i < columnDefs.size(); i++) {
+    RelationDef dataDef = dataPath.getDataDef();
+    for (int i = 0; i < dataDef.getColumnsSize(); i++) {
 
       try {
 
-        ColumnDef columnDef = columnDefs.get(i);
+        ColumnDef columnDef = dataDef.getColumnDef(i);
         // Add it to the columns statement
         statementColumnPart.append(getColumnStatementForCreateTable(columnDef));
 
@@ -120,7 +120,7 @@ public class DbDdl {
       }
 
       // Is it the end ...
-      if (i != columnDefs.size() - 1) {
+      if (i != dataDef.getColumnsSize() - 1) {
         statementColumnPart.append(",\n");
       } else {
         statementColumnPart.append("\n");

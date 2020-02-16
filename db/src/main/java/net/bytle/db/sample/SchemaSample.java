@@ -22,6 +22,6 @@ public interface SchemaSample {
     DataPath getAndCreateDataPath(String tableName);
 
 
-    List<DataPath> getAndCreateDataPaths(String... tableNames);
+    List<DataPath> getDataPaths(String... tableNames);
 
 }

@@ -18,7 +18,7 @@ public class DbDml {
      */
     public static String getParameterizedInsertStatement(RelationDef relationDef) {
 
-        if (relationDef.getColumnDefs().size() == 0) {
+        if (relationDef.getColumnsSize() == 0) {
             throw new RuntimeException("The table (" + relationDef.getDataPath() + ") has no columns. We can not create an insert statement.");
         }
         String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(relationDef.getDataPath()) + " (";
@@ -70,7 +70,7 @@ public class DbDml {
         String insertStatementBindVariable = "";
 
         try {
-            for (int i = 0; i < source.getColumnDefs().size(); i++) {
+            for (int i = 0; i < source.getColumnsSize(); i++) {
                 String colName = source.getColumnDef(i).getColumnName();
                 ColumnDef columnDef = target.getColumnDef(colName);
                 if (!columnDef.getIsAutoincrement()) {

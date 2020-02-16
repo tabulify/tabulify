@@ -56,7 +56,7 @@ public class DataDefs {
   }
 
 
-  public static TableDef of(DataPath dataPath) {
+  public static RelationDef of(DataPath dataPath) {
 
     return dataPath.getDataDef();
 
@@ -71,7 +71,7 @@ public class DataDefs {
   public static void addColumns(RelationDef sourceDef, RelationDef targetDef) {
 
     assert sourceDef != null : "SourceDef should not be null";
-    int columnCount = sourceDef.getColumnDefs().size();
+    int columnCount = sourceDef.getColumnsSize();
     for (int i = 0; i < columnCount; i++) {
       ColumnDef columnDef = sourceDef.getColumnDef(i);
       targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClazz())
@@ -135,7 +135,7 @@ public class DataDefs {
   }
 
 
-  public static void copy(TableDef source, TableDef target) {
+  public static void copy(RelationDef source, RelationDef target) {
 
     if (source == null) {
       return;
@@ -185,7 +185,7 @@ public class DataDefs {
   }
 
   public static int getColumnIdFromName(TableDef dataDef, String columnName) {
-    for (int i = 0; i < dataDef.getColumnDefs().size(); i++) {
+    for (int i = 0; i < dataDef.getColumnsSize(); i++) {
       if (dataDef.getColumnDef(i).getColumnName().equals(columnName)) {
         return i;
       }

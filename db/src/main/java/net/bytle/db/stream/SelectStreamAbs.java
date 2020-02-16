@@ -46,10 +46,13 @@ public abstract class SelectStreamAbs implements SelectStream {
 
   @Override
   public List<Object> getObjects() {
-    return IntStream.of(this.dataPath.getDataDef().getColumnDefs().size())
+    return IntStream.of(this.dataPath.getDataDef().getColumnsSize())
       .mapToObj(this::getObject)
       .collect(Collectors.toList());
   }
 
-
+  @Override
+  public DataPath getDataPath() {
+    return this.dataPath;
+  }
 }

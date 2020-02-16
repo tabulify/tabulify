@@ -1,19 +1,25 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.memory.list.MemoryListDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.uri.DataUri;
 
 public class MemoryDataStore extends DataStore {
 
+  static final String WORKING_PATH = "";
   private MemoryStore memoryStore;
   private final MemoryDataSystem memoryDataSystem;
 
-  public MemoryDataStore(String name, String connectionString, MemoryDataSystem memoryDataSystem) {
+  public MemoryDataStore(String name, String connectionString) {
     super(name, connectionString);
-    this.memoryDataSystem = memoryDataSystem;
+    this.memoryDataSystem = MemoryDataSystem.of();
   }
+
+  public static MemoryDataStore of(String name, String connectionString){
+    return new MemoryDataStore(name,connectionString);
+  }
+
 
   @Override
   public MemoryDataSystem getDataSystem() {
@@ -21,17 +27,15 @@ public class MemoryDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getDataPath(String... parts) {
+  public MemoryDataPath getDataPath(String... parts) {
 
-    DataUri dataUri = DataUri.of(String.join(MemoryDataPath.PATH_SEPARATOR, parts) + DataUri.AT_STRING + this.getName());
-    MemoryDataPath memoryDataPath = MemoryDataPath.of(this, dataUri.getPath());
-    return memoryDataPath;
+    return this.getCurrentDataPath().resolve(parts);
 
   }
 
   @Override
   public MemoryDataPath getCurrentDataPath() {
-    return MemoryDataPath.of(this,"");
+    return new MemoryListDataPath(this,WORKING_PATH);
   }
 
   @Override

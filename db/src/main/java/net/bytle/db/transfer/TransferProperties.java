@@ -1,5 +1,6 @@
 package net.bytle.db.transfer;
 
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 
 import java.util.Arrays;
@@ -32,7 +33,7 @@ public class TransferProperties {
 
   /**
    * The location of the metrics data (ie snapshot of the counters by time)
-   * See {@link #setMetricsPath(DataPath)}
+   * See {@link #setMetricsPath(DataPathAbs)}
    */
   private DataPath metricsPath;
 

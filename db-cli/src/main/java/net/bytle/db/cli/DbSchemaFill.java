@@ -46,7 +46,7 @@ public class DbSchemaFill {
     cliCommand.argOf(SCHEMA_URI)
       .setDescription("A Data Uri that points to a schema (example for the default one `@datastore`")
       .setMandatory(true);
-    cliCommand.optionOf(Words.GLOB_PATERN_DATADEF_FILE)
+    cliCommand.optionOf(Words.GLOB_PATTERN_DATADEF_FILE)
       .setDescription("A glob pattern that defines data definition file with the data generation properties (ie dir/*--datadef.yml)");
     cliCommand.flagOf(NOT_STRICT)
       .setDescription("if set, it will not throw an error for minor problem (example if a data def has not a yml extension,...) ")
@@ -58,7 +58,7 @@ public class DbSchemaFill {
 
     // Parser and args
     CliParser cliParser = Clis.getParser(cliCommand, args);
-    final String dataDefGlobArg = cliParser.getString(Words.GLOB_PATERN_DATADEF_FILE);
+    final String dataDefGlobArg = cliParser.getString(Words.GLOB_PATTERN_DATADEF_FILE);
     final Boolean notStrictRunArg = cliParser.getBoolean(NOT_STRICT);
     final Boolean withDependencies = cliParser.getBoolean(WITH_DEPENDENCIES);
     final Path storagePathValueArg = cliParser.getPath(DATASTORE_VAULT_PATH);
@@ -95,7 +95,7 @@ public class DbSchemaFill {
       // Target
       DataPath targetDataPath = tabular.getDataPath(targetSchemaDataUriArg);
       if (!Tabulars.isContainer(targetDataPath)) {
-        String msg = "The target data uri (" + targetSchemaDataUriArg + " is not a schema";
+        String msg = "The target data uri (" + targetSchemaDataUriArg + ") is not a schema";
         if (notStrictRunArg) {
           LOGGER.warn(msg);
         } else {
@@ -164,7 +164,8 @@ public class DbSchemaFill {
 
       // Start loading
       Timer cliTimer = Timer.getTimer("schema fill").start();
-      List<DataPath> loadedDataPaths = dataGeneration.load();
+      List<DataPath> loadedDataPaths = dataGeneration
+        .load();
       cliTimer.stop();
 
       // Feedback

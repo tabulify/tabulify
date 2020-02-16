@@ -108,7 +108,7 @@ public class BytleSchema implements SchemaSample {
 
   @Override
   public List<DataPath> getAndCreateDataPaths() {
-    ArrayList<DataPath> dataPaths = new ArrayList<>(bytleTables.values());
+    List<DataPath> dataPaths = getDataPaths();
     Tabulars.createIfNotExist(dataPaths);
     return dataPaths;
   }
@@ -121,7 +121,7 @@ public class BytleSchema implements SchemaSample {
   }
 
   @Override
-  public List<DataPath> getAndCreateDataPaths(String... tableNames) {
+  public List<DataPath> getDataPaths(String... tableNames) {
     return Arrays.stream(tableNames).map(name -> bytleTables.get(name)).collect(Collectors.toList());
   }
 
@@ -134,7 +134,11 @@ public class BytleSchema implements SchemaSample {
    * Drop all tables and recreate the schema
    */
   public void dropAllAndCreateDataPaths() {
-    Tabulars.drop(Tabulars.getChildren(datastore.getCurrentDataPath()));
+    Tabulars.dropIfExists(Tabulars.getChildren(datastore.getCurrentDataPath()));
     getAndCreateDataPaths();
+  }
+
+  public List<DataPath> getDataPaths() {
+    return new ArrayList<>(bytleTables.values());
   }
 }

@@ -2,18 +2,17 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
+import net.bytle.db.memory.list.MemoryListDataPath;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 
 /**
@@ -38,7 +37,7 @@ public class MemoryDataSystem extends TableSystem {
 
 
   public void delete(DataPath memoryDataPath) {
-    Object values = ((MemoryDataPath) memoryDataPath).getDataStore().getMemoryStore().remove(memoryDataPath);
+    Object values = ((MemoryListDataPath) memoryDataPath).getDataStore().getMemoryStore().remove(memoryDataPath);
     if (values == null) {
       LOGGER.warning("The table (" + memoryDataPath + ") had no values. Nothing removed.");
     }
@@ -49,14 +48,15 @@ public class MemoryDataSystem extends TableSystem {
   }
 
   public void truncate(DataPath dataPath) {
-    ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().put(dataPath, new ArrayList<>());
+    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    getManager(memoryDataPath).truncate(memoryDataPath);
   }
 
 
   public InsertStream getInsertStream(DataPath dataPath) {
 
-    MemoryDataPath memoryDataPath = (MemoryDataPath) dataPath;
-    return new MemoryInsertStream(memoryDataPath);
+    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    return getManager(memoryDataPath).getInsertStream(memoryDataPath);
 
   }
 
@@ -82,7 +82,8 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public Integer size(DataPath dataPath) {
 
-    return ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().getValues(dataPath).size();
+    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    return Math.toIntExact(getManager(memoryDataPath).size(memoryDataPath));
 
   }
 
@@ -125,7 +126,7 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public DataStore createDataStore(String name, String url) {
-    return new MemoryDataStore(name, url, this);
+    return new MemoryDataStore(name, url);
   }
 
 
@@ -135,18 +136,10 @@ public class MemoryDataSystem extends TableSystem {
   }
 
   @Override
-  public net.bytle.db.stream.SelectStream getSelectStream(DataPath memoryTable) {
+  public SelectStream getSelectStream(DataPath dataPath) {
 
-    MemoryDataPath memoryDataPath = (MemoryDataPath) memoryTable;
-    switch (memoryDataPath.getType()) {
-      case TYPE_BLOCKED_QUEUE:
-        throw new RuntimeException("Not yet implemented");
-      case TYPE_LIST:
-        return new MemorySelectStream(memoryDataPath);
-      default:
-        throw new RuntimeException("Type (" + memoryDataPath.getType() + ") is unknown");
-    }
-
+    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    return getManager(memoryDataPath).getSelectStream(memoryDataPath);
 
   }
 
@@ -160,19 +153,29 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public void create(DataPath dataPath) {
-    MemoryDataPath memoryDataPath = (MemoryDataPath) dataPath;
-    switch (memoryDataPath.getType()) {
-      case TYPE_BLOCKED_QUEUE:
-        int bufferSize = 10000;
-        BlockingQueue<List<Object>> queue = new ArrayBlockingQueue<>(bufferSize);
-        memoryDataPath.getDataStore().getMemoryStore().put(dataPath, queue);
-        break;
-      case TYPE_LIST:
-        memoryDataPath.getDataStore().getMemoryStore().put(dataPath, new ArrayList<ArrayList<Object>>());
-        break;
-      default:
-        throw new RuntimeException("Type (" + memoryDataPath.getType() + " is unknown");
+
+    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
+    getManager(memoryDataPath).create(memoryDataPath);
+
+  }
+
+  public MemoryVariableManager getManager(MemoryDataPathAbs memoryDataPath) {
+    MemoryVariableManager memoryVariableManager = null;
+    List<MemoryVariableManagerProvider> installedProviders = MemoryVariableManagerProvider.installedProviders();
+    for (MemoryVariableManagerProvider structProvider : installedProviders) {
+      if (structProvider.accept(memoryDataPath.getType())) {
+        memoryVariableManager = structProvider.getMemoryVariableManager();
+        if (memoryVariableManager == null) {
+          String message = "The returned variable manager is null for the provider (" + structProvider.getClass().toString() + ")";
+          DbLoggers.LOGGER_DB_ENGINE.severe(message);
+          throw new RuntimeException(message);
+        }
+      }
     }
+    if (memoryVariableManager == null) {
+      throw new RuntimeException("This memory data path ("+memoryDataPath+") has a type ("+memoryDataPath.getType()+") and no installed provider takes it into account.");
+    }
+    return memoryVariableManager;
   }
 
 

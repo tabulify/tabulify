@@ -11,7 +11,7 @@ package net.bytle.db.resultSetDiff;
 
 import net.bytle.db.Tabular;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -125,9 +125,9 @@ public class DataSetDiff {
         .addColumn("+/-") // Add the diff result for the row
         .addColumn("DiffRowId")  // Add the id of the row
         .addColumn("Reason");  // Add the id of the row
-      TableDef sourceDataDef = firstDataPath.getDataDef();
+      RelationDef sourceDataDef = firstDataPath.getDataDef();
       // Add the data
-      for (int i = 0; i < sourceDataDef.getColumnDefs().size(); i++) {
+      for (int i = 0; i < sourceDataDef.getColumnsSize(); i++) {
         ColumnDef<Object> columnDef = sourceDataDef.getColumnDef(i);
         resultDataPath.getDataDef().addColumn(
           columnDef.getColumnName(),
@@ -378,7 +378,7 @@ public class DataSetDiff {
       cellWithDiffCoordinates.forEach(diff -> columnPositions.add(diff.getPosition()));
     }
 
-    for (int i = 0; i < selectStream.getSelectDataDef().getColumnDefs().size(); i++) {
+    for (int i = 0; i < selectStream.getSelectDataDef().getColumnsSize(); i++) {
       Object object = selectStream.getObject(i);
 
       if (columnPositions.contains(i)) {
@@ -408,7 +408,7 @@ public class DataSetDiff {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
-    for (int i = 0; i < firstStream.getSelectDataDef().getColumnDefs().size(); i++) {
+    for (int i = 0; i < firstStream.getSelectDataDef().getColumnsSize(); i++) {
 
       String cellCoordinates = "Cell(Row,Col)(" + firstStream.getRow() + "," + i + ")";
 
@@ -472,8 +472,8 @@ public class DataSetDiff {
     StringBuilder reason = new StringBuilder();
 
     // Length
-    int sourceSize = firstDataPath.getDataDef().getColumnDefs().size();
-    int targetSize = secondDataPath.getDataDef().getColumnDefs().size();
+    int sourceSize = firstDataPath.getDataDef().getColumnsSize();
+    int targetSize = secondDataPath.getDataDef().getColumnsSize();
     if (sourceSize != targetSize) {
       reason.append("The number of columns are not equals. The source data set has ");
       reason.append(sourceSize);

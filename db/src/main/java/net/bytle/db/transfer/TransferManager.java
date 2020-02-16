@@ -4,7 +4,7 @@ package net.bytle.db.transfer;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.ForeignKeyDag;
-import net.bytle.db.memory.MemoryDataPath;
+import net.bytle.db.memory.queue.MemoryQueueDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.spi.DataPath;
@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static net.bytle.db.memory.MemoryDataPathType.TYPE_BLOCKED_QUEUE;
 
 
 /**
@@ -109,7 +107,7 @@ public class TransferManager {
         if (next) {
           showMustGoOn = true;
           InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -129,7 +127,7 @@ public class TransferManager {
         throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
       }
     }
-    if (sourceDataPath.getDataDef().getColumnDefs().size()==0){
+    if (sourceDataPath.getDataDef().getColumnDefs().length==0){
       throw new RuntimeException("We cannot move this tabular data path (" + sourceDataPath + ") because it has no columns.");
     }
   }
@@ -170,7 +168,7 @@ public class TransferManager {
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         while (sourceSelectStream.next()) {
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnDefs().size())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -203,8 +201,7 @@ public class TransferManager {
 
     // The queue between the producer (source) and the consumer (target)
     long timeout = transferProperties.getTimeOut();
-    MemoryDataPath queue = ((MemoryDataPath) Tabular.tabular().getDataPath("Transfer"))
-      .setType(TYPE_BLOCKED_QUEUE)
+    MemoryQueueDataPath queue = ((MemoryQueueDataPath) Tabular.tabular().getDataPath("Transfer"))
       .setTimeout(timeout)
       .setCapacity(transferProperties.getQueueSize());
 
@@ -298,7 +295,7 @@ public class TransferManager {
   public static void checkOrCreateTargetStructureFromSource(DataPath source, DataPath target) {
     // If this for instance, the move of a file, the file may exist
     // but have no content and therefore no structure
-    if (target.getDataDef().getColumnDefs().size() != 0) {
+    if (target.getDataDef().getColumnsSize() != 0) {
       for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
         ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
         if (targetColumnDef == null) {

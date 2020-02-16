@@ -1,6 +1,7 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.uri.DataUri;
@@ -9,6 +10,7 @@ import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A jdbc data path knows only three parts
@@ -16,7 +18,7 @@ import java.util.List;
  * * schema
  * * and name
  */
-public class JdbcDataPath extends DataPath {
+public class JdbcDataPath extends DataPathAbs {
 
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
@@ -158,10 +160,12 @@ public class JdbcDataPath extends DataPath {
    * @param name
    */
   private JdbcDataPath(JdbcDataStore jdbcDataStore, String catalog, String schema, String name) {
+
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
     this.schema = schema;
     this.name = name;
+
   }
 
 
@@ -175,9 +179,9 @@ public class JdbcDataPath extends DataPath {
   }
 
   @Override
-  public TableDef getDataDef() {
+  public RelationDef getDataDef() {
 
-    if (super.getDataDef().getColumnDefs().size() == 0) {
+    if (super.getDataDef().getColumnsSize() == 0) {
       // The data def of query is build at runtime
       if (type.equals(QUERY_TYPE)) {
         // The select stream build the data def
@@ -242,25 +246,27 @@ public class JdbcDataPath extends DataPath {
     if (name != null) {
       actualPath.add(name);
     }
-    for (int i = 0; i < names.length; i++) {
-      switch (names[i]) {
-        case ".":
-          // Nothing to do
-          break;
-        case "..":
-          if (actualPath.size()==0){
-            throw new RuntimeException("You can't apply two points on this path (..) because you are already on the root path and we can't therefore go to th parent");
-          } else {
-            actualPath.remove(actualPath.size() - 1);
-          }
-          break;
-        default:
-          if (names[i].startsWith("/")) {
-            actualPath = new ArrayList<>();
-            actualPath.add(names[i].substring(1, names[i].length() - 1));
-          } else {
-            actualPath.add((names[i]));
-          }
+    if (names != null) {
+      for (int i = 0; i < names.length; i++) {
+        switch (names[i]) {
+          case ".":
+            // Nothing to do
+            break;
+          case "..":
+            if (actualPath.size() == 0) {
+              throw new RuntimeException("You can't apply two points on this path (..) because you are already on the root path and we can't therefore go to th parent");
+            } else {
+              actualPath.remove(actualPath.size() - 1);
+            }
+            break;
+          default:
+            if (names[i].startsWith("/")) {
+              actualPath = new ArrayList<>();
+              actualPath.add(names[i].substring(1, names[i].length() - 1));
+            } else {
+              actualPath.add((names[i]));
+            }
+        }
       }
     }
     if (this.catalog != null) {
@@ -329,7 +335,7 @@ public class JdbcDataPath extends DataPath {
   @Override
   public List<String> getNames() {
     List<String> pathSegments = new ArrayList<>();
-    if (catalog != null) {
+    if (catalog != null ) {
       pathSegments.add(catalog);
     }
     if (schema != null) {
@@ -343,7 +349,9 @@ public class JdbcDataPath extends DataPath {
 
   @Override
   public String getPath() {
-    return String.join(".", getNames());
+    return getNames().stream()
+      .filter(n->!n.equals(""))
+      .collect(Collectors.joining(SEPARATOR));
   }
 
 
@@ -353,7 +361,7 @@ public class JdbcDataPath extends DataPath {
 
 
   public boolean isDocument() {
-    if (type.equals(QUERY_TYPE)){
+    if (type.equals(QUERY_TYPE)) {
       return true;
     } else {
       return name != null;
@@ -371,9 +379,8 @@ public class JdbcDataPath extends DataPath {
 
 
   /**
-   *
    * @return a select stream
-   *
+   * <p>
    * The {@link #getDataDef()} function may have initialized this select stream
    * when the data path is a query
    */

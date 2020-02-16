@@ -6,22 +6,23 @@ import java.util.*;
 
 public class MemoryStore {
 
-    private Map<DataPath, Collection<? extends List>> tableValues = new HashMap<>();
+    private Map<MemoryDataPath, Object> tableValues = new HashMap<>();
 
-    public Collection<? extends List> getValues(DataPath memoryTable) {
+    public Object getValue(DataPath memoryTable) {
 
         return tableValues.get(memoryTable);
     }
 
-    public Collection<? extends List> remove(DataPath memoryTable) {
+    public Object remove(DataPath memoryTable) {
         return tableValues.remove(memoryTable);
     }
 
-    public void put(DataPath memoryTable, Collection<? extends List> objects) {
-        tableValues.put(memoryTable,objects);
+    public void put(MemoryDataPath memoryDataPath, Object objects) {
+        tableValues.put(memoryDataPath,objects);
     }
 
     public Boolean containsKey(DataPath dataPath) {
         return tableValues.containsKey(dataPath);
     }
+
 }

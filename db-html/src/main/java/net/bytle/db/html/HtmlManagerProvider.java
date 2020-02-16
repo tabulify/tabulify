@@ -3,21 +3,25 @@ package net.bytle.db.html;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
 
 public class HtmlManagerProvider extends FsFileManagerProvider {
 
   static private HtmlManager htmlManager;
 
   @Override
-  public List<String> getContentType() {
-    return Arrays.asList("html","htm");
+  public Boolean accept(Path path) {
+
+    if (path.toString().toLowerCase().endsWith("html") || path.toString().toLowerCase().endsWith("htm")) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
   public FsFileManager getFsFileManager() {
-    if (htmlManager == null){
+    if (htmlManager == null) {
       htmlManager = new HtmlManager();
     }
     return htmlManager;

@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
 
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -45,7 +46,7 @@ public abstract class FsFileManagerProvider {
     private static Void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
-            sm.checkPermission(new RuntimePermission("FsStructProvider"));
+            sm.checkPermission(new RuntimePermission("FsFileManagerProvider"));
         return null;
     }
 
@@ -115,11 +116,10 @@ public abstract class FsFileManagerProvider {
     }
 
     /**
-     * Returns the URI scheme that identifies this provider.
      *
-     * @return The URI scheme
+     * @return true if the file manager accepts the path
      */
-    public abstract List<String> getContentType();
+    public abstract Boolean accept(Path path);
 
     /**
      * Returns an existing {@code work} created by this provider.

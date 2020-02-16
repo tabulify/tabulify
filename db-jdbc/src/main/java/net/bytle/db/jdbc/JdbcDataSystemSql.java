@@ -72,7 +72,7 @@ public class JdbcDataSystemSql {
         /**
          * {@link DatabaseMetaData#getIdentifierQuoteString()}
          */
-        return IntStream.range(0,jdbcDataPath.getDataDef().getColumnDefs().size())
+        return IntStream.range(0,jdbcDataPath.getDataDef().getColumnsSize())
                 .mapToObj(i->jdbcDataPath.getDataDef().getColumnDef(i).getColumnName())
                 .collect(Collectors.joining(", "));
     }
@@ -98,9 +98,9 @@ public class JdbcDataSystemSql {
 
         sql += columnsName + ") values (";
 
-        for (int i = 0; i < jdbcDataPath.getDataDef().getColumnDefs().size(); i++) {
+        for (int i = 0; i < jdbcDataPath.getDataDef().getColumnsSize(); i++) {
             sql += "?";
-            if (!(i >= jdbcDataPath.getDataDef().getColumnDefs().size() - 1)) {
+            if (!(i >= jdbcDataPath.getDataDef().getColumnsSize() - 1)) {
                 sql += ",";
             }
         }

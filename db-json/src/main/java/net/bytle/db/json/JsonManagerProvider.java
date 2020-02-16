@@ -3,16 +3,17 @@ package net.bytle.db.json;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
 
 public class JsonManagerProvider extends FsFileManagerProvider {
 
   static private JsonManager jsonManager;
 
   @Override
-  public List<String> getContentType() {
-    return Arrays.asList("json","jsonl");
+  public Boolean accept(Path path) {
+
+    return path.toString().toLowerCase().endsWith("json") || path.toString().toLowerCase().endsWith("jsonl");
+
   }
 
   @Override

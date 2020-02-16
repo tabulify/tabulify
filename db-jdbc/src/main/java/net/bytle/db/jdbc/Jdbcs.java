@@ -3,6 +3,7 @@ package net.bytle.db.jdbc;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
+import net.bytle.type.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,9 +22,10 @@ public class Jdbcs {
   private static final Log LOGGER = JdbcDataSystemLog.LOGGER_DB_JDBC;
 
 
-  public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath){
-    return getDescendants(jdbcDataPath,null);
+  public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath) {
+    return getDescendants(jdbcDataPath, null);
   }
+
   public static List<DataPath> getDescendants(JdbcDataPath jdbcDataPath, String tableNamePattern) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
@@ -81,7 +83,7 @@ public class Jdbcs {
     return jdbcDataPaths;
   }
 
-  private static void buildPrimaryKey(TableDef tableDef) throws SQLException {
+  private static void buildPrimaryKey(RelationDef tableDef) throws SQLException {
 
 
     // Bug in SQLite Driver - Hack
@@ -89,7 +91,7 @@ public class Jdbcs {
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
     JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
-    if (sqlDatabase!=null) {
+    if (sqlDatabase != null) {
       done = sqlDatabase.addPrimaryKey(tableDef);
     }
     if (done == null || done) {
@@ -105,8 +107,8 @@ public class Jdbcs {
     pkProp.add(key_seq);
 
     // Primary Key building
-    String schemaName =null;
-    if (dataPath.getSchema()!=null){
+    String schemaName = null;
+    if (dataPath.getSchema() != null) {
       schemaName = dataPath.getSchema().getName();
     }
     ResultSet pkResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getPrimaryKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
@@ -127,10 +129,10 @@ public class Jdbcs {
     List<String> columns = pkColumns
       .stream()
       .sorted(Comparator.comparing(o -> Integer.valueOf(o.get(key_seq))))
-      .map(s -> s.get(pk_name))
+      .map(s -> s.get(column_name))
       .collect(Collectors.toList());
 
-    if (columns.size()>0) {
+    if (columns.size() > 0) {
       tableDef.primaryKeyOf(columns.toArray(new String[0]))
         .setName(pkName);
     }
@@ -146,7 +148,7 @@ public class Jdbcs {
    * @param tableDef
    * @return null if no table is found
    */
-  public static TableDef getTableDef(TableDef tableDef) {
+  public static RelationDef getTableDef(RelationDef tableDef) {
 
 
     try {
@@ -197,7 +199,7 @@ public class Jdbcs {
 
   }
 
-  private static void buildTableColumns(TableDef tableDef) throws SQLException {
+  private static void buildTableColumns(RelationDef tableDef) throws SQLException {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean added = false;
@@ -208,7 +210,7 @@ public class Jdbcs {
     if (!added) {
 
       String schemaName = null;
-      if (dataPath.getSchema()!=null){
+      if (dataPath.getSchema() != null) {
         schemaName = dataPath.getSchema().getName();
       }
       ResultSet columnResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
@@ -265,14 +267,15 @@ public class Jdbcs {
    *
    * @param tableDef
    */
-  private static void buildForeignKey(TableDef tableDef) {
+  private static void buildForeignKey(RelationDef tableDef) {
 
     // SQLite Driver doesn't return a empty string as key name
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
     Boolean done = false;
-    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
-    if (sqlDatabase!=null) {
+    JdbcDataStore dataStore = dataPath.getDataStore();
+    JdbcDataStoreExtension sqlDatabase = dataStore.getExtension();
+    if (sqlDatabase != null) {
       done = sqlDatabase.addForeignKey(tableDef);
     }
     if (done == null || done) {
@@ -298,21 +301,21 @@ public class Jdbcs {
     String col_key_seq = "KEY_SEQ";
 
 
-    List<String> resultSetColumnNames = new ArrayList<>();
-    resultSetColumnNames.add(col_fk_name);
-    resultSetColumnNames.add(col_fkcolumn_name);
-    resultSetColumnNames.add(col_fktable_schem);
-    resultSetColumnNames.add(col_fktable_cat);
-    resultSetColumnNames.add(col_fktable_name);
-    resultSetColumnNames.add(col_pkcolumn_name);
-    resultSetColumnNames.add(col_pktable_name);
-    resultSetColumnNames.add(col_pktable_schem);
-    resultSetColumnNames.add(col_pktable_cat);
-    resultSetColumnNames.add(col_pk_name);
-    resultSetColumnNames.add(col_key_seq);
+    List<String> resultSetColumnNames = Arrays.asList(
+      col_fk_name,
+      col_fkcolumn_name,
+      col_fktable_schem,
+      col_fktable_cat,
+      col_fktable_name,
+      col_pkcolumn_name,
+      col_pktable_name,
+      col_pktable_schem,
+      col_pktable_cat,
+      col_pk_name,
+      col_key_seq);
 
     // Collect the data before processing it
-    // because of the recursion the data need first to be collected
+    // because of the build that have a recursion nature, the data need first to be collected
     // processing the data and calling recursively the creation of an other table
     // with foreign key result in a "result set is closed" exception within the Ms Sql Driver
 
@@ -320,12 +323,12 @@ public class Jdbcs {
     List<Map<String, String>> fkDatas = new ArrayList<>();
 
     String schemaName = null;
-    if (dataPath.getSchema()!=null){
+    if (dataPath.getSchema() != null) {
       schemaName = dataPath.getSchema().getName();
     }
     try (
       // ImportedKey = the primary keys imported by a table
-      ResultSet fkResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
+      ResultSet fkResultSet = dataStore.getCurrentConnection().getMetaData().getImportedKeys(dataPath.getCatalog(), schemaName, dataPath.getName());
     ) {
 
       while (fkResultSet.next()) {
@@ -336,10 +339,10 @@ public class Jdbcs {
           .collect(Collectors.toMap(s -> s, s -> {
             try {
               String string = fkResultSet.getString(s);
-              return string == null ? "": string;
+              return string == null ? "" : string;
             } catch (Exception e) {
               String msg = "Error when retrieving the string value of " + s;
-              throw new RuntimeException(msg,e);
+              throw new RuntimeException(msg, e);
             }
           }));
         fkDatas.add(fkProperties);
@@ -347,15 +350,21 @@ public class Jdbcs {
       }
 
     } catch (Exception e) {
-      String s = "Error when building Foreign Key (ie imported keys) for the table " + dataPath;
+      String s = Strings.multiline("Error when building Foreign Key (ie imported keys) for the table " + dataPath,
+        e.getMessage());
       LOGGER.severe(s);
       System.err.println(s);
-      throw new RuntimeException(e);
+      if (dataStore.isStrict()) {
+        throw new RuntimeException(e);
+      } else {
+        return;
+      }
     }
 
     // How much foreign key (ie how much foreign key tables)
     List<JdbcDataPath> foreignTableNames = fkDatas.stream()
-      .map(s -> JdbcDataPath.of(dataPath.getDataStore(), s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
+      .distinct()
+      .map(s -> JdbcDataPath.of(dataStore, s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
       .collect(Collectors.toList());
 
 
@@ -385,13 +394,13 @@ public class Jdbcs {
   }
 
   /**
-   * This function must be called after the function {@link #buildPrimaryKey(TableDef)}
+   * This function must be called after the function {@link #buildPrimaryKey(RelationDef)}
    * because the getIndex function of JDBC returns also the unique index of the primary
    * key. We need then the primary key information in order to exclude it from the building
    *
    * @param metaDataDef
    */
-  private static void buildUniqueKey(TableDef metaDataDef) {
+  private static void buildUniqueKey(RelationDef metaDataDef) {
 
     // Collect all data first because we need all columns that make a unique key before
     // building the object
@@ -444,15 +453,19 @@ public class Jdbcs {
 
       // We don't want the unique index of the primary key
       PrimaryKeyDef primaryKeyDef = metaDataDef.getPrimaryKey();
-      if (primaryKeyDef!=null) {
+      if (primaryKeyDef != null) {
         if (primaryKeyDef.getColumns().equals(columnDefs)) {
           continue;
         }
       }
 
       // Construct the unique key
-      UniqueKeyDef uniqueKey = metaDataDef.getOrCreateUniqueKey(columnDefs.toArray(new ColumnDef[0]));
-      uniqueKey.name(indexName);
+
+      String[] columnNames = columnDefs
+        .stream()
+        .map(ColumnDef::getColumnName)
+        .toArray(String[]::new);
+      metaDataDef.addUniqueKey(indexName, columnNames);
 
     }
 
@@ -616,7 +629,6 @@ public class Jdbcs {
 
 
   }
-
 
 
   /**

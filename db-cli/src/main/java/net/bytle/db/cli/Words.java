@@ -73,7 +73,7 @@ public class Words {
     static final String HELP = "help";
 
     // Options
-    public static final String GLOB_PATERN_DATADEF_FILE = "data-def";
+    public static final String GLOB_PATTERN_DATADEF_FILE = "data-def";
     public static final String NOT_STRICT = "no-strict";
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";

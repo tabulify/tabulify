@@ -256,7 +256,7 @@ public class Tabulars {
    * @param dataPath
    * @return if the data path locate a document
    * <p>
-   * The counter part is {@link #isContainer(DataPath)}
+   * The counter part is {@link #isContainer(DataPathAbs)}
    */
   public static boolean isDocument(DataPath dataPath) {
     return dataPath.getDataStore().getDataSystem().isDocument(dataPath);
@@ -468,7 +468,7 @@ public class Tabulars {
   public static DataPath extractHead(DataPath source, DataPath target, Integer limit) {
 
     // Structure
-    if (target.getDataDef().getColumnDefs().size() == 0) {
+    if (target.getDataDef().getColumnsSize() == 0) {
       DataDefs.copy(source.getDataDef(), target.getDataDef());
     } else {
       assertEqualsColumnsDefinition(source, target);
@@ -498,7 +498,7 @@ public class Tabulars {
   public static DataPath extractTail(DataPath source, DataPath target, Integer limit) {
 
     // Structure
-    if (target.getDataDef().getColumnDefs().size() == 0) {
+    if (target.getDataDef().getColumnsSize() == 0) {
       DataDefs.copy(source.getDataDef(), target.getDataDef());
     } else {
       assertEqualsColumnsDefinition(source, target);

@@ -3,15 +3,19 @@ package net.bytle.db.csv;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
 
 public class CsvManagerProvider extends FsFileManagerProvider {
   private CsvManager csvManager;
 
   @Override
-  public List<String> getContentType() {
-    return Arrays.asList("csv");
+  public Boolean accept(Path path) {
+
+    if (path.toString().toLowerCase().endsWith("csv")){
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override

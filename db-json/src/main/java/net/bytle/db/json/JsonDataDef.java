@@ -21,7 +21,7 @@ public class JsonDataDef extends TableDef {
   }
 
   @Override
-  public List<ColumnDef> getColumnDefs() {
+  public List<net.bytle.db.gen.GenColumnDef> getColumnDefs() {
     buildColumnNamesIfNeeded();
     return super.getColumnDefs();
   }

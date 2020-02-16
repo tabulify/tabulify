@@ -1,6 +1,7 @@
 package net.bytle.db.csv;
 
 
+import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
@@ -13,7 +14,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Implementation of the CSV format
@@ -79,6 +79,7 @@ public class CsvDataDef extends TableDef {
    * See {@link #setCommentCharacter(char)}
    */
   private Character commentCharacter = '#';
+  private boolean columnsWereBuild = false;
 
   /**
    * Set the comment character
@@ -195,7 +196,7 @@ public class CsvDataDef extends TableDef {
   }
 
   @Override
-  public List<ColumnDef> getColumnDefs() {
+  public ColumnDef[] getColumnDefs() {
     buildColumnNamesIfNeeded();
     return super.getColumnDefs();
   }
@@ -213,6 +214,12 @@ public class CsvDataDef extends TableDef {
   }
 
   @Override
+  public int getColumnsSize() {
+    buildColumnNamesIfNeeded();
+    return super.getColumnsSize();
+  }
+
+  @Override
   public CsvDataPath getDataPath() {
     return fsDataPath;
   }
@@ -223,8 +230,8 @@ public class CsvDataDef extends TableDef {
    */
   private void buildColumnNamesIfNeeded() {
 
-    if (super.getColumnDefs().size() == 0) {
-
+    if (!columnsWereBuild) {
+      columnsWereBuild = true;
       if (Files.exists(fsDataPath.getNioPath())) {
         try (
           CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
@@ -265,7 +272,7 @@ public class CsvDataDef extends TableDef {
 
   /**
    * The format of the CSV file excepts the header
-   * that is handled in the function {@link CsvManager#create(CsvDataPath)}
+   * that is handled in the function {@link CsvManager#create(FsDataPath)}
    * This way we doesn't overwrite the file and we can add rows in an existing Csv file
    *
    * @return the Apache common Csv Format

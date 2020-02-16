@@ -134,7 +134,7 @@ public class CsvSelectStream extends SelectStreamAbs {
   @Override
   public Object getObject(int columnIndex) {
     if (columnIndex > currentRecord.size() - 1) {
-      final int size = csvDataPath.getDataDef().getColumnDefs().size();
+      final int size = csvDataPath.getDataDef().getColumnsSize();
       if (currentRecord.size() > size) {
         throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
       } else {

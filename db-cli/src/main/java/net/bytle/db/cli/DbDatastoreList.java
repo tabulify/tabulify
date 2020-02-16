@@ -7,7 +7,7 @@ import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import org.slf4j.Logger;
@@ -58,7 +58,7 @@ public class DbDatastoreList {
     final List<DataStore> datastore = datastoreVault.getDataStores(names);
 
     // Creating a table to use the print function
-    TableDef databaseInfo = Tabular.tabular().getDataPath("databases")
+    RelationDef databaseInfo = Tabular.tabular().getDataPath("databases")
       .getDataDef()
       .addColumn("Name")
       .addColumn("Login")

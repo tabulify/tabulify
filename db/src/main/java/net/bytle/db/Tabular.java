@@ -4,6 +4,7 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
@@ -103,8 +104,14 @@ public class Tabular implements AutoCloseable {
     }
     DataUri dataUriObj = DataUri.of(dataUri);
     String dataStoreName = dataUriObj.getDataStore();
-    DataPath dataUriPath = getDataStore(dataStoreName)
-      .getDataPath(dataUriObj.getPath());
+    String path = dataUriObj.getPath();
+    DataStore dataStore = getDataStore(dataStoreName);
+    DataPath dataUriPath;
+    if (path != null) {
+      dataUriPath = dataStore.getDataPath(path);
+    } else {
+      dataUriPath = dataStore.getCurrentDataPath();
+    }
 
     // Second argument to get the childs
     for (int i = 0; i < parts.length; i++) {
@@ -281,7 +288,7 @@ public class Tabular implements AutoCloseable {
     return getDefaultDataStore().createOrMergeDataPathOfDataDef(dataDefPath);
   }
 
-  public DataPath getDataPathOfDataDef(String name, TableDef datadef) {
+  public DataPath getDataPathOfDataDef(String name, RelationDef datadef) {
     return getDefaultDataStore().getCurrentDataPath().getChild(name, datadef);
   }
 

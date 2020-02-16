@@ -30,7 +30,7 @@ public class FsFileManager  {
   }
 
 
-  public SelectStream getSelectStream(FsDataPath fsDataPath){
+  public SelectStream getSelectStream(FsRawDataPath fsDataPath){
     throw new RuntimeException("This file ("+ fsDataPath + ") has no known structure and/or manager and therefore can't return a select stream");
   }
 
@@ -39,7 +39,7 @@ public class FsFileManager  {
   }
 
   public FsDataPath createDataPath(FsDataStore fsDataStore, Path path) {
-    return FsDataPath.of(fsDataStore, path);
+    return FsRawDataPath.of(fsDataStore, path);
   }
 
   /**

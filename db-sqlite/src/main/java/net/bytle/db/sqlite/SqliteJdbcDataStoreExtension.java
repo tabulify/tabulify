@@ -75,14 +75,14 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
     List<String> statements = new ArrayList<>();
     StringBuilder statement = new StringBuilder();
     statement.append("CREATE TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (\n");
-    TableDef tableDef = dataPath.getDataDef();
+    RelationDef tableDef = dataPath.getDataDef();
     if (tableDef == null) {
       throw new RuntimeException("The dataPath (" + dataPath.toString() + ") has no columns definitions. We can't create a table from then");
     }
-    for (int i = 0; i < tableDef.getColumnDefs().size(); i++) {
-      ColumnDef columnDef = tableDef.getColumnDefs().get(i);
+    for (int i = 0; i < tableDef.getColumnsSize(); i++) {
+      ColumnDef columnDef = tableDef.getColumnDef(i);
       statement.append(DbDdl.getColumnStatementForCreateTable(columnDef));
-      if (i != tableDef.getColumnDefs().size() - 1) {
+      if (i != tableDef.getColumnsSize() - 1) {
         statement.append(",\n");
       }
     }
@@ -237,7 +237,7 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
    * @return true if the columns were added to the table
    */
   @Override
-  public boolean addColumns(TableDef tableDef) {
+  public boolean addColumns(RelationDef tableDef) {
 
     // Because the driver returns 20000000 and no data type name
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();

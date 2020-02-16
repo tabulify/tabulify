@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * Created by gerard on 29-01-2016.

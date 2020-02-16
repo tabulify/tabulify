@@ -2,6 +2,7 @@ package net.bytle.db.tpc;
 
 import net.bytle.db.model.TableDef;
 import net.bytle.db.sample.SchemaSample;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 
@@ -1238,13 +1239,13 @@ public class TpcdsModel implements SchemaSample {
      * @param tableName - one of the static constant field that represents a table name
      * @return - the definition of this table
      */
-    public DataPath getAndCreateDataPath(String tableName) {
+    public DataPathAbs getAndCreateDataPath(String tableName) {
 
         return tables.get(tableName);
     }
 
     @Override
-    public List<DataPath> getAndCreateDataPaths(String... tableNames) {
+    public List<DataPath> getDataPaths(String... tableNames) {
 
         return Arrays.stream(tableNames).map(name -> tables.get(name)).collect(Collectors.toList());
 

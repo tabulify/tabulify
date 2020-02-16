@@ -1,6 +1,7 @@
 package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.model.ColumnDef;
@@ -12,6 +13,7 @@ import org.apache.commons.csv.CSVPrinter;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 public class CsvManager extends FsFileManager {
 
@@ -31,7 +33,7 @@ public class CsvManager extends FsFileManager {
     CsvDataDef csvDataDef = csvDataPath.getDataDef();
     CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
     if (csvDataDef.getHeaderRowCount() > 0) {
-      final String[] headers = csvDataDef.getColumnDefs().stream()
+      final String[] headers = Arrays.stream(csvDataDef.getColumnDefs())
         .map(ColumnDef::getColumnName).toArray(String[]::new);
       if (headers.length != 0) {
         csvFormat = csvFormat.withHeader(headers);
@@ -53,7 +55,7 @@ public class CsvManager extends FsFileManager {
 
 
   @Override
-  public SelectStream getSelectStream(FsDataPath fsDataPath) {
+  public SelectStream getSelectStream(FsRawDataPath fsDataPath) {
     return CsvSelectStream.of((CsvDataPath) fsDataPath);
   }
 

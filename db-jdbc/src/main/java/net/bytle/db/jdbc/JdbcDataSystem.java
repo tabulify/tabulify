@@ -1,14 +1,18 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +26,7 @@ import java.util.List;
 public class JdbcDataSystem extends TableSystem {
 
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDataSystem.class);
 
 
   private JdbcDataProcessingEngine processingEngine;
@@ -209,13 +214,15 @@ public class JdbcDataSystem extends TableSystem {
       Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement()
     ) {
 
-      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Dropping " + jdbcDataPath.getType() + " " + dataPath.toString());
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Trying to drop " + jdbcDataPath.getType() + " " + dataPath.toString());
       statement.execute(dropTableStatement.toString());
       JdbcDataSystemLog.LOGGER_DB_JDBC.info(jdbcDataPath.getType() + " " + dataPath.toString() + " dropped");
 
     } catch (SQLException e) {
-      System.err.println(dropTableStatement);
-      throw new RuntimeException(e);
+      String msg = Strings.multiline( "Dropping of the data path ("+jdbcDataPath+") was not successful with the statement `"+dropTableStatement.toString()+"`"
+        , "Cause: "+e.getMessage());
+      LOGGER.error(msg);
+      throw new RuntimeException(msg, e);
     }
 
   }
@@ -284,7 +291,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
   /**
-   * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPath, DataPath)}
+   * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPathAbs, DataPathAbs)}
    * The checks on source and target are already done on the calling function
    *
    * @param source

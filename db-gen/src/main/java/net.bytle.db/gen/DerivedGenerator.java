@@ -167,16 +167,16 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
      * @param dataGeneration - The context object (giving access to the build method and other context method)
      * @return a data generator for chaining
      */
-    static public <T> DerivedGenerator<T> of(ColumnDef<T> columnDef, DataGeneration dataGeneration) {
+    static public <T> DerivedGenerator<T> of(GenColumnDef<T> columnDef, GenSelectStream dataGeneration) {
 
-        Map<String, Object> properties = DataGeneration.getProperties(columnDef);
+        Map<String, Object> properties = columnDef.getProperties(columnDef);
         // Parent Generator
         final String columnParentKeyProperty = "ColumnParent";
         String columnName = (String) Maps.getPropertyCaseIndependent(properties,columnParentKeyProperty);
         if (columnName == null) {
             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
         }
-        ColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnName);
+        GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnName);
         DataGenerator parentGenerator = dataGeneration.getDataGenerator(columnParent);
         if (parentGenerator == null) {
             if (columnDef.equals(columnParent)) {

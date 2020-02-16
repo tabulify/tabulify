@@ -94,14 +94,19 @@ public class FsTableSystem extends TableSystem {
   public Boolean exists(DataPath dataPath) {
 
     final FsDataPath fsDataPath = (FsDataPath) dataPath;
-    return Files.exists(fsDataPath.getNioPath());
+    Path nioPath = fsDataPath.getNioPath();
+    if (nioPath==null){
+      return false;
+    } else {
+      return Files.exists(nioPath);
+    }
 
   }
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
 
-    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    FsRawDataPath fsDataPath = (FsRawDataPath) dataPath;
     return getFileManager(fsDataPath).getSelectStream(fsDataPath);
 
   }
@@ -114,11 +119,10 @@ public class FsTableSystem extends TableSystem {
    * @return
    */
   public FsFileManager getFileManager(Path path) {
-    String contentType = Fs.getExtension(path.toString());
     FsFileManager fileManager = null;
     List<FsFileManagerProvider> installedProviders = FsFileManagerProvider.installedProviders();
     for (FsFileManagerProvider structProvider : installedProviders) {
-      if (structProvider.getContentType().contains(contentType)) {
+      if (structProvider.accept(path)) {
         fileManager = structProvider.getFsFileManager();
         if (fileManager == null) {
           String message = "The returned file manager is null for the provider (" + structProvider.getClass().toString() + ")";
@@ -129,7 +133,7 @@ public class FsTableSystem extends TableSystem {
     }
     if (fileManager == null) {
       if (Files.isRegularFile(path)) {
-        DbLoggers.LOGGER_DB_ENGINE.warning("The content type (" + contentType + ") of the file is unknown and got therefore the default file manager. Path (" + path + ")");
+        DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
         fileManager = FsFileManager.of();
       } else {
         fileManager = FsDirectoryManager.of();
@@ -285,8 +289,8 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
-    FsDataPath fsSource = (FsDataPath) source;
-    FsDataPath fsTarget = (FsDataPath) target;
+    FsRawDataPath fsSource = (FsRawDataPath) source;
+    FsRawDataPath fsTarget = (FsRawDataPath) target;
     TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
       .startTimer();
     try {

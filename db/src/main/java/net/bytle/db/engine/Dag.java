@@ -1,6 +1,7 @@
 package net.bytle.db.engine;
 
 
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -36,7 +37,7 @@ public class Dag {
   private Boolean withDependency = false;
 
   /**
-   * You may also use the {@link ForeignKeyDag#get(DataPath)} function
+   * You may also use the {@link ForeignKeyDag#get(DataPathAbs)} function
    */
   Dag(String dependencyType) {
     this.dependencyType = dependencyType;

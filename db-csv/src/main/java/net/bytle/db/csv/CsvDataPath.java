@@ -1,12 +1,12 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsDataStore;
 
 import java.nio.file.Path;
 
 
-public class CsvDataPath extends FsDataPath {
+public class CsvDataPath extends FsRawDataPath {
 
   public CsvDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);

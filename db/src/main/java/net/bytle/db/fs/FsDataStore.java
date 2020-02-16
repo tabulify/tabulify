@@ -1,7 +1,7 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 
 import java.net.URI;
@@ -58,7 +58,7 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getQueryDataPath(String query) {
+  public DataPathAbs getQueryDataPath(String query) {
     throw new RuntimeException("Query is not yet supported on file");
   }
 
@@ -102,7 +102,7 @@ public class FsDataStore extends DataStore {
   @Override
   public FsDataPath getCurrentDataPath() {
     Path currentPath = Paths.get(connectionString);
-    return new FsDataPath(this, currentPath);
+    return new FsRawDataPath(this, currentPath);
   }
 
 }

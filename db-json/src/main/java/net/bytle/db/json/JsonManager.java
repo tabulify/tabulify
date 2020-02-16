@@ -1,6 +1,7 @@
 package net.bytle.db.json;
 
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsTableSystem;
 import net.bytle.db.stream.SelectStream;
@@ -18,7 +19,7 @@ public class JsonManager extends FsFileManager {
 
 
   @Override
-  public SelectStream getSelectStream(FsDataPath fsDataPath) {
+  public SelectStream getSelectStream(FsRawDataPath fsDataPath) {
     return new JsonSelectStream((JsonDataPath) fsDataPath);
   }
 

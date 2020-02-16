@@ -46,7 +46,7 @@ public abstract class TableSystem {
    * @param dataPath
    * @return true if the data path locate a document
    * <p>
-   * The opposite is {@link #isContainer(DataPath)}
+   * The opposite is {@link #isContainer(DataPathAbs)}
    */
   public abstract boolean isDocument(DataPath dataPath);
 

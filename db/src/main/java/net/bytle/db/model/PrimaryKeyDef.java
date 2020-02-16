@@ -7,13 +7,14 @@ import java.util.stream.Collectors;
 
 public class PrimaryKeyDef {
 
-    private final TableDef tableDef;
+    private final RelationDef tableDef;
     private String name;
     private String[] columnNames;
 
-    public static PrimaryKeyDef of(TableDef tableDef, String... columnNames) {
+    public static PrimaryKeyDef of(RelationDef tableDef, String... columnNames) {
         assert tableDef != null;
         assert columnNames.length > 0;
+        assert columnNames[0]!=null:"A column name must not be null";
 
         return new PrimaryKeyDef(tableDef,columnNames);
     }
@@ -23,18 +24,18 @@ public class PrimaryKeyDef {
     }
 
     /**
-     * Use {@link #PrimaryKeyDef(TableDef, String...)}
+     * Use {@link #PrimaryKeyDef(RelationDef, String...)}
      */
     PrimaryKeyDef(){
         throw new RuntimeException("Don't use this");
     }
 
-    private PrimaryKeyDef(TableDef tableDef, String... columnNames) {
+    private PrimaryKeyDef(RelationDef tableDef, String... columnNames) {
         this.columnNames = columnNames;
         this.tableDef = tableDef;
     }
 
-    public TableDef getDataDef() {
+    public RelationDef getDataDef() {
         return tableDef;
     }
 
@@ -65,4 +66,9 @@ public class PrimaryKeyDef {
         result = 31 * result + Arrays.hashCode(columnNames);
         return result;
     }
+
+  @Override
+  public String toString() {
+    return "PrimaryKey of " + tableDef.getDataPath() + " (" + Arrays.toString(columnNames) +")";
+  }
 }

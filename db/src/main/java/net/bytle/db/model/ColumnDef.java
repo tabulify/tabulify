@@ -20,7 +20,7 @@ import java.util.Set;
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#columns">Web tabular model Columns</a>
  * @see <a href="https://www.w3.org/TR/2015/REC-tabular-metadata-20151217/#columns">Web tabular metadata Columns</a>
  */
-public class ColumnDef<T> implements Comparable<ColumnDef> {
+public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
 
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
@@ -45,7 +45,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
   private int nullable = DatabaseMetaData.columnNullable;
   private Boolean isAutoincrement = false;
   private Boolean isGeneratedColumn = false;
-  private TableDef dataDef;
+  private RelationDef dataDef;
   private int columnPosition;
   private String fullyQualifiedName;
 
@@ -70,7 +70,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
    *
    * @param dataDef
    */
-  ColumnDef(TableDef dataDef, String columnName, Class<T> clazz) {
+  public ColumnDef(RelationDef dataDef, String columnName, Class<T> clazz) {
 
     this.dataDef = dataDef;
     this.columnName = columnName;
@@ -114,7 +114,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
     return scale;
   }
 
-  public TableDef getDataDef() {
+  public RelationDef getDataDef() {
     return dataDef;
   }
 
@@ -141,8 +141,9 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
   }
 
-  public void setColumnPosition(int columnPosition) {
+  public ColumnDef setColumnPosition(int columnPosition) {
     this.columnPosition = columnPosition;
+    return this;
   }
 
   public Integer getColumnPosition() {
@@ -162,8 +163,9 @@ public class ColumnDef<T> implements Comparable<ColumnDef> {
 
   public ColumnDef setNullable(Boolean nullable) {
 
-    assert nullable != null;
-    setNullable(nullable ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
+    if ( nullable != null ) {
+      setNullable(nullable ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
+    }
     return this;
 
   }

@@ -1,0 +1,2 @@
+net.bytle.db.memory.list.MemoryListManagerProvider
+net.bytle.db.memory.queue.MemoryQueueManagerProvider

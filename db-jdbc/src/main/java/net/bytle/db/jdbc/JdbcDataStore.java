@@ -3,7 +3,7 @@ package net.bytle.db.jdbc;
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.SqlDataType;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.TableSystem;
 import org.slf4j.Logger;
@@ -175,7 +175,7 @@ public class JdbcDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getQueryDataPath(String query) {
+  public DataPathAbs getQueryDataPath(String query) {
     return JdbcDataPath.ofQuery(this, query);
   }
 
@@ -326,7 +326,11 @@ public class JdbcDataStore extends DataStore {
   public String getCurrentCatalog() {
     try {
 
-      return this.getCurrentConnection().getCatalog();
+      String catalog = this.getCurrentConnection().getCatalog();
+      if (catalog !=null && catalog.equals("")){
+        catalog = null;
+      }
+      return catalog;
 
     } catch (SQLException e) {
       throw new RuntimeException(e);

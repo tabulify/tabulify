@@ -1,7 +1,7 @@
 package net.bytle.db.tpc;
 
 import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 
 import static net.bytle.db.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY;
@@ -21,7 +21,7 @@ public class TpcDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getDataPath(String... names) {
+  public DataPathAbs getDataPath(String... names) {
     if (names.length > 1) {
       throw new RuntimeException("There is two much names to define the path. It should be only one of word such as " + TpcdsModel.storeSalesTables);
     }
@@ -34,12 +34,12 @@ public class TpcDataStore extends DataStore {
   }
 
   @Override
-  public DataPath getCurrentDataPath() {
+  public DataPathAbs getCurrentDataPath() {
     return new TpcDataPath(this, CURRENT_WORKING_DIRECTORY);
   }
 
   @Override
-  public DataPath getQueryDataPath(String query) {
+  public DataPathAbs getQueryDataPath(String query) {
     throw new RuntimeException("The tpc data source does not support query");
   }
 

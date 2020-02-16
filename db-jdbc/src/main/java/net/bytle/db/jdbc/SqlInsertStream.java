@@ -3,7 +3,6 @@ package net.bytle.db.jdbc;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
@@ -18,7 +17,7 @@ import java.util.List;
 public class SqlInsertStream extends InsertStreamAbs implements InsertStream, AutoCloseable {
 
   public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
-  private final TableDef targetMetaDef;
+  private final RelationDef targetMetaDef;
   private final JdbcDataPath jdbcDataPath;
 
   private PreparedStatement preparedStatement;
@@ -47,7 +46,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   @Override
   public InsertStream insert(List<Object> values) {
 
-    final int columnsSize = this.jdbcDataPath.getDataDef().getColumnDefs().size();
+    final int columnsSize = this.jdbcDataPath.getDataDef().getColumnsSize();
     final int valuesSize = values.size();
     assert valuesSize == columnsSize : "The number of values to insert (" + valuesSize + ") is not the same than the number of columns (" + columnsSize + ")";
 

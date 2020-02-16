@@ -1,13 +1,14 @@
 package net.bytle.db.tpc;
 
 import com.teradata.tpcds.Table;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.uri.DataUri;
 
 import java.util.Collections;
 import java.util.List;
 
-public class TpcDataPath extends DataPath {
+public class TpcDataPath extends DataPathAbs {
 
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";

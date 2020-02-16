@@ -1,8 +1,8 @@
 package net.bytle.db.jdbc;
 
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SqlDataType;
-import net.bytle.db.model.TableDef;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public abstract class JdbcDataStoreExtension {
    * @param tableDef
    * @return true if implemented / false or null if not implemented
    */
-  protected Boolean addPrimaryKey(TableDef tableDef) {
+  protected Boolean addPrimaryKey(RelationDef tableDef) {
     return false;
   }
 
@@ -94,7 +94,7 @@ public abstract class JdbcDataStoreExtension {
    * @param tableDef
    * @return true if implemented / false or null if not implemented
    */
-  protected Boolean addForeignKey(TableDef tableDef) {
+  protected Boolean addForeignKey(RelationDef tableDef) {
     return false;
   }
 
@@ -106,7 +106,7 @@ public abstract class JdbcDataStoreExtension {
    * @param tableDef
    * @return true if the columns were added to the table
    */
-  protected boolean addColumns(TableDef tableDef){
+  protected boolean addColumns(RelationDef tableDef){
     return false;
   }
 
