@@ -60,13 +60,13 @@ public abstract class DataSetSystem extends TableSystem {
 
   public abstract Boolean isEmpty(DataPath queue);
 
-  public abstract Integer size(DataPath dataPath);
+  public abstract long size(DataPath dataPath);
 
   /**
    * @param dataPath
    * @return true if the data path locate a document
    * <p>
-   * The opposite is {@link #isContainer(DataPathAbs)}
+   * The opposite is {@link #isContainer(DataPath)}
    */
   public abstract boolean isDocument(DataPath dataPath);
 

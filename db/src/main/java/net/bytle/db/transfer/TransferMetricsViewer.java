@@ -74,7 +74,7 @@ public class TransferMetricsViewer implements Runnable {
 
                 String timeMillis = getCurrentTimeStamp();
 
-                int size = Tabulars.getSize(queue);
+                long size = Tabulars.getSize(queue);
                 String bufferSizeCsv = timeMillis + ", Buffer Size, " + size;
                 outputStream.write(bufferSizeCsv);
                 outputStream.newLine();
@@ -83,7 +83,7 @@ public class TransferMetricsViewer implements Runnable {
                 outputStream.write(bufferMaxSizeCsv);
                 outputStream.newLine();
 
-                Double ratio = Double.valueOf(size) / this.queueSize * 100;
+                double ratio = (double) size / this.queueSize * 100;
                 String bufferRatioCsv = timeMillis + ", Buffer Ratio, " + ratio;
                 outputStream.write(bufferRatioCsv);
                 outputStream.newLine();

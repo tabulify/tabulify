@@ -86,9 +86,9 @@ public class JdbcDataSystem extends TableSystem {
   }
 
   @Override
-  public Integer size(DataPath dataPath) {
+  public long size(DataPath dataPath) {
 
-    Integer size = 0;
+    long size = 0;
     DataPath queryDataPath = dataPath.getDataStore().getQueryDataPath("select count(1) from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     try (
       SelectStream selectStream = getSelectStream(queryDataPath)

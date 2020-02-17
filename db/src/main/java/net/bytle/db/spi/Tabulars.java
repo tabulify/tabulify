@@ -244,8 +244,7 @@ public class Tabulars {
   }
 
 
-  // TODO: long !!!!!
-  public static int getSize(DataPath dataPath) {
+  public static long getSize(DataPath dataPath) {
     if (!Tabulars.exists(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
     }

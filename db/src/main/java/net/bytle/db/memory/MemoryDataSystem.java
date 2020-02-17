@@ -80,10 +80,10 @@ public class MemoryDataSystem extends TableSystem {
 
 
   @Override
-  public Integer size(DataPath dataPath) {
+  public long size(DataPath dataPath) {
 
     MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
-    return Math.toIntExact(getManager(memoryDataPath).size(memoryDataPath));
+    return getManager(memoryDataPath).size(memoryDataPath);
 
   }
 

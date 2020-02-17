@@ -243,7 +243,7 @@ public class DataGeneration {
           DataPath parentDataUnit = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
           if (!tablesToLoad.keySet().contains(parentDataUnit)) {
 
-            Integer rows = Tabulars.getSize(parentDataUnit);
+            long rows = Tabulars.getSize(parentDataUnit);
             if (rows == 0) {
               if (this.loadParent) {
                 LOGGER.info("The table (" + parentDataUnit.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
@@ -277,7 +277,7 @@ public class DataGeneration {
 
       // The number of row may be trimmed if the generator cannot generate them
       // or if there is already rows in the table
-      Integer numberOfRowToInsert = getNumberOfRowToInsert(dataPath);
+      long numberOfRowToInsert = getNumberOfRowToInsert(dataPath);
 
       if (numberOfRowToInsert > 0) {
         LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
@@ -320,7 +320,7 @@ public class DataGeneration {
    * @param dataPath
    * @return
    */
-  private Integer getNumberOfRowToInsert(DataPath dataPath) {
+  private long getNumberOfRowToInsert(DataPath dataPath) {
 
 
     // Select the data generators only for this table
@@ -332,7 +332,7 @@ public class DataGeneration {
         .collect(Collectors.toList());
 
     // Precision of a sequence (Pk of unique col) make that we cannot insert the number of rows that we want
-    Integer maxNumberOfRowToInsert = 0;
+    long maxNumberOfRowToInsert = 0;
     for (CollectionGenerator dataGenerator : dataGeneratorsForTable) {
       final Integer maxGeneratedValues = (dataGenerator.getMaxGeneratedValues()).intValue();
       if (maxNumberOfRowToInsert == 0) {
@@ -345,8 +345,8 @@ public class DataGeneration {
     }
 
     final Integer totalRows = tablesToLoad.get(dataPath);
-    Integer numberOfRowToInsert = totalRows;
-    if (numberOfRowToInsert == null) {
+    long numberOfRowToInsert = 0;
+    if (totalRows == null) {
       if (maxNumberOfRowToInsert < MAX_INSERT) {
         numberOfRowToInsert = maxNumberOfRowToInsert;
       } else {
@@ -362,7 +362,7 @@ public class DataGeneration {
       throw new RuntimeException(msg);
     }
 
-    Integer numberOfRows = Tabulars.getSize(dataPath);
+    long numberOfRows = Tabulars.getSize(dataPath);
     if (numberOfRows != 0) {
       numberOfRowToInsert = numberOfRowToInsert - numberOfRows;
       if (numberOfRowToInsert <= 0) {

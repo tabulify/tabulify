@@ -41,7 +41,7 @@ public class GenMemManager implements MemoryVariableManager {
   public long size(MemoryDataPath memoryDataPath) {
 
     DataGenerator dataGenerator =  DataGenerator.of((GenDataPath) memoryDataPath);
-    return 0;
+    return dataGenerator.getMaxSize();
 
   }
 
