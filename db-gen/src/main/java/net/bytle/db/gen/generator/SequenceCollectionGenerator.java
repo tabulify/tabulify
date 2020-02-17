@@ -1,6 +1,7 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 
+import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 
@@ -32,7 +33,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * * values in case of a list of data (may be null)
  */
 
-public class SequenceGenerator<T> implements DataGenerator<T> {
+public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
 
 
   private final ColumnDef<T> columnDef;
@@ -61,7 +62,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
   /**
    * @param columnDef
    */
-  public SequenceGenerator(ColumnDef<T> columnDef) {
+  public SequenceCollectionGenerator(ColumnDef<T> columnDef) {
 
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
@@ -103,9 +104,9 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
    * @param <T>
    * @return
    */
-  public static <T> SequenceGenerator<T> of(ColumnDef<T> columnDef) {
+  public static <T> SequenceCollectionGenerator<T> of(ColumnDef<T> columnDef) {
 
-    SequenceGenerator<T> sequenceGenerator = new SequenceGenerator<>(columnDef);
+    SequenceCollectionGenerator<T> sequenceGenerator = new SequenceCollectionGenerator<>(columnDef);
 
     Map<String, Object> properties = DataGeneration.getProperties(columnDef);
     if (properties != null) {
@@ -249,7 +250,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
    * @param start is the start value
    * @return
    */
-  public SequenceGenerator start(T start) {
+  public SequenceCollectionGenerator start(T start) {
 
     // When checking the minValue date in a table, the returned value may be null
     // for the sake of simplicity we are not throwing an error
@@ -286,14 +287,14 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
     return this;
   }
 
-  public SequenceGenerator<T> step(Integer step) {
+  public SequenceCollectionGenerator<T> step(Integer step) {
 
     this.step = step;
     return this;
 
   }
 
-  public SequenceGenerator max(Integer max) {
+  public SequenceCollectionGenerator max(Integer max) {
     this.maxValue = max;
     return this;
   }
@@ -340,7 +341,7 @@ public class SequenceGenerator<T> implements DataGenerator<T> {
    * @param values
    * @return
    */
-  public SequenceGenerator<T> values(List<Object> values) {
+  public SequenceCollectionGenerator<T> values(List<Object> values) {
     if (clazz == String.class) {
       this.values = values;
       maxValue = this.values.size();

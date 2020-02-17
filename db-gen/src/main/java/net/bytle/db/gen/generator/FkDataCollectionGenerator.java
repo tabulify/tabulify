@@ -1,4 +1,4 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.model.ColumnDef;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class FkDataGenerator implements DataGenerator {
+public class FkDataCollectionGenerator implements CollectionGenerator {
 
 
     private final ForeignKeyDef foreignKeyDef;
@@ -22,7 +22,7 @@ public class FkDataGenerator implements DataGenerator {
     /**
      * Get a random foreign value when the {@link #getNewValue()} is called
      */
-    public FkDataGenerator(ForeignKeyDef foreignKeyDef) {
+    public FkDataCollectionGenerator(ForeignKeyDef foreignKeyDef) {
 
         this.foreignKeyDef = foreignKeyDef;
 

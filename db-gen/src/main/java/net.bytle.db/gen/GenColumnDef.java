@@ -1,5 +1,6 @@
 package net.bytle.db.gen;
 
+import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Maps;
@@ -57,7 +58,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return new GenColumnDef<T>(genDataDef, columnName, clazz);
   }
 
-  public DataGenerator getGenerator() {
+  public CollectionGenerator getGenerator() {
     return null;
   }
 

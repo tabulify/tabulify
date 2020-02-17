@@ -1,7 +1,8 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.engine.Columns;
+import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.SqlDataType;
 
@@ -10,11 +11,11 @@ import java.sql.Date;
 import java.util.*;
 
 
-public class UniqueDataGenerator implements DataGenerator {
+public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
 
 
-    private Map<ColumnDef,DataGenerator> dataGeneratorMap = new HashMap<>();
+    private Map<ColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
 
     Integer position = new Integer(0);
 
@@ -23,38 +24,38 @@ public class UniqueDataGenerator implements DataGenerator {
      * the {@link #getNewValue()} is called
      * @param columnDefs
      */
-    public UniqueDataGenerator(List<ColumnDef> columnDefs) {
+    public UniqueDataCollectionGenerator(List<GenColumnDef> columnDefs) {
 
         // long numberOfValueToGenerateByColumn = Math.floorDiv((long) numberOfRowToInsert,(long) columnDefs.size());
 
         // Creating a data generator by column
         // and adding it to the data generator map variable
-        for(ColumnDef columnDef: columnDefs) {
+        for(GenColumnDef columnDef: columnDefs) {
 
             if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 // With date, we are going in the past
                 ColumnDef<Date> dateColumn = Columns.safeCast(columnDef,Date.class);
                 Date minDate = Columns.getMin(dateColumn);
-                dataGeneratorMap.put(columnDef,SequenceGenerator.of(dateColumn).start(minDate).step(-1));
+                dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(dateColumn).start(minDate).step(-1));
 
             } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 if (columnDef.getClazz()== BigDecimal.class){
                     ColumnDef<BigDecimal> bigDecimalColumnDef = Columns.safeCast(columnDef, BigDecimal.class);
                     BigDecimal intCounter = Columns.getMax(bigDecimalColumnDef);
-                    dataGeneratorMap.put(columnDef, SequenceGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
+                    dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
                 } else {
                     ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef, Integer.class);
                     Integer intCounter = Columns.getMax(integerColumn);
-                    dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter).step(1));
+                    dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(integerColumn).start(intCounter).step(1));
                 }
 
             } else if ( SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 ColumnDef<String> stringColumn = Columns.safeCast(columnDef,String.class);
                 String s = Columns.getMax(stringColumn);
-                dataGeneratorMap.put(columnDef,SequenceGenerator.of(stringColumn).start(s));
+                dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(stringColumn).start(s));
 
             } else {
 
@@ -140,8 +141,8 @@ public class UniqueDataGenerator implements DataGenerator {
     public Object getNewValue(ColumnDef columnDef) {
 
 
-        final DataGenerator dataGenerator = dataGeneratorMap.get(columnDef);
-        return dataGenerator.getNewValue(columnDef);
+        final CollectionGenerator dataCollectionGenerator = dataGeneratorMap.get(columnDef);
+        return dataCollectionGenerator.getNewValue(columnDef);
 
     }
 

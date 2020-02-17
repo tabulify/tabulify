@@ -1,9 +1,10 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.gen.GenSelectStream;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 

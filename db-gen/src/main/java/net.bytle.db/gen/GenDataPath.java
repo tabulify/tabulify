@@ -1,10 +1,11 @@
 package net.bytle.db.gen;
 
-/**
- *
- */
-public interface GenDataPath  {
+import net.bytle.db.spi.DataPath;
 
+/**
+ * A generator data path
+ */
+public interface GenDataPath extends DataPath {
 
   GenDataDef getDataDef();
 

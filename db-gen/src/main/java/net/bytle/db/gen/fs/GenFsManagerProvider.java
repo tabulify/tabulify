@@ -1,4 +1,4 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;

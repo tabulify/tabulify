@@ -1,5 +1,7 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.memory;
 
+import net.bytle.db.gen.GenDataDef;
+import net.bytle.db.gen.GenDataPath;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.memory.MemoryDataPathAbs;
 import net.bytle.db.memory.MemoryDataStore;
@@ -10,17 +12,18 @@ import net.bytle.db.memory.MemoryDataStore;
  *
  * If you use a file, use the {@link GenDataPath}
  */
-public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath {
+public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath, GenDataPath {
 
 
   private static MemoryDataStore memoryDataStore;
+  private GenDataDef genDataDef;
 
   public GenMemDataPath(MemoryDataStore memoryDataStore, String path) {
     super(memoryDataStore, path);
   }
 
 
-  protected static GenMemDataPath of(String path) {
+  public static GenMemDataPath of(String path) {
     if (memoryDataStore == null){
       memoryDataStore = new MemoryDataStore("gen", "gen");
     }
@@ -29,7 +32,10 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath 
 
   @Override
   public GenDataDef getDataDef() {
-    return new GenDataDef(this);
+    if (genDataDef == null){
+      genDataDef = new GenDataDef(this);
+    }
+    return genDataDef;
   }
 
   @Override

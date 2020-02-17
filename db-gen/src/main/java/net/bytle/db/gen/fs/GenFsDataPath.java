@@ -1,8 +1,10 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsRawDataPath;
+import net.bytle.db.gen.GenDataDef;
+import net.bytle.db.gen.GenDataPath;
 
 import java.nio.file.Path;
 

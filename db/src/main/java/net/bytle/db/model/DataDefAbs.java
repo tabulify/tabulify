@@ -298,7 +298,7 @@ public abstract class DataDefAbs implements RelationDef {
 
 
   @Override
-  public DataPathAbs getDataPath() {
+  public DataPath getDataPath() {
     return dataPath;
   }
 

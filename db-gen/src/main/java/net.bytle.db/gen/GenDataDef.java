@@ -124,4 +124,10 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   public Set<GenColumnDef> getGenColumnsDef() {
     return genColumns;
   }
+
+
+  @Override
+  public GenDataPath getDataPath() {
+    return (GenDataPath) super.getDataPath();
+  }
 }

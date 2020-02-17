@@ -1,4 +1,4 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 
 import java.util.HashMap;
@@ -49,8 +49,8 @@ public class StringGenerator {
     if (radix < MIN_RADIX || radix > MAX_RADIX)
       radix = MAX_RADIX;
 
-    if (len > DataGenerator.MAX_STRING_PRECISION) {
-      len = DataGenerator.MAX_STRING_PRECISION;
+    if (len > CollectionGenerator.MAX_STRING_PRECISION) {
+      len = CollectionGenerator.MAX_STRING_PRECISION;
     }
     char buf[] = new char[len];
 

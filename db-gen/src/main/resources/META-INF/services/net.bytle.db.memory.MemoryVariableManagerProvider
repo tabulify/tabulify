@@ -1,1 +1,1 @@
-net.bytle.db.gen.GenMemManagerProvider
+net.bytle.db.gen.memory.GenMemManagerProvider

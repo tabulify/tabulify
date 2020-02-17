@@ -1,6 +1,5 @@
 package net.bytle.db.model;
 
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 
 import java.util.List;
@@ -68,7 +67,7 @@ public interface RelationDef {
 
   PrimaryKeyDef primaryKeyOf(String... columnNames);
 
-  abstract DataPathAbs getDataPath();
+  DataPath getDataPath();
 
 
   /**

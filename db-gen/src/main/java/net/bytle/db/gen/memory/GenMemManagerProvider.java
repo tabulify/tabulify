@@ -1,5 +1,6 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.memory;
 
+import net.bytle.db.gen.GenDataDef;
 import net.bytle.db.memory.MemoryVariableManager;
 import net.bytle.db.memory.MemoryVariableManagerProvider;
 

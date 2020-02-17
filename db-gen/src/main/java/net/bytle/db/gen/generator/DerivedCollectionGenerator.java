@@ -1,9 +1,12 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import net.bytle.log.Log;
+import net.bytle.db.gen.DataGenerator;
+import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -16,10 +19,10 @@ import java.util.List;
 import java.util.Map;
 
 
-public class DerivedGenerator<T> implements DataGenerator<T> {
+public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
 
 
-    static final Log LOGGER = DataGeneration.GEN_LOG;
+  private static final Logger LOGGER = LoggerFactory.getLogger(DerivedCollectionGenerator.class);
 
     private static final ScriptEngine engine;
 
@@ -28,16 +31,16 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
         engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
     }
 
-    private final DataGenerator dataGenerator;
+    private final CollectionGenerator dataCollectionGenerator;
     private final String formula;
     private final ColumnDef<T> columnDef;
     private Object actualValue;
 
 
-    public DerivedGenerator(ColumnDef<T> columnDef, DataGenerator parentDataGenerator, String formula) {
+    public DerivedCollectionGenerator(ColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
 
         this.columnDef = columnDef;
-        this.dataGenerator = parentDataGenerator;
+        this.dataCollectionGenerator = parentDataCollectionGenerator;
         this.formula = formula;
         if (formula==null){
             throw new RuntimeException("The formula for the column "+columnDef.getFullyQualifiedName()+" is null");
@@ -52,7 +55,7 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
     @Override
     public T getNewValue() {
 
-        Object derivedActualValue = dataGenerator.getActualValue();
+        Object derivedActualValue = dataCollectionGenerator.getActualValue();
         String value = derivedActualValue.toString();
 
         if (derivedActualValue.getClass().equals(Date.class)) {
@@ -71,7 +74,7 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
             Object evalValue = engine.eval(evalScript);
             if (evalValue==null){
                 final String msg = "The derived generator for the column (" + columnDef.getFullyQualifiedName() + ") has returned a NULL value and it's not expected.\nThe formula was: " + evalScript;
-                LOGGER.severe(msg);
+                LOGGER.error(msg);
                 throw new RuntimeException(msg);
             }
             if (evalValue.getClass() == ScriptObjectMirror.class) {
@@ -158,7 +161,7 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
 
     @Override
     public Double getMaxGeneratedValues() {
-        return dataGenerator.getMaxGeneratedValues();
+        return dataCollectionGenerator.getMaxGeneratedValues();
     }
 
     /**
@@ -167,7 +170,7 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
      * @param dataGeneration - The context object (giving access to the build method and other context method)
      * @return a data generator for chaining
      */
-    static public <T> DerivedGenerator<T> of(GenColumnDef<T> columnDef, GenSelectStream dataGeneration) {
+    static public <T> DerivedCollectionGenerator<T> of(GenColumnDef<T> columnDef, DataGenerator dataGeneration) {
 
         Map<String, Object> properties = columnDef.getProperties(columnDef);
         // Parent Generator
@@ -177,15 +180,15 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
         }
         GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnName);
-        DataGenerator parentGenerator = dataGeneration.getDataGenerator(columnParent);
-        if (parentGenerator == null) {
+        CollectionGenerator parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
+        if (parentCollectionGenerator == null) {
             if (columnDef.equals(columnParent)) {
                 throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
             }
             // Build it
             dataGeneration.buildDefaultDataGeneratorForColumn(columnParent);
         }
-        parentGenerator = dataGeneration.getDataGenerator(columnParent);
+        parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
 
         // Formula
         String formula = (String) Maps.getPropertyCaseIndependent(properties,"formula");
@@ -194,11 +197,11 @@ public class DerivedGenerator<T> implements DataGenerator<T> {
         }
 
         // New Instance
-        return new DerivedGenerator<>(columnDef,parentGenerator,formula);
+        return new DerivedCollectionGenerator<>(columnDef, parentCollectionGenerator,formula);
     }
 
 
-    public DataGenerator getParentGenerator() {
-        return dataGenerator;
+    public CollectionGenerator getParentGenerator() {
+        return dataCollectionGenerator;
     }
 }

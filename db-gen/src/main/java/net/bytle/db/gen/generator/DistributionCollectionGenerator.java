@@ -1,6 +1,7 @@
-package net.bytle.db.gen;
+package net.bytle.db.gen.generator;
 
 
+import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 
@@ -20,7 +21,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 /**
  * Distribution Generator by default: random
  */
-public class DistributionGenerator<T> implements DataGenerator<T> {
+public class DistributionCollectionGenerator<T> implements CollectionGenerator<T> {
 
   private final Class<T> clazz;
 
@@ -31,7 +32,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
   private Object range;
   private List<T> values;
 
-  public DistributionGenerator(ColumnDef<T> columnDef) {
+  public DistributionCollectionGenerator(ColumnDef<T> columnDef) {
 
     this.columnDef = columnDef;
     clazz = columnDef.getClazz();
@@ -79,9 +80,9 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
 
   }
 
-  public static <T> DistributionGenerator<T> of(ColumnDef<T> columnDef) {
+  public static <T> DistributionCollectionGenerator<T> of(ColumnDef<T> columnDef) {
 
-    final DistributionGenerator<T> distributionGenerator = new DistributionGenerator<>(columnDef);
+    final DistributionCollectionGenerator<T> distributionGenerator = new DistributionCollectionGenerator<>(columnDef);
 
     Map<String, Object> generatorColumnProperties = DataGeneration.getProperties(columnDef);
     final Object bucketsObject = Maps.getPropertyCaseIndependent(generatorColumnProperties, "buckets");
@@ -244,7 +245,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
    * @param buckets
    * @return
    */
-  public DistributionGenerator<T> setBuckets(Map<T, Integer> buckets) {
+  public DistributionCollectionGenerator<T> setBuckets(Map<T, Integer> buckets) {
     if (buckets != null) {
       if (buckets.size() > 0) {
         // Create the values list and add the element according to their ratio
@@ -260,7 +261,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
     return this;
   }
 
-  public DistributionGenerator<T> setMin(T min) {
+  public DistributionCollectionGenerator<T> setMin(T min) {
     if (min != null) {
       this.min = min;
       updateRange();
@@ -268,7 +269,7 @@ public class DistributionGenerator<T> implements DataGenerator<T> {
     return this;
   }
 
-  public DistributionGenerator<T> setMax(T max) {
+  public DistributionCollectionGenerator<T> setMax(T max) {
     if (max != null) {
       this.max = max;
       updateRange();

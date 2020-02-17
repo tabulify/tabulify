@@ -6,7 +6,6 @@ import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.Tabular;
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -149,7 +148,7 @@ public class DbQueryExecute {
 
         default:
 
-          DataPathAbs executionTable = tabular.getDataPath("executions")
+          DataPath executionTable = tabular.getDataPath("executions")
             .getDataDef()
             .addColumn("Query Name", Types.VARCHAR)
             .addColumn("Start Time", Types.DATE)

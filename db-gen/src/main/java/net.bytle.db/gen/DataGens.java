@@ -89,4 +89,9 @@ public class DataGens {
     }
 
   }
+
+  public static GenColumnDef castToGenColumnDef(ColumnDef c) {
+    return (GenColumnDef) c;
+  }
+
 }
