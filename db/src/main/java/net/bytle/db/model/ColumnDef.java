@@ -144,7 +144,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
 
   }
 
-  public ColumnDef setColumnPosition(int columnPosition) {
+  public ColumnDef<T> setColumnPosition(int columnPosition) {
     this.columnPosition = columnPosition;
     return this;
   }

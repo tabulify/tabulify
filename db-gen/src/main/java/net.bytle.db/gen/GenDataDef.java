@@ -74,8 +74,8 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
 
   public GenDataDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
-    if (type==null){
-      type=DEFAULT_DATA_TYPE;
+    if (type == null) {
+      type = DEFAULT_DATA_TYPE;
     }
     Class clazz = this.getDataPath().getDataStore().getSqlDataType(type).getClazz();
     if (!genColumns.keySet().contains(columnName)) {
@@ -132,9 +132,16 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   @Override
   public <T> GenColumnDef getColumnOf(String columnName, Class<T> clazz) {
-    GenColumnDef<T> of = GenColumnDef.of(this, columnName, clazz);
-    genColumns.put(columnName, of);
-    return of;
+
+
+    if (!genColumns.containsValue(columnName)) {
+      GenColumnDef<T> of = (GenColumnDef<T>) GenColumnDef.of(this, columnName, clazz)
+        .setColumnPosition(genColumns.values().size() + 1);
+      genColumns.put(columnName, of);
+      return of;
+    } else {
+      throw new RuntimeException("The column (" + columnName + ") is already defined");
+    }
   }
 
   @Override

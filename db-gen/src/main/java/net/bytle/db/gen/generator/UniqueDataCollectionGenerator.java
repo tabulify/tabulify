@@ -8,174 +8,208 @@ import net.bytle.db.model.SqlDataType;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.*;
 
 
 public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
 
+  private Map<GenColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
 
-    private Map<GenColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
+  Integer position = new Integer(0);
 
-    Integer position = new Integer(0);
+  /**
+   * Get the max value of a primary key numeric column and add 1 to the value each time
+   * the {@link #getNewValue()} is called
+   *
+   * @param columnDefs
+   */
+  public UniqueDataCollectionGenerator(List<GenColumnDef> columnDefs) {
 
-    /**
-     * Get the max value of a primary key numeric column and add 1 to the value each time
-     * the {@link #getNewValue()} is called
-     * @param columnDefs
-     */
-    public UniqueDataCollectionGenerator(List<GenColumnDef> columnDefs) {
+    // long numberOfValueToGenerateByColumn = Math.floorDiv((long) numberOfRowToInsert,(long) columnDefs.size());
 
-        // long numberOfValueToGenerateByColumn = Math.floorDiv((long) numberOfRowToInsert,(long) columnDefs.size());
+    // Creating a data generator by column
+    // and adding it to the data generator map variable
+    for (GenColumnDef columnDef : columnDefs) {
 
-        // Creating a data generator by column
-        // and adding it to the data generator map variable
-        for(GenColumnDef columnDef: columnDefs) {
+      if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-            if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
+        // With date, we are going in the past
+        GenColumnDef<Date> dateColumn = (GenColumnDef<Date>) Columns.safeCast(columnDef, Date.class);
+        Date minDate = getMinSafely(dateColumn, Date.valueOf(LocalDate.now()));
+        dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(dateColumn).start(minDate).step(-1));
 
-                // With date, we are going in the past
-                GenColumnDef<Date> dateColumn = (GenColumnDef<Date>) Columns.safeCast(columnDef,Date.class);
-                Date minDate = Columns.getMin(dateColumn);
-                dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(dateColumn).start(minDate).step(-1));
+      } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-            } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
-
-                if (columnDef.getClazz()== BigDecimal.class){
-                    GenColumnDef<BigDecimal> bigDecimalColumnDef = (GenColumnDef<BigDecimal>) Columns.safeCast(columnDef, BigDecimal.class);
-                    BigDecimal intCounter = Columns.getMax(bigDecimalColumnDef);
-                    dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
-                } else {
-                    GenColumnDef<Integer> integerColumn = (GenColumnDef<Integer>) Columns.safeCast(columnDef, Integer.class);
-                    Integer intCounter = Columns.getMax(integerColumn);
-                    dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(integerColumn).start(intCounter).step(1));
-                }
-
-            } else if ( SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
-
-                GenColumnDef<String> stringColumn = (GenColumnDef<String>) Columns.safeCast(columnDef,String.class);
-                String s = Columns.getMax(stringColumn);
-                dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(stringColumn).start(s));
-
-            } else {
-
-                throw new RuntimeException("The data type (" + columnDef.getDataType().getTypeCode() + "," + columnDef.getDataType().getTypeNames() + ") is not yet implemented for the column " + columnDef.getFullyQualifiedName() + ").");
-
-            }
-
-        }
-
-
-    }
-
-    /**
-     * @return a new generated data object every time it's called
-     */
-    @Override
-    public Object getNewValue() {
-
-        // Only one column ?
-        if (dataGeneratorMap.size()==1){
-
-            ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
-            return dataGeneratorMap.get(columnDef).getNewValue();
-
+        if (columnDef.getClazz() == BigDecimal.class) {
+          GenColumnDef<BigDecimal> bigDecimalColumnDef = (GenColumnDef<BigDecimal>) Columns.safeCast(columnDef, BigDecimal.class);
+          BigDecimal intCounter = getMaxSafely(bigDecimalColumnDef,BigDecimal.ZERO);
+          dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
         } else {
-
-            throw new RuntimeException("This is a multi-column generator of "+dataGeneratorMap.size()+" columns, you should use the function getNewValue(ColumnDef)");
-
+          GenColumnDef<Integer> integerColumn = (GenColumnDef<Integer>) Columns.safeCast(columnDef, Integer.class);
+          Integer intCounter = getMaxSafely(integerColumn,0);
+          dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(integerColumn).start(intCounter).step(1));
         }
 
-    }
+      } else if (SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-    /**
-     * @return a generated value (used in case of derived data
-     */
-    @Override
-    public Object getActualValue() {
+        GenColumnDef<String> stringColumn = (GenColumnDef<String>) Columns.safeCast(columnDef, String.class);
+        String s = getMaxSafely(stringColumn,"");
+        dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(stringColumn).start(s));
 
-        if (dataGeneratorMap.size()==1){
+      } else {
 
-            ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
-            return dataGeneratorMap.get(columnDef).getActualValue();
+        throw new RuntimeException("The data type (" + columnDef.getDataType().getTypeCode() + "," + columnDef.getDataType().getTypeNames() + ") is not yet implemented for the column " + columnDef.getFullyQualifiedName() + ").");
 
-        } else {
-
-            throw new RuntimeException("This is a multi-column generator of "+dataGeneratorMap.size()+" columns, you should use the function getActualValue(ColumnDef)");
-
-        }
-
+      }
 
     }
 
-    /**
-     * @return the column attached to this generator
-     * It permits to create parent relationship between generators
-     * when asking a value for a column, we may need to ask the value for another column before
-     */
-    @Override
-    public GenColumnDef getColumn() {
 
-        if (dataGeneratorMap.size()==1){
+  }
 
-            return dataGeneratorMap.keySet().iterator().next();
+  /**
+   *
+   * @param columnDef
+   * @param otherwise
+   * @param <T>
+   * @return the min or otherwise if the processing engine does not support it
+   */
+  private <T> T getMinSafely(ColumnDef<T> columnDef, T otherwise) {
+    try {
+      return Columns.getMin(columnDef);
+    } catch (RuntimeException e) {
+      // java.lang.RuntimeException: A processing engine is not yet supported
+      return otherwise;
+    }
+  }
 
-        } else {
+  /**
+   * Processing engine may be not supported everywhere
+   * @param columnDef
+   * @param otherwise
+   * @param <T>
+   * @return the max or otherwise
+   */
+  private <T> T getMaxSafely(ColumnDef<T> columnDef, T otherwise) {
+    try {
+      return Columns.getMax(columnDef);
+    } catch (RuntimeException e) {
+      // java.lang.RuntimeException: A processing engine is not yet supported
+      return otherwise;
+    }
 
-            throw new RuntimeException("This is a multi-column generator of "+dataGeneratorMap.size()+" columns, you should use the function getColumns()");
+  }
 
-        }
+  /**
+   * @return a new generated data object every time it's called
+   */
+  @Override
+  public Object getNewValue() {
+
+    // Only one column ?
+    if (dataGeneratorMap.size() == 1) {
+
+      ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
+      return dataGeneratorMap.get(columnDef).getNewValue();
+
+    } else {
+
+      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getNewValue(ColumnDef)");
 
     }
 
-    /**
-     * Get a new value for a column
-     *
-     * This generator is row based. You need to call each column
-     * in order to have a unique set
-     *
-     * @param columnDef
-     * @return a new generated data object every time it's called
-     */
-    @Override
-    public Object getNewValue(ColumnDef columnDef) {
+  }
 
+  /**
+   * @return a generated value (used in case of derived data
+   */
+  @Override
+  public Object getActualValue() {
 
-        final CollectionGenerator dataCollectionGenerator = dataGeneratorMap.get(columnDef);
-        return dataCollectionGenerator.getNewValue(columnDef);
+    if (dataGeneratorMap.size() == 1) {
+
+      ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
+      return dataGeneratorMap.get(columnDef).getActualValue();
+
+    } else {
+
+      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getActualValue(ColumnDef)");
 
     }
 
-    /**
-     * of the actual value of a column
-     *
-     * @param columnDef
-     * @return a generated value (used in case of derived data
-     */
-    @Override
-    public Object getActualValue(ColumnDef columnDef) {
 
-        return dataGeneratorMap.get(columnDef).getActualValue(columnDef);
+  }
+
+  /**
+   * @return the column attached to this generator
+   * It permits to create parent relationship between generators
+   * when asking a value for a column, we may need to ask the value for another column before
+   */
+  @Override
+  public GenColumnDef getColumn() {
+
+    if (dataGeneratorMap.size() == 1) {
+
+      return dataGeneratorMap.keySet().iterator().next();
+
+    } else {
+
+      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getColumns()");
+
     }
 
-    /**
-     * @return the columns attached to this generator
-     */
-    @Override
-    public List<ColumnDef> getColumns() {
-        List<ColumnDef> columnDefs = new ArrayList<>(dataGeneratorMap.keySet());
-        Collections.sort(columnDefs);
-        return columnDefs;
-    }
+  }
 
-    @Override
-    public Long getMaxGeneratedValues() {
-        // Hack
-        return Long.MAX_VALUE;
-    }
+  /**
+   * Get a new value for a column
+   * <p>
+   * This generator is row based. You need to call each column
+   * in order to have a unique set
+   *
+   * @param columnDef
+   * @return a new generated data object every time it's called
+   */
+  @Override
+  public Object getNewValue(ColumnDef columnDef) {
 
-    @Override
-    public String toString() {
-        return "UniqueDataGenerator{" + dataGeneratorMap + '}';
-    }
+
+    final CollectionGenerator dataCollectionGenerator = dataGeneratorMap.get(columnDef);
+    return dataCollectionGenerator.getNewValue(columnDef);
+
+  }
+
+  /**
+   * of the actual value of a column
+   *
+   * @param columnDef
+   * @return a generated value (used in case of derived data
+   */
+  @Override
+  public Object getActualValue(ColumnDef columnDef) {
+
+    return dataGeneratorMap.get(columnDef).getActualValue(columnDef);
+  }
+
+  /**
+   * @return the columns attached to this generator
+   */
+  @Override
+  public List<ColumnDef> getColumns() {
+    List<ColumnDef> columnDefs = new ArrayList<>(dataGeneratorMap.keySet());
+    Collections.sort(columnDefs);
+    return columnDefs;
+  }
+
+  @Override
+  public Long getMaxGeneratedValues() {
+    // Hack
+    return Long.MAX_VALUE;
+  }
+
+  @Override
+  public String toString() {
+    return "UniqueDataGenerator{" + dataGeneratorMap + '}';
+  }
 }

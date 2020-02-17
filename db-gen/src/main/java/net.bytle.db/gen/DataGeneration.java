@@ -273,7 +273,8 @@ public class DataGeneration {
           GenSelectStream genSelectStream = new GenSelectStream(genDataPath)
         ) {
           while(genSelectStream.next()){
-            inputStream.insert(genSelectStream.getObjects());
+            List<Object> objects = genSelectStream.getObjects();
+            inputStream.insert(objects);
           }
         }
 
