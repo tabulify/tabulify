@@ -1,7 +1,7 @@
 package net.bytle.db.model;
 
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.type.MapCaseIndependent;
 
 import java.util.*;
@@ -317,6 +317,12 @@ public abstract class DataDefAbs implements RelationDef {
    */
   protected Long getPropertyAsLong(String key) {
     return this.properties.getAsLong(key);
+  }
+
+  @Override
+  public DataDefAbs copy(DataPath sourceDataPath) {
+    DataDefs.copy(sourceDataPath.getDataDef(),this);
+    return this;
   }
 
 }

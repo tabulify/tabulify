@@ -2,6 +2,7 @@ package net.bytle.db.gen;
 
 
 import net.bytle.db.gen.generator.*;
+import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.log.Log;
 import net.bytle.db.engine.ForeignKeyDag;
@@ -56,40 +57,33 @@ public class DataGeneration {
    */
   private Map<ColumnDef, CollectionGenerator> dataGenerators = new HashMap<>();
 
-  public DataGeneration addTable(DataPath dataPath, Integer totalRows) {
+  public DataGeneration addTable(DataPath targetDataPath, Integer totalRows) {
 
-    if (totalRows == null) {
-      final Object totalRowsObject = Maps.getPropertyCaseIndependent(dataPath.getDataDef().getProperties(), GenDataDef.TOTAL_ROWS_PROPERTY_KEY);
-      try {
-        totalRows = (Integer) totalRowsObject;
-      } catch (ClassCastException e) {
-        throw new RuntimeException("The total rows property of the table (" + dataPath.toString() + ") is not an integer. Its value is: " + totalRowsObject);
-      }
-    }
+
     // Adding the table into the list of tables to load
-    tablesToLoad.put(dataPath, totalRows);
+    tablesToLoad.put(targetDataPath, totalRows);
 
     // Building the foreign, primary and unique keys
 
     // Self referencing foreign key check
-    List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(dataPath);
+    List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(targetDataPath);
     if (selfReferencingForeignKeys.size() > 0) {
       for (ForeignKeyDef foreignKeyDef : selfReferencingForeignKeys) {
         LOGGER.severe("The foreign key " + foreignKeyDef.getName() + " on the table (" + foreignKeyDef.getTableDef().getDataPath().toString() + ") references itself and it's not supported.");
       }
-      throw new RuntimeException("Self referencing foreign key found in the table " + dataPath.toString());
+      throw new RuntimeException("Self referencing foreign key found in the table " + targetDataPath.toString());
     }
 
 
     // Primary Key with only one column are supported
-    PrimaryKeyDef primaryKeyDef = dataPath.getDataDef().getPrimaryKey();
+    PrimaryKeyDef primaryKeyDef = targetDataPath.getDataDef().getPrimaryKey();
     // Extract the primary column
     if (primaryKeyDef != null) {
       primaryColumns.addAll(primaryKeyDef.getColumns());
     }
 
     // Foreign Key with only one column are supported
-    List<ForeignKeyDef> foreignKeys = dataPath.getDataDef().getForeignKeys();
+    List<ForeignKeyDef> foreignKeys = targetDataPath.getDataDef().getForeignKeys();
     for (ForeignKeyDef foreignKeyDef : foreignKeys) {
       int size = foreignKeyDef.getChildColumns().size();
       if (size > 1) {
@@ -103,7 +97,7 @@ public class DataGeneration {
     }
 
     // Unique Keys
-    for (UniqueKeyDef uniqueKeyDef : dataPath.getDataDef().getUniqueKeys()) {
+    for (UniqueKeyDef uniqueKeyDef : targetDataPath.getDataDef().getUniqueKeys()) {
       for (ColumnDef columnDef : uniqueKeyDef.getColumns()) {
         this.columnUniqueKeyMap.put(columnDef, uniqueKeyDef);
       }
@@ -254,34 +248,29 @@ public class DataGeneration {
     }
 
     // Load
-    final List<GenDataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables()
-      .stream()
-      .map(dp-> (GenDataPath) dp)
-      .collect(Collectors.toList());
+    final List<DataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables();
 
-    for (GenDataPath dataPath : createOrderedTables) {
+    for (DataPath dataPath : createOrderedTables) {
+
+      GenDataPath genDataPath = GenMemDataPath.of(dataPath.getPath())
+        .getDataDef()
+        .setMaxRows(tablesToLoad.get(dataPath))
+        .copy(dataPath)
+        .getDataPath();
 
       // The load
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
-      // First pass to create a default generator if they are not specified
-      for (GenColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
 
-        if (dataGenerators.get(columnDef) == null) {
-          buildDefaultDataGeneratorForColumn(columnDef);
-        }
-
-      }
-
-      // The number of row may be trimmed if the generator cannot generate them
-      // or if there is already rows in the table
       long numberOfRowToInsert = getNumberOfRowToInsert(dataPath);
 
       if (numberOfRowToInsert > 0) {
         LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
+
         try (
-          InsertStream inputStream = Tabulars.getInsertStream(dataPath)
+          InsertStream inputStream = Tabulars.getInsertStream(dataPath);
+          GenSelectStream genSelectStream = new GenSelectStream(genDataPath)
         ) {
           for (int i = 0; i < numberOfRowToInsert; i++) {
 

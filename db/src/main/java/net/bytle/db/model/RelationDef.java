@@ -6,34 +6,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * The relational structure of the data
- *
  */
 public interface RelationDef {
 
 
-    /**
-     *
-     * @param columnName
-     * @return a column def by its name
-     */
-    <T> ColumnDef<T> getColumnDef(String columnName);
+  /**
+   * @param columnName
+   * @return a column def by its name
+   */
+  <T> ColumnDef<T> getColumnDef(String columnName);
 
-    /**
-     *
-     * @param columnIndex
-     * @return a column def by its index
-     */
-    <T> ColumnDef<T> getColumnDef(Integer columnIndex);
+  /**
+   * @param columnIndex
+   * @return a column def by its index
+   */
+  <T> ColumnDef<T> getColumnDef(Integer columnIndex);
 
-    /**
-     *
-     * @param columnName
-     * @param clazz - The type of the column (Java needs the type to be a sort of type safe)
-     * @return  a new columnDef
-     */
-    <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
+  <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
 
   PrimaryKeyDef getPrimaryKey();
 
@@ -71,9 +61,7 @@ public interface RelationDef {
 
 
   /**
-   *
    * @return the number of columns
-   *
    */
   int getColumnsSize();
 
@@ -95,5 +83,13 @@ public interface RelationDef {
   RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale, Boolean nullable, String comment);
 
   ColumnDef[] getColumnDefs();
+
+  /**
+   * Copy the data definitions (columns,..)
+   *
+   * @param sourceDataPath
+   * @return
+   */
+  RelationDef copy(DataPath sourceDataPath);
 
 }

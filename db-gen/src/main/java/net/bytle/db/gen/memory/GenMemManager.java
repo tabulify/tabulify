@@ -13,7 +13,7 @@ public class GenMemManager implements MemoryVariableManager {
 
   @Override
   public SelectStream getSelectStream(MemoryDataPath memoryDataPath) {
-    return new GenSelectStream(memoryDataPath);
+    return new GenSelectStream((GenDataPath) memoryDataPath);
   }
 
   @Override

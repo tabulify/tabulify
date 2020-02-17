@@ -4,6 +4,7 @@ package net.bytle.db.gen;
 import net.bytle.db.model.DataDefAbs;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +132,9 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   @Override
   public <T> GenColumnDef getColumnOf(String columnName, Class<T> clazz) {
-    return (GenColumnDef) GenColumnDef.of(this, columnName, clazz);
+    GenColumnDef<T> of = GenColumnDef.of(this, columnName, clazz);
+    genColumns.put(columnName, of);
+    return of;
   }
 
   @Override
@@ -147,6 +150,14 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   public Long getMaxSize() {
     return this.getPropertyAsLong(GenDataDef.TOTAL_ROWS_PROPERTY_KEY);
+  }
+
+  @Override
+  public GenDataDef copy(DataPath sourceDataPath) {
+
+    super.copy(sourceDataPath);
+    return this;
+
   }
 
 

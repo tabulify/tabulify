@@ -4,7 +4,6 @@ import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.gen.generator.DerivedCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.SelectStreamAbs;
 
 import java.sql.Clob;
@@ -21,7 +20,7 @@ public class GenSelectStream extends SelectStreamAbs {
   // For each column def, it's value (ie a row)
   private HashMap<ColumnDef, Object> row;
 
-  public GenSelectStream(DataPath dataPath) {
+  public GenSelectStream(GenDataPath dataPath) {
 
     super(dataPath);
     genDataPath = (GenDataPath) dataPath;
