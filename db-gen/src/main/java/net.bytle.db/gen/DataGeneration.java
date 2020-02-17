@@ -234,7 +234,7 @@ public class DataGeneration {
 
             long rows = Tabulars.getSize(parentDataUnit);
             if (rows == 0) {
-              if (this.loadParent) {
+              if (this.loadParent!=null && this.loadParent) {
                 LOGGER.info("The table (" + parentDataUnit.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
                 tablesLoaded.add(parentDataUnit);
               } else {
@@ -263,7 +263,7 @@ public class DataGeneration {
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
 
-      long numberOfRowToInsert = getNumberOfRowToInsert(dataPath);
+      long numberOfRowToInsert = genDataPath.getDataDef().getMaxSize();
 
       if (numberOfRowToInsert > 0) {
         LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
@@ -272,20 +272,8 @@ public class DataGeneration {
           InsertStream inputStream = Tabulars.getInsertStream(dataPath);
           GenSelectStream genSelectStream = new GenSelectStream(genDataPath)
         ) {
-          for (int i = 0; i < numberOfRowToInsert; i++) {
-
-            Map<ColumnDef, Object> columnValues = new HashMap<>();
-            for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
-              populateColumnValues(columnValues, columnDef);
-            }
-
-            List<Object> values = new ArrayList<>();
-            for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
-              // We need also a recursion here to create the value
-              values.add(columnValues.get(columnDef));
-            }
-            inputStream.insert(values);
-
+          while(genSelectStream.next()){
+            inputStream.insert(genSelectStream.getObjects());
           }
         }
 
