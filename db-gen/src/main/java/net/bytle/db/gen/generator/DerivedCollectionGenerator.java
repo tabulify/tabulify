@@ -160,7 +160,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
     }
 
     @Override
-    public Double getMaxGeneratedValues() {
+    public Long getMaxGeneratedValues() {
         return dataCollectionGenerator.getMaxGeneratedValues();
     }
 

@@ -169,9 +169,9 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
     }
 
     @Override
-    public Double getMaxGeneratedValues() {
+    public Long getMaxGeneratedValues() {
         // Hack
-        return Double.valueOf(Integer.MAX_VALUE);
+        return Long.MAX_VALUE;
     }
 
     @Override

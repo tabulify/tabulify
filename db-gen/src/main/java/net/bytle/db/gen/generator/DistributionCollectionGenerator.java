@@ -4,6 +4,9 @@ package net.bytle.db.gen.generator;
 import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
+import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -22,6 +25,8 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * Distribution Generator by default: random
  */
 public class DistributionCollectionGenerator<T> implements CollectionGenerator<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DistributionCollectionGenerator.class);
 
   private final Class<T> clazz;
 
@@ -106,10 +111,16 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
 
   private String getString() {
-    Integer precision = this.columnDef.getPrecision();
+    Integer precision = this.columnDef.getPrecisionOrMax();
     if (precision == null) {
-      precision = this.columnDef.getDataType().getMaxPrecision();
+      precision = CollectionGenerator.MAX_STRING_PRECISION;
+      LOGGER.warn(
+        Strings.multiline("The precision for the column (" + this.columnDef + ") is unknown",
+          "The max precision for its data type (" + columnDef.getDataType().getTypeName() + ") is unknonw",
+          "The precision was then set to " + precision
+        ));
     }
+
     String s = "hello";
     if (s.length() > precision) {
       s = s.substring(0, precision);
@@ -226,8 +237,8 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
   }
 
   @Override
-  public Double getMaxGeneratedValues() {
-    return Double.valueOf(Integer.MAX_VALUE);
+  public Long getMaxGeneratedValues() {
+    return Long.MAX_VALUE;
   }
 
 

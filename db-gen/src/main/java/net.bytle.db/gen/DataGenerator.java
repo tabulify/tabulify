@@ -172,9 +172,9 @@ public class DataGenerator {
    */
   public long getMaxSize() {
     // Precision of a sequence (Pk of unique col) make that we cannot insert the number of rows that we want
-    Integer maxNumberOfRowToInsert = 0;
+    Long maxNumberOfRowToInsert = 0L;
     for (CollectionGenerator dataGenerator : dataGenerators.values()) {
-      final Integer maxGeneratedValues = (dataGenerator.getMaxGeneratedValues()).intValue();
+      final Long maxGeneratedValues = dataGenerator.getMaxGeneratedValues();
       if (maxNumberOfRowToInsert == 0) {
         maxNumberOfRowToInsert = maxGeneratedValues;
       } else {
@@ -183,6 +183,10 @@ public class DataGenerator {
         }
       }
     }
-    return maxNumberOfRowToInsert;
+    if (maxNumberOfRowToInsert > genDataPath.getDataDef().getMaxSize()){
+      return genDataPath.getDataDef().getMaxSize();
+    } else {
+      return maxNumberOfRowToInsert;
+    }
   }
 }

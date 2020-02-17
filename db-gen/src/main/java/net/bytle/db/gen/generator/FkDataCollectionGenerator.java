@@ -114,7 +114,9 @@ public class FkDataCollectionGenerator implements CollectionGenerator {
     }
 
     @Override
-    public Double getMaxGeneratedValues() {
-        return Double.valueOf(Integer.MAX_VALUE);
+    public Long getMaxGeneratedValues() {
+
+      return Long.MAX_VALUE;
+
     }
 }

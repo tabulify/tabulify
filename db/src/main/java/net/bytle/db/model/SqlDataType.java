@@ -321,4 +321,8 @@ public class SqlDataType {
     this.description = description;
     return this;
   }
+
+  public String getTypeName() {
+      return typeNames.get(0);
+  }
 }

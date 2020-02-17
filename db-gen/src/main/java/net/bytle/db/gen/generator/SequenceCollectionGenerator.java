@@ -306,25 +306,25 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    *
    * @return the maxValue number of times the function {@link #getNewValue(ColumnDef)} can be called
    */
-  public Double getMaxGeneratedValues() {
+  public Long getMaxGeneratedValues() {
 
-    Double maxGeneratedValues;
+    Long maxGeneratedValues;
 
     if (values != null) {
-      maxGeneratedValues = (double) (values.size() / step);
+      maxGeneratedValues = (long) (values.size() / step);
     } else {
       if (clazz == Integer.class || clazz == BigDecimal.class) {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
         ;
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
-        maxGeneratedValues = Math.pow(10, precision);
+        maxGeneratedValues = Double.valueOf(Math.pow(10, precision)).longValue();
       } else if (clazz == String.class) {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
         ;
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
-        maxGeneratedValues = Math.pow(StringGenerator.MAX_RADIX, precision);
+        maxGeneratedValues = Double.valueOf(Math.pow(StringGenerator.MAX_RADIX, precision)).longValue();
       } else if (clazz == Date.class) {
-        maxGeneratedValues = (double) DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
+        maxGeneratedValues = DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
       } else {
         throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
       }

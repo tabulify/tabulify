@@ -76,7 +76,7 @@ public interface CollectionGenerator<T> {
    *
    * @return the maxValue number of times the function {@link #getNewValue(ColumnDef)} can be called
    */
-  Double getMaxGeneratedValues();
+  Long getMaxGeneratedValues();
 
 
 }

@@ -19,7 +19,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   public static final int DEFAULT_DATA_TYPE = Types.VARCHAR;
 
-  private Integer maxRows;
+  private Long maxRows;
   private Set<GenColumnDef> genColumns = new HashSet<>();
 
   public GenDataDef(DataPathAbs dataPath) {
@@ -87,7 +87,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
     return this;
   }
 
-  public GenDataDef setMaxRows(int rows) {
+  public GenDataDef setMaxRows(long rows) {
     this.maxRows = rows;
     return this;
   }
@@ -129,5 +129,9 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   @Override
   public GenDataPath getDataPath() {
     return (GenDataPath) super.getDataPath();
+  }
+
+  public Long getMaxSize() {
+    return maxRows;
   }
 }
