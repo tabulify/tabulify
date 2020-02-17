@@ -22,11 +22,6 @@ import java.util.stream.Collectors;
  */
 public class DataGeneration {
 
-  /**
-   * The {@link TableDef#getProperty(String)} key giving the total number of rows that the table should have
-   */
-  public static final String TOTAL_ROWS_PROPERTY_KEY = "TotalRows";
-
   static final Log GEN_LOG = Log.getLog(DataGeneration.class);
   private static final Log LOGGER = GEN_LOG;
 
@@ -64,7 +59,7 @@ public class DataGeneration {
   public DataGeneration addTable(DataPath dataPath, Integer totalRows) {
 
     if (totalRows == null) {
-      final Object totalRowsObject = Maps.getPropertyCaseIndependent(dataPath.getDataDef().getProperties(), TOTAL_ROWS_PROPERTY_KEY);
+      final Object totalRowsObject = Maps.getPropertyCaseIndependent(dataPath.getDataDef().getProperties(), GenDataDef.TOTAL_ROWS_PROPERTY_KEY);
       try {
         totalRows = (Integer) totalRowsObject;
       } catch (ClassCastException e) {
@@ -140,7 +135,7 @@ public class DataGeneration {
    * This is also a function that can create several generator for several columns (for instance, if the column is part
    * of an unique key, one generator will be created with all columns at once).
    */
-  public <T> void buildDefaultDataGeneratorForColumn(ColumnDef<T> columnDef) {
+  public <T> void buildDefaultDataGeneratorForColumn(GenColumnDef<T> columnDef) {
 
 
     CollectionGenerator generator = dataGenerators.get(columnDef);
@@ -259,15 +254,19 @@ public class DataGeneration {
     }
 
     // Load
-    final List<DataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables();
-    for (DataPath dataPath : createOrderedTables) {
+    final List<GenDataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables()
+      .stream()
+      .map(dp-> (GenDataPath) dp)
+      .collect(Collectors.toList());
+
+    for (GenDataPath dataPath : createOrderedTables) {
 
       // The load
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
       // First pass to create a default generator if they are not specified
-      for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
+      for (GenColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
 
         if (dataGenerators.get(columnDef) == null) {
           buildDefaultDataGeneratorForColumn(columnDef);

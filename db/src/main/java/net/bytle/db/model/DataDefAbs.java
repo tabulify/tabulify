@@ -2,6 +2,7 @@ package net.bytle.db.model;
 
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
+import net.bytle.type.MapCaseIndependent;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public abstract class DataDefAbs implements RelationDef {
   /**
    * Table Property that can be used by other type of relation
    */
-  private HashMap<String, Object> properties = new HashMap<>();
+  private MapCaseIndependent<Object> properties = new MapCaseIndependent<>();
 
   /**
    * The identity string is for now the name of the foreign key
@@ -278,7 +279,7 @@ public abstract class DataDefAbs implements RelationDef {
    * @return the properties value of this table def
    */
   @Override
-  public Map<String, Object> getProperties() {
+  public MapCaseIndependent<Object> getProperties() {
     return properties;
   }
 
@@ -308,5 +309,14 @@ public abstract class DataDefAbs implements RelationDef {
     return "DataDef of " + dataPath;
   }
 
+
+  /**
+   * Shortcut alias function to get a property value of a key as long
+   * @param key - the string
+   * @return a property as a long
+   */
+  protected Long getPropertyAsLong(String key) {
+    return this.properties.getAsLong(key);
+  }
 
 }

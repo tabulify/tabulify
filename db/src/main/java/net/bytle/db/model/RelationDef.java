@@ -95,4 +95,5 @@ public interface RelationDef {
   RelationDef addColumn(String columnName, Integer typeCode, Integer precision, Integer scale, Boolean nullable, String comment);
 
   ColumnDef[] getColumnDefs();
+
 }

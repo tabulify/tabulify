@@ -7,6 +7,11 @@ import net.bytle.type.Maps;
 
 import java.util.Map;
 
+/**
+ * A wrapper/extension around a {@link ColumnDef}
+ * that map a {@link ColumnDef} to a {@link CollectionGenerator}
+ * @param <T>
+ */
 public class GenColumnDef<T> extends ColumnDef<T> {
 
   /**

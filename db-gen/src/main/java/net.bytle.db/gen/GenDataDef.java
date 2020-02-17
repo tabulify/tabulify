@@ -1,26 +1,34 @@
 package net.bytle.db.gen;
 
 
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.DataDefAbs;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPathAbs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Types;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
  */
 public class GenDataDef extends DataDefAbs implements RelationDef {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(GenDataDef.class);
+
   public static final String TYPE = "GEN";
 
   public static final int DEFAULT_DATA_TYPE = Types.VARCHAR;
+  /**
+   * The {@link TableDef#getProperty(String)} key giving the total number of rows that the table should have
+   */
+  public static final String TOTAL_ROWS_PROPERTY_KEY = "TotalRows";
 
-  private Long maxRows;
-  private Set<GenColumnDef> genColumns = new HashSet<>();
+  private Map<String, GenColumnDef> genColumns = new HashMap<>();
 
   public GenDataDef(DataPathAbs dataPath) {
     super(dataPath);
@@ -65,20 +73,30 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
 
   public GenDataDef addColumn(String columnName, Integer type, Integer precision, Integer scale, Boolean nullable, String comment) {
-    Class clazz = this.getDataPath().getDataStore().getSqlDataType(DEFAULT_DATA_TYPE).getClazz();
-    genColumns.add((GenColumnDef) GenColumnDef.of(this, columnName, clazz)
-      .typeCode(type)
-      .precision(precision)
-      .scale(scale)
-      .setNullable(nullable)
-      .comment(comment)
-      .setColumnPosition(genColumns.size()+1));
+    if (type==null){
+      type=DEFAULT_DATA_TYPE;
+    }
+    Class clazz = this.getDataPath().getDataStore().getSqlDataType(type).getClazz();
+    if (!genColumns.keySet().contains(columnName)) {
+      genColumns.put(columnName, (GenColumnDef) GenColumnDef.of(this, columnName, clazz)
+        .typeCode(type)
+        .precision(precision)
+        .scale(scale)
+        .setNullable(nullable)
+        .comment(comment)
+        .setColumnPosition(genColumns.size() + 1));
+    } else {
+      LOGGER.warn("The column (" + columnName + ") was already defined, you can't add it");
+    }
     return this;
   }
 
   @Override
-  public ColumnDef[] getColumnDefs() {
-    return new ColumnDef[0];
+  public GenColumnDef[] getColumnDefs() {
+    return (new ArrayList<>(genColumns.values()))
+      .stream()
+      .sorted()
+      .toArray(GenColumnDef[]::new);
   }
 
 
@@ -88,25 +106,25 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   public GenDataDef setMaxRows(long rows) {
-    this.maxRows = rows;
+    this.addProperty(GenDataDef.TOTAL_ROWS_PROPERTY_KEY, rows);
     return this;
   }
 
 
   @Override
   public <T> GenColumnDef getColumnDef(String columnName) {
-    return genColumns
+    return genColumns.values()
       .stream()
-      .filter(c->c.getColumnName().equals(columnName))
+      .filter(c -> c.getColumnName().equals(columnName))
       .findFirst()
       .orElse(null);
   }
 
   @Override
   public <T> GenColumnDef getColumnDef(Integer columnIndex) {
-    return genColumns
+    return genColumns.values()
       .stream()
-      .filter(c->c.getColumnPosition().equals(columnIndex))
+      .filter(c -> c.getColumnPosition().equals(columnIndex))
       .findFirst()
       .orElse(null);
   }
@@ -121,10 +139,6 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
     return genColumns.size();
   }
 
-  public Set<GenColumnDef> getGenColumnsDef() {
-    return genColumns;
-  }
-
 
   @Override
   public GenDataPath getDataPath() {
@@ -132,6 +146,8 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   public Long getMaxSize() {
-    return maxRows;
+    return this.getPropertyAsLong(GenDataDef.TOTAL_ROWS_PROPERTY_KEY);
   }
+
+
 }

@@ -1,6 +1,7 @@
 package net.bytle.db.gen.generator;
 
 
+import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.Tabulars;
@@ -66,8 +67,8 @@ public class FkDataCollectionGenerator implements CollectionGenerator {
      * when asking a value for a column, we may need to ask the value for another column before
      */
     @Override
-    public ColumnDef getColumn() {
-        return foreignKeyDef.getChildColumns().get(0);
+    public GenColumnDef getColumn() {
+        return (GenColumnDef) foreignKeyDef.getChildColumns().get(0);
     }
 
     /**

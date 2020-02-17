@@ -4,8 +4,6 @@ import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public abstract class SelectStreamAbs implements SelectStream {
 
@@ -45,11 +43,7 @@ public abstract class SelectStreamAbs implements SelectStream {
 
 
   @Override
-  public List<Object> getObjects() {
-    return IntStream.of(this.dataPath.getDataDef().getColumnsSize())
-      .mapToObj(this::getObject)
-      .collect(Collectors.toList());
-  }
+  public abstract List<Object> getObjects();
 
   @Override
   public DataPath getDataPath() {

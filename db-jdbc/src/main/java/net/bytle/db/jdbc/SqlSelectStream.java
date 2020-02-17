@@ -8,7 +8,10 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
 
@@ -182,6 +185,14 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {
     throw new RuntimeException("Not implemented");
+  }
+
+  @Override
+  public List<Object> getObjects() {
+    return
+      Arrays.stream(jdbcDataPath.getDataDef().getColumnDefs())
+        .map(c -> getObject(c.getColumnPosition()))
+        .collect(Collectors.toList());
   }
 
   @Override

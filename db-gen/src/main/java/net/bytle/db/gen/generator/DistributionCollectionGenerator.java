@@ -2,6 +2,7 @@ package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.gen.DataGeneration;
+import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Maps;
 import net.bytle.type.Strings;
@@ -85,7 +86,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
   }
 
-  public static <T> DistributionCollectionGenerator<T> of(ColumnDef<T> columnDef) {
+  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef<T> columnDef) {
 
     final DistributionCollectionGenerator<T> distributionGenerator = new DistributionCollectionGenerator<>(columnDef);
 

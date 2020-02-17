@@ -1,6 +1,7 @@
 package net.bytle.db.gen;
 
 import net.bytle.db.gen.generator.*;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.PrimaryKeyDef;
 import net.bytle.type.Maps;
 
@@ -43,7 +44,7 @@ public class DataGenerator {
 
 
     // First pass to create a default generator if they are not specified
-    for (GenColumnDef columnDef : genDataPath.getDataDef().getGenColumnsDef()) {
+    for (GenColumnDef columnDef : genDataPath.getDataDef().getColumnDefs()) {
 
       if (columnDef.getGenerator() == null) {
         buildDefaultDataGeneratorForColumn(columnDef);
@@ -158,8 +159,8 @@ public class DataGenerator {
 
   }
 
-  public <T> CollectionGenerator<T> getCollectionGenerator(GenColumnDef<T> genColumnDef) {
-    return dataGenerators.get(genColumnDef);
+  public <T> CollectionGenerator<T> getCollectionGenerator(ColumnDef<T> columnDef) {
+    return dataGenerators.get(columnDef);
   }
 
   public int getDataGeneratorsSize() {
@@ -204,4 +205,6 @@ public class DataGenerator {
     }
     return maxNumberOfRowToInsert;
   }
+
+
 }

@@ -15,7 +15,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
 
 
-    private Map<ColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
+    private Map<GenColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
 
     Integer position = new Integer(0);
 
@@ -35,25 +35,25 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
             if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 // With date, we are going in the past
-                ColumnDef<Date> dateColumn = Columns.safeCast(columnDef,Date.class);
+                GenColumnDef<Date> dateColumn = (GenColumnDef<Date>) Columns.safeCast(columnDef,Date.class);
                 Date minDate = Columns.getMin(dateColumn);
                 dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(dateColumn).start(minDate).step(-1));
 
             } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
                 if (columnDef.getClazz()== BigDecimal.class){
-                    ColumnDef<BigDecimal> bigDecimalColumnDef = Columns.safeCast(columnDef, BigDecimal.class);
+                    GenColumnDef<BigDecimal> bigDecimalColumnDef = (GenColumnDef<BigDecimal>) Columns.safeCast(columnDef, BigDecimal.class);
                     BigDecimal intCounter = Columns.getMax(bigDecimalColumnDef);
                     dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
                 } else {
-                    ColumnDef<Integer> integerColumn = Columns.safeCast(columnDef, Integer.class);
+                    GenColumnDef<Integer> integerColumn = (GenColumnDef<Integer>) Columns.safeCast(columnDef, Integer.class);
                     Integer intCounter = Columns.getMax(integerColumn);
                     dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(integerColumn).start(intCounter).step(1));
                 }
 
             } else if ( SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
 
-                ColumnDef<String> stringColumn = Columns.safeCast(columnDef,String.class);
+                GenColumnDef<String> stringColumn = (GenColumnDef<String>) Columns.safeCast(columnDef,String.class);
                 String s = Columns.getMax(stringColumn);
                 dataGeneratorMap.put(columnDef, SequenceCollectionGenerator.of(stringColumn).start(s));
 
@@ -114,7 +114,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
      * when asking a value for a column, we may need to ask the value for another column before
      */
     @Override
-    public ColumnDef getColumn() {
+    public GenColumnDef getColumn() {
 
         if (dataGeneratorMap.size()==1){
 
