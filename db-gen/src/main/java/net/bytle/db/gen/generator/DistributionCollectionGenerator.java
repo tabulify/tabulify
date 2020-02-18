@@ -30,13 +30,13 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
   private final Class<T> clazz;
 
   private Object o;
-  private ColumnDef columnDef;
+  private GenColumnDef columnDef;
   private Object min;
   private Object max;
   private Object range;
   private List<T> values;
 
-  public DistributionCollectionGenerator(ColumnDef<T> columnDef) {
+  public DistributionCollectionGenerator(GenColumnDef<T> columnDef) {
 
     this.columnDef = columnDef;
     clazz = columnDef.getClazz();
@@ -190,8 +190,10 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
    * when asking a value for a column, we may need to ask the value for another column before
    */
   @Override
-  public ColumnDef getColumn() {
+  public GenColumnDef getColumn() {
+
     return columnDef;
+
   }
 
   /**

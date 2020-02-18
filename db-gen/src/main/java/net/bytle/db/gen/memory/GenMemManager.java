@@ -1,6 +1,5 @@
 package net.bytle.db.gen.memory;
 
-import net.bytle.db.gen.DataGenerator;
 import net.bytle.db.gen.GenDataPath;
 import net.bytle.db.gen.GenSelectStream;
 import net.bytle.db.memory.MemoryDataPath;
@@ -42,8 +41,7 @@ public class GenMemManager implements MemoryVariableManager {
   @Override
   public long size(MemoryDataPath memoryDataPath) {
 
-    DataGenerator dataGenerator =  DataGenerator.of((GenDataPath) memoryDataPath);
-    return dataGenerator.getMaxSize();
+    return ((GenDataPath) memoryDataPath).getDataDef().getSize();
 
   }
 

@@ -15,7 +15,7 @@ import java.util.*;
 public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
 
-  private Map<ColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
+  private Map<GenColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
 
   Integer position = new Integer(0);
 
@@ -31,7 +31,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
     // Creating a data generator by column
     // and adding it to the data generator map variable
-    for (ColumnDef columnDef : columnDefs) {
+    for (GenColumnDef columnDef : columnDefs) {
 
       if (SqlDataType.timeTypes.contains(columnDef.getDataType().getTypeCode())) {
 
@@ -148,7 +148,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
    * when asking a value for a column, we may need to ask the value for another column before
    */
   @Override
-  public ColumnDef getColumn() {
+  public GenColumnDef getColumn() {
 
     if (dataGeneratorMap.size() == 1) {
 

@@ -31,11 +31,11 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
 
   private final CollectionGenerator dataCollectionGenerator;
   private final String formula;
-  private final ColumnDef<T> columnDef;
+  private final GenColumnDef<T> columnDef;
   private Object actualValue;
 
 
-  public DerivedCollectionGenerator(ColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
+  public DerivedCollectionGenerator(GenColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
 
     this.columnDef = columnDef;
     this.dataCollectionGenerator = parentDataCollectionGenerator;
@@ -109,7 +109,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
    * @return the column attached to this generator
    */
   @Override
-  public ColumnDef getColumn() {
+  public GenColumnDef getColumn() {
     return columnDef;
   }
 

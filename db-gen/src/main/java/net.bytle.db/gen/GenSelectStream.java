@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 public class GenSelectStream extends SelectStreamAbs {
 
-  private final DataGenerator dataGenerator;
   private final GenDataPath genDataPath;
   long actualRowId = 0;
 
@@ -25,7 +24,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
     super(dataPath);
     this.genDataPath = dataPath;
-    dataGenerator = DataGenerator.of(genDataPath);
+    this.genDataPath.getDataDef().buildMissingGenerators();
 
   }
 
@@ -36,15 +35,15 @@ public class GenSelectStream extends SelectStreamAbs {
    * @param columnDef
    * @param columnValues
    */
-  private void populateColumnValues(Map<ColumnDef, Object> columnValues, ColumnDef columnDef) {
+  private void populateColumnValues(Map<ColumnDef, Object> columnValues, GenColumnDef columnDef) {
 
     if (columnValues.get(columnDef) == null) {
 
-      CollectionGenerator collectionGenerator = dataGenerator.getCollectionGenerator(columnDef);
+      CollectionGenerator collectionGenerator = columnDef.getGenerator();
 
       if (collectionGenerator.getClass().equals(DerivedCollectionGenerator.class)) {
         DerivedCollectionGenerator dataGeneratorDerived = (DerivedCollectionGenerator) collectionGenerator;
-        ColumnDef parentColumn = dataGeneratorDerived.getParentGenerator().getColumn();
+        GenColumnDef parentColumn = dataGeneratorDerived.getParentGenerator().getColumn();
         // The column value of the parent must be generated before
         populateColumnValues(columnValues, parentColumn);
       }
@@ -60,7 +59,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public boolean next() {
-    if (actualRowId >= dataGenerator.getMaxSize()) {
+    if (actualRowId >= genDataPath.getDataDef().getMaxSize()) {
       return false;
     } else {
       actualRowId++;
@@ -71,7 +70,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   private void buildRow() {
     row = new HashMap<>();
-    for (ColumnDef columnDef : genDataPath.getDataDef().getColumnDefs()) {
+    for (GenColumnDef columnDef : genDataPath.getDataDef().getColumnDefs()) {
       populateColumnValues(row, columnDef);
     }
 

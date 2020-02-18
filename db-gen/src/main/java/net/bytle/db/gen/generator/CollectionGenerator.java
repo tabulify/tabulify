@@ -1,6 +1,7 @@
 package net.bytle.db.gen.generator;
 
 
+import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 
 import java.util.List;
@@ -48,7 +49,7 @@ public interface CollectionGenerator<T> {
    * when asking a value for a column, we may need to ask the value for another column before
    * If the generator is a multi-column generator, it will throw an errors
    */
-  ColumnDef<T> getColumn();
+  GenColumnDef<T> getColumn();
 
   /**
    * of a new value for a column

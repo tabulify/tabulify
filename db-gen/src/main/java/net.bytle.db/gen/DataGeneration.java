@@ -3,22 +3,17 @@ package net.bytle.db.gen;
 
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.gen.generator.CollectionGenerator;
-import net.bytle.db.gen.generator.SequenceCollectionGenerator;
 import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.PrimaryKeyDef;
-import net.bytle.db.model.UniqueKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents an data generation instance
@@ -42,10 +37,10 @@ public class DataGeneration {
    * The table to load mapping
    * The target is the driver, this is why it's in the first position
    */
-  private final Map<DataPath, GenDataPath> tablesToLoad = new HashMap<>();
-  private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
-  private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
-  private List<ColumnDef> primaryColumns = new ArrayList<>();
+  private final Map<DataPath, GenDataPath> transfers = new HashMap<>();
+  // private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
+  //private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
+//  private List<ColumnDef> primaryColumns = new ArrayList<>();
 
   /**
    * Do we need to load parent table even if they are not in the set
@@ -64,55 +59,16 @@ public class DataGeneration {
    */
   private Map<ColumnDef, CollectionGenerator> dataGenerators = new HashMap<>();
 
-  public DataGeneration addTable(DataPath targetDataPath, Integer totalRows) {
+
+  public DataGeneration addTable(DataPath targetDataPath, Long totalRows) {
 
     GenDataPath sourceDataPath = GenMemDataPath.of(targetDataPath.getName())
       .getDataDef()
       .copy(targetDataPath)
-      .setMaxRows(totalRows)
+      .setMaxSize(totalRows)
       .getDataPath();
     // Adding the table into the list of tables to load
-    tablesToLoad.put(targetDataPath, sourceDataPath);
-
-    // Building the foreign, primary and unique keys
-
-    // Self referencing foreign key check
-    List<ForeignKeyDef> selfReferencingForeignKeys = DataGens.getSelfReferencingForeignKeys(targetDataPath);
-    if (selfReferencingForeignKeys.size() > 0) {
-      for (ForeignKeyDef foreignKeyDef : selfReferencingForeignKeys) {
-        LOGGER.severe("The foreign key " + foreignKeyDef.getName() + " on the table (" + foreignKeyDef.getTableDef().getDataPath().toString() + ") references itself and it's not supported.");
-      }
-      throw new RuntimeException("Self referencing foreign key found in the table " + targetDataPath.toString());
-    }
-
-
-    // Primary Key with only one column are supported
-    PrimaryKeyDef primaryKeyDef = targetDataPath.getDataDef().getPrimaryKey();
-    // Extract the primary column
-    if (primaryKeyDef != null) {
-      primaryColumns.addAll(primaryKeyDef.getColumns());
-    }
-
-    // Foreign Key with only one column are supported
-    List<ForeignKeyDef> foreignKeys = targetDataPath.getDataDef().getForeignKeys();
-    for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-      int size = foreignKeyDef.getChildColumns().size();
-      if (size > 1) {
-        throw new RuntimeException("Foreign Key on more than one column are not yet supported. The foreignKey (" + foreignKeyDef.getName() + ") has " + size);
-      }
-      ColumnDef foreignKeyColumn = foreignKeyDef.getChildColumns().get(0);
-      if (this.columnForeignKeyMap.get(foreignKeyColumn) != null) {
-        throw new RuntimeException("Two foreign keys on the same column are not supported. The column (" + foreignKeyColumn.toString() + ") has more than one foreign key.");
-      }
-      this.columnForeignKeyMap.put(foreignKeyColumn, foreignKeyDef);
-    }
-
-    // Unique Keys
-    for (UniqueKeyDef uniqueKeyDef : targetDataPath.getDataDef().getUniqueKeys()) {
-      for (ColumnDef columnDef : uniqueKeyDef.getColumns()) {
-        this.columnUniqueKeyMap.put(columnDef, uniqueKeyDef);
-      }
-    }
+    addTransfer(sourceDataPath, targetDataPath);
 
     return this;
   }
@@ -140,64 +96,98 @@ public class DataGeneration {
    */
   public List<DataPath> load() {
 
-    final List<DataPath> tablesLoaded = new ArrayList<>(tablesToLoad.keySet());
-
-    // Parent check
+    // Target Parent check
     // Parent not in the table set to load ?
-    // If yes, add the parent to the tables to loaded
-    for (DataPath dataPath : tablesLoaded) {
-      if (dataPath.getDataDef().getForeignKeys().size() != 0) {
-        for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
-          DataPath parentDataUnit = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
-          if (!tablesToLoad.containsKey(parentDataUnit)) {
-
-            long rows = Tabulars.getSize(parentDataUnit);
+    // If yes, add a transfer with the parent tables
+    List<DataPath> targetDataPaths = new ArrayList<>(transfers.keySet());
+    for (DataPath targetDataPath : targetDataPaths) {
+      if (targetDataPath.getDataDef().getForeignKeys().size() != 0) {
+        for (ForeignKeyDef foreignKeyDef : targetDataPath.getDataDef().getForeignKeys()) {
+          DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
+          if (!transfers.containsKey(foreignDataPath)) {
+            long rows = Tabulars.getSize(foreignDataPath);
             if (rows == 0) {
               if (this.loadParent != null && this.loadParent) {
-                LOGGER.info("The table (" + parentDataUnit.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
-                tablesLoaded.add(parentDataUnit);
+                LOGGER.info("The table (" + foreignDataPath.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
+                addTable(foreignDataPath);
               } else {
-                throw new RuntimeException("The table (" + dataPath.toString() + ") has a foreign key to the parent table (" + parentDataUnit.toString() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + dataPath.toString() + ")");
+                throw new RuntimeException("The table (" + targetDataPath.toString() + ") has a foreign key to the parent table (" + foreignDataPath.toString() + "). This table has no rows and the option to load parent is disabled, we cannot then generated rows in the table (" + targetDataPath.toString() + ")");
               }
             }
-
-          } else {
-            // Add the collection generator to the generator data path
-            GenDataDef parentDataDef = getGenDataPath(parentDataUnit).getDataDef();
-            GenDataDef genDataPath = getGenDataPath(dataPath).getDataDef();
-            parentDataDef
-              .getPrimaryKey()
-              .getColumns()
-              .stream()
-              .forEach(c -> {
-                GenColumnDef columnDef = parentDataDef.getColumnDef(c.getColumnName());
-                if (columnDef.getClazz().equals(Integer.class)) {
-                  SequenceCollectionGenerator<Integer> collectionGenerator = (SequenceCollectionGenerator<Integer>) columnDef.getGenerator();
-                  if (collectionGenerator==null){
-                    collectionGenerator = (SequenceCollectionGenerator<Integer>) DataGenerator.of(parentDataDef.getDataPath()).getCollectionGenerator(columnDef);
-                  }
-                  Integer max = collectionGenerator.getDomainMax();
-                  Integer min = collectionGenerator.getDomainMin();
-                  genDataPath
-                    .getColumn(columnDef.getColumnName(), Integer.class)
-                    .addDistributionGenerator()
-                    .setMin(min)
-                    .setMax(max);
-                } else {
-                  throw new RuntimeException("The foreign column (" + columnDef + ") of the data path (" + dataPath + ") has a class of (" + columnDef.getClazz() + ") that is not yet supported");
-                }
-              });
           }
         }
       }
     }
 
+    // Source
+    // Building the missing data generators
+    transfers.values().forEach(sourceDataPath -> sourceDataPath.getDataDef().buildMissingGenerators());
+
+    // The load parent option may have added a transfer
+    targetDataPaths = new ArrayList<>(transfers.keySet());
+    // foreign data generators building
+    for (DataPath targetDataPath : targetDataPaths) {
+
+      // Add the foreign collection generator to the foreign columns
+      targetDataPath
+        .getDataDef()
+        .getForeignKeys()
+        .forEach(foreignKey -> {
+
+          // Only one column relationship is supported
+          if (foreignKey.getChildColumns().size() > 1) {
+            String cols = foreignKey.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(","));
+            throw new RuntimeException("The foreign key of the data path (" + targetDataPath + ") has more than one columns (" + cols + "and its not yet supported");
+          }
+
+          // Get the primary key collection generator
+          String primaryKeyTableName = foreignKey.getForeignPrimaryKey().getDataDef().getDataPath().getName();
+          String primaryKeyColumnName = foreignKey.getForeignPrimaryKey().getColumns().get(0).getColumnName();
+          CollectionGenerator primaryKeyCollectionGenerator = transfers.values()
+            .stream()
+            .filter(dp -> dp.getName().equals(primaryKeyTableName))
+            .flatMap(dp -> Arrays.stream(dp.getDataDef().getColumnDefs()))
+            .filter(c -> c.getColumnName().equals(primaryKeyColumnName))
+            .map(GenColumnDef::getGenerator)
+            .findFirst()
+            .orElse(null);
+
+          // Get the foreign column
+          String foreignTableName = targetDataPath.getName();
+          String foreignColumnName = foreignKey.getChildColumns().get(0).getColumnName();
+          GenColumnDef foreignColumn = transfers.values()
+            .stream()
+            .filter(dp -> dp.getName().equals(foreignTableName))
+            .flatMap(dp -> Arrays.stream(dp.getDataDef().getColumnDefs()))
+            .filter(c -> c.getColumnName().equals(foreignColumnName))
+            .findFirst()
+            .orElse(null);
+
+          // Add the good generator to the column of the foreign key
+          assert primaryKeyCollectionGenerator != null;
+          assert foreignColumn != null;
+          if (primaryKeyCollectionGenerator.getColumn().getClazz().equals(Integer.class)) {
+            CollectionGenerator<Integer> collectionGenerator = (CollectionGenerator<Integer>) primaryKeyCollectionGenerator;
+            Integer max = collectionGenerator.getDomainMax();
+            Integer min = collectionGenerator.getDomainMin();
+            ((GenColumnDef<Integer>) foreignColumn)
+              .addDistributionGenerator()
+              .setMin(min)
+              .setMax(max);
+          } else {
+            throw new RuntimeException("The foreign column (" + primaryKeyCollectionGenerator.getColumn() + ") of the data path (" + targetDataPath + ") has a class of (" + primaryKeyCollectionGenerator.getColumn().getClazz() + ") that is not yet supported");
+          }
+
+        })
+      ;
+    }
+
     // Load
-    final List<DataPath> createOrderedTables = ForeignKeyDag.get(tablesLoaded).getCreateOrderedTables();
+    final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
 
     for (DataPath dataPath : createOrderedTables) {
 
-      GenDataPath genDataPath = tablesToLoad.get(dataPath);
+      GenDataPath genDataPath = transfers.get(dataPath);
 
       // The load
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
@@ -205,7 +195,7 @@ public class DataGeneration {
 
       Tabulars.create(genDataPath);
       long numberOfRowToInsert = Tabulars.getSize(genDataPath);
-      if (genDataPath.getDataDef().getMaxSize() == null && numberOfRowToInsert > MAX_INSERT) {
+      if (numberOfRowToInsert > MAX_INSERT) {
         throw new RuntimeException(
           Strings.multiline("The generator (" + genDataPath + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
             "Set a row size number on the generator data path to resolve this issue."));
@@ -230,12 +220,14 @@ public class DataGeneration {
       LOGGER.info("The new size is: " + Tabulars.getSize(dataPath));
 
     }
-    return tablesLoaded;
+
+    // Return the tables loaded (due to the parent options, this may be more than the configured one)
+    return targetDataPaths;
 
   }
 
   private GenDataPath getGenDataPath(DataPath parentDataUnit) {
-    return tablesToLoad.values().stream()
+    return transfers.values().stream()
       .filter(dp -> dp.getName().equals(parentDataUnit.getName()))
       .findFirst()
       .orElse(null);
@@ -264,15 +256,18 @@ public class DataGeneration {
    * @param totalRows - the totalRows
    * @return
    */
-  public DataGeneration addTables(List<DataPath> dataPaths, Integer totalRows) {
+  public DataGeneration addTables(List<DataPath> dataPaths, Long totalRows) {
     for (DataPath dataPath : dataPaths) {
       addTable(dataPath, totalRows);
     }
     return this;
   }
 
-  public DataGeneration addTransfer(GenDataPath genDataPath, DataPath dataPath) {
-    tablesToLoad.put(dataPath, genDataPath);
+  public DataGeneration addTransfer(GenDataPath genDataPath, DataPath targetDataPath) {
+
+    // Add the transfers
+    transfers.put(targetDataPath, genDataPath);
     return this;
+
   }
 }

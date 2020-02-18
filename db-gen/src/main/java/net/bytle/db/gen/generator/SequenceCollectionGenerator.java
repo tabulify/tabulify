@@ -350,7 +350,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
       if (maxValue!=null){
         max = (Integer) maxValue;
       }
-      Long maxSize = this.getColumn().getDataDef().getMaxSize();
+      Long maxSize = this.getColumn().getDataDef().getSize();
       if(maxSize !=null){
         if (maxSize>max){
           if (maxSize>Integer.MAX_VALUE){

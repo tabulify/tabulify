@@ -1,9 +1,6 @@
 package net.bytle.db.gen;
 
-import net.bytle.db.gen.generator.CollectionGenerator;
-import net.bytle.db.gen.generator.DerivedCollectionGenerator;
-import net.bytle.db.gen.generator.DistributionCollectionGenerator;
-import net.bytle.db.gen.generator.SequenceCollectionGenerator;
+import net.bytle.db.gen.generator.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Typess;
@@ -24,7 +21,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
    */
   public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
   private final GenDataDef genDataDef;
-  private CollectionGenerator generator;
+  private CollectionGenerator<T> generator;
 
   /**
    * Only called by the function of of a TableDef
@@ -157,4 +154,29 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     generator = distributionCollectionGenerator;
     return distributionCollectionGenerator;
   }
+
+
+
+  public SequenceCollectionGenerator<T> getSequenceGenerator(Class<T> clazz) {
+
+    if (generator==null){
+      throw new RuntimeException("The column ("+this+") has no generator");
+    }
+    if (getGenerator().getClass()!=SequenceCollectionGenerator.class){
+      throw new RuntimeException("The column ("+this+") has a generator that is not a sequence generator but "+generator.getClass());
+    }
+    return (SequenceCollectionGenerator<T>) generator;
+
+  }
+
+  /**
+   *
+   * @param collectionGenerator
+   * @return
+   */
+  public GenColumnDef setGenerator(CollectionGenerator collectionGenerator) {
+    generator = collectionGenerator;
+    return this;
+  }
+
 }
