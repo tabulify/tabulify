@@ -79,4 +79,19 @@ public interface CollectionGenerator<T> {
   Long getMaxGeneratedValues();
 
 
+  /**
+   *
+   * @param <T>
+   * @return the max generated value of the domain
+   * If the collection generator generates values from 0 to 10, it will return 10
+   */
+  <T> T getDomainMax();
+
+  /**
+   *
+   * @param <T>
+   * @return the min generated value of the domain
+   * If the collection generator generates values from 0 to 10, it will return 0
+   */
+  <T> T getDomainMin();
 }

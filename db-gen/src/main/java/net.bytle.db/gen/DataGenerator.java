@@ -2,6 +2,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.gen.generator.DistributionCollectionGenerator;
+import net.bytle.db.gen.generator.SequenceCollectionGenerator;
 import net.bytle.db.gen.generator.UniqueDataCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.PrimaryKeyDef;
@@ -85,11 +86,23 @@ public class DataGenerator {
     // A data generator was not yet fund, we will find one with the column constraint
     if (this.primaryColumns.contains(columnDef)) {
 
-      final List<ColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getDataDef().equals(columnDef.getDataDef())).collect(Collectors.toList());
-      UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(primaryColumnsForColumnDefTable);
-      for (ColumnDef pkColumns : primaryColumnsForColumnDefTable) {
-        dataGenerators.put(pkColumns, uniqueDataGenerator);
+      final List<GenColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getDataDef().equals(columnDef.getDataDef())).collect(Collectors.toList());
+      if (primaryColumnsForColumnDefTable.size()==1) {
+
+        GenColumnDef primaryCol = primaryColumnsForColumnDefTable.get(0);
+        SequenceCollectionGenerator uniqueDataGenerator = new SequenceCollectionGenerator(primaryCol);
+        dataGenerators.put(primaryCol, uniqueDataGenerator);
+
+      } else {
+
+        UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(primaryColumnsForColumnDefTable);
+        for (ColumnDef pkColumn : primaryColumnsForColumnDefTable) {
+          dataGenerators.put(pkColumn, uniqueDataGenerator);
+        }
+
       }
+
+
       return;
 
       // TODO
@@ -101,9 +114,10 @@ public class DataGenerator {
 
     } else if (allUniqueKeyColumns.contains(columnDef)) {
 
-      List<ColumnDef> uniqueKeyColumns = genDataPath.getDataDef().getUniqueKeys().stream()
+      List<GenColumnDef> uniqueKeyColumns = genDataPath.getDataDef().getUniqueKeys().stream()
         .filter(uk -> uk.getColumns().contains(columnDef))
         .flatMap(uk -> uk.getColumns().stream())
+        .map(DataGens::castToGenColumnDef)
         .collect(Collectors.toList());
 
       UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(uniqueKeyColumns);

@@ -25,7 +25,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
    *
    * @param columnDefs
    */
-  public UniqueDataCollectionGenerator(List<ColumnDef> columnDefs) {
+  public UniqueDataCollectionGenerator(List<GenColumnDef> columnDefs) {
 
     // long numberOfValueToGenerateByColumn = Math.floorDiv((long) numberOfRowToInsert,(long) columnDefs.size());
 
@@ -206,6 +206,16 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
   public Long getMaxGeneratedValues() {
     // Hack
     return Long.MAX_VALUE;
+  }
+
+  @Override
+  public Object getDomainMin() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Object getDomainMax() {
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override

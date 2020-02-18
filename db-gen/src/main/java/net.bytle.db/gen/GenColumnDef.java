@@ -151,4 +151,10 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     super.precision(precision);
     return this;
   }
+
+  public DistributionCollectionGenerator<T> addDistributionGenerator() {
+    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this);
+    generator = distributionCollectionGenerator;
+    return distributionCollectionGenerator;
+  }
 }

@@ -118,6 +118,15 @@ public class TableDef extends DataDefAbs  {
 
   }
 
+  @Override
+  public <T> ColumnDef<T> getColumn(String columnName, Class<T> clazz) {
+    ColumnDef column = columnDefByName.get(columnName);
+    if (!column.getClazz().equals(clazz)){
+      throw new RuntimeException("The column ("+column+") does not have a clazz of ("+clazz+") but of "+column.getClazz());
+    }
+    return column;
+  }
+
 
   /**
    * @param columnName

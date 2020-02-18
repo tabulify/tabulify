@@ -120,4 +120,14 @@ public class FkDataCollectionGenerator implements CollectionGenerator {
       return Long.MAX_VALUE;
 
     }
+
+  @Override
+  public Object getDomainMin() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public Object getDomainMax() {
+    throw new RuntimeException("Not yet implemented");
+  }
 }

@@ -162,6 +162,16 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
     return dataCollectionGenerator.getMaxGeneratedValues();
   }
 
+  @Override
+  public <T1> T1 getDomainMax() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public <T1> T1 getDomainMin() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
   /**
    * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
    *

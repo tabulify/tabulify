@@ -92,4 +92,13 @@ public interface RelationDef {
    */
   RelationDef copy(DataPath sourceDataPath);
 
+  /**
+   *
+   * @param columnName
+   * @param clazz
+   * @param <T>
+   * @return the column checked against the clazz
+   */
+  <T> ColumnDef<T> getColumn(String columnName, Class<T> clazz);
+
 }

@@ -3,6 +3,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.gen.generator.CollectionGenerator;
+import net.bytle.db.gen.generator.SequenceCollectionGenerator;
 import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -152,7 +153,7 @@ public class DataGeneration {
 
             long rows = Tabulars.getSize(parentDataUnit);
             if (rows == 0) {
-              if (this.loadParent!=null && this.loadParent) {
+              if (this.loadParent != null && this.loadParent) {
                 LOGGER.info("The table (" + parentDataUnit.toString() + ") has no rows, the option to load the parent is on, therefore the table will be loaded.");
                 tablesLoaded.add(parentDataUnit);
               } else {
@@ -160,6 +161,32 @@ public class DataGeneration {
               }
             }
 
+          } else {
+            // Add the collection generator to the generator data path
+            GenDataDef parentDataDef = getGenDataPath(parentDataUnit).getDataDef();
+            GenDataDef genDataPath = getGenDataPath(dataPath).getDataDef();
+            parentDataDef
+              .getPrimaryKey()
+              .getColumns()
+              .stream()
+              .forEach(c -> {
+                GenColumnDef columnDef = parentDataDef.getColumnDef(c.getColumnName());
+                if (columnDef.getClazz().equals(Integer.class)) {
+                  SequenceCollectionGenerator<Integer> collectionGenerator = (SequenceCollectionGenerator<Integer>) columnDef.getGenerator();
+                  if (collectionGenerator==null){
+                    collectionGenerator = (SequenceCollectionGenerator<Integer>) DataGenerator.of(parentDataDef.getDataPath()).getCollectionGenerator(columnDef);
+                  }
+                  Integer max = collectionGenerator.getDomainMax();
+                  Integer min = collectionGenerator.getDomainMin();
+                  genDataPath
+                    .getColumn(columnDef.getColumnName(), Integer.class)
+                    .addDistributionGenerator()
+                    .setMin(min)
+                    .setMax(max);
+                } else {
+                  throw new RuntimeException("The foreign column (" + columnDef + ") of the data path (" + dataPath + ") has a class of (" + columnDef.getClazz() + ") that is not yet supported");
+                }
+              });
           }
         }
       }
@@ -178,9 +205,9 @@ public class DataGeneration {
 
       Tabulars.create(genDataPath);
       long numberOfRowToInsert = Tabulars.getSize(genDataPath);
-      if (genDataPath.getDataDef().getMaxSize()==null && numberOfRowToInsert>MAX_INSERT){
+      if (genDataPath.getDataDef().getMaxSize() == null && numberOfRowToInsert > MAX_INSERT) {
         throw new RuntimeException(
-          Strings.multiline("The generator ("+genDataPath+") may generate ("+numberOfRowToInsert+") records which is bigger than the upper limit of ("+MAX_INSERT+").",
+          Strings.multiline("The generator (" + genDataPath + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
             "Set a row size number on the generator data path to resolve this issue."));
       }
 
@@ -191,7 +218,7 @@ public class DataGeneration {
           InsertStream inputStream = Tabulars.getInsertStream(dataPath);
           GenSelectStream genSelectStream = new GenSelectStream(genDataPath)
         ) {
-          while(genSelectStream.next()){
+          while (genSelectStream.next()) {
             List<Object> objects = genSelectStream.getObjects();
             inputStream.insert(objects);
           }
@@ -207,13 +234,18 @@ public class DataGeneration {
 
   }
 
+  private GenDataPath getGenDataPath(DataPath parentDataUnit) {
+    return tablesToLoad.values().stream()
+      .filter(dp -> dp.getName().equals(parentDataUnit.getName()))
+      .findFirst()
+      .orElse(null);
+  }
+
 
   public DataGeneration loadDependencies(Boolean loadParent) {
     this.loadParent = loadParent;
     return this;
   }
-
-
 
 
   public DataGeneration addTable(DataPath dataPath) {
@@ -240,7 +272,7 @@ public class DataGeneration {
   }
 
   public DataGeneration addTransfer(GenDataPath genDataPath, DataPath dataPath) {
-    tablesToLoad.put(dataPath,genDataPath);
+    tablesToLoad.put(dataPath, genDataPath);
     return this;
   }
 }

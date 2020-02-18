@@ -167,6 +167,16 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   }
 
+  @Override
+  public <T> GenColumnDef<T> getColumn(String columnName, Class<T> clazz) {
 
+
+    GenColumnDef genColumnDef = genColumns.get(columnName);
+    if (!genColumnDef.getClazz().equals(clazz)){
+      throw new RuntimeException("The column ("+genColumnDef+") does not have a clazz of ("+clazz+") but of "+genColumnDef.getClazz());
+    }
+    return genColumnDef;
+
+  }
 
 }

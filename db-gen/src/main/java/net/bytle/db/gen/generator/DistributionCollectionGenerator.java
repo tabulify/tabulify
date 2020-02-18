@@ -239,6 +239,16 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
     return Long.MAX_VALUE;
   }
 
+  @Override
+  public <T1> T1 getDomainMax() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public <T1> T1 getDomainMin() {
+    throw new RuntimeException("Not yet implemented");
+  }
+
 
   /**
    * The buckets defines the distribution of discrete variable

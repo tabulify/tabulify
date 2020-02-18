@@ -34,13 +34,15 @@ import static java.time.temporal.ChronoUnit.DAYS;
 public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
 
 
-  private final ColumnDef<T> columnDef;
+  private final GenColumnDef<T> columnDef;
   private final Class<T> clazz;
 
 
   // The current value that the generated has generated
   private Object currentValue;
 
+  // The start value
+  private Object start;
   // The min value is the lower limit value
   private Object minValue;
   // The max value is the upper limit value
@@ -54,37 +56,42 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * Second element = Second element of the list
    * ...
    */
-  private List<Object> values;
+  private List<T> values;
 
 
   /**
    * @param columnDef
    */
-  public SequenceCollectionGenerator(ColumnDef<T> columnDef) {
+  public SequenceCollectionGenerator(GenColumnDef<T> columnDef) {
 
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
 
     if (clazz == Integer.class) {
       currentValue = 0;
+      start = 0;
       maxValue = Integer.MAX_VALUE;
       step = 1;
     } else if (clazz == Double.class) {
       currentValue = 0.0;
+      start = 0.0;
       maxValue = Double.MAX_VALUE;
       step = 1;
     } else if (clazz == Date.class) {
       currentValue = LocalDate.now();
+      start = LocalDate.now();
       step = -1;
       minValue = LocalDate.MIN;
       maxValue = LocalDate.MAX;
     } else if (clazz == BigDecimal.class) {
       currentValue = new BigDecimal(0);
+      start = new BigDecimal(0);
       step = 1;
       minValue = Integer.MIN_VALUE;
       maxValue = Integer.MAX_VALUE;
     } else if (clazz == String.class) {
       currentValue = -1;
+      start = -1;
       step = 1;
       minValue = 0; // The first code point
       // See the test SeqGenTest.sequenceGeneratorStringCharacterPrintTest to print them
@@ -118,10 +125,10 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
       sequenceGenerator.step = step;
     }
 
-    List<Object> values;
+    List<T> values;
     final Object valuesAsObject = columnDef.getProperty("values");
     try {
-      values = (List<Object>) valuesAsObject;
+      values = (List<T>) valuesAsObject;
     } catch (ClassCastException e) {
       throw new RuntimeException("The values excepted for the column " + columnDef + " are not a list. The values are " + valuesAsObject);
     }
@@ -200,7 +207,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * @return the column attached to this generator
    */
   @Override
-  public ColumnDef<T> getColumn() {
+  public GenColumnDef<T> getColumn() {
     return columnDef;
   }
 
@@ -259,13 +266,16 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
         if (clazz == BigDecimal.class && start.getClass() == Integer.class) {
           // We got an integer as start value
           this.currentValue = new BigDecimal((Integer) start);
+          this.start = new BigDecimal((Integer) start);
         } else if (clazz == Double.class && start.getClass() == Integer.class) {
           // We got an integer as start value
           this.currentValue = new Double((Integer) start);
+          this.start = new Double((Integer) start);
         } else if (clazz == String.class && start.getClass() == Integer.class) {
           // The integer representation of a string
           // that may be obtains via the {@link StringGenerator.toInt)
           this.currentValue = start;
+          this.start = start;
         } else {
           throw new RuntimeException("The expected class for this generator is not (" + start.getClass() + ") but " + clazz);
         }
@@ -274,10 +284,13 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
 
         if (start.getClass() == String.class) {
           this.currentValue = StringGenerator.toInt((String) start, StringGenerator.MAX_RADIX);
+          this.start = StringGenerator.toInt((String) start, StringGenerator.MAX_RADIX);
         } else if (start.getClass() == Date.class) {
           this.currentValue = ((Date) start).toLocalDate();
+          this.start = ((Date) start).toLocalDate();
         } else {
           this.currentValue = start;
+          this.start = start;
         }
 
       }
@@ -313,12 +326,10 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
     } else {
       if (clazz == Integer.class || clazz == BigDecimal.class) {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        ;
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
         maxGeneratedValues = Double.valueOf(Math.pow(10, precision)).longValue();
       } else if (clazz == String.class) {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        ;
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
         maxGeneratedValues = Double.valueOf(Math.pow(StringGenerator.MAX_RADIX, precision)).longValue();
       } else if (clazz == Date.class) {
@@ -331,6 +342,44 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
 
   }
 
+  @Override
+  public <T> T getDomainMax() {
+
+    if (clazz == Integer.class) {
+      Integer max = 0;
+      if (maxValue!=null){
+        max = (Integer) maxValue;
+      }
+      Long maxSize = this.getColumn().getDataDef().getMaxSize();
+      if(maxSize !=null){
+        if (maxSize>max){
+          if (maxSize>Integer.MAX_VALUE){
+            max = Integer.MAX_VALUE;
+          } else {
+            max = maxSize.intValue();
+          }
+        }
+      }
+      return (T) max;
+    } else {
+      throw new RuntimeException("Domain max on "+clazz+" is not yet implemented");
+    }
+
+  }
+
+  @Override
+  public <T> T getDomainMin() {
+    if (clazz == Integer.class) {
+      Integer min = 0;
+      if (start!=null){
+        min = (Integer) start;
+      }
+      return (T) min;
+    } else {
+      throw new RuntimeException("Domain max on the class ("+clazz+") was not yet implemented");
+    }
+  }
+
 
   /**
    * The sequence will be defined by a list of fix value
@@ -339,7 +388,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * @param values
    * @return
    */
-  public SequenceCollectionGenerator<T> values(List<Object> values) {
+  public SequenceCollectionGenerator<T> values(List<T> values) {
     if (clazz == String.class) {
       this.values = values;
       maxValue = this.values.size();
