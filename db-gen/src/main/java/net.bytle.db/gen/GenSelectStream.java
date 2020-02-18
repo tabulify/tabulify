@@ -5,6 +5,7 @@ import net.bytle.db.gen.generator.DerivedCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.type.Typess;
 
 import java.sql.Clob;
 import java.util.*;
@@ -88,7 +89,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public String getString(int columnIndex) {
-    return null;
+    return Typess.safeCast(getObject(columnIndex),String.class);
   }
 
   @Override
@@ -98,7 +99,11 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public Object getObject(int columnIndex) {
-    return null;
+    return row.keySet().stream()
+      .filter(c -> c.getColumnPosition().equals(columnIndex))
+      .map(c->row.get(c))
+      .findFirst()
+      .orElse(null);
   }
 
   @Override
@@ -108,12 +113,16 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public double getDouble(int columnIndex) {
-    return 0;
+
+    return Typess.safeCast(getObject(columnIndex),Double.class);
+
   }
 
   @Override
   public Clob getClob(int columnIndex) {
-    return null;
+
+    return Typess.safeCast(getObject(columnIndex),Clob.class);
+
   }
 
   @Override
@@ -130,12 +139,15 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public Integer getInteger(int columnIndex) {
-    return null;
+    return Typess.safeCast(getObject(columnIndex),Integer.class);
   }
 
   @Override
   public Object getObject(String columnName) {
-    return null;
+    return row.keySet().stream()
+      .filter(c -> c.getColumnName().equals(columnName))
+      .findFirst()
+      .orElse(null);
   }
 
   @Override

@@ -1,7 +1,6 @@
 package net.bytle.db.gen.generator;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import net.bytle.db.gen.DataGenerator;
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Typess;
@@ -23,183 +22,177 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DerivedCollectionGenerator.class);
 
-    private static final ScriptEngine engine;
+  private static final ScriptEngine engine;
 
-    static {
-        ScriptEngineManager mgr = new ScriptEngineManager();
-        engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
+  static {
+    ScriptEngineManager mgr = new ScriptEngineManager();
+    engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
+  }
+
+  private final CollectionGenerator dataCollectionGenerator;
+  private final String formula;
+  private final ColumnDef<T> columnDef;
+  private Object actualValue;
+
+
+  public DerivedCollectionGenerator(ColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
+
+    this.columnDef = columnDef;
+    this.dataCollectionGenerator = parentDataCollectionGenerator;
+    this.formula = formula;
+    if (formula == null) {
+      throw new RuntimeException("The formula for the column " + columnDef.getFullyQualifiedName() + " is null");
     }
 
-    private final CollectionGenerator dataCollectionGenerator;
-    private final String formula;
-    private final ColumnDef<T> columnDef;
-    private Object actualValue;
+  }
 
 
-    public DerivedCollectionGenerator(ColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
+  /**
+   * @return a new generated data object every time it's called
+   */
+  @Override
+  public T getNewValue() {
 
-        this.columnDef = columnDef;
-        this.dataCollectionGenerator = parentDataCollectionGenerator;
-        this.formula = formula;
-        if (formula==null){
-            throw new RuntimeException("The formula for the column "+columnDef.getFullyQualifiedName()+" is null");
-        }
+    Object derivedActualValue = dataCollectionGenerator.getActualValue();
+    String value = derivedActualValue.toString();
 
-    }
+    if (derivedActualValue.getClass().equals(Date.class)) {
 
-
-    /**
-     * @return a new generated data object every time it's called
-     */
-    @Override
-    public T getNewValue() {
-
-        Object derivedActualValue = dataCollectionGenerator.getActualValue();
-        String value = derivedActualValue.toString();
-
-        if (derivedActualValue.getClass().equals(Date.class)) {
-
-            LocalDate actualDate = ((Date) derivedActualValue).toLocalDate();
-            value = "new Date(\"" + actualDate.format(DateTimeFormatter.ISO_DATE) + "\")";
-
-        }
-
-        // engine.eval load the script
-        // on eval can load a function
-        // and an other can start the function
-        String evalScript = "var x = " + value + ";\n" + formula;
-
-        try {
-            Object evalValue = engine.eval(evalScript);
-            if (evalValue==null){
-                final String msg = "The derived generator for the column (" + columnDef.getFullyQualifiedName() + ") has returned a NULL value and it's not expected.\nThe formula was: " + evalScript;
-                LOGGER.error(msg);
-                throw new RuntimeException(msg);
-            }
-            if (evalValue.getClass() == ScriptObjectMirror.class) {
-                ScriptObjectMirror evalValueMirror = (ScriptObjectMirror) evalValue;
-                if (evalValueMirror.getClassName().equals("Date")) {
-                    // https://stackoverflow.com/questions/25385911/nashorn-nativedate-conversion-to-java-util-date
-                    // js date returns timestamp in local time so you need to adjust it...
-                    long timestampLocalTime = (long) (double) evalValueMirror.callMember("getTime");
-                    // java.util.Date constructor utilizes UTC timestamp
-                    int timezoneOffsetMinutes = (int) (double) evalValueMirror.callMember("getTimezoneOffset");
-                    this.actualValue = new Date(timestampLocalTime + timezoneOffsetMinutes * 60 * 1000);
-                } else {
-                    this.actualValue = evalValue;
-                }
-            } else {
-                this.actualValue = evalValue;
-            }
-            return (T) this.actualValue;
-        } catch (ScriptException e) {
-            throw new RuntimeException(evalScript, e);
-        }
+      LocalDate actualDate = ((Date) derivedActualValue).toLocalDate();
+      value = "new Date(\"" + actualDate.format(DateTimeFormatter.ISO_DATE) + "\")";
 
     }
 
-    /**
-     * @return a generated value (used in case of derived data
-     */
-    @Override
-    public T getActualValue() {
-        return (T) actualValue;
-    }
+    // engine.eval load the script
+    // on eval can load a function
+    // and an other can start the function
+    String evalScript = "var x = " + value + ";\n" + formula;
 
-    /**
-     * @return the column attached to this generator
-     */
-    @Override
-    public ColumnDef getColumn() {
-        return columnDef;
-    }
-
-    /**
-     * of a new value for a column
-     *
-     * @param columnDef
-     * @return a new generated data object every time it's called
-     */
-    @Override
-    public T getNewValue(ColumnDef columnDef) {
-
-        if (columnDef.equals(this.columnDef)) {
-            return getNewValue();
+    try {
+      Object evalValue = engine.eval(evalScript);
+      if (evalValue == null) {
+        final String msg = "The derived generator for the column (" + columnDef.getFullyQualifiedName() + ") has returned a NULL value and it's not expected.\nThe formula was: " + evalScript;
+        LOGGER.error(msg);
+        throw new RuntimeException(msg);
+      }
+      if (evalValue.getClass() == ScriptObjectMirror.class) {
+        ScriptObjectMirror evalValueMirror = (ScriptObjectMirror) evalValue;
+        if (evalValueMirror.getClassName().equals("Date")) {
+          // https://stackoverflow.com/questions/25385911/nashorn-nativedate-conversion-to-java-util-date
+          // js date returns timestamp in local time so you need to adjust it...
+          long timestampLocalTime = (long) (double) evalValueMirror.callMember("getTime");
+          // java.util.Date constructor utilizes UTC timestamp
+          int timezoneOffsetMinutes = (int) (double) evalValueMirror.callMember("getTimezoneOffset");
+          this.actualValue = new Date(timestampLocalTime + timezoneOffsetMinutes * 60 * 1000);
         } else {
-            throw new RuntimeException("Multiple column generator is not implemented");
+          this.actualValue = evalValue;
         }
-
+      } else {
+        this.actualValue = evalValue;
+      }
+      return (T) this.actualValue;
+    } catch (ScriptException e) {
+      throw new RuntimeException(evalScript, e);
     }
 
-    /**
-     * of the actual value of a column
-     *
-     * @param columnDef
-     * @return a generated value (used in case of derived data
-     */
-    @Override
-    public T getActualValue(ColumnDef columnDef) {
+  }
 
-        if (columnDef.equals(this.columnDef)) {
-            return getActualValue();
-        } else {
-            throw new RuntimeException("Multiple column generator is not implemented");
-        }
+  /**
+   * @return a generated value (used in case of derived data
+   */
+  @Override
+  public T getActualValue() {
+    return (T) actualValue;
+  }
 
+  /**
+   * @return the column attached to this generator
+   */
+  @Override
+  public ColumnDef getColumn() {
+    return columnDef;
+  }
+
+  /**
+   * of a new value for a column
+   *
+   * @param columnDef
+   * @return a new generated data object every time it's called
+   */
+  @Override
+  public T getNewValue(ColumnDef columnDef) {
+
+    if (columnDef.equals(this.columnDef)) {
+      return getNewValue();
+    } else {
+      throw new RuntimeException("Multiple column generator is not implemented");
     }
 
-    /**
-     * @return the columns attached to this generator
-     */
-    @Override
-    public List<ColumnDef> getColumns() {
-        List<ColumnDef> columnDefs = new ArrayList<>();
-        columnDefs.add(columnDef);
-        return columnDefs;
+  }
+
+  /**
+   * of the actual value of a column
+   *
+   * @param columnDef
+   * @return a generated value (used in case of derived data
+   */
+  @Override
+  public T getActualValue(ColumnDef columnDef) {
+
+    if (columnDef.equals(this.columnDef)) {
+      return getActualValue();
+    } else {
+      throw new RuntimeException("Multiple column generator is not implemented");
     }
 
-    @Override
-    public Long getMaxGeneratedValues() {
-        return dataCollectionGenerator.getMaxGeneratedValues();
+  }
+
+  /**
+   * @return the columns attached to this generator
+   */
+  @Override
+  public List<ColumnDef> getColumns() {
+    List<ColumnDef> columnDefs = new ArrayList<>();
+    columnDefs.add(columnDef);
+    return columnDefs;
+  }
+
+  @Override
+  public Long getMaxGeneratedValues() {
+    return dataCollectionGenerator.getMaxGeneratedValues();
+  }
+
+  /**
+   * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
+   *
+   * @return a data generator for chaining
+   */
+  static public <T> DerivedCollectionGenerator<T> of(GenColumnDef<T> columnDef) {
+
+    // Parent Generator
+    final String columnParentKeyProperty = "ColumnParent";
+    String columnParentName = Typess.safeCast(columnDef.getProperty(columnParentKeyProperty), String.class);
+    if (columnParentName == null) {
+      throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
+    }
+    GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnParentName);
+    if (columnDef.equals(columnParent)) {
+      throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
+    }
+    CollectionGenerator parentCollectionGenerator = columnParent.getGenerator();
+
+    // Formula
+    String formula = Typess.safeCast(columnDef.getProperty("formula"), String.class);
+    if (formula == null) {
+      throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column (" + columnDef.getFullyQualifiedName() + ")");
     }
 
-    /**
-     *
-     * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
-     * @param dataGeneration - The context object (giving access to the build method and other context method)
-     * @return a data generator for chaining
-     */
-    static public <T> DerivedCollectionGenerator<T> of(GenColumnDef<T> columnDef, DataGenerator dataGeneration) {
-
-        // Parent Generator
-        final String columnParentKeyProperty = "ColumnParent";
-        String columnParentName = Typess.safeCast(columnDef.getProperty(columnParentKeyProperty), String.class);
-        if (columnParentName == null) {
-            throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
-        }
-        GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnParentName);
-        CollectionGenerator parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
-        if (parentCollectionGenerator == null) {
-            if (columnDef.equals(columnParent)) {
-                throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
-            }
-            // Build it
-            dataGeneration.buildDefaultDataGeneratorForColumn(columnParent);
-        }
-        parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
-
-        // Formula
-        String formula = Typess.safeCast(columnDef.getProperty("formula"),String.class);
-        if (formula==null){
-            throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column ("+columnDef.getFullyQualifiedName()+")");
-        }
-
-        // New Instance
-        return new DerivedCollectionGenerator<>(columnDef, parentCollectionGenerator,formula);
-    }
+    // New Instance
+    return new DerivedCollectionGenerator<>(columnDef, parentCollectionGenerator, formula);
+  }
 
 
-    public CollectionGenerator getParentGenerator() {
-        return dataCollectionGenerator;
-    }
+  public CollectionGenerator getParentGenerator() {
+    return dataCollectionGenerator;
+  }
 }
