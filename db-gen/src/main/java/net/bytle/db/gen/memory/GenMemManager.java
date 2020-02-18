@@ -23,7 +23,9 @@ public class GenMemManager implements MemoryVariableManager {
 
   @Override
   public MemoryDataPath createDataPath(MemoryDataStore memoryDataStore, String path) {
-    return null;
+
+    return GenMemDataPath.of(memoryDataStore, path);
+
   }
 
   @Override

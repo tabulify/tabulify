@@ -1,10 +1,8 @@
 package net.bytle.db.gen.generator;
 
 
-import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.type.Maps;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,8 +88,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
     final DistributionCollectionGenerator<T> distributionGenerator = new DistributionCollectionGenerator<>(columnDef);
 
-    Map<String, Object> generatorColumnProperties = DataGeneration.getProperties(columnDef);
-    final Object bucketsObject = Maps.getPropertyCaseIndependent(generatorColumnProperties, "buckets");
+    final Object bucketsObject = columnDef.getProperty("buckets");
     Map<T, Integer> buckets;
     try {
       buckets = (Map<T, Integer>) bucketsObject;

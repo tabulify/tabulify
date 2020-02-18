@@ -13,7 +13,6 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   private final MemoryDataStore memoryDataStore;
 
   private String path;
-  public static final String PATH_SEPARATOR = "/";
 
   public MemoryDataPathAbs(MemoryDataStore memoryDataStore, String path) {
     this.memoryDataStore = memoryDataStore;
@@ -52,7 +51,14 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
 
   @Override
   public MemoryDataPath getSibling(String name) {
-    throw new RuntimeException("Not yet implemented");
+
+    int i = this.path.lastIndexOf(PATH_SEPARATOR);
+    if (i==-1){
+      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, name);
+    } else {
+      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, this.path.substring(0,i) + PATH_SEPARATOR + name);
+    }
+
   }
 
   @Override

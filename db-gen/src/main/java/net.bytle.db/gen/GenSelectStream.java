@@ -23,10 +23,8 @@ public class GenSelectStream extends SelectStreamAbs {
   public GenSelectStream(GenDataPath dataPath) {
 
     super(dataPath);
-    genDataPath = (GenDataPath) dataPath;
-    GenDataDef dataDef = genDataPath.getDataDef();
+    this.genDataPath = dataPath;
     dataGenerator = DataGenerator.of(genDataPath);
-
 
   }
 

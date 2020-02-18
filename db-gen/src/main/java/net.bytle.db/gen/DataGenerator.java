@@ -62,7 +62,7 @@ public class DataGenerator {
    * The build has a recursive shape because of the derived data generator that depends on another
    * We used this map to track what was build
    */
-  private Map<GenColumnDef, CollectionGenerator> dataGenerators = new HashMap<>();
+  private Map<ColumnDef, CollectionGenerator> dataGenerators = new HashMap<>();
 
   /**
    * Function that is used to build the data generator for the column
@@ -123,9 +123,9 @@ public class DataGenerator {
     // A data generator was not yet fund, we will find one with the column constraint
     if (this.primaryColumns.contains(columnDef)) {
 
-      final List<GenColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getDataDef().equals(columnDef.getDataDef())).collect(Collectors.toList());
+      final List<ColumnDef> primaryColumnsForColumnDefTable = primaryColumns.stream().filter(c -> c.getDataDef().equals(columnDef.getDataDef())).collect(Collectors.toList());
       UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(primaryColumnsForColumnDefTable);
-      for (GenColumnDef pkColumns : primaryColumnsForColumnDefTable) {
+      for (ColumnDef pkColumns : primaryColumnsForColumnDefTable) {
         dataGenerators.put(pkColumns, uniqueDataGenerator);
       }
       return;
@@ -139,14 +139,13 @@ public class DataGenerator {
 
     } else if (allUniqueKeyColumns.contains(columnDef)) {
 
-      List<GenColumnDef> uniqueKeyColumns = genDataPath.getDataDef().getUniqueKeys().stream()
+      List<ColumnDef> uniqueKeyColumns = genDataPath.getDataDef().getUniqueKeys().stream()
         .filter(uk -> uk.getColumns().contains(columnDef))
-        .flatMap(uk -> uk.getColumns().stream())
-        .map(DataGens::castToGenColumnDef)
+        .flatMap(uk->uk.getColumns().stream())
         .collect(Collectors.toList());
 
       UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(uniqueKeyColumns);
-      for (GenColumnDef uniqueKeyColumn : allUniqueKeyColumns) {
+      for (ColumnDef uniqueKeyColumn : allUniqueKeyColumns) {
         dataGenerators.put(uniqueKeyColumn, uniqueDataGenerator);
       }
       return;

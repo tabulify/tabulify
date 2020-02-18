@@ -4,7 +4,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.db.gen.DataGenerator;
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.type.Maps;
+import net.bytle.type.Typess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
 public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
@@ -172,14 +171,13 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
      */
     static public <T> DerivedCollectionGenerator<T> of(GenColumnDef<T> columnDef, DataGenerator dataGeneration) {
 
-        Map<String, Object> properties = columnDef.getProperties(columnDef);
         // Parent Generator
         final String columnParentKeyProperty = "ColumnParent";
-        String columnName = (String) Maps.getPropertyCaseIndependent(properties,columnParentKeyProperty);
-        if (columnName == null) {
+        String columnParentName = Typess.safeCast(columnDef.getProperty(columnParentKeyProperty), String.class);
+        if (columnParentName == null) {
             throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
         }
-        GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnName);
+        GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnParentName);
         CollectionGenerator parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
         if (parentCollectionGenerator == null) {
             if (columnDef.equals(columnParent)) {
@@ -191,7 +189,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
         parentCollectionGenerator = dataGeneration.getCollectionGenerator(columnParent);
 
         // Formula
-        String formula = (String) Maps.getPropertyCaseIndependent(properties,"formula");
+        String formula = Typess.safeCast(columnDef.getProperty("formula"),String.class);
         if (formula==null){
             throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column ("+columnDef.getFullyQualifiedName()+")");
         }
