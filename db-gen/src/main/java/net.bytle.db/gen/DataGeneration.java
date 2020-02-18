@@ -12,6 +12,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.log.Log;
+import net.bytle.type.Strings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -147,7 +148,7 @@ public class DataGeneration {
       if (dataPath.getDataDef().getForeignKeys().size() != 0) {
         for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
           DataPath parentDataUnit = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
-          if (!tablesToLoad.keySet().contains(parentDataUnit)) {
+          if (!tablesToLoad.containsKey(parentDataUnit)) {
 
             long rows = Tabulars.getSize(parentDataUnit);
             if (rows == 0) {
@@ -175,8 +176,13 @@ public class DataGeneration {
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
-
-      long numberOfRowToInsert = genDataPath.getDataDef().getMaxSize();
+      Tabulars.create(genDataPath);
+      long numberOfRowToInsert = Tabulars.getSize(genDataPath);
+      if (genDataPath.getDataDef().getMaxSize()==null && numberOfRowToInsert>MAX_INSERT){
+        throw new RuntimeException(
+          Strings.multiline("The generator ("+genDataPath+") may generate ("+numberOfRowToInsert+") records which is bigger than the upper limit of ("+MAX_INSERT+").",
+            "Set a row size number on the generator data path to resolve this issue."));
+      }
 
       if (numberOfRowToInsert > 0) {
         LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
@@ -234,7 +240,7 @@ public class DataGeneration {
   }
 
   public DataGeneration addTransfer(GenDataPath genDataPath, DataPath dataPath) {
-
+    tablesToLoad.put(dataPath,genDataPath);
     return this;
   }
 }

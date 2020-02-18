@@ -105,9 +105,10 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
         ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
         selectDataDef = TableDef.of(jdbcDataPath);
         for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+          int columnType = resultSetMetaData.getColumnType(i);
           selectDataDef.addColumn(
             resultSetMetaData.getColumnName(i),
-            resultSetMetaData.getColumnType(i),
+            columnType,
             resultSetMetaData.getPrecision(i),
             resultSetMetaData.getScale(i));
         }

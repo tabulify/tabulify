@@ -78,7 +78,16 @@ public class TableDef extends DataDefAbs  {
       type = Types.VARCHAR;
     }
 
-    getColumnOf(columnName, this.getDataPath().getDataStore().getSqlDataType(type).getClazz())
+    SqlDataType sqlDataType = this.getDataPath().getDataStore().getSqlDataType(type);
+    if (sqlDataType==null){
+      throw new RuntimeException("The data store ("+this.getDataPath().getDataStore()+") does not know the numeric type code ("+type+")");
+    }
+
+    Class<?> clazz = sqlDataType.getClazz();
+    if (clazz==null){
+      throw new RuntimeException("The sql data type ("+sqlDataType.getTypeName()+") of the data store ("+this.getDataPath().getDataStore()+") does not have any class associated to it");
+    }
+    getColumnOf(columnName, clazz)
       .typeCode(type)
       .precision(precision)
       .scale(scale)

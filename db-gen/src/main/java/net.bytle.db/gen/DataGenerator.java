@@ -74,7 +74,7 @@ public class DataGenerator {
     if (generator == null) {
 
       CollectionGenerator dataGenerator = columnDef.getGenerator();
-      if (dataGenerators != null) {
+      if (dataGenerator != null) {
         dataGenerators.put(columnDef, dataGenerator);
         return;
       }

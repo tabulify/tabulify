@@ -78,7 +78,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
       // When read from a data definition file into the column property
       final String nameProperty = Typess.safeCast(getProperty("name"),String.class);
       if (nameProperty == null) {
-        throw new RuntimeException("The name property of the generator was not found within the property (" + GENERATOR_PROPERTY_KEY + ") of the column " + this.toString() + ".");
+        return null;
       }
 
       String name = nameProperty.toLowerCase();
