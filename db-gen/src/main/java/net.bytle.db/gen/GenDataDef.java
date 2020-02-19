@@ -166,9 +166,9 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   @Override
-  public GenDataDef copy(DataPath sourceDataPath) {
+  public GenDataDef copyDataDef(DataPath sourceDataPath) {
 
-    super.copy(sourceDataPath);
+    super.copyDataDef(sourceDataPath);
     return this;
 
   }
@@ -244,30 +244,34 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   private <T> void buildMissingGeneratorForColumn(GenColumnDef<T> columnDef) {
 
     CollectionGenerator generator = columnDef.getGenerator();
-    if (generator == null) {
+    if (generator != null) {
       return;
     }
 
     // If primary key
-    List<ColumnDef> primaryColumns = this.getPrimaryKey().getColumns();
-    if (primaryColumns.contains(columnDef)) {
+    PrimaryKeyDef primaryKey = this.getPrimaryKey();
+    if (primaryKey!=null) {
+      List<ColumnDef> primaryColumns = primaryKey.getColumns();
+      if (primaryColumns.contains(columnDef)) {
 
-      if (primaryColumns.size() == 1) {
+        if (primaryColumns.size() == 1) {
 
-        GenColumnDef primaryCol = (GenColumnDef) primaryColumns.get(0);
-        primaryCol.addSequenceGenerator();
+          GenColumnDef primaryCol = (GenColumnDef) primaryColumns.get(0);
+          primaryCol.addSequenceGenerator();
 
-      } else {
+        } else {
 
-        List<GenColumnDef> genPrimaryColumns = primaryColumns.stream().map(DataGens::castToGenColumnDef).collect(Collectors.toList());
-        UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(genPrimaryColumns);
-        for (GenColumnDef pkColumn : genPrimaryColumns) {
-          pkColumn.setGenerator(uniqueDataGenerator);
+          List<GenColumnDef> genPrimaryColumns = primaryColumns.stream().map(DataGens::castToGenColumnDef).collect(Collectors.toList());
+          UniqueDataCollectionGenerator uniqueDataGenerator = new UniqueDataCollectionGenerator(genPrimaryColumns);
+          for (GenColumnDef pkColumn : genPrimaryColumns) {
+            pkColumn.setGenerator(uniqueDataGenerator);
+          }
+
         }
 
-      }
+        return;
 
-      return;
+      }
 
     }
 

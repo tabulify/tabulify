@@ -3,6 +3,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.gen.generator.CollectionGenerator;
+import net.bytle.db.gen.generator.FkDataCollectionGenerator;
 import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -64,7 +65,7 @@ public class DataGeneration {
 
     GenDataPath sourceDataPath = GenMemDataPath.of(targetDataPath.getName())
       .getDataDef()
-      .copy(targetDataPath)
+      .copyDataDef(targetDataPath)
       .setMaxSize(totalRows)
       .getDataPath();
     // Adding the table into the list of tables to load
@@ -140,18 +141,6 @@ public class DataGeneration {
             throw new RuntimeException("The foreign key of the data path (" + targetDataPath + ") has more than one columns (" + cols + "and its not yet supported");
           }
 
-          // Get the primary key collection generator
-          String primaryKeyTableName = foreignKey.getForeignPrimaryKey().getDataDef().getDataPath().getName();
-          String primaryKeyColumnName = foreignKey.getForeignPrimaryKey().getColumns().get(0).getColumnName();
-          CollectionGenerator primaryKeyCollectionGenerator = transfers.values()
-            .stream()
-            .filter(dp -> dp.getName().equals(primaryKeyTableName))
-            .flatMap(dp -> Arrays.stream(dp.getDataDef().getColumnDefs()))
-            .filter(c -> c.getColumnName().equals(primaryKeyColumnName))
-            .map(GenColumnDef::getGenerator)
-            .findFirst()
-            .orElse(null);
-
           // Get the foreign column
           String foreignTableName = targetDataPath.getName();
           String foreignColumnName = foreignKey.getChildColumns().get(0).getColumnName();
@@ -162,22 +151,48 @@ public class DataGeneration {
             .filter(c -> c.getColumnName().equals(foreignColumnName))
             .findFirst()
             .orElse(null);
+          assert foreignColumn != null : "The foreign column was not found (" + foreignTableName + "." + foreignColumnName + ")";
 
-          // Add the good generator to the column of the foreign key
-          assert primaryKeyCollectionGenerator != null;
-          assert foreignColumn != null;
-          if (primaryKeyCollectionGenerator.getColumn().getClazz().equals(Integer.class)) {
-            CollectionGenerator<Integer> collectionGenerator = (CollectionGenerator<Integer>) primaryKeyCollectionGenerator;
-            Integer max = collectionGenerator.getDomainMax();
-            Integer min = collectionGenerator.getDomainMin();
-            ((GenColumnDef<Integer>) foreignColumn)
-              .addDistributionGenerator()
-              .setMin(min)
-              .setMax(max);
+          // Try to get the primary table generator
+          final String primaryKeyTableName = foreignKey.getForeignPrimaryKey().getDataDef().getDataPath().getName();
+          GenDataPath genPrimaryTable = transfers.values()
+            .stream()
+            .filter(dp -> dp.getName().equals(primaryKeyTableName))
+            .findFirst()
+            .orElse(null);
+
+          // If not defined
+          if (genPrimaryTable==null) {
+
+            // The table is not part of the data generation specification
+            LOGGER.warning("The data generation for the column ("+foreignKey.getForeignPrimaryKey()+") is not defined, we are then obliged to retrieve all data of this column to build the data generator for the foreign column ("+foreignColumn+")");
+            foreignColumn.setGenerator(new FkDataCollectionGenerator(foreignKey));
+
           } else {
-            throw new RuntimeException("The foreign column (" + primaryKeyCollectionGenerator.getColumn() + ") of the data path (" + targetDataPath + ") has a class of (" + primaryKeyCollectionGenerator.getColumn().getClazz() + ") that is not yet supported");
-          }
 
+            // The table is in the data generation definition
+            final String primaryKeyColumnName = foreignKey.getForeignPrimaryKey().getColumns().get(0).getColumnName();
+            CollectionGenerator primaryKeyCollectionGenerator = Arrays.stream(genPrimaryTable.getDataDef().getColumnDefs())
+              .filter(c -> c.getColumnName().equals(primaryKeyColumnName))
+              .map(GenColumnDef::getGenerator)
+              .findFirst()
+              .orElse(null);
+
+            assert primaryKeyCollectionGenerator != null : "The primary key data generator was not found on the primary column (" + primaryKeyTableName + "." + primaryKeyColumnName + ")";
+
+            if (primaryKeyCollectionGenerator.getColumn().getClazz().equals(Integer.class)) {
+              CollectionGenerator<Integer> collectionGenerator = (CollectionGenerator<Integer>) primaryKeyCollectionGenerator;
+              Integer max = collectionGenerator.getDomainMax();
+              Integer min = collectionGenerator.getDomainMin();
+              ((GenColumnDef<Integer>) foreignColumn)
+                .addDistributionGenerator()
+                .setMin(min)
+                .setMax(max);
+            } else {
+              throw new RuntimeException("The foreign column (" + primaryKeyCollectionGenerator.getColumn() + ") of the data path (" + targetDataPath + ") has a class of (" + primaryKeyCollectionGenerator.getColumn().getClazz() + ") that is not yet supported");
+            }
+
+          }
         })
       ;
     }
@@ -263,10 +278,10 @@ public class DataGeneration {
     return this;
   }
 
-  public DataGeneration addTransfer(GenDataPath genDataPath, DataPath targetDataPath) {
+  public DataGeneration addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
 
     // Add the transfers
-    transfers.put(targetDataPath, genDataPath);
+    transfers.put(targetDataPath, sourceDataPath);
     return this;
 
   }

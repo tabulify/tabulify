@@ -320,7 +320,7 @@ public abstract class DataDefAbs implements RelationDef {
   }
 
   @Override
-  public DataDefAbs copy(DataPath sourceDataPath) {
+  public DataDefAbs copyDataDef(DataPath sourceDataPath) {
     DataDefs.copy(sourceDataPath.getDataDef(),this);
     return this;
   }

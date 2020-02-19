@@ -90,7 +90,7 @@ public interface RelationDef {
    * @param sourceDataPath
    * @return
    */
-  RelationDef copy(DataPath sourceDataPath);
+  RelationDef copyDataDef(DataPath sourceDataPath);
 
   /**
    *

@@ -22,7 +22,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
   // if you put the query on the data def you got a recursion
   private String query;
 
-  protected TableDef dataDef;
+  protected RelationDef dataDef;
   private String description;
 
 
