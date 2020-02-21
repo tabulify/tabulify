@@ -1,6 +1,8 @@
 package net.bytle.db.gen;
 
 import net.bytle.db.gen.generator.CollectionGenerator;
+import net.bytle.db.gen.generator.CollectionGeneratorMultiple;
+import net.bytle.db.gen.generator.CollectionGeneratorOnce;
 import net.bytle.db.gen.generator.DerivedCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
@@ -47,10 +49,10 @@ public class GenSelectStream extends SelectStreamAbs {
         // The column value of the parent must be generated before
         populateColumnValues(columnValues, parentColumn);
       }
-      if (collectionGenerator.getColumns().size() == 1) {
-        columnValues.put(columnDef, collectionGenerator.getNewValue());
+      if (collectionGenerator instanceof CollectionGeneratorOnce) {
+        columnValues.put(columnDef, ((CollectionGeneratorOnce) collectionGenerator).getNewValue());
       } else {
-        columnValues.put(columnDef, collectionGenerator.getNewValue(columnDef));
+        columnValues.put(columnDef, ((CollectionGeneratorMultiple) collectionGenerator).getNewValue(columnDef));
       }
 
     }
@@ -111,7 +113,7 @@ public class GenSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
 
     return Typess.safeCast(getObject(columnIndex),Double.class);
 

@@ -49,8 +49,8 @@ public class StringGenerator {
     if (radix < MIN_RADIX || radix > MAX_RADIX)
       radix = MAX_RADIX;
 
-    if (len > CollectionGenerator.MAX_STRING_PRECISION) {
-      len = CollectionGenerator.MAX_STRING_PRECISION;
+    if (len > CollectionGeneratorOnce.MAX_STRING_PRECISION) {
+      len = CollectionGeneratorOnce.MAX_STRING_PRECISION;
     }
     char buf[] = new char[len];
 

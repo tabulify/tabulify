@@ -178,6 +178,10 @@ public class CsvDataDef extends TableDef {
     return this;
   }
 
+  /**
+   *
+   * @return the header row number or 0 if it does not exist
+   */
   public int getHeaderRowCount() {
     return headerRowCount;
   }

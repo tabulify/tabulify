@@ -7,11 +7,8 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 
-import java.util.ArrayList;
-import java.util.List;
 
-
-public class FkDataCollectionGenerator implements CollectionGenerator {
+public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
 
 
   private final ForeignKeyDef foreignKeyDef;
@@ -72,48 +69,7 @@ public class FkDataCollectionGenerator implements CollectionGenerator {
     return (GenColumnDef) foreignKeyDef.getChildColumns().get(0);
   }
 
-  /**
-   * of a new value for a column
-   *
-   * @param columnDef
-   * @return a new generated data object every time it's called
-   */
-  @Override
-  public Object getNewValue(ColumnDef columnDef) {
 
-    if (columnDef.equals(foreignColumnDef)) {
-      return getNewValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-
-  }
-
-  /**
-   * of the actual value of a column
-   *
-   * @param columnDef
-   * @return a generated value (used in case of derived data
-   */
-  @Override
-  public Object getActualValue(ColumnDef columnDef) {
-
-    if (columnDef.equals(foreignColumnDef)) {
-      return getActualValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-  }
-
-  /**
-   * @return the columns attached to this generator
-   */
-  @Override
-  public List<ColumnDef> getColumns() {
-    List<ColumnDef> columnDefs = new ArrayList<>();
-    columnDefs.add(foreignColumnDef);
-    return columnDefs;
-  }
 
   @Override
   public Long getMaxGeneratedValues() {
@@ -122,13 +78,5 @@ public class FkDataCollectionGenerator implements CollectionGenerator {
 
   }
 
-  @Override
-  public Object getDomainMin() {
-    throw new RuntimeException("Not yet implemented");
-  }
 
-  @Override
-  public Object getDomainMax() {
-    throw new RuntimeException("Not yet implemented");
-  }
 }

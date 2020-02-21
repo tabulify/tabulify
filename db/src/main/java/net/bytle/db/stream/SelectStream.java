@@ -23,7 +23,7 @@ public interface SelectStream extends AutoCloseable {
 
   RelationDef getSelectDataDef();
 
-  double getDouble(int columnIndex);
+  Double getDouble(int columnIndex);
 
   Clob getClob(int columnIndex);
 

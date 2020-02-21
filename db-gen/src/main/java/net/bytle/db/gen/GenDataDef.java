@@ -293,7 +293,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
     }
 
     // Else
-    columnDef.addDistributionGenerator();
+    columnDef.addUniformDistributionGenerator();
 
 
   }

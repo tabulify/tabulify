@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * A wrapper/extension around a {@link ColumnDef}
- * that map a {@link ColumnDef} to a {@link CollectionGenerator}
+ * that map a {@link ColumnDef} to a {@link CollectionGeneratorOnce}
  *
  * @param <T>
  */
@@ -70,6 +70,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   }
 
   public CollectionGenerator getGenerator() {
+
     if (generator == null) {
 
       // When read from a data definition file into the column property
@@ -89,7 +90,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           break;
         case "random":
         case "distribution":
-          generator = DistributionCollectionGenerator.of(this);
+          generator = DistributionCollectionGenerator.of(this,null);
           break;
         default:
           throw new RuntimeException("The generator (" + name + ") defined for the column (" + this.toString() + ") is unknown");
@@ -149,8 +150,8 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return this;
   }
 
-  public DistributionCollectionGenerator<T> addDistributionGenerator() {
-    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this);
+  public DistributionCollectionGenerator<T> addDistributionGenerator(Map<T, Double> buckets) {
+    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this,buckets);
     generator = distributionCollectionGenerator;
     return distributionCollectionGenerator;
   }
@@ -179,4 +180,21 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return this;
   }
 
+  public NameGenerator addNameGenerator() {
+    NameGenerator nameGenerator = new NameGenerator(this);
+    generator = nameGenerator;
+    return nameGenerator;
+  }
+
+  public UniformCollectionGenerator<T> addUniformDistributionGenerator() {
+    UniformCollectionGenerator uniformCollectionGenerator = UniformCollectionGenerator.of(this);
+    generator = uniformCollectionGenerator;
+    return uniformCollectionGenerator;
+  }
+
+  public UniformCollectionGenerator<T> addUniformDistributionGenerator(T min, T max) {
+    UniformCollectionGenerator uniformCollectionGenerator = new UniformCollectionGenerator(this, min, max);
+    generator = uniformCollectionGenerator;
+    return uniformCollectionGenerator;
+  }
 }

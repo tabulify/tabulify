@@ -100,7 +100,7 @@ public class JsonSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
     return Double.parseDouble(getString(columnIndex));
   }
 

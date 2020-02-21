@@ -3,6 +3,7 @@ package net.bytle.db.gen;
 
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.gen.generator.CollectionGenerator;
+import net.bytle.db.gen.generator.CollectionGeneratorOnce;
 import net.bytle.db.gen.generator.FkDataCollectionGenerator;
 import net.bytle.db.gen.generator.SequenceGenerator;
 import net.bytle.db.gen.memory.GenMemDataPath;
@@ -59,7 +60,7 @@ public class DataGeneration {
    * The build has a recursive shape because of the derived data generator that depends on another
    * We used this map to of track of what was build
    */
-  private Map<ColumnDef, CollectionGenerator> dataGenerators = new HashMap<>();
+  private Map<ColumnDef, CollectionGeneratorOnce> dataGenerators = new HashMap<>();
 
 
   public DataGeneration addTable(DataPath targetDataPath, Long totalRows) {
@@ -86,7 +87,7 @@ public class DataGeneration {
    * @param columnDef
    * @return
    */
-  public <T> CollectionGenerator<T> getDataGenerator(ColumnDef<T> columnDef) {
+  public <T> CollectionGeneratorOnce<T> getDataGenerator(ColumnDef<T> columnDef) {
     return dataGenerators.get(columnDef);
   }
 
@@ -185,10 +186,10 @@ public class DataGeneration {
             // Create the random distribution generator from the sequence
             SequenceGenerator<Object> sequenceGenerator = (SequenceGenerator<Object>) primaryKeyCollectionGenerator;
             ((GenColumnDef<Object>) foreignColumn)
-              .addDistributionGenerator()
+              .addUniformDistributionGenerator()
               .setMin(sequenceGenerator.getDomainMin())
               .setMax(sequenceGenerator.getDomainMax())
-              .setStep(sequenceGenerator.getStep());
+              .step(sequenceGenerator.getStep());
 
           }
         })

@@ -2,12 +2,10 @@ package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.gen.GenColumnDef;
-import net.bytle.db.model.ColumnDef;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -31,7 +29,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * * values in case of a list of data (may be null)
  */
 
-public class SequenceGenerator<T> implements CollectionGenerator<T> {
+public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
 
 
   private final GenColumnDef<T> columnDef;
@@ -210,45 +208,11 @@ public class SequenceGenerator<T> implements CollectionGenerator<T> {
     return columnDef;
   }
 
-  /**
-   * of a new value for a column
-   *
-   * @param columnDef
-   * @return a new generated data object every time it's called
-   */
-  @Override
-  public T getNewValue(ColumnDef columnDef) {
-    if (columnDef.equals(this.columnDef)) {
-      return getNewValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-  }
 
-  /**
-   * of the actual value of a column
-   *
-   * @param columnDef
-   * @return a generated value (used in case of derived data
-   */
-  @Override
-  public T getActualValue(ColumnDef columnDef) {
-    if (columnDef.equals(this.columnDef)) {
-      return getActualValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-  }
 
-  /**
-   * @return the columns attached to this generator
-   */
-  @Override
-  public List<ColumnDef> getColumns() {
-    List<ColumnDef> columnDefs = new ArrayList<>();
-    columnDefs.add(columnDef);
-    return columnDefs;
-  }
+
+
+
 
   /**
    * @param start is the start value
@@ -324,7 +288,7 @@ public class SequenceGenerator<T> implements CollectionGenerator<T> {
    * <p>
    * Example with a start of 0, a step 0f 1 and a maxValue of 2, the maxValue must be 2 (ie 1,2)
    *
-   * @return the maxValue number of times the function {@link #getNewValue(ColumnDef)} can be called
+   * @return the maxValue number of times the function {@link #getNewValue} can be called
    */
   public Long getMaxGeneratedValues() {
 

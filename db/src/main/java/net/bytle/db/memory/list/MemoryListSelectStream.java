@@ -103,7 +103,7 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
 
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
     return (double) getObject(columnIndex);
   }
 

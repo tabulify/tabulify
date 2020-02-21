@@ -109,7 +109,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
 
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
     return (double) getObject(columnIndex);
   }
 

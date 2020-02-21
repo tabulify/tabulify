@@ -2,6 +2,7 @@ package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -38,6 +39,16 @@ public class CsvSelectStream extends SelectStreamAbs {
 
     super(csvDataPath);
     this.csvDataPath = csvDataPath;
+    CsvDataDef dataDef = csvDataPath.getDataDef();
+    if (dataDef.getColumnsSize() == 0) {
+      if (dataDef.getHeaderRowCount() != 0) {
+        dataDef.addColumnNamesFromHeader();
+      } else {
+        throw new RuntimeException(
+          Strings.multiline("The csv file (" + csvDataPath + ") does not have any data structure attached.",
+            "If it has an header, set the row header property to the line number where the header is located."));
+      }
+    }
     beforeFirst();
 
   }
@@ -96,10 +107,27 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   @Override
   public String getString(int columnIndex) {
+
+    return safeGet(columnIndex);
+
+  }
+
+  private String safeGet(int columnIndex) {
+    if (rowNum == 0) {
+      throw new RuntimeException("You need to go the the first row with the next() function before asking for an object");
+    }
+    if (columnIndex > currentRecord.size() - 1) {
+      final int size = csvDataPath.getDataDef().getColumnsSize();
+      if (currentRecord.size() > size) {
+        throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
+      } else {
+        return null;
+      }
+    }
     try {
       return currentRecord.get(columnIndex);
-    } catch (Exception e){
-      throw new RuntimeException("Error on the record ("+getRow()+") when trying to retrieve the column ("+columnIndex+"). Records values are ("+currentRecord+") ",e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error on the record (" + getRow() + ") when trying to retrieve the column (" + columnIndex + "). Records values are (" + currentRecord + ") ", e);
     }
   }
 
@@ -140,15 +168,7 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   @Override
   public Object getObject(int columnIndex) {
-    if (columnIndex > currentRecord.size() - 1) {
-      final int size = csvDataPath.getDataDef().getColumnsSize();
-      if (currentRecord.size() > size) {
-        throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
-      } else {
-        return null;
-      }
-    }
-    return currentRecord.get(columnIndex);
+    return safeGet(columnIndex);
   }
 
   @Override
@@ -158,9 +178,14 @@ public class CsvSelectStream extends SelectStreamAbs {
 
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
 
-    return Double.parseDouble(currentRecord.get(columnIndex));
+    String s = safeGet(columnIndex);
+    if (s == null) {
+      return null;
+    } else {
+      return Double.parseDouble(s);
+    }
 
   }
 
@@ -184,14 +209,19 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   @Override
   public List<Object> getObjects() {
-    return IntStream.range(0,currentRecord.size())
+    return IntStream.range(0, currentRecord.size())
       .mapToObj(currentRecord::get)
       .collect(Collectors.toList());
   }
 
   @Override
   public Integer getInteger(int columnIndex) {
-    return Integer.parseInt(currentRecord.get(columnIndex));
+    String s = safeGet(columnIndex);
+    if (s == null) {
+      return null;
+    } else {
+      return Integer.parseInt(s);
+    }
   }
 
   @Override

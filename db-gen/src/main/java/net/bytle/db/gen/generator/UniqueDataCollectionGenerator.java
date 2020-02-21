@@ -12,16 +12,15 @@ import java.time.LocalDate;
 import java.util.*;
 
 
-public class UniqueDataCollectionGenerator implements CollectionGenerator {
+public class UniqueDataCollectionGenerator implements CollectionGeneratorMultiple {
 
 
-  private Map<GenColumnDef, CollectionGenerator> dataGeneratorMap = new HashMap<>();
+  private Map<GenColumnDef, CollectionGeneratorOnce> dataGeneratorMap = new HashMap<>();
 
   Integer position = new Integer(0);
 
   /**
-   * Get the max value of a primary key numeric column and add 1 to the value each time
-   * the {@link #getNewValue()} is called
+   *
    *
    * @param columnDefs
    */
@@ -102,65 +101,9 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
 
   }
 
-  /**
-   * @return a new generated data object every time it's called
-   */
-  @Override
-  public Object getNewValue() {
-
-    // Only one column ?
-    if (dataGeneratorMap.size() == 1) {
-
-      ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
-      return dataGeneratorMap.get(columnDef).getNewValue();
-
-    } else {
-
-      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getNewValue(ColumnDef)");
-
-    }
-
-  }
-
-  /**
-   * @return a generated value (used in case of derived data
-   */
-  @Override
-  public Object getActualValue() {
-
-    if (dataGeneratorMap.size() == 1) {
-
-      ColumnDef columnDef = dataGeneratorMap.keySet().iterator().next();
-      return dataGeneratorMap.get(columnDef).getActualValue();
-
-    } else {
-
-      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getActualValue(ColumnDef)");
-
-    }
 
 
-  }
 
-  /**
-   * @return the column attached to this generator
-   * It permits to create parent relationship between generators
-   * when asking a value for a column, we may need to ask the value for another column before
-   */
-  @Override
-  public GenColumnDef getColumn() {
-
-    if (dataGeneratorMap.size() == 1) {
-
-      return dataGeneratorMap.keySet().iterator().next();
-
-    } else {
-
-      throw new RuntimeException("This is a multi-column generator of " + dataGeneratorMap.size() + " columns, you should use the function getColumns()");
-
-    }
-
-  }
 
   /**
    * Get a new value for a column
@@ -175,8 +118,8 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
   public Object getNewValue(ColumnDef columnDef) {
 
 
-    final CollectionGenerator dataCollectionGenerator = dataGeneratorMap.get(columnDef);
-    return dataCollectionGenerator.getNewValue(columnDef);
+    final CollectionGeneratorOnce dataCollectionGenerator = dataGeneratorMap.get(columnDef);
+    return dataCollectionGenerator.getNewValue();
 
   }
 
@@ -189,7 +132,7 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
   @Override
   public Object getActualValue(ColumnDef columnDef) {
 
-    return dataGeneratorMap.get(columnDef).getActualValue(columnDef);
+    return dataGeneratorMap.get(columnDef).getActualValue();
   }
 
   /**
@@ -208,15 +151,6 @@ public class UniqueDataCollectionGenerator implements CollectionGenerator {
     return Long.MAX_VALUE;
   }
 
-  @Override
-  public Object getDomainMin() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  @Override
-  public Object getDomainMax() {
-    throw new RuntimeException("Not yet implemented");
-  }
 
   @Override
   public String toString() {

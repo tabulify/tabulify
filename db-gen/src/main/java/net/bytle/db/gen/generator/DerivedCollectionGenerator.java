@@ -2,7 +2,6 @@ package net.bytle.db.gen.generator;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.db.gen.GenColumnDef;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Typess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +12,9 @@ import javax.script.ScriptException;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 
 
-public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
+public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DerivedCollectionGenerator.class);
@@ -29,7 +26,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
     engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
   }
 
-  private final CollectionGenerator dataCollectionGenerator;
+  private final CollectionGeneratorOnce dataCollectionGenerator;
   private final String formula;
   private final GenColumnDef<T> columnDef;
   private Object actualValue;
@@ -37,8 +34,11 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
 
   public DerivedCollectionGenerator(GenColumnDef<T> columnDef, CollectionGenerator parentDataCollectionGenerator, String formula) {
 
+    if (!(parentDataCollectionGenerator instanceof CollectionGeneratorOnce)){
+      throw new RuntimeException("The parent generator ("+parentDataCollectionGenerator+") should only generate data for one column. Derived data generation are not supported");
+    }
     this.columnDef = columnDef;
-    this.dataCollectionGenerator = parentDataCollectionGenerator;
+    this.dataCollectionGenerator = (CollectionGeneratorOnce) parentDataCollectionGenerator;
     this.formula = formula;
     if (formula == null) {
       throw new RuntimeException("The formula for the column " + columnDef.getFullyQualifiedName() + " is null");
@@ -113,64 +113,12 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
     return columnDef;
   }
 
-  /**
-   * of a new value for a column
-   *
-   * @param columnDef
-   * @return a new generated data object every time it's called
-   */
-  @Override
-  public T getNewValue(ColumnDef columnDef) {
-
-    if (columnDef.equals(this.columnDef)) {
-      return getNewValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-
-  }
-
-  /**
-   * of the actual value of a column
-   *
-   * @param columnDef
-   * @return a generated value (used in case of derived data
-   */
-  @Override
-  public T getActualValue(ColumnDef columnDef) {
-
-    if (columnDef.equals(this.columnDef)) {
-      return getActualValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-
-  }
-
-  /**
-   * @return the columns attached to this generator
-   */
-  @Override
-  public List<ColumnDef> getColumns() {
-    List<ColumnDef> columnDefs = new ArrayList<>();
-    columnDefs.add(columnDef);
-    return columnDefs;
-  }
 
   @Override
   public Long getMaxGeneratedValues() {
     return dataCollectionGenerator.getMaxGeneratedValues();
   }
 
-  @Override
-  public <T1> T1 getDomainMax() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  @Override
-  public <T1> T1 getDomainMin() {
-    throw new RuntimeException("Not yet implemented");
-  }
 
   /**
    * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
@@ -189,7 +137,13 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
     if (columnDef.equals(columnParent)) {
       throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
     }
-    CollectionGenerator parentCollectionGenerator = columnParent.getGenerator();
+    CollectionGenerator generator = columnParent.getGenerator();
+    CollectionGeneratorOnce parentCollectionGenerator;
+    if (generator instanceof CollectionGeneratorOnce) {
+      parentCollectionGenerator = (CollectionGeneratorOnce) generator;
+    } else {
+      throw new RuntimeException("Derived generator are working only with a scalar generator. The generator (" + generator + ") generates values for a pair of columns");
+    }
 
     // Formula
     String formula = Typess.safeCast(columnDef.getProperty("formula"), String.class);
@@ -202,7 +156,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGenerator<T> {
   }
 
 
-  public CollectionGenerator getParentGenerator() {
+  public CollectionGeneratorOnce getParentGenerator() {
     return dataCollectionGenerator;
   }
 }

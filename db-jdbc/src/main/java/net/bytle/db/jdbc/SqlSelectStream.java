@@ -158,7 +158,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
     try {
       return getResultSet().getDouble(columnIndex + 1);
     } catch (SQLException e) {

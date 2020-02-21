@@ -110,7 +110,7 @@ public class TpcdsSelectStream implements SelectStream {
   }
 
   @Override
-  public double getDouble(int columnIndex) {
+  public Double getDouble(int columnIndex) {
     return Double.parseDouble(values.get(columnIndex));
   }
 

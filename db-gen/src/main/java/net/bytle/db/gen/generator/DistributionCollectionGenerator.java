@@ -2,7 +2,6 @@ package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.gen.GenColumnDef;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 /**
  * Distribution Generator by default: random
  */
-public class DistributionCollectionGenerator<T> implements CollectionGenerator<T> {
+public class DistributionCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributionCollectionGenerator.class);
 
@@ -40,7 +39,41 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
   private Object range;
   private List<T> values;
 
-  public DistributionCollectionGenerator(GenColumnDef<T> columnDef) {
+  public DistributionCollectionGenerator(GenColumnDef<T> columnDef, Map<T,Double> buckets) {
+
+
+
+    if (buckets==null) {
+
+      final Object bucketsObject = columnDef.getProperty("buckets");
+      try {
+        buckets = (Map<T, Double>) bucketsObject;
+      } catch (ClassCastException e) {
+        throw new RuntimeException("The buckets definition of the column (" + columnDef.getFullyQualifiedName() + ") are not in the map format <Object,Integer>. The values are: " + bucketsObject);
+      }
+
+      // DataType Check
+      if (buckets != null) {
+        Object o = buckets.entrySet().iterator().next().getKey();
+        if (o.getClass() != columnDef.getDataType().getClazz()) {
+          throw new RuntimeException("The data type of the key with the the value (" + o + ") in the buckets definition of the column " + columnDef.getFullyQualifiedName() + " is not a " + columnDef.getDataType().getClazz().getSimpleName() + " but a " + o.getClass().getSimpleName() + ".");
+        }
+
+      }
+    }
+
+    if (buckets==null){
+      throw new RuntimeException("You can't create a custom probability distribution without bucket definition");
+    }
+
+    // Create the values list and add the element according to their ratio
+    // A ratio of 3 = 3 elements in the list
+    values = new ArrayList<T>();
+    for (Map.Entry<T, Double> entry : buckets.entrySet()) {
+      for (int i = 0; i < entry.getValue(); i++) {
+        values.add(entry.getKey());
+      }
+    }
 
     this.columnDef = columnDef;
     clazz = columnDef.getClazz();
@@ -83,34 +116,35 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
   }
 
-  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef<T> columnDef) {
+  /**
+   * The buckets defines the distribution of discrete variable
+   * where:
+   * * The discrete variable are in the first Object variable
+   * * The ratios are in the second Integer variable
+   * <p>
+   * Example with the following, you will have 2 times much Red than Blue and Green
+   * Blue: 1
+   * Red: 2
+   * Green: 1
+   *
+   * @param buckets
+   * @return
+   */
+  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef<T> columnDef, Map<T, Double> buckets) {
 
-    final DistributionCollectionGenerator<T> distributionGenerator = new DistributionCollectionGenerator<>(columnDef);
+    return new DistributionCollectionGenerator<>(columnDef, buckets);
 
-    final Object bucketsObject = columnDef.getProperty("buckets");
-    Map<T, Integer> buckets;
-    try {
-      buckets = (Map<T, Integer>) bucketsObject;
-    } catch (ClassCastException e) {
-      throw new RuntimeException("The buckets definition of the column (" + columnDef.getFullyQualifiedName() + ") are not in the map format <Object,Integer>. The values are: " + bucketsObject);
-    }
+  }
 
-    // DataType Check
-    if (buckets != null) {
-      Object o = buckets.entrySet().iterator().next().getKey();
-      if (o.getClass() != columnDef.getDataType().getClazz()) {
-        throw new RuntimeException("The data type of the key with the the value (" + o + ") in the buckets definition of the column " + columnDef.getFullyQualifiedName() + " is not a " + columnDef.getDataType().getClazz().getSimpleName() + " but a " + o.getClass().getSimpleName() + ".");
-      }
-      distributionGenerator.setBuckets(buckets);
-    }
-    return distributionGenerator;
+  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef genColumnDef) {
+    return new DistributionCollectionGenerator<>(genColumnDef,null);
   }
 
 
   private String getString() {
     Integer precision = this.columnDef.getPrecisionOrMax();
     if (precision == null) {
-      precision = CollectionGenerator.MAX_STRING_PRECISION;
+      precision = CollectionGeneratorOnce.MAX_STRING_PRECISION;
       LOGGER.warn(
         Strings.multiline("The precision for the column (" + this.columnDef + ") is unknown",
           "The max precision for its data type (" + columnDef.getDataType().getTypeName() + ") is unknown",
@@ -195,91 +229,13 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
   }
 
-  /**
-   * of a new value for a column
-   *
-   * @param columnDef
-   * @return a new generated data object every time it's called
-   */
-  @Override
-  public T getNewValue(ColumnDef columnDef) {
-    if (columnDef.equals(this.columnDef)) {
-      return getNewValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-  }
 
-  /**
-   * of the actual value of a column
-   *
-   * @param columnDef
-   * @return a generated value (used in case of derived data
-   */
-  @Override
-  public T getActualValue(ColumnDef columnDef) {
-    if (columnDef.equals(this.columnDef)) {
-      return getActualValue();
-    } else {
-      throw new RuntimeException("Multiple column generator is not implemented");
-    }
-  }
-
-  /**
-   * @return the columns attached to this generator
-   */
-  @Override
-  public List<ColumnDef> getColumns() {
-    List<ColumnDef> columnDefs = new ArrayList<>();
-    columnDefs.add(columnDef);
-    return columnDefs;
-  }
 
   @Override
   public Long getMaxGeneratedValues() {
     return Long.MAX_VALUE;
   }
 
-  @Override
-  public <T1> T1 getDomainMax() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  @Override
-  public <T1> T1 getDomainMin() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-
-  /**
-   * The buckets defines the distribution of discrete variable
-   * where:
-   * * The discrete variable are in the first Object variable
-   * * The ratios are in the second Integer variable
-   * <p>
-   * Example with the following, you will have 2 times much Red than Blue and Green
-   * Blue: 1
-   * Red: 2
-   * Green: 1
-   *
-   * @param buckets
-   * @return
-   */
-  public DistributionCollectionGenerator<T> setBuckets(Map<T, Integer> buckets) {
-    if (buckets != null) {
-      if (buckets.size() > 0) {
-        // Create the values list and add the element according to their ratio
-        // A ratio of 3 = 3 elements in the list
-        values = new ArrayList<T>();
-        for (Map.Entry<T, Integer> entry : buckets.entrySet()) {
-          for (int i = 0; i < entry.getValue(); i++) {
-            values.add(entry.getKey());
-          }
-        }
-      }
-    }
-    return this;
-  }
 
   public DistributionCollectionGenerator<T> setMin(T min) {
     if (min != null) {
