@@ -31,7 +31,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * * values in case of a list of data (may be null)
  */
 
-public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
+public class SequenceGenerator<T> implements CollectionGenerator<T> {
 
 
   private final GenColumnDef<T> columnDef;
@@ -62,7 +62,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
   /**
    * @param columnDef
    */
-  public SequenceCollectionGenerator(GenColumnDef<T> columnDef) {
+  public SequenceGenerator(GenColumnDef<T> columnDef) {
 
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
@@ -109,9 +109,9 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * @param <T>
    * @return
    */
-  public static <T> SequenceCollectionGenerator<T> of(GenColumnDef<T> columnDef) {
+  public static <T> SequenceGenerator<T> of(GenColumnDef<T> columnDef) {
 
-    SequenceCollectionGenerator<T> sequenceGenerator = new SequenceCollectionGenerator<>(columnDef);
+    SequenceGenerator<T> sequenceGenerator = new SequenceGenerator<>(columnDef);
 
 
     final Object stepObj = columnDef.getProperty("step");
@@ -175,7 +175,6 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
         returnValue = values.get((Integer) currentValue);
       } else {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        ;
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
         returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, precision);
       }
@@ -255,7 +254,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * @param start is the start value
    * @return
    */
-  public SequenceCollectionGenerator<T> start(T start) {
+  public SequenceGenerator<T> start(T start) {
 
     // When checking the minValue date in a table, the returned value may be null
     // for the sake of simplicity we are not throwing an error
@@ -298,15 +297,25 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
     return this;
   }
 
-  public SequenceCollectionGenerator<T> step(Integer step) {
+  /**
+   *
+   * @param step - the step value
+   * @return
+   */
+  public SequenceGenerator<T> step(Integer step) {
 
     this.step = step;
     return this;
 
   }
 
-  public SequenceCollectionGenerator max(Integer max) {
-    this.maxValue = max;
+  /**
+   *
+   * @param maxSteps - the maximum number of steps
+   * @return
+   */
+  public SequenceGenerator maxSteps(Integer maxSteps) {
+    this.maxValue = maxSteps;
     return this;
   }
 
@@ -375,8 +384,10 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
         min = (Integer) start;
       }
       return (T) min;
+    }  else if (clazz == Date.class) {
+      return (T) minValue;
     } else {
-      throw new RuntimeException("Domain max on the class ("+clazz+") was not yet implemented");
+      throw new RuntimeException("Domain min on the class ("+clazz+") was not yet implemented");
     }
   }
 
@@ -388,7 +399,7 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
    * @param values
    * @return
    */
-  public SequenceCollectionGenerator<T> values(List<T> values) {
+  public SequenceGenerator<T> values(List<T> values) {
     if (clazz == String.class) {
       this.values = values;
       maxValue = this.values.size();
@@ -401,5 +412,9 @@ public class SequenceCollectionGenerator<T> implements CollectionGenerator<T> {
   @Override
   public String toString() {
     return "SequenceGenerator";
+  }
+
+  public int getStep() {
+    return step;
   }
 }

@@ -97,7 +97,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
    */
   @Override
   public final void delete(final Path path) {
-    throw new UnsupportedOperationException("Not implemented");
+    throw new UnsupportedOperationException("You can't delete a HTTP file. If you are using a `move` transfer, use the `copy` one instead.");
   }
 
   @Override

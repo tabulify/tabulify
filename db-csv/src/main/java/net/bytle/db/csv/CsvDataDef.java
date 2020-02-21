@@ -197,25 +197,21 @@ public class CsvDataDef extends TableDef {
 
   @Override
   public ColumnDef[] getColumnDefs() {
-    buildColumnNamesIfNeeded();
     return super.getColumnDefs();
   }
 
   @Override
   public <T> ColumnDef<T> getColumnDef(String columnName) {
-    buildColumnNamesIfNeeded();
     return super.getColumnDef(columnName);
   }
 
   @Override
   public <T> ColumnDef<T> getColumnDef(Integer columnIndex) {
-    buildColumnNamesIfNeeded();
     return super.getColumnDef(columnIndex);
   }
 
   @Override
   public int getColumnsSize() {
-    buildColumnNamesIfNeeded();
     return super.getColumnsSize();
   }
 
@@ -228,7 +224,12 @@ public class CsvDataDef extends TableDef {
    * Build the column metadata from the first row if needed
    * Lazy initialization
    */
-  private void buildColumnNamesIfNeeded() {
+  public void addColumnNamesFromHeader() {
+
+    // The data structure was given in the definition
+    if (!columnsWereBuild && super.getColumnsSize()!=0){
+        columnsWereBuild = true;
+    }
 
     if (!columnsWereBuild) {
       columnsWereBuild = true;

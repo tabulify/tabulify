@@ -2,6 +2,7 @@ package net.bytle.db.uri;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +70,19 @@ public class Uris {
       } else {
         return s.substring(0, endIndex);
       }
+    }
+  }
+
+  /**
+   * Just a wrapper to not have to deal with the exception
+   * @param s
+   * @return
+   */
+  public static URI of(String s) {
+    try {
+      return new URI(s);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
     }
   }
 }

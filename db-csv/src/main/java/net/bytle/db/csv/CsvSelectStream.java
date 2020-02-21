@@ -10,7 +10,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Clob;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class CsvSelectStream extends SelectStreamAbs {
 
@@ -93,7 +96,11 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   @Override
   public String getString(int columnIndex) {
-    return currentRecord.get(columnIndex);
+    try {
+      return currentRecord.get(columnIndex);
+    } catch (Exception e){
+      throw new RuntimeException("Error on the record ("+getRow()+") when trying to retrieve the column ("+columnIndex+"). Records values are ("+currentRecord+") ",e);
+    }
   }
 
   @Override
@@ -173,6 +180,13 @@ public class CsvSelectStream extends SelectStreamAbs {
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {
     throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public List<Object> getObjects() {
+    return IntStream.range(0,currentRecord.size())
+      .mapToObj(currentRecord::get)
+      .collect(Collectors.toList());
   }
 
   @Override

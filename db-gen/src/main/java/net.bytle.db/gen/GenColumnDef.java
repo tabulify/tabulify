@@ -82,7 +82,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
       switch (name) {
         case "sequence":
         case "unique":
-          generator = SequenceCollectionGenerator.of(this);
+          generator = SequenceGenerator.of(this);
           break;
         case "derived":
           generator = DerivedCollectionGenerator.of(this);
@@ -98,8 +98,8 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return generator;
   }
 
-  public SequenceCollectionGenerator<T> addSequenceGenerator() {
-    SequenceCollectionGenerator<T> sequenceGenerator = SequenceCollectionGenerator.of(this);
+  public SequenceGenerator<T> addSequenceGenerator() {
+    SequenceGenerator<T> sequenceGenerator = SequenceGenerator.of(this);
     generator = sequenceGenerator;
     return sequenceGenerator;
   }
@@ -157,15 +157,15 @@ public class GenColumnDef<T> extends ColumnDef<T> {
 
 
 
-  public SequenceCollectionGenerator<T> getSequenceGenerator(Class<T> clazz) {
+  public SequenceGenerator<T> getSequenceGenerator(Class<T> clazz) {
 
     if (generator==null){
       throw new RuntimeException("The column ("+this+") has no generator");
     }
-    if (getGenerator().getClass()!=SequenceCollectionGenerator.class){
+    if (getGenerator().getClass()!= SequenceGenerator.class){
       throw new RuntimeException("The column ("+this+") has a generator that is not a sequence generator but "+generator.getClass());
     }
-    return (SequenceCollectionGenerator<T>) generator;
+    return (SequenceGenerator<T>) generator;
 
   }
 

@@ -1,7 +1,7 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsDataStore;
+import net.bytle.db.fs.FsRawDataPath;
 
 import java.nio.file.Path;
 
@@ -33,4 +33,9 @@ public class CsvDataPath extends FsRawDataPath {
     return (CsvDataDef) this.dataDef;
   }
 
+  @Override
+  public CsvDataPath setDescription(String description) {
+    super.setDescription(description);
+    return this;
+  }
 }

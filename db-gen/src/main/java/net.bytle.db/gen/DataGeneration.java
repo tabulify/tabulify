@@ -4,6 +4,7 @@ package net.bytle.db.gen;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.gen.generator.FkDataCollectionGenerator;
+import net.bytle.db.gen.generator.SequenceGenerator;
 import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -162,35 +163,32 @@ public class DataGeneration {
             .orElse(null);
 
           // If not defined
-          if (genPrimaryTable==null) {
+          if (genPrimaryTable == null) {
 
             // The table is not part of the data generation specification
-            LOGGER.warning("The data generation for the column ("+foreignKey.getForeignPrimaryKey()+") is not defined, we are then obliged to retrieve all data of this column to build the data generator for the foreign column ("+foreignColumn+")");
+            LOGGER.warning("The data generation for the column (" + foreignKey.getForeignPrimaryKey() + ") is not defined, we are then obliged to retrieve all data of this column to build the data generator for the foreign column (" + foreignColumn + ")");
             foreignColumn.setGenerator(new FkDataCollectionGenerator(foreignKey));
 
           } else {
 
             // The table is in the data generation definition
-            final String primaryKeyColumnName = foreignKey.getForeignPrimaryKey().getColumns().get(0).getColumnName();
+            ColumnDef primaryColumn = foreignKey.getForeignPrimaryKey().getColumns().get(0);
             CollectionGenerator primaryKeyCollectionGenerator = Arrays.stream(genPrimaryTable.getDataDef().getColumnDefs())
-              .filter(c -> c.getColumnName().equals(primaryKeyColumnName))
+              .filter(c -> c.getColumnName().equals(primaryColumn.getColumnName()))
               .map(GenColumnDef::getGenerator)
               .findFirst()
               .orElse(null);
 
-            assert primaryKeyCollectionGenerator != null : "The primary key data generator was not found on the primary column (" + primaryKeyTableName + "." + primaryKeyColumnName + ")";
+            assert primaryKeyCollectionGenerator != null : "The primary key data generator was not found on the primary column (" + primaryColumn + ")";
+            assert primaryKeyCollectionGenerator.getClass() == SequenceGenerator.class : "The generator of the primary column (" + primaryColumn + ") is not a sequence but (" + primaryKeyCollectionGenerator.getClass().getSimpleName() + "). Other generator than a sequence for a primary column are not yet supported";
 
-            if (primaryKeyCollectionGenerator.getColumn().getClazz().equals(Integer.class)) {
-              CollectionGenerator<Integer> collectionGenerator = (CollectionGenerator<Integer>) primaryKeyCollectionGenerator;
-              Integer max = collectionGenerator.getDomainMax();
-              Integer min = collectionGenerator.getDomainMin();
-              ((GenColumnDef<Integer>) foreignColumn)
-                .addDistributionGenerator()
-                .setMin(min)
-                .setMax(max);
-            } else {
-              throw new RuntimeException("The foreign column (" + primaryKeyCollectionGenerator.getColumn() + ") of the data path (" + targetDataPath + ") has a class of (" + primaryKeyCollectionGenerator.getColumn().getClazz() + ") that is not yet supported");
-            }
+            // Create the random distribution generator from the sequence
+            SequenceGenerator<Object> sequenceGenerator = (SequenceGenerator<Object>) primaryKeyCollectionGenerator;
+            ((GenColumnDef<Object>) foreignColumn)
+              .addDistributionGenerator()
+              .setMin(sequenceGenerator.getDomainMin())
+              .setMax(sequenceGenerator.getDomainMax())
+              .setStep(sequenceGenerator.getStep());
 
           }
         })
@@ -200,7 +198,8 @@ public class DataGeneration {
     // Load
     final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
 
-    for (DataPath dataPath : createOrderedTables) {
+    for (
+      DataPath dataPath : createOrderedTables) {
 
       GenDataPath genDataPath = transfers.get(dataPath);
 

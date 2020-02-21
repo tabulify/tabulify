@@ -31,8 +31,12 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
 
   private Object o;
   private GenColumnDef columnDef;
+
+  // Domain
   private Object min;
   private Object max;
+  private int step;
+
   private Object range;
   private List<T> values;
 
@@ -43,9 +47,6 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
     int typeCode = columnDef.getDataType().getTypeCode();
     switch (typeCode) {
       case (Types.DOUBLE):
-        range = 10.0;
-        min = 0.0;
-        break;
       case Types.FLOAT:
         // Other name for double
         range = 10.0;
@@ -56,8 +57,6 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
         min = 0;
         break;
       case Types.VARCHAR:
-        o = getString();
-        break;
       case Types.CHAR:
         o = getString();
         break;
@@ -114,7 +113,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
       precision = CollectionGenerator.MAX_STRING_PRECISION;
       LOGGER.warn(
         Strings.multiline("The precision for the column (" + this.columnDef + ") is unknown",
-          "The max precision for its data type (" + columnDef.getDataType().getTypeName() + ") is unknonw",
+          "The max precision for its data type (" + columnDef.getDataType().getTypeName() + ") is unknown",
           "The precision was then set to " + precision
         ));
     }
@@ -258,7 +257,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
    * * The discrete variable are in the first Object variable
    * * The ratios are in the second Integer variable
    * <p>
-   * Example with the following, you will of 2 times much Red than Blue and Green
+   * Example with the following, you will have 2 times much Red than Blue and Green
    * Blue: 1
    * Red: 2
    * Green: 1
@@ -331,4 +330,8 @@ public class DistributionCollectionGenerator<T> implements CollectionGenerator<T
     return "DistributionGenerator{" + columnDef + '}';
   }
 
+  public DistributionCollectionGenerator setStep(int step) {
+    this.step = step;
+    return this;
+  }
 }
