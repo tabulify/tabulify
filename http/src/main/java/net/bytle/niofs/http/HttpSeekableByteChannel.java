@@ -35,9 +35,9 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
   }
 
   private void build(long start) {
+    currentConnection = HttpStatic.getConnection(httpPath.getUrl());
+    currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
     try {
-      currentConnection = HttpStatic.getConnection(httpPath.getUrl());
-      currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
       currentChannel = Channels.newChannel(currentConnection.getInputStream());
     } catch (IOException e) {
       throw new RuntimeException(e);

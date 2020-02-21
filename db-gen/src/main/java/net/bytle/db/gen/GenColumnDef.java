@@ -5,8 +5,10 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Typess;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A wrapper/extension around a {@link ColumnDef}
@@ -74,7 +76,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     if (generator == null) {
 
       // When read from a data definition file into the column property
-      final String nameProperty = Typess.safeCast(getProperty("name"),String.class);
+      final String nameProperty = Typess.safeCast(getProperty("name"), String.class);
       if (nameProperty == null) {
         return null;
       }
@@ -90,7 +92,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           break;
         case "random":
         case "distribution":
-          generator = DistributionCollectionGenerator.of(this,null);
+          generator = DistributionCollectionGenerator.of(this, null);
           break;
         default:
           throw new RuntimeException("The generator (" + name + ") defined for the column (" + this.toString() + ") is unknown");
@@ -151,27 +153,33 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   }
 
   public DistributionCollectionGenerator<T> addDistributionGenerator(Map<T, Double> buckets) {
-    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this,buckets);
+    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this, buckets);
+    generator = distributionCollectionGenerator;
+    return distributionCollectionGenerator;
+  }
+
+  public DistributionCollectionGenerator<T> addDistributionGenerator(T... element) {
+    Map<T, Double> buckets = Arrays.stream(element)
+      .collect(Collectors.toMap(e -> e, e -> 1.0));
+    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this, buckets);
     generator = distributionCollectionGenerator;
     return distributionCollectionGenerator;
   }
 
 
-
   public SequenceGenerator<T> getSequenceGenerator(Class<T> clazz) {
 
-    if (generator==null){
-      throw new RuntimeException("The column ("+this+") has no generator");
+    if (generator == null) {
+      throw new RuntimeException("The column (" + this + ") has no generator");
     }
-    if (getGenerator().getClass()!= SequenceGenerator.class){
-      throw new RuntimeException("The column ("+this+") has a generator that is not a sequence generator but "+generator.getClass());
+    if (getGenerator().getClass() != SequenceGenerator.class) {
+      throw new RuntimeException("The column (" + this + ") has a generator that is not a sequence generator but " + generator.getClass());
     }
     return (SequenceGenerator<T>) generator;
 
   }
 
   /**
-   *
    * @param collectionGenerator
    * @return
    */

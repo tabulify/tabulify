@@ -1,8 +1,12 @@
 package net.bytle.niofs.http;
 
+import net.bytle.niofs.ssl.Ssls;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * HTTP Static methods
@@ -62,7 +66,18 @@ class HttpStatic {
    */
   static HttpURLConnection getConnection(URL url) {
     try {
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      URLConnection urlConnection = url.openConnection();
+      if (!(urlConnection instanceof HttpURLConnection))
+      {
+        throw new RuntimeException("The URL is not using HTTP/HTTPS: " + url);
+
+      }
+      HttpURLConnection connection = (HttpURLConnection) urlConnection;
+      if (urlConnection instanceof HttpsURLConnection){
+        // Trust all certificates
+        // TODO: implement it as option
+        ((HttpsURLConnection) urlConnection).setSSLSocketFactory(Ssls.getTrustAllCertificateSocketFactory());
+      }
       connection.addRequestProperty("User-Agent", HttpFileSystem.USER_AGENT);
       return connection;
     } catch (IOException e) {

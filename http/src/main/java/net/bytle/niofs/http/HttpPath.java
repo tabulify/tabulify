@@ -11,6 +11,11 @@ import java.util.Iterator;
 
 public class HttpPath implements Path {
 
+  /**
+   * When creating a name for the fonction {@link #getFileName()}
+   */
+  private String fileName;
+
   HttpFileSystem httpFileSystem;
   URL url;
 
@@ -19,8 +24,14 @@ public class HttpPath implements Path {
     this.url = url;
   }
 
+  public HttpPath(HttpFileSystem httpFileSystem, String fileName) {
+    this.httpFileSystem = httpFileSystem;
+    this.url = null;
+    this.fileName = fileName;
+  }
+
   @Override
-  public FileSystem getFileSystem() {
+  public HttpFileSystem getFileSystem() {
     return this.httpFileSystem;
   }
 
@@ -36,7 +47,9 @@ public class HttpPath implements Path {
 
   @Override
   public Path getFileName() {
-    throw new UnsupportedOperationException("Not implemented");
+    String path = url.getPath();
+    int i = path.lastIndexOf("/");
+    return new HttpPath(this.getFileSystem(),path.substring(i+1));
   }
 
   @Override
@@ -179,6 +192,11 @@ public class HttpPath implements Path {
 
   @Override
   public String toString() {
-    return url.toString();
+    if (url !=null) {
+      return url.toString();
+    } else {
+      return fileName;
+    }
+
   }
 }
