@@ -72,6 +72,7 @@ public class JdbcDataSystemSql {
         /**
          * {@link DatabaseMetaData#getIdentifierQuoteString()}
          */
+        assert jdbcDataPath.getDataDef().getColumnsSize() !=0 : "The table ("+jdbcDataPath+") does not have any columns, a create statement cannot be created";
         return IntStream.range(0,jdbcDataPath.getDataDef().getColumnsSize())
                 .mapToObj(i->jdbcDataPath.getDataDef().getColumnDef(i).getColumnName())
                 .collect(Collectors.joining(", "));

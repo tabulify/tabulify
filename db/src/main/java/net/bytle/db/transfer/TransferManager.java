@@ -119,6 +119,12 @@ public class TransferManager {
     return transferListeners;
   }
 
+  /**
+   * Check a tabular source before moving
+   *   * check if it exists (except for query)
+   *   * check if it has a structure
+   * @param sourceDataPath
+   */
   public static void checkSource(DataPath sourceDataPath) {
     // Check source
     if (!Tabulars.exists(sourceDataPath)) {
