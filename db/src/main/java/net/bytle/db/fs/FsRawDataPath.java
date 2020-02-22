@@ -27,9 +27,15 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
 
   }
 
-  protected static FsRawDataPath of(FsDataStore fsDataStore, Path path) {
+  public static FsRawDataPath of(FsDataStore fsDataStore, Path path) {
 
     return new FsRawDataPath(fsDataStore, path);
+
+  }
+
+  public static FsRawDataPath of(Path path) {
+
+    return new FsRawDataPath(DataStore.of(path), path);
 
   }
 

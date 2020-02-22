@@ -7,9 +7,7 @@ import net.bytle.type.Arrayss;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
@@ -58,20 +56,13 @@ public class Fs {
   public static String getFileContent(Path path) {
     try {
 
-      StringBuilder s = new StringBuilder();
-      BufferedReader reader;
-      reader = new BufferedReader(new FileReader(path.toFile()));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        s.append(line).append(System.getProperty("line.separator"));
-      }
-
-      return s.toString();
+      return Files.lines(path)
+        .collect(Collectors.joining(System.getProperty("line.separator")));
 
     } catch (FileNotFoundException e) {
       throw new RuntimeException("Unable to find the file (" + path.toAbsolutePath().normalize().toString() + ")", e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      throw new RuntimeException("Error on the path ("+path.toString()+")",e);
     }
   }
 

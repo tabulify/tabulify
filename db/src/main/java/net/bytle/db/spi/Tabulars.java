@@ -3,8 +3,10 @@ package net.bytle.db.spi;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.ForeignKeyDag;
+import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.resultSetDiff.DataSetDiff;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -14,6 +16,7 @@ import net.bytle.db.transfer.TransferLoadOperation;
 import net.bytle.db.transfer.TransferManager;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.regexp.Globs;
+import net.bytle.type.Strings;
 import net.bytle.type.TailQueue;
 
 import java.util.ArrayList;
@@ -200,9 +203,13 @@ public class Tabulars {
    */
   public static void print(DataPath dataPath) {
 
-    SelectStream tableOutputStream = getSelectStream(dataPath);
-    Streams.print(tableOutputStream);
-    tableOutputStream.close();
+    if (dataPath.getDataDef().getColumnsSize() > 0) {
+      try (SelectStream tableOutputStream = getSelectStream(dataPath)) {
+        Streams.print(tableOutputStream);
+      }
+    } else {
+      cat(dataPath);
+    }
 
   }
 
@@ -255,7 +262,7 @@ public class Tabulars {
    * @param dataPath
    * @return if the data path locate a document
    * <p>
-   * The counter part is {@link #isContainer(DataPathAbs)}
+   * The counter part is {@link #isContainer(DataPath)}
    */
   public static boolean isDocument(DataPath dataPath) {
     return dataPath.getDataStore().getDataSystem().isDocument(dataPath);
@@ -368,7 +375,7 @@ public class Tabulars {
     TransferListener transferListener = null;
 
 
-    if (sameDataSystem(source,target)) {
+    if (sameDataSystem(source, target)) {
       // same provider (fs or jdbc)
       final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
       sourceDataSystem.move(source, target, transferProperties);
@@ -400,7 +407,7 @@ public class Tabulars {
     TransferListener transferListener;
 
 
-    if (sameDataSystem(source,target)) {
+    if (sameDataSystem(source, target)) {
       // same provider (fs or jdbc)
       transferListener = source.getDataStore().getDataSystem().copy(source, target, transferProperties);
     } else {
@@ -496,30 +503,50 @@ public class Tabulars {
    */
   public static DataPath extractTail(DataPath source, DataPath target, Integer limit) {
 
-    // Structure
-    if (target.getDataDef().getColumnsSize() == 0) {
-      DataDefs.copy(source.getDataDef(), target.getDataDef());
-    } else {
-      assertEqualsColumnsDefinition(source, target);
-    }
-
     // Tail
     TailQueue<List<Object>> queue = new TailQueue<>(limit);
-    // First collect the tail
+
+    // Collect it
     try (
       SelectStream selectStream = Tabulars.getSelectStream(source);
     ) {
+      RelationDef dataDef = selectStream.getSelectDataDef();
+      if (dataDef.getColumnsSize() == 0) {
+        // No row structure even at runtime
+        throw new RuntimeException(Strings.multiline(
+          "The data path (" + source + ") has no row structure. ",
+          "To extract a tail, a row structure is needed.",
+          "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
+      }
+      // Structure
+      if (target.getDataDef().getColumnsSize() == 0) {
+        DataDefs.copy(source.getDataDef(), target.getDataDef());
+      } else {
+        assertEqualsColumnsDefinition(source, target);
+      }
+
+      // Collect the tail
       while (selectStream.next()) {
         queue.add(selectStream.getObjects());
       }
     }
-    // Then insert
+
+    // Then insert in the target
     try (
       InsertStream insertStream = Tabulars.getInsertStream(target);
     ) {
       queue.forEach(insertStream::insert);
     }
+
     return target;
+
+  }
+
+  public static void tail(DataPath dataPath) {
+
+    DataPath target = MemoryDataStore.of("tail", "tail").getDataPath("tail");
+    extractTail(dataPath, target, 10);
+    Tabulars.print(target);
 
   }
 
@@ -536,6 +563,10 @@ public class Tabulars {
   public static void assertEqualsColumnsDefinition(DataPath first, DataPath second) {
     String reason = DataSetDiff.compareMetaData(first, second);
     assert reason.equals("") : "The columns definition between the data path (" + first + ") and (" + second + ") are not the same for the following reason " + reason;
+  }
+
+  public static void cat(DataPath dataPath) {
+    System.out.println(getString(dataPath));
   }
 
 }

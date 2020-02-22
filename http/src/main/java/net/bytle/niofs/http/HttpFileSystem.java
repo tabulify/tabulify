@@ -8,6 +8,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 final class HttpFileSystem extends FileSystem {
@@ -104,15 +105,17 @@ final class HttpFileSystem extends FileSystem {
     return String.format("%s[%s]@%s", this.getClass().getSimpleName(), provider, hashCode());
   }
 
+
   @Override
-  public boolean equals(Object other) {
-    throw new UnsupportedOperationException("Not implemented");
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    HttpFileSystem that = (HttpFileSystem) o;
+    return url.equals(that.url);
   }
 
   @Override
   public int hashCode() {
-    throw new UnsupportedOperationException("Not implemented");
+    return Objects.hash(url);
   }
-
-
 }

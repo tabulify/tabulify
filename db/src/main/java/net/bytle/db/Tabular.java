@@ -182,7 +182,8 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    return FsDataStore.getLocalFileSystem().getDataPath(path);
+    return DataStore.of(path).getDataPath(path);
+
 
   }
 

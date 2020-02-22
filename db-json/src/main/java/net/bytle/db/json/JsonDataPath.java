@@ -1,14 +1,14 @@
 package net.bytle.db.json;
 
+import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsRawDataPath;
-import net.bytle.db.fs.FsTableSystem;
 
 import java.nio.file.Path;
 
 public class JsonDataPath extends FsRawDataPath {
 
-  public JsonDataPath(FsTableSystem fsTableSystem, Path path) {
-    super(fsTableSystem, path);
+  public JsonDataPath(FsDataStore fsDataStore, Path path) {
+    super(fsDataStore, path);
   }
 
   @Override

@@ -19,12 +19,19 @@ public class FsDataStore extends DataStore {
    * Accessible via {@link #getLocalFileSystem()}
    */
   static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
+  private final FileSystem fileSystem;
 
 
   public FsDataStore(String name, String url) {
 
     super(name, url);
+    fileSystem = Paths.get(url).getFileSystem();
+  }
 
+  public FsDataStore(String name, String url, FileSystem fileSystem) {
+
+    super(name, url);
+    this.fileSystem = fileSystem;
   }
 
   public static FsDataStore getLocalFileSystem() {
@@ -33,7 +40,7 @@ public class FsDataStore extends DataStore {
 
 
   FileSystem getFileSystem() {
-    return Paths.get(this.getUri()).getFileSystem();
+    return this.fileSystem;
   }
 
 

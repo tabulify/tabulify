@@ -63,4 +63,5 @@ public class CsvManager extends FsFileManager {
   public InsertStream getInsertStream(FsDataPath fsDataPath) {
     return CsvInsertStream.of((CsvDataPath) fsDataPath);
   }
+
 }

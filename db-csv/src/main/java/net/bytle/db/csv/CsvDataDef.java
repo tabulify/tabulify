@@ -3,15 +3,14 @@ package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
+import net.bytle.db.fs.line.LineDataDef;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.TableDef;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Iterator;
 
@@ -25,13 +24,10 @@ import java.util.Iterator;
  * - <a href="https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/#parsing">W3c Parsing</a><br>
  * - <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a><br>
  */
-public class CsvDataDef extends TableDef {
+public class CsvDataDef extends LineDataDef {
 
   private static final char DOUBLE_QUOTE = '"';
-  /**
-   * See {@link #setCharset(Charset)}
-   */
-  private Charset charset = StandardCharsets.UTF_8;
+
 
   /**
    * The path of the Csv
@@ -110,17 +106,15 @@ public class CsvDataDef extends TableDef {
     this.trimWhitespace = trimWhitespace;
   }
 
-  public String getNewLineCharacters() {
-    return newLineCharacters;
-  }
 
   /**
    * Set the newline string
    *
    * @param newLineCharacters The strings that is used at the end of a row (default to the system default \r\n for Windows, \n for the other)
    */
+  @Override
   public CsvDataDef setNewLineCharacters(String newLineCharacters) {
-    this.newLineCharacters = newLineCharacters;
+    super.setNewLineCharacters(newLineCharacters);
     return this;
   }
 
@@ -174,7 +168,7 @@ public class CsvDataDef extends TableDef {
    * @return The {@link CsvDataDef CsvDataDef} instance for chaining initialization
    */
   public CsvDataDef setCharset(Charset charset) {
-    this.charset = charset;
+    super.setCharset(charset);
     return this;
   }
 
@@ -302,13 +296,6 @@ public class CsvDataDef extends TableDef {
 
   }
 
-
-  /**
-   * @return the {@link #charset}
-   */
-  public Charset getCharset() {
-    return charset;
-  }
 
   public boolean isIgnoreEmptyLine() {
     return isIgnoreEmptyLine;

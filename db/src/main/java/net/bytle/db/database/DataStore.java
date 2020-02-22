@@ -2,6 +2,7 @@ package net.bytle.db.database;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
+import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
@@ -14,6 +15,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -63,6 +65,17 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
       .setUser(ds.getUser())
       .setProperties(ds.getProperties())
       .setDescription(ds.getDescription());
+  }
+
+  public static FsDataStore of(Path path) {
+    FsDataStore fsDataStore;
+    if (path.toUri().getScheme().equals("file")){
+      fsDataStore = FsDataStore.getLocalFileSystem();
+    } else {
+      FileSystem fileSystem = path.getFileSystem();
+      fsDataStore = new FsDataStore(fileSystem.toString(), path.toUri().toString(), fileSystem);
+    }
+    return fsDataStore;
   }
 
   public String getDescription() {

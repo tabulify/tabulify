@@ -290,6 +290,9 @@ public class FsTableSystem extends TableSystem {
   @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
     FsRawDataPath fsSource = (FsRawDataPath) source;
+    if (!exists(fsSource)){
+      throw new RuntimeException("The source file ("+source+") does not exists");
+    }
     FsRawDataPath fsTarget = (FsRawDataPath) target;
     TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
       .startTimer();

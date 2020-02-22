@@ -1,12 +1,13 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsRawDataPath;
+import net.bytle.db.fs.line.LineDataPath;
 
 import java.nio.file.Path;
 
 
-public class CsvDataPath extends FsRawDataPath {
+public class CsvDataPath extends LineDataPath {
 
   public CsvDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);
@@ -21,7 +22,7 @@ public class CsvDataPath extends FsRawDataPath {
 
   public static CsvDataPath of(Path path) {
 
-    return new CsvDataPath(FsDataStore.getLocalFileSystem(), path);
+    return new CsvDataPath(DataStore.of(path), path);
 
   }
 

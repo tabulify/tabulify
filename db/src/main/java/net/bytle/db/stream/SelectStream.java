@@ -15,7 +15,7 @@ public interface SelectStream extends AutoCloseable {
 
   String getString(int columnIndex);
 
-  int getRow();
+  long getRow();
 
 
   Object getObject(int columnIndex);
