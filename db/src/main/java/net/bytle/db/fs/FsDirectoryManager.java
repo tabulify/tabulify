@@ -10,7 +10,7 @@ public class FsDirectoryManager extends FsFileManager {
 
 
   @Override
-  public SelectStream getSelectStream(FsRawDataPath fsDataPath) {
+  public SelectStream getSelectStream(FsDataPath fsDataPath) {
     throw new RuntimeException("This is a directory, it has no content, you can't therefore ask to read its content");
   }
 

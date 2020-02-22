@@ -92,7 +92,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
 
 
   @Override
-  public int getRow() {
+  public long getRow() {
     return rowIndex + 1;
   }
 

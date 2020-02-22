@@ -100,6 +100,11 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
   }
 
   @Override
+  public FsFileManager getFileManager() {
+    return FsFileManager.getSingeleton();
+  }
+
+  @Override
   public String getPath() {
 
     return this.path.toString();

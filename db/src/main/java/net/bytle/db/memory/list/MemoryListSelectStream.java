@@ -86,7 +86,7 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
 
 
   @Override
-  public int getRow() {
+  public long getRow() {
     return rowIndex + 1;
   }
 

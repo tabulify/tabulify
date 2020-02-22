@@ -3,7 +3,7 @@ package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
-import net.bytle.db.fs.line.LineDataDef;
+import net.bytle.db.textline.LineDataDef;
 import net.bytle.db.model.ColumnDef;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;

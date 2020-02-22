@@ -15,4 +15,6 @@ public interface FsDataPath extends DataPath {
   Path getNioPath();
 
 
+  FsFileManager getFileManager();
+
 }

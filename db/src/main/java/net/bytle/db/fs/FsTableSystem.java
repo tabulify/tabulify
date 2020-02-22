@@ -134,9 +134,9 @@ public class FsTableSystem extends TableSystem {
     if (fileManager == null) {
       if (Files.isRegularFile(path)) {
         DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
-        fileManager = FsFileManager.of();
+        fileManager = FsFileManager.getSingeleton();
       } else {
-        fileManager = FsDirectoryManager.of();
+        fileManager = FsDirectoryManager.getSingeleton();
       }
     }
     return fileManager;
@@ -205,7 +205,11 @@ public class FsTableSystem extends TableSystem {
   }
 
   private FsFileManager getFileManager(FsDataPath fsDataPath) {
-    return getFileManager(fsDataPath.getNioPath());
+    FsFileManager fileManager = fsDataPath.getFileManager();
+    if (fileManager==null){
+      fileManager = getFileManager(fsDataPath.getNioPath());
+    }
+    return fileManager;
   }
 
   @Override

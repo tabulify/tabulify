@@ -25,7 +25,7 @@ public class FsFileManager  {
 
   }
 
-  public static FsFileManager of() {
+  public static FsFileManager getSingeleton() {
    return new FsFileManager();
   }
 

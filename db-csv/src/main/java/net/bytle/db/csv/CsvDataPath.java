@@ -2,7 +2,7 @@ package net.bytle.db.csv;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.line.LineDataPath;
+import net.bytle.db.textline.LineDataPath;
 
 import java.nio.file.Path;
 
