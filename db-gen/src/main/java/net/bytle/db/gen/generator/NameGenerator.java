@@ -21,7 +21,7 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
   public <T> NameGenerator(GenColumnDef<String> columnDef) {
 
     this.columnDef = columnDef;
-    URL uri = Class.class.getResource("/DataSet/Names.csv");
+    URL uri = Class.class.getResource("/DataSet/FirstNamesScotland.csv");
     try {
       CsvDataPath csvDataPath = CsvDataPath.of(Paths.get(uri.toURI()))
         .getDataDef()

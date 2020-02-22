@@ -1,7 +1,6 @@
 package net.bytle.db.textline;
 
 
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 
 import java.nio.charset.Charset;
@@ -71,7 +70,6 @@ public class LineDataDef extends TableDef {
   }
 
 
-
   /**
    * @return the {@link #charset}
    */
@@ -79,11 +77,5 @@ public class LineDataDef extends TableDef {
     return charset;
   }
 
-  @Override
-  public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
-    if (super.getColumnsSize()>=1) {
-      throw new RuntimeException("The text format has only on column which it's a line, you can't add a column");
-    }
-    return super.getColumnOf(columnName, clazz);
-  }
+
 }

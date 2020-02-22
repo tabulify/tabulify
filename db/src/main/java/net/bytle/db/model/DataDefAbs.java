@@ -326,4 +326,9 @@ public abstract class DataDefAbs implements RelationDef {
   }
 
 
+  public DataDefAbs addColumn(String columnName, int typeCode, String comment) {
+    addColumn(columnName, typeCode,null,null,true,comment);
+    return this;
+  }
+
 }

@@ -110,7 +110,7 @@ public class LineSelectStream extends SelectStreamAbs {
     LineDataDef dataDef = lineDataPath.getDataDef();
     if (dataDef.getColumnsSize()==0) {
       // One column only
-      dataDef.addColumn("line");
+      dataDef.addColumn("Lines");
     }
     return dataDef;
   }

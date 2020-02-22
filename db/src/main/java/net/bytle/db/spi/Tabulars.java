@@ -471,20 +471,29 @@ public class Tabulars {
    * @param limit  - the number of element returned
    * @return extract the head element of source into target for a size of limit
    */
-  public static DataPath extractHead(DataPath source, DataPath target, Integer limit) {
+  public static DataPath extractHead(DataPath source, DataPath target, Long limit) {
 
-    // Structure
-    if (target.getDataDef().getColumnsSize() == 0) {
-      DataDefs.copy(source.getDataDef(), target.getDataDef());
-    } else {
-      assertEqualsColumnsDefinition(source, target);
-    }
 
     // Head
     try (
       SelectStream selectStream = Tabulars.getSelectStream(source);
       InsertStream insertStream = Tabulars.getInsertStream(target)
     ) {
+      RelationDef sourceDataDef = selectStream.getSelectDataDef();
+      if (sourceDataDef.getColumnsSize()==0){
+        // No row structure even at runtime
+        throw new RuntimeException(Strings.multiline(
+          "The data path (" + source + ") has no row structure. ",
+          "To extract a head, a row structure is needed.",
+          "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
+      }
+      // Structure
+      if (target.getDataDef().getColumnsSize() == 0) {
+        DataDefs.copy(sourceDataDef, target.getDataDef());
+      } else {
+        assertEqualsColumnsDefinition(source, target);
+      }
+
       int i = 0;
       while (selectStream.next() && i < limit) {
         i++;
@@ -569,6 +578,21 @@ public class Tabulars {
 
   public static void cat(DataPath dataPath) {
     System.out.println(getString(dataPath));
+  }
+
+  public static void head(DataPath dataPath) {
+
+    head(dataPath,10);
+
+  }
+
+  public static void head(DataPath dataPath, long limit) {
+    DataPath target = MemoryDataStore.of("head", "head").getDataPath("head");
+    Tabulars.create(target);
+    extractHead(dataPath, target, limit);
+    Tabulars.print(target);
+    Tabulars.drop(target);
+
   }
 
 }

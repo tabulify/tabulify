@@ -1,6 +1,6 @@
 select
-	'Male' as "Gender",
-	Boy_name as "Name",
+	'Male' as Gender,
+	Boy_name as "firstName",
 	(Boy_number*1.0 / (sum(Boy_number) over ()))* 100 as Probability
 from
 	(

@@ -18,6 +18,14 @@ import java.util.Arrays;
 
 public class CsvManager extends FsFileManager {
 
+   private static CsvManager csvManager;
+
+  public static CsvManager getCsvManagerSingeleton() {
+    if (csvManager==null){
+      csvManager = new CsvManager();
+    }
+    return csvManager;
+  }
 
   @Override
   public CsvDataPath createDataPath(FsDataStore fsDataStore, Path path) {
