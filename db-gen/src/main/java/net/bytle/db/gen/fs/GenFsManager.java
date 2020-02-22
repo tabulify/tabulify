@@ -1,7 +1,6 @@
 package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.fs.FsRawDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.gen.GenDataPath;
@@ -23,7 +22,7 @@ public class GenFsManager extends FsFileManager {
 
 
   @Override
-  public SelectStream getSelectStream(FsRawDataPath fsDataPath) {
+  public SelectStream getSelectStream(FsDataPath fsDataPath) {
     return new GenSelectStream((GenDataPath) fsDataPath);
   }
 

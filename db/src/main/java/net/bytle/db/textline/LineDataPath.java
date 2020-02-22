@@ -34,10 +34,6 @@ public class LineDataPath extends FsRawDataPath implements FsDataPath {
   public LineDataDef getDataDef() {
     if (this.dataDef == null) {
       this.dataDef = new LineDataDef(this);
-
-      // One column only
-      this.dataDef.addColumn("line");
-
     }
     return (LineDataDef) this.dataDef;
   }

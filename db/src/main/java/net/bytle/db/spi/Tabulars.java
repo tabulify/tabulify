@@ -545,8 +545,10 @@ public class Tabulars {
   public static void tail(DataPath dataPath) {
 
     DataPath target = MemoryDataStore.of("tail", "tail").getDataPath("tail");
+    Tabulars.create(target);
     extractTail(dataPath, target, 10);
     Tabulars.print(target);
+    Tabulars.drop(target);
 
   }
 

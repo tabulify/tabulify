@@ -107,7 +107,12 @@ public class LineSelectStream extends SelectStreamAbs {
 
   @Override
   public TableDef getSelectDataDef() {
-    return lineDataPath.getDataDef();
+    LineDataDef dataDef = lineDataPath.getDataDef();
+    if (dataDef.getColumnsSize()==0) {
+      // One column only
+      dataDef.addColumn("line");
+    }
+    return dataDef;
   }
 
 

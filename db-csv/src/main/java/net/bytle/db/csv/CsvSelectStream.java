@@ -27,7 +27,7 @@ public class CsvSelectStream extends SelectStreamAbs {
   /**
    * The record number (0=first)
    */
-  private int rowNum = 0;
+  private long rowNum = 0;
 
 
   /**
@@ -40,15 +40,7 @@ public class CsvSelectStream extends SelectStreamAbs {
     super(csvDataPath);
     this.csvDataPath = csvDataPath;
     CsvDataDef dataDef = csvDataPath.getDataDef();
-    if (dataDef.getColumnsSize() == 0) {
-      if (dataDef.getHeaderRowCount() != 0) {
-        dataDef.addColumnNamesFromHeader();
-      } else {
-        throw new RuntimeException(
-          Strings.multiline("The csv file (" + csvDataPath + ") does not have any data structure attached.",
-            "If it has an header, set the row header property to the line number where the header is located."));
-      }
-    }
+
     beforeFirst();
 
   }
@@ -161,7 +153,7 @@ public class CsvSelectStream extends SelectStreamAbs {
 
 
   @Override
-  public int getRow() {
+  public long getRow() {
     return rowNum;
   }
 
@@ -173,7 +165,17 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   @Override
   public TableDef getSelectDataDef() {
-    return csvDataPath.getDataDef();
+    CsvDataDef dataDef = csvDataPath.getDataDef();
+    if (dataDef.getColumnsSize() == 0) {
+      if (dataDef.getHeaderRowCount() != 0) {
+        dataDef.addColumnNamesFromHeader();
+      } else {
+        throw new RuntimeException(
+          Strings.multiline("The csv file (" + csvDataPath + ") does not have any data structure attached.",
+            "If it has an header, set the row header property to the line number where the header is located."));
+      }
+    }
+    return dataDef;
   }
 
 

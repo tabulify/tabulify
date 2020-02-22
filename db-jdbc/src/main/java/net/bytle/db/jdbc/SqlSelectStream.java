@@ -127,7 +127,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   @Override
-  public int getRow() {
+  public long getRow() {
     try {
       return getResultSet().getRow();
     } catch (SQLException e) {

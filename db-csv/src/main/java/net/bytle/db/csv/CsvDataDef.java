@@ -233,7 +233,7 @@ public class CsvDataDef extends LineDataDef {
       columnsWereBuild = true;
       if (Files.exists(fsDataPath.getNioPath())) {
         try (
-          CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), charset, getCsvFormat());
+          CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), this.getCharset(), getCsvFormat());
         ) {
           Iterator<CSVRecord> recordIterator = csvParser.iterator();
           try {

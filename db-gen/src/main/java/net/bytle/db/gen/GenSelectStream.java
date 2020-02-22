@@ -94,8 +94,8 @@ public class GenSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public int getRow() {
-    return 0;
+  public long getRow() {
+    return actualRowId;
   }
 
   @Override
