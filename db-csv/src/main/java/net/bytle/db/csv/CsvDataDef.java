@@ -5,6 +5,7 @@ import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
 import net.bytle.db.textline.LineDataDef;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -46,10 +47,6 @@ public class CsvDataDef extends LineDataDef {
    */
   private boolean trimWhitespace = false;
 
-  /**
-   * See {@link #setNewLineCharacters(String)}
-   */
-  private String newLineCharacters = System.lineSeparator();
 
   /**
    * See {@link #setDelimiterCharacter(char) | Delimiter}
@@ -59,26 +56,28 @@ public class CsvDataDef extends LineDataDef {
   /**
    * See {@link #setEscapeCharacter(char)}
    */
-  private char escapeCharacter = DOUBLE_QUOTE;
+  private Character escapeCharacter = null;
 
   /**
    * See {@link #setQuoteCharacter(char)}
    */
-  private char quoteCharacter = DOUBLE_QUOTE;
+  private Character quoteCharacter = null;
 
   /**
-   * See {@link #setIgnoreEmptyLine(boolean)}
+   * Always false see {@link #setIgnoreEmptyLine(boolean)}
    */
-  private boolean isIgnoreEmptyLine = true;
+  private final boolean isIgnoreEmptyLine = false;
 
   /**
+   * The third library use this character by default
+   * even if not set
    * See {@link #setCommentCharacter(char)}
    */
-  private Character commentCharacter = '#';
+  private char commentCharacter = '#';
   private boolean columnsWereBuild = false;
 
   /**
-   * Set the comment character
+   * Set the comment character.
    *
    * @param commentCharacter A character that, when it appears at the beginning of a row, indicates that the row is a comment - Default is null which means no rows are treated as comments
    * @return
@@ -90,12 +89,20 @@ public class CsvDataDef extends LineDataDef {
 
 
   /**
-   * Ignore empty line
+   * Ignore empty line (Default is no - ie number of line = number of records)
+   * Will send an exception if the parameters is set to true
    *
-   * @param ignoreEmptyLine if true, it will ignore empty line
+   * @param ignoreEmptyLine
    */
   public void setIgnoreEmptyLine(boolean ignoreEmptyLine) {
-    isIgnoreEmptyLine = ignoreEmptyLine;
+
+    if (ignoreEmptyLine) {
+      throw new RuntimeException(Strings.multiline(
+        "As of today, we can't skip empty lines due to the third library implementation",
+        "Ignoring empty line means that it will just skip the line without giving this knowledge back",
+        "If we have a comment or front matter above the header with an empty line",
+        "There is no way to locate the header line precisely"));
+    }
   }
 
   public boolean isTrimWhitespace() {
@@ -133,7 +140,7 @@ public class CsvDataDef extends LineDataDef {
     return this;
   }
 
-  public char getQuoteCharacter() {
+  public Character getQuoteCharacter() {
     return quoteCharacter;
   }
 
@@ -173,7 +180,6 @@ public class CsvDataDef extends LineDataDef {
   }
 
   /**
-   *
    * @return the header row number or 0 if it does not exist
    */
   public int getHeaderRowCount() {
@@ -222,24 +228,25 @@ public class CsvDataDef extends LineDataDef {
    * Build the column metadata from the first row if needed
    * Lazy initialization
    */
-  public void addColumnNamesFromHeader() {
+  public void scanAndAddColumnNames() {
 
     // The data structure was given in the definition
-    if (!columnsWereBuild && super.getColumnsSize()!=0){
-        columnsWereBuild = true;
+    if (!columnsWereBuild && super.getColumnsSize() != 0) {
+      columnsWereBuild = true;
     }
 
     if (!columnsWereBuild) {
       columnsWereBuild = true;
       if (Files.exists(fsDataPath.getNioPath())) {
+
         try (
-          CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), this.getCharset(), getCsvFormat());
+          CSVParser csvParser = CSVParser.parse(fsDataPath.getNioPath(), this.getCharset(), this.getCsvFormat());
         ) {
           Iterator<CSVRecord> recordIterator = csvParser.iterator();
           try {
 
             CSVRecord headerRecord = null;
-            int iterate = (headerRowCount==0?1:headerRowCount);
+            int iterate = (headerRowCount == 0 ? 1 : headerRowCount);
             for (int i = 0; i < iterate; i++) {
               headerRecord = Csvs.safeIterate(recordIterator);
               if (headerRecord == null) {
@@ -247,14 +254,26 @@ public class CsvDataDef extends LineDataDef {
               }
             }
 
-            for (int i = 0; i < headerRecord.size(); i++) {
-              if (headerRowCount > 0) {
-                this.addColumn(headerRecord.get(i));
-              } else {
-                String columnName = String.valueOf(i + 1);
-                this.addColumn(columnName);
-              }
+            int size = headerRecord.size();
+            switch (size) {
+              case 1:
+                if (headerRowCount > 0) {
+                  this.addColumn(headerRecord.get(0));
+                } else {
+                  this.addColumn("Lines");
+                }
+                break;
+              default:
+                for (int i = 0; i < size; i++) {
+                  if (headerRowCount > 0) {
+                    this.addColumn(headerRecord.get(i));
+                  } else {
+                    String columnName = String.valueOf(i + 1);
+                    this.addColumn(columnName);
+                  }
+                }
             }
+
 
           } catch (java.util.NoSuchElementException e) {
             // No more CSV records available, file is empty
@@ -277,20 +296,26 @@ public class CsvDataDef extends LineDataDef {
    * @return the Apache common Csv Format
    */
   protected CSVFormat getCsvFormat() {
-    CSVFormat csvFormat = CSVFormat.DEFAULT
-      .withDelimiter(delimiterCharacter)
-      // Ignoring empty line means that it will just skip the line
-      // if we have a comment or front matter above the header with empty line
-      // there is no way to locate the header line precisely
-      .withIgnoreEmptyLines(false)
-      .withCommentMarker(commentCharacter)
-      .withQuote(quoteCharacter)
-      .withRecordSeparator(newLineCharacters);
+
+    CSVFormat csvFormat = CSVFormat.newFormat(delimiterCharacter);
+
+    // Always false see the set function for the `why`
+    csvFormat = csvFormat.withIgnoreEmptyLines(false);
+
+    // Comment character for the third library even if not set is the #
+    // We then have the same by default
+    csvFormat = csvFormat.withCommentMarker(commentCharacter);
+
+    if (quoteCharacter!=null){
+      csvFormat = csvFormat.withQuote(quoteCharacter);
+    }
+    if (getNewLineCharacters()!=null) {
+      csvFormat = csvFormat.withRecordSeparator(getNewLineCharacters());
+    }
 
     // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
-    if (escapeCharacter != DOUBLE_QUOTE) {
-      csvFormat = csvFormat
-        .withEscape(escapeCharacter);
+    if (escapeCharacter != null) {
+      csvFormat = csvFormat.withEscape(escapeCharacter);
     }
     return csvFormat;
 

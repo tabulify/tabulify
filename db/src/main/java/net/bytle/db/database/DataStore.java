@@ -472,4 +472,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public boolean isStrict() {
     return strict;
   }
+
+
 }

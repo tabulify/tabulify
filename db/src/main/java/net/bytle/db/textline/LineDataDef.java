@@ -27,7 +27,7 @@ public class LineDataDef extends TableDef {
   /**
    * See {@link #setNewLineCharacters(String)}
    */
-  private String newLineCharacters = System.lineSeparator();
+  private String newLineCharacters = null;
 
   public String getNewLineCharacters() {
     return newLineCharacters;

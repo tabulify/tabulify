@@ -2,7 +2,6 @@ package net.bytle.db.csv;
 
 import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.SelectStreamAbs;
-import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -127,15 +126,18 @@ public class CsvSelectStream extends SelectStreamAbs {
   public void beforeFirst() {
     try {
 
-      CsvDataDef csvDataDef = this.csvDataPath.getDataDef();
-      CSVFormat csvFormat = csvDataDef.getCsvFormat();
+      CsvDataDef dataDef = this.csvDataPath.getDataDef();
+      if (dataDef.getColumnsSize() == 0) {
+          dataDef.scanAndAddColumnNames();
+      }
+      CSVFormat csvFormat = dataDef.getCsvFormat();
       Path nioPath = csvDataPath.getNioPath();
-      csvParser = CSVParser.parse(nioPath, csvDataDef.getCharset(), csvFormat);
+      csvParser = CSVParser.parse(nioPath, dataDef.getCharset(), csvFormat);
       recordIterator = csvParser.iterator();
       lineNumberInTextFile = 0;
 
       // Pass the header
-      while (lineNumberInTextFile < csvDataDef.getHeaderRowCount()) {
+      while (lineNumberInTextFile < dataDef.getHeaderRowCount()) {
         safeIterate();
       }
 
@@ -163,19 +165,14 @@ public class CsvSelectStream extends SelectStreamAbs {
     return safeGet(columnIndex);
   }
 
+  /**
+   *
+   * @return the select data def
+   * If there is no structure, {@link #beforeFirst()} will initiate a run time data definition
+   */
   @Override
   public TableDef getSelectDataDef() {
-    CsvDataDef dataDef = csvDataPath.getDataDef();
-    if (dataDef.getColumnsSize() == 0) {
-      if (dataDef.getHeaderRowCount() != 0) {
-        dataDef.addColumnNamesFromHeader();
-      } else {
-        throw new RuntimeException(
-          Strings.multiline("The csv file (" + csvDataPath + ") does not have any data structure attached.",
-            "If it has an header, set the row header property to the line number where the header is located."));
-      }
-    }
-    return dataDef;
+    return csvDataPath.getDataDef();
   }
 
 

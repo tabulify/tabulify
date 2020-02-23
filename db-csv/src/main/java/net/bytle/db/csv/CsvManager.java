@@ -6,8 +6,6 @@ import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
-import net.bytle.db.textline.LineDataPath;
-import net.bytle.db.textline.LineSelectStream;
 import net.bytle.fs.Fs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -18,10 +16,10 @@ import java.util.Arrays;
 
 public class CsvManager extends FsFileManager {
 
-   private static CsvManager csvManager;
+  private static CsvManager csvManager;
 
   public static CsvManager getCsvManagerSingeleton() {
-    if (csvManager==null){
+    if (csvManager == null) {
       csvManager = new CsvManager();
     }
     return csvManager;
@@ -66,11 +64,8 @@ public class CsvManager extends FsFileManager {
   @Override
   public SelectStream getSelectStream(FsDataPath fsDataPath) {
 
-    if (fsDataPath.getDataDef().getColumnsSize()!=0){
-      return CsvSelectStream.of((CsvDataPath) fsDataPath);
-    } else {
-      return LineSelectStream.of((LineDataPath) fsDataPath);
-    }
+    return CsvSelectStream.of((CsvDataPath) fsDataPath);
+
   }
 
   @Override

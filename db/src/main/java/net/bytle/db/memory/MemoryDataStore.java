@@ -4,6 +4,10 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.memory.list.MemoryListDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.type.Strings;
+
+import java.util.UUID;
 
 public class MemoryDataStore extends DataStore {
 
@@ -29,6 +33,11 @@ public class MemoryDataStore extends DataStore {
   @Override
   public MemoryDataPath getDataPath(String... parts) {
 
+    if (parts.length==0){
+      throw new RuntimeException(
+        Strings.multiline("You can't create a data path without name",
+          "If you don't want to specify a name, use the getRandomDataPath function"));
+    }
     return this.getCurrentDataPath().resolve(parts);
 
   }
@@ -59,5 +68,11 @@ public class MemoryDataStore extends DataStore {
       memoryStore = new MemoryStore();
     }
     return memoryStore;
+  }
+
+  public DataPath getAndCreateRandomDataPath() {
+    DataPath dataPath = getDataPath(UUID.randomUUID().toString());
+    Tabulars.create(dataPath);
+    return dataPath;
   }
 }

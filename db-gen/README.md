@@ -50,3 +50,4 @@ DataGeneration.of()
   * https://github.com/interana/eventsim#config-file
   * https://mockaroo.com/ - Data Type
   * https://github.com/mifmif/Generex
+  * [SQlite generate_series extension table](https://www.sqlite.org/vtab.html#tabfunc2) 

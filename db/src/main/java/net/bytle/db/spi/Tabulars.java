@@ -580,18 +580,19 @@ public class Tabulars {
     System.out.println(getString(dataPath));
   }
 
-  public static void head(DataPath dataPath) {
+  public static DataPath head(DataPath dataPath) {
 
-    head(dataPath,10);
+    return head(dataPath,10);
 
   }
 
-  public static void head(DataPath dataPath, long limit) {
-    DataPath target = MemoryDataStore.of("head", "head").getDataPath("head");
-    Tabulars.create(target);
+  public static DataPath head(DataPath dataPath, long limit) {
+
+    DataPath target = MemoryDataStore.of("head", "head").getAndCreateRandomDataPath();
     extractHead(dataPath, target, limit);
     Tabulars.print(target);
     Tabulars.drop(target);
+    return target;
 
   }
 
