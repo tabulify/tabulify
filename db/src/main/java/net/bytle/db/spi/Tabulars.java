@@ -590,7 +590,6 @@ public class Tabulars {
 
     DataPath target = MemoryDataStore.of("head", "head").getAndCreateRandomDataPath();
     extractHead(dataPath, target, limit);
-    Tabulars.print(target);
     Tabulars.drop(target);
     return target;
 

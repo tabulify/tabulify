@@ -1,0 +1,51 @@
+/*
+ * The settings files is the main entry to every project
+ */
+rootProject.buildFileName = "root.gradle.kts"
+rootProject.name = "bytle-parent"
+
+include(":ansible")
+include(":bytle-api")
+include(":bytle-cli")
+include(":bytle-db-transfer")
+include(":bytle-log")
+include(":bytle-type")
+include(":bytle-crypto")
+include(":bytle-command")
+include(":bytle-doctest")
+include(":bytle-fs")
+include(":bytle-os")
+include(":bytle-regexp")
+include(":bytle-email")
+include(":bytle-xml")
+include(":bytle-sftp")
+include(":bytle-db")
+include(":bytle-db-jdbc")
+include(":bytle-db-json")
+include(":bytle-db-csv")
+include(":bytle-db-cli")
+include(":bytle-db-tpc")
+include(":bytle-db-sqlite")
+include(":bytle-db-gen")
+include(":bytle-db-website")
+include(":bytle-db-html")
+include(":bytle-db-oracle")
+include(":bytle-db-assembly")
+include(":bytle-db-excel")
+include(":bytle-db-sqlserver")
+include(":bytle-timer")
+include(":bytle-http")
+include(":bytle-zip")
+include(":bytle-db-play")
+
+
+
+rootProject.children.forEach { project ->
+  project.projectDir = file(project.name.replace("bytle-", ""))
+  project.buildFileName = "${project.projectDir.name}.gradle.kts"
+  assert(project.projectDir.isDirectory)
+  assert(project.buildFile.isFile)
+}
+
+
+
