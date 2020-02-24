@@ -94,7 +94,7 @@ public class CsvDataDef extends LineDataDef {
    *
    * @param ignoreEmptyLine
    */
-  public void setIgnoreEmptyLine(boolean ignoreEmptyLine) {
+  public CsvDataDef setIgnoreEmptyLine(boolean ignoreEmptyLine) {
 
     if (ignoreEmptyLine) {
       throw new RuntimeException(Strings.multiline(
@@ -103,6 +103,7 @@ public class CsvDataDef extends LineDataDef {
         "If we have a comment or front matter above the header with an empty line",
         "There is no way to locate the header line precisely"));
     }
+    return this;
   }
 
   public boolean isTrimWhitespace() {
