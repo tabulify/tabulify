@@ -25,8 +25,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   MemoryQueueSelectStream(MemoryQueueDataPath memoryQueueDataPath) {
     super(memoryQueueDataPath);
     this.memoryQueueDataPath = memoryQueueDataPath;
-    this.tabular = (ArrayBlockingQueue<List<Object>>) memoryQueueDataPath.getDataStore().getMemoryStore().getValue(memoryQueueDataPath);
-
+    this.tabular = memoryQueueDataPath.getValues();
   }
 
 

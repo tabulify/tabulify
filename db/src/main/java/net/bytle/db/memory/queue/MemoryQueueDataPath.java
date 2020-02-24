@@ -5,7 +5,11 @@ import net.bytle.db.memory.MemoryDataPathAbs;
 import net.bytle.db.memory.MemoryDataPathType;
 import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.memory.list.MemoryListDataPath;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.SelectStream;
 
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryDataPath {
@@ -20,6 +24,7 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
 
   public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
   public static final Integer DEFAULT_TIME_OUT = 10;
+  private ArrayBlockingQueue<List<Object>> values;
 
   public MemoryQueueDataPath(MemoryDataStore memoryDataStore, String path) {
     super(memoryDataStore, path);
@@ -68,4 +73,38 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
     return TYPE;
   }
 
+  @Override
+  public void truncate() {
+    this.create();
+  }
+
+  @Override
+  public long size() {
+    return this.values.size();
+  }
+
+  @Override
+  public void create() {
+    this.values = new ArrayBlockingQueue<>(capacity);
+  }
+
+  @Override
+  public ArrayBlockingQueue<List<Object>> getValues() {
+    return this.values;
+  }
+
+  @Override
+  public InsertStream getInsertStream() {
+    return new MemoryQueueInsertStream(this);
+  }
+
+  @Override
+  public SelectStream getSelectStream() {
+    return new MemoryQueueSelectStream(this);
+  }
+
+  @Override
+  public void drop() {
+    this.values = null;
+  }
 }

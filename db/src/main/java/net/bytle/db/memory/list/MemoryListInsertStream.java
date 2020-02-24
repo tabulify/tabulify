@@ -19,11 +19,10 @@ public class MemoryListInsertStream extends InsertStreamAbs implements InsertStr
   public MemoryListInsertStream(MemoryListDataPath memoryListDataPath) {
     super(memoryListDataPath);
     this.memoryListDataPath = memoryListDataPath;
-    Object value = memoryListDataPath.getDataStore().getMemoryStore().getValue(memoryListDataPath);
-    if (value == null){
+    this.tabular = memoryListDataPath.getValues();
+    if (tabular == null){
       throw  new RuntimeException("The memory data path ("+memoryListDataPath+") does not exist (or was not created before insertion)");
     }
-    this.tabular = (List<List<Object>>) value;
   }
 
 

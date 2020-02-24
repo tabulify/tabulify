@@ -39,6 +39,9 @@ public class CsvManager extends FsFileManager {
     Fs.createFile(csvDataPath.getNioPath());
     CsvDataDef csvDataDef = csvDataPath.getDataDef();
     CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
+    if (csvFormat.getRecordSeparator()==null){
+      csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());
+    }
     if (csvDataDef.getHeaderRowCount() > 0) {
       final String[] headers = Arrays.stream(csvDataDef.getColumnDefs())
         .map(ColumnDef::getColumnName).toArray(String[]::new);

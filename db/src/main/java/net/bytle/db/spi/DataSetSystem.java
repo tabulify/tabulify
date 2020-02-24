@@ -1,6 +1,5 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.model.SqlDataType;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -26,10 +25,6 @@ public abstract class DataSetSystem extends TableSystem {
     throw new RuntimeException("A data set cannot create a data path. It can only read it");
   }
 
-  @Override
-  public SqlDataType getDataType(Integer typeCode) {
-    throw new RuntimeException("Not implemented");
-  }
 
   public void drop(DataPath dataPath) {
     throw new RuntimeException("A data set cannot drop a data path. It can only read it");

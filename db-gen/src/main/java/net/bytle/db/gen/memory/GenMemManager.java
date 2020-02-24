@@ -30,7 +30,7 @@ public class GenMemManager implements MemoryVariableManager {
   @Override
   public void create(MemoryDataPath memoryDataPath) {
     // We need to create it in the store to show that it exists
-    memoryDataPath.getDataStore().getMemoryStore().put(memoryDataPath, null);
+    memoryDataPath.getDataStore().getSingletonMemoryStore().put(memoryDataPath, null);
   }
 
   @Override

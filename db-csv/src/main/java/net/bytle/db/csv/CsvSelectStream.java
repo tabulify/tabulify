@@ -1,6 +1,5 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.model.TableDef;
 import net.bytle.db.stream.SelectStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -38,7 +37,6 @@ public class CsvSelectStream extends SelectStreamAbs {
 
     super(csvDataPath);
     this.csvDataPath = csvDataPath;
-    CsvDataDef dataDef = csvDataPath.getDataDef();
 
     beforeFirst();
 
@@ -68,7 +66,7 @@ public class CsvSelectStream extends SelectStreamAbs {
    */
   private boolean safeIterate() {
 
-    currentRecord = Csvs.safeIterate(recordIterator);
+    currentRecord = getSelectDataDef().safeIterate(recordIterator);
     if (currentRecord == null) {
       return false;
     } else {
@@ -171,7 +169,7 @@ public class CsvSelectStream extends SelectStreamAbs {
    * If there is no structure, {@link #beforeFirst()} will initiate a run time data definition
    */
   @Override
-  public TableDef getSelectDataDef() {
+  public CsvDataDef getSelectDataDef() {
     return csvDataPath.getDataDef();
   }
 

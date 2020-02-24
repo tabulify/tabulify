@@ -15,21 +15,21 @@ import java.util.concurrent.TimeUnit;
  */
 public class MemoryListSelectStream extends SelectStreamAbs implements SelectStream {
 
-  private List<List<Object>> tabular;
+  private List<List<Object>> values;
   private final MemoryDataPathAbs memoryDataPath;
 
   // Index is used for a list for a queue
   private int rowIndex = -1;
-  List<Object> currentRow;
+  private List<Object> currentRow;
 
   MemoryListSelectStream(MemoryListDataPath memoryListDataPath) {
     super(memoryListDataPath);
     this.memoryDataPath = memoryListDataPath;
-    Object value = memoryListDataPath.getDataStore().getMemoryStore().getValue(memoryListDataPath);
-    if (value == null){
+    List<List<Object>> values = memoryListDataPath.getValues();
+    if (values == null){
       throw  new RuntimeException("The memory data path ("+memoryListDataPath+") does not exist (or was not created before insertion)");
     }
-    this.tabular = (List<List<Object>>) value;
+    this.values = values;
   }
 
 
@@ -51,11 +51,11 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
   public boolean next(Integer timeout, TimeUnit timeUnit) {
 
 
-    if (rowIndex >= tabular.size() - 1) {
+    if (rowIndex >= values.size() - 1) {
       return false;
     } else {
       rowIndex++;
-      currentRow = tabular.get(rowIndex);
+      currentRow = values.get(rowIndex);
       return true;
     }
 

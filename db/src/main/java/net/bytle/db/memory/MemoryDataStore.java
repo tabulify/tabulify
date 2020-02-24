@@ -12,7 +12,6 @@ import java.util.UUID;
 public class MemoryDataStore extends DataStore {
 
   static final String WORKING_PATH = "";
-  private MemoryStore memoryStore;
   private final MemoryDataSystem memoryDataSystem;
 
   public MemoryDataStore(String name, String connectionString) {
@@ -63,12 +62,7 @@ public class MemoryDataStore extends DataStore {
     throw new RuntimeException("A processing engine is not yet supported on memory structure");
   }
 
-  public MemoryStore getMemoryStore() {
-    if (memoryStore == null){
-      memoryStore = new MemoryStore();
-    }
-    return memoryStore;
-  }
+
 
   public DataPath getAndCreateRandomDataPath() {
     DataPath dataPath = getDataPath(UUID.randomUUID().toString());

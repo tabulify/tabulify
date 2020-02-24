@@ -248,7 +248,7 @@ public class CsvDataDef extends LineDataDef {
             CSVRecord headerRecord = null;
             int iterate = (headerRowCount == 0 ? 1 : headerRowCount);
             for (int i = 0; i < iterate; i++) {
-              headerRecord = Csvs.safeIterate(recordIterator);
+              headerRecord = safeIterate(recordIterator);
               if (headerRecord == null) {
                 return;
               }
@@ -289,6 +289,28 @@ public class CsvDataDef extends LineDataDef {
   }
 
   /**
+   * @param recordIterator
+   * @return a csvRecord or null if this is the end
+   */
+  public CSVRecord safeIterate(Iterator<CSVRecord> recordIterator) {
+
+    try {
+      if (recordIterator.hasNext()) {
+        return recordIterator.next();
+      } else {
+        return null;
+      }
+    } catch (Exception e) {
+      // No record could be found
+      if (e.getMessage().equals("IOException reading next record: java.io.IOException: (startline 1) EOF reached before encapsulated token finished")) {
+        throw new RuntimeException("The end of the file was found before the end of the record. You should verify that the characters. They should not be equals and the end of line should exists.", e);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  /**
    * The format of the CSV file excepts the header
    * that is handled in the function {@link CsvManager#create(FsDataPath)}
    * This way we doesn't overwrite the file and we can add rows in an existing Csv file
@@ -299,6 +321,7 @@ public class CsvDataDef extends LineDataDef {
 
     CSVFormat csvFormat = CSVFormat.newFormat(delimiterCharacter);
 
+
     // Always false see the set function for the `why`
     csvFormat = csvFormat.withIgnoreEmptyLines(false);
 
@@ -306,15 +329,24 @@ public class CsvDataDef extends LineDataDef {
     // We then have the same by default
     csvFormat = csvFormat.withCommentMarker(commentCharacter);
 
-    if (quoteCharacter!=null){
+    if (quoteCharacter != null) {
+      if (quoteCharacter.equals(commentCharacter)){
+        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the comment character ("+commentCharacter+") and that's not permitted");
+      }
       csvFormat = csvFormat.withQuote(quoteCharacter);
     }
-    if (getNewLineCharacters()!=null) {
+    if (getNewLineCharacters() != null) {
       csvFormat = csvFormat.withRecordSeparator(getNewLineCharacters());
     }
 
     // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
     if (escapeCharacter != null) {
+      if (quoteCharacter!=null && quoteCharacter.equals(escapeCharacter)){
+        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the escape character ("+escapeCharacter+") and that's not permitted");
+      }
+      if (escapeCharacter.equals(commentCharacter)){
+        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the comment character ("+commentCharacter+") and that's not permitted");
+      }
       csvFormat = csvFormat.withEscape(escapeCharacter);
     }
     return csvFormat;

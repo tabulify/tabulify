@@ -21,7 +21,7 @@ public class MemoryQueueInsertStream extends InsertStreamAbs implements InsertSt
   public MemoryQueueInsertStream(MemoryQueueDataPath memoryQueueDataPath) {
     super(memoryQueueDataPath);
     this.memoryQueueDataPath = memoryQueueDataPath;
-    this.tabular = (ArrayBlockingQueue) memoryQueueDataPath.getDataStore().getMemoryStore().getValue(memoryQueueDataPath);
+    this.tabular = memoryQueueDataPath.getValues();
   }
 
 

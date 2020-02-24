@@ -2,8 +2,6 @@ package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.memory.list.MemoryListDataPath;
-import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.stream.InsertStream;
@@ -36,27 +34,29 @@ public class MemoryDataSystem extends TableSystem {
   }
 
 
+  /**
+   * This operation does nothing for now, as the memory structure are managed by the garbage collector
+   * @param memoryDataPath
+   */
   public void delete(DataPath memoryDataPath) {
-    Object values = ((MemoryListDataPath) memoryDataPath).getDataStore().getMemoryStore().remove(memoryDataPath);
-    if (values == null) {
-      LOGGER.warning("The table (" + memoryDataPath + ") had no values. Nothing removed.");
-    }
   }
 
-  public void drop(DataPath memoryTable) {
-    delete(memoryTable);
+  /**
+   * This operation set the values to null as the memory structure are managed by the garbage collector
+   * @param dataPath
+   */
+  public void drop(DataPath dataPath) {
+    ((MemoryDataPath) dataPath).drop();
   }
 
   public void truncate(DataPath dataPath) {
-    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
-    getManager(memoryDataPath).truncate(memoryDataPath);
+    ((MemoryDataPath) dataPath).truncate();
   }
 
 
   public InsertStream getInsertStream(DataPath dataPath) {
 
-    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
-    return getManager(memoryDataPath).getInsertStream(memoryDataPath);
+    return ((MemoryDataPath) dataPath).getInsertStream();
 
   }
 
@@ -72,9 +72,9 @@ public class MemoryDataSystem extends TableSystem {
 
 
   @Override
-  public Boolean isEmpty(DataPath queue) {
+  public Boolean isEmpty(DataPath dataPath) {
 
-    throw new RuntimeException("Not yet implemented");
+    return ((MemoryDataPath) dataPath).size()==0;
 
   }
 
@@ -82,14 +82,13 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public long size(DataPath dataPath) {
 
-    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
-    return getManager(memoryDataPath).size(memoryDataPath);
+    return ((MemoryDataPath) dataPath).size();
 
   }
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    throw new RuntimeException("Not implemented");
+    throw new RuntimeException("Not yet implemented");
   }
 
 
@@ -132,14 +131,13 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return ((MemoryDataPath) dataPath).getDataStore().getMemoryStore().containsKey(dataPath);
+    return ((MemoryDataPath) dataPath).getValues()!=null;
   }
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
 
-    MemoryDataPathAbs memoryDataPath = (MemoryDataPathAbs) dataPath;
-    return getManager(memoryDataPath).getSelectStream(memoryDataPath);
+    return ((MemoryDataPath) dataPath).getSelectStream();
 
   }
 
@@ -151,11 +149,15 @@ public class MemoryDataSystem extends TableSystem {
 
   }
 
+  /**
+   * A memory may be created after it's configuration
+   * A queue for instance needs a capacity
+   * @param dataPath
+   */
   @Override
   public void create(DataPath dataPath) {
 
-    MemoryDataPath memoryDataPath = (MemoryDataPathAbs) dataPath;
-    getManager(memoryDataPath).create(memoryDataPath);
+    ((MemoryDataPath) dataPath).create();
 
   }
 
@@ -179,10 +181,6 @@ public class MemoryDataSystem extends TableSystem {
   }
 
 
-  @Override
-  public SqlDataType getDataType(Integer typeCode) {
-    return null;
-  }
 
 
 }

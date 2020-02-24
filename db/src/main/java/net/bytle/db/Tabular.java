@@ -3,6 +3,7 @@ package net.bytle.db;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.fs.FsDataStore;
+import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.memory.MemorySystemProvider;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
@@ -300,4 +301,10 @@ public class Tabular implements AutoCloseable {
   public FsDataStore getLocalFileDataStore() {
     return FsDataStore.getLocalFileSystem();
   }
+
+
+  public DataPath getAndCreateRandomDataPath() {
+    return MemoryDataStore.of("random","random").getAndCreateRandomDataPath();
+  }
+
 }
