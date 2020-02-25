@@ -88,7 +88,6 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
     this.values = new ArrayBlockingQueue<>(capacity);
   }
 
-  @Override
   public ArrayBlockingQueue<List<Object>> getValues() {
     return this.values;
   }
@@ -106,5 +105,10 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   @Override
   public void drop() {
     this.values = null;
+  }
+
+  @Override
+  public Boolean exists() {
+    return this.values!=null;
   }
 }

@@ -131,7 +131,7 @@ public class MemoryDataSystem extends TableSystem {
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return ((MemoryDataPath) dataPath).getValues()!=null;
+    return ((MemoryDataPath) dataPath).exists();
   }
 
   @Override

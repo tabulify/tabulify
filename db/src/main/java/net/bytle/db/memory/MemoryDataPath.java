@@ -27,12 +27,17 @@ public interface MemoryDataPath extends DataPath {
 
   void create();
 
-  Object getValues();
 
   InsertStream getInsertStream();
 
   SelectStream getSelectStream();
 
   void drop();
+
+  /**
+   * In a memory context, this generally means that the variable type definition is not null (ie var !=null )
+   * @return
+   */
+  Boolean exists();
 
 }

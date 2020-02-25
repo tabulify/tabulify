@@ -46,7 +46,6 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     this.values = new ArrayList<>();
   }
 
-  @Override
   public List<List<Object>> getValues() {
     return values;
   }
@@ -67,4 +66,10 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
   public void drop() {
     this.values = null;
   }
+
+  @Override
+  public Boolean exists(){
+    return this.values!=null;
+  }
+
 }

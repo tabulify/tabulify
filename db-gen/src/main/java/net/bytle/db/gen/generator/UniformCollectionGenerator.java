@@ -53,31 +53,31 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
       case Types.FLOAT:
         this.min = min != null ? min : 0.0;
         this.max = max != null ? max : 10.0;
-        this.range = ((Double) max - (Double) min ) / step;
+        this.range = ((Double) this.max - (Double) this.min ) / step;
         break;
       case Types.INTEGER:
         this.min = min != null ? min : 0;
         this.max = max != null ? max : 10;
-        this.range = ((Integer) max - (Integer) min) / step;
+        this.range = ((Integer) this.max - (Integer) this.min) / step;
         break;
       case Types.NUMERIC:
         this.min = min != null ? min : BigDecimal.valueOf(0);
         this.max = max != null ? max : BigDecimal.valueOf(10);
-        this.range = (((BigDecimal) max).min((BigDecimal) min)).divide(BigDecimal.valueOf(step));
+        this.range = (((BigDecimal) this.max).min((BigDecimal) this.min)).divide(BigDecimal.valueOf(step));
         break;
       case Types.DATE:
         Date minDefault = Date.valueOf(LocalDate.now().minusDays(10));
         Date maxDefault = Date.valueOf(LocalDate.now());
         this.min = min != null ? min : clazz.cast(minDefault);
         this.max = max != null ? max : clazz.cast(maxDefault);
-        range = ((int) DAYS.between(((Date) min).toLocalDate(), ((Date) max).toLocalDate()))/step;
+        range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate()))/step;
         break;
       case Types.TIMESTAMP:
         Timestamp minTimestampDefault = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
         Timestamp maxTimeStampDefault = Timestamp.valueOf(LocalDateTime.now());
         this.min = min != null ? min : clazz.cast(minTimestampDefault);
         this.max = max != null ? max : clazz.cast(maxTimeStampDefault);
-        range = (((Timestamp) max).getTime() - ((Timestamp) min).getTime())/step;
+        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime())/step;
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + sqlType.getTypeCode() + "," + sqlType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
