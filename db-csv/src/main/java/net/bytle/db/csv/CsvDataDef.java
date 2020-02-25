@@ -3,12 +3,14 @@ package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsTableSystemLog;
-import net.bytle.db.textline.LineDataDef;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.textline.LineDataDef;
 import net.bytle.type.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -26,6 +28,8 @@ import java.util.Iterator;
  * - <a href="https://cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv">BigQuery</a><br>
  */
 public class CsvDataDef extends LineDataDef {
+
+  protected static final Logger LOGGER = LoggerFactory.getLogger(CsvDataDef.class);
 
   private static final char DOUBLE_QUOTE = '"';
 
@@ -64,9 +68,9 @@ public class CsvDataDef extends LineDataDef {
   private Character quoteCharacter = null;
 
   /**
-   * Always false see {@link #setIgnoreEmptyLine(boolean)}
+   * See {@link #setIgnoreEmptyLine(boolean)}
    */
-  private final boolean isIgnoreEmptyLine = false;
+  private boolean isIgnoreEmptyLine = true;
 
   /**
    * The third library use this character by default
@@ -89,21 +93,23 @@ public class CsvDataDef extends LineDataDef {
 
 
   /**
-   * Ignore empty line (Default is no - ie number of line = number of records)
-   * Will send an exception if the parameters is set to true
+   * Ignore empty line
+   *
+   * Implemented in the select stream {@link CsvSelectStream#safeIterate()} and not via the third part
+   *
+   * Because Ignoring empty line with the third library implementation means that it will just skip the line
+   * without giving us this knowledge back.
+   * If we have a comment or front matter above the header with an empty line
+   * There is no way to locate the header line precisely
+   * Ignoring empty line is then done in the select stream {@link CsvSelectStream#safeIterate()}
    *
    * @param ignoreEmptyLine
    */
   public CsvDataDef setIgnoreEmptyLine(boolean ignoreEmptyLine) {
 
-    if (ignoreEmptyLine) {
-      throw new RuntimeException(Strings.multiline(
-        "As of today, we can't skip empty lines due to the third library implementation",
-        "Ignoring empty line means that it will just skip the line without giving this knowledge back",
-        "If we have a comment or front matter above the header with an empty line",
-        "There is no way to locate the header line precisely"));
-    }
+    this.isIgnoreEmptyLine = ignoreEmptyLine;
     return this;
+
   }
 
   public boolean isTrimWhitespace() {
@@ -331,8 +337,8 @@ public class CsvDataDef extends LineDataDef {
     csvFormat = csvFormat.withCommentMarker(commentCharacter);
 
     if (quoteCharacter != null) {
-      if (quoteCharacter.equals(commentCharacter)){
-        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the comment character ("+commentCharacter+") and that's not permitted");
+      if (quoteCharacter.equals(commentCharacter)) {
+        throw new RuntimeException("The quote character (" + quoteCharacter + ") is the same than the comment character (" + commentCharacter + ") and that's not permitted");
       }
       csvFormat = csvFormat.withQuote(quoteCharacter);
     }
@@ -342,14 +348,20 @@ public class CsvDataDef extends LineDataDef {
 
     // If we set the escape character to double quote, we get an "Illegal state exception, EOF reach"
     if (escapeCharacter != null) {
-      if (quoteCharacter!=null && quoteCharacter.equals(escapeCharacter)){
-        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the escape character ("+escapeCharacter+") and that's not permitted");
+      if (quoteCharacter != null && quoteCharacter.equals(escapeCharacter)) {
+        LOGGER.trace(Strings.multiline(
+          "The quote character (" + quoteCharacter + ") is the same than the escape character (" + escapeCharacter + ").",
+          "We don't set it because otherwise an error will occurs",
+          "This is the default value anyway. Quoted value will work"));
+      } else {
+        csvFormat = csvFormat.withEscape(escapeCharacter);
       }
-      if (escapeCharacter.equals(commentCharacter)){
-        throw new RuntimeException("The quote character ("+quoteCharacter+") is the same than the comment character ("+commentCharacter+") and that's not permitted");
-      }
-      csvFormat = csvFormat.withEscape(escapeCharacter);
     }
+
+
+    // Ignore empty line is not implemented within the library
+    // See the setIgnoreEmpty line documentation for more
+
     return csvFormat;
 
   }
@@ -362,4 +374,5 @@ public class CsvDataDef extends LineDataDef {
   public char getCommentCharacter() {
     return commentCharacter;
   }
+
 }

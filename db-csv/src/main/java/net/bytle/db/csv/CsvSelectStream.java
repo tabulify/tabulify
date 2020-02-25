@@ -64,7 +64,7 @@ public class CsvSelectStream extends SelectStreamAbs {
    *
    * @return true if there is another record, false otherwise
    */
-  private boolean safeIterate() {
+  protected boolean safeIterate() {
 
     currentRecord = getSelectDataDef().safeIterate(recordIterator);
     if (currentRecord == null) {
