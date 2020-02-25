@@ -19,7 +19,7 @@ public interface RelationDef {
 
   /**
    * @param columnIndex
-   * @return a column def by its index
+   * @return a column def by its index (starting at 0)
    */
   <T> ColumnDef<T> getColumnDef(Integer columnIndex);
 
