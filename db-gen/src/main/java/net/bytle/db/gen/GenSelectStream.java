@@ -85,7 +85,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public String getString(int columnIndex) {
-    return Typess.safeCast(getObject(columnIndex),String.class);
+    return getObject(columnIndex).toString();
   }
 
   @Override

@@ -5,14 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A class that helps build a string from an integer
- * where the string representation has no number to avoid sort order problem
- * when asking for the max value (ie the order of 1 may be below A in one character set and above in another one)
+ * A class that helps build a sequence string
+ *
+ *
  */
-public class StringGenerator {
+public class SequenceStringGeneratorHelper {
 
   /**
-   * All possible chars for representing a number as a String
+   * The set of possible characters
    */
   final static char[] digits = {
     'a', 'b',
@@ -92,8 +92,6 @@ public class StringGenerator {
 
     int result = 0;
     int i = 0;
-    int limit = -Integer.MAX_VALUE;
-    int multmin;
     int digit;
 
     int len = s.length();

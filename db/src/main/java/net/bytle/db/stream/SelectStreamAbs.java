@@ -2,6 +2,7 @@ package net.bytle.db.stream;
 
 import net.bytle.db.spi.DataPath;
 
+import java.sql.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -11,8 +12,6 @@ public abstract class SelectStreamAbs implements SelectStream {
   private final DataPath dataPath;
   protected SelectStreamListener selectStreamListener = SelectStreamListener.of(this);
   private String name;
-  private Integer limit;
-  private int limitOrder;
 
 
   public SelectStreamAbs(DataPath dataPath) {
@@ -49,4 +48,10 @@ public abstract class SelectStreamAbs implements SelectStream {
   public DataPath getDataPath() {
     return this.dataPath;
   }
+
+  @Override
+  public Date getDate(int columnIndex) {
+    return (Date) getObject(columnIndex);
+  }
+
 }

@@ -4,6 +4,7 @@ import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 
 import java.sql.Clob;
+import java.sql.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -67,5 +68,7 @@ public interface SelectStream extends AutoCloseable {
 
 
   DataPath getDataPath();
+
+  Date getDate(int columnIndex);
 
 }

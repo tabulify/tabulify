@@ -259,12 +259,12 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     return "DistributionGenerator{" + columnDef + '}';
   }
 
-  public UniformCollectionGenerator setMin(Number min) {
+  public UniformCollectionGenerator setMin(Object min) {
     this.min = min;
     return this;
   }
 
-  public UniformCollectionGenerator setMax(Number max) {
+  public UniformCollectionGenerator setMax(Object max) {
     this.max = max;
     return this;
   }

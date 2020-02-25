@@ -205,4 +205,10 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     generator = uniformCollectionGenerator;
     return uniformCollectionGenerator;
   }
+
+  public PredefinedDataGenerator<T> addPredefinedDataGenerator(T... values) {
+    PredefinedDataGenerator<T> predefinedDataGenerator = new PredefinedDataGenerator<>(this, values);
+    generator = predefinedDataGenerator;
+    return predefinedDataGenerator;
+  }
 }

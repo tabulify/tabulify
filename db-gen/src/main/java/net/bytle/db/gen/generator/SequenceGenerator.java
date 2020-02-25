@@ -6,7 +6,6 @@ import net.bytle.db.gen.GenColumnDef;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.util.List;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -48,14 +47,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   // The step is the number of step in the sequence (Generally one)
   private int step;
 
-  /**
-   * The sequence of value can be given and not derived
-   * First element  = First element of the list
-   * Second element = Second element of the list
-   * ...
-   */
-  private List<T> values;
-
 
   /**
    * @param columnDef
@@ -88,13 +79,13 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       minValue = Integer.MIN_VALUE;
       maxValue = Integer.MAX_VALUE;
     } else if (clazz == String.class) {
+      // Supported to support generation of unique data in a string column
       currentValue = -1;
       start = -1;
       step = 1;
       minValue = 0; // The first code point
-      // See the test SeqGenTest.sequenceGeneratorStringCharacterPrintTest to print them
     } else {
-      throw new UnsupportedOperationException("The class (" + clazz + ") is not yet implemented");
+      throw new UnsupportedOperationException("The class (" + clazz + ") is not supported as a sequence");
     }
 
 
@@ -121,17 +112,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
     }
     if (step != null) {
       sequenceGenerator.step = step;
-    }
-
-    List<T> values;
-    final Object valuesAsObject = columnDef.getProperty("values");
-    try {
-      values = (List<T>) valuesAsObject;
-    } catch (ClassCastException e) {
-      throw new RuntimeException("The values excepted for the column " + columnDef + " are not a list. The values are " + valuesAsObject);
-    }
-    if (values != null) {
-      sequenceGenerator.values = values;
     }
 
     return sequenceGenerator;
@@ -166,16 +146,9 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
     }
     if (clazz == String.class) {
       currentValue = (Integer) (currentValue) + step;
-      if (values != null) {
-        if ((Integer) currentValue > values.size()) {
-          throw new RuntimeException("You cannot ask more than " + values.size() + " times a new value for this generator because its values are defined with a list of " + values.size() + " elements");
-        }
-        returnValue = values.get((Integer) currentValue);
-      } else {
-        Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
-        returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, precision);
-      }
+      Integer precisionOrMax = columnDef.getPrecisionOrMax();
+      Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
+      returnValue = SequenceStringGeneratorHelper.toString((Integer) currentValue, SequenceStringGeneratorHelper.MAX_RADIX, precision);
     }
 
     return clazz.cast(returnValue);
@@ -194,7 +167,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       returnValue = Date.valueOf((LocalDate) currentValue);
     }
     if (clazz == String.class) {
-      returnValue = StringGenerator.toString((Integer) currentValue, StringGenerator.MAX_RADIX, columnDef.getPrecision());
+      returnValue = SequenceStringGeneratorHelper.toString((Integer) currentValue, SequenceStringGeneratorHelper.MAX_RADIX, columnDef.getPrecision());
     }
     return clazz.cast(returnValue);
 
@@ -207,11 +180,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   public GenColumnDef<T> getColumn() {
     return columnDef;
   }
-
-
-
-
-
 
 
   /**
@@ -246,8 +214,8 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       } else {
 
         if (start.getClass() == String.class) {
-          this.currentValue = StringGenerator.toInt((String) start, StringGenerator.MAX_RADIX);
-          this.start = StringGenerator.toInt((String) start, StringGenerator.MAX_RADIX);
+          this.currentValue = SequenceStringGeneratorHelper.toInt((String) start, SequenceStringGeneratorHelper.MAX_RADIX);
+          this.start = SequenceStringGeneratorHelper.toInt((String) start, SequenceStringGeneratorHelper.MAX_RADIX);
         } else if (start.getClass() == Date.class) {
           this.currentValue = ((Date) start).toLocalDate();
           this.start = ((Date) start).toLocalDate();
@@ -262,7 +230,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   }
 
   /**
-   *
    * @param step - the step value
    * @return
    */
@@ -274,7 +241,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   }
 
   /**
-   *
    * @param maxSteps - the maximum number of steps
    * @return
    */
@@ -293,24 +259,20 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   public Long getMaxGeneratedValues() {
 
     Long maxGeneratedValues;
-
-    if (values != null) {
-      maxGeneratedValues = (long) (values.size() / step);
+    if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {
+      Integer precisionOrMax = columnDef.getPrecisionOrMax();
+      Integer precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
+      maxGeneratedValues = Double.valueOf(Math.pow(10, precision)).longValue();
+    } else if (clazz == String.class) {
+      Integer precisionOrMax = columnDef.getPrecisionOrMax();
+      Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
+      maxGeneratedValues = Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precision)).longValue();
+    } else if (clazz == Date.class) {
+      maxGeneratedValues = DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
     } else {
-      if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {
-        Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        Integer precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
-        maxGeneratedValues = Double.valueOf(Math.pow(10, precision)).longValue();
-      } else if (clazz == String.class) {
-        Integer precisionOrMax = columnDef.getPrecisionOrMax();
-        Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
-        maxGeneratedValues = Double.valueOf(Math.pow(StringGenerator.MAX_RADIX, precision)).longValue();
-      } else if (clazz == Date.class) {
-        maxGeneratedValues = DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
-      } else {
-        throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
-      }
+      throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
     }
+
     return maxGeneratedValues;
 
   }
@@ -320,13 +282,13 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
     if (clazz == Integer.class) {
       Integer max = 0;
-      if (maxValue!=null){
+      if (maxValue != null) {
         max = (Integer) maxValue;
       }
       Long maxSize = this.getColumn().getDataDef().getSize();
-      if(maxSize !=null){
-        if (maxSize>max){
-          if (maxSize>Integer.MAX_VALUE){
+      if (maxSize != null) {
+        if (maxSize > max) {
+          if (maxSize > Integer.MAX_VALUE) {
             max = Integer.MAX_VALUE;
           } else {
             max = maxSize.intValue();
@@ -334,8 +296,19 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
         }
       }
       return (T) max;
+    } else if (clazz == Date.class) {
+      if (step < 0) {
+        return (T) Date.valueOf(((LocalDate) start));
+      } else {
+        Long maxSize = this.getColumn().getDataDef().getMaxSize();
+        if (maxSize != null) {
+          return (T) Date.valueOf(((LocalDate) start).plus(step * maxSize.intValue(), DAYS));
+        } else {
+          return (T) LocalDate.MAX;
+        }
+      }
     } else {
-      throw new RuntimeException("Domain max on "+clazz+" is not yet implemented");
+      throw new RuntimeException("Domain max on " + clazz + " is not yet implemented");
     }
 
   }
@@ -344,38 +317,21 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   public <T> T getDomainMin() {
     if (clazz == Integer.class) {
       Integer min = 0;
-      if (start!=null){
+      if (start != null) {
         min = (Integer) start;
       }
       return (T) min;
-    }  else if (clazz == Date.class) {
+    } else if (clazz == Date.class) {
       return (T) minValue;
     } else {
-      throw new RuntimeException("Domain min on the class ("+clazz+") was not yet implemented");
+      throw new RuntimeException("Domain min on the class (" + clazz + ") was not yet implemented");
     }
   }
 
-
-  /**
-   * The sequence will be defined by a list of fix value
-   * 1 = first value, 2 = second value ...
-   *
-   * @param values
-   * @return
-   */
-  public SequenceGenerator<T> values(List<T> values) {
-    if (clazz == String.class) {
-      this.values = values;
-      maxValue = this.values.size();
-    } else {
-      throw new RuntimeException("The values function is not yet implemented for (" + clazz + ")");
-    }
-    return this;
-  }
 
   @Override
   public String toString() {
-    return "SequenceGenerator";
+    return "SequenceGenerator (" + columnDef + ")";
   }
 
   public int getStep() {
