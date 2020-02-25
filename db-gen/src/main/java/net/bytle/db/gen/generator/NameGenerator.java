@@ -15,7 +15,7 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
 
 
   private final GenColumnDef columnDef;
-  private final DistributionCollectionGenerator<String> nameStream;
+  private final HistogramCollectionGenerator<String> nameStream;
   private String actualValue;
 
   public <T> NameGenerator(GenColumnDef<String> columnDef) {
@@ -35,7 +35,7 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
           distProb.put(name, probability);
         }
       }
-      nameStream = new DistributionCollectionGenerator<>(columnDef, distProb);
+      nameStream = new HistogramCollectionGenerator<>(columnDef, distProb);
     } catch (URISyntaxException e) {
       throw new RuntimeException("Bad Uri", e);
     }

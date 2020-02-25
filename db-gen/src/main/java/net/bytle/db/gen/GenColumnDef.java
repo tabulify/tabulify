@@ -92,7 +92,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           break;
         case "random":
         case "distribution":
-          generator = DistributionCollectionGenerator.of(this, null);
+          generator = HistogramCollectionGenerator.of(this, null);
           break;
         default:
           throw new RuntimeException("The generator (" + name + ") defined for the column (" + this.toString() + ") is unknown");
@@ -152,18 +152,18 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return this;
   }
 
-  public DistributionCollectionGenerator<T> addDistributionGenerator(Map<T, Double> buckets) {
-    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this, buckets);
-    generator = distributionCollectionGenerator;
-    return distributionCollectionGenerator;
+  public HistogramCollectionGenerator<T> addHistogramGenerator(Map<T, Double> buckets) {
+    HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
+    generator = histogramCollectionGenerator;
+    return histogramCollectionGenerator;
   }
 
-  public DistributionCollectionGenerator<T> addDistributionGenerator(T... element) {
+  public HistogramCollectionGenerator<T> addHistogramGenerator(T... element) {
     Map<T, Double> buckets = Arrays.stream(element)
       .collect(Collectors.toMap(e -> e, e -> 1.0));
-    DistributionCollectionGenerator<T> distributionCollectionGenerator = DistributionCollectionGenerator.of(this, buckets);
-    generator = distributionCollectionGenerator;
-    return distributionCollectionGenerator;
+    HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
+    generator = histogramCollectionGenerator;
+    return histogramCollectionGenerator;
   }
 
 

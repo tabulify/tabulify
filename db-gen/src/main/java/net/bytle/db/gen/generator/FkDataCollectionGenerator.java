@@ -7,20 +7,24 @@ import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.SelectStream;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
 
 
   private final ForeignKeyDef foreignKeyDef;
   private final ColumnDef foreignColumnDef;
+  private final GenColumnDef columnDef;
 
   private Object value;
-  private EnumCollection enumCollection = new EnumCollection();
+  private HistogramCollectionGenerator enumCollection;
 
   /**
    * Get a random foreign value when the {@link #getNewValue()} is called
    */
-  public FkDataCollectionGenerator(ForeignKeyDef foreignKeyDef) {
+  public  FkDataCollectionGenerator(ForeignKeyDef foreignKeyDef) {
 
     this.foreignKeyDef = foreignKeyDef;
 
@@ -29,13 +33,15 @@ public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
     try (
       SelectStream selectStream = Tabulars.getSelectStream(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())
     ) {
-
+      Map<Object,Double> histogram = new HashMap<>();
       while (selectStream.next()) {
-        enumCollection.addElement(selectStream.getObject(foreignColumnDef.getColumnName()));
+        histogram.put(selectStream.getObject(foreignColumnDef.getColumnName()),1.0);
       }
-      if (enumCollection.size() == 0) {
+      if (histogram.size() == 0) {
         throw new RuntimeException("The foreign table (" + foreignColumnDef.getDataDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
       }
+      columnDef = (GenColumnDef) foreignKeyDef.getChildColumns().get(0);
+      enumCollection = new HistogramCollectionGenerator<>(columnDef,histogram);
     }
 
   }
@@ -46,7 +52,7 @@ public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
   @Override
   public Object getNewValue() {
 
-    value = enumCollection.getRandomValue();
+    value = enumCollection.getNewValue();
     return value;
 
   }
@@ -66,7 +72,8 @@ public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
    */
   @Override
   public GenColumnDef getColumn() {
-    return (GenColumnDef) foreignKeyDef.getChildColumns().get(0);
+
+    return columnDef;
   }
 
 

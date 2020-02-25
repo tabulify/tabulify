@@ -61,7 +61,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public boolean next() {
-    if (actualRowId >= genDataPath.getDataDef().getMaxSize()) {
+    if (actualRowId >= genDataPath.getDataDef().getSize()) {
       return false;
     } else {
       actualRowId++;

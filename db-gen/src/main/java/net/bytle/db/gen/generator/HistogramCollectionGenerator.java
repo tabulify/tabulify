@@ -22,9 +22,9 @@ import static java.time.temporal.ChronoUnit.DAYS;
 /**
  * Distribution Generator by default: random
  */
-public class DistributionCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
+public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DistributionCollectionGenerator.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(HistogramCollectionGenerator.class);
 
   private final Class<T> clazz;
 
@@ -39,7 +39,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
   private Object range;
   private List<T> values;
 
-  public DistributionCollectionGenerator(GenColumnDef<T> columnDef, Map<T,Double> buckets) {
+  public HistogramCollectionGenerator(GenColumnDef<T> columnDef, Map<T,Double> buckets) {
 
 
 
@@ -130,14 +130,14 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
    * @param buckets
    * @return
    */
-  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef<T> columnDef, Map<T, Double> buckets) {
+  public static <T> HistogramCollectionGenerator<T> of(GenColumnDef<T> columnDef, Map<T, Double> buckets) {
 
-    return new DistributionCollectionGenerator<>(columnDef, buckets);
+    return new HistogramCollectionGenerator<>(columnDef, buckets);
 
   }
 
-  public static <T> DistributionCollectionGenerator<T> of(GenColumnDef genColumnDef) {
-    return new DistributionCollectionGenerator<>(genColumnDef,null);
+  public static <T> HistogramCollectionGenerator<T> of(GenColumnDef genColumnDef) {
+    return new HistogramCollectionGenerator<>(genColumnDef,null);
   }
 
 
@@ -223,7 +223,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
    * when asking a value for a column, we may need to ask the value for another column before
    */
   @Override
-  public GenColumnDef getColumn() {
+  public GenColumnDef<T> getColumn() {
 
     return columnDef;
 
@@ -237,7 +237,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
   }
 
 
-  public DistributionCollectionGenerator<T> setMin(T min) {
+  public HistogramCollectionGenerator<T> setMin(T min) {
     if (min != null) {
       this.min = min;
       updateRange();
@@ -245,7 +245,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
     return this;
   }
 
-  public DistributionCollectionGenerator<T> setMax(T max) {
+  public HistogramCollectionGenerator<T> setMax(T max) {
     if (max != null) {
       this.max = max;
       updateRange();
@@ -286,7 +286,7 @@ public class DistributionCollectionGenerator<T> implements CollectionGeneratorOn
     return "DistributionGenerator{" + columnDef + '}';
   }
 
-  public DistributionCollectionGenerator setStep(int step) {
+  public HistogramCollectionGenerator setStep(int step) {
     this.step = step;
     return this;
   }
