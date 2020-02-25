@@ -201,7 +201,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   }
 
   public UniformCollectionGenerator<T> addUniformDistributionGenerator(T min, T max) {
-    UniformCollectionGenerator uniformCollectionGenerator = new UniformCollectionGenerator(this, min, max);
+    UniformCollectionGenerator<T> uniformCollectionGenerator = new UniformCollectionGenerator<>(this, min, max);
     generator = uniformCollectionGenerator;
     return uniformCollectionGenerator;
   }

@@ -18,7 +18,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 
 
 /**
- * Distribution Generator by default: random
+ * Distribution Generator that will return a value randomly chosen between a min and a max
  */
 public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
 
@@ -38,6 +38,12 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
   private Integer step = 1;
 
 
+  /**
+   * Distribution Generator that will return a value randomly chosen between a min and a max
+   * @param columnDef
+   * @param min
+   * @param max
+   */
   public UniformCollectionGenerator(GenColumnDef<T> columnDef, Object min, Object max) {
 
     // Save the args
@@ -77,7 +83,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         Timestamp maxTimeStampDefault = Timestamp.valueOf(LocalDateTime.now());
         this.min = min != null ? min : clazz.cast(minTimestampDefault);
         this.max = max != null ? max : clazz.cast(maxTimeStampDefault);
-        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime())/step;
+        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime())/step/1000;
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + sqlType.getTypeCode() + "," + sqlType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
@@ -145,9 +151,9 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         o = Date.valueOf(localValue.plusDays(i));
         break;
       case Types.TIMESTAMP:
-        int iTimestamp = ((int) Math.random()) * (int) range * step;
+        long iTimestamp = new Double(Math.random() * (long) range * step).longValue();
         LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
-        o = Timestamp.valueOf(localValueTimestamp.plusDays(iTimestamp));
+        o = Timestamp.valueOf(localValueTimestamp.plusSeconds(iTimestamp));
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + dataType.getTypeCode() + "," + dataType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
