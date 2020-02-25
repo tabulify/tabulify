@@ -5,9 +5,7 @@ import net.bytle.db.database.SqlDataTypesManager;
 import net.bytle.db.model.RelationDef;
 import net.bytle.log.Log;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Streams {
 
@@ -24,9 +22,11 @@ public class Streams {
 
     assert selectStream != null : "Select Stream is null";
 
+    List<List<Object>> values = new ArrayList<>();
     Map<Integer, Integer> maxs = new HashMap<>();
     final RelationDef tableDef = selectStream.getSelectDataDef();
     while (selectStream.next()) {
+      values.add(selectStream.getObjects());
       for (int i = 0; i < tableDef.getColumnsSize(); i++) {
         String string = selectStream.getString(i);
         if (string == null) {
@@ -89,23 +89,10 @@ public class Streams {
     System.out.println(line);
 
     // Print the data
-    selectStream.beforeFirst();
-    while (selectStream.next()) {
-      System.out.println(String.format(formatString.toString(), getObjects(selectStream)));
+    for (List<Object> row : values) {
+      System.out.println(String.format(formatString.toString(), row.toArray()));
     }
 
-    selectStream.close();
-
-  }
-
-  private static Object[] getObjects(SelectStream selectStream) {
-    int size = selectStream.getSelectDataDef().getColumnsSize();
-    Object[] os = new Object[size];
-
-    for (int i = 0; i < size; i++) {
-      os[i] = selectStream.getObject(i);
-    }
-    return os;
   }
 
 

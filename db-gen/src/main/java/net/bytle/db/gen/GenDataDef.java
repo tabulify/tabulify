@@ -127,7 +127,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   public <T> GenColumnDef getColumnDef(Integer columnIndex) {
     return genColumns.values()
       .stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex))
+      .filter(c -> c.getColumnPosition().equals(columnIndex+1))
       .findFirst()
       .orElse(null);
   }

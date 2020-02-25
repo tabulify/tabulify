@@ -203,12 +203,8 @@ public class Tabulars {
    */
   public static void print(DataPath dataPath) {
 
-    if (dataPath.getDataDef().getColumnsSize() > 0) {
-      try (SelectStream tableOutputStream = getSelectStream(dataPath)) {
-        Streams.print(tableOutputStream);
-      }
-    } else {
-      cat(dataPath);
+    try (SelectStream tableOutputStream = getSelectStream(dataPath)) {
+      Streams.print(tableOutputStream);
     }
 
   }
@@ -480,7 +476,7 @@ public class Tabulars {
       InsertStream insertStream = Tabulars.getInsertStream(target)
     ) {
       RelationDef sourceDataDef = selectStream.getSelectDataDef();
-      if (sourceDataDef.getColumnsSize()==0){
+      if (sourceDataDef.getColumnsSize() == 0) {
         // No row structure even at runtime
         throw new RuntimeException(Strings.multiline(
           "The data path (" + source + ") has no row structure. ",
@@ -576,13 +572,10 @@ public class Tabulars {
     assert reason.equals("") : "The columns definition between the data path (" + first + ") and (" + second + ") are not the same for the following reason " + reason;
   }
 
-  public static void cat(DataPath dataPath) {
-    System.out.println(getString(dataPath));
-  }
 
   public static DataPath head(DataPath dataPath) {
 
-    return head(dataPath,10);
+    return head(dataPath, 10);
 
   }
 

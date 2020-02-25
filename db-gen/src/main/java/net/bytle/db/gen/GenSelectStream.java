@@ -5,7 +5,7 @@ import net.bytle.db.gen.generator.CollectionGeneratorMultiple;
 import net.bytle.db.gen.generator.CollectionGeneratorOnce;
 import net.bytle.db.gen.generator.DerivedCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStreamAbs;
 import net.bytle.type.Typess;
 
@@ -76,11 +76,6 @@ public class GenSelectStream extends SelectStreamAbs {
       populateColumnValues(row, columnDef);
     }
 
-    List<Object> values = new ArrayList<>();
-    for (ColumnDef columnDef : genDataPath.getDataDef().getColumnDefs()) {
-      // We need also a recursion here to create the value
-      values.add(row.get(columnDef));
-    }
   }
 
   @Override
@@ -100,16 +95,19 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public Object getObject(int columnIndex) {
+    if (actualRowId==0){
+      throw new RuntimeException("You are on the row 0, you need to use the next function before retrieving a value");
+    }
     return row.keySet().stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex))
+      .filter(c -> c.getColumnPosition().equals(columnIndex+1))
       .map(c->row.get(c))
       .findFirst()
       .orElse(null);
   }
 
   @Override
-  public TableDef getSelectDataDef() {
-    return null;
+  public RelationDef getSelectDataDef() {
+    return this.genDataPath.getDataDef();
   }
 
   @Override

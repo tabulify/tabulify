@@ -40,6 +40,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
   /**
    * Distribution Generator that will return a value randomly chosen between a min and a max
+   *
    * @param columnDef
    * @param min
    * @param max
@@ -59,7 +60,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
       case Types.FLOAT:
         this.min = min != null ? min : 0.0;
         this.max = max != null ? max : 10.0;
-        this.range = ((Double) this.max - (Double) this.min ) / step;
+        this.range = ((Double) this.max - (Double) this.min) / step;
         break;
       case Types.INTEGER:
         this.min = min != null ? min : 0;
@@ -76,19 +77,52 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         Date maxDefault = Date.valueOf(LocalDate.now());
         this.min = min != null ? min : clazz.cast(minDefault);
         this.max = max != null ? max : clazz.cast(maxDefault);
-        range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate()))/step;
+        range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate())) / step;
         break;
       case Types.TIMESTAMP:
         Timestamp minTimestampDefault = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
         Timestamp maxTimeStampDefault = Timestamp.valueOf(LocalDateTime.now());
         this.min = min != null ? min : clazz.cast(minTimestampDefault);
         this.max = max != null ? max : clazz.cast(maxTimeStampDefault);
-        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime())/step/1000;
+        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime()) / step / 1000;
+        break;
+      case Types.CHAR:
+      case Types.VARCHAR:
+        int minCharDefault = Integer.parseInt("0061", 16); // a
+        int maxCharDefault = Integer.parseInt("007A", 16); // z
+        if (min != null) {
+          if (min instanceof String) {
+            if (((String) min).length() > 1) {
+              throw new RuntimeException("The minimum value (" + min + ") defined for the column (" + columnDef + ") is a string that has more than one character. This is not possible to be able to calculate the range");
+            }
+            this.min = ((String) min).charAt(0);
+          } else if (min instanceof Character) {
+            this.min = (int) (Character) min;
+          } else {
+            throw new RuntimeException("The minimum value (" + min + ") defined for the column (" + columnDef + ") is a not a string or a character.");
+          }
+        } else {
+          this.min = minCharDefault;
+        }
+        if (max != null) {
+          if (max instanceof String) {
+            if (((String) max).length() > 1) {
+              throw new RuntimeException("The maximum value (" + max + ") defined for the column (" + columnDef + ") is a string that has more than one character. This is not possible to be able to calculate the range");
+            }
+            this.max = ((String) max).charAt(0);
+          } else if (max instanceof Character) {
+            this.max = (int) (Character) max;
+          } else {
+            throw new RuntimeException("The maximum value (" + max + ") defined for the column (" + columnDef + ") is a not a string or a character.");
+          }
+        } else {
+          this.max = maxCharDefault;
+        }
+        range = ((char) (int) this.max - (char) (int) this.min) / step;
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + sqlType.getTypeCode() + "," + sqlType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
     }
-
 
   }
 
@@ -154,6 +188,11 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         long iTimestamp = new Double(Math.random() * (long) range * step).longValue();
         LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
         o = Timestamp.valueOf(localValueTimestamp.plusSeconds(iTimestamp));
+        break;
+      case Types.CHAR:
+      case Types.VARCHAR:
+        o = (char) ((int) min + (Math.random() * (int) range) * step);
+        o = String.valueOf(o); // A CHAR or a VARCHAR is a string
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + dataType.getTypeCode() + "," + dataType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());

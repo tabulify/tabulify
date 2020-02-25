@@ -42,12 +42,15 @@ public class StringGenerator {
    * Adaptation of {@link Integer#toString(int, int)}
    *
    * @param i     (Positive Integer)
-   * @param radix
+   * @param modulo - the modulo
+   *               - if 1, it will generate a string with only the a characters
+   *               - if 2, it will generate a string with the a and b characters
+   * @param len - the length of the string
    * @return
    */
-  public static String toString(int i, int radix, int len) {
-    if (radix < MIN_RADIX || radix > MAX_RADIX)
-      radix = MAX_RADIX;
+  public static String toString(int i, int modulo, int len) {
+    if (modulo < MIN_RADIX || modulo > MAX_RADIX)
+      modulo = MAX_RADIX;
 
     if (len > CollectionGeneratorOnce.MAX_STRING_PRECISION) {
       len = CollectionGeneratorOnce.MAX_STRING_PRECISION;
@@ -56,9 +59,9 @@ public class StringGenerator {
 
     int charPos = len - 1; // Array - 1
 
-    while (i >= radix) {
-      buf[charPos--] = digits[(i % radix)];
-      i = i / radix;
+    while (i >= modulo) {
+      buf[charPos--] = digits[(i % modulo)];
+      i = i / modulo;
     }
     buf[charPos] = digits[i];
 
