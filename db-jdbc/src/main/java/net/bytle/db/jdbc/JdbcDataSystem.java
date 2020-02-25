@@ -2,7 +2,6 @@ package net.bytle.db.jdbc;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.TableSystem;
@@ -219,11 +218,6 @@ public class JdbcDataSystem extends TableSystem {
     JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
 
 
-  }
-
-  @Override
-  public SqlDataType getDataType(Integer typeCode) {
-    throw new RuntimeException("Should not be there clearly");
   }
 
 
