@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 /**
@@ -60,31 +61,37 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
       case Types.FLOAT:
         this.min = min != null ? min : 0.0;
         this.max = max != null ? max : 10.0;
-        this.range = ((Double) this.max - (Double) this.min) / step;
+        this.o = ((Double) this.max - (Double) this.min)/2;
+        this.range = ((Double) this.max - (Double) this.min);
         break;
       case Types.INTEGER:
         this.min = min != null ? min : 0;
         this.max = max != null ? max : 10;
-        this.range = ((Integer) this.max - (Integer) this.min) / step;
+        this.o = ((Integer) this.max- (Integer) this.min)/2;
+        this.range = ((Integer) this.max - (Integer) this.min);
         break;
       case Types.NUMERIC:
         this.min = min != null ? min : BigDecimal.valueOf(0);
         this.max = max != null ? max : BigDecimal.valueOf(10);
-        this.range = (((BigDecimal) this.max).min((BigDecimal) this.min)).divide(BigDecimal.valueOf(step));
+        this.range = (((BigDecimal) this.max).min((BigDecimal) this.min));
+        BigDecimal half = ((BigDecimal) this.range).divide(BigDecimal.valueOf(2),0);
+        this.o = ((BigDecimal) this.min).add(half);
         break;
       case Types.DATE:
         Date minDefault = Date.valueOf(LocalDate.now().minusDays(10));
         Date maxDefault = Date.valueOf(LocalDate.now());
         this.min = min != null ? min : clazz.cast(minDefault);
         this.max = max != null ? max : clazz.cast(maxDefault);
-        range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate())) / step;
+        range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate()));
+        o = Date.valueOf(((Date) this.min).toLocalDate().plusDays((int)range/2));
         break;
       case Types.TIMESTAMP:
         Timestamp minTimestampDefault = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
         Timestamp maxTimeStampDefault = Timestamp.valueOf(LocalDateTime.now());
         this.min = min != null ? min : clazz.cast(minTimestampDefault);
         this.max = max != null ? max : clazz.cast(maxTimeStampDefault);
-        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime()) / step / 1000;
+        range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime()) / 1000;
+        this.o = Timestamp.valueOf(((Timestamp) this.min).toLocalDateTime().plus(((long) range)/2, SECONDS));
         break;
       case Types.CHAR:
       case Types.VARCHAR:
@@ -119,6 +126,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
           this.max = maxCharDefault;
         }
         range = ((char) (int) this.max - (char) (int) this.min) / step;
+        this.o = this.min;
         break;
       default:
         throw new RuntimeException("The data type with the type code (" + sqlType.getTypeCode() + "," + sqlType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());

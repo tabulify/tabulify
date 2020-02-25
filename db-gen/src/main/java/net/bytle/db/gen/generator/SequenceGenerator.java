@@ -297,7 +297,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
     if (values != null) {
       maxGeneratedValues = (long) (values.size() / step);
     } else {
-      if (clazz == Integer.class || clazz == BigDecimal.class) {
+      if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {
         Integer precisionOrMax = columnDef.getPrecisionOrMax();
         Integer precision = precisionOrMax != null ? precisionOrMax : MAX_NUMBER_PRECISION;
         maxGeneratedValues = Double.valueOf(Math.pow(10, precision)).longValue();

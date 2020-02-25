@@ -26,9 +26,10 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
   }
 
-  private final CollectionGeneratorOnce dataCollectionGenerator;
+  private final CollectionGeneratorOnce parentCollectionGenerator;
   private final String formula;
   private final GenColumnDef<T> columnDef;
+  private final Class<T> clazz;
   private Object actualValue;
 
 
@@ -37,8 +38,9 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     if (!(parentDataCollectionGenerator instanceof CollectionGeneratorOnce)){
       throw new RuntimeException("The parent generator ("+parentDataCollectionGenerator+") should only generate data for one column. Derived data generation are not supported");
     }
+    clazz = columnDef.getClazz();
     this.columnDef = columnDef;
-    this.dataCollectionGenerator = (CollectionGeneratorOnce) parentDataCollectionGenerator;
+    this.parentCollectionGenerator = (CollectionGeneratorOnce) parentDataCollectionGenerator;
     this.formula = formula;
     if (formula == null) {
       throw new RuntimeException("The formula for the column " + columnDef.getFullyQualifiedName() + " is null");
@@ -53,7 +55,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
   @Override
   public T getNewValue() {
 
-    Object derivedActualValue = dataCollectionGenerator.getActualValue();
+    Object derivedActualValue = parentCollectionGenerator.getActualValue();
     String value = derivedActualValue.toString();
 
     if (derivedActualValue.getClass().equals(Date.class)) {
@@ -88,9 +90,13 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
           this.actualValue = evalValue;
         }
       } else {
-        this.actualValue = evalValue;
+        if (this.clazz.equals(Integer.class)){
+          this.actualValue = ((Double) evalValue).intValue();
+        } else {
+          this.actualValue = evalValue;
+        }
       }
-      return (T) this.actualValue;
+      return clazz.cast(this.actualValue);
     } catch (ScriptException e) {
       throw new RuntimeException(evalScript, e);
     }
@@ -116,7 +122,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
   @Override
   public Long getMaxGeneratedValues() {
-    return dataCollectionGenerator.getMaxGeneratedValues();
+    return parentCollectionGenerator.getMaxGeneratedValues();
   }
 
 
@@ -157,6 +163,6 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
 
   public CollectionGeneratorOnce getParentGenerator() {
-    return dataCollectionGenerator;
+    return parentCollectionGenerator;
   }
 }
