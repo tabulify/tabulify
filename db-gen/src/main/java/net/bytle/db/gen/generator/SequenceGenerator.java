@@ -10,22 +10,24 @@ import java.time.LocalDate;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 /**
- * Generate in sequence data over:
- * * the integer domain
- * * the date domain
- * * or a list of data domain
- * <p>
- * <p>
+ * Generate in sequence data (generally used in unique or primary key column)
+ *
+ * Data Type supported
+ *   * integer
+ *   * double
+ *   * BigDecimal
+ *   * date
+ *   * string (to support a unique column for instance)
+ *
+ *
  * Each time, the {@link #getNewValue()} function is called
  * * For integer and date, it will calculate the new value from the start value plus or minValue the step
- * * For a list domain, it will take the first index defined by start and of the next one defined by step.
- * <p>
- * <p>
+ *
+ *
  * * start (may be a date, a number) - default to 0 / current date
  * * step  integer (number or number of day) - default to +1
  * * maxValue  only active if the step is positive
  * * minValue  only active if the step is negative
- * * values in case of a list of data (may be null)
  */
 
 public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
