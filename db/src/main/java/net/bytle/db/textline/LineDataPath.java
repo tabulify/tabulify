@@ -1,6 +1,5 @@
 package net.bytle.db.textline;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsFileManager;
@@ -26,7 +25,7 @@ public class LineDataPath extends FsRawDataPath implements FsDataPath {
 
   public static LineDataPath of(Path path) {
 
-    return new LineDataPath(DataStore.of(path), path);
+    return new LineDataPath(FsDataStore.of(path), path);
 
   }
 

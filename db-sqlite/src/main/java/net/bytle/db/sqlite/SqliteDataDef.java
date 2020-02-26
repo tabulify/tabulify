@@ -5,8 +5,17 @@ import net.bytle.db.jdbc.JdbcDataPath;
 
 public class SqliteDataDef extends JdbcDataDef {
 
-  public SqliteDataDef(JdbcDataPath dataPath) {
+  private final SqliteDataPath sqliteDataPath;
+
+  public SqliteDataDef(SqliteDataPath dataPath) {
+
     super(dataPath);
+    this.sqliteDataPath = dataPath;
   }
-  
+
+  @Override
+  public JdbcDataPath getDataPath() {
+    return sqliteDataPath;
+  }
+
 }

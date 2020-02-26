@@ -1,9 +1,8 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -23,10 +22,10 @@ import java.util.stream.Collectors;
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
  */
-public class FsTableSystem extends TableSystem {
+public class FsDataSystem implements DataSystem {
 
   // Static file system (Don't store state)
-  private static FsTableSystem fsTableSystem;
+  private static FsDataSystem fsTableSystem;
 
 
   // private FsDataStore fsDataStore;
@@ -34,9 +33,9 @@ public class FsTableSystem extends TableSystem {
   // private FileSystem fileSystem;
 
 
-  public static FsTableSystem of() {
+  public static FsDataSystem of() {
     if (fsTableSystem == null) {
-      fsTableSystem = new FsTableSystem();
+      fsTableSystem = new FsDataSystem();
     }
     return fsTableSystem;
   }
@@ -332,12 +331,6 @@ public class FsTableSystem extends TableSystem {
     throw new RuntimeException("Not yet implemented");
   }
 
-  @Override
-  public DataStore createDataStore(String name, String url) {
-
-    return new FsDataStore(name, url);
-
-  }
 
 
 }

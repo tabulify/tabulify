@@ -133,7 +133,7 @@ public class ResultSets {
      * @param jdbcDataStore
      * @throws SQLException
      */
-    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, JdbcDataStore jdbcDataStore) throws SQLException {
+    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, AnsiDataStore jdbcDataStore) throws SQLException {
 
         // Headers
         System.out.println("ColumnId\t" +

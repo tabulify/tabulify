@@ -14,7 +14,7 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
 
 
 
-  public JdbcDataStoreExtensionIHana(JdbcDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHana(AnsiDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 

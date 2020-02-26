@@ -1,12 +1,19 @@
-package net.bytle.db.jdbc;
+package net.bytle.db.memory;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataStoreProvider;
 
-public class JdbcDataSystemProvider extends DataStoreProvider {
+public class MemoryDataStoreProvider extends DataStoreProvider {
 
+  public static final String SCHEME = "mem";
+  static MemoryDataStoreProvider memoryDataStoreProvider;
 
-  public static final String JDBC_SCHEME = "jdbc";
+  public static MemoryDataStoreProvider of() {
+    if (memoryDataStoreProvider == null) {
+      memoryDataStoreProvider = new MemoryDataStoreProvider();
+    }
+    return memoryDataStoreProvider;
+  }
 
 
   /**
@@ -26,21 +33,13 @@ public class JdbcDataSystemProvider extends DataStoreProvider {
   @Override
   public DataStore getDataStore(String name, String url) {
 
-    // check installed providers
-    for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
-      if (provider.accept(url)) {
-        return provider.getJdbcDataStore(name, url);
-      }
-    }
-
-    // No provider found, return the default data store
-    return new AnsiDataStore(name, url);
+    return new MemoryDataStore(name, url);
 
   }
 
   @Override
   public boolean accept(String url) {
-    return url.toLowerCase().startsWith(JDBC_SCHEME);
+    return url.toLowerCase().startsWith(SCHEME);
   }
 
 }

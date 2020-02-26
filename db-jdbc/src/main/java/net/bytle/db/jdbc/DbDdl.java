@@ -157,14 +157,14 @@ public class DbDdl {
     String notNullStatement = "";
     if (!columnDef.getNullable()) {
       // Hack because hive is read only, it does not support Not Null
-      if (!((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+      if (!((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
         notNullStatement = " NOT NULL";
       }
     }
 
     // Hack for Hive
     String encloseString = "\"";
-    if (((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(JdbcDataStore.DB_HIVE)) {
+    if (((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
       encloseString = "`";
     }
 
@@ -224,11 +224,11 @@ public class DbDdl {
    */
   public static String getAlterTableForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
 
-    JdbcDataStore jdbcDataSystem = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    AnsiDataStore jdbcDataSystem = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
 
     // Constraint are supported from 2.1
     // https://issues.apache.org/jira/browse/HIVE-13290
-    if (jdbcDataSystem.getProductName().equals(JdbcDataStore.DB_HIVE)) {
+    if (jdbcDataSystem.getProductName().equals(AnsiDataStore.DB_HIVE)) {
       if (jdbcDataSystem.getDatabaseMajorVersion() < 2) {
         return null;
       } else {
@@ -284,8 +284,8 @@ public class DbDdl {
     // TODO: Move to Hive
     // Constraint are supported from 2.1
     // https://issues.apache.org/jira/browse/HIVE-13290
-    final JdbcDataStore dataStore = jdbcDataPath.getDataStore();
-    if (dataStore.getProductName().equals(JdbcDataStore.DB_HIVE)) {
+    final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
+    if (dataStore.getProductName().equals(AnsiDataStore.DB_HIVE)) {
       if (dataStore.getDatabaseMajorVersion() < 2) {
         return null;
       } else {

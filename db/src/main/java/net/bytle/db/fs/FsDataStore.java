@@ -14,6 +14,16 @@ import java.nio.file.Paths;
  */
 public class FsDataStore extends DataStore {
 
+  public static FsDataStore of(Path path) {
+    FsDataStore fsDataStore;
+    if (path.toUri().getScheme().equals("file")){
+      fsDataStore = FsDataStore.getLocalFileSystem();
+    } else {
+      FileSystem fileSystem = path.getFileSystem();
+      fsDataStore = new FsDataStore(fileSystem.toString(), path.toUri().toString(), fileSystem);
+    }
+    return fsDataStore;
+  }
 
   /**
    * Accessible via {@link #getLocalFileSystem()}
@@ -50,13 +60,13 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
-  public FsTableSystem getDataSystem() {
-    return FsTableSystem.of();
+  public FsDataSystem getDataSystem() {
+    return FsDataSystem.of();
   }
 
   @Override
   public void close() {
-    FsTableSystem.of();
+    FsDataSystem.of();
   }
 
   @Override

@@ -8,10 +8,12 @@ import net.bytle.db.transfer.TransferProperties;
 import java.util.List;
 
 /**
+ * Data Set = Source only data store
+ *
  * A data set system does not have all table system because it's only a read system
  * This abstract method takes care of this
  */
-public abstract class DataSetSystem extends TableSystem {
+public abstract class DataSetSystem implements DataSystem {
 
 
 

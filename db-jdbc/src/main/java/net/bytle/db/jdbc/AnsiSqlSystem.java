@@ -1,9 +1,8 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -21,29 +20,24 @@ import java.sql.Statement;
 import java.util.List;
 
 /**
- * This is a static class
- * No data in there please
+ * An ANSI SQL system
  */
-public class JdbcDataSystem extends TableSystem {
+public class AnsiSqlSystem implements DataSystem {
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDataSystem.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AnsiSqlSystem.class);
+
 
   /**
-   * Singleton
+   * The data store is needed to get the connection to be able to
+   * for instance {@link #execute(List)} statements
    */
-  private static JdbcDataSystem jdbcSingletonDataSystem;
+  private AnsiDataStore jdbcDataStore;
 
 
-  private JdbcDataProcessingEngine processingEngine;
-
-  public static JdbcDataSystem getSingleton() {
-    if (jdbcSingletonDataSystem == null) {
-      jdbcSingletonDataSystem = new JdbcDataSystem();
-    }
-    return jdbcSingletonDataSystem;
+  public AnsiSqlSystem(AnsiDataStore jdbcDataStore) {
+    this.jdbcDataStore = jdbcDataStore;
   }
-
 
   /**
    * @param dataPath
@@ -187,21 +181,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
 
-  @Override
-  public DataStore createDataStore(String name, String url) {
 
-
-    DataStore dataStore;
-    // check installed providers
-    for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
-      if (provider.accept(url)) {
-        return provider.getJdbcDataStore(name, url);
-      }
-    }
-
-    return new JdbcDataStore(name, url);
-
-  }
 
 
   @Override
@@ -224,18 +204,7 @@ public class JdbcDataSystem extends TableSystem {
 
     // Standard SQL
     List<String> createTableStatements = DbDdl.getCreateTableStatements(dataPath);
-    for (String createTableStatement : createTableStatements) {
-      try {
-
-        Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement();
-        statement.execute(createTableStatement);
-        statement.close();
-
-      } catch (SQLException e) {
-        System.err.println(createTableStatement);
-        throw new RuntimeException(e);
-      }
-    }
+    this.execute(createTableStatements);
     final String name = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : "null";
     JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
 
@@ -347,6 +316,29 @@ public class JdbcDataSystem extends TableSystem {
 
     throw new RuntimeException("Renaming a table is not yet implemented");
 
+  }
+
+  /**
+   * Execute SQL statements
+   *
+   * @param statements
+   */
+  public void execute(List<String> statements) {
+    for (String statementAsString : statements) {
+      try (Statement statement = this.getDataStore().getCurrentConnection().createStatement()) {
+        statement.execute(statementAsString);
+      } catch (SQLException e) {
+        String message = Strings.multiline(
+          "An error occured executing the following statement:",
+          statementAsString);
+        LOGGER.error(message);
+        throw new RuntimeException(message, e);
+      }
+    }
+  }
+
+  private AnsiDataStore getDataStore() {
+    return jdbcDataStore;
   }
 
 }

@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 public class DbSql {
 
-    static String getIdentifierQuote(JdbcDataStore jdbcDataStore) {
+    static String getIdentifierQuote(AnsiDataStore jdbcDataStore) {
         String identifierQuoteString = "\"";
         try {
             final Connection currentConnection = jdbcDataStore.getCurrentConnection();
@@ -18,7 +18,7 @@ public class DbSql {
         return identifierQuoteString;
     }
 
-    protected String quoted(String name,JdbcDataStore dataStore)
+    protected String quoted(String name, AnsiDataStore dataStore)
     {
         String identifierQuote = getIdentifierQuote(dataStore);
         name = name.replace(identifierQuote, identifierQuote + identifierQuote);

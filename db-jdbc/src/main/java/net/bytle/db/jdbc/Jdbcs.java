@@ -11,7 +11,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.JdbcDataStore.DB_SQLITE;
+import static net.bytle.db.jdbc.AnsiDataStore.DB_SQLITE;
 
 /**
  * Static method
@@ -257,7 +257,7 @@ public class Jdbcs {
     // SQLite Driver doesn't return a empty string as key name
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-    JdbcDataStore dataStore = dataPath.getDataStore();
+    AnsiDataStore dataStore = dataPath.getDataStore();
 
     // The column names of the fkresult set
     String col_fk_name = "FK_NAME";
@@ -478,7 +478,7 @@ public class Jdbcs {
   /**
    * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
    */
-  public static void printDatabaseInformation(JdbcDataStore jdbcDataStore) {
+  public static void printDatabaseInformation(AnsiDataStore jdbcDataStore) {
 
     System.out.println("Information about the database (" + jdbcDataStore.getName() + "):");
 
@@ -560,7 +560,7 @@ public class Jdbcs {
   /**
    * Print data type given by the driver
    */
-  public static void printDataTypeInformation(JdbcDataStore jdbcDataStore) {
+  public static void printDataTypeInformation(AnsiDataStore jdbcDataStore) {
 
     Set<SqlDataType> sqlDataTypes = jdbcDataStore.getSqlDataTypes();
 
@@ -635,7 +635,7 @@ public class Jdbcs {
      * for now a hack
      * because Sqlite does not support alter table drop foreign keys
      */
-    JdbcDataStore dataStore = (JdbcDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    AnsiDataStore dataStore = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataStore.getProductName().equals(DB_SQLITE)) {
       JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();

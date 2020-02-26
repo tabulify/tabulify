@@ -36,7 +36,7 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
 
   public static FsRawDataPath of(Path path) {
 
-    return new FsRawDataPath(DataStore.of(path), path);
+    return new FsRawDataPath(FsDataStore.of(path), path);
 
   }
 
@@ -49,7 +49,7 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
   @Override
   public FsRawDataPath getSibling(String name) {
     Path siblingPath = path.resolveSibling(name);
-    return (FsRawDataPath) FsTableSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
+    return (FsRawDataPath) FsDataSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
   }
 
   @Override
@@ -64,13 +64,13 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return (FsRawDataPath) FsTableSystem.of().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
+    return (FsRawDataPath) FsDataSystem.of().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
   }
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
     Path siblingPath = path.resolve(name + ".csv");
-    return FsTableSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
+    return FsDataSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
   }
 
   @Override

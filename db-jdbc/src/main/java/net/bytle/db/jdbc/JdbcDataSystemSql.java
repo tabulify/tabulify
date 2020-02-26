@@ -39,7 +39,7 @@ public class JdbcDataSystemSql {
     public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
 
 
-        final JdbcDataStore dataStore = jdbcDataPath.getDataStore();
+        final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
         String identifierQuoteString = DbSql.getIdentifierQuote(dataStore);
         final String tableName = jdbcDataPath.getName();
         return identifierQuoteString+ tableName +identifierQuoteString;

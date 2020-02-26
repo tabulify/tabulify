@@ -1,6 +1,6 @@
 package net.bytle.db.oracle;
 
-import net.bytle.db.jdbc.JdbcDataStore;
+import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
@@ -12,7 +12,7 @@ public class OraDataStoreExtensionProvider extends JdbcDataStoreExtensionProvide
   }
 
   @Override
-  public JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
+  public JdbcDataStoreExtension getJdbcDataStoreExtension(AnsiDataStore jdbcDataStore) {
     return new OraDataStoreExtension(jdbcDataStore);
   }
 

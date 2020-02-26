@@ -18,7 +18,7 @@ import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-  private final JdbcDataStore jdbcDataStore;
+  private final AnsiDataStore jdbcDataStore;
 
   private JdbcDataPath jdbcDataPath;
 

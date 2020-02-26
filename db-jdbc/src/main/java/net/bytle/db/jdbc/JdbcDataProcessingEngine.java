@@ -11,9 +11,9 @@ import java.sql.Types;
 
 public class JdbcDataProcessingEngine extends ProcessingEngine {
 
-    private final JdbcDataStore jdbcDataStore;
+    private final AnsiDataStore jdbcDataStore;
 
-    public JdbcDataProcessingEngine(JdbcDataStore jdbcDataStore) {
+    public JdbcDataProcessingEngine(AnsiDataStore jdbcDataStore) {
         this.jdbcDataStore = jdbcDataStore;
     }
 

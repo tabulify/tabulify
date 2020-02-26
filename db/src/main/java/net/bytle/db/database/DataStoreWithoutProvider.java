@@ -2,7 +2,7 @@ package net.bytle.db.database;
 
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.DataSystem;
 
 public class DataStoreWithoutProvider extends DataStore {
 
@@ -11,7 +11,7 @@ public class DataStoreWithoutProvider extends DataStore {
   }
 
   @Override
-  public TableSystem getDataSystem() {
+  public DataSystem getDataSystem() {
     throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
   }
 

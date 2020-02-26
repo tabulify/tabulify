@@ -373,7 +373,7 @@ public class Tabulars {
 
     if (sameDataSystem(source, target)) {
       // same provider (fs or jdbc)
-      final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
+      final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
       sourceDataSystem.move(source, target, transferProperties);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
@@ -429,7 +429,7 @@ public class Tabulars {
 
     TransferListener transferListener = null;
     transferProperties.setLoadOperation(TransferLoadOperation.INSERT);
-    final TableSystem sourceDataSystem = source.getDataStore().getDataSystem();
+    final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
     if (sourceDataSystem.equals(target.getDataStore())) {
       // same provider (fs or jdbc)
       sourceDataSystem.insert(source, target, transferProperties);

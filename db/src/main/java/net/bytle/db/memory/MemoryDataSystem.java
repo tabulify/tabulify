@@ -1,9 +1,8 @@
 package net.bytle.db.memory;
 
 import net.bytle.db.DbLoggers;
-import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.TableSystem;
+import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -17,7 +16,7 @@ import java.util.List;
  * Static memory system
  * No data in their please
  */
-public class MemoryDataSystem extends TableSystem {
+public class MemoryDataSystem implements DataSystem {
 
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
 
@@ -120,12 +119,6 @@ public class MemoryDataSystem extends TableSystem {
   @Override
   public List<DataPath> getReferences(DataPath dataPath) {
     throw new RuntimeException("Not yet implemented");
-  }
-
-
-  @Override
-  public DataStore createDataStore(String name, String url) {
-    return new MemoryDataStore(name, url);
   }
 
 

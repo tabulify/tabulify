@@ -1,6 +1,6 @@
 package net.bytle.db.sqlserver;
 
-import net.bytle.db.jdbc.JdbcDataStore;
+import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
@@ -12,7 +12,7 @@ public class SqlServerDataStoreExtensionProvider extends JdbcDataStoreExtensionP
   }
 
   @Override
-  public JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
+  public JdbcDataStoreExtension getJdbcDataStoreExtension(AnsiDataStore jdbcDataStore) {
     return new SqlServerDataStoreExtension(jdbcDataStore);
   }
 

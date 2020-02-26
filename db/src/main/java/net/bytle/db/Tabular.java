@@ -4,7 +4,7 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.memory.MemoryDataStore;
-import net.bytle.db.memory.MemorySystemProvider;
+import net.bytle.db.memory.MemoryDataStoreProvider;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -55,7 +55,7 @@ public class Tabular implements AutoCloseable {
     dataStores.put(LOCAL_FILE_SYSTEM, FsDataStore.getLocalFileSystem());
 
     // Memory
-    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE, MemorySystemProvider.SCHEME);
+    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE, MemoryDataStoreProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
     this.setDefaultDataStore(memoryDataBase);
 
@@ -190,7 +190,7 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    return DataStore.of(path).getDataPath(path);
+    return FsDataStore.of(path).getDataPath(path);
 
 
   }

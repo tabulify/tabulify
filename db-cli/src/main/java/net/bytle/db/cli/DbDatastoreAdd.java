@@ -6,7 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.jdbc.JdbcDataStore;
+import net.bytle.db.jdbc.AnsiDataStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +113,7 @@ public class DbDatastoreAdd {
         dataStore = DataStore.of(datastoreName, urlValue)
           .setUser(userValue)
           .setPassword(pwdValue)
-          .addProperty(JdbcDataStore.DRIVER_PROPERTY_KEY, driverValue);
+          .addProperty(AnsiDataStore.DRIVER_PROPERTY_KEY, driverValue);
       }
       datastoreVault.add(dataStore);
       LOGGER.info("The datastore ({}) was saved.", datastoreName);

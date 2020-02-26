@@ -27,7 +27,7 @@ public class JdbcDataPath extends DataPathAbs {
   private final String name;
   private final String schema;
   private final String catalog;
-  private final JdbcDataStore jdbcDataStore;
+  private final AnsiDataStore jdbcDataStore;
 
 
   /**
@@ -50,7 +50,7 @@ public class JdbcDataPath extends DataPathAbs {
    * @param table_name
    * @return
    */
-  public static JdbcDataPath of(JdbcDataStore dataStore, String cat_name, String schema_name, String table_name) {
+  public static JdbcDataPath of(AnsiDataStore dataStore, String cat_name, String schema_name, String table_name) {
     return new JdbcDataPath(dataStore, cat_name, schema_name, table_name);
   }
 
@@ -63,7 +63,7 @@ public class JdbcDataPath extends DataPathAbs {
    * @param dataUri
    * @return
    */
-  public static JdbcDataPath of(JdbcDataStore jdbcDataStore, DataUri dataUri) {
+  public static JdbcDataPath of(AnsiDataStore jdbcDataStore, DataUri dataUri) {
 
     String path = dataUri.getPath();
     List<String> pathSegments = new ArrayList<>();
@@ -142,7 +142,7 @@ public class JdbcDataPath extends DataPathAbs {
 
   }
 
-  public JdbcDataPath(JdbcDataStore jdbcDataStore, String query) {
+  public JdbcDataPath(AnsiDataStore jdbcDataStore, String query) {
     this.jdbcDataStore = jdbcDataStore;
     this.setType(QUERY_TYPE);
     this.setQuery(query);
@@ -154,7 +154,7 @@ public class JdbcDataPath extends DataPathAbs {
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #ofQuery(JdbcDataStore, String)}
+   * Query has another one, See {@link #ofQuery(AnsiDataStore, String)}
    * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
    *
    * @param jdbcDataStore
@@ -162,7 +162,7 @@ public class JdbcDataPath extends DataPathAbs {
    * @param schema
    * @param name
    */
-  public JdbcDataPath(JdbcDataStore jdbcDataStore, String catalog, String schema, String name) {
+  public JdbcDataPath(AnsiDataStore jdbcDataStore, String catalog, String schema, String name) {
 
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
@@ -172,12 +172,12 @@ public class JdbcDataPath extends DataPathAbs {
   }
 
 
-  public static JdbcDataPath ofQuery(JdbcDataStore jdbcDataStore, String query) {
+  public static JdbcDataPath ofQuery(AnsiDataStore jdbcDataStore, String query) {
     return new JdbcDataPath(jdbcDataStore, query);
   }
 
   @Override
-  public JdbcDataStore getDataStore() {
+  public AnsiDataStore getDataStore() {
     return jdbcDataStore;
   }
 

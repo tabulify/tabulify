@@ -1,14 +1,46 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataStore;
+import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.model.SqlDataType;
 import net.bytle.type.Strings;
 
-public class SqliteDataStore extends JdbcDataStore {
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Types;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+public class SqliteDataStore extends AnsiDataStore {
+
+
+  private SqliteSqlSystem sqliteDataSystem;
 
   public SqliteDataStore(String name, String url) {
     super(name, url);
+
+  }
+
+
+  /**
+   * @param path whatever/youwant/db.db
+   * @return an JDBC Url from a path
+   */
+  public static SqliteDataStore of(Path path) {
+    Path dirDbFile = path.getParent();
+    if (!Files.exists(dirDbFile)) {
+      try {
+        Files.createDirectory(dirDbFile);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    // TODO: what if linux
+    String rootWindows = "///";
+    String url = "jdbc:sqlite:" + rootWindows + path.toString().replace("\\", "/");
+    return new SqliteDataStore(path.getFileName().toString(), url);
   }
 
   @Override
@@ -45,4 +77,53 @@ public class SqliteDataStore extends JdbcDataStore {
     return 1;
   }
 
+  @Override
+  public SqliteSqlSystem getDataSystem() {
+    if (sqliteDataSystem == null) {
+      sqliteDataSystem = new SqliteSqlSystem(this);
+    }
+    return sqliteDataSystem;
+  }
+
+
+  @Override
+  public SqlDataType getSqlDataType(String typeName) {
+    SqlDataType sqlDataType = super.getSqlDataType(typeName);
+    sqlDataType = ModifyDataTypeIfNeeded(sqlDataType);
+    return sqlDataType;
+  }
+
+  @Override
+  public SqlDataType getSqlDataType(Class<?> clazz) {
+    SqlDataType sqlDataType = super.getSqlDataType(clazz);
+    sqlDataType = ModifyDataTypeIfNeeded(sqlDataType);
+    return sqlDataType;
+  }
+
+  @Override
+  public SqlDataType getSqlDataType(Integer typeCode) {
+    SqlDataType sqlDataType = super.getSqlDataType(typeCode);
+    sqlDataType = ModifyDataTypeIfNeeded(sqlDataType);
+    return sqlDataType;
+  }
+
+  @Override
+  public Set<SqlDataType> getSqlDataTypes() {
+    return super.getSqlDataTypes()
+      .stream()
+      .map(this::ModifyDataTypeIfNeeded)
+      .collect(Collectors.toSet());
+  }
+
+  private SqlDataType ModifyDataTypeIfNeeded(SqlDataType sqlDataType) {
+    // Don't change the name of the data type
+    // because of the versality of sqlite, a user may create a column with a TEXT or VARCHAR
+    switch (sqlDataType.getTypeCode()) {
+      case Types.VARCHAR:
+        sqlDataType
+          .setMaxPrecision(SqliteType.MAX_LENGTH);
+        break;
+    }
+    return sqlDataType;
+  }
 }

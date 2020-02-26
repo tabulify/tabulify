@@ -17,18 +17,19 @@ import java.util.stream.Collectors;
 /**
  * An object with all meta information about a JDBC data store
  */
-public class JdbcDataStore extends DataStore {
+public class AnsiDataStore extends DataStore {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDataStore.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AnsiDataStore.class);
+  private AnsiSqlSystem ansiSqlSystem;
 
   @Override
-  public JdbcDataStore addProperty(String key, String value) {
+  public AnsiDataStore addProperty(String key, String value) {
     super.addProperty(key, value);
     return this;
   }
 
   @Override
-  public JdbcDataStore setStrict(boolean strict) {
+  public AnsiDataStore setStrict(boolean strict) {
     super.setStrict(strict);
     return this;
   }
@@ -48,13 +49,13 @@ public class JdbcDataStore extends DataStore {
   private JdbcDataProcessingEngine processingEngine;
 
 
-  public JdbcDataStore(String name, String url) {
+  public AnsiDataStore(String name, String url) {
     super(name, url);
   }
 
-  public static JdbcDataStore of(String name, String url) {
+  public static AnsiDataStore of(String name, String url) {
 
-    return new JdbcDataStore(name, url);
+    return new AnsiDataStore(name, url);
 
   }
 
@@ -66,13 +67,13 @@ public class JdbcDataStore extends DataStore {
    * @param jdbcDriver
    * @return
    */
-  public JdbcDataStore setDriver(String jdbcDriver) {
+  public AnsiDataStore setDriver(String jdbcDriver) {
     super.addProperty(DRIVER_PROPERTY_KEY, jdbcDriver);
     return this;
   }
 
 
-  public JdbcDataStore setPostConnectionStatement(String connectionScriptValue) {
+  public AnsiDataStore setPostConnectionStatement(String connectionScriptValue) {
     super.addProperty(POST_STATEMENT_PROPERTY_KEY, connectionScriptValue);
     return this;
   }
@@ -92,7 +93,7 @@ public class JdbcDataStore extends DataStore {
 
 
   @Override
-  public JdbcDataStore setConnectionString(String connectionString) {
+  public AnsiDataStore setConnectionString(String connectionString) {
 
     if (isOpen()) {
       throw new RuntimeException("The connection string cannot be changed while there is a connection. It has already the value (" + this.connectionString + ") and cannot be set to (" + connectionString + ")");
@@ -108,21 +109,24 @@ public class JdbcDataStore extends DataStore {
   }
 
   @Override
-  public JdbcDataStore setUser(String user) {
+  public AnsiDataStore setUser(String user) {
     super.setUser(user);
     return this;
   }
 
   @Override
-  public JdbcDataStore setPassword(String password) {
+  public AnsiDataStore setPassword(String password) {
     super.setPassword(password);
     return this;
   }
 
   @Override
-  public JdbcDataSystem getDataSystem() {
+  public AnsiSqlSystem getDataSystem() {
 
-    return JdbcDataSystem.getSingleton();
+     if (ansiSqlSystem == null) {
+       ansiSqlSystem = new AnsiSqlSystem(this);
+     }
+    return ansiSqlSystem;
 
   }
 

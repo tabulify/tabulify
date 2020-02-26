@@ -1,13 +1,11 @@
 package net.bytle.db.tpc;
 
-import net.bytle.db.database.DataStore;
-import net.bytle.db.spi.TableSystem;
-import net.bytle.db.spi.TableSystemProvider;
+import net.bytle.db.spi.DataStoreProvider;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TpcTableSystemProvider extends TableSystemProvider {
+public class TpcDataStoreProvider extends DataStoreProvider {
 
 
   public static final String TPCDS_SCHEME = "tpcds";
@@ -38,7 +36,7 @@ public class TpcTableSystemProvider extends TableSystemProvider {
    *                           permission.
    */
   @Override
-  public TpcDataSetSystem getTableSystem() {
+  public TpcDataSetSystem getDataStore() {
 
     return tpcDataSetSystem;
 

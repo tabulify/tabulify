@@ -1,13 +1,14 @@
 package net.bytle.db.sqlite;
 
+import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.jdbc.JdbcDataPath;
-import net.bytle.db.jdbc.JdbcDataStore;
 import net.bytle.db.spi.DataPath;
 
 public class SqliteDataPath extends JdbcDataPath implements DataPath {
 
 
   private final SqliteDataStore sqliteDataStore;
+  private SqliteDataDef sqliteDataDef;
 
   public SqliteDataPath(SqliteDataStore jdbcDataStore, String catalog, String schema, String name) {
     super(jdbcDataStore, catalog, schema, name);
@@ -20,8 +21,15 @@ public class SqliteDataPath extends JdbcDataPath implements DataPath {
   }
 
   @Override
-  public JdbcDataStore getDataStore() {
+  public AnsiDataStore getDataStore() {
     return super.getDataStore();
   }
 
+  @Override
+  public SqliteDataDef getDataDef() {
+    if (sqliteDataDef == null){
+      sqliteDataDef = new SqliteDataDef(this);
+    }
+    return sqliteDataDef;
+  }
 }

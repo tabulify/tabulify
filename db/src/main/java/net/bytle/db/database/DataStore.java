@@ -2,11 +2,13 @@ package net.bytle.db.database;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
-import net.bytle.db.spi.*;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataSystem;
+import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.db.spi.DataStoreProvider;
 import net.bytle.db.uri.Uris;
 import net.bytle.type.Maps;
 import org.slf4j.Logger;
@@ -15,7 +17,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -67,16 +68,6 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
       .setDescription(ds.getDescription());
   }
 
-  public static FsDataStore of(Path path) {
-    FsDataStore fsDataStore;
-    if (path.toUri().getScheme().equals("file")){
-      fsDataStore = FsDataStore.getLocalFileSystem();
-    } else {
-      FileSystem fileSystem = path.getFileSystem();
-      fsDataStore = new FsDataStore(fileSystem.toString(), path.toUri().toString(), fileSystem);
-    }
-    return fsDataStore;
-  }
 
   public String getDescription() {
     return description;
@@ -160,38 +151,28 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   public static DataStore of(String name, String url) {
 
-    String scheme = Uris.getScheme(url);
-    TableSystem tableSystem = createTableSystem(scheme);
-    if (tableSystem == null) {
-      final String message = "No provider was found for the scheme (" + scheme + ") from the dataStore (" + name + ") with the Url (" + url + ")";
-      DbLoggers.LOGGER_DB_ENGINE.warning(message);
-      return new DataStoreWithoutProvider(name, url);
-    } else {
-      return tableSystem.createDataStore(name, url);
-    }
-
-  }
-
-  public abstract TableSystem getDataSystem();
-
-
-  static protected TableSystem createTableSystem(String scheme) {
-
-    TableSystem tableSystem = null;
-    List<TableSystemProvider> installedProviders = TableSystemProvider.installedProviders();
-    for (TableSystemProvider tableSystemProvider : installedProviders) {
-      if (tableSystemProvider.getSchemes().contains(scheme)) {
-        tableSystem = tableSystemProvider.getTableSystem();
-        if (tableSystem == null) {
-          String message = "The table system is null for the provider (" + tableSystemProvider.getClass().toString() + ")";
+    List<DataStoreProvider> installedProviders = DataStoreProvider.installedProviders();
+    for (DataStoreProvider dataStoreProvider : installedProviders) {
+      if (dataStoreProvider.accept(url)) {
+        DataStore dataStore = dataStoreProvider.getDataStore(name, url);
+        if (dataStore == null) {
+          String message = "The table system is null for the provider (" + dataStoreProvider.getClass().toString() + ")";
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
           throw new RuntimeException(message);
         }
+        return dataStore;
       }
     }
 
-    return tableSystem;
+    // No provider was found
+    final String message = "No provider was found for the url (" + url + ") from the dataStore (" + name + ") with the Url (" + url + ")";
+    DbLoggers.LOGGER_DB_ENGINE.warning(message);
+    return new DataStoreWithoutProvider(name, url);
+
   }
+
+  public abstract DataSystem getDataSystem();
+
 
   /**
    * @param parts

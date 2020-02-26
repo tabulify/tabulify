@@ -2,38 +2,33 @@ package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.*;
 import net.bytle.db.model.*;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
+public class SqliteSqlSystem extends AnsiSqlSystem {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SqliteJdbcDataStoreExtension.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SqliteSqlSystem.class);
+  private final SqliteDataStore sqliteDataStore;
 
-  public SqliteJdbcDataStoreExtension(JdbcDataStore jdbcDataStore) {
-    super(jdbcDataStore);
+  public SqliteSqlSystem(SqliteDataStore sqliteDataStore) {
+    super(sqliteDataStore);
+    this.sqliteDataStore = sqliteDataStore;
   }
 
-  @Override
-  public void updateSqlDataType(SqlDataType sqlDataType) {
-    // Don't change the name of the data type
-    // because of the versality of sqlite, a user may create a column with a TEXT or VARCHAR
-    switch (sqlDataType.getTypeCode()) {
-      case Types.VARCHAR:
-        sqlDataType
-          .setMaxPrecision(SqliteType.MAX_LENGTH);
-        break;
-    }
-  }
 
   @Override
+  public void create(DataPath dataPath) {
+    SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
+    List<String> statements = getCreateTableStatements(sqliteDataPath);
+    super.execute(statements);
+  }
+
   public String getCreateColumnStatement(ColumnDef columnDef) {
     switch (columnDef.getDataType().getTypeCode()) {
       default:
@@ -43,22 +38,10 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
   }
 
 
-  @Override
   public String getNormativeSchemaObjectName(String objectName) {
     return "\"" + objectName + "\"";
   }
 
-  /**
-   * Related ?
-   * {@link DatabaseMetaData#getMaxConnections()}
-   * Sqlite can't have several connection
-   *
-   * @return
-   */
-  @Override
-  public Integer getMaxWriterConnection() {
-    return 1;
-  }
 
   /**
    * Returns statement to create the table
@@ -69,7 +52,6 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
    * @param dataPath
    * @return a create statement https://www.sqlite.org/lang_createtable.html
    */
-  @Override
   public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
 
     List<String> statements = new ArrayList<>();
@@ -154,7 +136,6 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
    *
    * @param tableDef
    */
-  @Override
   public Boolean addPrimaryKey(RelationDef tableDef) {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
@@ -183,7 +164,6 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
 
   }
 
-  @Override
   public Boolean addForeignKey(RelationDef tableDef) {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
@@ -239,7 +219,6 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
    * @param tableDef
    * @return true if the columns were added to the table
    */
-  @Override
   public boolean addColumns(RelationDef tableDef) {
 
     // Because the driver returns 20000000 and no data type name
@@ -277,33 +256,12 @@ public class SqliteJdbcDataStoreExtension extends JdbcDataStoreExtension {
     return true;
   }
 
-  @Override
   public String getTruncateStatement(JdbcDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();
   }
 
-  /**
-   * @param path whatever/youwant/db.db
-   * @return an JDBC Url from a path
-   */
-  static public String getJdbcUrl(Path path) {
 
-    Path dirDbFile = path.getParent();
-    if (!Files.exists(dirDbFile)) {
-      try {
-        Files.createDirectory(dirDbFile);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-
-    // TODO: what if linux
-    String rootWindows = "///";
-    return "jdbc:sqlite:" + rootWindows + path.toString().replace("\\", "/");
-
-  }
 
 }
