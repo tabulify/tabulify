@@ -5,7 +5,6 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.spi.TableSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,19 +44,17 @@ public class JdbcDataStore extends DataStore {
   // Jdbc
   public static final String DRIVER_PROPERTY_KEY = "driver";
   public static final String POST_STATEMENT_PROPERTY_KEY = "post_statement";
-  private final JdbcDataSystem jdbcDataSystem;
   private JdbcDataStoreExtension sqlDatabase;
   private JdbcDataProcessingEngine processingEngine;
 
 
-  public JdbcDataStore(String name, String url, JdbcDataSystem jdbcDataSystem) {
+  public JdbcDataStore(String name, String url) {
     super(name, url);
-    this.jdbcDataSystem = jdbcDataSystem;
   }
 
   public static JdbcDataStore of(String name, String url) {
 
-    return new JdbcDataStore(name, url, JdbcDataSystemProvider.jdbcDataSystem);
+    return new JdbcDataStore(name, url);
 
   }
 
@@ -107,7 +104,7 @@ public class JdbcDataStore extends DataStore {
 
   @Override
   public boolean isOpen() {
-    return this.connection !=null;
+    return this.connection != null;
   }
 
   @Override
@@ -123,8 +120,10 @@ public class JdbcDataStore extends DataStore {
   }
 
   @Override
-  public TableSystem getDataSystem() {
-    return jdbcDataSystem;
+  public JdbcDataSystem getDataSystem() {
+
+    return JdbcDataSystem.getSingleton();
+
   }
 
   @Override
@@ -143,21 +142,6 @@ public class JdbcDataStore extends DataStore {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-
-  }
-
-  public JdbcDataStoreExtension getExtension() {
-
-    if (sqlDatabase == null) {
-      // check installed providers
-      for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
-        if (this.getProductName().equalsIgnoreCase(provider.getProductName())) {
-          sqlDatabase = provider.getJdbcDataStoreExtension(this);
-        }
-      }
-    }
-
-    return sqlDatabase;
 
   }
 
@@ -273,27 +257,18 @@ public class JdbcDataStore extends DataStore {
    * @return the number of concurrent writer connection
    */
   public Integer getMaxWriterConnection() {
-    Integer maxWriterConnection = null;
-    if (this.getExtension() != null) {
-      maxWriterConnection = this.getExtension().getMaxWriterConnection();
-    }
-    if (maxWriterConnection != null) {
-      return maxWriterConnection;
-    } else {
-      try {
-        maxWriterConnection = connection.getMetaData().getMaxConnections();
-        // 0 writer is not really possible
-        if (maxWriterConnection == 0) {
-          return 1;
-        } else {
-          return maxWriterConnection;
-        }
-      } catch (SQLException e) {
-        JdbcDataSystemLog.LOGGER_DB_JDBC.severe("Tip: The getMaxConnections is may be not supported on the JDBC driver. Adding it to the extension will resolve this problem.");
-        throw new RuntimeException(e);
+    try {
+      Integer maxWriterConnection = connection.getMetaData().getMaxConnections();
+      // 0 writer is not really possible
+      if (maxWriterConnection == 0) {
+        return 1;
+      } else {
+        return maxWriterConnection;
       }
+    } catch (SQLException e) {
+      JdbcDataSystemLog.LOGGER_DB_JDBC.severe("Tip: The getMaxConnections is may be not supported on the JDBC driver. Adding it to the extension will resolve this problem.");
+      throw new RuntimeException(e);
     }
-
   }
 
   public int getDatabaseMajorVersion() {
@@ -327,7 +302,7 @@ public class JdbcDataStore extends DataStore {
     try {
 
       String catalog = this.getCurrentConnection().getCatalog();
-      if (catalog !=null && catalog.equals("")){
+      if (catalog != null && catalog.equals("")) {
         catalog = null;
       }
       return catalog;
@@ -418,11 +393,6 @@ public class JdbcDataStore extends DataStore {
         throw new RuntimeException(e);
       }
 
-      // Extension update
-      JdbcDataStoreExtension jdbcDataStoreExtension = getExtension();
-      if (jdbcDataStoreExtension != null) {
-        super.getSqlDataTypes().forEach(dt -> jdbcDataStoreExtension.updateSqlDataType(dt));
-      }
       sqlDataTypeWereUpdated = true;
     }
   }
@@ -438,15 +408,8 @@ public class JdbcDataStore extends DataStore {
    */
   public Object getLoadObject(int targetColumnType, Object sourceObject) {
 
-    Object object = null;
-    if (this.getExtension() != null) {
-      object = this.getExtension().getLoadObject(targetColumnType, sourceObject);
-    }
-    if (object == null) {
-      return sourceObject;
-    } else {
-      return object;
-    }
+    return sourceObject;
+
   }
 
 

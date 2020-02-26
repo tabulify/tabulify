@@ -42,14 +42,7 @@ public class JdbcDataSystemSql {
         final JdbcDataStore dataStore = jdbcDataPath.getDataStore();
         String identifierQuoteString = DbSql.getIdentifierQuote(dataStore);
         final String tableName = jdbcDataPath.getName();
-        String normativeObjectName = identifierQuoteString+ tableName +identifierQuoteString;
-        if (dataStore.getExtension() != null) {
-            String objectNameExtension = dataStore.getExtension().getNormativeSchemaObjectName(tableName);
-            if (objectNameExtension != null) {
-                normativeObjectName = objectNameExtension;
-            }
-        }
-        return normativeObjectName;
+        return identifierQuoteString+ tableName +identifierQuoteString;
 
 
     }

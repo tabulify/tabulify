@@ -24,35 +24,8 @@ public class DbDdl {
   public static List<String> getCreateTableStatements(DataPath dataPath) {
 
     JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
-    List<String> statements;
-    final JdbcDataStoreExtension sqlDatabase = jdbcDataPath.getDataStore().getExtension();
 
-    // If the databaseDefault implements its own logic, we return it.
-    try {
-      statements = sqlDatabase.getCreateTableStatements(jdbcDataPath);
-      if (statements != null) {
-        if (statements.size() == 0) {
-          LOGGER.warning("The database extension " + sqlDatabase.toString() + " returns 0 statements.");
-        } else {
-          return statements;
-        }
-      } else {
-
-        statements = new ArrayList<>();
-
-      }
-
-
-    } catch (Exception e) {
-
-      LOGGER.severe("The getCreateTableStatements of the database provider " + sqlDatabase.toString() + " returns an error.");
-      throw new RuntimeException(e);
-
-    }
-
-
-    // The database extension doesn't implements its own logic, we create then a standard SQL
-
+    List<String> statements = new ArrayList<>();
     StringBuilder createTableStatement = new StringBuilder()
       .append("create table ");
     final String schemaName = jdbcDataPath.getSchema().getName();
@@ -169,32 +142,15 @@ public class DbDdl {
 
     String dataTypeCreateStatement = null;
 
-    JdbcDataStoreExtension jdbcDataStoreExtension = ((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getExtension();
-    if (jdbcDataStoreExtension != null) {
-      dataTypeCreateStatement = jdbcDataStoreExtension.getCreateColumnStatement(columnDef);
-    }
 
-    if (dataTypeCreateStatement == null) {
-      if (targetSqlDataType.getTypeCode() == Types.DATE || targetSqlDataType.getTypeCode() == Types.TIME) {
+    if (targetSqlDataType.getTypeCode() == Types.DATE || targetSqlDataType.getTypeCode() == Types.TIME) {
 
-        dataTypeCreateStatement = targetSqlDataType.getTypeNames().get(0);
+      dataTypeCreateStatement = targetSqlDataType.getTypeNames().get(0);
 
+    } else {
 
-      } else {
+      dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType.getTypeNames().get(0), precision, scale);
 
-
-        if (targetSqlDataType != null) {
-          dataTypeCreateStatement = getCreateDataTypeStatement(targetSqlDataType.getTypeNames().get(0), precision, scale);
-        } else {
-          String columnTypeName;
-          try {
-            columnTypeName = columnDef.getDataType().getTypeNames().get(0);
-            dataTypeCreateStatement = getCreateDataTypeStatement(columnTypeName, precision, scale);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        }
-      }
     }
 
     // NOT NULL

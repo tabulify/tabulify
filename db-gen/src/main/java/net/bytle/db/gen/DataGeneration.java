@@ -278,6 +278,18 @@ public class DataGeneration {
     return this;
   }
 
+  /**
+   * @param sourceDataPaths
+   * @param targetDataPath
+   * @return
+   */
+  public DataGeneration addTransfers(List<GenDataPath> sourceDataPaths, DataPath targetDataPath) {
+    for (GenDataPath sourceDataPath : sourceDataPaths) {
+      addTransfer(sourceDataPath, targetDataPath);
+    }
+    return this;
+  }
+
   public DataGeneration addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
 
     // Add the transfers

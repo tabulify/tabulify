@@ -1,6 +1,8 @@
 
 package net.bytle.db.jdbc;
 
+import net.bytle.db.database.DataStore;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -16,7 +18,7 @@ import java.util.*;
  * A service provider is a concrete implementation of this class that
  * implements the abstract methods defined by this class.
  * <p/>
- * A provider is identified by a {@code URI} {@link #getProductName() scheme}.
+ * A provider is identified by a {@code URI} {@link #accept(String)}.
  * <p/>
  * A factory method class defines how providers are located
  * and loaded.
@@ -32,123 +34,110 @@ import java.util.*;
  * <p/>
  * A provider is a factory for one or more (service) object instances.
  * Each service is identified by a {@code URI} where the URI's scheme matches
- * the provider's {@link #getProductName scheme}.
+ * the provider's {@link #accept(String)}.
  * <p/>
  * Inspired by {@link java.nio.file.spi.FileSystemProvider}
  */
 
 public abstract class JdbcDataStoreExtensionProvider {
 
-    // lock using when loading providers
-    private static final Object lock = new Object();
+  // lock using when loading providers
+  private static final Object lock = new Object();
 
-    // installed providers
-    private static volatile List<JdbcDataStoreExtensionProvider> installedProviders;
+  // installed providers
+  private static volatile List<JdbcDataStoreExtensionProvider> installedProviders;
 
-    // used to avoid recursive loading of installed providers
-    private static boolean loadingProviders = false;
+  // used to avoid recursive loading of installed providers
+  private static boolean loadingProviders = false;
 
-    private static Void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("fileSystemProvider"));
-        return null;
+  private static Void checkPermission() {
+    SecurityManager sm = System.getSecurityManager();
+    if (sm != null)
+      sm.checkPermission(new RuntimePermission("fileSystemProvider"));
+    return null;
+  }
+
+  private JdbcDataStoreExtensionProvider(Void ignore) {
+  }
+
+  /**
+   * Initializes a new instance of this class.
+   * <p/>
+   * <p> During construction a provider may safely access files associated
+   * with the default provider but care needs to be taken to avoid circular
+   * loading of other installed providers. If circular loading of installed
+   * providers is detected then an unspecified error is thrown.
+   *
+   * @throws SecurityException If a security manager has been installed and it denies
+   *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
+   */
+  protected JdbcDataStoreExtensionProvider() {
+    this(checkPermission());
+  }
+
+  // loads all installed providers
+  private static List<JdbcDataStoreExtensionProvider> loadInstalledProviders() {
+
+    List<JdbcDataStoreExtensionProvider> list = new ArrayList<JdbcDataStoreExtensionProvider>();
+
+    ServiceLoader<JdbcDataStoreExtensionProvider> jdbcDataStoreExtensionProviders = ServiceLoader
+      .load(JdbcDataStoreExtensionProvider.class, ClassLoader.getSystemClassLoader());
+
+    for (JdbcDataStoreExtensionProvider provider : jdbcDataStoreExtensionProviders) {
+        list.add(provider);
     }
 
-    private JdbcDataStoreExtensionProvider(Void ignore) {
-    }
+    return list;
+  }
 
-    /**
-     * Initializes a new instance of this class.
-     * <p/>
-     * <p> During construction a provider may safely access files associated
-     * with the default provider but care needs to be taken to avoid circular
-     * loading of other installed providers. If circular loading of installed
-     * providers is detected then an unspecified error is thrown.
-     *
-     * @throws SecurityException If a security manager has been installed and it denies
-     *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
-     */
-    protected JdbcDataStoreExtensionProvider() {
-        this(checkPermission());
-    }
+  /**
+   * Returns a list of the installed work providers.
+   * <p/>
+   * <p> The first invocation of this method loads any installed
+   * providers that will be used by the provider Factory class.
+   *
+   * @return An unmodifiable list of the installed service providers.
+   * @throws ServiceConfigurationError When an error occurs while loading a service provider
+   */
+  public static List<JdbcDataStoreExtensionProvider> installedProviders() {
+    if (installedProviders == null) {
 
-    // loads all installed providers
-    private static List<JdbcDataStoreExtensionProvider> loadInstalledProviders() {
-        List<JdbcDataStoreExtensionProvider> list = new ArrayList<JdbcDataStoreExtensionProvider>();
-
-        ServiceLoader<JdbcDataStoreExtensionProvider> sl = ServiceLoader
-                .load(JdbcDataStoreExtensionProvider.class, ClassLoader.getSystemClassLoader());
-
-        // ServiceConfigurationError may be throw here
-        for (JdbcDataStoreExtensionProvider provider : sl) {
-            String scheme = provider.getProductName();
-
-            boolean found = false;
-            for (JdbcDataStoreExtensionProvider p : list) {
-                if (p.getProductName().equalsIgnoreCase(scheme)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                list.add(provider);
-            }
-
-        }
-        return list;
-    }
-
-    /**
-     * Returns a list of the installed work providers.
-     * <p/>
-     * <p> The first invocation of this method loads any installed
-     * providers that will be used by the provider Factory class.
-     *
-     * @return An unmodifiable list of the installed service providers.
-     * @throws ServiceConfigurationError When an error occurs while loading a service provider
-     */
-    public static List<JdbcDataStoreExtensionProvider> installedProviders() {
+      synchronized (lock) {
         if (installedProviders == null) {
+          if (loadingProviders) {
+            throw new Error("Circular loading of installed providers detected");
+          }
+          loadingProviders = true;
 
-            synchronized (lock) {
-                if (installedProviders == null) {
-                    if (loadingProviders) {
-                        throw new Error("Circular loading of installed providers detected");
-                    }
-                    loadingProviders = true;
+          List<JdbcDataStoreExtensionProvider> list = AccessController
+            .doPrivileged(new PrivilegedAction<List<JdbcDataStoreExtensionProvider>>() {
+              @Override
+              public List<JdbcDataStoreExtensionProvider> run() {
+                return loadInstalledProviders();
+              }
+            });
 
-                    List<JdbcDataStoreExtensionProvider> list = AccessController
-                            .doPrivileged(new PrivilegedAction<List<JdbcDataStoreExtensionProvider>>() {
-                                @Override
-                                public List<JdbcDataStoreExtensionProvider> run() {
-                                    return loadInstalledProviders();
-                                }
-                            });
-
-                    installedProviders = Collections.unmodifiableList(list);
-                }
-            }
+          installedProviders = Collections.unmodifiableList(list);
         }
-        return installedProviders;
+      }
     }
-
-    /**
-     * Returns the product name that identifies this provider.
-     *
-     * @return The URI scheme
-     */
-    public abstract String getProductName();
+    return installedProviders;
+  }
 
 
 
-    /**
-     *
-     * @param jdbcDataStore URI reference
-     * @return The sql database
-     */
-    public abstract JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcDataStore);
+  /**
+   * @param name
+   * @param url
+   * @return a data store created by the extension
+   */
+  public abstract DataStore getJdbcDataStore(String name, String url);
 
-
+  /**
+   *
+   * @param url
+   * @return true if the provider is accepting the URL
+   */
+  public abstract boolean accept(String url);
 
 }

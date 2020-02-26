@@ -89,15 +89,6 @@ public class Jdbcs {
     // Bug in SQLite Driver - Hack
     // that doesn't return the good primary ley
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-    Boolean done = false;
-    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
-    if (sqlDatabase != null) {
-      done = sqlDatabase.addPrimaryKey(tableDef);
-    }
-    if (done == null || done) {
-      return;
-    }
-
     final String column_name = "COLUMN_NAME";
     final String pk_name = "PK_NAME";
     final String key_seq = "KEY_SEQ";
@@ -202,56 +193,50 @@ public class Jdbcs {
   private static void buildTableColumns(RelationDef tableDef) throws SQLException {
 
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-    Boolean added = false;
-    JdbcDataStoreExtension sqlDatabase = dataPath.getDataStore().getExtension();
-    if (sqlDatabase != null) {
-      added = sqlDatabase.addColumns(tableDef);
+
+
+    String schemaName = null;
+    if (dataPath.getSchema() != null) {
+      schemaName = dataPath.getSchema().getName();
     }
-    if (!added) {
+    ResultSet columnResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
 
-      String schemaName = null;
-      if (dataPath.getSchema() != null) {
-        schemaName = dataPath.getSchema().getName();
+    while (columnResultSet.next()) {
+
+      String isGeneratedColumn = "";
+      try {
+        isGeneratedColumn = columnResultSet.getString("IS_GENERATEDCOLUMN");
+      } catch (SQLException e) {
+        // Not always supported
       }
-      ResultSet columnResultSet = dataPath.getDataStore().getCurrentConnection().getMetaData().getColumns(dataPath.getCatalog(), schemaName, dataPath.getName(), null);
 
-      while (columnResultSet.next()) {
+      String column_name = columnResultSet.getString("COLUMN_NAME");
 
-        String isGeneratedColumn = "";
-        try {
-          isGeneratedColumn = columnResultSet.getString("IS_GENERATEDCOLUMN");
-        } catch (SQLException e) {
-          // Not always supported
-        }
-
-        String column_name = columnResultSet.getString("COLUMN_NAME");
-
-        String is_autoincrement = null;
-        // Not implemented by the sqliteDriver
-        try {
-          is_autoincrement = columnResultSet.getString("IS_AUTOINCREMENT");
-        } catch (SQLException e) {
-          LOGGER.fine("The IS_AUTOINCREMENT column seems not to be implemented. Message: " + e.getMessage());
-        }
-
-        int column_size = columnResultSet.getInt("COLUMN_SIZE");
-
-
-        final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
-
-        SqlDataType dataType = tableDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
-        tableDef.getColumnOf(column_name, dataType.getClass())
-          .typeCode(sqlTypeCode)
-          .precision(column_size)
-          .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
-          .isAutoincrement(is_autoincrement)
-          .isGeneratedColumn(isGeneratedColumn)
-          .setNullable(columnResultSet.getInt("NULLABLE"));
-
+      String is_autoincrement = null;
+      // Not implemented by the sqliteDriver
+      try {
+        is_autoincrement = columnResultSet.getString("IS_AUTOINCREMENT");
+      } catch (SQLException e) {
+        LOGGER.fine("The IS_AUTOINCREMENT column seems not to be implemented. Message: " + e.getMessage());
       }
-      columnResultSet.close();
+
+      int column_size = columnResultSet.getInt("COLUMN_SIZE");
+
+
+      final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
+
+      SqlDataType dataType = tableDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
+      tableDef.getColumnOf(column_name, dataType.getClass())
+        .typeCode(sqlTypeCode)
+        .precision(column_size)
+        .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
+        .isAutoincrement(is_autoincrement)
+        .isGeneratedColumn(isGeneratedColumn)
+        .setNullable(columnResultSet.getInt("NULLABLE"));
 
     }
+    columnResultSet.close();
+
 
   }
 
@@ -272,18 +257,7 @@ public class Jdbcs {
     // SQLite Driver doesn't return a empty string as key name
     // for all foreigns key
     final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
-    Boolean done = false;
     JdbcDataStore dataStore = dataPath.getDataStore();
-    JdbcDataStoreExtension sqlDatabase = dataStore.getExtension();
-    if (sqlDatabase != null) {
-      done = sqlDatabase.addForeignKey(tableDef);
-    }
-    if (done == null || done) {
-      return;
-    }
-
-    // Collect all fk data
-    Map<String, ForeignKeyDef> fkMap = new HashMap<>();
 
     // The column names of the fkresult set
     String col_fk_name = "FK_NAME";

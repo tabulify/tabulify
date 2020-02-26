@@ -3,7 +3,6 @@ package net.bytle.db.jdbc;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.TableSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -30,8 +29,20 @@ public class JdbcDataSystem extends TableSystem {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDataSystem.class);
 
+  /**
+   * Singleton
+   */
+  private static JdbcDataSystem jdbcSingletonDataSystem;
+
 
   private JdbcDataProcessingEngine processingEngine;
+
+  public static JdbcDataSystem getSingleton() {
+    if (jdbcSingletonDataSystem == null) {
+      jdbcSingletonDataSystem = new JdbcDataSystem();
+    }
+    return jdbcSingletonDataSystem;
+  }
 
 
   /**
@@ -122,11 +133,11 @@ public class JdbcDataSystem extends TableSystem {
     TransferManager.checkSource(source);
 
     // Check the target
-    TransferManager.createOrCheckTargetFromSource(source,target);
+    TransferManager.createOrCheckTargetFromSource(source, target);
 
     // The target table should be without rows
     long size = Tabulars.getSize(target);
-    assert size == 0: "In a copy operation, the target table should be empty. This is not the case. The target table ("+target+") has ("+ size+") rows";
+    assert size == 0 : "In a copy operation, the target table should be empty. This is not the case. The target table (" + target + ") has (" + size + ") rows";
 
     // insert into select statement
     JdbcDataPath sourceJdbcDataPath = (JdbcDataPath) source;
@@ -159,7 +170,7 @@ public class JdbcDataSystem extends TableSystem {
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {
 
-    return Jdbcs.getDescendants((JdbcDataPath) dataPath,null);
+    return Jdbcs.getDescendants((JdbcDataPath) dataPath, null);
 
   }
 
@@ -178,7 +189,18 @@ public class JdbcDataSystem extends TableSystem {
 
   @Override
   public DataStore createDataStore(String name, String url) {
-    return new JdbcDataStore(name, url, this);
+
+
+    DataStore dataStore;
+    // check installed providers
+    for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
+      if (provider.accept(url)) {
+        return provider.getJdbcDataStore(name, url);
+      }
+    }
+
+    return new JdbcDataStore(name, url);
+
   }
 
 
@@ -247,8 +269,8 @@ public class JdbcDataSystem extends TableSystem {
       JdbcDataSystemLog.LOGGER_DB_JDBC.info(jdbcDataPath.getType() + " " + dataPath.toString() + " dropped");
 
     } catch (SQLException e) {
-      String msg = Strings.multiline( "Dropping of the data path ("+jdbcDataPath+") was not successful with the statement `"+dropTableStatement.toString()+"`"
-        , "Cause: "+e.getMessage());
+      String msg = Strings.multiline("Dropping of the data path (" + jdbcDataPath + ") was not successful with the statement `" + dropTableStatement.toString() + "`"
+        , "Cause: " + e.getMessage());
       LOGGER.error(msg);
       throw new RuntimeException(msg, e);
     }
@@ -279,18 +301,12 @@ public class JdbcDataSystem extends TableSystem {
   public void truncate(DataPath dataPath) {
 
     JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
-    final JdbcDataStoreExtension sqlDatabase = jdbcDataPath.getDataStore().getExtension();
-    String truncateStatement;
-    if (sqlDatabase != null) {
-      truncateStatement = sqlDatabase.getTruncateStatement(jdbcDataPath);
-    } else {
-      StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
-      truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-      truncateStatement = truncateStatementBuilder.toString();
-    }
+    StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
+    truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
+    String truncateStatement = truncateStatementBuilder.toString();
 
     try (
-      Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement();
+      Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement()
     ) {
 
       statement.execute(truncateStatement);
@@ -319,7 +335,7 @@ public class JdbcDataSystem extends TableSystem {
   }
 
   /**
-   * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPathAbs, DataPathAbs)}
+   * This function is called by {@link net.bytle.db.spi.Tabulars#move(DataPath, DataPath)}
    * The checks on source and target are already done on the calling function
    *
    * @param source

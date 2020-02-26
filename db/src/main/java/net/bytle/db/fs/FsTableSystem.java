@@ -129,15 +129,15 @@ public class FsTableSystem extends TableSystem {
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
           throw new RuntimeException(message);
         }
+        return fileManager;
       }
     }
-    if (fileManager == null) {
-      if (Files.isRegularFile(path)) {
-        DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
-        fileManager = FsFileManager.getSingeleton();
-      } else {
-        fileManager = FsDirectoryManager.getSingeleton();
-      }
+    // No file manager found
+    if (Files.isRegularFile(path)) {
+      DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
+      fileManager = FsFileManager.getSingeleton();
+    } else {
+      fileManager = FsDirectoryManager.getSingeleton();
     }
     return fileManager;
   }
