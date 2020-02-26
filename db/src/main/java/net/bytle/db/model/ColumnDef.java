@@ -6,10 +6,7 @@ import net.bytle.type.Maps;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by gerard on 01-02-2016.
@@ -59,7 +56,6 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
 
   private String comment;
 
-
   public Boolean getIsGeneratedColumn() {
     return isGeneratedColumn;
   }
@@ -77,6 +73,11 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
 
     this.dataDef = dataDef;
     this.columnName = columnName;
+
+    // To point out where we write sqltype.getClass in place of getClazz
+    if (clazz==SqlDataType.class){
+      throw new RuntimeException("Bad class");
+    }
     this.clazz = clazz;
 
   }

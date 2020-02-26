@@ -15,7 +15,7 @@ public class Columns {
         if (columnDef.getClazz().equals(clazz)){
             return (ColumnDef<T>) columnDef;
         } else {
-            throw new RuntimeException("The class of the column ("+columnDef.getColumnName()+") is " + columnDef.getClazz() + " and not" + clazz);
+            throw new RuntimeException("The class of the column ("+columnDef.getColumnName()+") is " + columnDef.getClazz() + " and not " + clazz);
         }
     }
 

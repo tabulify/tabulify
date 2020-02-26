@@ -1,31 +1,18 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.JdbcDataStore;
-import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
-/**
- * Created by gerard on 02-12-2015.
- */
 public class SqliteProvider extends JdbcDataStoreExtensionProvider {
 
-
+   public final String URL_PREFIX = "jdbc:sqlite:";
   @Override
-  public String getProductName() {
-    return "sqlite";
+  public SqliteDataStore getJdbcDataStore(String name, String url) {
+    return new SqliteDataStore(name,url);
   }
 
-
-  /**
-   *
-   * @param jdbcdataStore URI reference
-   * @return The sql database
-   * @throws SecurityException If a security manager is installed and it denies an unspecified
-   *                           permission.
-   */
   @Override
-  public JdbcDataStoreExtension getJdbcDataStoreExtension(JdbcDataStore jdbcdataStore) {
-    return new SqliteJdbcDataStoreExtension(jdbcdataStore);
+  public boolean accept(String url) {
+    return url.startsWith(URL_PREFIX);
   }
 
 }

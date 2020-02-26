@@ -144,7 +144,11 @@ public class JdbcDataSystemSql {
              * Only for catalog
              * {@link DatabaseMetaData#getCatalogSeparator()}
              */
-            return jdbcDataPath.getSchema().getName() + "." + statementTableName;
+            if (jdbcDataPath.getSchema().getName().equals("")){
+              return statementTableName;
+            } else {
+              return jdbcDataPath.getSchema().getName() + "." + statementTableName;
+            }
         }
 
 

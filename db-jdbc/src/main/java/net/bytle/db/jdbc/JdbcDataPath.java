@@ -22,6 +22,7 @@ public class JdbcDataPath extends DataPathAbs {
 
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
+  public static final String PARENT_DIRECTORY = "..";
   private static final String SEPARATOR = ".";
   private final String name;
   private final String schema;
@@ -43,15 +44,17 @@ public class JdbcDataPath extends DataPathAbs {
   /**
    * Constructor used in the JDBC api to build a jdbc path
    *
-   * @param dataSystem
+   * @param dataStore
    * @param cat_name
    * @param schema_name
    * @param table_name
    * @return
    */
-  public static JdbcDataPath of(JdbcDataStore dataSystem, String cat_name, String schema_name, String table_name) {
-    return new JdbcDataPath(dataSystem, cat_name, schema_name, table_name);
+  public static JdbcDataPath of(JdbcDataStore dataStore, String cat_name, String schema_name, String table_name) {
+    return new JdbcDataPath(dataStore, cat_name, schema_name, table_name);
   }
+
+
 
   /**
    * Constructor from an data Uri string
@@ -159,7 +162,7 @@ public class JdbcDataPath extends DataPathAbs {
    * @param schema
    * @param name
    */
-  private JdbcDataPath(JdbcDataStore jdbcDataStore, String catalog, String schema, String name) {
+  public JdbcDataPath(JdbcDataStore jdbcDataStore, String catalog, String schema, String name) {
 
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;

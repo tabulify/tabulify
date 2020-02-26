@@ -29,7 +29,7 @@ public class DbDdl {
     StringBuilder createTableStatement = new StringBuilder()
       .append("create table ");
     final String schemaName = jdbcDataPath.getSchema().getName();
-    if (schemaName != null) {
+    if (schemaName != null && !schemaName.equals("")) {
       createTableStatement.append(schemaName).append(".");
     }
     createTableStatement

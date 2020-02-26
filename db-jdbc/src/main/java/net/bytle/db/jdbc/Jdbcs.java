@@ -226,7 +226,7 @@ public class Jdbcs {
       final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
       SqlDataType dataType = tableDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
-      tableDef.getColumnOf(column_name, dataType.getClass())
+      tableDef.getColumnOf(column_name, dataType.getClazz())
         .typeCode(sqlTypeCode)
         .precision(column_size)
         .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
