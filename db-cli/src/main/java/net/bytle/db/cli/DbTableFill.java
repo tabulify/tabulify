@@ -48,8 +48,8 @@ public class DbTableFill {
         CliUsage.getFullChainOfCommand(cliCommand) + "random  *@sqlite"))
       .addExample(Strings.multiline("To load the tables `D_TIME` from the datastore `sqlite` with random data:",
         CliUsage.getFullChainOfCommand(cliCommand) + "random  D_TIME@sqlite"))
-      .addExample(Strings.multiline("To load the table `D_TIME` with the data definition file `D_TIME--datadef.yml` present in the current directory:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datadef.yml  D_TIME@datastore"))
+      .addExample(Strings.multiline("To load the table `D_TIME` with the data definition file `D_TIME--datagen.yml` present in the current directory:",
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datagen.yml  D_TIME@datastore"))
       .addExample(Strings.multiline("To load all the tables that have a data definition file in the current directory:",
         CliUsage.getFullChainOfCommand(cliCommand) + "*--datadef.yml   *@datastore"));
     cliCommand.argOf(DATA_URI_PATTERNS)

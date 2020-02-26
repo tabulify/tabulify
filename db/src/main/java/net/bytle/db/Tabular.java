@@ -32,20 +32,13 @@ public class Tabular implements AutoCloseable {
   // Named used to create default path
   public static final String APP_NAME = "BytleDb";
 
-  /**
-   * The local file database name as also stated
-   * by the {@link Path#getFileSystem()}
-   */
+  // The default data store added to an URI if it does not have it.
+  protected DataStore defaultDatastore;
+
+  // The internal datastore
   public static final String MEMORY_DATASTORE = "memory";
   public static final String TPCDS_DATASTORE = "tpcds";
-
-  public static final String DEFAUT_URL = MemorySystemProvider.SCHEME;
-
-
-  /**
-   * The memory database
-   */
-  public static final String DEFAULT_DATASTORE = MEMORY_DATASTORE;
+  public static final String LOCAL_FILE_SYSTEM = FsDataStore.getLocalFileSystem().getName();
 
 
   DatastoreVault dataStoreVault = null;
@@ -59,17 +52,33 @@ public class Tabular implements AutoCloseable {
     // Intern datastore
 
     // Local Fs
-    dataStores.put(FsDataStore.getLocalFileSystem().getName(), FsDataStore.getLocalFileSystem());
+    dataStores.put(LOCAL_FILE_SYSTEM, FsDataStore.getLocalFileSystem());
 
     // Memory
-    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE,MemorySystemProvider.SCHEME);
+    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE, MemorySystemProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
+    this.setDefaultDataStore(memoryDataBase);
 
     // TpcsDs
-    DataStore tpcDs = DataStore.of(TPCDS_DATASTORE,TPCDS_DATASTORE)
+    DataStore tpcDs = DataStore.of(TPCDS_DATASTORE, TPCDS_DATASTORE)
       .addProperty("scale", "0.01");
     dataStores.put(tpcDs.getName(), tpcDs);
 
+  }
+
+  public void setDefaultDataStore(DataStore dataStore) {
+    this.defaultDatastore = dataStore;
+  }
+
+  public void setDefaultDataStore(String dataStoreName) {
+    DataStore dataStore = this.dataStores.get(dataStoreName);
+    if (dataStore != null) {
+      this.defaultDatastore = dataStore;
+    } else {
+      throw new RuntimeException(
+        Strings.multiline("The data store (" + dataStoreName + ") was not found and could not be set as the default one.",
+          "The actual datastore are (" + this.dataStores.entrySet() + ")"));
+    }
   }
 
   public static Tabular tabular() {
@@ -97,11 +106,11 @@ public class Tabular implements AutoCloseable {
    * @return
    */
   public DataPath getDataPath(String dataUri, String... parts) {
-    assert dataUri!=null: "The first name of the data path should not be null";
+    assert dataUri != null : "The first name of the data path should not be null";
 
     // First argument
     if (!dataUri.contains(DataUri.AT_STRING)) {
-      dataUri = dataUri + DataUri.AT_STRING + DEFAULT_DATASTORE;
+      dataUri = dataUri + DataUri.AT_STRING + defaultDatastore;
     }
     DataUri dataUriObj = DataUri.of(dataUri);
     String dataStoreName = dataUriObj.getDataStore();
@@ -141,7 +150,7 @@ public class Tabular implements AutoCloseable {
   public Tabular setDataStoreVault(Path storagePath) {
 
     if (passphrase != null) {
-      dataStoreVault = dataStoreVault.of(storagePath,passphrase);
+      dataStoreVault = dataStoreVault.of(storagePath, passphrase);
     } else {
       dataStoreVault = dataStoreVault.of(storagePath);
     }
@@ -153,12 +162,10 @@ public class Tabular implements AutoCloseable {
     return this;
   }
 
-  public DataStore getOrCreateDataStore(String dataStoreName) {
-    DataStore dataStore = dataStores.get(dataStoreName);
-    if (dataStore == null) {
-      dataStore = DataStore.of(dataStoreName,DEFAUT_URL);
-      dataStores.put(dataStore.getName(), dataStore);
-    }
+
+  public DataStore createDataStore(String dataStoreName, String url) {
+    DataStore dataStore = DataStore.of(dataStoreName, url);
+    dataStores.put(dataStore.getName(), dataStore);
     return dataStore;
   }
 
@@ -176,7 +183,7 @@ public class Tabular implements AutoCloseable {
     }
     // Not really needed has the tabular object does not add any data store to the data store value
     // but this is a resource
-    if (dataStoreVault!=null) {
+    if (dataStoreVault != null) {
       dataStoreVault.close();
     }
   }
@@ -218,7 +225,7 @@ public class Tabular implements AutoCloseable {
   public List<DataPath> select(String dataUriPattern) {
     List<DataPath> dataPathsToReturn = new ArrayList<>();
     if (!dataUriPattern.contains(DataUri.AT_STRING)) {
-      dataUriPattern = dataUriPattern + DataUri.AT_STRING + DEFAULT_DATASTORE;
+      dataUriPattern = dataUriPattern + DataUri.AT_STRING + defaultDatastore;
     }
     DataUri dataUri = DataUri.of(dataUriPattern);
     String pathInUri = dataUri.getPath();
@@ -269,8 +276,8 @@ public class Tabular implements AutoCloseable {
         // Normal data uri pattern
         String dataStoreName = dataUri.getDataStore();
         DataStore dataStore = getDataStore(dataStoreName);
-        if (dataStore==null){
-          throw new RuntimeException("No data store was found with the name ("+dataStoreName+")");
+        if (dataStore == null) {
+          throw new RuntimeException("No data store was found with the name (" + dataStoreName + ")");
         }
         dataPathsToReturn = dataStore.select(pathInUri);
 
@@ -295,7 +302,7 @@ public class Tabular implements AutoCloseable {
   }
 
   public DataStore getDefaultDataStore() {
-    return this.getDataStore(DEFAULT_DATASTORE);
+    return this.defaultDatastore;
   }
 
   public FsDataStore getLocalFileDataStore() {
@@ -304,7 +311,7 @@ public class Tabular implements AutoCloseable {
 
 
   public DataPath getAndCreateRandomDataPath() {
-    return MemoryDataStore.of("random","random").getAndCreateRandomDataPath();
+    return MemoryDataStore.of("random", "random").getAndCreateRandomDataPath();
   }
 
 }

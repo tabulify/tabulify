@@ -30,6 +30,7 @@ import static net.bytle.type.Bytes.printHexBinary;
 public class Fs {
 
 
+  public static final String GLOB_SEPARATOR = "/";
   private static final Logger LOGGER = LoggerFactory.getLogger(Fs.class);
 
   /**
@@ -535,7 +536,7 @@ public class Fs {
    * /tmp/*.md
    * will return all md file in the tmp directory
    */
-  static public List<Path> getFilesByGlob(String glob) {
+  static public List<Path>  getFilesByGlob(String glob) {
 
     // Get the file system
     FileSystem fileSystem = Paths.get(".").getFileSystem();

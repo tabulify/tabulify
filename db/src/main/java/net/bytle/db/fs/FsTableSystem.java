@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
@@ -94,7 +95,7 @@ public class FsTableSystem extends TableSystem {
 
     final FsDataPath fsDataPath = (FsDataPath) dataPath;
     Path nioPath = fsDataPath.getNioPath();
-    if (nioPath==null){
+    if (nioPath == null) {
       return false;
     } else {
       return Files.exists(nioPath);
@@ -167,7 +168,6 @@ public class FsTableSystem extends TableSystem {
   }
 
 
-
   @Override
   public void drop(DataPath dataPath) {
     delete(dataPath);
@@ -199,7 +199,7 @@ public class FsTableSystem extends TableSystem {
 
   private FsFileManager getFileManager(FsDataPath fsDataPath) {
     FsFileManager fileManager = fsDataPath.getFileManager();
-    if (fileManager==null){
+    if (fileManager == null) {
       fileManager = getFileManager(fsDataPath.getNioPath());
     }
     return fileManager;
@@ -287,8 +287,8 @@ public class FsTableSystem extends TableSystem {
   @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
     FsRawDataPath fsSource = (FsRawDataPath) source;
-    if (!exists(fsSource)){
-      throw new RuntimeException("The source file ("+source+") does not exists");
+    if (!exists(fsSource)) {
+      throw new RuntimeException("The source file (" + source + ") does not exists");
     }
     FsRawDataPath fsTarget = (FsRawDataPath) target;
     TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
@@ -314,7 +314,17 @@ public class FsTableSystem extends TableSystem {
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath, String glob) {
-    throw new RuntimeException("Not yet implemented");
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
+    Path path = fsDataPath.getNioPath().toAbsolutePath().normalize();
+    String separator = path.getFileSystem().getSeparator();
+    if (!separator.equals(Fs.GLOB_SEPARATOR)) {
+      glob = glob.replace(Fs.GLOB_SEPARATOR, separator);
+    }
+    String finalGlob = path + separator + glob;
+    List<Path> paths = Fs.getFilesByGlob(finalGlob);
+    return paths.stream()
+      .map(p -> getFileManager(p).createDataPath(fsDataPath.getDataStore(), p))
+      .collect(Collectors.toList());
   }
 
   @Override

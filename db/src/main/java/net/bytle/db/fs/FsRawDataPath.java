@@ -27,6 +27,7 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
 
   }
 
+
   public static FsRawDataPath of(FsDataStore fsDataStore, Path path) {
 
     return new FsRawDataPath(fsDataStore, path);
@@ -78,7 +79,7 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
   }
 
   @Override
-  public DataStore getDataStore() {
+  public FsDataStore getDataStore() {
     return fsDataStore;
   }
 

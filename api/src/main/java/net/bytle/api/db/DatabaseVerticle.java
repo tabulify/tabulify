@@ -95,7 +95,7 @@ public class DatabaseVerticle extends AbstractVerticle {
       String dataStoreName = "ip";
       Tabular tabular = Tabular.tabular();
       DataPath ipTable = tabular
-        .getOrCreateDataStore(dataStoreName)
+        .getDataStore(dataStoreName)
         .setConnectionString(url)
         .getDataPath("ip");
       if (Tabulars.getSize(ipTable) == 0) {

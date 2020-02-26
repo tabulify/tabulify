@@ -23,9 +23,9 @@ public class BytleSchemaDataDefs {
         try {
             List<DataPath> dataPaths = new ArrayList<>();
             List<URL> urls = new ArrayList<>();
-            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/F_SALES--datadef.yml"));
-            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/D_CATEGORY--datadef.yml"));
-            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/D_TIME--datadef.yml"));
+            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/F_SALES--datagen.yml"));
+            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/D_CATEGORY--datagen.yml"));
+            urls.add(BytleSchemaDataDefs.class.getResource("/DataDef/D_TIME--datagen.yml"));
 
             for (URL url: urls) {
                 dataPaths.add(tabular.getDataPathOfDataDef(Paths.get(url.toURI())));
