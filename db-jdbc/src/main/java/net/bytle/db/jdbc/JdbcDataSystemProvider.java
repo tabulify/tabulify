@@ -24,7 +24,7 @@ public class JdbcDataSystemProvider extends DataStoreProvider {
    *                           permission.
    */
   @Override
-  public DataStore getDataStore(String name, String url) {
+  public DataStore createDataStore(String name, String url) {
 
     // check installed providers
     for (JdbcDataStoreExtensionProvider provider : JdbcDataStoreExtensionProvider.installedProviders()) {
@@ -34,7 +34,7 @@ public class JdbcDataSystemProvider extends DataStoreProvider {
     }
 
     // No provider found, return the default data store
-    return new AnsiDataStore(name, url);
+    return new SqlDataStore(name, url);
 
   }
 

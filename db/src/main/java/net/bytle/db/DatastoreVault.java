@@ -37,25 +37,25 @@ public class DatastoreVault implements AutoCloseable {
   static {
 
     internalDataStores.add(
-      DataStore.of(SQLITE, getSqliteConnectionString(SQLITE))
+      DataStore.createDataStoreFromProviderOrDefault(SQLITE, getSqliteConnectionString(SQLITE))
         .addProperty("driver", "org.sqlite.JDBC")
         .setDescription("The sqlite default data store connection")
     );
 
     internalDataStores.add(
-      DataStore.of(SQLITE_TARGET, getSqliteConnectionString(SQLITE_TARGET))
+      DataStore.createDataStoreFromProviderOrDefault(SQLITE_TARGET, getSqliteConnectionString(SQLITE_TARGET))
         .addProperty("driver", "org.sqlite.JDBC")
         .setDescription("The default sqlite target data store (Sqlite cannot read and write with the same connection)")
     );
 
     internalDataStores.add(
-      DataStore.of(ORACLE, "jdbc:oracle:thin:@[host]:[port]/[servicename]")
+      DataStore.createDataStoreFromProviderOrDefault(ORACLE, "jdbc:oracle:thin:@[host]:[port]/[servicename]")
         .setDescription("The default oracle data store")
         .addProperty("driver", "oracle.jdbc.OracleDriver")
     );
 
     internalDataStores.add(
-      DataStore.of(SQLSERVER, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
+      DataStore.createDataStoreFromProviderOrDefault(SQLSERVER, "jdbc:sqlserver://localhost;databaseName=AdventureWorks;")
         .setDescription("The default sqlserver data store")
         .addProperty("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
         .setUser("sa")
@@ -63,14 +63,14 @@ public class DatastoreVault implements AutoCloseable {
     );
 
     internalDataStores.add(
-      DataStore.of(MYSQL, "jdbc:mysql://[host]:[port]/[database]")
+      DataStore.createDataStoreFromProviderOrDefault(MYSQL, "jdbc:mysql://[host]:[port]/[database]")
         .setDescription("The default mysql data store")
         .addProperty("driver", "com.mysql.jdbc.Driver")
     );
 
     // jdbc:postgresql://host:port/database?prop=value
     internalDataStores.add(
-      DataStore.of(POSTGRESQL, "jdbc:postgresql://host:port/test?ssl=true")
+      DataStore.createDataStoreFromProviderOrDefault(POSTGRESQL, "jdbc:postgresql://host:port/test?ssl=true")
         .setDescription("The default postgres data store")
         .addProperty("driver", "org.postgresql.Driver")
     );
@@ -241,7 +241,7 @@ public class DatastoreVault implements AutoCloseable {
       for (String name : ini.keySet()) {
         Wini.Section iniSection = ini.get(name);
         String connectionString = iniSection.get(URL);
-        DataStore dataStore = DataStore.of(name, connectionString);
+        DataStore dataStore = DataStore.createDataStoreFromProviderOrDefault(name, connectionString);
         dataStores.put(name, dataStore);
         for (String propertyName : iniSection.keySet())
           switch (propertyName) {

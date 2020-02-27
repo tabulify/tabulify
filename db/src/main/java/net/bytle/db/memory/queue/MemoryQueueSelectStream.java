@@ -102,7 +102,7 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   }
 
   @Override
-  public void buildDataDef(RelationDef relationDef) {
+  public void runtimeDataDef(RelationDef relationDef) {
 
   }
 

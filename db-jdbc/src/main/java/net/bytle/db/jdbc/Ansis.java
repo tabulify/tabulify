@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
 
-import static net.bytle.db.jdbc.AnsiDataStore.DB_SQLITE;
+import static net.bytle.db.jdbc.SqlDataStore.DB_SQLITE;
 
 /**
  * Static method for an ANSI database
@@ -39,7 +39,7 @@ public class Ansis {
         final String schema_name = tableResultSet.getString("TABLE_SCHEM");
         final String cat_name = tableResultSet.getString("TABLE_CAT");
         final String type_name = tableResultSet.getString("TABLE_TYPE");
-        AnsiDataPath childDataPath = AnsiDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name)
+        AnsiDataPath childDataPath = jdbcDataPath.getDataStore().getDataPath(cat_name, schema_name, table_name)
           .setType(type_name);
         jdbcDataPaths.add(childDataPath);
       }
@@ -122,7 +122,7 @@ public class Ansis {
   /**
    * Todo: Add {@link DatabaseMetaData#getClientInfoProperties()}
    */
-  public static void printDatabaseInformation(AnsiDataStore jdbcDataStore) {
+  public static void printDatabaseInformation(SqlDataStore jdbcDataStore) {
 
     System.out.println("Information about the database (" + jdbcDataStore.getName() + "):");
 
@@ -204,7 +204,7 @@ public class Ansis {
   /**
    * Print data type given by the driver
    */
-  public static void printDataTypeInformation(AnsiDataStore jdbcDataStore) {
+  public static void printDataTypeInformation(SqlDataStore jdbcDataStore) {
 
     Set<SqlDataType> sqlDataTypes = jdbcDataStore.getSqlDataTypes();
 
@@ -279,7 +279,7 @@ public class Ansis {
      * for now a hack
      * because Sqlite does not support alter table drop foreign keys
      */
-    AnsiDataStore dataStore = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    SqlDataStore dataStore = (SqlDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataStore.getProductName().equals(DB_SQLITE)) {
       AnsiDataPath jdbcDataPath = (AnsiDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();

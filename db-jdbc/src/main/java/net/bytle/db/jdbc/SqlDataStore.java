@@ -17,19 +17,19 @@ import java.util.stream.Collectors;
 /**
  * An object with all meta information about a JDBC data store
  */
-public class AnsiDataStore extends DataStore {
+public class SqlDataStore extends DataStore {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AnsiDataStore.class);
-  private AnsiSqlSystem ansiSqlSystem;
+  private static final Logger LOGGER = LoggerFactory.getLogger(SqlDataStore.class);
+  private SqlDataSystem sqlDataSystem;
 
   @Override
-  public AnsiDataStore addProperty(String key, String value) {
+  public SqlDataStore addProperty(String key, String value) {
     super.addProperty(key, value);
     return this;
   }
 
   @Override
-  public AnsiDataStore setStrict(boolean strict) {
+  public SqlDataStore setStrict(boolean strict) {
     super.setStrict(strict);
     return this;
   }
@@ -49,13 +49,13 @@ public class AnsiDataStore extends DataStore {
   private JdbcDataProcessingEngine processingEngine;
 
 
-  public AnsiDataStore(String name, String url) {
+  public SqlDataStore(String name, String url) {
     super(name, url);
   }
 
-  public static AnsiDataStore of(String name, String url) {
+  public static SqlDataStore of(String name, String url) {
 
-    return new AnsiDataStore(name, url);
+    return new SqlDataStore(name, url);
 
   }
 
@@ -67,13 +67,13 @@ public class AnsiDataStore extends DataStore {
    * @param jdbcDriver
    * @return
    */
-  public AnsiDataStore setDriver(String jdbcDriver) {
+  public SqlDataStore setDriver(String jdbcDriver) {
     super.addProperty(DRIVER_PROPERTY_KEY, jdbcDriver);
     return this;
   }
 
 
-  public AnsiDataStore setPostConnectionStatement(String connectionScriptValue) {
+  public SqlDataStore setPostConnectionStatement(String connectionScriptValue) {
     super.addProperty(POST_STATEMENT_PROPERTY_KEY, connectionScriptValue);
     return this;
   }
@@ -93,7 +93,7 @@ public class AnsiDataStore extends DataStore {
 
 
   @Override
-  public AnsiDataStore setConnectionString(String connectionString) {
+  public SqlDataStore setConnectionString(String connectionString) {
 
     if (isOpen()) {
       throw new RuntimeException("The connection string cannot be changed while there is a connection. It has already the value (" + this.connectionString + ") and cannot be set to (" + connectionString + ")");
@@ -109,24 +109,24 @@ public class AnsiDataStore extends DataStore {
   }
 
   @Override
-  public AnsiDataStore setUser(String user) {
+  public SqlDataStore setUser(String user) {
     super.setUser(user);
     return this;
   }
 
   @Override
-  public AnsiDataStore setPassword(String password) {
+  public SqlDataStore setPassword(String password) {
     super.setPassword(password);
     return this;
   }
 
   @Override
-  public AnsiSqlSystem getDataSystem() {
+  public SqlDataSystem getDataSystem() {
 
-     if (ansiSqlSystem == null) {
-       ansiSqlSystem = new AnsiSqlSystem(this);
+     if (sqlDataSystem == null) {
+       sqlDataSystem = new SqlDataSystem(this);
      }
-    return ansiSqlSystem;
+    return sqlDataSystem;
 
   }
 

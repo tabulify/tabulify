@@ -25,7 +25,7 @@ public class AnsiDataPath extends DataPathAbs {
   private final String name;
   private final String schema;
   private final String catalog;
-  private final AnsiDataStore jdbcDataStore;
+  private final SqlDataStore jdbcDataStore;
 
 
   /**
@@ -53,7 +53,7 @@ public class AnsiDataPath extends DataPathAbs {
    * @param table_name
    * @return
    */
-  public static AnsiDataPath of(AnsiDataStore dataStore, String cat_name, String schema_name, String table_name) {
+  public static AnsiDataPath of(SqlDataStore dataStore, String cat_name, String schema_name, String table_name) {
     return new AnsiDataPath(dataStore, cat_name, schema_name, table_name);
   }
 
@@ -65,7 +65,7 @@ public class AnsiDataPath extends DataPathAbs {
    * @param dataUri
    * @return
    */
-  public static AnsiDataPath of(AnsiDataStore jdbcDataStore, DataUri dataUri) {
+  public static AnsiDataPath of(SqlDataStore jdbcDataStore, DataUri dataUri) {
 
     String path = dataUri.getPath();
     List<String> pathSegments = new ArrayList<>();
@@ -144,7 +144,7 @@ public class AnsiDataPath extends DataPathAbs {
 
   }
 
-  public AnsiDataPath(AnsiDataStore jdbcDataStore, String query) {
+  public AnsiDataPath(SqlDataStore jdbcDataStore, String query) {
     this.jdbcDataStore = jdbcDataStore;
     this.setType(QUERY_TYPE);
     this.setQuery(query);
@@ -156,7 +156,7 @@ public class AnsiDataPath extends DataPathAbs {
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #ofQuery(AnsiDataStore, String)}
+   * Query has another one, See {@link #ofQuery(SqlDataStore, String)}
    * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
    *
    * @param jdbcDataStore
@@ -164,7 +164,7 @@ public class AnsiDataPath extends DataPathAbs {
    * @param schema
    * @param name
    */
-  public AnsiDataPath(AnsiDataStore jdbcDataStore, String catalog, String schema, String name) {
+  public AnsiDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
 
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
@@ -174,12 +174,12 @@ public class AnsiDataPath extends DataPathAbs {
   }
 
 
-  public static AnsiDataPath ofQuery(AnsiDataStore jdbcDataStore, String query) {
+  public static AnsiDataPath ofQuery(SqlDataStore jdbcDataStore, String query) {
     return new AnsiDataPath(jdbcDataStore, query);
   }
 
   @Override
-  public AnsiDataStore getDataStore() {
+  public SqlDataStore getDataStore() {
     return jdbcDataStore;
   }
 

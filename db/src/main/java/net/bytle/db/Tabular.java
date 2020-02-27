@@ -55,12 +55,12 @@ public class Tabular implements AutoCloseable {
     dataStores.put(LOCAL_FILE_SYSTEM, FsDataStore.getLocalFileSystem());
 
     // Memory
-    DataStore memoryDataBase = DataStore.of(MEMORY_DATASTORE, MemoryDataStoreProvider.SCHEME);
+    DataStore memoryDataBase = DataStore.createDataStoreFromProviderOrDefault(MEMORY_DATASTORE, MemoryDataStoreProvider.SCHEME);
     dataStores.put(memoryDataBase.getName(), memoryDataBase);
     this.setDefaultDataStore(memoryDataBase);
 
     // TpcsDs
-    DataStore tpcDs = DataStore.of(TPCDS_DATASTORE, TPCDS_DATASTORE)
+    DataStore tpcDs = DataStore.createDataStoreFromProviderOrDefault(TPCDS_DATASTORE, TPCDS_DATASTORE)
       .addProperty("scale", "0.01");
     dataStores.put(tpcDs.getName(), tpcDs);
 
@@ -164,7 +164,7 @@ public class Tabular implements AutoCloseable {
 
 
   public DataStore createDataStore(String dataStoreName, String url) {
-    DataStore dataStore = DataStore.of(dataStoreName, url);
+    DataStore dataStore = DataStore.createDataStoreFromProviderOrDefault(dataStoreName, url);
     dataStores.put(dataStore.getName(), dataStore);
     return dataStore;
   }

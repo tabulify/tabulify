@@ -1,7 +1,7 @@
 package net.bytle.db.jdbc.Hive;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
@@ -15,7 +15,7 @@ import java.sql.Types;
 public class JdbcDataStoreExtensionIHive extends JdbcDataStoreExtension {
 
 
-  public JdbcDataStoreExtensionIHive(AnsiDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHive(SqlDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 

@@ -1,14 +1,14 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.spi.DataPath;
 
 public class SqliteDataPath extends AnsiDataPath implements DataPath {
 
 
+  public static final String SCHEMA_NAME = "";
   private final SqliteDataStore sqliteDataStore;
-  private SqliteDataDef sqliteDataDef;
 
   public SqliteDataPath(SqliteDataStore jdbcDataStore, String catalog, String schema, String name) {
     super(jdbcDataStore, catalog, schema, name);
@@ -17,11 +17,11 @@ public class SqliteDataPath extends AnsiDataPath implements DataPath {
 
   @Override
   public AnsiDataPath getSchema() {
-    return new SqliteDataPath(sqliteDataStore,"","",null);
+    return new SqliteDataPath(sqliteDataStore,"", SCHEMA_NAME,null);
   }
 
   @Override
-  public AnsiDataStore getDataStore() {
+  public SqlDataStore getDataStore() {
     return super.getDataStore();
   }
 
@@ -39,5 +39,14 @@ public class SqliteDataPath extends AnsiDataPath implements DataPath {
       relationDef = new SqliteDataDef(this,false);
     }
     return (SqliteDataDef) relationDef;
+  }
+
+  @Override
+  public SqliteDataPath getChild(String name) {
+    if (super.getSchema().getName().equals(SCHEMA_NAME)){
+      return new SqliteDataPath(sqliteDataStore,null,null,name);
+    } else {
+      throw  new RuntimeException("You can't ask a children from a table. You are asking a children from the table ("+this+")");
+    }
   }
 }

@@ -251,6 +251,9 @@ public class Tabulars {
     if (!Tabulars.exists(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
     }
+    if (isContainer(dataPath)){
+      throw new RuntimeException("The data path ("+dataPath+")  is a container, it had therefore no size, you can't ask for its size");
+    }
     return dataPath.getDataStore().getDataSystem().size(dataPath);
   }
 

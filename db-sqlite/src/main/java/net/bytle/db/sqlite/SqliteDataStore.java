@@ -1,7 +1,7 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.type.Strings;
 
@@ -9,10 +9,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Types;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SqliteDataStore extends AnsiDataStore {
+import static net.bytle.db.sqlite.SqliteDataPath.SCHEMA_NAME;
+
+public class SqliteDataStore extends SqlDataStore {
 
 
   private SqliteSqlSystem sqliteDataSystem;
@@ -44,15 +48,26 @@ public class SqliteDataStore extends AnsiDataStore {
   }
 
   @Override
+  public AnsiDataPath getCurrentDataPath() {
+    return getDataPath("");
+  }
+
+  @Override
   public SqliteDataPath getDataPath(String... names) {
+
+    // Filter out the null value (they comes from Jdbc for instance)
+    names = Arrays.stream(names)
+      .filter(Objects::nonNull)
+      .toArray(String[]::new);
 
     switch (names.length) {
       case 0:
         throw new RuntimeException("We can't create a path without names");
       case 1:
         switch (names[0]) {
+          case SCHEMA_NAME:
           case AnsiDataPath.CURRENT_WORKING_DIRECTORY:
-            return new SqliteDataPath(this, null, AnsiDataPath.CURRENT_WORKING_DIRECTORY, null);
+            return new SqliteDataPath(this, null, SCHEMA_NAME, null);
           case AnsiDataPath.PARENT_DIRECTORY:
             throw new RuntimeException("Sqlite does not have the notion of catalog or schema, you can't ask therefore for a parent");
           default:

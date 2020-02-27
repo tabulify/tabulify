@@ -291,7 +291,9 @@ public class DataGeneration {
   }
 
   public DataGeneration addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
-
+    if (Tabulars.isContainer(targetDataPath)){
+      targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
+    }
     // Add the transfers
     transfers.put(targetDataPath, sourceDataPath);
     return this;

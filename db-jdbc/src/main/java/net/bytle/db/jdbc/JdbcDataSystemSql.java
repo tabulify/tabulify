@@ -10,11 +10,11 @@ import java.util.stream.IntStream;
 
 /**
  *
- * Sql statement are in the class {@link AnsiSqlSystem} closed to the operations
+ * Sql statement are in the class {@link SqlDataSystem} closed to the operations
  * that they supports
  *
- * For example, the truncate statement can be found at {@link AnsiSqlSystem#truncateStatement(AnsiDataPath)}
- * next to the {@link AnsiSqlSystem#truncate(DataPath)} operations
+ * For example, the truncate statement can be found at {@link SqlDataSystem#truncateStatement(AnsiDataPath)}
+ * next to the {@link SqlDataSystem#truncate(DataPath)} operations
  *
  * The SQL function below
  * Schema implementation
@@ -40,10 +40,10 @@ public class JdbcDataSystemSql {
      *
      * The databaseName of a table in a SQL statement
      */
-    public static String getStatementTableName(AnsiDataPath jdbcDataPath) {
+    public static String getQuotedTableName(AnsiDataPath jdbcDataPath) {
 
 
-        final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
+        final SqlDataStore dataStore = jdbcDataPath.getDataStore();
         String identifierQuoteString = dataStore.getIdentifierQuote();
         final String tableName = jdbcDataPath.getName();
         return identifierQuoteString+ tableName +identifierQuoteString;
@@ -138,7 +138,7 @@ public class JdbcDataSystemSql {
 
         AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
 
-        final String statementTableName = getStatementTableName(jdbcDataPath);
+        final String statementTableName = getQuotedTableName(jdbcDataPath);
 
         // No schema functionality (Sqlite has a schema on database level)
         if (jdbcDataPath.getSchema() == null) {

@@ -106,9 +106,10 @@ public class GenSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public RelationDef getSelectDataDef() {
-    return this.genDataPath.getOrCreateDataDef();
+  public void runtimeDataDef(RelationDef relationDef) {
+
   }
+
 
   @Override
   public Double getDouble(int columnIndex) {

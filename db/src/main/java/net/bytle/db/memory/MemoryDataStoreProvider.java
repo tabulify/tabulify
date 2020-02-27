@@ -31,7 +31,7 @@ public class MemoryDataStoreProvider extends DataStoreProvider {
    *                           permission.
    */
   @Override
-  public DataStore getDataStore(String name, String url) {
+  public DataStore createDataStore(String name, String url) {
 
     return new MemoryDataStore(name, url);
 

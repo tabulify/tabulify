@@ -10,11 +10,11 @@ import java.util.List;
 /**
  *
  * */
-public class JdbcDataStoreExtensionIHana extends AnsiSqlSystem {
+public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
 
 
 
-  public JdbcDataStoreExtensionIHana(AnsiDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHana(SqlDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 

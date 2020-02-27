@@ -61,7 +61,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
    * internal data stores.
    */
   public static DataStore of(DataStore ds) {
-    return DataStore.of(ds.getName(), ds.getConnectionString())
+    return DataStore.createDataStoreFromProviderOrDefault(ds.getName(), ds.getConnectionString())
       .setPassword(ds.getPassword())
       .setUser(ds.getUser())
       .setProperties(ds.getProperties())
@@ -149,12 +149,12 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     return this;
   }
 
-  public static DataStore of(String name, String url) {
+  public static DataStore createDataStoreFromProviderOrDefault(String name, String url) {
 
     List<DataStoreProvider> installedProviders = DataStoreProvider.installedProviders();
     for (DataStoreProvider dataStoreProvider : installedProviders) {
       if (dataStoreProvider.accept(url)) {
-        DataStore dataStore = dataStoreProvider.getDataStore(name, url);
+        DataStore dataStore = dataStoreProvider.createDataStore(name, url);
         if (dataStore == null) {
           String message = "The table system is null for the provider (" + dataStoreProvider.getClass().toString() + ")";
           DbLoggers.LOGGER_DB_ENGINE.severe(message);
@@ -251,9 +251,10 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public DataPath createOrMergeDataPathOfDataDef(Path dataDefPath) {
     assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
-    assert dataDefPath.getFileName().toString().contains(TableDef.DATA_DEF_SUFFIX) : "The file (" + dataDefPath.getFileName().toString() + ") has not the data def extension (" + TableDef.DATA_DEF_SUFFIX + ")";
+    String fileName = dataDefPath.getFileName().toString();
+    assert fileName.matches("(.*)--(.*).yml") : "The file (" + fileName + ") has not the data def extension (" + TableDef.DATA_DEF_SUFFIX + ")";
 
-    String name = dataDefPath.getFileName().toString().replace(TableDef.DATA_DEF_SUFFIX, "");
+    String name = fileName.substring(0,fileName.lastIndexOf("--"));
     DataPath dataPath = this.getDataPath(name);
 
     InputStream input;

@@ -1,5 +1,6 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -66,7 +67,7 @@ public class CsvSelectStream extends SelectStreamAbs {
    */
   protected boolean safeIterate() {
 
-    currentRecord = getSelectDataDef().safeIterate(recordIterator);
+    currentRecord = this.csvDataPath.getOrCreateDataDef().safeIterate(recordIterator);
     if (currentRecord == null) {
       return false;
     } else {
@@ -125,9 +126,7 @@ public class CsvSelectStream extends SelectStreamAbs {
     try {
 
       CsvDataDef dataDef = this.csvDataPath.getOrCreateDataDef();
-      if (dataDef.getColumnsSize() == 0) {
-          dataDef.scanAndAddColumnNames();
-      }
+      runtimeDataDef(dataDef);
       CSVFormat csvFormat = dataDef.getCsvFormat();
       Path nioPath = csvDataPath.getNioPath();
       csvParser = CSVParser.parse(nioPath, dataDef.getCharset(), csvFormat);
@@ -165,12 +164,16 @@ public class CsvSelectStream extends SelectStreamAbs {
 
   /**
    *
-   * @return the select data def
-   * If there is no structure, {@link #beforeFirst()} will initiate a run time data definition
+   * Will add the columns names from the header if there is no columns
+   *
+   * {@link #beforeFirst()} initiate it at run time data definition
    */
   @Override
-  public CsvDataDef getSelectDataDef() {
-    return csvDataPath.getOrCreateDataDef();
+  public void runtimeDataDef(RelationDef relationDef) {
+    CsvDataDef csvDataDef = (CsvDataDef) relationDef;
+    if (csvDataDef.getColumnsSize() == 0) {
+      csvDataDef.scanAndAddColumnNames();
+    }
   }
 
 

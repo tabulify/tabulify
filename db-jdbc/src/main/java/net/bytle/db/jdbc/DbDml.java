@@ -75,7 +75,7 @@ public class DbDml {
                 ColumnDef columnDef = target.getColumnDef(colName);
                 if (!columnDef.getIsAutoincrement()) {
                     String fieldQuote = "\"";
-                    if (dataPath.getDataStore().getCurrentConnection().getMetaData().getDatabaseProductName().equals(AnsiDataStore.DB_HIVE)) {
+                    if (dataPath.getDataStore().getCurrentConnection().getMetaData().getDatabaseProductName().equals(SqlDataStore.DB_HIVE)) {
                         fieldQuote = "`";
                     }
                     insertStatement += fieldQuote + columnDef.getColumnName() + fieldQuote + ", ";

@@ -38,7 +38,7 @@ public interface SelectStream extends AutoCloseable {
    *   * a text file without any defined structure will add a column called `lines`
    *
    */
-  void buildDataDef(RelationDef relationDef);
+  void runtimeDataDef(RelationDef relationDef);
 
   Double getDouble(int columnIndex);
 

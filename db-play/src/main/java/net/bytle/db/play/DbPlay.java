@@ -2,7 +2,7 @@ package net.bytle.db.play;
 
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
@@ -120,7 +120,7 @@ public class DbPlay {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the clean operations: " + desc);
     String target = (String) Maps.getPropertyCaseIndependent(task, "target");
-    AnsiDataStore jdbcDataStore = datastoreVault.getDataStore(target);
+    SqlDataStore jdbcDataStore = datastoreVault.getDataStore(target);
     DataPath dataPath = DataPaths.of(jdbcDataStore, ".");
     List<DataPath> children = DataPaths.getChildren(dataPath);
     ForeignKeyDag.get(children).getDropOrderedTables()
@@ -137,7 +137,7 @@ public class DbPlay {
     System.out.println("Starting the load operations: " + desc);
 
     // Source
-    AnsiDataStore jdbcDataStore;
+    SqlDataStore jdbcDataStore;
     String targetPath;
     DataPath sourceDataPath;
     Path sourcePath = null;
@@ -194,7 +194,7 @@ public class DbPlay {
     System.out.println("Starting the sql operations: " + desc);
     String sourceValue = (String) Maps.getPropertyCaseIndependent(task, "source");
     DatastoreVault datastoreVault = DatastoreVault.of(dataDir.resolve("dsn.ini"));
-    AnsiDataStore sourceJdbcDataStore = datastoreVault.getDataStore(sourceValue);
+    SqlDataStore sourceJdbcDataStore = datastoreVault.getDataStore(sourceValue);
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     String targetDsn = null;
     String targetName = null;
@@ -203,7 +203,7 @@ public class DbPlay {
       targetDsn = (String) Maps.getPropertyCaseIndependent(targetMap, "dsn");
       targetName = (String) Maps.getPropertyCaseIndependent(targetMap, "name");
     }
-    AnsiDataStore targetJdbcDataStore = datastoreVault.getDataStore(targetDsn);
+    SqlDataStore targetJdbcDataStore = datastoreVault.getDataStore(targetDsn);
     String sqlValue = (String) Maps.getPropertyCaseIndependent(task, "sql");
     if (targetName == null) {
       targetName = Fs.getFileNameWithoutExtension(sqlValue);

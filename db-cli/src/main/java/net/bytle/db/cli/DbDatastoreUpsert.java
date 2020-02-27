@@ -6,7 +6,7 @@ import net.bytle.cli.CliParser;
 import net.bytle.cli.Clis;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.database.DataStore;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
@@ -102,7 +102,7 @@ public class DbDatastoreUpsert {
 
       DataStore dataStore = datastoreVault.getDataStore(datastoreName);
       if (dataStore == null) {
-        dataStore = DataStore.of(datastoreName, urlValue);
+        dataStore = DataStore.createDataStoreFromProviderOrDefault(datastoreName, urlValue);
         datastoreVault.add(dataStore);
         LOGGER.info("The datastore (" + datastoreName + ") was added");
       } else {
@@ -113,7 +113,7 @@ public class DbDatastoreUpsert {
         .setUser(userValue)
         .setPassword(pwdValue);
       if (driverValue!=null) {
-        dataStore.addProperty(AnsiDataStore.DRIVER_PROPERTY_KEY, driverValue);
+        dataStore.addProperty(SqlDataStore.DRIVER_PROPERTY_KEY, driverValue);
       }
 
       LOGGER.info("Done");

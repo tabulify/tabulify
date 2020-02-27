@@ -27,7 +27,7 @@ public class LineSelectStream extends SelectStreamAbs {
 
     super(lineDataPath);
     this.lineDataPath = lineDataPath;
-    buildDataDef(lineDataPath.getOrCreateDataDef());
+    runtimeDataDef(lineDataPath.getOrCreateDataDef());
     beforeFirst();
   }
 
@@ -107,7 +107,7 @@ public class LineSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public void buildDataDef(RelationDef relationDef) {
+  public void runtimeDataDef(RelationDef relationDef) {
     if (relationDef.getColumnsSize()==0) {
       // One column only
       relationDef.addColumn("Lines");

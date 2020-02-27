@@ -34,7 +34,7 @@ public class FsDataStoreProvider extends DataStoreProvider {
      *                           permission.
      */
     @Override
-    public FsDataStore getDataStore(String name, String url) {
+    public FsDataStore createDataStore(String name, String url) {
 
       return new FsDataStore(name, url);
 

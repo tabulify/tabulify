@@ -16,9 +16,9 @@ import java.util.List;
 public abstract class JdbcDataStoreExtension {
 
 
-  private final AnsiDataStore jdbcDataStore;
+  private final SqlDataStore jdbcDataStore;
 
-  public JdbcDataStoreExtension(AnsiDataStore jdbcDataStore) {
+  public JdbcDataStoreExtension(SqlDataStore jdbcDataStore) {
     this.jdbcDataStore = jdbcDataStore;
   }
 

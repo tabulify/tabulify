@@ -1,7 +1,7 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiSqlSystem;
+import net.bytle.db.jdbc.SqlDataSystem;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -16,10 +16,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SqliteSqlSystem extends AnsiSqlSystem {
+public class SqliteSqlSystem extends SqlDataSystem {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SqliteSqlSystem.class);
   private final SqliteDataStore sqliteDataStore;
+
+
+  @Override
+  public Boolean exists(DataPath dataPath) {
+    SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
+    if (sqliteDataPath.getSchema().getName().equals(AnsiDataPath.CURRENT_WORKING_DIRECTORY)){
+      return true;
+    } else {
+      return super.exists(dataPath);
+    }
+  }
 
   public SqliteSqlSystem(SqliteDataStore sqliteDataStore) {
     super(sqliteDataStore);
@@ -49,7 +60,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
 
     List<String> statements = new ArrayList<>();
     StringBuilder statement = new StringBuilder();
-    statement.append("CREATE TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (\n");
+    statement.append("CREATE TABLE " + JdbcDataSystemSql.getQuotedTableName(dataPath) + " (\n");
     RelationDef tableDef = dataPath.getOrCreateDataDef();
     if (tableDef == null) {
       throw new RuntimeException("The dataPath (" + dataPath.toString() + ") has no columns definitions. We can't create a table from then");
@@ -132,5 +143,8 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
   }
 
 
-
+  @Override
+  public List<DataPath> getChildrenDataPath(DataPath dataPath) {
+    return super.getChildrenDataPath(dataPath);
+  }
 }

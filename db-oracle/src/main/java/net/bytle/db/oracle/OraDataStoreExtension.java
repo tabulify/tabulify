@@ -1,7 +1,7 @@
 package net.bytle.db.oracle;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
@@ -15,7 +15,7 @@ import java.sql.Types;
  */
 public class OraDataStoreExtension extends JdbcDataStoreExtension {
 
-  public OraDataStoreExtension(AnsiDataStore jdbcDataStore) {
+  public OraDataStoreExtension(SqlDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 

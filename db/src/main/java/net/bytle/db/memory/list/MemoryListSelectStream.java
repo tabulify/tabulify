@@ -97,7 +97,7 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
   }
 
   @Override
-  public void buildDataDef(RelationDef relationDef) {
+  public void runtimeDataDef(RelationDef relationDef) {
 
   }
 

@@ -131,7 +131,7 @@ public abstract class DataStoreProvider {
    * @throws SecurityException If a security manager is installed and it denies an unspecified
    *                           permission.
    */
-  public abstract DataStore getDataStore(String name, String url);
+  public abstract DataStore createDataStore(String name, String url);
 
   /**
    * If the data store extension accept this url

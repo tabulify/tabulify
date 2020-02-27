@@ -1,7 +1,7 @@
 package net.bytle.db.sqlserver;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.AnsiDataStore;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
@@ -21,7 +21,7 @@ import java.util.List;
 public class SqlServerDataStoreExtension extends JdbcDataStoreExtension {
 
 
-  public SqlServerDataStoreExtension(AnsiDataStore jdbcDataStore) {
+  public SqlServerDataStoreExtension(SqlDataStore jdbcDataStore) {
     super(jdbcDataStore);
   }
 

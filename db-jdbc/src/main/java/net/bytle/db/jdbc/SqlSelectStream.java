@@ -18,7 +18,7 @@ import static net.bytle.db.jdbc.AnsiDataPath.QUERY_TYPE;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-  private final AnsiDataStore jdbcDataStore;
+  private final SqlDataStore jdbcDataStore;
 
   private AnsiDataPath jdbcDataPath;
 
@@ -138,7 +138,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
    * @return
    */
   @Override
-  public void buildDataDef(RelationDef ansiDataDef) {
+  public void runtimeDataDef(RelationDef ansiDataDef) {
     try {
       ResultSetMetaData resultSetMetaData = getResultSet().getMetaData();
       for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {

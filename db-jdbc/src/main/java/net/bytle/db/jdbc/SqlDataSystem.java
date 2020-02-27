@@ -25,20 +25,20 @@ import java.util.List;
 /**
  * An ANSI SQL system
  */
-public class AnsiSqlSystem implements DataSystem {
+public class SqlDataSystem implements DataSystem {
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AnsiSqlSystem.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SqlDataSystem.class);
 
 
   /**
    * The data store is needed to get the connection to be able to
    * for instance {@link #execute(List)} statements
    */
-  private AnsiDataStore jdbcDataStore;
+  private SqlDataStore jdbcDataStore;
 
 
-  public AnsiSqlSystem(AnsiDataStore jdbcDataStore) {
+  public SqlDataSystem(SqlDataStore jdbcDataStore) {
     this.jdbcDataStore = jdbcDataStore;
   }
 
@@ -396,14 +396,14 @@ public class AnsiSqlSystem implements DataSystem {
     String notNullStatement = "";
     if (!columnDef.getNullable()) {
       // Hack because hive is read only, it does not support Not Null
-      if (!((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+      if (!((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
         notNullStatement = " NOT NULL";
       }
     }
 
     // Hack for Hive
     String encloseString = "\"";
-    if (((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+    if (((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
       encloseString = "`";
     }
 
@@ -418,11 +418,11 @@ public class AnsiSqlSystem implements DataSystem {
    */
   protected String createForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
 
-    AnsiDataStore jdbcDataSystem = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+    SqlDataStore jdbcDataSystem = (SqlDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
 
     // Constraint are supported from 2.1
     // https://issues.apache.org/jira/browse/HIVE-13290
-    if (jdbcDataSystem.getProductName().equals(AnsiDataStore.DB_HIVE)) {
+    if (jdbcDataSystem.getProductName().equals(SqlDataStore.DB_HIVE)) {
       if (jdbcDataSystem.getDatabaseMajorVersion() < 2) {
         return null;
       } else {
@@ -478,8 +478,8 @@ public class AnsiSqlSystem implements DataSystem {
     // TODO: Move to Hive
     // Constraint are supported from 2.1
     // https://issues.apache.org/jira/browse/HIVE-13290
-    final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
-    if (dataStore.getProductName().equals(AnsiDataStore.DB_HIVE)) {
+    final SqlDataStore dataStore = jdbcDataPath.getDataStore();
+    if (dataStore.getProductName().equals(SqlDataStore.DB_HIVE)) {
       if (dataStore.getDatabaseMajorVersion() < 2) {
         return null;
       } else {
@@ -604,7 +604,6 @@ public class AnsiSqlSystem implements DataSystem {
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
-
     return Ansis.getChildrenDataPath((AnsiDataPath) dataPath);
 
   }
@@ -651,7 +650,7 @@ public class AnsiSqlSystem implements DataSystem {
     }
   }
 
-  private AnsiDataStore getDataStore() {
+  private SqlDataStore getDataStore() {
     return jdbcDataStore;
   }
 

@@ -47,7 +47,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
         if (dataPath.getType().equals(QUERY_TYPE)) {
           // The select stream build the data def
           selectStream = SqlSelectStream.of(dataPath);
-          selectStream.buildDataDef(this);
+          selectStream.runtimeDataDef(this);
           // sqlite for instance
           if (this.getDataPath().getDataStore().getMaxWriterConnection() == 1) {
             selectStream.close();
@@ -89,7 +89,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
    * @return true if the table exists in the metadata or false
    * <p>
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   * We are not using the {@link AnsiSqlSystem#exists(DataPath)} function
+   * We are not using the {@link SqlDataSystem#exists(DataPath)} function
    * because this function will return true for a query
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    */
@@ -189,7 +189,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
    */
   protected void addForeignKeysFromMetadata() {
 
-    AnsiDataStore dataStore = this.getDataPath().getDataStore();
+    SqlDataStore dataStore = this.getDataPath().getDataStore();
 
     // The column names of the fkresult set
     String col_fk_name = "FK_NAME";
