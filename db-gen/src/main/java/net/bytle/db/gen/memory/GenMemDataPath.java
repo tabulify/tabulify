@@ -38,10 +38,10 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   }
 
   @Override
-  public GenDataDef getDataDef() {
+  public GenDataDef getOrCreateDataDef() {
     if (genDataDef == null){
       genDataDef = new GenDataDef(this);
-      super.csvDataDef = genDataDef;
+      super.relationDef = genDataDef;
     }
     return genDataDef;
   }
@@ -59,7 +59,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
 
   @Override
   public long size() {
-    return this.getDataDef().getSize();
+    return this.getOrCreateDataDef().getSize();
   }
 
   @Override
@@ -92,7 +92,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
    */
   @Override
   public Boolean exists() {
-    return this.getDataDef().getColumnsSize()>0;
+    return this.getOrCreateDataDef().getColumnsSize()>0;
   }
 
 }

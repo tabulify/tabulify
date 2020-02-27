@@ -65,9 +65,9 @@ public class JdbcDataSystemSql {
         /**
          * {@link DatabaseMetaData#getIdentifierQuoteString()}
          */
-        assert jdbcDataPath.getDataDef().getColumnsSize() !=0 : "The table ("+jdbcDataPath+") does not have any columns, a create statement cannot be created";
-        return IntStream.range(0,jdbcDataPath.getDataDef().getColumnsSize())
-                .mapToObj(i->jdbcDataPath.getDataDef().getColumnDef(i).getColumnName())
+        assert jdbcDataPath.getOrCreateDataDef().getColumnsSize() !=0 : "The table ("+jdbcDataPath+") does not have any columns, a create statement cannot be created";
+        return IntStream.range(0,jdbcDataPath.getOrCreateDataDef().getColumnsSize())
+                .mapToObj(i->jdbcDataPath.getOrCreateDataDef().getColumnDef(i).getColumnName())
                 .collect(Collectors.joining(", "));
     }
 
@@ -92,9 +92,9 @@ public class JdbcDataSystemSql {
 
         sql += columnsName + ") values (";
 
-        for (int i = 0; i < jdbcDataPath.getDataDef().getColumnsSize(); i++) {
+        for (int i = 0; i < jdbcDataPath.getOrCreateDataDef().getColumnsSize(); i++) {
             sql += "?";
-            if (!(i >= jdbcDataPath.getDataDef().getColumnsSize() - 1)) {
+            if (!(i >= jdbcDataPath.getOrCreateDataDef().getColumnsSize() - 1)) {
                 sql += ",";
             }
         }

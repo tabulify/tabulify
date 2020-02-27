@@ -12,7 +12,7 @@ public class ExcelDataPath extends FsRawDataPath {
   }
 
   @Override
-  public ExcelDataDef getDataDef() {
+  public ExcelDataDef getOrCreateDataDef() {
     return new ExcelDataDef(this);
   }
 

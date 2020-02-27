@@ -22,7 +22,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
   // if you put the query on the data def you got a recursion
   private String query;
 
-  protected RelationDef csvDataDef;
+  protected RelationDef relationDef;
   private String description;
 
 
@@ -46,11 +46,16 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
 
 
   @Override
-  public RelationDef getDataDef() {
-    if (this.csvDataDef == null) {
-      this.csvDataDef = TableDef.of(this);
+  public RelationDef getOrCreateDataDef() {
+    return createDataDef();
+  }
+
+  @Override
+  public RelationDef createDataDef() {
+    if (this.relationDef == null) {
+      this.relationDef = TableDef.of(this);
     }
-    return csvDataDef;
+    return relationDef;
   }
 
   @Override
@@ -88,7 +93,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
   @Override
   public List<DataPath> getForeignKeyDependencies() {
 
-    List<ForeignKeyDef> foreignKeys = this.getDataDef() != null ? this.getDataDef().getForeignKeys() : new ArrayList<>();
+    List<ForeignKeyDef> foreignKeys = this.getOrCreateDataDef() != null ? this.getOrCreateDataDef().getForeignKeys() : new ArrayList<>();
     List<DataPath> parentDataPaths = new ArrayList<>();
     if (foreignKeys.size() > 0) {
 
@@ -130,7 +135,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
   @Override
   public DataPath getChild(String name, RelationDef datadef) {
     DataPath dataPath = this.getChild(name);
-    DataDefs.copy(datadef,dataPath.getDataDef());
+    DataDefs.copy(datadef,dataPath.getOrCreateDataDef());
     return dataPath;
   }
 

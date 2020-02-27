@@ -71,16 +71,16 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
       + "\n)";
 
     statements.add(statement);
-    final PrimaryKeyDef primaryKey = jdbcDataPath.getDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = jdbcDataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey != null) {
       statements.add(DbDdl.getAlterTablePrimaryKeyStatement(jdbcDataPath));
     }
 
-    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getDataDef().getForeignKeys()) {
+    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getOrCreateDataDef().getForeignKeys()) {
       statements.add(DbDdl.getAlterTableForeignKeyStatement(foreignKeyDef));
     }
 
-    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getDataDef().getUniqueKeys()) {
+    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getOrCreateDataDef().getUniqueKeys()) {
       statements.add(DbDdl.getAlterTableUniqueKeyStatement(uniqueKeyDef));
     }
 

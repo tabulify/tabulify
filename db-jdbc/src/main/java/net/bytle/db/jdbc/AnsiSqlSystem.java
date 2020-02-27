@@ -81,7 +81,7 @@ public class AnsiSqlSystem implements DataSystem {
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
     AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
-    return jdbcDataPath.getDataDef().getSelectStream();
+    return jdbcDataPath.getOrCreateDataDef().getSelectStream();
   }
 
 
@@ -195,7 +195,7 @@ public class AnsiSqlSystem implements DataSystem {
     AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
 
     // Check that the foreign tables exist
-    for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+    for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
       DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
       if (!exists(foreignDataPath)) {
         throw new RuntimeException("The foreign table (" + foreignDataPath.toString() + ") does not exist");

@@ -66,7 +66,7 @@ public class DataGeneration {
   public DataGeneration addTable(DataPath targetDataPath, Long totalRows) {
 
     GenDataPath sourceDataPath = GenMemDataPath.of(targetDataPath.getName())
-      .getDataDef()
+      .getOrCreateDataDef()
       .copyDataDef(targetDataPath)
       .setMaxSize(totalRows)
       .getDataPath();
@@ -104,8 +104,8 @@ public class DataGeneration {
     // If yes, add a transfer with the parent tables
     List<DataPath> targetDataPaths = new ArrayList<>(transfers.keySet());
     for (DataPath targetDataPath : targetDataPaths) {
-      if (targetDataPath.getDataDef().getForeignKeys().size() != 0) {
-        for (ForeignKeyDef foreignKeyDef : targetDataPath.getDataDef().getForeignKeys()) {
+      if (targetDataPath.getOrCreateDataDef().getForeignKeys().size() != 0) {
+        for (ForeignKeyDef foreignKeyDef : targetDataPath.getOrCreateDataDef().getForeignKeys()) {
           DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
           if (!transfers.containsKey(foreignDataPath)) {
             long rows = Tabulars.getSize(foreignDataPath);
@@ -124,7 +124,7 @@ public class DataGeneration {
 
     // Source
     // Building the missing data generators
-    transfers.values().forEach(sourceDataPath -> sourceDataPath.getDataDef().buildMissingGenerators());
+    transfers.values().forEach(sourceDataPath -> sourceDataPath.getOrCreateDataDef().buildMissingGenerators());
 
     // The load parent option may have added a transfer
     targetDataPaths = new ArrayList<>(transfers.keySet());
@@ -133,7 +133,7 @@ public class DataGeneration {
 
       // Add the foreign collection generator to the foreign columns
       targetDataPath
-        .getDataDef()
+        .getOrCreateDataDef()
         .getForeignKeys()
         .forEach(foreignKey -> {
 
@@ -149,7 +149,7 @@ public class DataGeneration {
           GenColumnDef foreignColumn = transfers.values()
             .stream()
             .filter(dp -> dp.getName().equals(foreignTableName))
-            .flatMap(dp -> Arrays.stream(dp.getDataDef().getColumnDefs()))
+            .flatMap(dp -> Arrays.stream(dp.getOrCreateDataDef().getColumnDefs()))
             .filter(c -> c.getColumnName().equals(foreignColumnName))
             .findFirst()
             .orElse(null);
@@ -174,7 +174,7 @@ public class DataGeneration {
 
             // The table is in the data generation definition
             ColumnDef primaryColumn = foreignKey.getForeignPrimaryKey().getColumns().get(0);
-            CollectionGenerator primaryKeyCollectionGenerator = Arrays.stream(genPrimaryTable.getDataDef().getColumnDefs())
+            CollectionGenerator primaryKeyCollectionGenerator = Arrays.stream(genPrimaryTable.getOrCreateDataDef().getColumnDefs())
               .filter(c -> c.getColumnName().equals(primaryColumn.getColumnName()))
               .map(GenColumnDef::getGenerator)
               .findFirst()

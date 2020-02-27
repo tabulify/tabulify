@@ -73,7 +73,7 @@ public class CsvSelectStream extends SelectStreamAbs {
       lineNumberInTextFile++;
       if (currentRecord.size() == 1) {
         // Empty line
-        if (currentRecord.get(0).equals("") && csvDataPath.getDataDef().isIgnoreEmptyLine()) {
+        if (currentRecord.get(0).equals("") && csvDataPath.getOrCreateDataDef().isIgnoreEmptyLine()) {
           return safeIterate();
         } else {
           return true;
@@ -106,7 +106,7 @@ public class CsvSelectStream extends SelectStreamAbs {
       throw new RuntimeException("You need to go the the first row with the next() function before asking for an object");
     }
     if (columnIndex > currentRecord.size() - 1) {
-      final int size = csvDataPath.getDataDef().getColumnsSize();
+      final int size = csvDataPath.getOrCreateDataDef().getColumnsSize();
       if (currentRecord.size() > size) {
         throw new RuntimeException("There is no data at the index (" + columnIndex + ") because this tabular has (" + size + ") columns (Column 1 is at index 0).");
       } else {
@@ -124,7 +124,7 @@ public class CsvSelectStream extends SelectStreamAbs {
   public void beforeFirst() {
     try {
 
-      CsvDataDef dataDef = this.csvDataPath.getDataDef();
+      CsvDataDef dataDef = this.csvDataPath.getOrCreateDataDef();
       if (dataDef.getColumnsSize() == 0) {
           dataDef.scanAndAddColumnNames();
       }
@@ -170,7 +170,7 @@ public class CsvSelectStream extends SelectStreamAbs {
    */
   @Override
   public CsvDataDef getSelectDataDef() {
-    return csvDataPath.getDataDef();
+    return csvDataPath.getOrCreateDataDef();
   }
 
 

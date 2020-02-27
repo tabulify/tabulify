@@ -313,7 +313,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                 try {
                   Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
 
-                  ColumnDef columnDef = dataPath.getDataDef().getColumnDef(column.getKey());
+                  ColumnDef columnDef = dataPath.getOrCreateDataDef().getColumnDef(column.getKey());
                   // If the columns does not exist
                   if (columnDef == null) {
                     String type = "varchar";
@@ -322,7 +322,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                       type = (String) oType;
                     }
                     SqlDataType sqlDataType = getSqlDataTypeManager().get(type);
-                    columnDef = dataPath.getDataDef().getColumnOf(column.getKey(), sqlDataType.getClazz());
+                    columnDef = dataPath.getOrCreateDataDef().getColumnOf(column.getKey(), sqlDataType.getClazz());
                   }
 
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
@@ -367,7 +367,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
               }
               break;
             default:
-              dataPath.getDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
+              dataPath.getOrCreateDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
               break;
           }
         }

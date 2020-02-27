@@ -90,7 +90,7 @@ public class DbDatastoreInfo {
       for (int i = 0; i < dataStores.size(); i++) {
 
         DataPath datastoreInfo = tabular.getDataPath("datastoreInfo")
-          .getDataDef()
+          .getOrCreateDataDef()
           .addColumn("Property")
           .addColumn("Value")
           .getDataPath();

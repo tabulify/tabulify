@@ -26,11 +26,11 @@ public class CsvDataPath extends LineDataPath {
   }
 
   @Override
-  public CsvDataDef getDataDef() {
-    if (this.csvDataDef == null) {
-      this.csvDataDef = new CsvDataDef(this);
+  public CsvDataDef getOrCreateDataDef() {
+    if (this.relationDef == null) {
+      this.relationDef = new CsvDataDef(this);
     }
-    return (CsvDataDef) this.csvDataDef;
+    return (CsvDataDef) this.relationDef;
   }
 
   @Override

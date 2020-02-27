@@ -58,7 +58,7 @@ public class DataDefs {
 
   public static RelationDef of(DataPath dataPath) {
 
-    return dataPath.getDataDef();
+    return dataPath.getOrCreateDataDef();
 
   }
 
@@ -86,15 +86,15 @@ public class DataDefs {
   public static DataPath getColumnsDataPath(Tabular tabular, List<DataPath> dataPaths) {
 
     DataPath columnsInfoDataPath = tabular.getDataPath("columns")
-      .getDataDef()
+      .getOrCreateDataDef()
       .getDataPath();
 
     if (dataPaths.size() >= 1) {
-      columnsInfoDataPath.getDataDef()
+      columnsInfoDataPath.getOrCreateDataDef()
         .addColumn("#")
         .addColumn("Table Name");
     }
-    columnsInfoDataPath.getDataDef()
+    columnsInfoDataPath.getOrCreateDataDef()
       .addColumn("Position")
       .addColumn("Column Name")
       .addColumn("Data Type")
@@ -109,13 +109,13 @@ public class DataDefs {
     ) {
       int i = 0;
       for (DataPath dataPath : dataPaths) {
-        for (ColumnDef columnDef : dataPath.getDataDef().getColumnDefs()) {
+        for (ColumnDef columnDef : dataPath.getOrCreateDataDef().getColumnDefs()) {
 
           Object[] columnsColumns = {
             columnDef.getColumnPosition(),
             columnDef.getColumnName(),
             columnDef.getDataType().getTypeNames(),
-            (dataPath.getDataDef().getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
+            (dataPath.getOrCreateDataDef().getPrimaryKey().getColumns().contains(columnDef) ? "x" : ""),
             (columnDef.getNullable() ? "x" : ""),
             // columnDef.getDefault(),
             columnDef.getIsAutoincrement(),
@@ -160,13 +160,13 @@ public class DataDefs {
       DataPath targetForeignDataPath = target.getDataPath().getSibling(sourceForeignDataPath.getName());
       // Does the table exist in the target
       if (Tabulars.exists(targetForeignDataPath)) {
-        PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getDataDef().getPrimaryKey();
+        PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getOrCreateDataDef().getPrimaryKey();
         if (targetPrimaryKey != null) {
           List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
             getColumns().stream()
             .map(ColumnDef::getColumnName)
             .collect(Collectors.toList());
-          List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+          List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getOrCreateDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
           // Do they have the same primary key columns
           if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
             // Create it then

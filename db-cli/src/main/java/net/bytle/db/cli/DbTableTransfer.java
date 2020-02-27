@@ -101,7 +101,7 @@ public class DbTableTransfer {
           Collections.sort(resultSetListeners);
 
           DataPath result = tabular.getDataPath("result_table_transfer")
-            .getDataDef()
+            .getOrCreateDataDef()
             .addColumn("Source Table Name", Types.VARCHAR)
             .addColumn("Target Table Name", Types.VARCHAR)
             .addColumn("Latency (ms)", Types.INTEGER)

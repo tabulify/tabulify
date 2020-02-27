@@ -121,15 +121,15 @@ public class DataSetDiff {
         resultDataPath = Tabular.tabular().getDataPath("diff-" + firstDataPath.getName() + "-" + secondDataPath.getName());
         dataSetDiffResult.setDataPath(resultDataPath);
       }
-      resultDataPath.getDataDef()
+      resultDataPath.getOrCreateDataDef()
         .addColumn("+/-") // Add the diff result for the row
         .addColumn("DiffRowId")  // Add the id of the row
         .addColumn("Reason");  // Add the id of the row
-      RelationDef sourceDataDef = firstDataPath.getDataDef();
+      RelationDef sourceDataDef = firstDataPath.getOrCreateDataDef();
       // Add the data
       for (int i = 0; i < sourceDataDef.getColumnsSize(); i++) {
         ColumnDef<Object> columnDef = sourceDataDef.getColumnDef(i);
-        resultDataPath.getDataDef().addColumn(
+        resultDataPath.getOrCreateDataDef().addColumn(
           columnDef.getColumnName(),
           columnDef.getDataType().getTypeCode(),
           columnDef.getPrecision(),
@@ -378,7 +378,7 @@ public class DataSetDiff {
       cellWithDiffCoordinates.forEach(diff -> columnPositions.add(diff.getPosition()));
     }
 
-    for (int i = 0; i < selectStream.getDataPath().getDataDef().getColumnsSize(); i++) {
+    for (int i = 0; i < selectStream.getDataPath().getOrCreateDataDef().getColumnsSize(); i++) {
       Object object = selectStream.getObject(i);
 
       if (columnPositions.contains(i)) {
@@ -408,7 +408,7 @@ public class DataSetDiff {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
-    for (int i = 0; i < firstStream.getDataPath().getDataDef().getColumnsSize(); i++) {
+    for (int i = 0; i < firstStream.getDataPath().getOrCreateDataDef().getColumnsSize(); i++) {
 
       String cellCoordinates = "Cell(Row,Col)(" + firstStream.getRow() + "," + i + ")";
 
@@ -472,8 +472,8 @@ public class DataSetDiff {
     StringBuilder reason = new StringBuilder();
 
     // Length
-    int sourceSize = firstDataPath.getDataDef().getColumnsSize();
-    int targetSize = secondDataPath.getDataDef().getColumnsSize();
+    int sourceSize = firstDataPath.getOrCreateDataDef().getColumnsSize();
+    int targetSize = secondDataPath.getOrCreateDataDef().getColumnsSize();
     if (sourceSize != targetSize) {
       reason.append("The number of columns are not equals. The source data set has ");
       reason.append(sourceSize);
@@ -486,8 +486,8 @@ public class DataSetDiff {
 
     // Type
     for (int i = 0; i < sourceSize; i++) {
-      ColumnDef sourceColumn = firstDataPath.getDataDef().getColumnDef(i);
-      ColumnDef targetColumn = secondDataPath.getDataDef().getColumnDef(i);
+      ColumnDef sourceColumn = firstDataPath.getOrCreateDataDef().getColumnDef(i);
+      ColumnDef targetColumn = secondDataPath.getOrCreateDataDef().getColumnDef(i);
       if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
         reason.append("The type column of the column (");
         reason.append(i);

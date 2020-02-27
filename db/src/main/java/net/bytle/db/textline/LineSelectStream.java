@@ -27,7 +27,7 @@ public class LineSelectStream extends SelectStreamAbs {
 
     super(lineDataPath);
     this.lineDataPath = lineDataPath;
-    buildDataDef(lineDataPath.getDataDef());
+    buildDataDef(lineDataPath.getOrCreateDataDef());
     beforeFirst();
   }
 
@@ -83,7 +83,7 @@ public class LineSelectStream extends SelectStreamAbs {
   public void beforeFirst() {
     try {
       lineNumberInTextFile = 0;
-      br = Files.newBufferedReader(lineDataPath.getNioPath(), lineDataPath.getDataDef().getCharset());
+      br = Files.newBufferedReader(lineDataPath.getNioPath(), lineDataPath.getOrCreateDataDef().getCharset());
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -162,7 +162,7 @@ public class LineSelectStream extends SelectStreamAbs {
 
   @Override
   public Object getObject(String columnName) {
-    return getObject(this.lineDataPath.getDataDef().getColumnDef(columnName).getColumnPosition());
+    return getObject(this.lineDataPath.getOrCreateDataDef().getColumnDef(columnName).getColumnPosition());
   }
 
 

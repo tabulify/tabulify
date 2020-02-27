@@ -7,7 +7,7 @@ import net.bytle.db.spi.DataPath;
  */
 public interface GenDataPath extends DataPath {
 
-  GenDataDef getDataDef();
+  GenDataDef getOrCreateDataDef();
 
 
 }

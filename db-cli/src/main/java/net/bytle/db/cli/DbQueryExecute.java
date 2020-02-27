@@ -149,7 +149,7 @@ public class DbQueryExecute {
         default:
 
           DataPath executionTable = tabular.getDataPath("executions")
-            .getDataDef()
+            .getOrCreateDataDef()
             .addColumn("Query Name", Types.VARCHAR)
             .addColumn("Start Time", Types.DATE)
             .addColumn("End Time", Types.DATE)

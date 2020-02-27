@@ -84,7 +84,7 @@ public class DbQueryDiff {
 
       // A structure to get the feedback
       DataPath feedback = tabular.getDataPath("feedback")
-        .getDataDef()
+        .getOrCreateDataDef()
         .addColumn("Query Diff Name")
         .addColumn("Result")
         .addColumn("Error")

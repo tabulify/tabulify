@@ -12,10 +12,10 @@ public class JsonDataPath extends FsRawDataPath {
   }
 
   @Override
-  public JsonDataDef getDataDef() {
-    if (this.csvDataDef == null) {
-      this.csvDataDef = new JsonDataDef(this);
+  public JsonDataDef getOrCreateDataDef() {
+    if (this.relationDef == null) {
+      this.relationDef = new JsonDataDef(this);
     }
-    return (JsonDataDef) this.csvDataDef;
+    return (JsonDataDef) this.relationDef;
   }
 }

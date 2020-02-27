@@ -24,7 +24,12 @@ public interface DataPath extends Comparable<DataPath>, Relational {
 
   String getId();
 
-  RelationDef getDataDef();
+  /**
+   * @return a {@link RelationDef} object created from the data store metadata or an empty object if it does not exist
+   *
+   * The function {@link #createDataDef()} create only an empty object
+   */
+  RelationDef getOrCreateDataDef();
 
   DataPath setQuery(String query);
 
@@ -82,5 +87,15 @@ public interface DataPath extends Comparable<DataPath>, Relational {
   String getType();
 
   DataPath getSelectStreamDependency();
+
+  /**
+   *
+   * @return an empty {@link RelationDef} object
+   * This function is used mostly to create a data def in memory
+   * with test that will not clash with the actual data definition in the data store
+   *
+   * {@link net.bytle.db.sample.BytleSchema} is a good example of usage
+   */
+  RelationDef createDataDef();
 
 }

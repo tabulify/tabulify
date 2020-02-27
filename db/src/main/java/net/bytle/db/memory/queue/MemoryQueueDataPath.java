@@ -5,6 +5,7 @@ import net.bytle.db.memory.MemoryDataPathAbs;
 import net.bytle.db.memory.MemoryDataPathType;
 import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.memory.list.MemoryListDataPath;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
@@ -72,6 +73,8 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   public String getType() {
     return TYPE;
   }
+
+
 
   @Override
   public void truncate() {

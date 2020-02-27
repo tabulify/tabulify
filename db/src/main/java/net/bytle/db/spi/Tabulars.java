@@ -60,10 +60,10 @@ public class Tabulars {
    */
   public static List<DataPath> atomic(List<DataPath> dataPaths) {
     for (DataPath dataPath : dataPaths) {
-      List<ForeignKeyDef> foreignKeys = dataPath.getDataDef().getForeignKeys();
+      List<ForeignKeyDef> foreignKeys = dataPath.getOrCreateDataDef().getForeignKeys();
       for (ForeignKeyDef foreignKeyDef : foreignKeys) {
         if (!(dataPaths.contains(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath()))) {
-          dataPath.getDataDef().deleteForeignKey(foreignKeyDef);
+          dataPath.getOrCreateDataDef().deleteForeignKey(foreignKeyDef);
         }
       }
     }
@@ -334,7 +334,7 @@ public class Tabulars {
    */
   public static List<ForeignKeyDef> dropOneToManyRelationship(DataPath one, DataPath many) {
 
-    List<ForeignKeyDef> foreignKeyDefs = one.getDataDef().getForeignKeys().stream()
+    List<ForeignKeyDef> foreignKeyDefs = one.getOrCreateDataDef().getForeignKeys().stream()
       .filter(fk -> fk.getForeignPrimaryKey().getDataDef().getDataPath().equals(many))
       .collect(Collectors.toList());
 
@@ -458,7 +458,7 @@ public class Tabulars {
   }
 
   public static void copyDataDef(DataPath source, DataPath target) {
-    DataDefs.copy(source.getDataDef(), target.getDataDef());
+    DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
   }
 
   /**
@@ -475,7 +475,7 @@ public class Tabulars {
       SelectStream selectStream = Tabulars.getSelectStream(source);
       InsertStream insertStream = Tabulars.getInsertStream(target)
     ) {
-      RelationDef sourceDataDef = selectStream.getDataPath().getDataDef();
+      RelationDef sourceDataDef = selectStream.getDataPath().getOrCreateDataDef();
       if (sourceDataDef.getColumnsSize() == 0) {
         // No row structure even at runtime
         throw new RuntimeException(Strings.multiline(
@@ -484,8 +484,8 @@ public class Tabulars {
           "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
       }
       // Structure
-      if (target.getDataDef().getColumnsSize() == 0) {
-        DataDefs.copy(sourceDataDef, target.getDataDef());
+      if (target.getOrCreateDataDef().getColumnsSize() == 0) {
+        DataDefs.copy(sourceDataDef, target.getOrCreateDataDef());
       } else {
         assertEqualsColumnsDefinition(source, target);
       }
@@ -515,7 +515,7 @@ public class Tabulars {
     try (
       SelectStream selectStream = Tabulars.getSelectStream(source);
     ) {
-      RelationDef dataDef = selectStream.getDataPath().getDataDef();
+      RelationDef dataDef = selectStream.getDataPath().getOrCreateDataDef();
       if (dataDef.getColumnsSize() == 0) {
         // No row structure even at runtime
         throw new RuntimeException(Strings.multiline(
@@ -524,8 +524,8 @@ public class Tabulars {
           "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
       }
       // Structure
-      if (target.getDataDef().getColumnsSize() == 0) {
-        DataDefs.copy(source.getDataDef(), target.getDataDef());
+      if (target.getOrCreateDataDef().getColumnsSize() == 0) {
+        DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
       } else {
         assertEqualsColumnsDefinition(source, target);
       }

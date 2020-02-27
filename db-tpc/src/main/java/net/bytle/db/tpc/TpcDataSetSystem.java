@@ -97,7 +97,7 @@ public class TpcDataSetSystem extends DataSetSystem {
     TpcDataPath  tpcDataPath = (TpcDataPath) dataPath;
     return tpcDataPath.getDataStore().getDataModel().getAndCreateDataPaths().stream()
       .filter(
-        s -> s.getDataDef()
+        s -> s.getOrCreateDataDef()
           .getForeignKeys().stream()
           .filter(d -> d.getForeignPrimaryKey().getDataDef().getDataPath().equals(dataPath))
           .count() > 0

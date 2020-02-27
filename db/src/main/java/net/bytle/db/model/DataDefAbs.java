@@ -84,7 +84,7 @@ public abstract class DataDefAbs implements RelationDef {
   @Override
   public ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKeyDef, String... columnNames) {
 
-    assert primaryKeyDef != null : "To add a foreign key to (" + this.getDataPath().toString() + "), the primary key should not be null";
+    assert primaryKeyDef != null : "To add a foreign key to (" + this.getDataPath().toString() + ") on the columns ("+ Arrays.toString(columnNames) +"), the primary key should not be null";
     assert columnNames.length > 0;
 
     // if the foreign key exist already, return it
@@ -221,7 +221,7 @@ public abstract class DataDefAbs implements RelationDef {
    */
   @Override
   public DataDefAbs addForeignKey(DataPath dataPath, String... columnNames) {
-    final PrimaryKeyDef primaryKey = dataPath.getDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = dataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey == null) {
       throw new RuntimeException("The data unit (" + dataPath + ") can't be added as foreign table for the table (" + this.getDataPath() + ") and its columns (" + String.join(",", columnNames) + ") because it has no primary key defined.");
     }
@@ -321,7 +321,7 @@ public abstract class DataDefAbs implements RelationDef {
 
   @Override
   public DataDefAbs copyDataDef(DataPath sourceDataPath) {
-    DataDefs.copy(sourceDataPath.getDataDef(),this);
+    DataDefs.copy(sourceDataPath.getOrCreateDataDef(),this);
     return this;
   }
 

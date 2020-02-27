@@ -40,7 +40,7 @@ public class DbDdl {
     statements.add(createTableStatement.toString());
 
     // Primary Key
-    final PrimaryKeyDef primaryKey = dataPath.getDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = dataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey != null) {
       if (primaryKey.getColumns().size() != 0) {
         String createPrimaryKeyStatement = getAlterTablePrimaryKeyStatement(jdbcDataPath);
@@ -51,7 +51,7 @@ public class DbDdl {
     }
 
     // Foreign key
-    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getDataDef().getForeignKeys()) {
+    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getOrCreateDataDef().getForeignKeys()) {
       String createForeignKeyStatement = getAlterTableForeignKeyStatement(foreignKeyDef);
       if (createForeignKeyStatement != null) {
         statements.add(createForeignKeyStatement);
@@ -59,7 +59,7 @@ public class DbDdl {
     }
 
     // Unique key
-    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getDataDef().getUniqueKeys()) {
+    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getOrCreateDataDef().getUniqueKeys()) {
       String createUniqueKeyStatement = getAlterTableUniqueKeyStatement(uniqueKeyDef);
       statements.add(createUniqueKeyStatement);
     }
@@ -77,7 +77,7 @@ public class DbDdl {
 
 
     StringBuilder statementColumnPart = new StringBuilder();
-    RelationDef dataDef = dataPath.getDataDef();
+    RelationDef dataDef = dataPath.getOrCreateDataDef();
     for (int i = 0; i < dataDef.getColumnsSize(); i++) {
 
       try {
@@ -258,7 +258,7 @@ public class DbDdl {
       .append("REFERENCES ")
       .append(JdbcDataSystemSql.getFullyQualifiedSqlName(foreignDataPath))
       .append(" (");
-    List<ColumnDef> foreignColumns = foreignDataPath.getDataDef().getPrimaryKey().getColumns();
+    List<ColumnDef> foreignColumns = foreignDataPath.getOrCreateDataDef().getPrimaryKey().getColumns();
     for (int i = 0; i < foreignColumns.size(); i++) {
       statement.append(foreignColumns.get(i).getColumnName());
       if (i != foreignColumns.size() - 1) {
@@ -274,7 +274,7 @@ public class DbDdl {
 
   public static String getAlterTablePrimaryKeyStatement(AnsiDataPath jdbcDataPath) {
 
-    final PrimaryKeyDef primaryKey = jdbcDataPath.getDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = jdbcDataPath.getOrCreateDataDef().getPrimaryKey();
     List<ColumnDef> columns = primaryKey.getColumns();
     int size = columns.size();
     if (size == 0) {

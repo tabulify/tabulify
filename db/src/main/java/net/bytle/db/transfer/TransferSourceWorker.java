@@ -58,7 +58,7 @@ public class TransferSourceWorker implements Runnable {
             transferListener.addInsertListener(insertStreamListener);
 
             // The transfer
-            int columnCount = sourceDataPath.getDataDef().getColumnsSize();
+            int columnCount = sourceDataPath.getOrCreateDataDef().getColumnsSize();
             while (selectStream.next()) {
 
                 List<Object> objects = IntStream.of(columnCount)

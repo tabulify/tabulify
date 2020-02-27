@@ -106,7 +106,7 @@ public class TpcdsSelectStream implements SelectStream {
 
   @Override
   public RelationDef getSelectDataDef() {
-    return dataPath.getDataDef();
+    return dataPath.getOrCreateDataDef();
   }
 
   @Override
@@ -131,7 +131,7 @@ public class TpcdsSelectStream implements SelectStream {
 
   @Override
   public Object getObject(String columnName) {
-    int i = DataDefs.getColumnIdFromName(dataPath.getDataDef(), columnName);
+    int i = DataDefs.getColumnIdFromName(dataPath.getOrCreateDataDef(), columnName);
     return values.get(i);
   }
 

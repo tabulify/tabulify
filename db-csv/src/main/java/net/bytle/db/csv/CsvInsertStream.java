@@ -18,9 +18,9 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
   public CsvInsertStream(CsvDataPath fsDataPath) {
 
     super(fsDataPath);
-    this.csvDataDef = fsDataPath.getDataDef();
+    this.csvDataDef = fsDataPath.getOrCreateDataDef();
     this.csvDataPath = fsDataPath;
-    CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
+    CSVFormat csvFormat = csvDataPath.getOrCreateDataDef().getCsvFormat();
     String recordSeparator = csvFormat.getRecordSeparator();
     if (recordSeparator==null){
       csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());

@@ -189,7 +189,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public List<Object> getObjects() {
     return
-      Arrays.stream(jdbcDataPath.getDataDef().getColumnDefs())
+      Arrays.stream(jdbcDataPath.getOrCreateDataDef().getColumnDefs())
         .map(c -> getObject(c.getColumnPosition() - 1))
         .collect(Collectors.toList());
   }

@@ -139,7 +139,7 @@ public class DbSchemaFill {
           dataPaths.stream()
             .filter(dp -> dataPathDataGen.keySet().contains(dp.getName()))
             .forEach(dp -> {
-                DataDefs.mergeProperties(dp.getDataDef(), dataPathDataGen.get(dp.getName()).getDataDef());
+                DataDefs.mergeProperties(dp.getOrCreateDataDef(), dataPathDataGen.get(dp.getName()).getOrCreateDataDef());
               }
             );
 

@@ -109,7 +109,7 @@ public class DbTableFill {
       LOGGER.info("Calculating the size of the tables loaded ...");
 
       DataPath tablesFilled = tabular.getDataPath("tables_filled")
-        .getDataDef()
+        .getOrCreateDataDef()
         .addColumn("DataStore")
         .addColumn("Table")
         .addColumn("Size")

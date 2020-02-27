@@ -44,7 +44,7 @@ public class DataGens {
     }
 
     for (DataPath dataPathToCheck : dataPathToChecks) {
-      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getDataDef().getForeignKeys()) {
+      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateDataDef().getForeignKeys()) {
         if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
           foreignKeyDefs.add(foreignKeyDef);
         }
@@ -60,7 +60,7 @@ public class DataGens {
     List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
     for (DataPath dataPath : Tabulars.getChildren(schemaPath)) {
       List<ColumnDef> columnDefs = new ArrayList<>();
-      for (ForeignKeyDef foreignKeyDef : dataPath.getDataDef().getForeignKeys()) {
+      for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
         for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
           if (columnDefs.contains(columnDef)) {
             foreignKeyDefs.add(foreignKeyDef);

@@ -107,7 +107,7 @@ public class TransferManager {
         if (next) {
           showMustGoOn = true;
           InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getDataDef().getColumnsSize())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -133,7 +133,7 @@ public class TransferManager {
         throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
       }
     }
-    if (sourceDataPath.getDataDef().getColumnDefs().length==0){
+    if (sourceDataPath.getOrCreateDataDef().getColumnDefs().length==0){
       throw new RuntimeException("We cannot move this tabular data path (" + sourceDataPath + ") because it has no columns.");
     }
   }
@@ -174,7 +174,7 @@ public class TransferManager {
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         while (sourceSelectStream.next()) {
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getDataDef().getColumnsSize())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -301,9 +301,9 @@ public class TransferManager {
   public static void checkOrCreateTargetStructureFromSource(DataPath source, DataPath target) {
     // If this for instance, the move of a file, the file may exist
     // but have no content and therefore no structure
-    if (target.getDataDef().getColumnsSize() != 0) {
-      for (ColumnDef columnDef : source.getDataDef().getColumnDefs()) {
-        ColumnDef targetColumnDef = target.getDataDef().getColumnDef(columnDef.getColumnName());
+    if (target.getOrCreateDataDef().getColumnsSize() != 0) {
+      for (ColumnDef columnDef : source.getOrCreateDataDef().getColumnDefs()) {
+        ColumnDef targetColumnDef = target.getOrCreateDataDef().getColumnDef(columnDef.getColumnName());
         if (targetColumnDef == null) {
           String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
             " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
@@ -312,7 +312,7 @@ public class TransferManager {
         }
       }
     } else {
-      DataDefs.copy(source.getDataDef(), target.getDataDef());
+      DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
     }
   }
 

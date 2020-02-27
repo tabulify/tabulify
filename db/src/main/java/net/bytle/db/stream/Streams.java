@@ -24,7 +24,7 @@ public class Streams {
 
     List<List<Object>> values = new ArrayList<>();
     Map<Integer, Integer> maxs = new HashMap<>();
-    final RelationDef tableDef = selectStream.getDataPath().getDataDef();
+    final RelationDef tableDef = selectStream.getDataPath().getOrCreateDataDef();
     while (selectStream.next()) {
       values.add(selectStream.getObjects());
       for (int i = 0; i < tableDef.getColumnsSize(); i++) {

@@ -1,7 +1,7 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.spi.DataPath;
 
 public class SqliteDataPath extends AnsiDataPath implements DataPath {
@@ -26,10 +26,18 @@ public class SqliteDataPath extends AnsiDataPath implements DataPath {
   }
 
   @Override
-  public SqliteDataDef getDataDef() {
-    if (sqliteDataDef == null){
-      sqliteDataDef = new SqliteDataDef(this);
+  public SqliteDataDef getOrCreateDataDef() {
+    if (relationDef == null){
+      relationDef = new SqliteDataDef(this,true);
     }
-    return sqliteDataDef;
+    return (SqliteDataDef) relationDef;
+  }
+
+  @Override
+  public SqliteDataDef createDataDef() {
+    if (relationDef == null){
+      relationDef = new SqliteDataDef(this,false);
+    }
+    return (SqliteDataDef) relationDef;
   }
 }

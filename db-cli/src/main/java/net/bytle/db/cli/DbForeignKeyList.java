@@ -56,7 +56,7 @@ public class DbForeignKeyList {
       // Collect the foreign keys
       List<ForeignKeyDef> foreignKeys = dataUris.stream()
         .flatMap(du -> tabular.select(du).stream())
-        .flatMap(dp -> dp.getDataDef().getForeignKeys().stream())
+        .flatMap(dp -> dp.getOrCreateDataDef().getForeignKeys().stream())
         .collect(Collectors.toList());
 
 
@@ -71,7 +71,7 @@ public class DbForeignKeyList {
 
         // Creating a table to use the print function
         DataPath foreignKeysInfo = tabular.getDataPath("foreignKeys")
-          .getDataDef()
+          .getOrCreateDataDef()
           .addColumn("Id", Types.INTEGER)
           .addColumn("Child/Foreign Table")
           .addColumn("<-")

@@ -26,7 +26,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
     super(dataPath);
     this.genDataPath = dataPath;
-    this.genDataPath.getDataDef().buildMissingGenerators();
+    this.genDataPath.getOrCreateDataDef().buildMissingGenerators();
 
   }
 
@@ -61,7 +61,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public boolean next() {
-    if (actualRowId >= genDataPath.getDataDef().getSize()) {
+    if (actualRowId >= genDataPath.getOrCreateDataDef().getSize()) {
       return false;
     } else {
       actualRowId++;
@@ -72,7 +72,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   private void buildRow() {
     row = new HashMap<>();
-    for (GenColumnDef columnDef : genDataPath.getDataDef().getColumnDefs()) {
+    for (GenColumnDef columnDef : genDataPath.getOrCreateDataDef().getColumnDefs()) {
       populateColumnValues(row, columnDef);
     }
 
@@ -107,7 +107,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public RelationDef getSelectDataDef() {
-    return this.genDataPath.getDataDef();
+    return this.genDataPath.getOrCreateDataDef();
   }
 
   @Override
@@ -131,7 +131,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public List<Object> getObjects() {
-    return Arrays.stream(genDataPath.getDataDef().getColumnDefs())
+    return Arrays.stream(genDataPath.getOrCreateDataDef().getColumnDefs())
       .map(c -> row.get(c))
       .collect(Collectors.toList());
   }

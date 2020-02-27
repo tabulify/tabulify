@@ -94,7 +94,7 @@ public class DbSchemaList {
         }
       } else {
         DataPath output = tabular.getDataPath("output")
-          .getDataDef()
+          .getOrCreateDataDef()
           .addColumn("Name")
           .addColumn("NumberOfChildren")
           .getDataPath();

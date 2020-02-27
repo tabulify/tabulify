@@ -24,7 +24,7 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
     URL uri = Class.class.getResource("/DataSet/FirstNamesScotland.csv");
     try {
       CsvDataPath csvDataPath = CsvDataPath.of(Paths.get(uri.toURI()))
-        .getDataDef()
+        .getOrCreateDataDef()
         .setHeaderRowCount(1)
         .getDataPath();
       Map<String, Double> distProb = new HashMap<>();

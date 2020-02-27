@@ -37,8 +37,8 @@ public class CsvManager extends FsFileManager {
 
     CsvDataPath csvDataPath = (CsvDataPath) fsDataPath;
     Fs.createFile(csvDataPath.getNioPath());
-    CsvDataDef csvDataDef = csvDataPath.getDataDef();
-    CSVFormat csvFormat = csvDataPath.getDataDef().getCsvFormat();
+    CsvDataDef csvDataDef = csvDataPath.getOrCreateDataDef();
+    CSVFormat csvFormat = csvDataPath.getOrCreateDataDef().getCsvFormat();
     if (csvFormat.getRecordSeparator()==null){
       csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());
     }

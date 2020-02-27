@@ -88,10 +88,10 @@ public class DbTableList {
           break;
         case 1:
           tables
-            .getDataDef()
+            .getOrCreateDataDef()
             .addColumn("Table Name");
           if (!noCountColumn) {
-            tables.getDataDef().addColumn("Rows Count", Types.INTEGER);
+            tables.getOrCreateDataDef().addColumn("Rows Count", Types.INTEGER);
           }
           try (InsertStream insertStream = Tabulars.getInsertStream(tables)) {
             List<DataPath> dataPathsByDataStore = dataPathsByDataStores.entrySet().iterator().next().getValue();
@@ -108,12 +108,12 @@ public class DbTableList {
           break;
         default:
           tables
-            .getDataDef()
+            .getOrCreateDataDef()
             .addColumn("Data Store")
             .addColumn("Table Name")
             .getDataPath();
           if (!noCountColumn) {
-            tables.getDataDef().addColumn("Rows Count", Types.INTEGER);
+            tables.getOrCreateDataDef().addColumn("Rows Count", Types.INTEGER);
           }
           try (InsertStream insertStream = Tabulars.getInsertStream(tables)) {
             for (DataStore dataStore : dataStores) {

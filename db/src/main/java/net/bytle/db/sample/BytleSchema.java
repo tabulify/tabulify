@@ -67,7 +67,7 @@ public class BytleSchema implements SchemaSample {
     // Dim Cat Table
     final DataPath catTable = datastore.getDataPath(TABLE_CATEGORY_NAME);
     bytleTables.put(TABLE_CATEGORY_NAME, catTable);
-    catTable.getDataDef()
+    catTable.createDataDef()
       .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
       .addColumn(COLUMN_CATEGORY_DESC_NAME, Types.VARCHAR)
       .addColumn(COLUMN_CATEGORY_LOAD_DATE, Types.DATE)
@@ -78,7 +78,7 @@ public class BytleSchema implements SchemaSample {
     // Dim timeTable
     final DataPath timeTable = datastore.getDataPath(TABLE_TIME_NAME);
     bytleTables.put(TABLE_TIME_NAME, timeTable);
-    timeTable.getDataDef()
+    timeTable.createDataDef()
       .addColumn(COLUMN_DATE_ID, Types.DATE)
       .addColumn(COLUMN_MONTH_ID, Types.VARCHAR, 6)
       .addColumn(COLUMN_MONTH_NUMBER, Types.INTEGER)
@@ -92,15 +92,15 @@ public class BytleSchema implements SchemaSample {
     // Fact Table
     final DataPath factTable = datastore.getDataPath(TABLE_FACT_NAME);
     bytleTables.put(TABLE_FACT_NAME, factTable);
-    factTable.getDataDef()
+    factTable.createDataDef()
       .addColumn(COLUMN_FACT_ID, Types.INTEGER)
       .addColumn(COLUMN_DATE_ID, Types.DATE)
       .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
       .addColumn(COLUMN_SALES_QTY, Types.DOUBLE)
       .addColumn(COLUMN_SALES_PRICE, Types.DOUBLE, 50, 2)
       .setPrimaryKey(COLUMN_FACT_ID)
-      .addForeignKey(timeTable.getDataDef().getPrimaryKey(), COLUMN_DATE_ID)
-      .addForeignKey(catTable.getDataDef().getPrimaryKey(), COLUMN_CATEGORY_ID);
+      .addForeignKey(timeTable.getOrCreateDataDef().getPrimaryKey(), COLUMN_DATE_ID)
+      .addForeignKey(catTable.getOrCreateDataDef().getPrimaryKey(), COLUMN_CATEGORY_ID);
 
 
   }

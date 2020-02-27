@@ -59,7 +59,7 @@ public class DbDatastoreList {
 
     // Creating a table to use the print function
     RelationDef databaseInfo = Tabular.tabular().getDataPath("databases")
-      .getDataDef()
+      .getOrCreateDataDef()
       .addColumn("Name")
       .addColumn("Login")
       .addColumn("Url");

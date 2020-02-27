@@ -30,17 +30,22 @@ public class LineDataPath extends FsRawDataPath implements FsDataPath {
   }
 
   @Override
-  public LineDataDef getDataDef() {
-    if (this.csvDataDef == null) {
-      this.csvDataDef = new LineDataDef(this);
-    }
-    return (LineDataDef) this.csvDataDef;
+  public LineDataDef getOrCreateDataDef() {
+    return createDataDef();
   }
 
   @Override
   public LineDataPath setDescription(String description) {
     super.setDescription(description);
     return this;
+  }
+
+  @Override
+  public LineDataDef createDataDef() {
+    if (this.relationDef == null) {
+      this.relationDef = new LineDataDef(this);
+    }
+    return (LineDataDef) this.relationDef;
   }
 
   @Override

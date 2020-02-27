@@ -42,7 +42,6 @@ public class AnsiDataPath extends DataPathAbs {
    */
   private SqlSelectStream selectStream;
 
-  private AnsiDataDef ansiDataDef;
 
 
   /**
@@ -185,13 +184,21 @@ public class AnsiDataPath extends DataPathAbs {
   }
 
   @Override
-  public AnsiDataDef getDataDef() {
+  public AnsiDataDef getOrCreateDataDef() {
 
-    if (ansiDataDef==null) {
-      ansiDataDef = new AnsiDataDef(this);
+    if (relationDef==null) {
+      relationDef = new AnsiDataDef(this,true);
     }
-    return ansiDataDef;
+    return (AnsiDataDef) relationDef;
 
+  }
+
+  @Override
+  public AnsiDataDef createDataDef() {
+    if (relationDef==null) {
+      relationDef = new AnsiDataDef(this,false);
+    }
+    return (AnsiDataDef) relationDef;
   }
 
 

@@ -149,7 +149,7 @@ public class SqlDataTypesManager {
   public void printSqlDataType() {
 
     DataPath dataPath = Tabular.tabular().getDataPath("datatype")
-      .getDataDef()
+      .getOrCreateDataDef()
       .addColumn("Data Type")
       .addColumn("Type Name")
       .getDataPath();

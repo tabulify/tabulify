@@ -31,7 +31,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   private SqlInsertStream(AnsiDataPath jdbcDataPath) {
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
-    this.targetMetaDef = jdbcDataPath.getDataDef();
+    this.targetMetaDef = jdbcDataPath.getOrCreateDataDef();
     init();
   }
 
@@ -46,7 +46,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   @Override
   public InsertStream insert(List<Object> values) {
 
-    final int columnsSize = this.jdbcDataPath.getDataDef().getColumnsSize();
+    final int columnsSize = this.jdbcDataPath.getOrCreateDataDef().getColumnsSize();
     final int valuesSize = values.size();
     assert valuesSize == columnsSize : "The number of values to insert (" + valuesSize + ") is not the same than the number of columns (" + columnsSize + ")";
 

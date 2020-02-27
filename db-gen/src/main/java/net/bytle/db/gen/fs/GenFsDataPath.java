@@ -15,7 +15,7 @@ public class GenFsDataPath extends FsRawDataPath implements FsDataPath, GenDataP
   }
 
   @Override
-  public GenDataDef getDataDef() {
+  public GenDataDef getOrCreateDataDef() {
     return new GenDataDef(this);
   }
 

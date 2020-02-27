@@ -81,7 +81,7 @@ public class JsonSelectStream extends SelectStreamAbs {
   }
 
   private String getColumnName(int columnIndex) {
-    return jsonDataPath.getDataDef().getColumnDefs().get(columnIndex).getColumnName();
+    return jsonDataPath.getOrCreateDataDef().getColumnDefs().get(columnIndex).getColumnName();
   }
 
   @Override
@@ -96,7 +96,7 @@ public class JsonSelectStream extends SelectStreamAbs {
 
   @Override
   public TableDef getSelectDataDef() {
-    return jsonDataPath.getDataDef();
+    return jsonDataPath.getOrCreateDataDef();
   }
 
   @Override

@@ -19,7 +19,7 @@ public class LineInsertStream extends InsertStreamAbs implements InsertStream {
   public LineInsertStream(LineDataPath fsDataPath) {
 
         super(fsDataPath);
-        this.csvDataDef = fsDataPath.getDataDef();
+        this.csvDataDef = fsDataPath.getOrCreateDataDef();
         this.lineDataPath = fsDataPath;
         try {
             writer = Files.newBufferedWriter(lineDataPath.getNioPath(), csvDataDef.getCharset(), StandardOpenOption.APPEND);

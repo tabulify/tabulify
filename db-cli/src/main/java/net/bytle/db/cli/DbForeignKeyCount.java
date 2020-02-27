@@ -51,7 +51,7 @@ public class DbForeignKeyCount {
           return tabular.select(du).stream();
         }
         )
-        .flatMap(dp -> dp.getDataDef().getForeignKeys().stream())
+        .flatMap(dp -> dp.getOrCreateDataDef().getForeignKeys().stream())
         .collect(Collectors.toList());
 
       System.out.println();
