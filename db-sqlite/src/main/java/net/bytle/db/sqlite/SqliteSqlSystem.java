@@ -2,7 +2,6 @@ package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataPath;
 import net.bytle.db.jdbc.AnsiSqlSystem;
-import net.bytle.db.jdbc.DbDdl;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
@@ -31,21 +30,8 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
   @Override
   public void create(DataPath dataPath) {
     SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
-    List<String> statements = getCreateTableStatements(sqliteDataPath);
+    List<String> statements = createTableStatements(sqliteDataPath);
     super.execute(statements);
-  }
-
-  public String getCreateColumnStatement(ColumnDef columnDef) {
-    switch (columnDef.getDataType().getTypeCode()) {
-      default:
-        return null;
-    }
-
-  }
-
-
-  public String getNormativeSchemaObjectName(String objectName) {
-    return "\"" + objectName + "\"";
   }
 
 
@@ -58,7 +44,8 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
    * @param dataPath
    * @return a create statement https://www.sqlite.org/lang_createtable.html
    */
-  public List<String> getCreateTableStatements(AnsiDataPath dataPath) {
+  @Override
+  protected List<String> createTableStatements(AnsiDataPath dataPath) {
 
     List<String> statements = new ArrayList<>();
     StringBuilder statement = new StringBuilder();
@@ -69,7 +56,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
     }
     for (int i = 0; i < tableDef.getColumnsSize(); i++) {
       ColumnDef columnDef = tableDef.getColumnDef(i);
-      statement.append(DbDdl.getColumnStatementForCreateTable(columnDef));
+      statement.append(createColumnStatement(columnDef));
       if (i != tableDef.getColumnsSize() - 1) {
         statement.append(",\n");
       }
@@ -137,8 +124,8 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
 
 
 
-
-  public String getTruncateStatement(AnsiDataPath dataPath) {
+  @Override
+  public String truncateStatement(AnsiDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

@@ -10,7 +10,7 @@ import java.util.List;
 /**
  *
  * */
-public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
+public class JdbcDataStoreExtensionIHana extends AnsiSqlSystem {
 
 
 
@@ -18,7 +18,6 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
     super(jdbcDataStore);
   }
 
-  @Override
   public void updateSqlDataType(SqlDataType sqlDataType) {
     switch (sqlDataType.getTypeCode()) {
       case Types.VARCHAR:
@@ -28,7 +27,7 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
   }
 
   @Override
-  public String getCreateColumnStatement(ColumnDef columnDef) {
+  public String createColumnStatement(ColumnDef columnDef) {
     SqlDataType dataType = columnDef.getDataType();
     switch (dataType.getTypeCode()) {
       case Types.VARCHAR:
@@ -51,11 +50,11 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
   /**
    * Returns statement to create the table
    *
-   * @param jdbcDataPath
+   * @param ansiDataPath
    * @return
    */
   @Override
-  public List<String> getCreateTableStatements(AnsiDataPath jdbcDataPath) {
+  public List<String> createTableStatements(AnsiDataPath ansiDataPath) {
 
 
     List<String> statements = new ArrayList<>();
@@ -66,22 +65,22 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
     //        if (tableType != null){
     //            statement += tableType;
     //        }
-    statement += " table " + jdbcDataPath.getName() + " (\n"
-      + DbDdl.getCreateTableStatementColumnsDefinition(jdbcDataPath)
+    statement += " table " + ansiDataPath.getName() + " (\n"
+      + createColumnsStatement(ansiDataPath)
       + "\n)";
 
     statements.add(statement);
-    final PrimaryKeyDef primaryKey = jdbcDataPath.getOrCreateDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = ansiDataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey != null) {
-      statements.add(DbDdl.getAlterTablePrimaryKeyStatement(jdbcDataPath));
+      statements.add(createPrimaryKeyStatement(ansiDataPath));
     }
 
-    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getOrCreateDataDef().getForeignKeys()) {
-      statements.add(DbDdl.getAlterTableForeignKeyStatement(foreignKeyDef));
+    for (ForeignKeyDef foreignKeyDef : ansiDataPath.getOrCreateDataDef().getForeignKeys()) {
+      statements.add(createForeignKeyStatement(foreignKeyDef));
     }
 
-    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getOrCreateDataDef().getUniqueKeys()) {
-      statements.add(DbDdl.getAlterTableUniqueKeyStatement(uniqueKeyDef));
+    for (UniqueKeyDef uniqueKeyDef : ansiDataPath.getOrCreateDataDef().getUniqueKeys()) {
+      statements.add(createUniqueKeyStatement(uniqueKeyDef));
     }
 
     return statements;
@@ -89,23 +88,9 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
   }
 
 
-  @Override
-  public Object getLoadObject(int targetColumnType, Object sourceObject) {
-    return null;
-  }
 
   @Override
-  public String getNormativeSchemaObjectName(String objectName) {
-    return null;
-  }
-
-  @Override
-  public Integer getMaxWriterConnection() {
-    return null;
-  }
-
-  @Override
-  public String getTruncateStatement(AnsiDataPath dataPath) {
+  public String truncateStatement(AnsiDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

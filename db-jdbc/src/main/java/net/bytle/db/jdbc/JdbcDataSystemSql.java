@@ -4,14 +4,19 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
 
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  *
+ * Sql statement are in the class {@link AnsiSqlSystem} closed to the operations
+ * that they supports
+ *
+ * For example, the truncate statement can be found at {@link AnsiSqlSystem#truncateStatement(AnsiDataPath)}
+ * next to the {@link AnsiSqlSystem#truncate(DataPath)} operations
+ *
+ * The SQL function below
  * Schema implementation
  *
  * See also:
@@ -28,7 +33,6 @@ import java.util.stream.IntStream;
  * {@link DatabaseMetaData#supportsCatalogsInTableDefinitions()}
  *
  */
-
 public class JdbcDataSystemSql {
 
 
@@ -40,16 +44,16 @@ public class JdbcDataSystemSql {
 
 
         final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
-        String identifierQuoteString = DbSql.getIdentifierQuote(dataStore);
+        String identifierQuoteString = dataStore.getIdentifierQuote();
         final String tableName = jdbcDataPath.getName();
         return identifierQuoteString+ tableName +identifierQuoteString;
 
 
     }
 
-    public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
+    public static String getQueryColumnName(ColumnDef columnDef) {
         final AnsiDataPath dataPath = (AnsiDataPath) columnDef.getDataDef().getDataPath();
-        String identifier = DbSql.getIdentifierQuote(dataPath.getDataStore());
+        String identifier = dataPath.getDataStore().getIdentifierQuote();
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }
 
@@ -61,7 +65,7 @@ public class JdbcDataSystemSql {
      * Example:
      * col1, col2, col3
      */
-    public static String getColumnsStatement(AnsiDataPath jdbcDataPath) {
+    public static String getQueryColumnsStatement(AnsiDataPath jdbcDataPath) {
         /**
          * {@link DatabaseMetaData#getIdentifierQuoteString()}
          */
@@ -116,7 +120,7 @@ public class JdbcDataSystemSql {
          */
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("SELECT ");
-        stringBuilder.append(JdbcDataSystemSql.getColumnsStatement(dataPath));
+        stringBuilder.append(JdbcDataSystemSql.getQueryColumnsStatement(dataPath));
         stringBuilder.append(" FROM ");
         stringBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
 
@@ -154,32 +158,7 @@ public class JdbcDataSystemSql {
 
     }
 
-    /**
-     * Return the number of rows
-     *
-     * @param jdbcDataPath - A tableDef
-     * @return - the number of rows for this table
-     */
-    public static Integer getSize(AnsiDataPath jdbcDataPath) {
 
-
-
-        Integer returnValue = 0;
-        String statementString = "select count(1) from " + getFullyQualifiedSqlName(jdbcDataPath);
-
-        try (
-          ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().createStatement().executeQuery(statementString);
-        ) {
-            while (resultSet.next()) {
-                returnValue += resultSet.getInt(1);
-            }
-        } catch (SQLException e) {
-            System.err.println(statementString);
-            throw new RuntimeException(e);
-        }
-        return returnValue;
-
-    }
 
 
 

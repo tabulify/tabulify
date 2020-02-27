@@ -1,6 +1,7 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.model.ForeignKeyDef;
+import net.bytle.db.database.DataStore;
+import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.Tabulars;
@@ -17,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -108,6 +111,7 @@ public class AnsiSqlSystem implements DataSystem {
     return size;
   }
 
+
   @Override
   public boolean isDocument(DataPath dataPath) {
     AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
@@ -181,9 +185,6 @@ public class AnsiSqlSystem implements DataSystem {
   }
 
 
-
-
-
   @Override
   public boolean isContainer(DataPath dataPath) {
     return !isDocument(dataPath);
@@ -192,7 +193,7 @@ public class AnsiSqlSystem implements DataSystem {
   @Override
   public void create(DataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    AnsiDataPath ansiDataPath = (AnsiDataPath) dataPath;
 
     // Check that the foreign tables exist
     for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
@@ -203,12 +204,311 @@ public class AnsiSqlSystem implements DataSystem {
     }
 
     // Standard SQL
-    List<String> createTableStatements = DbDdl.getCreateTableStatements(dataPath);
+    List<String> createTableStatements = createTableStatements(ansiDataPath);
     this.execute(createTableStatements);
-    final String name = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : "null";
+    final String name = ansiDataPath.getSchema() != null ? ansiDataPath.getSchema().getName() : "null";
     JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
 
 
+  }
+
+  /**
+   * Return all statements (inclusive primary key, foreign key and unique key)
+   * to create a table
+   *
+   * @param dataPath The table Name in the create statement
+   */
+  protected List<String> createTableStatements(AnsiDataPath dataPath) {
+
+    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+
+    List<String> statements = new ArrayList<>();
+    StringBuilder createTableStatement = new StringBuilder()
+      .append("create table ");
+    final String schemaName = JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
+    if (schemaName != null && !schemaName.equals("")) {
+      createTableStatement.append(schemaName).append(".");
+    }
+    createTableStatement
+      .append(jdbcDataPath.getName())
+      .append(" (\n")
+      .append(createColumnsStatement(dataPath))
+      .append(" )\n");
+    statements.add(createTableStatement.toString());
+
+    // Primary Key
+    final PrimaryKeyDef primaryKey = dataPath.getOrCreateDataDef().getPrimaryKey();
+    if (primaryKey != null) {
+      if (primaryKey.getColumns().size() != 0) {
+        String createPrimaryKeyStatement = createPrimaryKeyStatement(jdbcDataPath);
+        if (createPrimaryKeyStatement != null) {
+          statements.add(createPrimaryKeyStatement);
+        }
+      }
+    }
+
+    // Foreign key
+    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getOrCreateDataDef().getForeignKeys()) {
+      String createForeignKeyStatement = createForeignKeyStatement(foreignKeyDef);
+      if (createForeignKeyStatement != null) {
+        statements.add(createForeignKeyStatement);
+      }
+    }
+
+    // Unique key
+    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getOrCreateDataDef().getUniqueKeys()) {
+      String createUniqueKeyStatement = createUniqueKeyStatement(uniqueKeyDef);
+      statements.add(createUniqueKeyStatement);
+    }
+
+    return statements;
+
+  }
+
+  /**
+   * @param dataPath : The target schema
+   * @return the column string part of a create statement
+   */
+  protected String createColumnsStatement(DataPath dataPath) {
+
+
+    StringBuilder statementColumnPart = new StringBuilder();
+    RelationDef dataDef = dataPath.getOrCreateDataDef();
+    for (int i = 0; i < dataDef.getColumnsSize(); i++) {
+
+      try {
+
+        ColumnDef columnDef = dataDef.getColumnDef(i);
+        // Add it to the columns statement
+        statementColumnPart.append(createColumnStatement(columnDef));
+
+      } catch (Exception e) {
+
+        throw new RuntimeException(e + "\nException: The Column Statement build until now is:\n" + statementColumnPart, e);
+
+      }
+
+      // Is it the end ...
+      if (i != dataDef.getColumnsSize() - 1) {
+        statementColumnPart.append(",\n");
+      } else {
+        statementColumnPart.append("\n");
+      }
+
+    }
+
+    return statementColumnPart.toString();
+
+  }
+
+  protected String createDataTypeStatement(String columnTypeName, Integer precision, Integer scale) {
+
+    String dataTypeCreateStatement = columnTypeName;
+    if (precision != null && precision > 0) {
+      dataTypeCreateStatement += "(" + precision;
+      if (scale != null && scale != 0) {
+        dataTypeCreateStatement += "," + scale;
+      }
+      dataTypeCreateStatement += ")";
+    }
+    return dataTypeCreateStatement;
+
+  }
+
+  /**
+   * @param uniqueKeyDef - The source unique key def
+   * @return an alter table unique statement
+   */
+  protected String createUniqueKeyStatement(UniqueKeyDef uniqueKeyDef) {
+
+    String statement = "ALTER TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(uniqueKeyDef.getRelationDef().getDataPath()) + " ADD ";
+
+    // The serie of columns definitions (col1, col2,...)
+    final List<ColumnDef> columns = uniqueKeyDef.getColumns();
+    List<String> columnNames = new ArrayList<>();
+    for (ColumnDef columnDef : columns) {
+      columnNames.add(columnDef.getColumnName());
+    }
+    final String columnDefStatement = String.join(",", columnNames.toArray(new String[columnNames.size()]));
+
+    // The final statement that presence of the name
+    final String name = uniqueKeyDef.getName();
+    if (name == null) {
+      statement = statement + "UNIQUE (" + columnDefStatement + ") ";
+    } else {
+      statement = statement + "CONSTRAINT " + name + " UNIQUE (" + columnDefStatement + ") ";
+    }
+
+    return statement;
+
+  }
+
+
+  /**
+   * A blank statement in the form "columnName datatype(scale, precision)"
+   * The constraint such as NOT NULL unique may change between database
+   * Example Sqlite has the primary key statement before NOT NULL
+   *
+   * @param columnDef : The source column
+   * @return
+   */
+  protected String createColumnStatement(ColumnDef columnDef) {
+
+    // Target data type from source data type is lost
+    // It should be handle when the path is changing of database
+    SqlDataType targetSqlDataType = columnDef.getDataType();
+
+    // Always passed to create the statement
+    Integer precision = columnDef.getPrecision();
+    Integer maxPrecision = targetSqlDataType.getMaxPrecision();
+    if (precision == null) {
+      precision = maxPrecision;
+    }
+    if (precision != null && maxPrecision != null && precision > maxPrecision) {
+      DataStore dataStore = columnDef.getDataDef().getDataPath().getDataStore();
+      String message = "The precision (" + precision + ") of the column (" + columnDef + ") is greater than the maximum allowed (" + maxPrecision + ") for the datastore (" + dataStore.getName() + ")";
+      if (dataStore.isStrict()) {
+        throw new RuntimeException(message);
+      } else {
+        LOGGER.warn(message);
+        precision = maxPrecision;
+      }
+    }
+    Integer scale = columnDef.getScale();
+    if (scale == null) {
+      scale = targetSqlDataType.getMaximumScale();
+    }
+
+    String dataTypeCreateStatement = null;
+
+
+    if (targetSqlDataType.getTypeCode() == Types.DATE || targetSqlDataType.getTypeCode() == Types.TIME) {
+
+      dataTypeCreateStatement = targetSqlDataType.getTypeNames().get(0);
+
+    } else {
+
+      dataTypeCreateStatement = createDataTypeStatement(targetSqlDataType.getTypeNames().get(0), precision, scale);
+
+    }
+
+    // NOT NULL
+    String notNullStatement = "";
+    if (!columnDef.getNullable()) {
+      // Hack because hive is read only, it does not support Not Null
+      if (!((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+        notNullStatement = " NOT NULL";
+      }
+    }
+
+    // Hack for Hive
+    String encloseString = "\"";
+    if (((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+      encloseString = "`";
+    }
+
+    // Number as columnName is not possible in Oracle
+    // Just with two double quote
+    return encloseString + columnDef.getColumnName() + encloseString + " " + dataTypeCreateStatement + notNullStatement;
+  }
+
+  /**
+   * @param foreignKeyDef - The source foreign key
+   * @return a alter table foreign key statement
+   */
+  protected String createForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
+
+    AnsiDataStore jdbcDataSystem = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
+
+    // Constraint are supported from 2.1
+    // https://issues.apache.org/jira/browse/HIVE-13290
+    if (jdbcDataSystem.getProductName().equals(AnsiDataStore.DB_HIVE)) {
+      if (jdbcDataSystem.getDatabaseMajorVersion() < 2) {
+        return null;
+      } else {
+        if (jdbcDataSystem.getDatabaseMinorVersion() < 1) {
+          return null;
+        }
+      }
+    }
+    StringBuilder statement = new StringBuilder().append("ALTER TABLE ");
+    statement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(foreignKeyDef.getTableDef().getDataPath()))
+      .append(" ADD ")
+      .append("CONSTRAINT ")
+      .append(foreignKeyDef.getName())
+      .append(" FOREIGN KEY (");
+    final List<ColumnDef> nativeColumns = foreignKeyDef.getChildColumns();
+    for (int i = 0; i < nativeColumns.size(); i++) {
+      statement.append(nativeColumns.get(i).getColumnName());
+      if (i != nativeColumns.size() - 1) {
+        statement.append(", ");
+      }
+    }
+    statement.append(") ");
+
+
+    final DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
+    statement
+      .append("REFERENCES ")
+      .append(JdbcDataSystemSql.getFullyQualifiedSqlName(foreignDataPath))
+      .append(" (");
+    List<ColumnDef> foreignColumns = foreignDataPath.getOrCreateDataDef().getPrimaryKey().getColumns();
+    for (int i = 0; i < foreignColumns.size(); i++) {
+      statement.append(foreignColumns.get(i).getColumnName());
+      if (i != foreignColumns.size() - 1) {
+        statement.append(", ");
+      }
+    }
+    statement.append(")");
+
+    return statement.toString();
+
+
+  }
+
+  protected String createPrimaryKeyStatement(AnsiDataPath jdbcDataPath) {
+
+    final PrimaryKeyDef primaryKey = jdbcDataPath.getOrCreateDataDef().getPrimaryKey();
+    List<ColumnDef> columns = primaryKey.getColumns();
+    int size = columns.size();
+    if (size == 0) {
+      return null;
+    }
+
+    // TODO: Move to Hive
+    // Constraint are supported from 2.1
+    // https://issues.apache.org/jira/browse/HIVE-13290
+    final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
+    if (dataStore.getProductName().equals(AnsiDataStore.DB_HIVE)) {
+      if (dataStore.getDatabaseMajorVersion() < 2) {
+        return null;
+      } else {
+        if (dataStore.getDatabaseMinorVersion() < 1) {
+          return null;
+        }
+      }
+    }
+
+    StringBuilder statement = new StringBuilder().append("ALTER TABLE ");
+    statement
+      .append(JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath))
+      .append(" ADD ");
+    if (primaryKey.getName() != null) {
+      statement
+        .append("CONSTRAINT ")
+        .append(primaryKey.getName())
+        .append(" ");
+    }
+    List<String> columnNames = new ArrayList<>();
+    for (ColumnDef columnDef : columns) {
+      columnNames.add(columnDef.getColumnName());
+    }
+    statement
+      .append("PRIMARY KEY  (")
+      .append(String.join(", ", columnNames))
+      .append(")");
+
+    return statement.toString();
   }
 
 
@@ -288,6 +588,12 @@ public class AnsiSqlSystem implements DataSystem {
 
   }
 
+  protected String truncateStatement(AnsiDataPath dataPath) {
+
+    return "truncate table " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
+
+  }
+
 
   @Override
   public InsertStream getInsertStream(DataPath dataPath) {
@@ -325,15 +631,23 @@ public class AnsiSqlSystem implements DataSystem {
    */
   public void execute(List<String> statements) {
     for (String statementAsString : statements) {
-      try (Statement statement = this.getDataStore().getCurrentConnection().createStatement()) {
-        statement.execute(statementAsString);
-      } catch (SQLException e) {
-        String message = Strings.multiline(
-          "An error occured executing the following statement:",
-          statementAsString);
-        LOGGER.error(message);
-        throw new RuntimeException(message, e);
-      }
+      execute(statementAsString);
+    }
+  }
+
+  /**
+   * Execute a sql statement
+   * @param statement
+   */
+  public void execute(String statement){
+    try (Statement sqlStatement = this.getDataStore().getCurrentConnection().createStatement()) {
+      sqlStatement.execute(statement);
+    } catch (SQLException e) {
+      String message = Strings.multiline(
+        "An error occured executing the following statement:",
+        statement);
+      LOGGER.error(message);
+      throw new RuntimeException(message, e);
     }
   }
 

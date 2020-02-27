@@ -425,4 +425,21 @@ public class AnsiDataStore extends DataStore {
     return this.processingEngine;
   }
 
+  /**
+   *
+   * @return the quote for identifier such as table, column name
+   */
+  String getIdentifierQuote() {
+    String identifierQuoteString = "\"";
+    try {
+      final Connection currentConnection = this.getCurrentConnection();
+      if (currentConnection!=null) {
+        identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
+      }
+    } catch (SQLException e) {
+      JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database ("+this+") throw an error when retrieving the quoted string identifier."+e.getMessage());
+    }
+    return identifierQuoteString;
+  }
+
 }

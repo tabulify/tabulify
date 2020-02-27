@@ -119,7 +119,7 @@ public class DbDml {
 
         StringBuilder insertIntoBuilder = new StringBuilder();
         insertIntoBuilder.append("INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(target) + " (");
-        insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(target));
+        insertIntoBuilder.append(JdbcDataSystemSql.getQueryColumnsStatement(target));
         insertIntoBuilder.append(") ");
         if (source.getType().equals(AnsiDataPath.QUERY_TYPE)){
 
