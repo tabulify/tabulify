@@ -23,7 +23,7 @@ public class DbDdl {
    */
   public static List<String> getCreateTableStatements(DataPath dataPath) {
 
-    JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
 
     List<String> statements = new ArrayList<>();
     StringBuilder createTableStatement = new StringBuilder()
@@ -157,14 +157,14 @@ public class DbDdl {
     String notNullStatement = "";
     if (!columnDef.getNullable()) {
       // Hack because hive is read only, it does not support Not Null
-      if (!((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+      if (!((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
         notNullStatement = " NOT NULL";
       }
     }
 
     // Hack for Hive
     String encloseString = "\"";
-    if (((JdbcDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
+    if (((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(AnsiDataStore.DB_HIVE)) {
       encloseString = "`";
     }
 
@@ -272,7 +272,7 @@ public class DbDdl {
 
   }
 
-  public static String getAlterTablePrimaryKeyStatement(JdbcDataPath jdbcDataPath) {
+  public static String getAlterTablePrimaryKeyStatement(AnsiDataPath jdbcDataPath) {
 
     final PrimaryKeyDef primaryKey = jdbcDataPath.getDataDef().getPrimaryKey();
     List<ColumnDef> columns = primaryKey.getColumns();
@@ -318,7 +318,7 @@ public class DbDdl {
   }
 
 
-  public static void truncateTable(JdbcDataPath dataPath) {
+  public static void truncateTable(AnsiDataPath dataPath) {
 
     try {
       String dropTableStatement = "truncate table " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
@@ -328,7 +328,7 @@ public class DbDdl {
     }
   }
 
-  public static void deleteAllRecordsTable(JdbcDataPath dataPath) {
+  public static void deleteAllRecordsTable(AnsiDataPath dataPath) {
 
     try {
       String dropTableStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
@@ -340,7 +340,7 @@ public class DbDdl {
 
   public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
     try {
-      final JdbcDataPath dataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
+      final AnsiDataPath dataPath = (AnsiDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropTableStatement = "ALTER TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath)
         + " DROP CONSTRAINT " + foreignKeyDef.getName();
       dataPath.getDataStore().getCurrentConnection().createStatement().execute(dropTableStatement);

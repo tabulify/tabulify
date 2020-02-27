@@ -1,6 +1,6 @@
 package net.bytle.db.sqlserver;
 
-import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.AnsiDataPath;
 import net.bytle.db.jdbc.AnsiDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
@@ -69,7 +69,7 @@ public class SqlServerDataStoreExtension extends JdbcDataStoreExtension {
    * @return
    */
   @Override
-  public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
+  public List<String> getCreateTableStatements(AnsiDataPath dataPath) {
     return null;
   }
 
@@ -86,7 +86,7 @@ public class SqlServerDataStoreExtension extends JdbcDataStoreExtension {
 
 
   @Override
-  public String getTruncateStatement(JdbcDataPath dataPath) {
+  public String getTruncateStatement(AnsiDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

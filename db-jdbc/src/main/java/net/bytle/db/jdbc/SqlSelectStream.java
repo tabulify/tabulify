@@ -1,6 +1,6 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
 
@@ -13,24 +13,22 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.JdbcDataPath.QUERY_TYPE;
+import static net.bytle.db.jdbc.AnsiDataPath.QUERY_TYPE;
 
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   private final AnsiDataStore jdbcDataStore;
 
-  private JdbcDataPath jdbcDataPath;
+  private AnsiDataPath jdbcDataPath;
 
   // The cursor
   private ResultSet resultSet;
 
-  private TableDef selectDataDef;
-
   // Just for debugging purpose, in order to see the query that created this stream
   private String query;
 
-  public SqlSelectStream(JdbcDataPath jdbcDataPath) {
+  public SqlSelectStream(AnsiDataPath jdbcDataPath) {
 
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
@@ -40,7 +38,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   }
 
 
-  public static SqlSelectStream of(JdbcDataPath jdbcDataPath) {
+  public static SqlSelectStream of(AnsiDataPath jdbcDataPath) {
     return new SqlSelectStream(jdbcDataPath);
   }
 
@@ -90,37 +88,25 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public void execute() {
 
+    getResultSet();
 
-    switch (jdbcDataPath.getType()) {
-      case QUERY_TYPE:
-        query = jdbcDataPath.getQuery();
-        break;
-      default:
-        query = "select * from " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
-    }
-
-    try {
-      this.resultSet = jdbcDataStore.getCurrentConnection().createStatement().executeQuery(query);
-      if (selectDataDef == null) {
-        ResultSetMetaData resultSetMetaData = this.resultSet.getMetaData();
-        selectDataDef = TableDef.of(jdbcDataPath);
-        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-          int columnType = resultSetMetaData.getColumnType(i);
-          selectDataDef.addColumn(
-            resultSetMetaData.getColumnName(i),
-            columnType,
-            resultSetMetaData.getPrecision(i),
-            resultSetMetaData.getScale(i));
-        }
-      }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private ResultSet getResultSet() {
     if (resultSet == null) {
-      execute();
+      switch (jdbcDataPath.getType()) {
+        case QUERY_TYPE:
+          query = jdbcDataPath.getQuery();
+          break;
+        default:
+          query = "select * from " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
+      }
+
+      try {
+        this.resultSet = jdbcDataStore.getCurrentConnection().createStatement().executeQuery(query);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
     }
     return resultSet;
   }
@@ -145,15 +131,27 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
     }
   }
 
+
+
+
   /**
-   * @return the data def of the result set from the select
+   * @return
    */
   @Override
-  public TableDef getSelectDataDef() {
-    if (this.selectDataDef == null) {
-      execute();
+  public void buildDataDef(RelationDef ansiDataDef) {
+    try {
+      ResultSetMetaData resultSetMetaData = getResultSet().getMetaData();
+      for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+        int columnType = resultSetMetaData.getColumnType(i);
+        ansiDataDef.addColumn(
+          resultSetMetaData.getColumnName(i),
+          columnType,
+          resultSetMetaData.getPrecision(i),
+          resultSetMetaData.getScale(i));
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
     }
-    return this.selectDataDef;
   }
 
 
@@ -192,7 +190,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   public List<Object> getObjects() {
     return
       Arrays.stream(jdbcDataPath.getDataDef().getColumnDefs())
-        .map(c -> getObject(c.getColumnPosition()))
+        .map(c -> getObject(c.getColumnPosition() - 1))
         .collect(Collectors.toList());
   }
 

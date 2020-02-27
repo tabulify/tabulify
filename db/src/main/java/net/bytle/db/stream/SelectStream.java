@@ -22,7 +22,23 @@ public interface SelectStream extends AutoCloseable {
   Object getObject(int columnIndex);
 
 
-  RelationDef getSelectDataDef();
+  /**
+   *
+   * This is a hook function to build the data def at selection/runtime
+   *
+   * This function is used when:
+   *   * building the data def
+   *   * or before running a select stream
+   *
+   * @param relationDef - the relationDef to build
+   * @return the data def build from the select stream
+   *
+   * Example:
+   *   * a query is build from the result set
+   *   * a text file without any defined structure will add a column called `lines`
+   *
+   */
+  void buildDataDef(RelationDef relationDef);
 
   Double getDouble(int columnIndex);
 

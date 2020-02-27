@@ -13,9 +13,9 @@ public class JsonDataPath extends FsRawDataPath {
 
   @Override
   public JsonDataDef getDataDef() {
-    if (this.dataDef == null) {
-      this.dataDef = new JsonDataDef(this);
+    if (this.csvDataDef == null) {
+      this.csvDataDef = new JsonDataDef(this);
     }
-    return (JsonDataDef) this.dataDef;
+    return (JsonDataDef) this.csvDataDef;
   }
 }

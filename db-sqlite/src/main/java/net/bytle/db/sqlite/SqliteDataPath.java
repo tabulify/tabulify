@@ -1,10 +1,10 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataStore;
-import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.AnsiDataPath;
 import net.bytle.db.spi.DataPath;
 
-public class SqliteDataPath extends JdbcDataPath implements DataPath {
+public class SqliteDataPath extends AnsiDataPath implements DataPath {
 
 
   private final SqliteDataStore sqliteDataStore;
@@ -16,7 +16,7 @@ public class SqliteDataPath extends JdbcDataPath implements DataPath {
   }
 
   @Override
-  public JdbcDataPath getSchema() {
+  public AnsiDataPath getSchema() {
     return new SqliteDataPath(sqliteDataStore,"","",null);
   }
 

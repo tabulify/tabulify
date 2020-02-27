@@ -1,8 +1,6 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
 import net.bytle.db.textline.LineDataPath;
 
 import java.nio.file.Path;
@@ -23,16 +21,16 @@ public class CsvDataPath extends LineDataPath {
 
   public static CsvDataPath of(Path path) {
 
-    return new CsvDataPath(DataStore.of(path), path);
+    return new CsvDataPath(FsDataStore.of(path), path);
 
   }
 
   @Override
   public CsvDataDef getDataDef() {
-    if (this.dataDef == null) {
-      this.dataDef = new CsvDataDef(this);
+    if (this.csvDataDef == null) {
+      this.csvDataDef = new CsvDataDef(this);
     }
-    return (CsvDataDef) this.dataDef;
+    return (CsvDataDef) this.csvDataDef;
   }
 
   @Override

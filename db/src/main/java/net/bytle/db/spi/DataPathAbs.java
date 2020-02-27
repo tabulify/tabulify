@@ -22,7 +22,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
   // if you put the query on the data def you got a recursion
   private String query;
 
-  protected RelationDef dataDef;
+  protected RelationDef csvDataDef;
   private String description;
 
 
@@ -47,10 +47,10 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
 
   @Override
   public RelationDef getDataDef() {
-    if (this.dataDef == null) {
-      this.dataDef = TableDef.of(this);
+    if (this.csvDataDef == null) {
+      this.csvDataDef = TableDef.of(this);
     }
-    return dataDef;
+    return csvDataDef;
   }
 
   @Override

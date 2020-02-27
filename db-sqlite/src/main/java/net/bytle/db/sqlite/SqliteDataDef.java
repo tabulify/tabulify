@@ -1,21 +1,16 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.JdbcDataDef;
-import net.bytle.db.jdbc.JdbcDataPath;
+import net.bytle.db.jdbc.AnsiDataDef;
 
-public class SqliteDataDef extends JdbcDataDef {
-
-  private final SqliteDataPath sqliteDataPath;
+public class SqliteDataDef extends AnsiDataDef {
 
   public SqliteDataDef(SqliteDataPath dataPath) {
-
     super(dataPath);
-    this.sqliteDataPath = dataPath;
   }
 
   @Override
-  public JdbcDataPath getDataPath() {
-    return sqliteDataPath;
+  public SqliteDataPath getDataPath() {
+    return (SqliteDataPath) super.dataPath;
   }
 
 }

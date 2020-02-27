@@ -102,8 +102,8 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   }
 
   @Override
-  public RelationDef getSelectDataDef() {
-    return memoryQueueDataPath.getDataDef();
+  public void buildDataDef(RelationDef relationDef) {
+
   }
 
 

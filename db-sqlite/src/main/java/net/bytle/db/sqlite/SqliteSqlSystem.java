@@ -52,7 +52,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
    * @param dataPath
    * @return a create statement https://www.sqlite.org/lang_createtable.html
    */
-  public List<String> getCreateTableStatements(JdbcDataPath dataPath) {
+  public List<String> getCreateTableStatements(AnsiDataPath dataPath) {
 
     List<String> statements = new ArrayList<>();
     StringBuilder statement = new StringBuilder();
@@ -138,7 +138,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
    */
   public Boolean addPrimaryKey(RelationDef tableDef) {
 
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) tableDef.getDataPath();
     Connection connection = dataPath.getDataStore().getCurrentConnection();
     List<String> columns = new ArrayList<>();
     final String sql = "PRAGMA table_info('" + dataPath.getName() + "')";
@@ -166,7 +166,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
 
   public Boolean addForeignKey(RelationDef tableDef) {
 
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) tableDef.getDataPath();
     Connection connection = dataPath.getDataStore().getCurrentConnection();
     Map<Integer, List<String>> foreignKeys = new HashMap<>();
     final String sql = "PRAGMA foreign_key_list('" + dataPath.getName() + "')";
@@ -194,7 +194,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
       final List<String> foreignKey = foreignKeys.get(i);
       final String foreignTableName = foreignKey.get(0);
       final String nativeTableColumn = foreignKey.get(1);
-      JdbcDataPath foreignDataPath = dataPath.getDataStore().getDataPath(foreignTableName);
+      AnsiDataPath foreignDataPath = dataPath.getDataStore().getDataPath(foreignTableName);
 
       // This is possible in Sqlite to have foreign key on table that does not exist
       if (Tabulars.exists(foreignDataPath)) {
@@ -222,7 +222,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
   public boolean addColumns(RelationDef tableDef) {
 
     // Because the driver returns 20000000 and no data type name
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) tableDef.getDataPath();
     try (
       Statement statement = dataPath.getDataStore().getCurrentConnection().createStatement();
       ResultSet resultSet = statement.executeQuery("PRAGMA table_info('" + dataPath.getName() + "')");
@@ -256,7 +256,7 @@ public class SqliteSqlSystem extends AnsiSqlSystem {
     return true;
   }
 
-  public String getTruncateStatement(JdbcDataPath dataPath) {
+  public String getTruncateStatement(AnsiDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

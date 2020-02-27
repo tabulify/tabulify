@@ -36,7 +36,7 @@ public class JdbcDataSystemSql {
      *
      * The databaseName of a table in a SQL statement
      */
-    public static String getStatementTableName(JdbcDataPath jdbcDataPath) {
+    public static String getStatementTableName(AnsiDataPath jdbcDataPath) {
 
 
         final AnsiDataStore dataStore = jdbcDataPath.getDataStore();
@@ -48,7 +48,7 @@ public class JdbcDataSystemSql {
     }
 
     public static String getFullyQualifiedSqlName(ColumnDef columnDef) {
-        final JdbcDataPath dataPath = (JdbcDataPath) columnDef.getDataDef().getDataPath();
+        final AnsiDataPath dataPath = (AnsiDataPath) columnDef.getDataDef().getDataPath();
         String identifier = DbSql.getIdentifierQuote(dataPath.getDataStore());
         return getFullyQualifiedSqlName(dataPath)+"."+identifier+columnDef.getColumnName()+identifier;
     }
@@ -61,7 +61,7 @@ public class JdbcDataSystemSql {
      * Example:
      * col1, col2, col3
      */
-    public static String getColumnsStatement(JdbcDataPath jdbcDataPath) {
+    public static String getColumnsStatement(AnsiDataPath jdbcDataPath) {
         /**
          * {@link DatabaseMetaData#getIdentifierQuoteString()}
          */
@@ -79,7 +79,7 @@ public class JdbcDataSystemSql {
      * @param mergeColumnPositions
      * @return a merge statement that is used by the loader
      */
-    public String getMergeStatement(JdbcDataPath jdbcDataPath, List<Integer> mergeColumnPositions) {
+    public String getMergeStatement(AnsiDataPath jdbcDataPath, List<Integer> mergeColumnPositions) {
 
         String sql = "INSERT OR REPLACE INTO " + jdbcDataPath.getName() + "(";
 
@@ -109,7 +109,7 @@ public class JdbcDataSystemSql {
      *
      * @return
      */
-    public static String getSelectStatement(JdbcDataPath dataPath) {
+    public static String getSelectStatement(AnsiDataPath dataPath) {
 
         /**
          * If it does not work, "select * from " + getFullyQualifiedSqlName(dataPath); ?
@@ -132,7 +132,7 @@ public class JdbcDataSystemSql {
      */
     public static String getFullyQualifiedSqlName(DataPath dataPath) {
 
-        JdbcDataPath jdbcDataPath = (JdbcDataPath) dataPath;
+        AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
 
         final String statementTableName = getStatementTableName(jdbcDataPath);
 
@@ -160,7 +160,7 @@ public class JdbcDataSystemSql {
      * @param jdbcDataPath - A tableDef
      * @return - the number of rows for this table
      */
-    public static Integer getSize(JdbcDataPath jdbcDataPath) {
+    public static Integer getSize(AnsiDataPath jdbcDataPath) {
 
 
 

@@ -18,7 +18,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
   private final RelationDef targetMetaDef;
-  private final JdbcDataPath jdbcDataPath;
+  private final AnsiDataPath jdbcDataPath;
 
   private PreparedStatement preparedStatement;
   private Connection connection;
@@ -28,14 +28,14 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   private Boolean supportNamedParameters;
   private Statement statement;
 
-  private SqlInsertStream(JdbcDataPath jdbcDataPath) {
+  private SqlInsertStream(AnsiDataPath jdbcDataPath) {
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
     this.targetMetaDef = jdbcDataPath.getDataDef();
     init();
   }
 
-  public synchronized static SqlInsertStream of(JdbcDataPath jdbcDataPath) {
+  public synchronized static SqlInsertStream of(AnsiDataPath jdbcDataPath) {
     if (!Tabulars.exists(jdbcDataPath)) {
       throw new RuntimeException("You can't open an insert stream on the SQL table (" + jdbcDataPath + ") because it does not exist.");
     }
@@ -62,7 +62,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
           try {
             if (sourceObject != null) {
 
-              Object loadObject = Jdbcs.castLoadObjectIfNecessary(preparedStatement.getConnection(), targetColumnType, sourceObject);
+              Object loadObject = Ansis.castLoadObjectIfNecessary(preparedStatement.getConnection(), targetColumnType, sourceObject);
               preparedStatement.setObject(i + 1, loadObject, targetColumnType);
 
 
@@ -139,8 +139,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   }
 
   @Override
-  public JdbcDataPath getDataPath() {
-    return (JdbcDataPath) super.getDataPath();
+  public AnsiDataPath getDataPath() {
+    return (AnsiDataPath) super.getDataPath();
   }
 
   private void init() {
@@ -309,7 +309,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         }
       }
 
-      final JdbcDataPath dataPath = (JdbcDataPath) targetMetaDef.getDataPath();
+      final AnsiDataPath dataPath = (AnsiDataPath) targetMetaDef.getDataPath();
       if (dataPath.getDataStore().getMaxWriterConnection() > 1) {
         if (connection != null) {
           connection.close();

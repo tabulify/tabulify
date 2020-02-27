@@ -55,7 +55,7 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
    * @return
    */
   @Override
-  public List<String> getCreateTableStatements(JdbcDataPath jdbcDataPath) {
+  public List<String> getCreateTableStatements(AnsiDataPath jdbcDataPath) {
 
 
     List<String> statements = new ArrayList<>();
@@ -105,7 +105,7 @@ public class JdbcDataStoreExtensionIHana extends JdbcDataStoreExtension {
   }
 
   @Override
-  public String getTruncateStatement(JdbcDataPath dataPath) {
+  public String getTruncateStatement(AnsiDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

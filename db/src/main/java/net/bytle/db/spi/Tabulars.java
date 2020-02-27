@@ -475,7 +475,7 @@ public class Tabulars {
       SelectStream selectStream = Tabulars.getSelectStream(source);
       InsertStream insertStream = Tabulars.getInsertStream(target)
     ) {
-      RelationDef sourceDataDef = selectStream.getSelectDataDef();
+      RelationDef sourceDataDef = selectStream.getDataPath().getDataDef();
       if (sourceDataDef.getColumnsSize() == 0) {
         // No row structure even at runtime
         throw new RuntimeException(Strings.multiline(
@@ -515,7 +515,7 @@ public class Tabulars {
     try (
       SelectStream selectStream = Tabulars.getSelectStream(source);
     ) {
-      RelationDef dataDef = selectStream.getSelectDataDef();
+      RelationDef dataDef = selectStream.getDataPath().getDataDef();
       if (dataDef.getColumnsSize() == 0) {
         // No row structure even at runtime
         throw new RuntimeException(Strings.multiline(

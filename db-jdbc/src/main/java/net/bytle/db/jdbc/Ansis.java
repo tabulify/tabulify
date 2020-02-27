@@ -14,19 +14,19 @@ import java.util.stream.Collectors;
 import static net.bytle.db.jdbc.AnsiDataStore.DB_SQLITE;
 
 /**
- * Static method
+ * Static method for an ANSI database
  */
-public class Jdbcs {
+public class Ansis {
 
 
   private static final Log LOGGER = JdbcDataSystemLog.LOGGER_DB_JDBC;
 
 
-  public static List<DataPath> getChildrenDataPath(JdbcDataPath jdbcDataPath) {
+  public static List<DataPath> getChildrenDataPath(AnsiDataPath jdbcDataPath) {
     return getDescendants(jdbcDataPath, null);
   }
 
-  public static List<DataPath> getDescendants(JdbcDataPath jdbcDataPath, String tableNamePattern) {
+  public static List<DataPath> getDescendants(AnsiDataPath jdbcDataPath, String tableNamePattern) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
     try {
@@ -41,7 +41,7 @@ public class Jdbcs {
         final String schema_name = tableResultSet.getString("TABLE_SCHEM");
         final String cat_name = tableResultSet.getString("TABLE_CAT");
         final String type_name = tableResultSet.getString("TABLE_TYPE");
-        JdbcDataPath childDataPath = JdbcDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name)
+        AnsiDataPath childDataPath = AnsiDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name)
           .setType(type_name);
         jdbcDataPaths.add(childDataPath);
       }
@@ -58,7 +58,7 @@ public class Jdbcs {
    * @param jdbcDataPath
    * @return a list of data path that reference the primary key of the jdbcDataPath
    */
-  public static List<DataPath> getReferencingDataPaths(JdbcDataPath jdbcDataPath) {
+  public static List<DataPath> getReferencingDataPaths(AnsiDataPath jdbcDataPath) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
     try {
@@ -72,7 +72,7 @@ public class Jdbcs {
         final String table_name = tableResultSet.getString("FKTABLE_NAME");
         final String schema_name = tableResultSet.getString("FKTABLE_SCHEM");
         final String cat_name = tableResultSet.getString("FKTABLE_CAT");
-        JdbcDataPath fkDataPath = JdbcDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name);
+        AnsiDataPath fkDataPath = AnsiDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name);
         jdbcDataPaths.add(fkDataPath);
       }
 
@@ -88,7 +88,7 @@ public class Jdbcs {
 
     // Bug in SQLite Driver - Hack
     // that doesn't return the good primary ley
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) tableDef.getDataPath();
     final String column_name = "COLUMN_NAME";
     final String pk_name = "PK_NAME";
     final String key_seq = "KEY_SEQ";
@@ -136,50 +136,50 @@ public class Jdbcs {
    * if no table is found, return null
    * The table of a schema but the whole schema will not be build
    *
-   * @param tableDef
    * @return null if no table is found
    */
-  public static RelationDef getTableDef(RelationDef tableDef) {
+  public static AnsiDataDef buildAnsiDataDef(AnsiDataDef ansiDataDef) {
 
 
     try {
-      JdbcDataPath jdbcDataPath = (JdbcDataPath) tableDef.getDataPath();
-      LOGGER.fine("Building the table structure for the data path (" + jdbcDataPath + ")");
+
+      AnsiDataPath ansiDataPath = ansiDataDef.getDataPath();
+      LOGGER.fine("Building the table structure for the data path (" + ansiDataPath + ")");
 
       String[] types = {"TABLE"};
 
-      final JdbcDataPath schemaPath = jdbcDataPath.getSchema();
+      final AnsiDataPath schemaPath = ansiDataPath.getSchema();
       String schema = null;
       if (schemaPath != null) {
         schema = schemaPath.getName();
       }
-      String catalog = jdbcDataPath.getCatalog();
-      String tableName = jdbcDataPath.getName();
+      String catalog = ansiDataPath.getCatalog();
+      String tableName = ansiDataPath.getName();
 
-      ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
+      ResultSet tableResultSet = ansiDataPath.getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
       boolean tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY
 
       if (!tableExist) {
 
         tableResultSet.close();
-        return tableDef;
+        return ansiDataDef;
 
       } else {
 
-        jdbcDataPath.setType(tableResultSet.getString("TABLE_TYPE"));
+        ansiDataPath.setType(tableResultSet.getString("TABLE_TYPE"));
         tableResultSet.close();
 
         // Columns building
-        buildTableColumns(tableDef);
+        buildTableColumns(ansiDataDef);
         // Pk Building
-        buildPrimaryKey(tableDef);
+        buildPrimaryKey(ansiDataDef);
         // Foreign Key building
-        buildForeignKey(tableDef);
+        buildForeignKey(ansiDataDef);
         // Unique Key
-        buildUniqueKey(tableDef);
+        buildUniqueKey(ansiDataDef);
 
         // Return the table
-        return tableDef;
+        return ansiDataDef;
 
       }
 
@@ -190,9 +190,9 @@ public class Jdbcs {
 
   }
 
-  private static void buildTableColumns(RelationDef tableDef) throws SQLException {
+  private static void buildTableColumns(AnsiDataDef ansiDataDef) throws SQLException {
 
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = ansiDataDef.getDataPath();
 
 
     String schemaName = null;
@@ -225,8 +225,8 @@ public class Jdbcs {
 
       final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
-      SqlDataType dataType = tableDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
-      tableDef.getColumnOf(column_name, dataType.getClazz())
+      SqlDataType dataType = ansiDataDef.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
+      ansiDataDef.getColumnOf(column_name, dataType.getClazz())
         .typeCode(sqlTypeCode)
         .precision(column_size)
         .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
@@ -256,7 +256,7 @@ public class Jdbcs {
 
     // SQLite Driver doesn't return a empty string as key name
     // for all foreigns key
-    final JdbcDataPath dataPath = (JdbcDataPath) tableDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) tableDef.getDataPath();
     AnsiDataStore dataStore = dataPath.getDataStore();
 
     // The column names of the fkresult set
@@ -336,13 +336,13 @@ public class Jdbcs {
     }
 
     // How much foreign key (ie how much foreign key tables)
-    List<JdbcDataPath> foreignTableNames = fkDatas.stream()
+    List<AnsiDataPath> foreignTableNames = fkDatas.stream()
       .distinct()
-      .map(s -> JdbcDataPath.of(dataStore, s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
+      .map(s -> AnsiDataPath.of(dataStore, s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
       .collect(Collectors.toList());
 
 
-    for (JdbcDataPath foreignTable : foreignTableNames) {
+    for (AnsiDataPath foreignTable : foreignTableNames) {
       Map<Integer, String> cols = new HashMap<>();
       String fk_name = "";
       for (Map<String, String> fkData : fkDatas) {
@@ -381,7 +381,7 @@ public class Jdbcs {
     Map<String, Map<Integer, String>> indexData = new HashMap<>();
     final String ordinal_position_alias = "ORDINAL_POSITION";
     final String column_name_alias = "COLUMN_NAME";
-    final JdbcDataPath dataPath = (JdbcDataPath) metaDataDef.getDataPath();
+    final AnsiDataPath dataPath = (AnsiDataPath) metaDataDef.getDataPath();
     final String schema = dataPath.getSchema() != null ? dataPath.getSchema().getName() : null;
     try (
       // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges
@@ -447,7 +447,7 @@ public class Jdbcs {
   }
 
 
-  public void printPrimaryKey(JdbcDataPath jdbcDataPath) {
+  public void printPrimaryKey(AnsiDataPath jdbcDataPath) {
 
     try (
       ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getPrimaryKeys(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName())
@@ -461,7 +461,7 @@ public class Jdbcs {
 
   }
 
-  public void printUniqueKey(JdbcDataPath jdbcDataPath) {
+  public void printUniqueKey(AnsiDataPath jdbcDataPath) {
 
     try (
       ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getIndexInfo(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName(), true, false)
@@ -637,7 +637,7 @@ public class Jdbcs {
      */
     AnsiDataStore dataStore = (AnsiDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataStore.getProductName().equals(DB_SQLITE)) {
-      JdbcDataPath jdbcDataPath = (JdbcDataPath) foreignKeyDef.getTableDef().getDataPath();
+      AnsiDataPath jdbcDataPath = (AnsiDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
       try {
 

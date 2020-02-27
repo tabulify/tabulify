@@ -1,6 +1,6 @@
 package net.bytle.db.textline;
 
-import net.bytle.db.model.TableDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStreamAbs;
 
 import java.io.BufferedReader;
@@ -27,6 +27,7 @@ public class LineSelectStream extends SelectStreamAbs {
 
     super(lineDataPath);
     this.lineDataPath = lineDataPath;
+    buildDataDef(lineDataPath.getDataDef());
     beforeFirst();
   }
 
@@ -106,13 +107,11 @@ public class LineSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public TableDef getSelectDataDef() {
-    LineDataDef dataDef = lineDataPath.getDataDef();
-    if (dataDef.getColumnsSize()==0) {
+  public void buildDataDef(RelationDef relationDef) {
+    if (relationDef.getColumnsSize()==0) {
       // One column only
-      dataDef.addColumn("Lines");
+      relationDef.addColumn("Lines");
     }
-    return dataDef;
   }
 
 

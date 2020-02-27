@@ -107,7 +107,7 @@ public class TransferManager {
         if (next) {
           showMustGoOn = true;
           InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnsSize())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -174,7 +174,7 @@ public class TransferManager {
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         while (sourceSelectStream.next()) {
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getSelectDataDef().getColumnsSize())
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getDataDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);

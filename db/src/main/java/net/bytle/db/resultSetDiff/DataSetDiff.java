@@ -378,7 +378,7 @@ public class DataSetDiff {
       cellWithDiffCoordinates.forEach(diff -> columnPositions.add(diff.getPosition()));
     }
 
-    for (int i = 0; i < selectStream.getSelectDataDef().getColumnsSize(); i++) {
+    for (int i = 0; i < selectStream.getDataPath().getDataDef().getColumnsSize(); i++) {
       Object object = selectStream.getObject(i);
 
       if (columnPositions.contains(i)) {
@@ -408,7 +408,7 @@ public class DataSetDiff {
 
     Boolean diffFound = false;
     List<Diff> columnPositionWithDiff = new ArrayList<>();
-    for (int i = 0; i < firstStream.getSelectDataDef().getColumnsSize(); i++) {
+    for (int i = 0; i < firstStream.getDataPath().getDataDef().getColumnsSize(); i++) {
 
       String cellCoordinates = "Cell(Row,Col)(" + firstStream.getRow() + "," + i + ")";
 

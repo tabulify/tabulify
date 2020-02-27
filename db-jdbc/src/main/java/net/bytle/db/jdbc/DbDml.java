@@ -65,7 +65,7 @@ public class DbDml {
      */
     public static String getInsertStatement(RelationDef source, RelationDef target, List<Object> values) {
 
-        final JdbcDataPath dataPath = (JdbcDataPath) target.getDataPath();
+        final AnsiDataPath dataPath = (AnsiDataPath) target.getDataPath();
         String insertStatement = "INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) + " (";
         String insertStatementBindVariable = "";
 
@@ -115,13 +115,13 @@ public class DbDml {
      * @param target
      * @return an insert into statement
      */
-    public static String getInsertIntoStatement(JdbcDataPath source, JdbcDataPath target) {
+    public static String getInsertIntoStatement(AnsiDataPath source, AnsiDataPath target) {
 
         StringBuilder insertIntoBuilder = new StringBuilder();
         insertIntoBuilder.append("INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(target) + " (");
         insertIntoBuilder.append(JdbcDataSystemSql.getColumnsStatement(target));
         insertIntoBuilder.append(") ");
-        if (source.getType().equals(JdbcDataPath.QUERY_TYPE)){
+        if (source.getType().equals(AnsiDataPath.QUERY_TYPE)){
 
             insertIntoBuilder.append(source.getQuery());
 

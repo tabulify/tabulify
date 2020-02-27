@@ -131,13 +131,13 @@ public class AnsiDataStore extends DataStore {
   }
 
   @Override
-  public JdbcDataPath getDataPath(String... names) {
+  public AnsiDataPath getDataPath(String... names) {
     return this.getCurrentDataPath().resolve(names);
   }
 
   @Override
-  public JdbcDataPath getCurrentDataPath() {
-    return JdbcDataPath.of(this, getCurrentCatalog(), getCurrentSchema(), null);
+  public AnsiDataPath getCurrentDataPath() {
+    return AnsiDataPath.of(this, getCurrentCatalog(), getCurrentSchema(), null);
   }
 
   public String getProductName() {
@@ -164,7 +164,7 @@ public class AnsiDataStore extends DataStore {
 
   @Override
   public DataPathAbs getQueryDataPath(String query) {
-    return JdbcDataPath.ofQuery(this, query);
+    return AnsiDataPath.ofQuery(this, query);
   }
 
   /**

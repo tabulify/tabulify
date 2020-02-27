@@ -97,8 +97,8 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
   }
 
   @Override
-  public RelationDef getSelectDataDef() {
-    return memoryDataPath.getDataDef();
+  public void buildDataDef(RelationDef relationDef) {
+
   }
 
 

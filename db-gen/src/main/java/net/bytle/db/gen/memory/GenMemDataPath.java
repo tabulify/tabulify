@@ -41,7 +41,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   public GenDataDef getDataDef() {
     if (genDataDef == null){
       genDataDef = new GenDataDef(this);
-      super.dataDef = genDataDef;
+      super.csvDataDef = genDataDef;
     }
     return genDataDef;
   }
