@@ -37,6 +37,7 @@ include(":bytle-timer")
 include(":bytle-http")
 include(":bytle-zip")
 include(":bytle-db-play")
+include(":bytle-viz")
 
 
 
