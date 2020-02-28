@@ -1,28 +1,30 @@
 package net.bytle.db.sqlite;
 
 import net.bytle.db.jdbc.AnsiDataPath;
-import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.spi.DataPath;
 
 public class SqliteDataPath extends AnsiDataPath implements DataPath {
 
 
-  public static final String SCHEMA_NAME = "";
-  private final SqliteDataStore sqliteDataStore;
 
   public SqliteDataPath(SqliteDataStore jdbcDataStore, String catalog, String schema, String name) {
     super(jdbcDataStore, catalog, schema, name);
-    this.sqliteDataStore = jdbcDataStore;
+    assert catalog==null:"Sqlite does not have the notion of catalog. The catalog should be null bit was ("+catalog+")";
+    assert schema==null:"Sqlite does not have the notion of schema. The schema should be null bit was ("+schema+")";
+  }
+
+  public SqliteDataPath(SqliteDataStore sqliteDataStore, String query) {
+    super(sqliteDataStore, query);
   }
 
   @Override
-  public AnsiDataPath getSchema() {
-    return new SqliteDataPath(sqliteDataStore,"", SCHEMA_NAME,null);
+  public SqliteDataPath getSchema() {
+    return null;
   }
 
   @Override
-  public SqlDataStore getDataStore() {
-    return super.getDataStore();
+  public SqliteDataStore getDataStore() {
+    return (SqliteDataStore) super.getDataStore();
   }
 
   @Override
@@ -43,10 +45,12 @@ public class SqliteDataPath extends AnsiDataPath implements DataPath {
 
   @Override
   public SqliteDataPath getChild(String name) {
-    if (super.getSchema().getName().equals(SCHEMA_NAME)){
-      return new SqliteDataPath(sqliteDataStore,null,null,name);
+    if (super.getName()==null){
+      return this.getDataStore().getSqlDataPath(null,null,name);
     } else {
       throw  new RuntimeException("You can't ask a children from a table. You are asking a children from the table ("+this+")");
     }
   }
+
+
 }

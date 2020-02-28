@@ -25,7 +25,8 @@ public class SqliteSqlSystem extends SqlDataSystem {
   @Override
   public Boolean exists(DataPath dataPath) {
     SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
-    if (sqliteDataPath.getSchema().getName().equals(AnsiDataPath.CURRENT_WORKING_DIRECTORY)){
+    if (sqliteDataPath.getName()==null){
+      // Schema
       return true;
     } else {
       return super.exists(dataPath);

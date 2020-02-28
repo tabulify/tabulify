@@ -62,7 +62,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
   /**
    * @return a select stream
    * <p>
-   * The constructor {@link #AnsiDataDef(AnsiDataPath)} may have initialized this select stream
+   * The constructor {@link #AnsiDataDef(AnsiDataPath,Boolean)} may have initialized this select stream
    * when the data path is a query
    */
   public SelectStream getSelectStream() {
@@ -270,7 +270,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
     // How much foreign key (ie how much foreign key tables)
     List<AnsiDataPath> foreignTableNames = fkDatas.stream()
       .distinct()
-      .map(s -> AnsiDataPath.of(dataStore, s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
+      .map(s -> dataStore.getSqlDataPath(s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
       .collect(Collectors.toList());
 
 

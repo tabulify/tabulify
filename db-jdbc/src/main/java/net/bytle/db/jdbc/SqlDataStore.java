@@ -123,9 +123,9 @@ public class SqlDataStore extends DataStore {
   @Override
   public SqlDataSystem getDataSystem() {
 
-     if (sqlDataSystem == null) {
-       sqlDataSystem = new SqlDataSystem(this);
-     }
+    if (sqlDataSystem == null) {
+      sqlDataSystem = new SqlDataSystem(this);
+    }
     return sqlDataSystem;
 
   }
@@ -137,7 +137,7 @@ public class SqlDataStore extends DataStore {
 
   @Override
   public AnsiDataPath getCurrentDataPath() {
-    return AnsiDataPath.of(this, getCurrentCatalog(), getCurrentSchema(), null);
+    return getSqlDataPath(getCurrentCatalog(), getCurrentSchema(), null);
   }
 
   public String getProductName() {
@@ -164,7 +164,7 @@ public class SqlDataStore extends DataStore {
 
   @Override
   public DataPathAbs getQueryDataPath(String query) {
-    return AnsiDataPath.ofQuery(this, query);
+    return new AnsiDataPath(this, query);
   }
 
   /**
@@ -426,20 +426,28 @@ public class SqlDataStore extends DataStore {
   }
 
   /**
-   *
    * @return the quote for identifier such as table, column name
    */
   String getIdentifierQuote() {
     String identifierQuoteString = "\"";
     try {
       final Connection currentConnection = this.getCurrentConnection();
-      if (currentConnection!=null) {
+      if (currentConnection != null) {
         identifierQuoteString = currentConnection.getMetaData().getIdentifierQuoteString();
       }
     } catch (SQLException e) {
-      JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database ("+this+") throw an error when retrieving the quoted string identifier."+e.getMessage());
+      JdbcDataSystemLog.LOGGER_DB_JDBC.warning("The database (" + this + ") throw an error when retrieving the quoted string identifier." + e.getMessage());
     }
     return identifierQuoteString;
   }
 
+  /**
+   * A sql data path has only three parts
+   * @param catalog
+   * @param schema
+   * @param name
+   */
+  public AnsiDataPath getSqlDataPath(String catalog, String schema, String name) {
+    return new AnsiDataPath(this,catalog,schema,name);
+  }
 }

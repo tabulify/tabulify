@@ -6,7 +6,6 @@ import net.bytle.db.uri.DataUri;
 
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,115 +35,16 @@ public class AnsiDataPath extends DataPathAbs {
   public static final String VIEW_TYPE = "VIEW";
   public static final String QUERY_TYPE = "QUERY";
 
-  /**
-   * When the data path is a query, we need to open a selectStream to read the
-   * data def
-   */
-  private SqlSelectStream selectStream;
-
-
 
   /**
-   * Constructor used in the JDBC api to build a jdbc path
-   *
-   * @param dataStore
-   * @param cat_name
-   * @param schema_name
-   * @param table_name
-   * @return
-   */
-  public static AnsiDataPath of(SqlDataStore dataStore, String cat_name, String schema_name, String table_name) {
-    return new AnsiDataPath(dataStore, cat_name, schema_name, table_name);
-  }
-
-
-  /**
-   * Constructor from an data Uri string
    *
    * @param jdbcDataStore
-   * @param dataUri
-   * @return
+   * @param query - a query data pth
+   *
+   * To facilitate creation of a SqlDataStore extension, a query data path is
+   * created from a data store via {@link SqlDataStore#getQueryDataPath(String)}
    */
-  public static AnsiDataPath of(SqlDataStore jdbcDataStore, DataUri dataUri) {
-
-    String path = dataUri.getPath();
-    List<String> pathSegments = new ArrayList<>();
-
-    // Separator is a point by default
-    char splitter = '.';
-    if (path.charAt(0) == '.') {
-      // except if thi
-      splitter = '/';
-    }
-    if (path.indexOf(splitter) != -1) {
-      pathSegments = Arrays.asList(path.split(String.valueOf(splitter)));
-    } else {
-      pathSegments.add(path);
-    }
-
-    String catalog = jdbcDataStore.getCurrentCatalog();
-    String schema = jdbcDataStore.getCurrentSchema();
-    String first = pathSegments.get(0);
-    switch (first) {
-      case ".":
-        switch (pathSegments.size()) {
-          case 1:
-            return new AnsiDataPath(jdbcDataStore, catalog, schema, null);
-          case 2:
-            String name = pathSegments.get(pathSegments.size() - 1);
-            return new AnsiDataPath(jdbcDataStore, catalog, schema, name);
-          default:
-            throw new RuntimeException("The working context is the schema and have no children, it's then not possible to have following path (" + String.join("/", pathSegments) + ")");
-        }
-      case "..":
-        switch (pathSegments.size()) {
-          case 1:
-            // A catalog
-            return new AnsiDataPath(jdbcDataStore, catalog, null, null);
-          case 2:
-            switch (pathSegments.get(1)) {
-              case "..":
-                // the root
-                return new AnsiDataPath(jdbcDataStore, null, null, null);
-              case ".":
-                return new AnsiDataPath(jdbcDataStore, catalog, null, null);
-              default:
-                schema = pathSegments.get(1);
-                return new AnsiDataPath(jdbcDataStore, catalog, schema, null);
-            }
-          case 3:
-            schema = pathSegments.get(1);
-            String name = pathSegments.get(2);
-            return new AnsiDataPath(jdbcDataStore, catalog, schema, name);
-          default:
-            throw new RuntimeException("A Jdbc path knows max only three parts (catalog, schema, name). This path is then not possible (" + String.join("/", pathSegments) + ")");
-        }
-      default:
-        if (pathSegments.size() > 3) {
-          throw new RuntimeException("This jdbc path (" + String.join("/", pathSegments) + ") is not a valid JDBC uri because it has more than 3 name path but a Jdbc database system supports only maximum three: catalog, schema and name");
-        }
-
-        if (pathSegments.size() > 2) {
-          catalog = pathSegments.get(pathSegments.size() - 3);
-        } else {
-          catalog = jdbcDataStore.getCurrentCatalog();
-        }
-
-        if (pathSegments.size() > 1) {
-          schema = pathSegments.get(pathSegments.size() - 2);
-        } else {
-          schema = jdbcDataStore.getCurrentSchema();
-        }
-
-        String name = pathSegments.get(pathSegments.size() - 1);
-        return new AnsiDataPath(jdbcDataStore, catalog, schema, name);
-
-    }
-
-
-  }
-
-  public AnsiDataPath(SqlDataStore jdbcDataStore, String query) {
+  protected AnsiDataPath(SqlDataStore jdbcDataStore, String query) {
     this.jdbcDataStore = jdbcDataStore;
     this.setType(QUERY_TYPE);
     this.setQuery(query);
@@ -156,15 +56,17 @@ public class AnsiDataPath extends DataPathAbs {
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #ofQuery(SqlDataStore, String)}
-   * The data uri is not given but rebuild. See for more info {@link #getDataUri()}
+   * Query has another one, See {@link #AnsiDataPath(SqlDataStore, String)}
    *
    * @param jdbcDataStore
    * @param catalog
    * @param schema
    * @param name
+   *
+   * To facilitate the SqlDataStore extension, a data path is
+   * created from a data store via {@link SqlDataStore#getSqlDataPath(String, String, String)}
    */
-  public AnsiDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
+  protected AnsiDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
 
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
@@ -173,10 +75,6 @@ public class AnsiDataPath extends DataPathAbs {
 
   }
 
-
-  public static AnsiDataPath ofQuery(SqlDataStore jdbcDataStore, String query) {
-    return new AnsiDataPath(jdbcDataStore, query);
-  }
 
   @Override
   public SqlDataStore getDataStore() {
@@ -224,9 +122,18 @@ public class AnsiDataPath extends DataPathAbs {
 
   }
 
+  /**
+   *
+   * @param name - the sibling name
+   * @return a sibling of a table
+   * The implementation is not complete,
+   * you will never get a sibling of a catalog or a schema
+   */
   @Override
-  public DataPath getSibling(String name) {
-    return new AnsiDataPath(this.jdbcDataStore, catalog, schema, name);
+  public AnsiDataPath getSibling(String name) {
+
+    return this.getDataStore().getDataPath(catalog, schema, name);
+
   }
 
   @Override
@@ -271,19 +178,19 @@ public class AnsiDataPath extends DataPathAbs {
       }
     }
     if (this.catalog != null) {
-      return new AnsiDataPath(this.jdbcDataStore,
+      return this.getDataStore().getSqlDataPath(
         actualPath.size() >= 1 ? actualPath.get(0) : null,
         actualPath.size() >= 2 ? actualPath.get(1) : null,
         actualPath.size() >= 3 ? actualPath.get(2) : null);
     } else {
       if (this.schema != null) {
-        return new AnsiDataPath(this.jdbcDataStore,
+        return this.getDataStore().getSqlDataPath(
           null,
           actualPath.size() >= 1 ? actualPath.get(0) : null,
           actualPath.size() >= 2 ? actualPath.get(1) : null
         );
       } else {
-        return new AnsiDataPath(this.jdbcDataStore,
+        return this.getDataStore().getSqlDataPath(
           null,
           null,
           actualPath.size() >= 1 ? actualPath.get(0) : null
@@ -306,7 +213,7 @@ public class AnsiDataPath extends DataPathAbs {
     if (schema == null) {
       return null;
     } else {
-      return new AnsiDataPath(jdbcDataStore, catalog, schema, null);
+      return this.getDataStore().getSqlDataPath(catalog, schema, null);
     }
 
   }
@@ -379,11 +286,9 @@ public class AnsiDataPath extends DataPathAbs {
   }
 
 
-
-
-
   @Override
   public DataPath getSelectStreamDependency() {
     return null;
   }
+
 }

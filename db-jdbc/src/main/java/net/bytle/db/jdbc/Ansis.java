@@ -70,7 +70,7 @@ public class Ansis {
         final String table_name = tableResultSet.getString("FKTABLE_NAME");
         final String schema_name = tableResultSet.getString("FKTABLE_SCHEM");
         final String cat_name = tableResultSet.getString("FKTABLE_CAT");
-        AnsiDataPath fkDataPath = AnsiDataPath.of(jdbcDataPath.getDataStore(), cat_name, schema_name, table_name);
+        AnsiDataPath fkDataPath = jdbcDataPath.getDataStore().getSqlDataPath(cat_name, schema_name, table_name);
         jdbcDataPaths.add(fkDataPath);
       }
 

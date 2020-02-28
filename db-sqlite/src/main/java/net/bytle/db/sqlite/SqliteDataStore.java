@@ -3,6 +3,7 @@ package net.bytle.db.sqlite;
 import net.bytle.db.jdbc.AnsiDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.model.SqlDataType;
+import net.bytle.db.spi.DataPathAbs;
 import net.bytle.type.Strings;
 
 import java.io.IOException;
@@ -14,7 +15,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.sqlite.SqliteDataPath.SCHEMA_NAME;
 
 public class SqliteDataStore extends SqlDataStore {
 
@@ -49,7 +49,7 @@ public class SqliteDataStore extends SqlDataStore {
 
   @Override
   public AnsiDataPath getCurrentDataPath() {
-    return getDataPath("");
+    return new SqliteDataPath(this, getCurrentCatalog(), getCurrentSchema(), null);
   }
 
   @Override
@@ -65,17 +65,16 @@ public class SqliteDataStore extends SqlDataStore {
         throw new RuntimeException("We can't create a path without names");
       case 1:
         switch (names[0]) {
-          case SCHEMA_NAME:
           case AnsiDataPath.CURRENT_WORKING_DIRECTORY:
-            return new SqliteDataPath(this, null, SCHEMA_NAME, null);
+            return getSqlDataPath( null, null, null);
           case AnsiDataPath.PARENT_DIRECTORY:
             throw new RuntimeException("Sqlite does not have the notion of catalog or schema, you can't ask therefore for a parent");
           default:
-            return new SqliteDataPath(this, null, null, names[0]);
+            return getSqlDataPath(null, null, names[0]);
         }
       case 2:
         if (names[0].equals(AnsiDataPath.CURRENT_WORKING_DIRECTORY)) {
-          return new SqliteDataPath(this, null, null, names[1]);
+          return getSqlDataPath( null, null, names[1]);
         }
       default:
         throw new RuntimeException(
@@ -140,5 +139,15 @@ public class SqliteDataStore extends SqlDataStore {
         break;
     }
     return sqlDataType;
+  }
+
+  @Override
+  public SqliteDataPath getSqlDataPath(String catalog, String schema, String name) {
+    return new SqliteDataPath(this,catalog, schema, name);
+  }
+
+  @Override
+  public DataPathAbs getQueryDataPath(String query) {
+    return new SqliteDataPath(this, query);
   }
 }
