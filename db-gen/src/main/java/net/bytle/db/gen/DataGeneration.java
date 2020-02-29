@@ -153,7 +153,7 @@ public class DataGeneration {
             .filter(c -> c.getColumnName().equals(foreignColumnName))
             .findFirst()
             .orElse(null);
-          assert foreignColumn != null : "The foreign column was not found (" + foreignTableName + "." + foreignColumnName + ")";
+          assert foreignColumn != null : "The foreign column (" + foreignTableName + "." + foreignColumnName + ") was not found in the source data path to transfer.";
 
           // Try to get the primary table generator
           final String primaryKeyTableName = foreignKey.getForeignPrimaryKey().getDataDef().getDataPath().getName();

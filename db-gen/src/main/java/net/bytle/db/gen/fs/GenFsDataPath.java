@@ -16,7 +16,22 @@ public class GenFsDataPath extends FsRawDataPath implements FsDataPath, GenDataP
 
   @Override
   public GenDataDef getOrCreateDataDef() {
+
     return new GenDataDef(this);
+
   }
+
+
+  /**
+   * The name of a data generation path
+   * is without the extension
+   * @return
+   */
+  @Override
+  public String getName() {
+    return super.getName().replace(GenFsManagerProvider.EXTENSION,"");
+  }
+
+
 
 }

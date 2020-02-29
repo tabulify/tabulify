@@ -49,8 +49,8 @@ public abstract class DataDefAbs implements RelationDef {
 
   private Set<UniqueKeyDef> uniqueKeys = new HashSet<>();
 
-  public DataDefAbs(DataPathAbs dataPath) {
-    this.dataPath = dataPath;
+  public DataDefAbs(DataPath dataPath) {
+    this.dataPath = (DataPathAbs) dataPath;
   }
 
 

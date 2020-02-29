@@ -246,7 +246,6 @@ public class Tabular implements AutoCloseable {
           return dataPathsToReturn;
         }
 
-
         for (Path path : files) {
           if (pathInUri.endsWith(".sql")) {
             String query = Fs.getFileContent(path);
@@ -268,7 +267,7 @@ public class Tabular implements AutoCloseable {
           } else if (pathInUri.endsWith(TableDef.DATA_DEF_SUFFIX)) {
             DataPath dataDefDataPath = this
               .getDataStore(dataUri.getDataStore())
-              .createOrMergeDataPathOfDataDef(path);
+              .getDataPathOfDataDefAndMerge(path);
             dataPathsToReturn.add(dataDefDataPath);
           }
         }
@@ -294,7 +293,7 @@ public class Tabular implements AutoCloseable {
    * @return the data path with its meta
    */
   public DataPath getDataPathOfDataDef(Path dataDefPath) {
-    return getDefaultDataStore().createOrMergeDataPathOfDataDef(dataDefPath);
+    return getDefaultDataStore().getDataPathOfDataDefAndMerge(dataDefPath);
   }
 
   public DataPath getDataPathOfDataDef(String name, RelationDef datadef) {

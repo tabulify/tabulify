@@ -3,6 +3,7 @@ package net.bytle.db.database;
 import net.bytle.db.DatastoreVault;
 import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
@@ -242,20 +243,29 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public abstract DataPath getQueryDataPath(String query);
 
   /**
+   *
+   * @param dataDefPath
+   * @return create a data path
+   */
+  public DataPath getDataPathOfDataDefAndMerge(Path dataDefPath) {
+    String fileName = dataDefPath.getFileName().toString();
+    String name = fileName.substring(0,fileName.lastIndexOf("--"));
+    DataPath dataPath = this.getDataPath(name);
+    mergeDataDefFromFile(dataPath.getOrCreateDataDef(), dataDefPath);
+    return dataPath;
+  }
+  /**
    * @param dataDefPath - the path of a data def file
    * @return a data path from a data def path
    * It will create or merge the data path from the data def file
    * <p>
    * If the data document already exist in the data store, it will merge, otherwise it will create it.
    */
-  public DataPath createOrMergeDataPathOfDataDef(Path dataDefPath) {
+  public void mergeDataDefFromFile(RelationDef dataDef, Path dataDefPath) {
     assert Files.exists(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     assert Files.isRegularFile(dataDefPath) : "The data definition file path (" + dataDefPath.toAbsolutePath().toString() + " does not exist";
     String fileName = dataDefPath.getFileName().toString();
     assert fileName.matches("(.*)--(.*).yml") : "The file (" + fileName + ") has not the data def extension (" + TableDef.DATA_DEF_SUFFIX + ")";
-
-    String name = fileName.substring(0,fileName.lastIndexOf("--"));
-    DataPath dataPath = this.getDataPath(name);
 
     InputStream input;
     try {
@@ -314,7 +324,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                 try {
                   Map<String, Object> columnProperties = (Map<String, Object>) column.getValue();
 
-                  ColumnDef columnDef = dataPath.getOrCreateDataDef().getColumnDef(column.getKey());
+                  ColumnDef columnDef = dataDef.getColumnDef(column.getKey());
                   // If the columns does not exist
                   if (columnDef == null) {
                     String type = "varchar";
@@ -323,7 +333,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                       type = (String) oType;
                     }
                     SqlDataType sqlDataType = getSqlDataTypeManager().get(type);
-                    columnDef = dataPath.getOrCreateDataDef().getColumnOf(column.getKey(), sqlDataType.getClazz());
+                    columnDef = dataDef.getColumnOf(column.getKey(), sqlDataType.getClazz());
                   }
 
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {
@@ -358,7 +368,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                   }
 
                 } catch (ClassCastException e) {
-                  String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataPath.toString() + ") must be in a map format. ";
+                  String message = "The properties of column (" + column.getKey() + ") from the data def (" + dataDef.toString() + ") must be in a map format. ";
                   if (column.getValue().getClass().equals(java.util.ArrayList.class)) {
                     message += "They are in a list format. You should suppress the minus if they are present.";
                   }
@@ -368,15 +378,14 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
               }
               break;
             default:
-              dataPath.getOrCreateDataDef().addProperty(entry.getKey().toLowerCase(), entry.getValue());
+              dataDef.addProperty(entry.getKey().toLowerCase(), entry.getValue());
               break;
           }
         }
         break;
       default:
-        throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + dataDefPath.toString() + ") for the dataPath (" + dataPath.toString() + ")");
+        throw new RuntimeException("Too much metadata documents (" + documents.size() + ") found in the file (" + dataDefPath.toString() + ") for the dataPath (" + dataDef.toString() + ")");
     }
-    return dataPath;
   }
 
 

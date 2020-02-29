@@ -1,11 +1,11 @@
 package net.bytle.db.gen;
 
 
+import net.bytle.db.gen.fs.GenFsDataPath;
 import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.gen.generator.UniqueDataCollectionGenerator;
 import net.bytle.db.model.*;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPathAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +30,12 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
 
   private Map<String, GenColumnDef> genColumns = new HashMap<>();
 
-  public GenDataDef(DataPathAbs dataPath) {
+  public GenDataDef(DataPath dataPath) {
     super(dataPath);
+    if (dataPath instanceof GenFsDataPath){
+      GenFsDataPath fsDataPath = (GenFsDataPath) dataPath;
+      fsDataPath.getDataStore().mergeDataDefFromFile(this,fsDataPath.getNioPath());
+    }
   }
 
 
