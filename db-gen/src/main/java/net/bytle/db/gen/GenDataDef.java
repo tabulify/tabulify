@@ -137,7 +137,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   @Override
-  public <T> GenColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
+  public <T> GenColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz) {
 
 
     if (!genColumns.containsValue(columnName)) {
@@ -187,6 +187,11 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
     }
     return genColumnDef;
 
+  }
+
+  @Override
+  public ColumnDef getColumn(String columnName) {
+    return genColumns.get(columnName);
   }
 
   /**

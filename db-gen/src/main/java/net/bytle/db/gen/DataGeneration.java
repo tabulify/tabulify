@@ -294,6 +294,8 @@ public class DataGeneration {
     if (Tabulars.isContainer(targetDataPath)){
       targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
     }
+    // Merge the data def
+    sourceDataPath.getOrCreateDataDef().mergeDataDef(targetDataPath);
     // Add the transfers
     transfers.put(targetDataPath, sourceDataPath);
     return this;

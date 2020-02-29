@@ -333,7 +333,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
                       type = (String) oType;
                     }
                     SqlDataType sqlDataType = getSqlDataTypeManager().get(type);
-                    columnDef = dataDef.getColumnOf(column.getKey(), sqlDataType.getClazz());
+                    columnDef = dataDef.getOrCreateColumn(column.getKey(), sqlDataType.getClazz());
                   }
 
                   for (Map.Entry<String, Object> columnProperty : columnProperties.entrySet()) {

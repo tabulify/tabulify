@@ -10,12 +10,15 @@ import java.util.*;
 
 /**
  *
- * The default DataDef implementation
  *
- * ColumnDef is a generic and we may extend them
- * Therefore all column function are below separated
- * (
- * ie you can't cast directly a generic with a parameter, by isolating them, it's possible to create
+ * ColumnDef can be extended therefore all column function are below separated
+ *
+ * Why ?
+ * Because:
+ *   * columnDef is a generic data type with the class
+ *   * you can't cast directly a generic with a parameter
+ *
+ * By isolating them in a different class, it's possible to create
  * a get list for each columnDef extension (ie DataGenColumnDef for instance)
  *
  */
@@ -87,7 +90,7 @@ public class TableDef extends DataDefAbs  {
     if (clazz==null){
       throw new RuntimeException("The sql data type ("+sqlDataType.getTypeName()+") of the data store ("+this.getDataPath().getDataStore()+") does not have any class associated to it");
     }
-    getColumnOf(columnName, clazz)
+    getOrCreateColumn(columnName, clazz)
       .typeCode(type)
       .precision(precision)
       .scale(scale)
@@ -127,6 +130,11 @@ public class TableDef extends DataDefAbs  {
     return column;
   }
 
+  @Override
+  public ColumnDef getColumn(String columnName) {
+    return columnDefByName.get(columnName);
+  }
+
 
   /**
    * @param columnName
@@ -159,7 +167,7 @@ public class TableDef extends DataDefAbs  {
    * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
    * @return a new columnDef
    */
-  public <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz) {
+  public <T> ColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz) {
 
     ColumnDef<T> columnDef;
     ColumnDef columnDefGet = getColumnDef(columnName);
@@ -217,9 +225,6 @@ public class TableDef extends DataDefAbs  {
     return "DataDef of " + dataPath;
   }
 
-  protected void addColumnDef(ColumnDef columnDef) {
-    columnDefByName.put(columnDef.getColumnName(),columnDef);
-  }
 
 
 }

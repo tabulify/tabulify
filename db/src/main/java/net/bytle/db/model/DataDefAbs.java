@@ -326,8 +326,9 @@ public abstract class DataDefAbs implements RelationDef {
   }
 
 
-  public DataDefAbs addColumn(String columnName, int typeCode, String comment) {
-    addColumn(columnName, typeCode,null,null,true,comment);
+  @Override
+  public DataDefAbs mergeDataDef(DataPath fromDataPath) {
+    DataDefs.merge(fromDataPath.getOrCreateDataDef(),this);
     return this;
   }
 

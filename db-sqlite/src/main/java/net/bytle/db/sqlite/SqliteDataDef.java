@@ -54,7 +54,7 @@ public class SqliteDataDef extends AnsiDataDef {
           throw new RuntimeException("Unable to find a type for the name " + typeCodeName);
         }
 
-        this.getColumnOf(columnName, jdbcDataType.getClazz())
+        this.getOrCreateColumn(columnName, jdbcDataType.getClazz())
           .typeCode(jdbcDataType.getTypeCode())
           .precision(type.getPrecision())
           .scale(type.getScale())

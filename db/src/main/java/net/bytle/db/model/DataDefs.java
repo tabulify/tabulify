@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Retrieve a list of TableDef through a Data Definition file
+ * DataDef(s)tatic functions
  */
 public class DataDefs {
 
@@ -56,14 +56,13 @@ public class DataDefs {
   }
 
 
-  public static RelationDef of(DataPath dataPath) {
-
-    return dataPath.getOrCreateDataDef();
-
-  }
 
   /**
    * Add the columns to the targetDef from the sourceDef
+   * <p>
+   * If the target have any columns of the source with a different class (data type),
+   * you will get an error. To avoid it, you may want to use the {@link #mergeColumns(RelationDef, RelationDef)}
+   * function instead
    *
    * @param sourceDef
    * @param targetDef
@@ -74,10 +73,12 @@ public class DataDefs {
     int columnCount = sourceDef.getColumnsSize();
     for (int i = 0; i < columnCount; i++) {
       ColumnDef columnDef = sourceDef.getColumnDef(i);
-      targetDef.getColumnOf(columnDef.getColumnName(), columnDef.getClazz())
+      targetDef.getOrCreateColumn(columnDef.getColumnName(), columnDef.getClazz())
         .typeCode(columnDef.getDataType().getTypeCode())
         .precision(columnDef.getPrecision())
-        .scale(columnDef.getScale());
+        .scale(columnDef.getScale())
+        .setNullable(columnDef.getNullable())
+        .comment(columnDef.getComment());
     }
 
 
@@ -135,25 +136,36 @@ public class DataDefs {
   }
 
 
+  /**
+   * Copy (ie add) from source to target:
+   * * the columns,
+   * * the primary key
+   * * the foreign keys if the foreign table exists in the target
+   *
+   * @param source
+   * @param target
+   */
   public static void copy(RelationDef source, RelationDef target) {
-
-    if (source == null) {
-      return;
-    }
+    assert source != null : "The source data definition cannot be null";
+    assert target != null : "The target data definition cannot be null";
 
     // Add the columns
     addColumns(source, target);
 
     // Add the primary key
-    final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
-    if (sourcePrimaryKey != null) {
-      final List<String> columns = sourcePrimaryKey.getColumns().stream()
-        .map(s -> s.getColumnName())
-        .collect(Collectors.toList());
-      target.setPrimaryKey(columns);
-    }
+    addPrimaryKey(source, target);
 
     // Add the foreign key if the tables exist
+    addForeignKeys(source, target);
+  }
+
+  /**
+   * Add the foreign key from the source to the target
+   * if the foreign tables exist in the target
+   * @param source
+   * @param target
+   */
+  private static void addForeignKeys(RelationDef source, RelationDef target) {
     final List<ForeignKeyDef> foreignKeyDefs = source.getForeignKeys();
     for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
       DataPath sourceForeignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
@@ -187,6 +199,16 @@ public class DataDefs {
     }
   }
 
+  private static void addPrimaryKey(RelationDef source, RelationDef target) {
+    final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
+    if (sourcePrimaryKey != null) {
+      final List<String> columns = sourcePrimaryKey.getColumns().stream()
+        .map(s -> s.getColumnName())
+        .collect(Collectors.toList());
+      target.setPrimaryKey(columns);
+    }
+  }
+
   public static int getColumnIdFromName(RelationDef dataDef, String columnName) {
     for (int i = 0; i < dataDef.getColumnsSize(); i++) {
       if (dataDef.getColumnDef(i).getColumnName().equals(columnName)) {
@@ -195,4 +217,54 @@ public class DataDefs {
     }
     throw new RuntimeException("Column name (" + columnName + ") not found in data document (" + dataDef.getDataPath() + ")");
   }
+
+  /**
+   * The target is always right in case of conflict
+   *   * Merge the columns
+   *   * Add a primary key if it does not exist
+   * @param source
+   * @param target
+   */
+  public static void merge(RelationDef source, RelationDef target) {
+
+    // Add the columns
+    mergeColumns(source, target);
+
+    // Add the primary key
+    if (target.getPrimaryKey()==null) {
+      addPrimaryKey(source, target);
+    }
+
+    addForeignKeys(source,target);
+
+  }
+
+  /**
+   * Add the columns of the source to the target
+   * The target may have already some columns. If this is the case,
+   * the columns properties will be overwritten by the source.
+   * If you don't want
+   *
+   * @param sourceDef
+   * @param targetDef
+   */
+  private static void mergeColumns(RelationDef sourceDef, RelationDef targetDef) {
+    assert sourceDef != null : "SourceDef should not be null";
+    assert targetDef != null : "TargetDef should not be null";
+    int columnCount = sourceDef.getColumnsSize();
+    for (int i = 0; i < columnCount; i++) {
+      ColumnDef columnDef = sourceDef.getColumnDef(i);
+      ColumnDef targetColumn = targetDef.getColumn(columnDef.getColumnName());
+      if (targetColumn == null) {
+        targetColumn = targetDef.getOrCreateColumn(columnDef.getColumnName(), columnDef.getClazz())
+          .typeCode(columnDef.getDataType().getTypeCode());
+      }
+      targetColumn
+        .precision(columnDef.getPrecision())
+        .scale(columnDef.getScale())
+        .setNullable(columnDef.getNullable())
+        .comment(columnDef.getComment());
+    }
+  }
+
 }

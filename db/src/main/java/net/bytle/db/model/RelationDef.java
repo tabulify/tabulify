@@ -23,7 +23,18 @@ public interface RelationDef {
    */
   <T> ColumnDef<T> getColumnDef(Integer columnIndex);
 
-  <T> ColumnDef<T> getColumnOf(String columnName, Class<T> clazz);
+  /**
+   * Get or create column
+   *
+   * This is the unique factory method that create the column object
+   * All other add method call this method
+   *
+   * @param columnName
+   * @param clazz
+   * @param <T>
+   * @return
+   */
+  <T> ColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz);
 
   PrimaryKeyDef getPrimaryKey();
 
@@ -98,7 +109,16 @@ public interface RelationDef {
    * @param clazz
    * @param <T>
    * @return the column checked against the clazz
+   * This is an utility function that permits to have type safe statement
    */
   <T> ColumnDef<T> getColumn(String columnName, Class<T> clazz);
 
+  /**
+   *
+   * @param columnName
+   * @return a column def or null if the column does not exist
+   */
+  ColumnDef getColumn(String columnName);
+
+  DataDefAbs mergeDataDef(DataPath fromDataPath);
 }

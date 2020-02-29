@@ -160,7 +160,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
         final int sqlTypeCode = columnResultSet.getInt("DATA_TYPE");
 
         SqlDataType dataType = this.getDataPath().getDataStore().getSqlDataType(sqlTypeCode);
-        this.getColumnOf(column_name, dataType.getClazz())
+        this.getOrCreateColumn(column_name, dataType.getClazz())
           .typeCode(sqlTypeCode)
           .precision(column_size)
           .scale(columnResultSet.getInt("DECIMAL_DIGITS"))
