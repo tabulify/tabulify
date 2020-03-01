@@ -20,7 +20,18 @@ import static java.time.temporal.ChronoUnit.DAYS;
 
 
 /**
- * Distribution Generator by default: random
+ * Histogram Distribution Generator known also as enumerated distribution
+ *
+ * Discrete probability distribution over a finite sample space, based on an enumerated list of <value, probability> pairs.
+ *
+ *   * Probabilities if not given have all the same size for the sample
+ *   * Probabilities must all be non-negative
+ *   * Probabilities of zero are allowed
+ *   * Probabilities sum does not have to equal one, they will be be normalize to make them sum to one.
+ * http://en.wikipedia.org/wiki/Probability_distribution#Discrete_probability_distribution
+ *
+ * See another example at
+ * https://commons.apache.org/proper/commons-math/apidocs/org/apache/commons/math4/distribution/EnumeratedDistribution.html
  */
 public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
 

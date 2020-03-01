@@ -558,7 +558,12 @@ public class Fs {
     }
 
     String separator = fileSystem.getSeparator();
+    // if windows
     if (separator.equals("\\")){
+      // if the glog is given manually in the form dir1/dir2
+      glob = glob.replace("/","\\");
+      // the split operator is a regexp, we need then to add a \ to escape it
+      // for the split operations
       separator = "\\\\";
     }
     String[] globNames = glob.split(separator);

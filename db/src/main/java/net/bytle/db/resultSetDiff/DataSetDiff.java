@@ -11,6 +11,7 @@ package net.bytle.db.resultSetDiff;
 
 import net.bytle.db.Tabular;
 import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
@@ -469,43 +470,11 @@ public class DataSetDiff {
    */
   public static String compareMetaData(DataPath firstDataPath, DataPath secondDataPath) {
 
-    StringBuilder reason = new StringBuilder();
-
-    // Length
-    int sourceSize = firstDataPath.getOrCreateDataDef().getColumnsSize();
-    int targetSize = secondDataPath.getOrCreateDataDef().getColumnsSize();
-    if (sourceSize != targetSize) {
-      reason.append("The number of columns are not equals. The source data set has ");
-      reason.append(sourceSize);
-      reason.append(" columns, and the target data set has ");
-      reason.append(targetSize);
-      reason.append(" columns.");
-      reason.append(System.getProperty("line.separator"));
-    }
-
-
-    // Type
-    for (int i = 0; i < sourceSize; i++) {
-      ColumnDef sourceColumn = firstDataPath.getOrCreateDataDef().getColumnDef(i);
-      ColumnDef targetColumn = secondDataPath.getOrCreateDataDef().getColumnDef(i);
-      if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
-        reason.append("The type column of the column (");
-        reason.append(i);
-        reason.append(") are not equals. The source column (");
-        reason.append(sourceColumn.getColumnName());
-        reason.append(") has the type (");
-        reason.append(sourceColumn.getDataType().getTypeNames());
-        reason.append(") whereas the target column (");
-        reason.append(targetColumn.getColumnName());
-        reason.append(") has the column type (");
-        reason.append(targetColumn.getDataType().getTypeNames());
-        reason.append(").");
-        reason.append(System.getProperty("line.separator"));
-      }
-    }
-    return reason.toString();
+    return DataDefs.compare(firstDataPath.getOrCreateDataDef(), secondDataPath.getOrCreateDataDef());
 
   }
+
+
 
 
   private class Diff {

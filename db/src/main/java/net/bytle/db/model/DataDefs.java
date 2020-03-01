@@ -267,4 +267,66 @@ public class DataDefs {
     }
   }
 
+  /**
+   * A wrapper around the {@link #compare(RelationDef, RelationDef)} function
+   * to return a boolean
+   * @param leftDataDef
+   * @param rightDataDef
+   * @return true if there is no diff, false otherewise
+   * You can get the reason with the function {@link #compare(RelationDef, RelationDef)}
+   */
+  public static Boolean equals(RelationDef leftDataDef, RelationDef rightDataDef) {
+    if (compare(leftDataDef,rightDataDef)==null){
+      return true;
+    } else {
+      return false;
+    }
+  }
+  /**
+   *
+   * @param leftDataDef
+   * @param rightDataDef
+   * @return null if there is no diff otherwise the reason
+   */
+  public static String compare(RelationDef leftDataDef, RelationDef rightDataDef) {
+    StringBuilder reason = new StringBuilder();
+
+    // Length
+    int sourceSize = leftDataDef.getColumnsSize();
+    int targetSize = rightDataDef.getColumnsSize();
+    if (sourceSize != targetSize) {
+      reason.append("The number of columns are not equals. The source data set has ");
+      reason.append(sourceSize);
+      reason.append(" columns, and the target data set has ");
+      reason.append(targetSize);
+      reason.append(" columns.");
+      reason.append(System.getProperty("line.separator"));
+    }
+
+
+    // Type
+    for (int i = 0; i < sourceSize; i++) {
+      ColumnDef sourceColumn = leftDataDef.getColumnDef(i);
+      ColumnDef targetColumn = rightDataDef.getColumnDef(i);
+      if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+        reason.append("The type column of the column (");
+        reason.append(i);
+        reason.append(") are not equals. The source column (");
+        reason.append(sourceColumn.getColumnName());
+        reason.append(") has the type (");
+        reason.append(sourceColumn.getDataType().getTypeNames());
+        reason.append(") whereas the target column (");
+        reason.append(targetColumn.getColumnName());
+        reason.append(") has the column type (");
+        reason.append(targetColumn.getDataType().getTypeNames());
+        reason.append(").");
+        reason.append(System.getProperty("line.separator"));
+      }
+    }
+    if (reason.length()==0){
+      return null;
+    } else {
+      return reason.toString();
+    }
+  }
 }

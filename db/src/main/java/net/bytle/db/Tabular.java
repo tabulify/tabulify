@@ -309,6 +309,11 @@ public class Tabular implements AutoCloseable {
   }
 
 
+  /**
+   * @return a memory data path with an id that should be unique (UUID v4) that have been created
+   * TODO: May be just an sequence id implementation such as the jvm ?
+   * This kind of data path is commonly used in test
+   */
   public DataPath getAndCreateRandomDataPath() {
     return MemoryDataStore.of("random", "random").getAndCreateRandomDataPath();
   }
