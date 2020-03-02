@@ -3,6 +3,7 @@ package net.bytle.db.gen;
 import net.bytle.db.gen.generator.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
+import net.bytle.type.Arrayss;
 import net.bytle.type.Typess;
 
 import java.util.Arrays;
@@ -96,7 +97,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
         case "uniform":
           Object min = this.getProperty("min");
           Object max = this.getProperty("max");
-          generator = new UniformCollectionGenerator<>(this,min,max);
+          generator = new UniformCollectionGenerator<>(this, min, max);
         case "histogram":
           Map<Object, Double> buckets = (Map<Object, Double>) this.getProperty("buckets");
           generator = HistogramCollectionGenerator.of(this, buckets);
@@ -142,8 +143,12 @@ public class GenColumnDef<T> extends ColumnDef<T> {
    */
   @Override
   public ColumnDef addProperty(String key, Object value) {
-    Map<String, Object> properties = getProperties();
-    properties.put(key, value);
+    if (!key.toLowerCase().equals(GENERATOR_PROPERTY_KEY.toLowerCase())) {
+      Map<String, Object> properties = getProperties();
+      properties.put(key, value);
+    } else {
+      super.addProperty(key,value);
+    }
     return this;
   }
 
@@ -169,12 +174,16 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return histogramCollectionGenerator;
   }
 
-  public HistogramCollectionGenerator<T> addHistogramGenerator(Object... element) {
-    Map<Object, Double> buckets = Arrays.stream(element)
-      .collect(Collectors.toMap(e -> e, e -> 1.0));
-    HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
-    generator = histogramCollectionGenerator;
-    return histogramCollectionGenerator;
+  public HistogramCollectionGenerator<T> addHistogramGenerator(Object element, Object... elements) {
+    if (element instanceof Map) {
+      return addHistogramGenerator((Map<Object, Double>) element);
+    } else {
+      Map<Object, Double> buckets = Arrays.stream(Arrayss.concat(element, elements))
+        .collect(Collectors.toMap(e -> e, e -> 1.0));
+      HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
+      generator = histogramCollectionGenerator;
+      return histogramCollectionGenerator;
+    }
   }
 
 

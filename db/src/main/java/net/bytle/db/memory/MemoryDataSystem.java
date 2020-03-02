@@ -7,6 +7,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
+import net.bytle.type.Strings;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,10 +23,10 @@ public class MemoryDataSystem implements DataSystem {
    * The data path of the data store are keep here
    * This is to be able to support the copy/merge of data defs
    * into another data path that have foreign key relationships
-   *
+   * <p>
    * ie if the foreign table exists, we create the foreign key
-   *   * in a {@link net.bytle.db.model.DataDefs#merge(RelationDef, RelationDef)}
-   *   * or {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
+   * * in a {@link net.bytle.db.model.DataDefs#merge(RelationDef, RelationDef)}
+   * * or {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
    */
   Map<String, MemoryDataPath> dataPaths = new HashMap<>();
 
@@ -108,7 +109,10 @@ public class MemoryDataSystem implements DataSystem {
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath, String glob) {
-    throw new RuntimeException("Not yet implemented");
+    throw new RuntimeException(Strings.multiline(
+      "Not yet implemented.",
+      "If you want to select a file from a tabular object, you need to set the default data store to the file system")
+    );
   }
 
   @Override
