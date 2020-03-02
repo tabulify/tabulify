@@ -132,7 +132,7 @@ public class AnsiDataPath extends DataPathAbs {
   @Override
   public AnsiDataPath getSibling(String name) {
 
-    return this.getDataStore().getDataPath(catalog, schema, name);
+    return this.getDataStore().getDefaultDataPath(catalog, schema, name);
 
   }
 

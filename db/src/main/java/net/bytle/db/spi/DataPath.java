@@ -84,6 +84,21 @@ public interface DataPath extends Comparable<DataPath>, Relational {
    */
   DataPath getChildAsTabular(String name);
 
+  /**
+   * The type is the structure of the data path that offerst the data store. ie
+   *   * for a file system:
+   *      * csv
+   *      * json
+   *   * for a memory system:
+   *      * list
+   *      * queue
+   *      * gen
+   *   * for a relational system
+   *      * table
+   *      * view
+   *   ...
+   * @return
+   */
   String getType();
 
   DataPath getSelectStreamDependency();

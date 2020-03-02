@@ -319,6 +319,11 @@ public abstract class DataDefAbs implements RelationDef {
     return this.properties.getAsLong(key);
   }
 
+  /**
+   *
+   * @param sourceDataPath
+   * @return the data def
+   */
   @Override
   public DataDefAbs copyDataDef(DataPath sourceDataPath) {
     DataDefs.copy(sourceDataPath.getOrCreateDataDef(),this);

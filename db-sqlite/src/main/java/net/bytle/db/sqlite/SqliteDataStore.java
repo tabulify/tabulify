@@ -53,7 +53,7 @@ public class SqliteDataStore extends SqlDataStore {
   }
 
   @Override
-  public SqliteDataPath getDataPath(String... names) {
+  public SqliteDataPath getDefaultDataPath(String... names) {
 
     // Filter out the null value (they comes from Jdbc for instance)
     names = Arrays.stream(names)

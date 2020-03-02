@@ -118,7 +118,7 @@ public class Tabular implements AutoCloseable {
     DataStore dataStore = getDataStore(dataStoreName);
     DataPath dataUriPath;
     if (path != null) {
-      dataUriPath = dataStore.getDataPath(path);
+      dataUriPath = dataStore.getDefaultDataPath(path);
     } else {
       dataUriPath = dataStore.getCurrentDataPath();
     }

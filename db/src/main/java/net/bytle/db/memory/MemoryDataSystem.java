@@ -154,24 +154,7 @@ public class MemoryDataSystem implements DataSystem {
 
   }
 
-  public MemoryVariableManager getManager(MemoryDataPath memoryDataPath) {
-    MemoryVariableManager memoryVariableManager = null;
-    List<MemoryVariableManagerProvider> installedProviders = MemoryVariableManagerProvider.installedProviders();
-    for (MemoryVariableManagerProvider structProvider : installedProviders) {
-      if (structProvider.accept(memoryDataPath.getType())) {
-        memoryVariableManager = structProvider.getMemoryVariableManager();
-        if (memoryVariableManager == null) {
-          String message = "The returned variable manager is null for the provider (" + structProvider.getClass().toString() + ")";
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new RuntimeException(message);
-        }
-      }
-    }
-    if (memoryVariableManager == null) {
-      throw new RuntimeException("This memory data path ("+memoryDataPath+") has a type ("+memoryDataPath.getType()+") and no installed provider takes it into account.");
-    }
-    return memoryVariableManager;
-  }
+
 
 
 

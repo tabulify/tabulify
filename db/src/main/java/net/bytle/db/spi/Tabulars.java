@@ -217,7 +217,7 @@ public class Tabulars {
 
     List<DataPath> targetDataPaths = new ArrayList<>();
     for (DataPath sourceDataPath : ForeignKeyDag.get(sources).getCreateOrderedTables()) {
-      DataPath targetDataPath = target.getDataStore().getDataPath(sourceDataPath.getName());
+      DataPath targetDataPath = target.getDataStore().getDefaultDataPath(sourceDataPath.getName());
       Tabulars.move(sourceDataPath, targetDataPath);
       targetDataPaths.add(targetDataPath);
     }
@@ -552,7 +552,7 @@ public class Tabulars {
 
   public static void tail(DataPath dataPath) {
 
-    DataPath target = MemoryDataStore.of("tail", "tail").getDataPath("tail");
+    DataPath target = MemoryDataStore.of("tail", "tail").getDefaultDataPath("tail");
     Tabulars.create(target);
     extractTail(dataPath, target, 10);
     Tabulars.print(target);

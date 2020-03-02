@@ -97,7 +97,7 @@ public class SqliteDataDef extends AnsiDataDef {
       final List<String> foreignKey = foreignKeys.get(i);
       final String foreignTableName = foreignKey.get(0);
       final String nativeTableColumn = foreignKey.get(1);
-      SqliteDataPath foreignDataPath = (SqliteDataPath) this.getDataPath().getDataStore().getDataPath(foreignTableName);
+      SqliteDataPath foreignDataPath = (SqliteDataPath) this.getDataPath().getDataStore().getDefaultDataPath(foreignTableName);
 
       // This is possible in Sqlite to have foreign key on table that does not exist
       if (Tabulars.exists(foreignDataPath)) {

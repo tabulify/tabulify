@@ -65,7 +65,7 @@ public class BytleSchema implements SchemaSample {
   void buildTables() {
 
     // Dim Cat Table
-    final DataPath catTable = datastore.getDataPath(TABLE_CATEGORY_NAME);
+    final DataPath catTable = datastore.getDefaultDataPath(TABLE_CATEGORY_NAME);
     bytleTables.put(TABLE_CATEGORY_NAME, catTable);
     catTable.createDataDef()
       .addColumn(COLUMN_CATEGORY_ID, Types.INTEGER)
@@ -76,7 +76,7 @@ public class BytleSchema implements SchemaSample {
 
 
     // Dim timeTable
-    final DataPath timeTable = datastore.getDataPath(TABLE_TIME_NAME);
+    final DataPath timeTable = datastore.getDefaultDataPath(TABLE_TIME_NAME);
     bytleTables.put(TABLE_TIME_NAME, timeTable);
     timeTable.createDataDef()
       .addColumn(COLUMN_DATE_ID, Types.DATE)
@@ -90,7 +90,7 @@ public class BytleSchema implements SchemaSample {
 
 
     // Fact Table
-    final DataPath factTable = datastore.getDataPath(TABLE_FACT_NAME);
+    final DataPath factTable = datastore.getDefaultDataPath(TABLE_FACT_NAME);
     bytleTables.put(TABLE_FACT_NAME, factTable);
     factTable.createDataDef()
       .addColumn(COLUMN_FACT_ID, Types.INTEGER)

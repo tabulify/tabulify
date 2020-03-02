@@ -131,7 +131,7 @@ public class SqlDataStore extends DataStore {
   }
 
   @Override
-  public AnsiDataPath getDataPath(String... names) {
+  public AnsiDataPath getDefaultDataPath(String... names) {
     return this.getCurrentDataPath().resolve(names);
   }
 

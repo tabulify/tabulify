@@ -54,9 +54,9 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
 
     int i = this.path.lastIndexOf(PATH_SEPARATOR);
     if (i==-1){
-      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, name);
+      return this.memoryDataStore.getDefaultDataPath(name);
     } else {
-      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, this.path.substring(0,i) + PATH_SEPARATOR + name);
+      return this.memoryDataStore.getTypedDataPath(getType(),this.path.substring(0,i) + PATH_SEPARATOR + name);
     }
 
   }
@@ -65,9 +65,9 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   public MemoryDataPath getChild(String name) {
 
     if (this.path.equals(MemoryDataStore.WORKING_PATH)) {
-      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, name);
+      return this.memoryDataStore.getDefaultDataPath(name);
     } else {
-      return MemoryDataSystem.of().getManager(this).createDataPath(memoryDataStore, this.path + PATH_SEPARATOR + name);
+      return this.memoryDataStore.getTypedDataPath(getType(),this.path + PATH_SEPARATOR + name);
     }
 
   }

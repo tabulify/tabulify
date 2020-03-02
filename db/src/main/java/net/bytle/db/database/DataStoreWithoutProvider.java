@@ -1,5 +1,6 @@
 package net.bytle.db.database;
 
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.db.spi.DataSystem;
@@ -16,7 +17,12 @@ public class DataStoreWithoutProvider extends DataStore {
   }
 
   @Override
-  public DataPathAbs getDataPath(String... parts) {
+  public DataPathAbs getDefaultDataPath(String... parts) {
+    throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
+  }
+
+  @Override
+  public DataPath getTypedDataPath(String type, String... parts) {
     throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
   }
 

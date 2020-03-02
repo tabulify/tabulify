@@ -22,6 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+/**
+ * A data store
+ */
 public abstract class DataStore implements Comparable<DataStore>, AutoCloseable {
 
   private final static Logger logger = LoggerFactory.getLogger(DataStore.class);
@@ -177,9 +180,18 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
 
   /**
    * @param parts
-   * @return a data path from the current database and its path
+   * @return a data path with the default type from the data store
+   * To get a data path from a specific type, use the function {@link #getTypedDataPath(String, String...)}
    */
-  public abstract DataPath getDataPath(String... parts);
+  public abstract DataPath getDefaultDataPath(String... parts);
+
+  /**
+   *
+   * @param type - the {@link DataPath#getType()} of a data path
+   * @param parts - the parts of the data path
+   * @return a data path with the designed type from the data store
+   */
+  public abstract DataPath getTypedDataPath(String type, String... parts);
 
 
   /**
@@ -250,7 +262,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   public DataPath getDataPathOfDataDefAndMerge(Path dataDefPath) {
     String fileName = dataDefPath.getFileName().toString();
     String name = fileName.substring(0,fileName.lastIndexOf("--"));
-    DataPath dataPath = this.getDataPath(name);
+    DataPath dataPath = this.getDefaultDataPath(name);
     mergeDataDefFromFile(dataPath.getOrCreateDataDef(), dataDefPath);
     return dataPath;
   }

@@ -105,7 +105,7 @@ public class DataSetDiff {
     String reason = compareMetaData(firstDataPath, secondDataPath);
 
     // Can we diff the data set
-    if (!reason.equals("")) {
+    if (reason!=null) {
 
       dataSetDiffResult
         .setDataDefDiffFound(true)

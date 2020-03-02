@@ -1,6 +1,7 @@
 package net.bytle.db.fs;
 
 import net.bytle.db.database.DataStore;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 
@@ -103,7 +104,7 @@ public class FsDataStore extends DataStore {
   }
 
   @Override
-  public FsDataPath getDataPath(String... names) {
+  public FsDataPath getDefaultDataPath(String... names) {
 
     // Rebuild the path
     Path currentPath = Paths.get(connectionString);
@@ -114,6 +115,11 @@ public class FsDataStore extends DataStore {
 
     return getDataPath(path);
 
+  }
+
+  @Override
+  public DataPath getTypedDataPath(String type, String... parts) {
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override

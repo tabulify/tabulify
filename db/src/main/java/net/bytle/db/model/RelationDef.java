@@ -97,11 +97,14 @@ public interface RelationDef {
 
   /**
    * Copy the data definitions (columns,..)
-   *
+   * This function is used to create another data path
+   * and to quickly copy its structure
    * @param sourceDataPath
    * @return
    */
   RelationDef copyDataDef(DataPath sourceDataPath);
+
+
 
   /**
    *
@@ -120,5 +123,14 @@ public interface RelationDef {
    */
   ColumnDef getColumn(String columnName);
 
-  DataDefAbs mergeDataDef(DataPath fromDataPath);
+  /**
+   * Merge the data definition.
+   * This function was created to extend a data generation definition
+   * to its insert target. As the data generation may be only defined for one
+   * column.
+   * @param fromDataPath
+   * @return
+   */
+  RelationDef mergeDataDef(DataPath fromDataPath);
+
 }
