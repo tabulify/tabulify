@@ -45,7 +45,7 @@ public class MemoryDataSystem implements DataSystem {
    * @param dataPath
    */
   public void drop(DataPath dataPath) {
-    ((MemoryDataPath) dataPath).drop();
+    ((MemoryDataPath) dataPath).getDataStore().drop((MemoryDataPath) dataPath);
   }
 
   public void truncate(DataPath dataPath) {
@@ -124,7 +124,7 @@ public class MemoryDataSystem implements DataSystem {
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return ((MemoryDataPath) dataPath).exists();
+    return ((MemoryDataPath) dataPath).getDataStore().exists((MemoryDataPath) dataPath);
   }
 
   @Override
@@ -150,8 +150,10 @@ public class MemoryDataSystem implements DataSystem {
   @Override
   public void create(DataPath dataPath) {
 
+    // Create the structure
     ((MemoryDataPath) dataPath).create();
-
+    // Add it to the data store
+    ((MemoryDataPath) dataPath).getDataStore().create((MemoryDataPath) dataPath);
   }
 
 

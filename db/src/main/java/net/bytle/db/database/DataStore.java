@@ -477,4 +477,11 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
   }
 
 
+  /**
+   * @return a default typed data path with a UUID v4 name
+   */
+  public DataPath getAndCreateRandomDataPath(){
+    return getDefaultDataPath(UUID.randomUUID().toString());
+  }
+
 }

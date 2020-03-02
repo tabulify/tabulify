@@ -3,11 +3,11 @@ package net.bytle.db;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.memory.MemoryDataStoreProvider;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.regexp.Globs;
@@ -116,18 +116,18 @@ public class Tabular implements AutoCloseable {
     String dataStoreName = dataUriObj.getDataStore();
     String path = dataUriObj.getPath();
     DataStore dataStore = getDataStore(dataStoreName);
-    DataPath dataUriPath;
+    DataPath dataPath;
     if (path != null) {
-      dataUriPath = dataStore.getDefaultDataPath(path);
+      dataPath = dataStore.getDefaultDataPath(path);
     } else {
-      dataUriPath = dataStore.getCurrentDataPath();
+      dataPath = dataStore.getCurrentDataPath();
     }
 
     // Second argument to get the childs
     for (int i = 0; i < parts.length; i++) {
-      dataUriPath = dataUriPath.getChild(parts[i]);
+      dataPath = dataPath.getChild(parts[i]);
     }
-    return dataUriPath;
+    return dataPath;
 
   }
 
@@ -315,7 +315,11 @@ public class Tabular implements AutoCloseable {
    * This kind of data path is commonly used in test
    */
   public DataPath getAndCreateRandomDataPath() {
-    return MemoryDataStore.of("random", "random").getAndCreateRandomDataPath();
+
+    DataPath dataPath = getDefaultDataStore().getAndCreateRandomDataPath();
+    Tabulars.create(dataPath);
+    return dataPath;
+
   }
 
 }

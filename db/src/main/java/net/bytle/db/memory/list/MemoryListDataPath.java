@@ -62,14 +62,5 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     return new MemoryListSelectStream(this);
   }
 
-  @Override
-  public void drop() {
-    this.values = null;
-  }
-
-  @Override
-  public Boolean exists(){
-    return this.values!=null;
-  }
 
 }

@@ -221,6 +221,7 @@ public abstract class DataDefAbs implements RelationDef {
    */
   @Override
   public DataDefAbs addForeignKey(DataPath dataPath, String... columnNames) {
+    assert this.getDataPath().getDataStore().equals(dataPath.getDataStore()):"The foreign data path ("+dataPath+") has a data store ("+dataPath.getDataStore()+") that is not the same ("+this.getDataPath().getDataStore()+") than the data path ("+this.getDataPath()+")";
     final PrimaryKeyDef primaryKey = dataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey == null) {
       throw new RuntimeException("The data unit (" + dataPath + ") can't be added as foreign table for the table (" + this.getDataPath() + ") and its columns (" + String.join(",", columnNames) + ") because it has no primary key defined.");

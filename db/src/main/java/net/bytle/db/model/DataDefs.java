@@ -56,7 +56,6 @@ public class DataDefs {
   }
 
 
-
   /**
    * Add the columns to the targetDef from the sourceDef
    * <p>
@@ -162,6 +161,7 @@ public class DataDefs {
   /**
    * Add the foreign key from the source to the target
    * if the foreign tables exist in the target
+   *
    * @param source
    * @param target
    */
@@ -173,25 +173,22 @@ public class DataDefs {
       // Does the table exist in the target
       if (Tabulars.exists(targetForeignDataPath)) {
         PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getOrCreateDataDef().getPrimaryKey();
-        if (targetPrimaryKey != null) {
-          List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
-            getColumns().stream()
-            .map(ColumnDef::getColumnName)
-            .collect(Collectors.toList());
-          List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getOrCreateDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
-          // Do they have the same primary key columns
-          if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
-            // Create it then
-            target.addForeignKey(targetForeignDataPath,
-              foreignKeyDef.getChildColumns().stream()
-                .map(ColumnDef::getColumnName)
-                .toArray(String[]::new)
-            );
-          } else {
-            logger.warn("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
-          }
+        assert targetPrimaryKey!=null: "Foreign Key not copied: The foreign data path (" + targetForeignDataPath + ") exists but does not have any primary key. There is a inconsistency bug somewhere.";
+        List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
+          getColumns().stream()
+          .map(ColumnDef::getColumnName)
+          .collect(Collectors.toList());
+        List<String> sourceForeignPrimaryKeyColumns = sourceForeignDataPath.getOrCreateDataDef().getPrimaryKey().getColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.toList());
+        // Do they have the same primary key columns
+        if (targetForeignPrimaryKeyColumns.equals(sourceForeignPrimaryKeyColumns)) {
+          // Create it then
+          target.addForeignKey(targetForeignDataPath,
+            foreignKeyDef.getChildColumns().stream()
+              .map(ColumnDef::getColumnName)
+              .toArray(String[]::new)
+          );
         } else {
-          logger.warn("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") exists but does not have any primary key");
+          logger.warn("Foreign Key not copied: The primary columns of the source (" + sourceForeignPrimaryKeyColumns + ") are not the same than the target (" + targetForeignPrimaryKeyColumns);
         }
       } else {
         logger.warn("Foreign Key not copied: The target data path (" + targetForeignDataPath + ") does not exist");
@@ -220,8 +217,9 @@ public class DataDefs {
 
   /**
    * The target is always right in case of conflict
-   *   * Merge the columns
-   *   * Add a primary key if it does not exist
+   * * Merge the columns
+   * * Add a primary key if it does not exist
+   *
    * @param source
    * @param target
    */
@@ -231,11 +229,11 @@ public class DataDefs {
     mergeColumns(source, target);
 
     // Add the primary key
-    if (target.getPrimaryKey()==null) {
+    if (target.getPrimaryKey() == null) {
       addPrimaryKey(source, target);
     }
 
-    addForeignKeys(source,target);
+    addForeignKeys(source, target);
 
   }
 
@@ -270,23 +268,25 @@ public class DataDefs {
   /**
    * A wrapper around the {@link #compare(RelationDef, RelationDef)} function
    * to return a boolean
+   *
    * @param leftDataDef
    * @param rightDataDef
    * @return true if there is no diff, false otherewise
    * You can get the reason with the function {@link #compare(RelationDef, RelationDef)}
    */
   public static Boolean equals(RelationDef leftDataDef, RelationDef rightDataDef) {
-    if (compare(leftDataDef,rightDataDef)==null){
+    if (compare(leftDataDef, rightDataDef) == null) {
       return true;
     } else {
       return false;
     }
   }
+
   /**
-   *
    * @param leftDataDef
    * @param rightDataDef
    * @return null if there is no diff otherwise the reason
+   * Compare only the data structure (not the constraints)
    */
   public static String compare(RelationDef leftDataDef, RelationDef rightDataDef) {
     StringBuilder reason = new StringBuilder();
@@ -323,7 +323,7 @@ public class DataDefs {
         reason.append(System.getProperty("line.separator"));
       }
     }
-    if (reason.length()==0){
+    if (reason.length() == 0) {
       return null;
     } else {
       return reason.toString();

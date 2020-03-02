@@ -5,15 +5,17 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.memory.list.MemoryListDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.ProcessingEngine;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.type.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class MemoryDataStore extends DataStore {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MemoryDataStore.class);
 
   static final String WORKING_PATH = "";
   private final MemoryDataSystem memoryDataSystem;
@@ -60,7 +62,7 @@ public class MemoryDataStore extends DataStore {
     if (memoryDataPath==null) {
       getManager(type).createDataPath(this, path);
       memoryDataPath = new MemoryListDataPath(this, path);
-      this.dataPaths.put(path, memoryDataPath);
+      create(memoryDataPath);
     }
     return memoryDataPath;
   }
@@ -88,12 +90,6 @@ public class MemoryDataStore extends DataStore {
 
 
 
-  public DataPath getAndCreateRandomDataPath() {
-    DataPath dataPath = getDefaultDataPath(UUID.randomUUID().toString());
-    Tabulars.create(dataPath);
-    return dataPath;
-  }
-
   @Override
   public void close() {
     super.close();
@@ -118,5 +114,20 @@ public class MemoryDataStore extends DataStore {
       throw new RuntimeException("The type ("+type+") has no installed provider.");
     }
     return memoryVariableManager;
+  }
+
+  public void drop(MemoryDataPath dataPath){
+    MemoryDataPath returned = dataPaths.remove(dataPath.getPath());
+    if (returned==null){
+      throw new RuntimeException("The data path ("+dataPath+") could not be dropped because it does not exists");
+    }
+  }
+
+  public Boolean exists(MemoryDataPath dataPath){
+    return dataPaths.containsKey(dataPath.getPath());
+  }
+
+  public void create(MemoryDataPath dataPath) {
+    this.dataPaths.put(dataPath.getPath(), dataPath);
   }
 }
