@@ -388,7 +388,7 @@ public class Tabulars {
   }
 
   private static boolean sameDataSystem(DataPath source, DataPath target) {
-    return source.getDataStore().getDataSystem().equals(target.getDataStore().getDataSystem());
+    return source.getDataStore().getDataSystem().getClass().equals(target.getDataStore().getDataSystem().getClass());
   }
 
   /**

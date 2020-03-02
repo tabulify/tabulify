@@ -9,44 +9,38 @@ import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.log.Log;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
- * Static memory system
  * No data in their please
  */
 public class MemoryDataSystem implements DataSystem {
 
+  /**
+   * The data path of the data store are keep here
+   * This is to be able to support the copy/merge of data defs
+   * into another data path that have foreign key relationships
+   * See {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
+   */
+  Map<String, MemoryDataPath> dataPaths = new HashMap<>();
+
   private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
+  private MemoryDataStore dataStore;
 
-
-
-  static MemoryDataSystem memoryDataSystem;
-
-
-  public static MemoryDataSystem of() {
-    if (memoryDataSystem == null) {
-      memoryDataSystem = new MemoryDataSystem();
-    }
-    return memoryDataSystem;
+  public MemoryDataSystem(MemoryDataStore memoryDataStore) {
+    this.dataStore = memoryDataStore;
   }
 
 
   /**
-   * This operation does nothing for now, as the memory structure are managed by the garbage collector
    * @param memoryDataPath
    */
   public void delete(DataPath memoryDataPath) {
   }
 
-  /**
-   * This operation set the values to null as the memory structure are managed by the garbage collector
-   * @param dataPath
-   */
-  public void drop(DataPath dataPath) {
-    ((MemoryDataPath) dataPath).getDataStore().drop((MemoryDataPath) dataPath);
-  }
 
   public void truncate(DataPath dataPath) {
     ((MemoryDataPath) dataPath).truncate();
@@ -73,7 +67,7 @@ public class MemoryDataSystem implements DataSystem {
   @Override
   public Boolean isEmpty(DataPath dataPath) {
 
-    return ((MemoryDataPath) dataPath).size()==0;
+    return ((MemoryDataPath) dataPath).size() == 0;
 
   }
 
@@ -123,9 +117,10 @@ public class MemoryDataSystem implements DataSystem {
 
 
   @Override
-  public Boolean exists(DataPath dataPath) {
-    return ((MemoryDataPath) dataPath).getDataStore().exists((MemoryDataPath) dataPath);
+  public MemoryDataStore getDataStore() {
+    return dataStore;
   }
+
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
@@ -145,6 +140,7 @@ public class MemoryDataSystem implements DataSystem {
   /**
    * A memory may be created after it's configuration
    * A queue for instance needs a capacity
+   *
    * @param dataPath
    */
   @Override
@@ -152,13 +148,22 @@ public class MemoryDataSystem implements DataSystem {
 
     // Create the structure
     ((MemoryDataPath) dataPath).create();
-    // Add it to the data store
-    ((MemoryDataPath) dataPath).getDataStore().create((MemoryDataPath) dataPath);
+    this.dataPaths.put(dataPath.getPath(), (MemoryDataPath) dataPath);
+
   }
 
+  @Override
+  public void drop(DataPath dataPath) {
+    MemoryDataPath returned = dataPaths.remove(dataPath.getPath());
+    if (returned == null) {
+      throw new RuntimeException("The data path (" + dataPath + ") could not be dropped because it does not exists");
+    }
+  }
 
-
-
+  @Override
+  public Boolean exists(DataPath dataPath) {
+    return dataPaths.containsKey(dataPath.getPath());
+  }
 
 
 }

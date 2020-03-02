@@ -62,12 +62,12 @@ public class FsDataStore extends DataStore {
 
   @Override
   public FsDataSystem getDataSystem() {
-    return FsDataSystem.of();
+    return new FsDataSystem(this);
   }
 
   @Override
   public void close() {
-    FsDataSystem.of();
+
   }
 
   @Override

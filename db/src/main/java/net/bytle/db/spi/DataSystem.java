@@ -1,5 +1,6 @@
 package net.bytle.db.spi;
 
+import net.bytle.db.database.DataStore;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
@@ -7,8 +8,21 @@ import net.bytle.db.transfer.TransferProperties;
 
 import java.util.List;
 
+/**
+ * A data system
+ *   * a file system
+ *   * a relational database
+ *   * a memory system
+ *
+ * The data system is where the data is stored
+ *   * a file system store them on the file system
+ *   * the relational database store them remotely on the server
+ *   * memory system store them in a map
+ */
 public interface DataSystem {
 
+
+  DataStore getDataStore();
 
   Boolean exists(DataPath dataPath);
 
@@ -17,7 +31,6 @@ public interface DataSystem {
   boolean isContainer(DataPath dataPath);
 
   void create(DataPath dataPath);
-
 
   void drop(DataPath dataPath);
 

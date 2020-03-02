@@ -9,9 +9,7 @@ import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MemoryDataStore extends DataStore {
 
@@ -20,17 +18,11 @@ public class MemoryDataStore extends DataStore {
   static final String WORKING_PATH = "";
   private final MemoryDataSystem memoryDataSystem;
 
-  /**
-   * The data path of the data store are keep here
-   * This is to be able to support the copy/merge of data defs
-   * into another data path that have foreign key relationships
-   * See {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
-   */
-  Map<String, MemoryDataPath> dataPaths = new HashMap<>();
+
 
   public MemoryDataStore(String name, String connectionString) {
     super(name, connectionString);
-    this.memoryDataSystem = MemoryDataSystem.of();
+    this.memoryDataSystem = new MemoryDataSystem(this);
   }
 
   public static MemoryDataStore of(String name, String connectionString){
@@ -58,11 +50,11 @@ public class MemoryDataStore extends DataStore {
           "If you don't want to specify a name, use the getRandomDataPath function"));
     }
     String path = String.join("/",parts);
-    MemoryDataPath memoryDataPath = this.dataPaths.get(path);
+    MemoryDataPath memoryDataPath = this.memoryDataSystem.dataPaths.get(path);
     if (memoryDataPath==null) {
       getManager(type).createDataPath(this, path);
       memoryDataPath = new MemoryListDataPath(this, path);
-      create(memoryDataPath);
+      this.memoryDataSystem.create(memoryDataPath);
     }
     return memoryDataPath;
   }
@@ -94,7 +86,7 @@ public class MemoryDataStore extends DataStore {
   public void close() {
     super.close();
     // Delete all data paths
-    this.dataPaths = null;
+    this.memoryDataSystem.dataPaths = null;
   }
 
   public MemoryVariableManager getManager(String type) {
@@ -116,18 +108,5 @@ public class MemoryDataStore extends DataStore {
     return memoryVariableManager;
   }
 
-  public void drop(MemoryDataPath dataPath){
-    MemoryDataPath returned = dataPaths.remove(dataPath.getPath());
-    if (returned==null){
-      throw new RuntimeException("The data path ("+dataPath+") could not be dropped because it does not exists");
-    }
-  }
 
-  public Boolean exists(MemoryDataPath dataPath){
-    return dataPaths.containsKey(dataPath.getPath());
-  }
-
-  public void create(MemoryDataPath dataPath) {
-    this.dataPaths.put(dataPath.getPath(), dataPath);
-  }
 }

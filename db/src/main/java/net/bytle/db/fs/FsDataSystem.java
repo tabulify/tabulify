@@ -8,7 +8,6 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.transfer.TransferSourceTarget;
-import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 
 import java.io.IOException;
@@ -17,77 +16,27 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * A wrapper around a {@link java.nio.file.FileSystem}
+ *
  */
 public class FsDataSystem implements DataSystem {
 
-  // Static file system (Don't store state)
-  private static FsDataSystem fsTableSystem;
 
+  private FsDataStore dataStore;
 
-  // private FsDataStore fsDataStore;
-  // private final FsTableSystemProvider fsTableSystemProvider;
-  // private FileSystem fileSystem;
-
-
-  public static FsDataSystem of() {
-    if (fsTableSystem == null) {
-      fsTableSystem = new FsDataSystem();
-    }
-    return fsTableSystem;
+  public FsDataSystem(FsDataStore fsDataStore) {
+    dataStore = fsDataStore;
   }
 
 
-  /**
-   * @param dataUri - a data Uri
-   * @return a list of file that matches the uri segments
-   * <p>
-   * ex: the following file uri
-   * /tmp/*.md
-   * will return all md file in the tmp directory
-   */
-  public List<DataPath> getDataPaths(DataUri dataUri) {
-    throw new RuntimeException("Never used ?");
-    //String[] pathSegments = dataUri.getPath().split(this.fileSystem.getSeparator());
-
-    // Start
-//    Path startPath = Paths.get(".");
-//    List<Path> currentMatchesPaths = new ArrayList<>();
-//    currentMatchesPaths.add(startPath);
-//
-//    for (String s : pathSegments) {
-//
-//      // Glob to regex Pattern
-//      String pattern = Globs.toRegexPattern(s);
-//
-//      // The list where the actual matches path will be stored
-//      List<Path> matchesPath = new ArrayList<>();
-//      for (Path currentPath : currentMatchesPaths) {
-//        List<Path> paths = Fs.getChildrenFiles(currentPath);
-//        for (Path childrenPath : paths) {
-//          if (childrenPath.getFileName().toString().matches(pattern)) {
-//            matchesPath.add(childrenPath);
-//          }
-//        }
-//      }
-//
-//      if (matchesPath.size() == 0) {
-//        break;
-//      } else {
-//        // Recursion
-//        currentMatchesPaths = matchesPath;
-//      }
-//
-//    }
-//
-//    return currentMatchesPaths.stream()
-//      .map(path -> getFileManager(path).createDataPath(this,path))
-//      .collect(Collectors.toList());
+  @Override
+  public FsDataStore getDataStore() {
+    return dataStore;
   }
-
 
   @Override
   public Boolean exists(DataPath dataPath) {
@@ -330,7 +279,6 @@ public class FsDataSystem implements DataSystem {
   public List<DataPath> getReferences(DataPath dataPath) {
     throw new RuntimeException("Not yet implemented");
   }
-
 
 
 }

@@ -1,6 +1,5 @@
 package net.bytle.db.fs;
 
-import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.uri.DataUri;
@@ -49,7 +48,7 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
   @Override
   public FsRawDataPath getSibling(String name) {
     Path siblingPath = path.resolveSibling(name);
-    return (FsRawDataPath) FsDataSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
+    return (FsRawDataPath) this.getDataStore().getDataSystem().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
   }
 
   @Override
@@ -64,13 +63,13 @@ public class FsRawDataPath extends DataPathAbs implements FsDataPath {
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return (FsRawDataPath) FsDataSystem.of().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
+    return (FsRawDataPath) this.getDataStore().getDataSystem().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
   }
 
   @Override
   public FsDataPath getChildAsTabular(String name) {
     Path siblingPath = path.resolve(name + ".csv");
-    return FsDataSystem.of().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
+    return this.getDataStore().getDataSystem().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
   }
 
   @Override
