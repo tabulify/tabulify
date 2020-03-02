@@ -258,7 +258,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
    *
    * @return the maxValue number of times the function {@link #getNewValue} can be called
    */
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
 
     Long maxGeneratedValues;
     if (clazz == Integer.class || clazz == BigDecimal.class || clazz == Double.class) {

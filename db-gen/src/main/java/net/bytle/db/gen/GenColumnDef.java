@@ -98,6 +98,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           Object min = this.getProperty("min");
           Object max = this.getProperty("max");
           generator = new UniformCollectionGenerator<>(this, min, max);
+          break;
         case "histogram":
           Map<Object, Double> buckets = (Map<Object, Double>) this.getProperty("buckets");
           generator = HistogramCollectionGenerator.of(this, buckets);

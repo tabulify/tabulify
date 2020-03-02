@@ -98,7 +98,7 @@ public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
   }
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     return (long) values.size();
   }
 

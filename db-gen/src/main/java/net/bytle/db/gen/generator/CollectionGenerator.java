@@ -9,7 +9,7 @@ public interface CollectionGenerator<T> {
    *
    * @return the maxValue number of times the function getNewValue can be called
    */
-  Long getMaxGeneratedValues();
+  long getMaxGeneratedValues();
 
 
 

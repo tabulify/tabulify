@@ -2,6 +2,8 @@ package net.bytle.db.gen.generator;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.db.gen.GenColumnDef;
+import net.bytle.type.Integers;
+import net.bytle.type.Strings;
 import net.bytle.type.Typess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,13 +92,19 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
           this.actualValue = evalValue;
         }
       } else {
-        if (this.clazz.equals(Integer.class)){
-          this.actualValue = ((Double) evalValue).intValue();
+        if (this.clazz.equals(Integer.class)) {
+          this.actualValue = Integers.toInteger(this.actualValue);
+        } else if (this.clazz.equals(String.class)){
+          this.actualValue = Strings.toString(this.actualValue);
         } else {
           this.actualValue = evalValue;
         }
       }
-      return clazz.cast(this.actualValue);
+      try {
+        return clazz.cast(this.actualValue);
+      } catch (ClassCastException e){
+        throw new RuntimeException("Cast problem on the column ("+columnDef+")", e);
+      }
     } catch (ScriptException e) {
       throw new RuntimeException(evalScript, e);
     }
@@ -121,7 +129,7 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     return parentCollectionGenerator.getMaxGeneratedValues();
   }
 
@@ -164,5 +172,9 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
   public CollectionGeneratorOnce getParentGenerator() {
     return parentCollectionGenerator;
+  }
+
+  public String getFormula() {
+    return this.formula;
   }
 }

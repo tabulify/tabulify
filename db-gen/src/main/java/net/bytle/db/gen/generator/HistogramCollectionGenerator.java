@@ -241,7 +241,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
 
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     return Long.MAX_VALUE;
   }
 

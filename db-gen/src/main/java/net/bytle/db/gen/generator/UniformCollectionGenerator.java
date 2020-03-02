@@ -3,6 +3,7 @@ package net.bytle.db.gen.generator;
 
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.model.SqlDataType;
+import net.bytle.type.Integers;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,8 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     switch (sqlType.getTypeCode()) {
       case (Types.DOUBLE):
       case Types.FLOAT:
+        min = Integers.toDouble(min);
+        max = Integers.toDouble(max);
         this.min = min != null ? min : 0.0;
         this.max = max != null ? max : 10.0;
         this.o = ((Double) this.max - (Double) this.min)/2;
@@ -68,7 +71,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
       case Types.INTEGER:
         this.min = min != null ? min : 0;
         this.max = max != null ? max : 10;
-        this.o = ((Integer) this.max- (Integer) this.min)/2;
+        this.o = ((Integer) this.max - (Integer) this.min)/2;
         this.range = ((Integer) this.max - (Integer) this.min);
         break;
       case Types.NUMERIC:
@@ -234,7 +237,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     return Long.MAX_VALUE;
   }
 

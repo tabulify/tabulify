@@ -146,7 +146,7 @@ public class UniqueDataCollectionGenerator implements CollectionGeneratorMultipl
   }
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     // Hack
     return Long.MAX_VALUE;
   }

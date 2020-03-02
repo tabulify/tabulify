@@ -60,7 +60,7 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
 
 
   @Override
-  public Long getMaxGeneratedValues() {
+  public long getMaxGeneratedValues() {
     return nameStream.getMaxGeneratedValues();
   }
 
