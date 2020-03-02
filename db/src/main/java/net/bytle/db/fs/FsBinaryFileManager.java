@@ -17,7 +17,7 @@ import java.nio.file.Path;
  * A file manager for a defined type (Csv, ...) can be defined via the {@link FsFileManagerProvider}
  *
  */
-public class FsBinaryFileManager {
+public class FsBinaryFileManager implements FsFileManager {
 
 
 
@@ -31,14 +31,17 @@ public class FsBinaryFileManager {
   }
 
 
+  @Override
   public SelectStream getSelectStream(FsDataPath fsDataPath){
     throw new RuntimeException("This file ("+ fsDataPath + ") has no known structure and/or manager and therefore can't return a select stream");
   }
 
+  @Override
   public InsertStream getInsertStream(FsDataPath fsDataPath) {
     throw new RuntimeException("This file ("+ fsDataPath + ") has no known structure and/or manager and therefore can't return an insert stream");
   }
 
+  @Override
   public FsDataPath createDataPath(FsDataStore fsDataStore, Path path) {
     throw new RuntimeException("This file ("+ path + ") has no known structure and/or manager and therefore can't return an insert stream");
   }
@@ -48,6 +51,7 @@ public class FsBinaryFileManager {
    * For instance, if it's a CSV, you may need to create the headers
    * @param fsDataPath
    */
+  @Override
   public void create(FsDataPath fsDataPath){
     try {
       Files.createFile(fsDataPath.getNioPath());

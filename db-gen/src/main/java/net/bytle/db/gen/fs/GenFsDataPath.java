@@ -1,14 +1,14 @@
 package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsDataPathAbs;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsBinaryDataPath;
 import net.bytle.db.gen.GenDataDef;
 import net.bytle.db.gen.GenDataPath;
 
 import java.nio.file.Path;
 
-public class GenFsDataPath extends FsBinaryDataPath implements FsDataPath, GenDataPath {
+public class GenFsDataPath extends FsDataPathAbs implements FsDataPath, GenDataPath {
 
   public GenFsDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);
@@ -20,6 +20,11 @@ public class GenFsDataPath extends FsBinaryDataPath implements FsDataPath, GenDa
       super.relationDef = new GenDataDef(this);
     }
     return (GenDataDef) super.relationDef;
+  }
+
+  @Override
+  public String getType() {
+    return "generator";
   }
 
 
@@ -35,4 +40,8 @@ public class GenFsDataPath extends FsBinaryDataPath implements FsDataPath, GenDa
   }
 
 
+  @Override
+  public GenFsManager getFileManager() {
+    return GenFsManager.getSingletonOfFsManager();
+  }
 }

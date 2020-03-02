@@ -77,6 +77,10 @@ public class MapCaseIndependent<V> implements Map<String, V> {
 
   public Long getAsLong(V key) {
     Object object = get(key);
-    return (Long) object;
+    if (object instanceof Integer) {
+      return ((Integer) object).longValue();
+    } else {
+      return (Long) object;
+    }
   }
 }

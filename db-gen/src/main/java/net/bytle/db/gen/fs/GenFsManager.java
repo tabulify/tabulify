@@ -12,6 +12,14 @@ import java.nio.file.Path;
 
 public class GenFsManager extends FsBinaryFileManager {
 
+  static GenFsManager genFsManager;
+
+  public static GenFsManager getSingletonOfFsManager() {
+    if (genFsManager==null){
+      genFsManager = new GenFsManager();
+    }
+    return genFsManager;
+  }
 
   @Override
   public GenFsDataPath createDataPath(FsDataStore fsDataStore, Path path) {

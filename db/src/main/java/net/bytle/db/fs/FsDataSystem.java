@@ -53,7 +53,7 @@ public class FsDataSystem implements DataSystem {
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
 
-    FsBinaryDataPath fsDataPath = (FsBinaryDataPath) dataPath;
+    FsDataPath fsDataPath = (FsDataPath) dataPath;
     return getFileManager(fsDataPath).getSelectStream(fsDataPath);
 
   }
@@ -65,8 +65,8 @@ public class FsDataSystem implements DataSystem {
    * @param path
    * @return
    */
-  public FsBinaryFileManager getFileManager(Path path) {
-    FsBinaryFileManager fileManager;
+  public FsFileManager getFileManager(Path path) {
+    FsFileManager fileManager;
     List<FsFileManagerProvider> installedProviders = FsFileManagerProvider.installedProviders();
     for (FsFileManagerProvider structProvider : installedProviders) {
       if (structProvider.accept(path)) {
@@ -144,8 +144,8 @@ public class FsDataSystem implements DataSystem {
 
   }
 
-  private FsBinaryFileManager getFileManager(FsDataPath fsDataPath) {
-    FsBinaryFileManager fileManager = fsDataPath.getFileManager();
+  private FsFileManager getFileManager(FsDataPath fsDataPath) {
+    FsFileManager fileManager = fsDataPath.getFileManager();
     if (fileManager == null) {
       fileManager = getFileManager(fsDataPath.getNioPath());
     }

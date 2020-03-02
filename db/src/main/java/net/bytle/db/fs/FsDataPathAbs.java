@@ -19,19 +19,19 @@ public abstract class FsDataPathAbs extends DataPathAbs implements FsDataPath {
   }
 
   @Override
-  public FsBinaryDataPath getSibling(String name) {
+  public FsDataPath getSibling(String name) {
     Path siblingPath = path.resolveSibling(name);
-    return (FsBinaryDataPath) this.getDataStore().getDataSystem().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
+    return this.getDataStore().getDataSystem().getFileManager(siblingPath).createDataPath(fsDataStore, siblingPath);
   }
 
   @Override
-  public FsBinaryDataPath resolve(String... names) {
+  public FsDataPath resolve(String... names) {
     assert names.length != 0 : "The names array to resolve must not be empty";
     Path resolvedPath = null;
     for (String name : names) {
       resolvedPath = path.resolve(name);
     }
-    return (FsBinaryDataPath) this.getDataStore().getDataSystem().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
+    return this.getDataStore().getDataSystem().getFileManager(resolvedPath).createDataPath(fsDataStore, resolvedPath);
   }
 
   @Override
