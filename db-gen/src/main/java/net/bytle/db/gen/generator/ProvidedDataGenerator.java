@@ -43,17 +43,16 @@ public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
 
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
-    this.values = Arrays.asList(values);
 
-    // Do we have a property ?
-    if (this.values.size() == 0) {
-      final Object valuesAsObject = columnDef.getProperty("values");
-      try {
-        this.values = (List<Object>) valuesAsObject;
-      } catch (ClassCastException e) {
-        throw new RuntimeException("The values excepted for the column " + columnDef + " are not a list. The values are " + valuesAsObject);
+    // If the first value is a list
+    if (values.length==1){
+      if (values[0] instanceof List){
+        this.values = (List<Object>) values[0];
       }
+    } else {
+      this.values = Arrays.asList(values);
     }
+
 
   }
 

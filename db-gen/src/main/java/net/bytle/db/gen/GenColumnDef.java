@@ -4,10 +4,10 @@ import net.bytle.db.gen.generator.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Arrayss;
+import net.bytle.type.MapCaseIndependent;
 import net.bytle.type.Typess;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -55,10 +55,10 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   @Override
   public Map<String, Object> getProperties() {
     Object generatorProperty = super.getProperty(GENERATOR_PROPERTY_KEY);
-    Map<String, Object> generatorColumnProperties = new HashMap<>();
+    Map<String, Object> generatorColumnProperties = new MapCaseIndependent<>();
     if (generatorProperty != null) {
       try {
-        generatorColumnProperties = ((Map<String, Object>) generatorProperty);
+        generatorColumnProperties.putAll(((Map<String, Object>) generatorProperty));
       } catch (ClassCastException e) {
         throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + this.toString() + ") should be a map value. Bad values:" + generatorProperty);
       }

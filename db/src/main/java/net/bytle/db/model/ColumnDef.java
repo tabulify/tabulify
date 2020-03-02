@@ -2,10 +2,10 @@ package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.log.Log;
+import net.bytle.type.MapCaseIndependent;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +26,7 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
   private static Set<Integer> allowedNullableValues = new HashSet<>();
   private final Class<T> clazz;
 
-  private HashMap<String, Object> properties = new HashMap<>();
+  private Map<String, Object> properties = new MapCaseIndependent<>();
 
   static {
     allowedNullableValues.add(DatabaseMetaData.columnNoNulls);
