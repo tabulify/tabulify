@@ -1,14 +1,12 @@
 package net.bytle.db.textline;
 
-import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsBinaryFileManager;
+import net.bytle.db.fs.*;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
 import java.nio.file.Path;
 
-public class LineManager extends FsBinaryFileManager {
+public class LineManager extends FsBinaryFileManager implements FsFileManager {
 
 
   private static LineManager lineManager;
@@ -25,6 +23,17 @@ public class LineManager extends FsBinaryFileManager {
 
     return new LineDataPath(fsDataStore, path);
 
+  }
+
+  @Override
+  public long getSize(FsDataPath fsDataPath) {
+    long i = 0;
+    try (SelectStream selectStream = getSelectStream(fsDataPath)) {
+      while (selectStream.next()) {
+        i++;
+      }
+    }
+    return i;
   }
 
 

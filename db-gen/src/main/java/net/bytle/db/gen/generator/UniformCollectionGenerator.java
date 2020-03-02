@@ -54,6 +54,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     // To cast the returned value back
     clazz = columnDef.getClazz();
 
+
     // Default
     SqlDataType sqlType = columnDef.getDataType();
     switch (sqlType.getTypeCode()) {

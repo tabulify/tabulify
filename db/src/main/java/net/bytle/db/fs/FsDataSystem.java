@@ -209,13 +209,7 @@ public class FsDataSystem implements DataSystem {
 
   @Override
   public long size(DataPath dataPath) {
-    long i = 0;
-    try (SelectStream selectStream = getSelectStream(dataPath)) {
-      while (selectStream.next()) {
-        i++;
-      }
-    }
-    return i;
+    return getFileManager((FsDataPath) dataPath).getSize((FsDataPath) dataPath);
   }
 
   @Override
@@ -233,11 +227,11 @@ public class FsDataSystem implements DataSystem {
 
   @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
-    FsBinaryDataPath fsSource = (FsBinaryDataPath) source;
+    FsDataPath fsSource = (FsDataPath) source;
     if (!exists(fsSource)) {
       throw new RuntimeException("The source file (" + source + ") does not exists");
     }
-    FsBinaryDataPath fsTarget = (FsBinaryDataPath) target;
+    FsDataPath fsTarget = (FsDataPath) target;
     TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
       .startTimer();
     try {

@@ -60,4 +60,9 @@ public class FsBinaryFileManager implements FsFileManager {
     }
   }
 
+  @Override
+  public long getSize(FsDataPath fsDataPath) {
+    throw new RuntimeException(fsDataPath+" was categorized as a binary file. It has therefore no notion of line (record) and can't give it back.");
+  }
+
 }

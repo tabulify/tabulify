@@ -7,9 +7,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * This is not really a generator has the data is in advance defined
+ * The data of this generator is provided of length N
+ * and it will generate (ie give back) one record
+ * at a time with a maximum of N
  */
-public class PredefinedDataGenerator<T> implements CollectionGeneratorOnce<T> {
+public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
 
 
   private final GenColumnDef<T> columnDef;
@@ -37,7 +39,7 @@ public class PredefinedDataGenerator<T> implements CollectionGeneratorOnce<T> {
    * @param columnDef
    * @param values    - The values to give bacl
    */
-  public PredefinedDataGenerator(GenColumnDef<T> columnDef, Object... values) {
+  public ProvidedDataGenerator(GenColumnDef<T> columnDef, Object... values) {
 
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
@@ -93,11 +95,12 @@ public class PredefinedDataGenerator<T> implements CollectionGeneratorOnce<T> {
 
   @Override
   public String toString() {
-    return "SequenceGenerator (" + columnDef + ")";
+    return "Provided Data Generator (" + columnDef + ")";
   }
 
   @Override
   public Long getMaxGeneratedValues() {
-    return Long.valueOf(values.size());
+    return (long) values.size();
   }
+
 }

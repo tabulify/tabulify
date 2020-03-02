@@ -4,13 +4,13 @@ Columns:
   SALES_PRICE:
     Type: Double
     DataGenerator:
-      Name: random
+      type: random
       Min: 1
       Max: 30
   SALES_QTY:
     Type: Double
     DataGenerator:
-      Name: distribution
+      Name: histogram
       Buckets:
         1.0: 2
         2.0: 3

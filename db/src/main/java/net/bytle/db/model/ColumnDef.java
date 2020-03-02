@@ -2,11 +2,13 @@ package net.bytle.db.model;
 
 import net.bytle.db.DbLoggers;
 import net.bytle.log.Log;
-import net.bytle.type.Maps;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by gerard on 01-02-2016.
@@ -290,20 +292,13 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
   }
 
   /**
-   * @param key - a key
+   * @param key - a key (The get is case independent)
    * @return
    */
   public Object getProperty(String key) {
     return properties.get(key);
   }
 
-  /**
-   * @param key - a key
-   * @return
-   */
-  public Object getPropertyCaseIndependently(String key) {
-    return Maps.getPropertyCaseIndependent(properties, key);
-  }
 
   /**
    * @param key

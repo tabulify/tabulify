@@ -22,6 +22,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
    * The {@link TableDef#getProperty(String)} key giving the data generator data
    */
   public static final String GENERATOR_PROPERTY_KEY = "DataGenerator";
+  public static final String GENERATORY_TYPE_PROPERTY = "type";
   private final GenDataDef genDataDef;
   private CollectionGenerator<T> generator;
 
@@ -56,7 +57,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     Map<String, Object> generatorColumnProperties = new HashMap<>();
     if (generatorProperty != null) {
       try {
-        generatorColumnProperties = (Map<String, Object>) generatorProperty;
+        generatorColumnProperties = ((Map<String, Object>) generatorProperty);
       } catch (ClassCastException e) {
         throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + this.toString() + ") should be a map value. Bad values:" + generatorProperty);
       }
@@ -76,7 +77,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     if (generator == null) {
 
       // When read from a data definition file into the column property
-      final String nameProperty = Typess.safeCast(getProperty("name"), String.class);
+      final String nameProperty = Typess.safeCast(getProperty(GENERATORY_TYPE_PROPERTY), String.class);
       if (nameProperty == null) {
         return null;
       }
@@ -92,7 +93,17 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           break;
         case "random":
         case "distribution":
-          generator = HistogramCollectionGenerator.of(this, null);
+        case "uniform":
+          Object min = this.getProperty("min");
+          Object max = this.getProperty("max");
+          generator = new UniformCollectionGenerator<>(this,min,max);
+        case "histogram":
+          Map<Object, Double> buckets = (Map<Object, Double>) this.getProperty("buckets");
+          generator = HistogramCollectionGenerator.of(this, buckets);
+          break;
+        case "provided":
+          Object values = this.getProperty("values");
+          generator = new ProvidedDataGenerator(this, values);
           break;
         default:
           throw new RuntimeException("The generator (" + name + ") defined for the column (" + this.toString() + ") is unknown");
@@ -152,14 +163,14 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return this;
   }
 
-  public HistogramCollectionGenerator<T> addHistogramGenerator(Map<T, Double> buckets) {
+  public HistogramCollectionGenerator<T> addHistogramGenerator(Map<Object, Double> buckets) {
     HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
     generator = histogramCollectionGenerator;
     return histogramCollectionGenerator;
   }
 
-  public HistogramCollectionGenerator<T> addHistogramGenerator(T... element) {
-    Map<T, Double> buckets = Arrays.stream(element)
+  public HistogramCollectionGenerator<T> addHistogramGenerator(Object... element) {
+    Map<Object, Double> buckets = Arrays.stream(element)
       .collect(Collectors.toMap(e -> e, e -> 1.0));
     HistogramCollectionGenerator<T> histogramCollectionGenerator = HistogramCollectionGenerator.of(this, buckets);
     generator = histogramCollectionGenerator;
@@ -206,9 +217,9 @@ public class GenColumnDef<T> extends ColumnDef<T> {
     return uniformCollectionGenerator;
   }
 
-  public PredefinedDataGenerator<T> addPredefinedDataGenerator(T... values) {
-    PredefinedDataGenerator<T> predefinedDataGenerator = new PredefinedDataGenerator<>(this, values);
-    generator = predefinedDataGenerator;
-    return predefinedDataGenerator;
+  public ProvidedDataGenerator<T> addPredefinedDataGenerator(T... values) {
+    ProvidedDataGenerator<T> providedDataGenerator = new ProvidedDataGenerator<>(this, values);
+    generator = providedDataGenerator;
+    return providedDataGenerator;
   }
 }

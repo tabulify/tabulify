@@ -39,4 +39,8 @@ public class GenFsManager extends FsBinaryFileManager {
     throw new RuntimeException("A generator data file generated only data. You can't therefore insert in a generator data path");
   }
 
+  @Override
+  public long getSize(FsDataPath fsDataPath) {
+    return ((GenFsDataPath) fsDataPath).getOrCreateDataDef().getSize();
+  }
 }

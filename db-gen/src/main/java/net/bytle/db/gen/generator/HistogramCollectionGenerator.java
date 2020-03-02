@@ -48,17 +48,15 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
   private int step;
 
   private Object range;
-  private List<T> values;
+  private List<Object> values;
 
-  public HistogramCollectionGenerator(GenColumnDef<T> columnDef, Map<T,Double> buckets) {
-
-
+  public HistogramCollectionGenerator(GenColumnDef<T> columnDef, Map<Object,Double> buckets) {
 
     if (buckets==null) {
 
       final Object bucketsObject = columnDef.getProperty("buckets");
       try {
-        buckets = (Map<T, Double>) bucketsObject;
+        buckets = (Map<Object, Double>) bucketsObject;
       } catch (ClassCastException e) {
         throw new RuntimeException("The buckets definition of the column (" + columnDef.getFullyQualifiedName() + ") are not in the map format <Object,Integer>. The values are: " + bucketsObject);
       }
@@ -79,8 +77,8 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
 
     // Create the values list and add the element according to their ratio
     // A ratio of 3 = 3 elements in the list
-    values = new ArrayList<T>();
-    for (Map.Entry<T, Double> entry : buckets.entrySet()) {
+    values = new ArrayList<>();
+    for (Map.Entry<Object, Double> entry : buckets.entrySet()) {
       for (int i = 0; i < entry.getValue(); i++) {
         values.add(entry.getKey());
       }
@@ -141,7 +139,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
    * @param buckets
    * @return
    */
-  public static <T> HistogramCollectionGenerator<T> of(GenColumnDef<T> columnDef, Map<T, Double> buckets) {
+  public static <T> HistogramCollectionGenerator<T> of(GenColumnDef<T> columnDef, Map<Object, Double> buckets) {
 
     return new HistogramCollectionGenerator<>(columnDef, buckets);
 

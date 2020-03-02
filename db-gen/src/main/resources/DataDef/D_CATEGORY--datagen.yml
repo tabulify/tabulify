@@ -2,7 +2,7 @@
 Columns:
   CAT_DESC:
     DataGenerator:
-      type: set
+      type: provided
       Values:
       - Blue
       - Green
