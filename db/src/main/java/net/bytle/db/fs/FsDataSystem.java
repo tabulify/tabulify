@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +53,7 @@ public class FsDataSystem implements DataSystem {
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
 
-    FsRawDataPath fsDataPath = (FsRawDataPath) dataPath;
+    FsBinaryDataPath fsDataPath = (FsBinaryDataPath) dataPath;
     return getFileManager(fsDataPath).getSelectStream(fsDataPath);
 
   }
@@ -66,8 +65,8 @@ public class FsDataSystem implements DataSystem {
    * @param path
    * @return
    */
-  public FsFileManager getFileManager(Path path) {
-    FsFileManager fileManager = null;
+  public FsBinaryFileManager getFileManager(Path path) {
+    FsBinaryFileManager fileManager;
     List<FsFileManagerProvider> installedProviders = FsFileManagerProvider.installedProviders();
     for (FsFileManagerProvider structProvider : installedProviders) {
       if (structProvider.accept(path)) {
@@ -83,7 +82,7 @@ public class FsDataSystem implements DataSystem {
     // No file manager found
     if (Files.isRegularFile(path)) {
       DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
-      fileManager = FsFileManager.getSingeleton();
+      fileManager = FsBinaryFileManager.getSingeleton();
     } else {
       fileManager = FsDirectoryManager.getSingeleton();
     }
@@ -145,8 +144,8 @@ public class FsDataSystem implements DataSystem {
 
   }
 
-  private FsFileManager getFileManager(FsDataPath fsDataPath) {
-    FsFileManager fileManager = fsDataPath.getFileManager();
+  private FsBinaryFileManager getFileManager(FsDataPath fsDataPath) {
+    FsBinaryFileManager fileManager = fsDataPath.getFileManager();
     if (fileManager == null) {
       fileManager = getFileManager(fsDataPath.getNioPath());
     }
@@ -234,11 +233,11 @@ public class FsDataSystem implements DataSystem {
 
   @Override
   public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
-    FsRawDataPath fsSource = (FsRawDataPath) source;
+    FsBinaryDataPath fsSource = (FsBinaryDataPath) source;
     if (!exists(fsSource)) {
       throw new RuntimeException("The source file (" + source + ") does not exists");
     }
-    FsRawDataPath fsTarget = (FsRawDataPath) target;
+    FsBinaryDataPath fsTarget = (FsBinaryDataPath) target;
     TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
       .startTimer();
     try {

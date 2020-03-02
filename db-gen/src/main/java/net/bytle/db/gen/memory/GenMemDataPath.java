@@ -78,21 +78,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
     return new GenSelectStream(this);
   }
 
-  @Override
-  public void drop() {
-    throw new RuntimeException("You can't drop a generation data path");
-  }
 
-  /**
-   *
-   * Return true if the number of defined columns is greater than 0
-   *
-   *
-   * @return
-   */
-  @Override
-  public Boolean exists() {
-    return this.getOrCreateDataDef().getColumnsSize()>0;
-  }
+
 
 }

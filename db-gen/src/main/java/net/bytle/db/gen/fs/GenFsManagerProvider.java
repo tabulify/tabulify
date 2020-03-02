@@ -1,6 +1,6 @@
 package net.bytle.db.gen.fs;
 
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
 import java.nio.file.Path;
@@ -21,7 +21,7 @@ public class GenFsManagerProvider extends FsFileManagerProvider {
   }
 
   @Override
-  public FsFileManager getFsFileManager() {
+  public FsBinaryFileManager getFsFileManager() {
     if (genManager == null){
       genManager = new GenFsManager();
     }

@@ -17,16 +17,17 @@ import java.nio.file.Path;
  * A file manager for a defined type (Csv, ...) can be defined via the {@link FsFileManagerProvider}
  *
  */
-public class FsFileManager  {
+public class FsBinaryFileManager {
 
 
 
-  public FsFileManager() {
+  public FsBinaryFileManager() {
 
   }
 
-  public static FsFileManager getSingeleton() {
-   return new FsFileManager();
+
+  public static FsBinaryFileManager getSingeleton() {
+   return new FsBinaryFileManager();
   }
 
 
@@ -39,7 +40,7 @@ public class FsFileManager  {
   }
 
   public FsDataPath createDataPath(FsDataStore fsDataStore, Path path) {
-    return FsRawDataPath.of(fsDataStore, path);
+    throw new RuntimeException("This file ("+ path + ") has no known structure and/or manager and therefore can't return an insert stream");
   }
 
   /**

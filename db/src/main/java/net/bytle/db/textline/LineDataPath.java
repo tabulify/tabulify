@@ -1,16 +1,16 @@
 package net.bytle.db.textline;
 
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsDataPath;
+import net.bytle.db.fs.FsDataPathAbs;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
-import net.bytle.db.fs.FsRawDataPath;
 
 import java.nio.file.Path;
 
 /**
  * A data path with a line tabular structure (one cell by row = one line)
  */
-public class LineDataPath extends FsRawDataPath implements FsDataPath {
+public class LineDataPath extends FsDataPathAbs implements FsDataPath {
 
   public LineDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);
@@ -41,6 +41,11 @@ public class LineDataPath extends FsRawDataPath implements FsDataPath {
   }
 
   @Override
+  public String getType() {
+    return "line";
+  }
+
+  @Override
   public LineDataDef createDataDef() {
     if (this.relationDef == null) {
       this.relationDef = new LineDataDef(this);
@@ -49,7 +54,7 @@ public class LineDataPath extends FsRawDataPath implements FsDataPath {
   }
 
   @Override
-  public FsFileManager getFileManager() {
+  public FsBinaryFileManager getFileManager() {
     return LineManager.getSingeleton();
   }
 }

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An ANSI SQL system
+ * An ANSI SQL system based on JDBC
  */
 public class SqlDataSystem implements DataSystem {
 
@@ -650,7 +650,7 @@ public class SqlDataSystem implements DataSystem {
     }
   }
 
-  private SqlDataStore getDataStore() {
+  public SqlDataStore getDataStore() {
     return jdbcDataStore;
   }
 

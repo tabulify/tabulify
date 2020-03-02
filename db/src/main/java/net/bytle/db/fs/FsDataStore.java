@@ -97,7 +97,13 @@ public class FsDataStore extends DataStore {
 
   }
 
-  public FsDataPath getDataPath(Path path) {
+  /**
+   *
+   * @param path
+   * @return
+   * The entry point to create all file system data path
+   */
+  public FsDataPath getFsDataPath(Path path) {
 
     return this.getDataSystem().getFileManager(path).createDataPath(this,path);
 
@@ -113,7 +119,7 @@ public class FsDataStore extends DataStore {
       path = path.resolve(name);
     }
 
-    return getDataPath(path);
+    return getFsDataPath(path);
 
   }
 
@@ -124,8 +130,7 @@ public class FsDataStore extends DataStore {
 
   @Override
   public FsDataPath getCurrentDataPath() {
-    Path currentPath = Paths.get(connectionString);
-    return new FsRawDataPath(this, currentPath);
+    return getDefaultDataPath(connectionString);
   }
 
 }

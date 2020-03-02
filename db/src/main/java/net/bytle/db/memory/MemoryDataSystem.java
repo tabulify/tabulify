@@ -1,13 +1,12 @@
 package net.bytle.db.memory;
 
-import net.bytle.db.DbLoggers;
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferProperties;
-import net.bytle.log.Log;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,11 +22,13 @@ public class MemoryDataSystem implements DataSystem {
    * The data path of the data store are keep here
    * This is to be able to support the copy/merge of data defs
    * into another data path that have foreign key relationships
-   * See {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
+   *
+   * ie if the foreign table exists, we create the foreign key
+   *   * in a {@link net.bytle.db.model.DataDefs#merge(RelationDef, RelationDef)}
+   *   * or {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
    */
   Map<String, MemoryDataPath> dataPaths = new HashMap<>();
 
-  private static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
   private MemoryDataStore dataStore;
 
   public MemoryDataSystem(MemoryDataStore memoryDataStore) {

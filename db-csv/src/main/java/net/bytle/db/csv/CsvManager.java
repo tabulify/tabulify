@@ -2,7 +2,7 @@ package net.bytle.db.csv;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-public class CsvManager extends FsFileManager {
+public class CsvManager extends FsBinaryFileManager {
 
   private static CsvManager csvManager;
 

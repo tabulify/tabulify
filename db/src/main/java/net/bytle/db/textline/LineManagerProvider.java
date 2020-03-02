@@ -1,6 +1,6 @@
 package net.bytle.db.textline;
 
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
 import java.nio.file.Path;
@@ -19,7 +19,7 @@ public class LineManagerProvider extends FsFileManagerProvider {
   }
 
   @Override
-  public FsFileManager getFsFileManager() {
+  public FsBinaryFileManager getFsFileManager() {
     if (lineManager == null){
       lineManager = new LineManager();
     }

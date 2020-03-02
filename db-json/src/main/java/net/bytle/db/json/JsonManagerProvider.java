@@ -1,6 +1,6 @@
 package net.bytle.db.json;
 
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
 import java.nio.file.Path;
@@ -17,7 +17,7 @@ public class JsonManagerProvider extends FsFileManagerProvider {
   }
 
   @Override
-  public FsFileManager getFsFileManager() {
+  public FsBinaryFileManager getFsFileManager() {
     if (jsonManager == null){
       jsonManager = new JsonManager();
     }

@@ -190,7 +190,7 @@ public class Tabular implements AutoCloseable {
 
   public DataPath getDataPath(Path path) {
 
-    return FsDataStore.of(path).getDataPath(path);
+    return FsDataStore.of(path).getFsDataPath(path);
 
 
   }

@@ -1,6 +1,6 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
 import java.nio.file.Path;
@@ -19,7 +19,7 @@ public class CsvManagerProvider extends FsFileManagerProvider {
   }
 
   @Override
-  public FsFileManager getFsFileManager() {
+  public FsBinaryFileManager getFsFileManager() {
     if (csvManager == null){
       csvManager = new CsvManager();
     }

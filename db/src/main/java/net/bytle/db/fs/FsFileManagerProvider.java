@@ -135,7 +135,7 @@ public abstract class FsFileManagerProvider {
      * @throws SecurityException           If a security manager is installed and it denies an unspecified
      *                                     permission.
      */
-    public abstract FsFileManager getFsFileManager();
+    public abstract FsBinaryFileManager getFsFileManager();
 
 
     /**

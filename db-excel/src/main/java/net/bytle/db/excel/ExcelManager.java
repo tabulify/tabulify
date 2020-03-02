@@ -1,11 +1,11 @@
 package net.bytle.db.excel;
 
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 
 import java.nio.file.Path;
 
-public class ExcelManager extends FsFileManager {
+public class ExcelManager extends FsBinaryFileManager {
 
 
   @Override

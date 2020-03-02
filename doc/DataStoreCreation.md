@@ -15,7 +15,9 @@
        * for a `SqlDataStore`
          * `getSqlDataPath` (for an AnsiDataStore: `return new myDataPath(this, getCurrentCatalog(), getCurrentSchema(), null);`)
          * `getQueryDataPath`
-       * for a memory/file data store
+       * for a `FsDataStore`
+         * `getFsDataPath`
+       * for a memory data store
          * `getTypedDataPath` is the main entry for data path creation
   * Data Def
     * Create a data def object, 

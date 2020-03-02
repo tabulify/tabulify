@@ -208,7 +208,7 @@ public class DataGeneration {
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
-      Tabulars.create(genDataPath);
+      Tabulars.createIfNotExist(genDataPath);
       long numberOfRowToInsert = Tabulars.getSize(genDataPath);
       if (numberOfRowToInsert > MAX_INSERT) {
         throw new RuntimeException(

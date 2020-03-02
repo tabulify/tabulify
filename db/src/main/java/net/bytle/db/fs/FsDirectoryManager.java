@@ -6,7 +6,7 @@ import net.bytle.db.stream.SelectStream;
 /**
  * A directory file manager
  */
-public class FsDirectoryManager extends FsFileManager {
+public class FsDirectoryManager extends FsBinaryFileManager {
 
 
   @Override

@@ -2,18 +2,18 @@ package net.bytle.db.textline;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
 import java.nio.file.Path;
 
-public class LineManager extends FsFileManager {
+public class LineManager extends FsBinaryFileManager {
 
 
   private static LineManager lineManager;
 
-  public static FsFileManager getSingeleton() {
+  public static FsBinaryFileManager getSingeleton() {
     if (lineManager == null){
       lineManager = new LineManager();
     }

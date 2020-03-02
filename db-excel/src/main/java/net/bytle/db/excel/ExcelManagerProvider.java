@@ -1,6 +1,6 @@
 package net.bytle.db.excel;
 
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
 
 import java.nio.file.Path;
@@ -20,7 +20,7 @@ public class ExcelManagerProvider extends FsFileManagerProvider {
   }
 
   @Override
-  public FsFileManager getFsFileManager() {
+  public FsBinaryFileManager getFsFileManager() {
     if (excelManager == null){
       excelManager = new ExcelManager();
     }

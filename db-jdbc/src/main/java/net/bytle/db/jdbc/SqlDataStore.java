@@ -3,6 +3,7 @@ package net.bytle.db.jdbc;
 import net.bytle.db.Tabular;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.model.SqlDataType;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 import org.slf4j.Logger;
@@ -133,6 +134,11 @@ public class SqlDataStore extends DataStore {
   @Override
   public AnsiDataPath getDefaultDataPath(String... names) {
     return this.getCurrentDataPath().resolve(names);
+  }
+
+  @Override
+  public DataPath getTypedDataPath(String type, String... parts) {
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override

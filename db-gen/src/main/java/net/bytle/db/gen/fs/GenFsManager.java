@@ -2,7 +2,7 @@ package net.bytle.db.gen.fs;
 
 import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.fs.FsDataStore;
-import net.bytle.db.fs.FsFileManager;
+import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.gen.GenDataPath;
 import net.bytle.db.gen.GenSelectStream;
 import net.bytle.db.stream.InsertStream;
@@ -10,7 +10,7 @@ import net.bytle.db.stream.SelectStream;
 
 import java.nio.file.Path;
 
-public class GenFsManager extends FsFileManager {
+public class GenFsManager extends FsBinaryFileManager {
 
 
   @Override

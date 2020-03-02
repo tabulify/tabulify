@@ -13,7 +13,7 @@ public interface FsDataPath extends DataPath {
 
   Path getNioPath();
 
-  FsFileManager getFileManager();
+  FsBinaryFileManager getFileManager();
 
   @Override
   FsDataStore getDataStore();
