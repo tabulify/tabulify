@@ -163,5 +163,10 @@ public class GenSelectStream extends SelectStreamAbs {
 
   }
 
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    return (T) getObject(columnName);
+  }
+
 
 }

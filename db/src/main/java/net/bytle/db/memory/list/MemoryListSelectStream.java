@@ -137,5 +137,10 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
     // nothing to do here
   }
 
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    return (T) getObject(columnName);
+  }
+
 
 }

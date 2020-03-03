@@ -484,4 +484,15 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     return getDefaultDataPath(UUID.randomUUID().toString());
   }
 
+  /**
+   * Transform an object into the desired clazz
+   * This function takes over if the result set function with the class attribute
+   * such as {@link java.sql.ResultSet#getObject(String, Class)} are not supported
+   * @param object
+   * @param clazz
+   * @param <T>
+   * @return
+   */
+  public abstract <T> T getObject(Object object, Class<T> clazz);
+
 }

@@ -87,4 +87,14 @@ public interface SelectStream extends AutoCloseable {
 
   Date getDate(int columnIndex);
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * and will to the requested Java data type, if the conversion is supported.
+   * @param columnName
+   * @param clazz
+   * @param <T>
+   * @return
+   */
+  <T> T getObject(String columnName, Class<T> clazz);
+
 }

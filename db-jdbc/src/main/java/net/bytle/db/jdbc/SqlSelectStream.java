@@ -92,6 +92,15 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
   }
 
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    try {
+      return getResultSet().getObject(columnName, clazz);
+    } catch (SQLException e) {
+      return this.getDataPath().getDataStore().getObject(getObject(columnName),clazz);
+    }
+  }
+
   private ResultSet getResultSet() {
     if (resultSet == null) {
       switch (jdbcDataPath.getType()) {

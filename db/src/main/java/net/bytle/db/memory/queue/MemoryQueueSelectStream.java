@@ -144,6 +144,10 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
     // nothing to do here
   }
 
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    return (T) getObject(columnName);
+  }
 
 
 }

@@ -36,7 +36,7 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
     ) {
       Map<Object,Double> histogram = new HashMap<>();
       while (selectStream.next()) {
-        histogram.put(selectStream.getObject(foreignColumnDef.getColumnName()),1.0);
+        histogram.put(selectStream.getObject(foreignColumnDef.getColumnName(), columnDef.getClazz()),1.0);
       }
       if (histogram.size() == 0) {
         throw new RuntimeException("The foreign table (" + foreignColumnDef.getDataDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");

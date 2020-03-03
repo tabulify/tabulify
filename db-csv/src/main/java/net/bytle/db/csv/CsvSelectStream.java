@@ -150,6 +150,11 @@ public class CsvSelectStream extends SelectStreamAbs {
     // no external request, nothing to do
   }
 
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    return (T) getObject(columnName);
+  }
+
 
   @Override
   public long getRow() {

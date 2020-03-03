@@ -6,6 +6,7 @@ import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
+import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,13 @@ public class SqlDataStore extends DataStore {
   public SqlDataStore setStrict(boolean strict) {
     super.setStrict(strict);
     return this;
+  }
+
+  @Override
+  public <T> T getObject(Object object, Class<T> clazz) {
+    throw new RuntimeException(Strings.multiline(
+      "This function is an extension point if the driver does not support it",
+      "It's then data store dependent and should be implemented/overwritten in the data store extension (ie "+this.getProductName()+")"));
   }
 
 

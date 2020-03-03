@@ -6,30 +6,22 @@ import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 
 /**
  * Histogram Distribution Generator known also as enumerated distribution
- *
+ * <p>
  * Discrete probability distribution over a finite sample space, based on an enumerated list of <value, probability> pairs.
- *
- *   * Probabilities if not given have all the same size for the sample
- *   * Probabilities must all be non-negative
- *   * Probabilities of zero are allowed
- *   * Probabilities sum does not have to equal one, they will be be normalize to make them sum to one.
+ * <p>
+ * * Probabilities if not given have all the same size for the sample
+ * * Probabilities must all be non-negative
+ * * Probabilities of zero are allowed
+ * * Probabilities sum does not have to equal one, they will be be normalize to make them sum to one.
  * http://en.wikipedia.org/wiki/Probability_distribution#Discrete_probability_distribution
- *
+ * <p>
  * See another example at
  * https://commons.apache.org/proper/commons-math/apidocs/org/apache/commons/math4/distribution/EnumeratedDistribution.html
  */
@@ -42,17 +34,11 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
   private Object o;
   private GenColumnDef columnDef;
 
-  // Domain
-  private Object min;
-  private Object max;
-  private int step;
-
-  private Object range;
   private List<Object> values;
 
-  public HistogramCollectionGenerator(GenColumnDef<T> columnDef, Map<Object,Double> buckets) {
+  public HistogramCollectionGenerator(GenColumnDef<T> columnDef, Map<Object, Double> buckets) {
 
-    if (buckets==null) {
+    if (buckets == null) {
 
       final Object bucketsObject = columnDef.getProperty("buckets");
       try {
@@ -71,7 +57,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
       }
     }
 
-    if (buckets==null){
+    if (buckets == null) {
       throw new RuntimeException("You can't create a custom probability distribution without bucket definition");
     }
 
@@ -86,42 +72,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
 
     this.columnDef = columnDef;
     clazz = columnDef.getClazz();
-    int typeCode = columnDef.getDataType().getTypeCode();
-    switch (typeCode) {
-      case (Types.DOUBLE):
-      case Types.FLOAT:
-        // Other name for double
-        range = 10.0;
-        min = 0.0;
-        break;
-      case Types.INTEGER:
-        range = 10;
-        min = 0;
-        break;
-      case Types.VARCHAR:
-      case Types.CHAR:
-        o = getString();
-        break;
-      case Types.NUMERIC:
-        range = BigDecimal.valueOf(10);
-        min = BigDecimal.valueOf(0);
-        break;
-      case Types.DATE:
-        o = Date.valueOf(LocalDate.now());
-        range = 10;
-        min = Date.valueOf(LocalDate.now().minusDays((int) range));
-        max = Date.valueOf(LocalDate.now());
-        break;
-      case Types.TIMESTAMP:
-        o = Timestamp.valueOf(LocalDateTime.now());
-        range = 10;
-        min = Timestamp.valueOf(LocalDateTime.now().minusDays((int) range));
-        max = Timestamp.valueOf(LocalDateTime.now());
-        break;
-      default:
-        throw new RuntimeException("The data type with the type code (" + typeCode + "," + clazz.getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
 
-    }
 
   }
 
@@ -146,7 +97,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
   }
 
   public static <T> HistogramCollectionGenerator<T> of(GenColumnDef genColumnDef) {
-    return new HistogramCollectionGenerator<>(genColumnDef,null);
+    return new HistogramCollectionGenerator<>(genColumnDef, null);
   }
 
 
@@ -174,48 +125,14 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
   @Override
   public T getNewValue() {
 
-    if (values == null) {
-      switch (columnDef.getDataType().getTypeCode()) {
-        case Types.DOUBLE:
-          o = Math.random() * (Double) range;
-          if (min != null) {
-            o = (Double) o + (Double) min;
-          }
-          break;
-        case Types.INTEGER:
-          o = (int) (Math.random() * (int) range);
-          if (min != null) {
-            o = (int) o + (int) min;
-          }
-          break;
-        case Types.NUMERIC:
-          o = BigDecimal.valueOf(Math.random() * ((BigDecimal) range).doubleValue());
-          if (min != null) {
-            o = ((BigDecimal) o).add(((BigDecimal) min));
-          }
-          break;
-        case Types.DATE:
-          int i = (int) (Math.random() * (int) range);
-          LocalDate localValue = ((Date) min).toLocalDate();
-          o = Date.valueOf(localValue.plusDays(i));
-          break;
-        case Types.TIMESTAMP:
-          int iTimestamp = (int) (Math.random() * (int) range);
-          LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
-          o = Timestamp.valueOf(localValueTimestamp.plusDays(iTimestamp));
-          break;
+    int i = (int) (Math.random() * values.size());
+    o = values.get(i);
 
-      }
-
-    } else {
-
-      int i = (int) (Math.random() * values.size());
-      o = values.get(i);
-
+    try {
+      return clazz.cast(o);
+    } catch (ClassCastException e) {
+      throw new RuntimeException("Unable to cast the value (" + o + ") for the column (" + columnDef + ")", e);
     }
-
-
-    return clazz.cast(o);
   }
 
   /**
@@ -239,64 +156,17 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
   }
 
 
-
   @Override
   public long getMaxGeneratedValues() {
     return Long.MAX_VALUE;
   }
 
 
-  public HistogramCollectionGenerator<T> setMin(T min) {
-    if (min != null) {
-      this.min = min;
-      updateRange();
-    }
-    return this;
-  }
-
-  public HistogramCollectionGenerator<T> setMax(T max) {
-    if (max != null) {
-      this.max = max;
-      updateRange();
-    }
-
-    return this;
-  }
-
-  private void updateRange() {
-    // Range
-    switch (columnDef.getDataType().getTypeCode()) {
-      case Types.DOUBLE:
-        if (max != null) {
-          range = (double) max - (double) min;
-        }
-        break;
-      case Types.INTEGER:
-        if (max != null) {
-          range = (int) max - (int) min;
-        }
-        break;
-      case Types.NUMERIC:
-        if (max != null) {
-          range = ((BigDecimal) max).min((BigDecimal) min);
-        }
-        break;
-      case Types.DATE:
-        if (max != null) {
-          range = (int) DAYS.between(((Date) min).toLocalDate(), ((Date) max).toLocalDate());
-        }
-        break;
-
-    }
-  }
 
   @Override
   public String toString() {
-    return "DistributionGenerator{" + columnDef + '}';
+    return "HistogramGenerator{" + columnDef + '}';
   }
 
-  public HistogramCollectionGenerator setStep(int step) {
-    this.step = step;
-    return this;
-  }
+
 }

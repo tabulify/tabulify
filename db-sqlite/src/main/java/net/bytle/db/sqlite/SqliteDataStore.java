@@ -4,11 +4,13 @@ import net.bytle.db.jdbc.AnsiDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPathAbs;
+import net.bytle.type.SqlDates;
 import net.bytle.type.Strings;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Date;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.Objects;
@@ -66,7 +68,7 @@ public class SqliteDataStore extends SqlDataStore {
       case 1:
         switch (names[0]) {
           case AnsiDataPath.CURRENT_WORKING_DIRECTORY:
-            return getSqlDataPath( null, null, null);
+            return getSqlDataPath(null, null, null);
           case AnsiDataPath.PARENT_DIRECTORY:
             throw new RuntimeException("Sqlite does not have the notion of catalog or schema, you can't ask therefore for a parent");
           default:
@@ -74,7 +76,7 @@ public class SqliteDataStore extends SqlDataStore {
         }
       case 2:
         if (names[0].equals(AnsiDataPath.CURRENT_WORKING_DIRECTORY)) {
-          return getSqlDataPath( null, null, names[1]);
+          return getSqlDataPath(null, null, names[1]);
         }
       default:
         throw new RuntimeException(
@@ -143,11 +145,21 @@ public class SqliteDataStore extends SqlDataStore {
 
   @Override
   public SqliteDataPath getSqlDataPath(String catalog, String schema, String name) {
-    return new SqliteDataPath(this,catalog, schema, name);
+    return new SqliteDataPath(this, catalog, schema, name);
   }
 
   @Override
   public DataPathAbs getQueryDataPath(String query) {
     return new SqliteDataPath(this, query);
+  }
+
+  @Override
+  public <T> T getObject(Object object, Class<T> clazz) {
+    if (clazz.equals(Date.class)) {
+      if (object instanceof Long) {
+        return (T) SqlDates.fromEpochMilli((Long) object);
+      }
+    }
+    return clazz.cast(object);
   }
 }

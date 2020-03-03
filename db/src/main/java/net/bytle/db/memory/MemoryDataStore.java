@@ -80,6 +80,10 @@ public class MemoryDataStore extends DataStore {
     throw new RuntimeException("A processing engine is not yet supported on memory structure");
   }
 
+  @Override
+  public <T> T getObject(Object object, Class<T> clazz) {
+    throw new RuntimeException("Not yet supported");
+  }
 
 
   @Override

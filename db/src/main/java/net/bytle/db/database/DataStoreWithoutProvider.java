@@ -46,4 +46,9 @@ public class DataStoreWithoutProvider extends DataStore {
     throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
   }
 
+  @Override
+  public <T> T getObject(Object object, Class<T> clazz) {
+    throw new RuntimeException("No provider was found for datastore ("+getName()+") and the the url ("+getConnectionString()+")");
+  }
+
 }
