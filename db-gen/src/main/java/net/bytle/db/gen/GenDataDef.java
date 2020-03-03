@@ -196,7 +196,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   @Override
-  public ColumnDef getColumn(String columnName) {
+  public GenColumnDef getColumn(String columnName) {
     return genColumns.get(columnName);
   }
 
@@ -226,7 +226,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
     buildMissingGenerators();
     Long maxSizeFromGenerators = 0L;
     for (CollectionGenerator dataGenerator : Arrays.stream(getColumnDefs()).map(GenColumnDef::getGenerator).collect(Collectors.toList())) {
-      final Long maxGeneratedValues = dataGenerator.getMaxGeneratedValues();
+        final Long maxGeneratedValues = dataGenerator.getMaxGeneratedValues();
       if (maxSizeFromGenerators == 0) {
         maxSizeFromGenerators = maxGeneratedValues;
       } else {

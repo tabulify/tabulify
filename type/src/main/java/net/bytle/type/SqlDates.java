@@ -36,8 +36,8 @@ public class SqlDates {
    * @param to
    * @return the number of days between this two dates
    */
-  public static Long dayBetween(Date from, Date to) {
-    return DAYS.between(from.toLocalDate(),to.toLocalDate());
+  public static long dayBetween(Date from, Date to) {
+    return DAYS.between(to.toLocalDate(), from.toLocalDate());
   }
 
 }

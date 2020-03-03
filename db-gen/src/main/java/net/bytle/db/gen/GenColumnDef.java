@@ -188,7 +188,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   }
 
 
-  public SequenceGenerator<T> getSequenceGenerator(Class<T> clazz) {
+  public SequenceGenerator<T> getSequenceGenerator() {
 
     if (generator == null) {
       throw new RuntimeException("The column (" + this + ") has no generator");

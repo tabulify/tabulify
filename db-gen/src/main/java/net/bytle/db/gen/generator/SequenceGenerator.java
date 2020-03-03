@@ -42,6 +42,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
 
 
+  public static final Date MIN_DATE = new Date(Long.MIN_VALUE);
   private final GenColumnDef<T> columnDef;
   private final Class<T> clazz;
 
@@ -329,9 +330,9 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
         return clazz.cast(start);
       } else {
         if (this.maxSteps==null){
-          return clazz.cast(Date.valueOf(LocalDate.MIN));
+          return clazz.cast(MIN_DATE);
         } else {
-          return clazz.cast(Date.valueOf(((Date) start).toLocalDate().minus(this.maxSteps, DAYS)));
+          return clazz.cast(Date.valueOf(((LocalDate) start).minus(this.maxSteps, DAYS)));
         }
       }
     } else {
