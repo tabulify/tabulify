@@ -168,7 +168,7 @@ public class DataGeneration {
 
             // The table is not part of the data generation specification
             LOGGER.warning("The data generation for the column (" + foreignKey.getForeignPrimaryKey() + ") is not defined, we are then obliged to retrieve all data of this column to build the data generator for the foreign column (" + foreignColumn + ")");
-            foreignColumn.setGenerator(new FkDataCollectionGenerator(foreignKey));
+            foreignColumn.setGenerator(new FkDataCollectionGenerator(foreignColumn, foreignKey));
 
           } else {
 

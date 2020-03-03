@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
+public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
 
 
   private final ForeignKeyDef foreignKeyDef;
@@ -24,9 +24,10 @@ public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
   /**
    * Get a random foreign value when the {@link #getNewValue()} is called
    */
-  public  FkDataCollectionGenerator(ForeignKeyDef foreignKeyDef) {
+  public  FkDataCollectionGenerator(GenColumnDef<T> columnDef, ForeignKeyDef foreignKeyDef) {
 
     this.foreignKeyDef = foreignKeyDef;
+    this.columnDef = columnDef;
 
     // Building the map of value
     foreignColumnDef = foreignKeyDef.getForeignPrimaryKey().getColumns().get(0);
@@ -40,8 +41,7 @@ public class FkDataCollectionGenerator implements CollectionGeneratorOnce {
       if (histogram.size() == 0) {
         throw new RuntimeException("The foreign table (" + foreignColumnDef.getDataDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
       }
-      columnDef = (GenColumnDef) foreignKeyDef.getChildColumns().get(0);
-      enumCollection = new HistogramCollectionGenerator<>(columnDef,histogram);
+      enumCollection = new HistogramCollectionGenerator(columnDef,histogram);
     }
 
   }
