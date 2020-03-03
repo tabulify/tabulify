@@ -246,7 +246,8 @@ public class DataDefs {
         .precision(columnDef.getPrecision())
         .scale(columnDef.getScale())
         .setNullable(columnDef.getNullable())
-        .comment(columnDef.getComment());
+        .comment(columnDef.getComment())
+        .addAllProperties(columnDef);
     }
   }
 
