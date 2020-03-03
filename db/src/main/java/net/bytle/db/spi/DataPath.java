@@ -72,7 +72,6 @@ public interface DataPath extends Comparable<DataPath>, Relational {
 
   String getDescription();
 
-  DataPath getChild(String name, RelationDef datadef);
 
   /**
    *

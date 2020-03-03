@@ -170,9 +170,9 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   @Override
-  public GenDataDef copyDataDef(DataPath sourceDataPath) {
+  public GenDataDef copyDataDef(DataPath from) {
 
-    super.copyDataDef(sourceDataPath);
+    super.copyDataDef(from);
     return this;
 
   }

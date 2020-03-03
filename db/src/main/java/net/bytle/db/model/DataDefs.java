@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 
 /**
  * DataDef(s)tatic functions
+ * They are not meant to be used directly, use a {@link RelationDef object instead}
+ *
  */
 public class DataDefs {
 
@@ -77,7 +79,8 @@ public class DataDefs {
         .precision(columnDef.getPrecision())
         .scale(columnDef.getScale())
         .setNullable(columnDef.getNullable())
-        .comment(columnDef.getComment());
+        .comment(columnDef.getComment())
+        .addAllProperties(columnDef);
     }
 
 
@@ -135,28 +138,6 @@ public class DataDefs {
   }
 
 
-  /**
-   * Copy (ie add) from source to target:
-   * * the columns,
-   * * the primary key
-   * * the foreign keys if the foreign table exists in the target
-   *
-   * @param source
-   * @param target
-   */
-  public static void copy(RelationDef source, RelationDef target) {
-    assert source != null : "The source data definition cannot be null";
-    assert target != null : "The target data definition cannot be null";
-
-    // Add the columns
-    addColumns(source, target);
-
-    // Add the primary key
-    addPrimaryKey(source, target);
-
-    // Add the foreign key if the tables exist
-    addForeignKeys(source, target);
-  }
 
   /**
    * Add the foreign key from the source to the target
@@ -165,7 +146,7 @@ public class DataDefs {
    * @param source
    * @param target
    */
-  private static void addForeignKeys(RelationDef source, RelationDef target) {
+  public static void addForeignKeys(RelationDef source, RelationDef target) {
     final List<ForeignKeyDef> foreignKeyDefs = source.getForeignKeys();
     for (ForeignKeyDef foreignKeyDef : foreignKeyDefs) {
       DataPath sourceForeignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
@@ -196,7 +177,7 @@ public class DataDefs {
     }
   }
 
-  private static void addPrimaryKey(RelationDef source, RelationDef target) {
+  public static void addPrimaryKey(RelationDef source, RelationDef target) {
     final PrimaryKeyDef sourcePrimaryKey = source.getPrimaryKey();
     if (sourcePrimaryKey != null) {
       final List<String> columns = sourcePrimaryKey.getColumns().stream()
@@ -225,8 +206,12 @@ public class DataDefs {
    */
   public static void merge(RelationDef source, RelationDef target) {
 
+    // copy properties
+    source.addAllProperties(target);
+
     // Add the columns
     mergeColumns(source, target);
+
 
     // Add the primary key
     if (target.getPrimaryKey() == null) {
@@ -246,7 +231,7 @@ public class DataDefs {
    * @param sourceDef
    * @param targetDef
    */
-  private static void mergeColumns(RelationDef sourceDef, RelationDef targetDef) {
+  public static void mergeColumns(RelationDef sourceDef, RelationDef targetDef) {
     assert sourceDef != null : "SourceDef should not be null";
     assert targetDef != null : "TargetDef should not be null";
     int columnCount = sourceDef.getColumnsSize();

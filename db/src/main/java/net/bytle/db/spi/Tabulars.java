@@ -4,7 +4,6 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.engine.Dag;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.MemoryDataStore;
-import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.resultSetDiff.DataSetDiff;
@@ -251,8 +250,8 @@ public class Tabulars {
     if (!Tabulars.exists(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
     }
-    if (isContainer(dataPath)){
-      throw new RuntimeException("The data path ("+dataPath+")  is a container, it had therefore no size, you can't ask for its size");
+    if (isContainer(dataPath)) {
+      throw new RuntimeException("The data path (" + dataPath + ")  is a container, it had therefore no size, you can't ask for its size");
     }
     return dataPath.getDataStore().getDataSystem().size(dataPath);
   }
@@ -460,9 +459,6 @@ public class Tabulars {
     throw new RuntimeException("Not yet implemented");
   }
 
-  public static void copyDataDef(DataPath source, DataPath target) {
-    DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
-  }
 
   /**
    * @param source - the source data path
@@ -488,7 +484,7 @@ public class Tabulars {
       }
       // Structure
       if (target.getOrCreateDataDef().getColumnsSize() == 0) {
-        DataDefs.copy(sourceDataDef, target.getOrCreateDataDef());
+        target.getOrCreateDataDef().copyDataDef(source);
       } else {
         assertEqualsColumnsDefinition(source, target);
       }
@@ -528,7 +524,7 @@ public class Tabulars {
       }
       // Structure
       if (target.getOrCreateDataDef().getColumnsSize() == 0) {
-        DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
+        target.getOrCreateDataDef().copyDataDef(source);
       } else {
         assertEqualsColumnsDefinition(source, target);
       }

@@ -339,4 +339,9 @@ public class ColumnDef<T> implements Comparable<ColumnDef<T>> {
   public Integer getPrecisionOrMax() {
     return precision ==null ? getDataType().getMaxPrecision() : precision;
   }
+
+  public ColumnDef addAllProperties(ColumnDef source) {
+    this.properties.putAll(source.properties);
+    return this;
+  }
 }

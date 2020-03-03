@@ -321,21 +321,67 @@ public abstract class DataDefAbs implements RelationDef {
   }
 
   /**
-   *
-   * @param sourceDataPath
+   *  Copy (ie add) from source to target:
+   *    * * the columns,
+   *    * * the primary key
+   *    * * the foreign keys if the foreign table exists in the target
+   * @param from
    * @return the data def
    */
   @Override
-  public DataDefAbs copyDataDef(DataPath sourceDataPath) {
-    DataDefs.copy(sourceDataPath.getOrCreateDataDef(),this);
+  public DataDefAbs copyDataDef(DataPath from) {
+    assert from != null : "The source data definition cannot be null";
+    RelationDef fromDataDef = from.getOrCreateDataDef();
+
+    // copy properties
+    this.addAllProperties(fromDataDef);
+
+    // Add the columns
+    DataDefs.addColumns(fromDataDef, this);
+
+    // Add the primary key
+    DataDefs.addPrimaryKey(fromDataDef, this);
+
+    // Add the foreign key if the tables exist
+    DataDefs.addForeignKeys(fromDataDef, this);
     return this;
   }
 
 
+  /**
+   * The signature is the data path because this is the most used level
+   * and not a data def
+   * @param fromDataPath
+   * @return
+   */
   @Override
   public DataDefAbs mergeDataDef(DataPath fromDataPath) {
-    DataDefs.merge(fromDataPath.getOrCreateDataDef(),this);
+    assert fromDataPath != null : "The source data definition cannot be null";
+    RelationDef fromDataDef = fromDataPath.getOrCreateDataDef();
+
+    // copy properties
+    this.addAllProperties(fromDataDef);
+
+    // Add the columns
+    DataDefs.mergeColumns(fromDataDef, this);
+
+    // Add the primary key
+    if (this.getPrimaryKey() == null) {
+      DataDefs.addPrimaryKey(fromDataDef, this);
+    }
+
+    // Add the foreign keys
+    DataDefs.addForeignKeys(fromDataDef, this);
+
+    return this;
+
+  }
+
+  @Override
+  public RelationDef addAllProperties(RelationDef source) {
+    this.properties.putAll(source.getProperties());
     return this;
   }
+
 
 }

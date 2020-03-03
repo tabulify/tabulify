@@ -2,7 +2,6 @@ package net.bytle.db.spi;
 
 import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Relational;
-import net.bytle.db.model.DataDefs;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
@@ -126,18 +125,6 @@ public abstract class DataPathAbs implements Comparable<DataPath>, Relational, D
     return  this.description;
   }
 
-  /**
-   *
-   * @param name - the name of the child
-   * @param datadef - the data def
-   * @return a child with a data def
-   */
-  @Override
-  public DataPath getChild(String name, RelationDef datadef) {
-    DataPath dataPath = this.getChild(name);
-    DataDefs.copy(datadef,dataPath.getOrCreateDataDef());
-    return dataPath;
-  }
 
   @Override
   public DataPath getSelectStreamDependency() {

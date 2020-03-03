@@ -133,4 +133,11 @@ public interface RelationDef {
    */
   RelationDef mergeDataDef(DataPath fromDataPath);
 
+  /**
+   * Add all properties of a source to a target
+   * @param source
+   * @return
+   */
+  RelationDef addAllProperties(RelationDef source);
+
 }

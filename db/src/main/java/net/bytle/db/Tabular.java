@@ -4,7 +4,6 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.Queries;
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.memory.MemoryDataStoreProvider;
-import net.bytle.db.model.RelationDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
@@ -296,9 +295,6 @@ public class Tabular implements AutoCloseable {
     return getDefaultDataStore().getDataPathOfDataDefAndMerge(dataDefPath);
   }
 
-  public DataPath getDataPathOfDataDef(String name, RelationDef datadef) {
-    return getDefaultDataStore().getCurrentDataPath().getChild(name, datadef);
-  }
 
   public DataStore getDefaultDataStore() {
     return this.defaultDatastore;

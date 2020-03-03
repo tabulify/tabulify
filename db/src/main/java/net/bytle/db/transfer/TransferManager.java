@@ -6,7 +6,6 @@ import net.bytle.db.Tabular;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.queue.MemoryQueueDataPath;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.DataDefs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
@@ -284,7 +283,7 @@ public class TransferManager {
     // Check target
     final Boolean exists = Tabulars.exists(target);
     if (!exists) {
-      Tabulars.copyDataDef(source, target);
+      target.getOrCreateDataDef().copyDataDef(source);
       Tabulars.create(target);
     } else {
       checkOrCreateTargetStructureFromSource(source, target);
@@ -312,7 +311,7 @@ public class TransferManager {
         }
       }
     } else {
-      DataDefs.copy(source.getOrCreateDataDef(), target.getOrCreateDataDef());
+      target.getOrCreateDataDef().copyDataDef(source);
     }
   }
 
