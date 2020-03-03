@@ -93,9 +93,9 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         }
       } else {
         if (this.clazz.equals(Integer.class)) {
-          this.actualValue = Integers.toInteger(this.actualValue);
+          this.actualValue = Integers.toInteger(evalValue);
         } else if (this.clazz.equals(String.class)){
-          this.actualValue = Strings.toString(this.actualValue);
+          this.actualValue = Strings.toString(evalValue);
         } else {
           this.actualValue = evalValue;
         }

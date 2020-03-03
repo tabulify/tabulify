@@ -43,11 +43,14 @@ public class GenSelectStream extends SelectStreamAbs {
 
       CollectionGenerator collectionGenerator = columnDef.getGenerator();
 
-      if (collectionGenerator.getClass().equals(DerivedCollectionGenerator.class)) {
+      if (collectionGenerator instanceof DerivedCollectionGenerator) {
         DerivedCollectionGenerator dataGeneratorDerived = (DerivedCollectionGenerator) collectionGenerator;
         GenColumnDef parentColumn = dataGeneratorDerived.getParentGenerator().getColumn();
         // The column value of the parent must be generated before
-        populateColumnValues(columnValues, parentColumn);
+        if (columnValues.get(parentColumn) == null) {
+          populateColumnValues(columnValues, parentColumn);
+        }
+        columnValues.put(columnDef, ((DerivedCollectionGenerator) collectionGenerator).getNewValue());
       }
       if (collectionGenerator instanceof CollectionGeneratorOnce) {
         columnValues.put(columnDef, ((CollectionGeneratorOnce) collectionGenerator).getNewValue());
@@ -95,12 +98,12 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public Object getObject(int columnIndex) {
-    if (actualRowId==0){
+    if (actualRowId == 0) {
       throw new RuntimeException("You are on the row 0, you need to use the next function before retrieving a value");
     }
     return row.keySet().stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex+1))
-      .map(c->row.get(c))
+      .filter(c -> c.getColumnPosition().equals(columnIndex + 1))
+      .map(c -> row.get(c))
       .findFirst()
       .orElse(null);
   }
@@ -114,14 +117,14 @@ public class GenSelectStream extends SelectStreamAbs {
   @Override
   public Double getDouble(int columnIndex) {
 
-    return Typess.safeCast(getObject(columnIndex),Double.class);
+    return Typess.safeCast(getObject(columnIndex), Double.class);
 
   }
 
   @Override
   public Clob getClob(int columnIndex) {
 
-    return Typess.safeCast(getObject(columnIndex),Clob.class);
+    return Typess.safeCast(getObject(columnIndex), Clob.class);
 
   }
 
@@ -139,7 +142,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public Integer getInteger(int columnIndex) {
-    return Typess.safeCast(getObject(columnIndex),Integer.class);
+    return Typess.safeCast(getObject(columnIndex), Integer.class);
   }
 
   @Override
