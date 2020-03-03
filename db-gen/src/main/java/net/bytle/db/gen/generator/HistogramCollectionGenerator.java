@@ -29,6 +29,7 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
 
   private static final Logger LOGGER = LoggerFactory.getLogger(HistogramCollectionGenerator.class);
 
+  public static final String TYPE = "histogram";
   private final Class<T> clazz;
 
   private Object o;

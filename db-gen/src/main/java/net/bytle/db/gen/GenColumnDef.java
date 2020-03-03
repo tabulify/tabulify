@@ -4,10 +4,10 @@ import net.bytle.db.gen.generator.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Arrayss;
-import net.bytle.type.MapCaseIndependent;
 import net.bytle.type.Typess;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -55,17 +55,15 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   @Override
   public Map<String, Object> getProperties() {
     Object generatorProperty = super.getProperty(GENERATOR_PROPERTY_KEY);
-    Map<String, Object> generatorColumnProperties = new MapCaseIndependent<>();
-    if (generatorProperty != null) {
-      try {
-        generatorColumnProperties.putAll(((Map<String, Object>) generatorProperty));
-      } catch (ClassCastException e) {
-        throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + this.toString() + ") should be a map value. Bad values:" + generatorProperty);
-      }
-    } else {
-      super.addProperty(GENERATOR_PROPERTY_KEY, generatorColumnProperties);
+    if (generatorProperty == null) {
+      generatorProperty= new HashMap<String,Object>();
+      super.addProperty(GENERATOR_PROPERTY_KEY, generatorProperty);
     }
-    return generatorColumnProperties;
+    try {
+      return (Map<String, Object>) generatorProperty;
+    } catch (ClassCastException e) {
+      throw new RuntimeException("The values of the property (" + GENERATOR_PROPERTY_KEY + ") for the column (" + this.toString() + ") should be a map value. Bad values:" + generatorProperty);
+    }
   }
 
   public static <T> GenColumnDef<T> of(GenDataDef genDataDef, String columnName, Class<T> clazz) {
@@ -99,11 +97,11 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           Object max = this.getProperty("max");
           generator = new UniformCollectionGenerator<>(this, min, max);
           break;
-        case "histogram":
+        case HistogramCollectionGenerator.TYPE:
           Map<Object, Double> buckets = (Map<Object, Double>) this.getProperty("buckets");
           generator = HistogramCollectionGenerator.of(this, buckets);
           break;
-        case "provided":
+        case ProvidedDataGenerator.TYPE:
           Object values = this.getProperty("values");
           generator = new ProvidedDataGenerator(this, values);
           break;
@@ -143,7 +141,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
    * @return
    */
   @Override
-  public ColumnDef addProperty(String key, Object value) {
+  public GenColumnDef addProperty(String key, Object value) {
     if (!key.toLowerCase().equals(GENERATOR_PROPERTY_KEY.toLowerCase())) {
       Map<String, Object> properties = getProperties();
       properties.put(key, value);

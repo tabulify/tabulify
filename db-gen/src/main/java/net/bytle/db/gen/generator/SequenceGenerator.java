@@ -277,7 +277,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
     }
 
-    return maxGeneratedValues;
+    return Math.abs(maxGeneratedValues);
 
   }
 
@@ -327,7 +327,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       return (T) min;
     } else if (clazz == Date.class) {
       if (step>0) {
-        return clazz.cast(start);
+        return clazz.cast(Date.valueOf((LocalDate) start));
       } else {
         if (this.maxSteps==null){
           return clazz.cast(MIN_DATE);

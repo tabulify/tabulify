@@ -14,6 +14,11 @@ import java.util.List;
 public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
 
 
+  /**
+   * The value that we will find in a data def yaml file
+   * in the type field
+   */
+  final public static String TYPE = "provided";
   private final GenColumnDef<T> columnDef;
   private final Class<T> clazz;
 
@@ -40,15 +45,13 @@ public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
    * @param values    - The values to give bacl
    */
   public ProvidedDataGenerator(GenColumnDef<T> columnDef, Object... values) {
-
+    assert values != null : "Values should be not null";
     this.columnDef = columnDef;
     this.clazz = columnDef.getClazz();
 
     // If the first value is a list
-    if (values.length==1){
-      if (values[0] instanceof List){
-        this.values = (List<Object>) values[0];
-      }
+    if (values.length == 1 && values[0] instanceof List) {
+      this.values = (List<Object>) values[0];
     } else {
       this.values = Arrays.asList(values);
     }
@@ -99,7 +102,7 @@ public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
 
   @Override
   public long getMaxGeneratedValues() {
-    return (long) values.size();
+    return values.size();
   }
 
 }
