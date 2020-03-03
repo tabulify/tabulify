@@ -19,6 +19,10 @@ public class SqlDates {
     return new Date(epochMilli);
   }
 
+  /**
+   * Retrieve a date for now
+   * @return
+   */
   public static Date now() {
     return new Date(Instant.now().toEpochMilli());
   }
