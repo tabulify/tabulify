@@ -1,9 +1,9 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.spi.DataPath;
 
-public class SqliteDataPath extends AnsiDataPath implements DataPath {
+public class SqliteDataPath extends SqlDataPath implements DataPath {
 
 
   public SqliteDataPath(SqliteDataStore jdbcDataStore, String catalog, String schema, String name) {

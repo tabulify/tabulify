@@ -50,11 +50,10 @@ public class MemoryDataStore extends DataStore {
           "If you don't want to specify a name, use the getRandomDataPath function"));
     }
     String path = String.join("/",parts);
-    MemoryDataPath memoryDataPath = this.memoryDataSystem.dataPaths.get(path);
+    MemoryDataPath memoryDataPath = this.memoryDataSystem.storageMemDataPaths.get(path);
     if (memoryDataPath==null) {
-      getManager(type).createDataPath(this, path);
-      memoryDataPath = new MemoryListDataPath(this, path);
-      this.memoryDataSystem.create(memoryDataPath);
+      memoryDataPath = getManager(type).createDataPath(this, path);
+      this.memoryDataSystem.storageMemDataPaths.put(memoryDataPath.getPath(), memoryDataPath);
     }
     return memoryDataPath;
   }
@@ -90,7 +89,7 @@ public class MemoryDataStore extends DataStore {
   public void close() {
     super.close();
     // Delete all data paths
-    this.memoryDataSystem.dataPaths = null;
+    this.memoryDataSystem.storageMemDataPaths = null;
   }
 
   public MemoryVariableManager getManager(String type) {

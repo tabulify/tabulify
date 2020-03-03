@@ -53,11 +53,13 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   public MemoryDataPath getSibling(String name) {
 
     int i = this.path.lastIndexOf(PATH_SEPARATOR);
+    String calculatedPath;
     if (i==-1){
-      return this.memoryDataStore.getDefaultDataPath(name);
+      calculatedPath = name;
     } else {
-      return this.memoryDataStore.getTypedDataPath(getType(),this.path.substring(0,i) + PATH_SEPARATOR + name);
+      calculatedPath = this.path.substring(0,i) + PATH_SEPARATOR + name;
     }
+    return this.memoryDataStore.getTypedDataPath(getType(),calculatedPath);
 
   }
 

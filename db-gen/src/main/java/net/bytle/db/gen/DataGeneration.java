@@ -6,7 +6,6 @@ import net.bytle.db.gen.generator.CollectionGenerator;
 import net.bytle.db.gen.generator.CollectionGeneratorOnce;
 import net.bytle.db.gen.generator.FkDataCollectionGenerator;
 import net.bytle.db.gen.generator.SequenceGenerator;
-import net.bytle.db.gen.memory.GenMemDataPath;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
@@ -38,7 +37,7 @@ public class DataGeneration {
 
   /**
    * The table to load mapping
-   * The target is the driver, this is why it's in the first position
+   * The target table is the driver, this is why it's in the first position
    */
   private final Map<DataPath, GenDataPath> transfers = new HashMap<>();
   // private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
@@ -65,9 +64,8 @@ public class DataGeneration {
 
   public DataGeneration addTable(DataPath targetDataPath, Long totalRows) {
 
-    GenDataPath sourceDataPath = GenMemDataPath.of(targetDataPath.getName())
+    GenDataPath sourceDataPath = GenMemDataStore.singleton().getDefaultDataPath(targetDataPath.getName())
       .getOrCreateDataDef()
-      .copyDataDef(targetDataPath)
       .setMaxSize(totalRows)
       .getDataPath();
     // Adding the table into the list of tables to load
@@ -99,6 +97,7 @@ public class DataGeneration {
    */
   public List<DataPath> load() {
 
+
     // Target Parent check
     // Parent not in the table set to load ?
     // If yes, add a transfer with the parent tables
@@ -122,13 +121,24 @@ public class DataGeneration {
       }
     }
 
+    // The load parent option above may have added a transfer
+    targetDataPaths = new ArrayList<>(transfers.keySet());
+
+    // Merge the data def
+    // We do this only now because the transfers may be added
+    // in every order but when the merge add the foreign key,
+    // the primary key should be already present
+    // We start with the foreign table (ie createOrderedtables) to finish to the fact table
+    for (DataPath  targetDataPath : ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables()) {
+      GenDataPath sourceDataPath = transfers.get(targetDataPath);
+      sourceDataPath.getOrCreateDataDef().mergeDataDef(targetDataPath);
+    }
+
     // Source
     // Building the missing data generators
     transfers.values().forEach(sourceDataPath -> sourceDataPath.getOrCreateDataDef().buildMissingGenerators());
 
-    // The load parent option may have added a transfer
-    targetDataPaths = new ArrayList<>(transfers.keySet());
-    // foreign data generators building
+    // Foreign data generators building
     for (DataPath targetDataPath : targetDataPaths) {
 
       // Add the foreign collection generator to the foreign columns
@@ -199,15 +209,13 @@ public class DataGeneration {
     // Load
     final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
 
-    for (
-      DataPath dataPath : createOrderedTables) {
-
-      GenDataPath genDataPath = transfers.get(dataPath);
+    for (DataPath dataPath : createOrderedTables) {
 
       // The load
       LOGGER.info("Loading the table (" + dataPath.toString() + ")");
       LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
 
+      GenDataPath genDataPath = transfers.get(dataPath);
       Tabulars.createIfNotExist(genDataPath);
       long numberOfRowToInsert = Tabulars.getSize(genDataPath);
       if (numberOfRowToInsert > MAX_INSERT) {
@@ -216,12 +224,13 @@ public class DataGeneration {
             "Set a row size number on the generator data path to resolve this issue."));
       }
 
+
       if (numberOfRowToInsert > 0) {
         LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
 
         try (
-          InsertStream inputStream = Tabulars.getInsertStream(dataPath);
-          GenSelectStream genSelectStream = new GenSelectStream(genDataPath)
+          GenSelectStream genSelectStream = new GenSelectStream(genDataPath);
+          InsertStream inputStream = Tabulars.getInsertStream(dataPath)
         ) {
           while (genSelectStream.next()) {
             List<Object> objects = genSelectStream.getObjects();
@@ -294,8 +303,6 @@ public class DataGeneration {
     if (Tabulars.isContainer(targetDataPath)){
       targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
     }
-    // Merge the data def
-    sourceDataPath.getOrCreateDataDef().mergeDataDef(targetDataPath);
     // Add the transfers
     transfers.put(targetDataPath, sourceDataPath);
     return this;

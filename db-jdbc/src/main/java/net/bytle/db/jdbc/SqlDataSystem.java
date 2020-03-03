@@ -51,10 +51,10 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public Boolean exists(DataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
 
     switch (jdbcDataPath.getType()) {
-      case AnsiDataPath.QUERY_TYPE:
+      case SqlDataPath.QUERY_TYPE:
         return true;
       default:
         boolean tableExist;
@@ -83,7 +83,7 @@ public class SqlDataSystem implements DataSystem {
 
   @Override
   public SelectStream getSelectStream(DataPath dataPath) {
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     return jdbcDataPath.getOrCreateDataDef().getSelectStream();
   }
 
@@ -114,7 +114,7 @@ public class SqlDataSystem implements DataSystem {
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     return jdbcDataPath.isDocument();
   }
 
@@ -138,8 +138,8 @@ public class SqlDataSystem implements DataSystem {
     assert size == 0 : "In a copy operation, the target table should be empty. This is not the case. The target table (" + target + ") has (" + size + ") rows";
 
     // insert into select statement
-    AnsiDataPath sourceJdbcDataPath = (AnsiDataPath) source;
-    String insertInto = DbDml.getInsertIntoStatement(sourceJdbcDataPath, (AnsiDataPath) target);
+    SqlDataPath sourceJdbcDataPath = (SqlDataPath) source;
+    String insertInto = DbDml.getInsertIntoStatement(sourceJdbcDataPath, (SqlDataPath) target);
     TransferSourceTarget transferSourceTarget = TransferSourceTarget.of(source, target);
     TransferListener transferListener = TransferListener.of(transferSourceTarget);
     try {
@@ -168,20 +168,20 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {
 
-    return Ansis.getDescendants((AnsiDataPath) dataPath, null);
+    return Ansis.getDescendants((SqlDataPath) dataPath, null);
 
   }
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath, String glob) {
 
-    return Ansis.getDescendants((AnsiDataPath) dataPath, glob);
+    return Ansis.getDescendants((SqlDataPath) dataPath, glob);
 
   }
 
   @Override
   public List<DataPath> getReferences(DataPath dataPath) {
-    return Ansis.getReferencingDataPaths((AnsiDataPath) dataPath);
+    return Ansis.getReferencingDataPaths((SqlDataPath) dataPath);
   }
 
 
@@ -193,7 +193,7 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public void create(DataPath dataPath) {
 
-    AnsiDataPath ansiDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
 
     // Check that the foreign tables exist
     for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
@@ -204,9 +204,9 @@ public class SqlDataSystem implements DataSystem {
     }
 
     // Standard SQL
-    List<String> createTableStatements = createTableStatements(ansiDataPath);
+    List<String> createTableStatements = createTableStatements(sqlDataPath);
     this.execute(createTableStatements);
-    final String name = ansiDataPath.getSchema() != null ? ansiDataPath.getSchema().getName() : "null";
+    final String name = sqlDataPath.getSchema() != null ? sqlDataPath.getSchema().getName() : "null";
     JdbcDataSystemLog.LOGGER_DB_JDBC.info("Table (" + dataPath.toString() + ") created in the schema (" + name + ")");
 
 
@@ -218,9 +218,9 @@ public class SqlDataSystem implements DataSystem {
    *
    * @param dataPath The table Name in the create statement
    */
-  protected List<String> createTableStatements(AnsiDataPath dataPath) {
+  protected List<String> createTableStatements(SqlDataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
 
     List<String> statements = new ArrayList<>();
     StringBuilder createTableStatement = new StringBuilder()
@@ -396,14 +396,14 @@ public class SqlDataSystem implements DataSystem {
     String notNullStatement = "";
     if (!columnDef.getNullable()) {
       // Hack because hive is read only, it does not support Not Null
-      if (!((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
+      if (!((SqlDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
         notNullStatement = " NOT NULL";
       }
     }
 
     // Hack for Hive
     String encloseString = "\"";
-    if (((AnsiDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
+    if (((SqlDataPath) columnDef.getDataDef().getDataPath()).getDataStore().getProductName().equals(SqlDataStore.DB_HIVE)) {
       encloseString = "`";
     }
 
@@ -466,7 +466,7 @@ public class SqlDataSystem implements DataSystem {
 
   }
 
-  protected String createPrimaryKeyStatement(AnsiDataPath jdbcDataPath) {
+  protected String createPrimaryKeyStatement(SqlDataPath jdbcDataPath) {
 
     final PrimaryKeyDef primaryKey = jdbcDataPath.getOrCreateDataDef().getPrimaryKey();
     List<ColumnDef> columns = primaryKey.getColumns();
@@ -515,14 +515,14 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public void drop(DataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     StringBuilder dropTableStatement = new StringBuilder();
     dropTableStatement.append("drop ");
     switch (jdbcDataPath.getType()) {
-      case AnsiDataPath.TABLE_TYPE:
+      case SqlDataPath.TABLE_TYPE:
         dropTableStatement.append("table ");
         break;
-      case AnsiDataPath.VIEW_TYPE:
+      case SqlDataPath.VIEW_TYPE:
         dropTableStatement.append("view ");
         break;
       default:
@@ -551,7 +551,7 @@ public class SqlDataSystem implements DataSystem {
 
 
     String deleteStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     try (
       Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement();
     ) {
@@ -569,7 +569,7 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public void truncate(DataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     String truncateStatement = truncateStatementBuilder.toString();
@@ -588,7 +588,7 @@ public class SqlDataSystem implements DataSystem {
 
   }
 
-  protected String truncateStatement(AnsiDataPath dataPath) {
+  protected String truncateStatement(SqlDataPath dataPath) {
 
     return "truncate table " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
 
@@ -597,14 +597,14 @@ public class SqlDataSystem implements DataSystem {
 
   @Override
   public InsertStream getInsertStream(DataPath dataPath) {
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     return SqlInsertStream.of(jdbcDataPath);
   }
 
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
 
-    return Ansis.getChildrenDataPath((AnsiDataPath) dataPath);
+    return Ansis.getChildrenDataPath((SqlDataPath) dataPath);
 
   }
 

@@ -28,7 +28,7 @@ public class MemoryDataSystem implements DataSystem {
    * * in a {@link net.bytle.db.model.DataDefs#merge(RelationDef, RelationDef)}
    * * or {@link net.bytle.db.model.DataDefAbs#copyDataDef(DataPath)}
    */
-  Map<String, MemoryDataPath> dataPaths = new HashMap<>();
+  Map<String, MemoryDataPath> storageMemDataPaths = new HashMap<>();
 
   private MemoryDataStore dataStore;
 
@@ -153,13 +153,12 @@ public class MemoryDataSystem implements DataSystem {
 
     // Create the structure
     ((MemoryDataPath) dataPath).create();
-    this.dataPaths.put(dataPath.getPath(), (MemoryDataPath) dataPath);
 
   }
 
   @Override
   public void drop(DataPath dataPath) {
-    MemoryDataPath returned = dataPaths.remove(dataPath.getPath());
+    MemoryDataPath returned = storageMemDataPaths.remove(dataPath.getPath());
     if (returned == null) {
       throw new RuntimeException("The data path (" + dataPath + ") could not be dropped because it does not exists");
     }
@@ -167,7 +166,7 @@ public class MemoryDataSystem implements DataSystem {
 
   @Override
   public Boolean exists(DataPath dataPath) {
-    return dataPaths.containsKey(dataPath.getPath());
+    return storageMemDataPaths.containsKey(dataPath.getPath());
   }
 
 

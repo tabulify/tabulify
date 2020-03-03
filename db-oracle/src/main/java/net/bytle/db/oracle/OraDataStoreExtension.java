@@ -1,6 +1,6 @@
 package net.bytle.db.oracle;
 
-import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
@@ -129,7 +129,7 @@ public class OraDataStoreExtension extends JdbcDataStoreExtension {
 
 
   @Override
-  public String getTruncateStatement(AnsiDataPath dataPath) {
+  public String getTruncateStatement(SqlDataPath dataPath) {
     return "truncate from " +
       JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
   }

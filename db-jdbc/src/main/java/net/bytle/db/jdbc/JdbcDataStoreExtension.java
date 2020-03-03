@@ -33,7 +33,7 @@ public abstract class JdbcDataStoreExtension {
    * @param dataPath
    * @return
    */
-  protected List<String> getCreateTableStatements(AnsiDataPath dataPath){
+  protected List<String> getCreateTableStatements(SqlDataPath dataPath){
     return new ArrayList<>();
   }
 
@@ -110,7 +110,7 @@ public abstract class JdbcDataStoreExtension {
     return false;
   }
 
-  public String getTruncateStatement(AnsiDataPath dataPath){
+  public String getTruncateStatement(SqlDataPath dataPath){
     return null;
   }
 

@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.AnsiDataPath.QUERY_TYPE;
+import static net.bytle.db.jdbc.SqlDataPath.QUERY_TYPE;
 
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
   private final SqlDataStore jdbcDataStore;
 
-  private AnsiDataPath jdbcDataPath;
+  private SqlDataPath jdbcDataPath;
 
   // The cursor
   private ResultSet resultSet;
@@ -28,7 +28,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   // Just for debugging purpose, in order to see the query that created this stream
   private String query;
 
-  public SqlSelectStream(AnsiDataPath jdbcDataPath) {
+  public SqlSelectStream(SqlDataPath jdbcDataPath) {
 
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
@@ -38,7 +38,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   }
 
 
-  public static SqlSelectStream of(AnsiDataPath jdbcDataPath) {
+  public static SqlSelectStream of(SqlDataPath jdbcDataPath) {
     return new SqlSelectStream(jdbcDataPath);
   }
 

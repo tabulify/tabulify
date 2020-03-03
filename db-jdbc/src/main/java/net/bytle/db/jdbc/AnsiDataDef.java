@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.AnsiDataPath.QUERY_TYPE;
+import static net.bytle.db.jdbc.SqlDataPath.QUERY_TYPE;
 
 public class AnsiDataDef extends TableDef implements RelationDef {
 
@@ -25,7 +25,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
   /**
    * @param dataPath
    */
-  public AnsiDataDef(AnsiDataPath dataPath, Boolean buildFromMeta) {
+  public AnsiDataDef(SqlDataPath dataPath, Boolean buildFromMeta) {
     super(dataPath);
 
     if (buildFromMeta) {
@@ -62,7 +62,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
   /**
    * @return a select stream
    * <p>
-   * The constructor {@link #AnsiDataDef(AnsiDataPath,Boolean)} may have initialized this select stream
+   * The constructor {@link #AnsiDataDef(SqlDataPath,Boolean)} may have initialized this select stream
    * when the data path is a query
    */
   public SelectStream getSelectStream() {
@@ -75,8 +75,8 @@ public class AnsiDataDef extends TableDef implements RelationDef {
   }
 
   @Override
-  public AnsiDataPath getDataPath() {
-    return (AnsiDataPath) super.dataPath;
+  public SqlDataPath getDataPath() {
+    return (SqlDataPath) super.dataPath;
   }
 
   /**
@@ -100,7 +100,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
 
       String[] types = {"TABLE"};
 
-      final AnsiDataPath schemaPath = this.getDataPath().getSchema();
+      final SqlDataPath schemaPath = this.getDataPath().getSchema();
       String schema = null;
       if (schemaPath != null) {
         schema = schemaPath.getName();
@@ -268,13 +268,13 @@ public class AnsiDataDef extends TableDef implements RelationDef {
     }
 
     // How much foreign key (ie how much foreign key tables)
-    List<AnsiDataPath> foreignTableNames = fkDatas.stream()
+    List<SqlDataPath> foreignTableNames = fkDatas.stream()
       .distinct()
       .map(s -> dataStore.getSqlDataPath(s.get(col_pktable_cat), s.get(col_pktable_schem), s.get(col_pktable_name)))
       .collect(Collectors.toList());
 
 
-    for (AnsiDataPath foreignTable : foreignTableNames) {
+    for (SqlDataPath foreignTable : foreignTableNames) {
       Map<Integer, String> cols = new HashMap<>();
       String fk_name = "";
       for (Map<String, String> fkData : fkDatas) {
@@ -307,7 +307,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
     try {
       // Bug in SQLite Driver - Hack
       // that doesn't return the good primary ley
-      final AnsiDataPath dataPath = this.getDataPath();
+      final SqlDataPath dataPath = this.getDataPath();
       final String column_name = "COLUMN_NAME";
       final String pk_name = "PK_NAME";
       final String key_seq = "KEY_SEQ";
@@ -369,7 +369,7 @@ public class AnsiDataDef extends TableDef implements RelationDef {
     Map<String, Map<Integer, String>> indexData = new HashMap<>();
     final String ordinal_position_alias = "ORDINAL_POSITION";
     final String column_name_alias = "COLUMN_NAME";
-    final AnsiDataPath dataPath = (AnsiDataPath) this.getDataPath();
+    final SqlDataPath dataPath = (SqlDataPath) this.getDataPath();
     final String schema = dataPath.getSchema() != null ? dataPath.getSchema().getName() : null;
     try (
       // Oracle need to have the approximate argument to true, otherwise we of a ORA-01031: insufficient privileges

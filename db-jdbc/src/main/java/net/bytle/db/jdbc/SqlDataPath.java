@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * * schema
  * * and name
  */
-public class AnsiDataPath extends DataPathAbs {
+public class SqlDataPath extends DataPathAbs {
 
 
   public static final String CURRENT_WORKING_DIRECTORY = ".";
@@ -44,7 +44,7 @@ public class AnsiDataPath extends DataPathAbs {
    * To facilitate creation of a SqlDataStore extension, a query data path is
    * created from a data store via {@link SqlDataStore#getQueryDataPath(String)}
    */
-  protected AnsiDataPath(SqlDataStore jdbcDataStore, String query) {
+  protected SqlDataPath(SqlDataStore jdbcDataStore, String query) {
     this.jdbcDataStore = jdbcDataStore;
     this.setType(QUERY_TYPE);
     this.setQuery(query);
@@ -56,7 +56,7 @@ public class AnsiDataPath extends DataPathAbs {
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #AnsiDataPath(SqlDataStore, String)}
+   * Query has another one, See {@link #SqlDataPath(SqlDataStore, String)}
    *
    * @param jdbcDataStore
    * @param catalog
@@ -66,7 +66,7 @@ public class AnsiDataPath extends DataPathAbs {
    * To facilitate the SqlDataStore extension, a data path is
    * created from a data store via {@link SqlDataStore#getSqlDataPath(String, String, String)}
    */
-  protected AnsiDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
+  protected SqlDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
 
     this.jdbcDataStore = jdbcDataStore;
     this.catalog = catalog;
@@ -130,19 +130,19 @@ public class AnsiDataPath extends DataPathAbs {
    * you will never get a sibling of a catalog or a schema
    */
   @Override
-  public AnsiDataPath getSibling(String name) {
+  public SqlDataPath getSibling(String name) {
 
     return this.getDataStore().getDefaultDataPath(catalog, schema, name);
 
   }
 
   @Override
-  public AnsiDataPath getChild(String name) {
+  public SqlDataPath getChild(String name) {
     return resolve(name);
   }
 
   @Override
-  public AnsiDataPath resolve(String... names) {
+  public SqlDataPath resolve(String... names) {
 
     List<String> actualPath = new ArrayList<>();
     if (catalog != null) {
@@ -208,7 +208,7 @@ public class AnsiDataPath extends DataPathAbs {
   /**
    * {@link DatabaseMetaData#getMaxSchemaNameLength()}
    */
-  public AnsiDataPath getSchema() {
+  public SqlDataPath getSchema() {
 
     if (schema == null) {
       return null;
@@ -276,7 +276,7 @@ public class AnsiDataPath extends DataPathAbs {
     }
   }
 
-  public AnsiDataPath setType(String type) {
+  public SqlDataPath setType(String type) {
     this.type = type;
     return this;
   }

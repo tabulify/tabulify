@@ -178,6 +178,12 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   }
 
   @Override
+  public GenDataDef dropAllColumns() {
+    genColumns = new HashMap<>();
+    return this;
+  }
+
+  @Override
   public <T> GenColumnDef<T> getColumn(String columnName, Class<T> clazz) {
 
 

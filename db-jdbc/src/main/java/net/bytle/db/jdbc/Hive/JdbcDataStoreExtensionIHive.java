@@ -1,6 +1,6 @@
 package net.bytle.db.jdbc.Hive;
 
-import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtension;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
@@ -76,7 +76,7 @@ public class JdbcDataStoreExtensionIHive extends JdbcDataStoreExtension {
   }
 
   @Override
-  public String getTruncateStatement(AnsiDataPath dataPath) {
+  public String getTruncateStatement(SqlDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

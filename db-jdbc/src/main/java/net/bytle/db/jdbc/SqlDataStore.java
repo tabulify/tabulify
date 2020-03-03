@@ -140,7 +140,7 @@ public class SqlDataStore extends DataStore {
   }
 
   @Override
-  public AnsiDataPath getDefaultDataPath(String... names) {
+  public SqlDataPath getDefaultDataPath(String... names) {
     return this.getCurrentDataPath().resolve(names);
   }
 
@@ -150,7 +150,7 @@ public class SqlDataStore extends DataStore {
   }
 
   @Override
-  public AnsiDataPath getCurrentDataPath() {
+  public SqlDataPath getCurrentDataPath() {
     return getSqlDataPath(getCurrentCatalog(), getCurrentSchema(), null);
   }
 
@@ -178,7 +178,7 @@ public class SqlDataStore extends DataStore {
 
   @Override
   public DataPathAbs getQueryDataPath(String query) {
-    return new AnsiDataPath(this, query);
+    return new SqlDataPath(this, query);
   }
 
   /**
@@ -461,7 +461,7 @@ public class SqlDataStore extends DataStore {
    * @param schema
    * @param name
    */
-  public AnsiDataPath getSqlDataPath(String catalog, String schema, String name) {
-    return new AnsiDataPath(this,catalog,schema,name);
+  public SqlDataPath getSqlDataPath(String catalog, String schema, String name) {
+    return new SqlDataPath(this,catalog,schema,name);
   }
 }

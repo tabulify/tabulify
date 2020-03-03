@@ -20,11 +20,11 @@ public class Ansis {
   private static final Log LOGGER = JdbcDataSystemLog.LOGGER_DB_JDBC;
 
 
-  public static List<DataPath> getChildrenDataPath(AnsiDataPath jdbcDataPath) {
+  public static List<DataPath> getChildrenDataPath(SqlDataPath jdbcDataPath) {
     return getDescendants(jdbcDataPath, null);
   }
 
-  public static List<DataPath> getDescendants(AnsiDataPath jdbcDataPath, String tableNamePattern) {
+  public static List<DataPath> getDescendants(SqlDataPath jdbcDataPath, String tableNamePattern) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
     try {
@@ -39,7 +39,7 @@ public class Ansis {
         final String schema_name = tableResultSet.getString("TABLE_SCHEM");
         final String cat_name = tableResultSet.getString("TABLE_CAT");
         final String type_name = tableResultSet.getString("TABLE_TYPE");
-        AnsiDataPath childDataPath = jdbcDataPath.getDataStore().getDefaultDataPath(cat_name, schema_name, table_name)
+        SqlDataPath childDataPath = jdbcDataPath.getDataStore().getDefaultDataPath(cat_name, schema_name, table_name)
           .setType(type_name);
         jdbcDataPaths.add(childDataPath);
       }
@@ -56,7 +56,7 @@ public class Ansis {
    * @param jdbcDataPath
    * @return a list of data path that reference the primary key of the jdbcDataPath
    */
-  public static List<DataPath> getReferencingDataPaths(AnsiDataPath jdbcDataPath) {
+  public static List<DataPath> getReferencingDataPaths(SqlDataPath jdbcDataPath) {
 
     List<DataPath> jdbcDataPaths = new ArrayList<>();
     try {
@@ -70,7 +70,7 @@ public class Ansis {
         final String table_name = tableResultSet.getString("FKTABLE_NAME");
         final String schema_name = tableResultSet.getString("FKTABLE_SCHEM");
         final String cat_name = tableResultSet.getString("FKTABLE_CAT");
-        AnsiDataPath fkDataPath = jdbcDataPath.getDataStore().getSqlDataPath(cat_name, schema_name, table_name);
+        SqlDataPath fkDataPath = jdbcDataPath.getDataStore().getSqlDataPath(cat_name, schema_name, table_name);
         jdbcDataPaths.add(fkDataPath);
       }
 
@@ -91,7 +91,7 @@ public class Ansis {
 
 
 
-  public void printPrimaryKey(AnsiDataPath jdbcDataPath) {
+  public void printPrimaryKey(SqlDataPath jdbcDataPath) {
 
     try (
       ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getPrimaryKeys(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName())
@@ -105,7 +105,7 @@ public class Ansis {
 
   }
 
-  public void printUniqueKey(AnsiDataPath jdbcDataPath) {
+  public void printUniqueKey(SqlDataPath jdbcDataPath) {
 
     try (
       ResultSet resultSet = jdbcDataPath.getDataStore().getCurrentConnection().getMetaData().getIndexInfo(jdbcDataPath.getCatalog(), jdbcDataPath.getSchema().getName(), jdbcDataPath.getName(), true, false)
@@ -281,7 +281,7 @@ public class Ansis {
      */
     SqlDataStore dataStore = (SqlDataStore) foreignKeyDef.getTableDef().getDataPath().getDataStore();
     if (!dataStore.getProductName().equals(DB_SQLITE)) {
-      AnsiDataPath jdbcDataPath = (AnsiDataPath) foreignKeyDef.getTableDef().getDataPath();
+      SqlDataPath jdbcDataPath = (SqlDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropStatement = "alter table " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath) + " drop constraint " + foreignKeyDef.getName();
       try {
 

@@ -140,4 +140,11 @@ public interface RelationDef {
    */
   RelationDef addAllProperties(RelationDef source);
 
+  /**
+   * Drop all columns
+   * This function is used principally in test
+   * to be sure that there is no columns that comes from the backend metadata store
+   * @return
+   */
+  RelationDef dropAllColumns();
 }

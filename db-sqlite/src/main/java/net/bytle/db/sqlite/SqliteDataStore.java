@@ -1,6 +1,6 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.DataPathAbs;
@@ -50,7 +50,7 @@ public class SqliteDataStore extends SqlDataStore {
   }
 
   @Override
-  public AnsiDataPath getCurrentDataPath() {
+  public SqlDataPath getCurrentDataPath() {
     return new SqliteDataPath(this, getCurrentCatalog(), getCurrentSchema(), null);
   }
 
@@ -67,15 +67,15 @@ public class SqliteDataStore extends SqlDataStore {
         throw new RuntimeException("We can't create a path without names");
       case 1:
         switch (names[0]) {
-          case AnsiDataPath.CURRENT_WORKING_DIRECTORY:
+          case SqlDataPath.CURRENT_WORKING_DIRECTORY:
             return getSqlDataPath(null, null, null);
-          case AnsiDataPath.PARENT_DIRECTORY:
+          case SqlDataPath.PARENT_DIRECTORY:
             throw new RuntimeException("Sqlite does not have the notion of catalog or schema, you can't ask therefore for a parent");
           default:
             return getSqlDataPath(null, null, names[0]);
         }
       case 2:
-        if (names[0].equals(AnsiDataPath.CURRENT_WORKING_DIRECTORY)) {
+        if (names[0].equals(SqlDataPath.CURRENT_WORKING_DIRECTORY)) {
           return getSqlDataPath(null, null, names[1]);
         }
       default:

@@ -225,6 +225,11 @@ public class TableDef extends DataDefAbs  {
     return "DataDef of " + dataPath;
   }
 
+  @Override
+  public TableDef dropAllColumns() {
+    columnDefByName = new HashMap<>();
+    return this;
+  }
 
 
 }

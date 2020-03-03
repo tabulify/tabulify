@@ -50,11 +50,11 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
   /**
    * Returns statement to create the table
    *
-   * @param ansiDataPath
+   * @param sqlDataPath
    * @return
    */
   @Override
-  public List<String> createTableStatements(AnsiDataPath ansiDataPath) {
+  public List<String> createTableStatements(SqlDataPath sqlDataPath) {
 
 
     List<String> statements = new ArrayList<>();
@@ -65,21 +65,21 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
     //        if (tableType != null){
     //            statement += tableType;
     //        }
-    statement += " table " + ansiDataPath.getName() + " (\n"
-      + createColumnsStatement(ansiDataPath)
+    statement += " table " + sqlDataPath.getName() + " (\n"
+      + createColumnsStatement(sqlDataPath)
       + "\n)";
 
     statements.add(statement);
-    final PrimaryKeyDef primaryKey = ansiDataPath.getOrCreateDataDef().getPrimaryKey();
+    final PrimaryKeyDef primaryKey = sqlDataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey != null) {
-      statements.add(createPrimaryKeyStatement(ansiDataPath));
+      statements.add(createPrimaryKeyStatement(sqlDataPath));
     }
 
-    for (ForeignKeyDef foreignKeyDef : ansiDataPath.getOrCreateDataDef().getForeignKeys()) {
+    for (ForeignKeyDef foreignKeyDef : sqlDataPath.getOrCreateDataDef().getForeignKeys()) {
       statements.add(createForeignKeyStatement(foreignKeyDef));
     }
 
-    for (UniqueKeyDef uniqueKeyDef : ansiDataPath.getOrCreateDataDef().getUniqueKeys()) {
+    for (UniqueKeyDef uniqueKeyDef : sqlDataPath.getOrCreateDataDef().getUniqueKeys()) {
       statements.add(createUniqueKeyStatement(uniqueKeyDef));
     }
 
@@ -90,7 +90,7 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
 
 
   @Override
-  public String truncateStatement(AnsiDataPath dataPath) {
+  public String truncateStatement(SqlDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

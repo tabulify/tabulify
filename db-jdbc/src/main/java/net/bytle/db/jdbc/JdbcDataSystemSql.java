@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
  * Sql statement are in the class {@link SqlDataSystem} closed to the operations
  * that they supports
  * <p>
- * For example, the truncate statement can be found at {@link SqlDataSystem#truncateStatement(AnsiDataPath)}
+ * For example, the truncate statement can be found at {@link SqlDataSystem#truncateStatement(SqlDataPath)}
  * next to the {@link SqlDataSystem#truncate(DataPath)} operations
  * <p>
  * The SQL function below
@@ -37,7 +37,7 @@ public class JdbcDataSystemSql {
   /**
    * The databaseName of a table in a SQL statement
    */
-  public static String getQuotedTableName(AnsiDataPath jdbcDataPath) {
+  public static String getQuotedTableName(SqlDataPath jdbcDataPath) {
 
 
     final SqlDataStore dataStore = jdbcDataPath.getDataStore();
@@ -49,7 +49,7 @@ public class JdbcDataSystemSql {
   }
 
   public static String getQueryColumnName(ColumnDef columnDef) {
-    final AnsiDataPath dataPath = (AnsiDataPath) columnDef.getDataDef().getDataPath();
+    final SqlDataPath dataPath = (SqlDataPath) columnDef.getDataDef().getDataPath();
     String identifier = dataPath.getDataStore().getIdentifierQuote();
     return getFullyQualifiedSqlName(dataPath) + "." + identifier + columnDef.getColumnName() + identifier;
   }
@@ -61,7 +61,7 @@ public class JdbcDataSystemSql {
    * Example:
    * col1, col2, col3
    */
-  public static String getQueryColumnsStatement(AnsiDataPath jdbcDataPath) {
+  public static String getQueryColumnsStatement(SqlDataPath jdbcDataPath) {
     /**
      * {@link DatabaseMetaData#getIdentifierQuoteString()}
      */
@@ -79,7 +79,7 @@ public class JdbcDataSystemSql {
    * @param mergeColumnPositions
    * @return a merge statement that is used by the loader
    */
-  public String getMergeStatement(AnsiDataPath jdbcDataPath, List<Integer> mergeColumnPositions) {
+  public String getMergeStatement(SqlDataPath jdbcDataPath, List<Integer> mergeColumnPositions) {
 
     String sql = "INSERT OR REPLACE INTO " + jdbcDataPath.getName() + "(";
 
@@ -109,7 +109,7 @@ public class JdbcDataSystemSql {
    *
    * @return
    */
-  public static String getSelectStatement(AnsiDataPath dataPath) {
+  public static String getSelectStatement(SqlDataPath dataPath) {
 
     /**
      * If it does not work, "select * from " + getFullyQualifiedSqlName(dataPath); ?
@@ -132,7 +132,7 @@ public class JdbcDataSystemSql {
    */
   public static String getFullyQualifiedSqlName(DataPath dataPath) {
 
-    AnsiDataPath jdbcDataPath = (AnsiDataPath) dataPath;
+    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
 
     final String statementTableName = getQuotedTableName(jdbcDataPath);
 

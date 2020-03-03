@@ -30,12 +30,7 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
     return new GenMemDataPath(memoryDataStore, path);
   }
 
-  public static GenMemDataPath of(String path) {
-    if (memoryDataStore == null){
-      memoryDataStore = new MemoryDataStore("gen", "gen");
-    }
-    return new GenMemDataPath(memoryDataStore, path);
-  }
+
 
   @Override
   public GenDataDef getOrCreateDataDef() {

@@ -1,6 +1,6 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.AnsiDataPath;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.jdbc.SqlDataSystem;
 import net.bytle.db.jdbc.JdbcDataSystemSql;
 import net.bytle.db.model.ColumnDef;
@@ -57,7 +57,7 @@ public class SqliteSqlSystem extends SqlDataSystem {
    * @return a create statement https://www.sqlite.org/lang_createtable.html
    */
   @Override
-  protected List<String> createTableStatements(AnsiDataPath dataPath) {
+  protected List<String> createTableStatements(SqlDataPath dataPath) {
 
     List<String> statements = new ArrayList<>();
     StringBuilder statement = new StringBuilder();
@@ -137,7 +137,7 @@ public class SqliteSqlSystem extends SqlDataSystem {
 
 
   @Override
-  public String truncateStatement(AnsiDataPath dataPath) {
+  public String truncateStatement(SqlDataPath dataPath) {
     StringBuilder truncateStatementBuilder = new StringBuilder().append("delete from ");
     truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     return truncateStatementBuilder.toString();

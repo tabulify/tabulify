@@ -18,7 +18,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
   private final RelationDef targetMetaDef;
-  private final AnsiDataPath jdbcDataPath;
+  private final SqlDataPath jdbcDataPath;
 
   private PreparedStatement preparedStatement;
   private Connection connection;
@@ -28,14 +28,14 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   private Boolean supportNamedParameters;
   private Statement statement;
 
-  private SqlInsertStream(AnsiDataPath jdbcDataPath) {
+  private SqlInsertStream(SqlDataPath jdbcDataPath) {
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
     this.targetMetaDef = jdbcDataPath.getOrCreateDataDef();
     init();
   }
 
-  public synchronized static SqlInsertStream of(AnsiDataPath jdbcDataPath) {
+  public synchronized static SqlInsertStream of(SqlDataPath jdbcDataPath) {
     if (!Tabulars.exists(jdbcDataPath)) {
       throw new RuntimeException("You can't open an insert stream on the SQL table (" + jdbcDataPath + ") because it does not exist.");
     }
@@ -139,8 +139,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   }
 
   @Override
-  public AnsiDataPath getDataPath() {
-    return (AnsiDataPath) super.getDataPath();
+  public SqlDataPath getDataPath() {
+    return (SqlDataPath) super.getDataPath();
   }
 
   private void init() {
@@ -309,7 +309,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         }
       }
 
-      final AnsiDataPath dataPath = (AnsiDataPath) targetMetaDef.getDataPath();
+      final SqlDataPath dataPath = (SqlDataPath) targetMetaDef.getDataPath();
       if (dataPath.getDataStore().getMaxWriterConnection() > 1) {
         if (connection != null) {
           connection.close();

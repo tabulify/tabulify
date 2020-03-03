@@ -29,7 +29,7 @@ public class DbDdl {
 
 
 
-  public static void deleteAllRecordsTable(AnsiDataPath dataPath) {
+  public static void deleteAllRecordsTable(SqlDataPath dataPath) {
 
     try {
       String dropTableStatement = "delete from " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
@@ -41,7 +41,7 @@ public class DbDdl {
 
   public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
     try {
-      final AnsiDataPath dataPath = (AnsiDataPath) foreignKeyDef.getTableDef().getDataPath();
+      final SqlDataPath dataPath = (SqlDataPath) foreignKeyDef.getTableDef().getDataPath();
       String dropTableStatement = "ALTER TABLE " + JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath)
         + " DROP CONSTRAINT " + foreignKeyDef.getName();
       dataPath.getDataStore().getCurrentConnection().createStatement().execute(dropTableStatement);
