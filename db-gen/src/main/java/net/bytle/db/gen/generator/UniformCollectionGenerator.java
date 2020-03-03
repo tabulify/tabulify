@@ -65,20 +65,20 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         max = Integers.toDouble(max);
         this.min = min != null ? min : 0.0;
         this.max = max != null ? max : 10.0;
-        this.o = ((Double) this.max - (Double) this.min)/2;
+        this.o = ((Double) this.max - (Double) this.min) / 2;
         this.range = ((Double) this.max - (Double) this.min);
         break;
       case Types.INTEGER:
         this.min = min != null ? min : 0;
         this.max = max != null ? max : 10;
-        this.o = ((Integer) this.max - (Integer) this.min)/2;
+        this.o = ((Integer) this.max - (Integer) this.min) / 2;
         this.range = ((Integer) this.max - (Integer) this.min);
         break;
       case Types.NUMERIC:
         this.min = min != null ? min : BigDecimal.valueOf(0);
         this.max = max != null ? max : BigDecimal.valueOf(10);
         this.range = (((BigDecimal) this.max).min((BigDecimal) this.min));
-        BigDecimal half = ((BigDecimal) this.range).divide(BigDecimal.valueOf(2),0);
+        BigDecimal half = ((BigDecimal) this.range).divide(BigDecimal.valueOf(2), 0);
         this.o = ((BigDecimal) this.min).add(half);
         break;
       case Types.DATE:
@@ -87,7 +87,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         this.min = min != null ? min : clazz.cast(minDefault);
         this.max = max != null ? max : clazz.cast(maxDefault);
         range = ((int) DAYS.between(((Date) this.min).toLocalDate(), ((Date) this.max).toLocalDate()));
-        o = Date.valueOf(((Date) this.min).toLocalDate().plusDays((int)range/2));
+        o = Date.valueOf(((Date) this.min).toLocalDate().plusDays((int) range / 2));
         break;
       case Types.TIMESTAMP:
         Timestamp minTimestampDefault = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
@@ -95,7 +95,7 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
         this.min = min != null ? min : clazz.cast(minTimestampDefault);
         this.max = max != null ? max : clazz.cast(maxTimeStampDefault);
         range = (((Timestamp) this.max).getTime() - ((Timestamp) this.min).getTime()) / 1000;
-        this.o = Timestamp.valueOf(((Timestamp) this.min).toLocalDateTime().plus(((long) range)/2, SECONDS));
+        this.o = Timestamp.valueOf(((Timestamp) this.min).toLocalDateTime().plus(((long) range) / 2, SECONDS));
         break;
       case Types.CHAR:
       case Types.VARCHAR:
@@ -170,49 +170,52 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
   @Override
   public T getNewValue() {
 
+    try {
+      SqlDataType dataType = columnDef.getDataType();
+      switch (dataType.getTypeCode()) {
+        case Types.DOUBLE:
+          o = Math.random() * (Double) range * step;
+          if (min != null) {
+            o = (Double) o + (Double) min;
+          }
+          break;
+        case Types.INTEGER:
+          o = (int) Math.random() * (int) range * step;
+          if (min != null) {
+            o = (int) o + (int) min;
+          }
+          break;
+        case Types.NUMERIC:
+          o = BigDecimal.valueOf(range.doubleValue()).multiply(BigDecimal.valueOf(Math.random())).multiply(BigDecimal.valueOf(step));
+          if (min != null) {
+            o = ((BigDecimal) o).add(((BigDecimal) min));
+          }
+          break;
+        case Types.DATE:
+          int i = (int) (Math.random()) * (int) range * step;
+          LocalDate localValue = ((Date) min).toLocalDate();
+          o = Date.valueOf(localValue.plusDays(i));
+          break;
+        case Types.TIMESTAMP:
+          long iTimestamp = new Double(Math.random() * (long) range * step).longValue();
+          LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
+          o = Timestamp.valueOf(localValueTimestamp.plusSeconds(iTimestamp));
+          break;
+        case Types.CHAR:
+        case Types.VARCHAR:
+          o = (char) ((int) min + (Math.random() * (int) range) * step);
+          o = String.valueOf(o); // A CHAR or a VARCHAR is a string
+          break;
+        default:
+          throw new RuntimeException("The data type with the type code (" + dataType.getTypeCode() + "," + dataType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
 
-    SqlDataType dataType = columnDef.getDataType();
-    switch (dataType.getTypeCode()) {
-      case Types.DOUBLE:
-        o = Math.random() * (Double) range * step;
-        if (min != null) {
-          o = (Double) o + (Double) min;
-        }
-        break;
-      case Types.INTEGER:
-        o = (int) Math.random() * (int) range * step;
-        if (min != null) {
-          o = (int) o + (int) min;
-        }
-        break;
-      case Types.NUMERIC:
-        o = BigDecimal.valueOf(range.doubleValue()).multiply(BigDecimal.valueOf(Math.random())).multiply(BigDecimal.valueOf(step));
-        if (min != null) {
-          o = ((BigDecimal) o).add(((BigDecimal) min));
-        }
-        break;
-      case Types.DATE:
-        int i = (int) (Math.random()) * (int) range * step;
-        LocalDate localValue = ((Date) min).toLocalDate();
-        o = Date.valueOf(localValue.plusDays(i));
-        break;
-      case Types.TIMESTAMP:
-        long iTimestamp = new Double(Math.random() * (long) range * step).longValue();
-        LocalDateTime localValueTimestamp = ((Timestamp) min).toLocalDateTime();
-        o = Timestamp.valueOf(localValueTimestamp.plusSeconds(iTimestamp));
-        break;
-      case Types.CHAR:
-      case Types.VARCHAR:
-        o = (char) ((int) min + (Math.random() * (int) range) * step);
-        o = String.valueOf(o); // A CHAR or a VARCHAR is a string
-        break;
-      default:
-        throw new RuntimeException("The data type with the type code (" + dataType.getTypeCode() + "," + dataType.getClazz().getSimpleName() + ") is not supported for the column " + columnDef.getFullyQualifiedName());
+      }
 
+
+      return clazz.cast(o);
+    } catch (ClassCastException e) {
+      throw new RuntimeException("Cast problem for the value ("+o+"), min ("+min+") for the column ("+this.getColumn()+")",e);
     }
-
-
-    return clazz.cast(o);
   }
 
   /**
@@ -263,15 +266,6 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     return "DistributionGenerator{" + columnDef + '}';
   }
 
-  public UniformCollectionGenerator setMin(Object min) {
-    this.min = min;
-    return this;
-  }
-
-  public UniformCollectionGenerator setMax(Object max) {
-    this.max = max;
-    return this;
-  }
 
 
 }

@@ -195,10 +195,10 @@ public class DataGeneration {
 
             // Create the random distribution generator from the sequence
             SequenceGenerator<Object> sequenceGenerator = (SequenceGenerator<Object>) primaryKeyCollectionGenerator;
+            Object domainMin = sequenceGenerator.getDomainMin();
+            Object domainMax = sequenceGenerator.getDomainMax();
             ((GenColumnDef<Object>) foreignColumn)
-              .addUniformDistributionGenerator()
-              .setMin(sequenceGenerator.getDomainMin())
-              .setMax(sequenceGenerator.getDomainMax())
+              .addUniformDistributionGenerator(domainMin, domainMax)
               .step(sequenceGenerator.getStep());
 
           }

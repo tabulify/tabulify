@@ -2,6 +2,7 @@ package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.gen.GenColumnDef;
+import net.bytle.type.SqlDates;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -18,6 +19,14 @@ import static java.time.temporal.ChronoUnit.DAYS;
  *   * BigDecimal
  *   * date
  *   * string (to support a unique column for instance)
+ *
+ * This sequence generator supports only a integer as unit.
+ * For date, this sequence support only the day unit (ie
+ *   * 1 step = 1 day
+ *   * 1 step = 1 code character
+ *   * ...
+ * If we want to implement a sequence of one month, we need to support the concept of unit (ie create
+ * another implementation with the {@link java.time.temporal.ChronoUnit}
  *
  *
  * Each time, the {@link #getNewValue()} function is called
@@ -42,11 +51,9 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   // The start value
   private Object start;
-  // The min value is the lower limit value
-  private Object minValue;
-  // The max value is the upper limit value
-  private Object maxValue;
-  // The step is the number of step in the sequence (Generally one)
+  // The maximum number of step
+  private Long maxSteps;
+  // The step is the number of step in the sequence (Generally by 1 for numeric and -1 for date)
   private int step;
 
 
@@ -61,31 +68,25 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
     if (clazz == Integer.class) {
       currentValue = 0;
       start = 0;
-      maxValue = Integer.MAX_VALUE;
       step = 1;
     } else if (clazz == Double.class) {
       currentValue = 0.0;
       start = 0.0;
-      maxValue = Double.MAX_VALUE;
       step = 1;
     } else if (clazz == Date.class) {
       currentValue = LocalDate.now();
       start = LocalDate.now();
       step = -1;
-      minValue = LocalDate.MIN;
-      maxValue = LocalDate.MAX;
+
     } else if (clazz == BigDecimal.class) {
       currentValue = new BigDecimal(0);
       start = new BigDecimal(0);
       step = 1;
-      minValue = Integer.MIN_VALUE;
-      maxValue = Integer.MAX_VALUE;
     } else if (clazz == String.class) {
       // Supported to support generation of unique data in a string column
       currentValue = -1;
       start = -1;
       step = 1;
-      minValue = 0; // The first code point
     } else {
       throw new UnsupportedOperationException("The class (" + clazz + ") is not supported as a sequence");
     }
@@ -246,8 +247,8 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
    * @param maxSteps - the maximum number of steps
    * @return
    */
-  public SequenceGenerator maxSteps(Integer maxSteps) {
-    this.maxValue = maxSteps;
+  public SequenceGenerator maxSteps(Long maxSteps) {
+    this.maxSteps = maxSteps;
     return this;
   }
 
@@ -270,7 +271,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
       maxGeneratedValues = Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precision)).longValue();
     } else if (clazz == Date.class) {
-      maxGeneratedValues = DAYS.between((LocalDate) minValue, (LocalDate) maxValue);
+      maxGeneratedValues = SqlDates.dayBetween((Date) getDomainMin(), (Date) getDomainMax());
     } else {
       throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
     }
@@ -280,12 +281,12 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   }
 
   @Override
-  public <T> T getDomainMax() {
+  public T getDomainMax() {
 
     if (clazz == Integer.class) {
       Integer max = 0;
-      if (maxValue != null) {
-        max = (Integer) maxValue;
+      if (maxSteps != null) {
+        max = maxSteps.intValue();
       }
       Long maxSize = this.getColumn().getDataDef().getSize();
       if (maxSize != null) {
@@ -316,7 +317,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   }
 
   @Override
-  public <T> T getDomainMin() {
+  public T getDomainMin() {
     if (clazz == Integer.class) {
       Integer min = 0;
       if (start != null) {
@@ -324,7 +325,15 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       }
       return (T) min;
     } else if (clazz == Date.class) {
-      return (T) minValue;
+      if (step>0) {
+        return clazz.cast(start);
+      } else {
+        if (this.maxSteps==null){
+          return clazz.cast(Date.valueOf(LocalDate.MIN));
+        } else {
+          return clazz.cast(Date.valueOf(((Date) start).toLocalDate().minus(this.maxSteps, DAYS)));
+        }
+      }
     } else {
       throw new RuntimeException("Domain min on the class (" + clazz + ") was not yet implemented");
     }

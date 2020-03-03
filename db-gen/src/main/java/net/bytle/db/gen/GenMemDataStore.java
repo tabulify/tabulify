@@ -23,4 +23,5 @@ public class GenMemDataStore extends MemoryDataStore {
   public GenMemDataPath getDefaultDataPath(String... parts) {
     return (GenMemDataPath) super.getTypedDataPath(GenDataDef.TYPE, parts);
   }
+
 }
