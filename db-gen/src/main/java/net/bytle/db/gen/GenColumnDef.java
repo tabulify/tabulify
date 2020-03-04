@@ -4,6 +4,7 @@ import net.bytle.db.gen.generator.*;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.TableDef;
 import net.bytle.type.Arrayss;
+import net.bytle.type.Maps;
 import net.bytle.type.Typess;
 
 import java.util.Arrays;
@@ -56,7 +57,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   public Map<String, Object> getProperties() {
     Object generatorProperty = super.getProperty(GENERATOR_PROPERTY_KEY);
     if (generatorProperty == null) {
-      generatorProperty= new HashMap<String,Object>();
+      generatorProperty = new HashMap<String, Object>();
       super.addProperty(GENERATOR_PROPERTY_KEY, generatorProperty);
     }
     try {
@@ -87,8 +88,33 @@ public class GenColumnDef<T> extends ColumnDef<T> {
         case "unique":
           generator = SequenceGenerator.of(this);
           break;
-        case "derived":
-          generator = DerivedCollectionGenerator.of(this);
+        case DerivedCollectionGenerator.TYPE:
+          // Parent Generator
+          final String columnParentKeyProperty = "ColumnParent";
+          String columnParentName = Typess.safeCast(this.getProperty(columnParentKeyProperty), String.class);
+          if (columnParentName == null) {
+            throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + this.getFullyQualifiedName());
+          }
+          GenColumnDef columnParent = this.getDataDef().getColumnDef(columnParentName);
+          if (this.equals(columnParent)) {
+            throw new RuntimeException("The column (" + this.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
+          }
+          CollectionGenerator parentGenerator = columnParent.getGenerator();
+          CollectionGeneratorOnce parentCollectionGenerator;
+          if (parentGenerator instanceof CollectionGeneratorOnce) {
+            parentCollectionGenerator = (CollectionGeneratorOnce) parentGenerator;
+          } else {
+            throw new RuntimeException("Derived generator are working only with a scalar generator. The generator (" + parentGenerator + ") generates values for a pair of columns");
+          }
+
+          // Formula
+          String formula = Typess.safeCast(this.getProperty("formula"), String.class);
+          if (formula == null) {
+            throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column (" + this.getFullyQualifiedName() + ")");
+          }
+
+          // New Instance
+          generator = new DerivedCollectionGenerator<>(this, parentCollectionGenerator, formula);
           break;
         case "random":
         case "distribution":
@@ -99,7 +125,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
           break;
         case HistogramCollectionGenerator.TYPE:
           Map<Object, Double> buckets = (Map<Object, Double>) this.getProperty("buckets");
-          generator = HistogramCollectionGenerator.of(this, buckets);
+          parentGenerator = HistogramCollectionGenerator.of(this, buckets);
           break;
         case ProvidedDataGenerator.TYPE:
           Object values = this.getProperty("values");
@@ -146,7 +172,7 @@ public class GenColumnDef<T> extends ColumnDef<T> {
       Map<String, Object> properties = getProperties();
       properties.put(key, value);
     } else {
-      super.addProperty(key,value);
+      super.addProperty(key, value);
     }
     return this;
   }
@@ -158,7 +184,8 @@ public class GenColumnDef<T> extends ColumnDef<T> {
   @Override
   public Object getProperty(String key) {
     Map<String, Object> properties = getProperties();
-    return properties.get(key);
+    // From the yaml parser, we may get an dependent map
+    return Maps.getPropertyCaseIndependent(properties,key);
   }
 
   @Override

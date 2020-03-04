@@ -4,7 +4,6 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.type.Integers;
 import net.bytle.type.Strings;
-import net.bytle.type.Typess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 
 public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
 
+  public static final String TYPE = "derived";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DerivedCollectionGenerator.class);
 
@@ -134,40 +134,6 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
   }
 
 
-  /**
-   * Build a derived data generator from properties (got from a tableDef that was created with a data definition file)
-   *
-   * @return a data generator for chaining
-   */
-  static public <T> DerivedCollectionGenerator<T> of(GenColumnDef<T> columnDef) {
-
-    // Parent Generator
-    final String columnParentKeyProperty = "ColumnParent";
-    String columnParentName = Typess.safeCast(columnDef.getProperty(columnParentKeyProperty), String.class);
-    if (columnParentName == null) {
-      throw new IllegalArgumentException("The parent column is not defined in the '" + columnParentKeyProperty + "' properties for the column " + columnDef.getFullyQualifiedName());
-    }
-    GenColumnDef columnParent = columnDef.getDataDef().getColumnDef(columnParentName);
-    if (columnDef.equals(columnParent)) {
-      throw new RuntimeException("The column (" + columnDef.getFullyQualifiedName() + " has a derived generator and derived from itself creating a loop. Please choose another column as derived (parent) column.");
-    }
-    CollectionGenerator generator = columnParent.getGenerator();
-    CollectionGeneratorOnce parentCollectionGenerator;
-    if (generator instanceof CollectionGeneratorOnce) {
-      parentCollectionGenerator = (CollectionGeneratorOnce) generator;
-    } else {
-      throw new RuntimeException("Derived generator are working only with a scalar generator. The generator (" + generator + ") generates values for a pair of columns");
-    }
-
-    // Formula
-    String formula = Typess.safeCast(columnDef.getProperty("formula"), String.class);
-    if (formula == null) {
-      throw new RuntimeException("The 'formula' property is mandatory to create a derived data generator and is missing for the column (" + columnDef.getFullyQualifiedName() + ")");
-    }
-
-    // New Instance
-    return new DerivedCollectionGenerator<>(columnDef, parentCollectionGenerator, formula);
-  }
 
 
   public CollectionGeneratorOnce getParentGenerator() {

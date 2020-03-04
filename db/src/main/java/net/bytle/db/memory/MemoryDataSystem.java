@@ -12,6 +12,7 @@ import net.bytle.type.Strings;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -57,7 +58,17 @@ public class MemoryDataSystem implements DataSystem {
 
   @Override
   public List<DataPath> getChildrenDataPath(DataPath dataPath) {
-    throw new RuntimeException("Not yet implemented");
+    if (dataPath.equals(dataPath.getDataStore().getCurrentDataPath())){
+      return  storageMemDataPaths.values()
+        .stream()
+        .filter(p->!p.equals(dataPath.getDataStore().getCurrentDataPath()))
+        .collect(Collectors.toList());
+    } else {
+      throw new RuntimeException(Strings.multiline(
+        "The data path ("+dataPath+") is not the root path.",
+        "In the actual implementation, only the children from the root path may be retrieved"
+      ));
+    }
   }
 
   @Override
@@ -83,7 +94,11 @@ public class MemoryDataSystem implements DataSystem {
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    throw new RuntimeException("Not yet implemented");
+    if (dataPath.equals(dataPath.getDataStore().getCurrentDataPath())){
+      return false;
+    } else {
+      return true;
+    }
   }
 
 

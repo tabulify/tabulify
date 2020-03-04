@@ -52,8 +52,6 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   // The start value
   private Object start;
-  // The maximum number of step
-  private Long maxSteps;
   // The step is the number of step in the sequence (Generally by 1 for numeric and -1 for date)
   private int step;
 
@@ -244,14 +242,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   }
 
-  /**
-   * @param maxSteps - the maximum number of steps
-   * @return
-   */
-  public SequenceGenerator maxSteps(Long maxSteps) {
-    this.maxSteps = maxSteps;
-    return this;
-  }
+
 
   /**
    * How much data can this generator generate.
@@ -283,7 +274,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   @Override
   public T getDomainMax() {
-
+    Long maxSteps = this.columnDef.getDataDef().getMaxSize();
     if (clazz == Integer.class) {
       Integer max = 0;
       if (maxSteps != null) {
@@ -304,9 +295,8 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       if (step < 0) {
         return (T) Date.valueOf(((LocalDate) start));
       } else {
-        Long maxSize = this.getColumn().getDataDef().getMaxSize();
-        if (maxSize != null) {
-          return (T) Date.valueOf(((LocalDate) start).plus(step * maxSize.intValue(), DAYS));
+        if (maxSteps != null) {
+          return (T) Date.valueOf(((LocalDate) start).plus(step * maxSteps.intValue(), DAYS));
         } else {
           return (T) LocalDate.MAX;
         }
@@ -319,6 +309,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   @Override
   public T getDomainMin() {
+    Long maxSteps = this.columnDef.getDataDef().getMaxSize();
     if (clazz == Integer.class) {
       Integer min = 0;
       if (start != null) {
@@ -329,10 +320,10 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       if (step>0) {
         return clazz.cast(Date.valueOf((LocalDate) start));
       } else {
-        if (this.maxSteps==null){
+        if (maxSteps==null){
           return clazz.cast(MIN_DATE);
         } else {
-          return clazz.cast(Date.valueOf(((LocalDate) start).minus(this.maxSteps, DAYS)));
+          return clazz.cast(Date.valueOf(((LocalDate) start).minus(maxSteps, DAYS)));
         }
       }
     } else {
