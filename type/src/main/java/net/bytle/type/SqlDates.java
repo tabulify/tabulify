@@ -23,11 +23,10 @@ public class SqlDates {
 
   /**
    * Wrapper around {@link LocalDate#now()}
-   * Retrieve a date without time parts
-   * @return
+   * @return a date without time parts (at day precision) from GMT/UTC
    */
   public static Date dateNow() {
-    return Date.valueOf(LocalDate.now());
+    return Date.valueOf(LocalDates.nowGmt());
   }
 
 

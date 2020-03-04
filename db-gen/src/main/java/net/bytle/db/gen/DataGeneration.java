@@ -246,8 +246,7 @@ public class DataGeneration {
             Object domainMin = sequenceGenerator.getDomainMinCappedByMaxSteps(size);
             Object domainMax = sequenceGenerator.getDomainMaxCappedByMaxSteps(size);
             ((GenColumnDef<Object>) foreignColumn)
-              .addUniformDistributionGenerator(domainMin, domainMax)
-              .step(sequenceGenerator.getStep());
+              .addUniformDistributionGenerator(domainMin, domainMax);
 
           }
         })

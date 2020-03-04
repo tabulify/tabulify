@@ -3,6 +3,7 @@ package net.bytle.db.gen.generator;
 
 import net.bytle.db.gen.GenColumnDef;
 import net.bytle.db.gen.GenDataDef;
+import net.bytle.type.LocalDates;
 import net.bytle.type.SqlDates;
 
 import java.math.BigDecimal;
@@ -71,7 +72,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       start = 1.0;
       step = 1;
     } else if (clazz == Date.class) {
-      start = LocalDate.now();
+      start = LocalDates.nowGmt();
       step = -1;
     } else if (clazz == BigDecimal.class) {
       start = new BigDecimal(0);
@@ -147,7 +148,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       int codePoint = (Integer) (start) + i * step;
       Integer precisionOrMax = columnDef.getPrecisionOrMax();
       Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
-      actualValue = SequenceStringGeneratorHelper.toString((Integer) codePoint, SequenceStringGeneratorHelper.MAX_RADIX, precision);
+      actualValue = SequenceStringGeneratorHelper.toString(codePoint, SequenceStringGeneratorHelper.MAX_RADIX, precision);
     } else {
       throw new RuntimeException("The data type (" + clazz + ") is not yet implemented for a sequence generator");
     }

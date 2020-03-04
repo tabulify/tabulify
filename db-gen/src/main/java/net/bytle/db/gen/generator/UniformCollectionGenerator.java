@@ -262,6 +262,8 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
 
   @Override
   public UniformCollectionGenerator<T> step(Integer step) {
+    assert step !=null: "A step cannot be null";
+    assert step > 0: "A step cannot be negative or equal to zero. Actual value is ("+step+")";
     this.step = step;
     return this;
   }
