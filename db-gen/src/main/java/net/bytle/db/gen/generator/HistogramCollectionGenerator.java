@@ -162,6 +162,10 @@ public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<
     return Long.MAX_VALUE;
   }
 
+  @Override
+  public void reset() {
+    // Nothing to do
+  }
 
 
   @Override

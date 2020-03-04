@@ -77,4 +77,9 @@ public class UniqueKeyDef {
         return this;
 
     }
+
+  @Override
+  public String toString() {
+    return getName() +" ("+ columnDefs + ')';
+  }
 }

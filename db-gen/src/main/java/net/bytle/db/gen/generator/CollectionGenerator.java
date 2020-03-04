@@ -11,6 +11,10 @@ public interface CollectionGenerator<T> {
    */
   long getMaxGeneratedValues();
 
-
+  /**
+   * Used in a select stream to reset
+   * the state of the generator to their first state
+   */
+  void reset();
 
 }

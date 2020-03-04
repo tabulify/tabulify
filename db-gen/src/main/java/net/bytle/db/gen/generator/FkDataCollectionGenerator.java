@@ -19,7 +19,7 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
   private final GenColumnDef columnDef;
 
   private Object value;
-  private HistogramCollectionGenerator enumCollection;
+  private HistogramCollectionGenerator histogramCollectionGenerator;
 
   /**
    * Get a random foreign value when the {@link #getNewValue()} is called
@@ -41,7 +41,7 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
       if (histogram.size() == 0) {
         throw new RuntimeException("The foreign table (" + foreignColumnDef.getDataDef().getDataPath().toString() + ") has no data for the column (" + foreignKeyDef.getChildColumns().get(0) + ")");
       }
-      enumCollection = new HistogramCollectionGenerator(columnDef,histogram);
+      histogramCollectionGenerator = new HistogramCollectionGenerator(columnDef,histogram);
     }
 
   }
@@ -52,7 +52,7 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
   @Override
   public Object getNewValue() {
 
-    value = enumCollection.getNewValue();
+    value = histogramCollectionGenerator.getNewValue();
     return value;
 
   }
@@ -83,6 +83,11 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
 
     return Long.MAX_VALUE;
 
+  }
+
+  @Override
+  public void reset() {
+    histogramCollectionGenerator.reset();
   }
 
 

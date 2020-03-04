@@ -133,7 +133,10 @@ public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     return parentCollectionGenerator.getMaxGeneratedValues();
   }
 
-
+  @Override
+  public void reset() {
+    parentCollectionGenerator.reset();
+  }
 
 
   public CollectionGeneratorOnce getParentGenerator() {

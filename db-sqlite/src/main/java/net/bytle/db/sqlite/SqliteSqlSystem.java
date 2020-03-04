@@ -25,7 +25,7 @@ public class SqliteSqlSystem extends SqlDataSystem {
   @Override
   public Boolean exists(DataPath dataPath) {
     SqliteDataPath sqliteDataPath = (SqliteDataPath) dataPath;
-    if (sqliteDataPath.getName()==null){
+    if (sqliteDataPath.getName() == null) {
       // Schema
       return true;
     } else {
@@ -125,6 +125,22 @@ public class SqliteSqlSystem extends SqlDataSystem {
 
     }
 
+    // Uk
+    // Syntax in the table constraint clause
+    // https://sqlite.org/lang_createtable.html
+    tableDef.getUniqueKeys().forEach(uk -> {
+      assert uk.getColumns().size() > 0: "The unique key ("+uk+") of the table ("+tableDef.getDataPath()+") has no columns";
+      statement.append(",\nUNIQUE (");
+      for (int i = 0; i < uk.getColumns().size(); i++) {
+        ColumnDef columnDef = uk.getColumns().get(i);
+        statement.append(columnDef.getColumnName());
+        if (i < uk.getColumns().size() - 1) {
+          statement.append(", ");
+        }
+      }
+      statement.append(")");
+
+    });
 
     // End statement
     statement.append("\n)");
@@ -132,8 +148,7 @@ public class SqliteSqlSystem extends SqlDataSystem {
 
     return statements;
 
-  }
-
+}
 
 
   @Override

@@ -105,4 +105,9 @@ public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
     return values.size();
   }
 
+  @Override
+  public void reset() {
+    rowId = -1;
+  }
+
 }

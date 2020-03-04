@@ -46,7 +46,7 @@ public interface RelationDef {
 
   RelationDef setPrimaryKey(String... columnNames);
 
-  RelationDef addUniqueKey(String name, String... columnNames);
+  RelationDef addUniqueKey(String... columnNames);
 
   RelationDef addForeignKey(PrimaryKeyDef primaryKeyDef, String... columnNames);
 

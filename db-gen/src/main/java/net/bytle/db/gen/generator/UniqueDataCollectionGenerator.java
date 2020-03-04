@@ -11,13 +11,15 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
-
+/**
+ * A wrapper around {@link SequenceGenerator} for multiple columns
+ * in order to support an unique constraint
+ */
 public class UniqueDataCollectionGenerator implements CollectionGeneratorMultiple {
 
 
   private Map<GenColumnDef, CollectionGeneratorOnce> dataGeneratorMap = new HashMap<>();
 
-  Integer position = new Integer(0);
 
   /**
    *
@@ -37,18 +39,18 @@ public class UniqueDataCollectionGenerator implements CollectionGeneratorMultipl
         // With date, we are going in the past
         GenColumnDef<Date> dateColumn = (GenColumnDef<Date>) Columns.safeCast(columnDef, Date.class);
         Date minDate = getMinSafely(dateColumn, Date.valueOf(LocalDate.now()));
-        dataGeneratorMap.put(columnDef, SequenceGenerator.of(dateColumn).start(minDate).step(-1));
+        dataGeneratorMap.put(columnDef, SequenceGenerator.of(dateColumn).start(minDate));
 
       } else if (SqlDataType.numericTypes.contains(columnDef.getDataType().getTypeCode())) {
 
         if (columnDef.getClazz() == BigDecimal.class) {
           GenColumnDef<BigDecimal> bigDecimalColumnDef = (GenColumnDef<BigDecimal>) Columns.safeCast(columnDef, BigDecimal.class);
           BigDecimal intCounter = getMaxSafely(bigDecimalColumnDef,BigDecimal.ZERO);
-          dataGeneratorMap.put(columnDef, SequenceGenerator.of(bigDecimalColumnDef).start(intCounter).step(1));
+          dataGeneratorMap.put(columnDef, SequenceGenerator.of(bigDecimalColumnDef).start(intCounter));
         } else {
           GenColumnDef<Integer> integerColumn = (GenColumnDef<Integer>) Columns.safeCast(columnDef, Integer.class);
           Integer intCounter = getMaxSafely(integerColumn,0);
-          dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter).step(1));
+          dataGeneratorMap.put(columnDef, SequenceGenerator.of(integerColumn).start(intCounter));
         }
 
       } else if (SqlDataType.characterTypes.contains(columnDef.getDataType().getTypeCode())) {
@@ -149,6 +151,11 @@ public class UniqueDataCollectionGenerator implements CollectionGeneratorMultipl
   public long getMaxGeneratedValues() {
     // Hack
     return Long.MAX_VALUE;
+  }
+
+  @Override
+  public void reset() {
+    dataGeneratorMap.values().forEach(CollectionGenerator::reset);
   }
 
 

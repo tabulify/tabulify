@@ -248,6 +248,12 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   }
 
   @Override
+  public void reset() {
+    // counter at zero
+    i=0;
+  }
+
+  @Override
   public T getDomainMax() {
     return getDomainMaxCappedByMaxSteps(null);
   }

@@ -1,6 +1,6 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.AnsiDataDef;
+import net.bytle.db.jdbc.SqlDataDef;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.db.spi.Tabulars;
 
@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-public class SqliteDataDef extends AnsiDataDef {
+public class SqliteDataDef extends SqlDataDef {
 
   public SqliteDataDef(SqliteDataPath dataPath, Boolean buildFromMeta) {
     super(dataPath, buildFromMeta);
@@ -109,6 +109,11 @@ public class SqliteDataDef extends AnsiDataDef {
 
     }
 
+  }
+
+  @Override
+  protected void addUniqueKeysFromMetaData() {
+    super.addUniqueKeysFromMetaData();
   }
 
   /**

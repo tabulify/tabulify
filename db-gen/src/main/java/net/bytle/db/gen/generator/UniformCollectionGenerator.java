@@ -251,6 +251,11 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
   }
 
   @Override
+  public void reset() {
+    // nothing to do
+  }
+
+  @Override
   public <T> T getDomainMax() {
     return (T) max;
   }

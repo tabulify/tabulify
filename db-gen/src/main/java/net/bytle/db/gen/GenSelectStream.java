@@ -83,7 +83,7 @@ public class GenSelectStream extends SelectStreamAbs {
 
   @Override
   public void close() {
-
+    Arrays.stream(this.genDataPath.getOrCreateDataDef().getColumnDefs()).forEach(c->c.getGenerator().reset());
   }
 
   @Override

@@ -174,8 +174,8 @@ public abstract class DataDefAbs implements RelationDef {
    * @return the table def for chaining initialization
    */
   @Override
-  public RelationDef addUniqueKey(String name, String... columnNames) {
-    getOrCreateUniqueKey(name, columnNames);
+  public RelationDef addUniqueKey(String... columnNames) {
+    getOrCreateUniqueKey(String.join("_",columnNames)+"_uk", columnNames);
     return this;
   }
 

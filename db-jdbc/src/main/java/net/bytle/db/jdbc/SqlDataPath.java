@@ -82,21 +82,21 @@ public class SqlDataPath extends DataPathAbs {
   }
 
   @Override
-  public AnsiDataDef getOrCreateDataDef() {
+  public SqlDataDef getOrCreateDataDef() {
 
     if (relationDef==null) {
-      relationDef = new AnsiDataDef(this,true);
+      relationDef = new SqlDataDef(this,true);
     }
-    return (AnsiDataDef) relationDef;
+    return (SqlDataDef) relationDef;
 
   }
 
   @Override
-  public AnsiDataDef createDataDef() {
+  public SqlDataDef createDataDef() {
     if (relationDef==null) {
-      relationDef = new AnsiDataDef(this,false);
+      relationDef = new SqlDataDef(this,false);
     }
-    return (AnsiDataDef) relationDef;
+    return (SqlDataDef) relationDef;
   }
 
 
