@@ -1,7 +1,7 @@
 package net.bytle.type;
 
 import java.sql.Date;
-import java.time.Instant;
+import java.time.LocalDate;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -22,11 +22,12 @@ public class SqlDates {
   }
 
   /**
-   * Retrieve a date for now
+   * Wrapper around {@link LocalDate#now()}
+   * Retrieve a date without time parts
    * @return
    */
-  public static Date now() {
-    return new Date(Instant.now().toEpochMilli());
+  public static Date dateNow() {
+    return Date.valueOf(LocalDate.now());
   }
 
 
