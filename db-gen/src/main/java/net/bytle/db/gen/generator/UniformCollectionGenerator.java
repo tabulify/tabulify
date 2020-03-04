@@ -44,8 +44,8 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
    * Distribution Generator that will return a value randomly chosen between a min and a max
    *
    * @param columnDef
-   * @param min
-   * @param max
+   * @param min - included
+   * @param max - included
    */
   public UniformCollectionGenerator(GenColumnDef<T> columnDef, Object min, Object max) {
 
@@ -180,7 +180,10 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
           }
           break;
         case Types.INTEGER:
-          o = (int) Math.random() * (int) range * step;
+          // + 0.99 because of the int cast
+          // 0 = (int) 0.99
+          // 2 = (int) 2.99
+          o = (int) (Math.random() * ((int) range + 0.99) * step);
           if (min != null) {
             o = (int) o + (int) min;
           }
@@ -192,7 +195,10 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
           }
           break;
         case Types.DATE:
-          int i = (int) (Math.random()) * (int) range * step;
+          // + 0.99 because of the int cast
+          // 0 = (int) 0.99
+          // 2 = (int) 2.99
+          int i = (int) (Math.random() * ((int) range+0.99) * step);
           LocalDate localValue = ((Date) min).toLocalDate();
           o = Date.valueOf(localValue.plusDays(i));
           break;
