@@ -81,14 +81,6 @@ public class DataGeneration {
     return new DataGeneration();
   }
 
-  /**
-   * @param columnDef
-   * @return
-   */
-  public <T> CollectionGeneratorOnce<T> getDataGenerator(ColumnDef<T> columnDef) {
-    return dataGenerators.get(columnDef);
-  }
-
 
   /**
    * This function starts the data generation and data insertion for all tables specified
@@ -97,7 +89,62 @@ public class DataGeneration {
    */
   public List<DataPath> load() {
 
+    // Add the parent if needed
+    // build the generators
+    preLoad();
 
+    // Load
+    List<DataPath> targetDataPaths = new ArrayList<>(transfers.keySet());
+    final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
+
+    for (DataPath dataPath : createOrderedTables) {
+
+      // The load
+      LOGGER.info("Loading the table (" + dataPath.toString() + ")");
+      LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
+
+      GenDataPath genDataPath = transfers.get(dataPath);
+      Tabulars.createIfNotExist(genDataPath);
+      long numberOfRowToInsert = Tabulars.getSize(genDataPath);
+      if (numberOfRowToInsert > MAX_INSERT) {
+        throw new RuntimeException(
+          Strings.multiline("The generator (" + genDataPath + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
+            "Set a row size number on the generator data path to resolve this issue."));
+      }
+
+
+      if (numberOfRowToInsert > 0) {
+        LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
+
+        try (
+          GenSelectStream genSelectStream = new GenSelectStream(genDataPath);
+          InsertStream inputStream = Tabulars.getInsertStream(dataPath)
+        ) {
+          while (genSelectStream.next()) {
+            List<Object> objects = genSelectStream.getObjects();
+            inputStream.insert(objects);
+          }
+        }
+
+      }
+
+      LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + dataPath.toString() + ")");
+      LOGGER.info("The new size is: " + Tabulars.getSize(dataPath));
+
+    }
+
+    // Return the tables loaded (due to the parent options, this may be more than the configured one)
+    return targetDataPaths;
+  }
+
+  /**
+   * When all transfers has been added,
+   * this function will build the transfer
+   * ie:
+   *   * add the dependent table if needed
+   *   * add the missing generators
+   */
+  public DataGeneration preLoad() {
     // Target Parent check
     // Parent not in the table set to load ?
     // If yes, add a transfer with the parent tables
@@ -206,68 +253,35 @@ public class DataGeneration {
       ;
     }
 
-    // Load
-    final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
-
-    for (DataPath dataPath : createOrderedTables) {
-
-      // The load
-      LOGGER.info("Loading the table (" + dataPath.toString() + ")");
-      LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
-
-      GenDataPath genDataPath = transfers.get(dataPath);
-      Tabulars.createIfNotExist(genDataPath);
-      long numberOfRowToInsert = Tabulars.getSize(genDataPath);
-      if (numberOfRowToInsert > MAX_INSERT) {
-        throw new RuntimeException(
-          Strings.multiline("The generator (" + genDataPath + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
-            "Set a row size number on the generator data path to resolve this issue."));
-      }
-
-
-      if (numberOfRowToInsert > 0) {
-        LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
-
-        try (
-          GenSelectStream genSelectStream = new GenSelectStream(genDataPath);
-          InsertStream inputStream = Tabulars.getInsertStream(dataPath)
-        ) {
-          while (genSelectStream.next()) {
-            List<Object> objects = genSelectStream.getObjects();
-            inputStream.insert(objects);
-          }
-        }
-
-      }
-
-      LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + dataPath.toString() + ")");
-      LOGGER.info("The new size is: " + Tabulars.getSize(dataPath));
-
-    }
-
-    // Return the tables loaded (due to the parent options, this may be more than the configured one)
-    return targetDataPaths;
-
-  }
-
-  private GenDataPath getGenDataPath(DataPath parentDataUnit) {
-    return transfers.values().stream()
-      .filter(dp -> dp.getName().equals(parentDataUnit.getName()))
-      .findFirst()
-      .orElse(null);
+    return this;
   }
 
 
+  /**
+   * Do we load the foreign table ?
+   * @param loadParent
+   * @return
+   */
   public DataGeneration loadDependencies(Boolean loadParent) {
     this.loadParent = loadParent;
     return this;
   }
 
 
+  /**
+   * Add a target table
+   * @param dataPath
+   * @return
+   */
   public DataGeneration addTable(DataPath dataPath) {
     return addTable(dataPath, null);
   }
 
+  /**
+   * Add several target table at once
+   * @param dataPaths
+   * @return
+   */
   public DataGeneration addTables(List<DataPath> dataPaths) {
     for (DataPath dataPath : dataPaths) {
       addTable(dataPath);
@@ -276,6 +290,7 @@ public class DataGeneration {
   }
 
   /**
+   * Add several target table at once with their total rows
    * @param dataPaths
    * @param totalRows - the totalRows
    * @return
@@ -288,6 +303,7 @@ public class DataGeneration {
   }
 
   /**
+   * Add several transfer to the same target at once
    * @param sourceDataPaths
    * @param targetDataPath
    * @return
@@ -299,6 +315,12 @@ public class DataGeneration {
     return this;
   }
 
+  /**
+   * Add a transfer
+   * @param sourceDataPath
+   * @param targetDataPath
+   * @return
+   */
   public DataGeneration addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
     if (Tabulars.isContainer(targetDataPath)){
       targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
@@ -307,5 +329,9 @@ public class DataGeneration {
     transfers.put(targetDataPath, sourceDataPath);
     return this;
 
+  }
+
+  public List<GenDataPath> getGenDataPaths() {
+    return transfers.values().stream().collect(Collectors.toList());
   }
 }
