@@ -35,7 +35,10 @@ public class SqlDates {
    * @param from
    * @param to
    * @return the number of days between this two dates
+   *
    * Positive if from < to
+   * and that the date is not below 1970 (new Date(0L) = 1970-01-01
+   * Otherwise negative
    */
   public static long dayBetween(Date from, Date to) {
     return DAYS.between(from.toLocalDate(),to.toLocalDate());

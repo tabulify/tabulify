@@ -203,7 +203,7 @@ public class GenDataDef extends DataDefAbs implements RelationDef {
   /**
    * @return The size of data that will be generated
    */
-  public long   getSize() {
+  public long getSize() {
 
     Long maxNumberOfRowToInsert = getMaxSizeFromGenerators();
 

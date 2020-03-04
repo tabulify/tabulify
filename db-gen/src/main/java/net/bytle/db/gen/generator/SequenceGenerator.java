@@ -2,6 +2,7 @@ package net.bytle.db.gen.generator;
 
 
 import net.bytle.db.gen.GenColumnDef;
+import net.bytle.db.gen.GenDataDef;
 import net.bytle.type.SqlDates;
 
 import java.math.BigDecimal;
@@ -233,7 +234,9 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
       Integer precision = precisionOrMax != null ? precisionOrMax : MAX_STRING_PRECISION;
       maxGeneratedValues = Double.valueOf(Math.pow(SequenceStringGeneratorHelper.MAX_RADIX, precision)).longValue();
     } else if (clazz == Date.class) {
-      maxGeneratedValues = SqlDates.dayBetween((Date) getDomainMin(), (Date) getDomainMax());
+      T domainMin = getDomainMin();
+      T domainMax = getDomainMax();
+      maxGeneratedValues = SqlDates.dayBetween((Date) domainMin, (Date) domainMax);
     } else {
       throw new RuntimeException("Max Generated Value not implemented for class (" + clazz + ")");
     }
@@ -244,7 +247,15 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   @Override
   public T getDomainMax() {
-    Long maxSteps = this.columnDef.getDataDef().getMaxSize();
+    return getDomainMaxCappedByMaxSteps(null);
+  }
+
+  /**
+   * See {@link #getDomainMinCappedByMaxSteps(Long)}
+   * @param maxSteps
+   * @return
+   */
+  public T getDomainMaxCappedByMaxSteps(Long maxSteps) {
     if (clazz == Integer.class) {
       Integer max = 0;
       if (maxSteps != null) {
@@ -268,7 +279,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
         if (maxSteps != null) {
           return (T) Date.valueOf(((LocalDate) start).plus(step * maxSteps.intValue(), DAYS));
         } else {
-          return (T) LocalDate.MAX;
+          return (T) Date.valueOf(LocalDate.MAX);
         }
       }
     } else {
@@ -279,8 +290,21 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
 
   @Override
   public T getDomainMin() {
-    Long maxSteps = this.columnDef.getDataDef().getMaxSize();
-    if (clazz == Integer.class) {
+    return getDomainMinCappedByMaxSteps(null);
+  }
+
+  /**
+   * The domain when there is a maximum of steps
+   * This function is used to get the domain min on the whole data def
+   * The max steps is basically the output of {@link GenDataDef#getSize()}
+   * in order to pass the minimum to a {@link UniformCollectionGenerator}
+   * that is used in a column with a foreign key constraint
+   *
+   * @param maxSteps
+   * @return
+   */
+  public T getDomainMinCappedByMaxSteps(Long maxSteps) {
+    if (clazz == Integer.class || clazz == Double.class || clazz == BigDecimal.class) {
       return clazz.cast(start);
     } else if (clazz == Date.class) {
       if (step > 0) {
