@@ -260,6 +260,16 @@ public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>
     return (T) min;
   }
 
+  /**
+   *
+   * @param step - the value of a unit
+   * @return
+   * You may have a range 0-10 where you pick only the even number
+   * A step would be in this case 2
+   * @deprecated - Step is not fully functional (not really deprecated but not functional)
+   * Example of usage when you have a {@link SequenceGenerator sequence} that have a step that is not one
+   * and that you want to foreign data with this generator
+   */
   @Override
   public UniformCollectionGenerator<T> step(Integer step) {
     assert step !=null: "A step cannot be null";

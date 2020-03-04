@@ -207,6 +207,7 @@ public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, Collect
   /**
    * @param step - the step value
    * @return
+   * @deprecated - Step is not fully functional (not really deprecated but not functional)
    */
   public SequenceGenerator<T> step(Integer step) {
 
