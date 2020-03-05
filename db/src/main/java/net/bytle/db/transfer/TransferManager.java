@@ -406,6 +406,8 @@ public class TransferManager {
    * @return
    */
   public TransferManager addTransfer(DataPath source, DataPath target) {
+    assert source!=null:"The source cannot be null in a transfer";
+    assert target!=null:"The target cannot be null in a transfer";
 
     if (Tabulars.isContainer(target)) {
       String name = source.getName();

@@ -28,12 +28,22 @@ public class SqlDataPath extends DataPathAbs {
 
 
   /**
-   * TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
+   * The type structure is:
+   *   SYSTEM (Example: when there is no notion of catalog of schema, as with SQLite)
+   *      > CATALOG
+   *         > SCHEMA
+   *            > TABLE
+   *            > VIEW
+   *            > QUERY
+   *            > ....SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
    */
   private String type = TABLE_TYPE;
   public static final String TABLE_TYPE = "TABLE";
   public static final String VIEW_TYPE = "VIEW";
   public static final String QUERY_TYPE = "QUERY";
+  public static final String SCHEMA_TYPE = "SCHEMA"; // container
+  public static final String CATALOG_TYPE = "CATALOG"; // container
+  public static final String SYSTEM_TYPE = "SYSTEM"; // container
 
 
   /**
@@ -72,6 +82,18 @@ public class SqlDataPath extends DataPathAbs {
     this.catalog = catalog;
     this.schema = schema;
     this.name = name;
+
+    if (this.name == null){
+      if (this.schema==null){
+        if (this.catalog==null) {
+          type = SYSTEM_TYPE;
+        } else {
+          type = CATALOG_TYPE;
+        }
+      } else {
+        type = SCHEMA_TYPE;
+      }
+    }
 
   }
 
@@ -236,7 +258,6 @@ public class SqlDataPath extends DataPathAbs {
     if (type.equals(QUERY_TYPE)) {
       return "query";
     }
-    JdbcDataSystemLog.LOGGER_DB_JDBC.warning("All JDBC data path name are null (catalog, schema and name)");
     return null;
   }
 
@@ -269,10 +290,11 @@ public class SqlDataPath extends DataPathAbs {
 
 
   public boolean isDocument() {
-    if (type.equals(QUERY_TYPE)) {
-      return true;
+    assert type!=null: "The type of data path ("+this+") is null, we can't therefore determine if it's a document";
+    if (type.equals(SCHEMA_TYPE) || type.equals(CATALOG_TYPE) || type.equals(SYSTEM_TYPE)) {
+      return false;
     } else {
-      return name != null;
+      return true;
     }
   }
 
@@ -281,6 +303,9 @@ public class SqlDataPath extends DataPathAbs {
     return this;
   }
 
+  /**
+   * @return
+   */
   public String getType() {
     return this.type;
   }

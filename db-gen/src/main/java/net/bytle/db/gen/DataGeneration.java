@@ -10,7 +10,8 @@ import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.ForeignKeyDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
-import net.bytle.db.stream.InsertStream;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferManager;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
@@ -87,62 +88,32 @@ public class DataGeneration {
    *
    * @return the tables loaded which could be more that the tables asked if the parent loading option is on
    */
-  public List<DataPath> load() {
+  public List<TransferListener> load() {
 
     // Add the parent if needed
     // build the generators
     preLoad();
 
-    // Load
-    List<DataPath> targetDataPaths = new ArrayList<>(transfers.keySet());
-    final List<DataPath> createOrderedTables = ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables();
-
-    for (DataPath dataPath : createOrderedTables) {
-
-      // The load
-      LOGGER.info("Loading the table (" + dataPath.toString() + ")");
-      LOGGER.info("The size of the table (" + dataPath.toString() + ") before insertion is : " + Tabulars.getSize(dataPath));
-
-      GenDataPath genDataPath = transfers.get(dataPath);
-      Tabulars.createIfNotExist(genDataPath);
-      long numberOfRowToInsert = Tabulars.getSize(genDataPath);
-      if (numberOfRowToInsert > MAX_INSERT) {
-        throw new RuntimeException(
-          Strings.multiline("The generator (" + genDataPath + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
-            "Set a row size number on the generator data path to resolve this issue."));
+    TransferManager transferManager = TransferManager.of();
+    transfers.keySet().forEach(dp -> {
+        transferManager.addTransfer(transfers.get(dp),dp);
       }
+    );
+    List<TransferListener> transferListeners = transferManager.start();
 
+    return transferListeners;
 
-      if (numberOfRowToInsert > 0) {
-        LOGGER.info("Inserting " + numberOfRowToInsert + " rows into the table (" + dataPath.toString() + ")");
-
-        try (
-          GenSelectStream genSelectStream = new GenSelectStream(genDataPath);
-          InsertStream inputStream = Tabulars.getInsertStream(dataPath)
-        ) {
-          while (genSelectStream.next()) {
-            List<Object> objects = genSelectStream.getObjects();
-            inputStream.insert(objects);
-          }
-        }
-
-      }
-
-      LOGGER.info(numberOfRowToInsert + " records where inserted into the table (" + dataPath.toString() + ")");
-      LOGGER.info("The new size is: " + Tabulars.getSize(dataPath));
-
-    }
-
-    // Return the tables loaded (due to the parent options, this may be more than the configured one)
-    return targetDataPaths;
   }
 
   /**
    * When all transfers has been added,
    * this function will build the transfer
    * ie:
-   *   * add the dependent table if needed
-   *   * add the missing generators
+   *   * add the dependent table if the option {@link #loadDependencies(Boolean)} is true
+   *   * add the missing generators and take into account the target constraints (foreign key generator)
+   *   * verify that the size to insert is not abyssal (ie bigger than {@link #MAX_INSERT})
+   *
+   * You can get the modified data generator path by calling the {@link #getGenDataPaths()}
    */
   public DataGeneration preLoad() {
     // Target Parent check
@@ -176,7 +147,7 @@ public class DataGeneration {
     // in every order but when the merge add the foreign key,
     // the primary key should be already present
     // We start with the foreign table (ie createOrderedtables) to finish to the fact table
-    for (DataPath  targetDataPath : ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables()) {
+    for (DataPath targetDataPath : ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables()) {
       GenDataPath sourceDataPath = transfers.get(targetDataPath);
       sourceDataPath.getOrCreateDataDef().mergeDataDef(targetDataPath);
     }
@@ -253,12 +224,24 @@ public class DataGeneration {
       ;
     }
 
+    // Check that the size is not abyssal
+    transfers.values().forEach(dp -> {
+      Tabulars.createIfNotExist(dp);
+      long numberOfRowToInsert = Tabulars.getSize(dp);
+      if (numberOfRowToInsert > MAX_INSERT) {
+        throw new RuntimeException(
+          Strings.multiline("The generator (" + dp + ") may generate (" + numberOfRowToInsert + ") records which is bigger than the upper limit of (" + MAX_INSERT + ").",
+            "Set a row size number on the generator data path to resolve this issue."));
+      }
+    });
+
     return this;
   }
 
 
   /**
-   * Do we load the foreign table ?
+   * Do we load the foreign target table ?
+   * Default: false
    * @param loadParent
    * @return
    */
@@ -270,6 +253,7 @@ public class DataGeneration {
 
   /**
    * Add a target table
+   *
    * @param dataPath
    * @return
    */
@@ -279,6 +263,7 @@ public class DataGeneration {
 
   /**
    * Add several target table at once
+   *
    * @param dataPaths
    * @return
    */
@@ -291,6 +276,7 @@ public class DataGeneration {
 
   /**
    * Add several target table at once with their total rows
+   *
    * @param dataPaths
    * @param totalRows - the totalRows
    * @return
@@ -304,6 +290,7 @@ public class DataGeneration {
 
   /**
    * Add several transfer to the same target at once
+   *
    * @param sourceDataPaths
    * @param targetDataPath
    * @return
@@ -317,12 +304,13 @@ public class DataGeneration {
 
   /**
    * Add a transfer
+   *
    * @param sourceDataPath
    * @param targetDataPath
    * @return
    */
   public DataGeneration addTransfer(GenDataPath sourceDataPath, DataPath targetDataPath) {
-    if (Tabulars.isContainer(targetDataPath)){
+    if (Tabulars.isContainer(targetDataPath)) {
       targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
     }
     // Add the transfers

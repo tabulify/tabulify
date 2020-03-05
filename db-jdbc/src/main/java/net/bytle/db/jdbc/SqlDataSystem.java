@@ -114,8 +114,8 @@ public class SqlDataSystem implements DataSystem {
 
   @Override
   public boolean isDocument(DataPath dataPath) {
-    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
-    return jdbcDataPath.isDocument();
+    SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
+    return sqlDataPath.isDocument();
   }
 
 
