@@ -32,6 +32,12 @@ public class DataGens {
 
   }
 
+  /**
+   * Not supported a foreign key that references it self
+   *
+   * @param dataPath
+   * @return
+   */
   public static List<ForeignKeyDef> getSelfReferencingForeignKeys(DataPath dataPath) {
 
 
@@ -55,12 +61,24 @@ public class DataGens {
   }
 
 
-  public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath schemaPath) {
+  /**
+   * Two foreign key definition on the same column
+   * @param dataPath
+   * @return
+   */
+  public static List<ForeignKeyDef> getSecondForeignKeysOnTheSameColumn(DataPath dataPath) {
 
     List<ForeignKeyDef> foreignKeyDefs = new ArrayList<>();
-    for (DataPath dataPath : Tabulars.getChildren(schemaPath)) {
+    List<DataPath> dataPathToChecks = new ArrayList<>();
+    if (Tabulars.isContainer(dataPath)) {
+      dataPathToChecks.addAll(Tabulars.getChildren(dataPath));
+    } else {
+      dataPathToChecks.add(dataPath);
+    }
+
+    for (DataPath dataPathToCheck : dataPathToChecks) {
       List<ColumnDef> columnDefs = new ArrayList<>();
-      for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
+      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateDataDef().getForeignKeys()) {
         for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
           if (columnDefs.contains(columnDef)) {
             foreignKeyDefs.add(foreignKeyDef);

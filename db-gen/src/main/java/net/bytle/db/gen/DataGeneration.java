@@ -18,6 +18,9 @@ import net.bytle.type.Strings;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.bytle.db.gen.DataGens.getSecondForeignKeysOnTheSameColumn;
+import static net.bytle.db.gen.DataGens.getSelfReferencingForeignKeys;
+
 /**
  * Represents an data generation instance
  * <p>
@@ -116,6 +119,31 @@ public class DataGeneration {
    * You can get the modified data generator path by calling the {@link #getGenDataPaths()}
    */
   public DataGeneration preLoad() {
+
+    // Check self referencing key
+    transfers.keySet().forEach(dp->{
+      List<ForeignKeyDef> fk = getSelfReferencingForeignKeys(dp);
+      if (fk.size()>0){
+        throw new RuntimeException(Strings.multiline(
+          "The data path ("+dp+") has one more foreign key that references itself",
+          "We have the following self referencing foreign key: "+fk.stream()
+            .map(f->f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
+            .collect(Collectors.joining(" - "))));
+      }
+    });
+
+    // Check that there is only one foreign key on one column
+    transfers.keySet().forEach(dp->{
+      List<ForeignKeyDef> fk = getSecondForeignKeysOnTheSameColumn(dp);
+      if (fk.size()>0){
+        throw new RuntimeException(Strings.multiline(
+          "The data path ("+dp+") has more than one foreign key definition on a column and that's not permitted",
+          "We have the following double foreign keys: "+fk.stream()
+            .map(f->f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
+            .collect(Collectors.joining(" - "))));
+      }
+    });
+
     // Target Parent check
     // Parent not in the table set to load ?
     // If yes, add a transfer with the parent tables
