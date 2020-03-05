@@ -140,7 +140,7 @@ public class SqlDataSystem implements DataSystem {
     // insert into select statement
     SqlDataPath sourceJdbcDataPath = (SqlDataPath) source;
     String insertInto = DbDml.getInsertIntoStatement(sourceJdbcDataPath, (SqlDataPath) target);
-    TransferSourceTarget transferSourceTarget = TransferSourceTarget.of(source, target);
+    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source, target);
     TransferListener transferListener = TransferListener.of(transferSourceTarget);
     try {
       Statement statement = sourceJdbcDataPath.getDataStore().getCurrentConnection().createStatement();

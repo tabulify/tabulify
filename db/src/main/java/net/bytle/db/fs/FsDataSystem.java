@@ -232,7 +232,7 @@ public class FsDataSystem implements DataSystem {
       throw new RuntimeException("The source file (" + source + ") does not exists");
     }
     FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListener = TransferListener.of(TransferSourceTarget.of(fsSource, fsTarget))
+    TransferListener transferListener = TransferListener.of(new TransferSourceTarget(fsSource, fsTarget))
       .startTimer();
     try {
       Files.copy(fsSource.getNioPath(), fsTarget.getNioPath());

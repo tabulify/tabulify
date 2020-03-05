@@ -11,6 +11,7 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.log.Log;
+import net.bytle.type.Strings;
 
 import java.sql.Types;
 import java.util.*;
@@ -23,9 +24,14 @@ import java.util.stream.IntStream;
 
 
 /**
- * A class to transfer a tabular data document content from a data source to another
- * <p>
- * One source can have only one target otherwise this is too complicated
+ *
+ * A transfer manager.
+ *
+ *   * You add you transfer with {@link #addTransfer(DataPath, DataPath)} or {@link #addTransfers(List, DataPath)}
+ *   * You set your properties via {@link #getProperties()}
+ *   * You say if you also want to transfer the source foreign table via {@link #withDependency(boolean)}
+ *   * and you {@link #start()}
+ *
  */
 public class TransferManager {
 
@@ -46,6 +52,7 @@ public class TransferManager {
   );
 
 
+  // Transfers by source data path
   private Map<DataPath, TransferSourceTarget> transfers = new HashMap<>();
 
 
@@ -69,10 +76,25 @@ public class TransferManager {
   }
 
 
-  public List<TransferListener> dependantTransfer(Transfer transfer) {
+  /**
+   * A dependent transfer is used when the data generation of a source
+   * is dependent of another source
+   * <p>
+   * This was created originally for the loading of TPC table (the returns data
+   * are generated at the same time that the sales data) but you could
+   * easily imagine that in a tree format (Xml, ...), you first need to create
+   * the parent to be able to create the child
+   * <p>
+   * If a source has no {@link DataPath#getSelectStreamDependency()}, the {@link #atomicTransfer(TransferSourceTarget)}
+   * is normally used
+   *
+   * @param transferSourceTargets
+   * @return
+   */
+  public List<TransferListener> dependantTransfer(List<TransferSourceTarget> transferSourceTargets) {
 
 
-    for (TransferSourceTarget transferSourceTarget : transfer.getSourceTargets()) {
+    for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
       TransferManager.checkSource(transferSourceTarget.getSourceDataPath());
       TransferManager.createOrCheckTargetFromSource(transferSourceTarget.getSourceDataPath(), transferSourceTarget.getTargetDataPath());
     }
@@ -80,7 +102,7 @@ public class TransferManager {
     List<TransferListener> transferListeners = new ArrayList<>();
 
     List<List<Object>> streamTransfers = new ArrayList<>();
-    for (TransferSourceTarget transferSourceTarget : transfer.getSourceTargets()) {
+    for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
       TransferListener transferListener = TransferListener.of(transferSourceTarget);
       transferListeners.add(transferListener);
       transferListener.startTimer();
@@ -120,8 +142,9 @@ public class TransferManager {
 
   /**
    * Check a tabular source before moving
-   *   * check if it exists (except for query)
-   *   * check if it has a structure
+   * * check if it exists (except for query)
+   * * check if it has a structure
+   *
    * @param sourceDataPath
    */
   public static void checkSource(DataPath sourceDataPath) {
@@ -132,25 +155,38 @@ public class TransferManager {
         throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
       }
     }
-    if (sourceDataPath.getOrCreateDataDef().getColumnDefs().length==0){
+    if (sourceDataPath.getOrCreateDataDef().getColumnDefs().length == 0) {
       throw new RuntimeException("We cannot move this tabular data path (" + sourceDataPath + ") because it has no columns.");
     }
   }
 
-  private TransferListener atomicTransfer(Transfer transfer) {
+  /**
+   * Transfer of data from one source to one target
+   * <p>
+   * There is also a transfer from multiple source to one target
+   * when the source generation is dependent called {@link #dependantTransfer(List)}
+   * <p>
+   * This function supports the loading of data with multiple threads (ie
+   * when the {@link TransferProperties#setTargetWorkerCount(int)} is bigger than one)
+   *
+   * @param transferSourceTarget
+   * @return
+   */
+  private TransferListener atomicTransfer(TransferSourceTarget transferSourceTarget) {
 
-    assert transfer.getSourceTargets().size() == 1 : "This is not a transfer of only one source/target";
 
-    TransferSourceTarget transferSourceTarget = transfer.getSourceTargets().get(0);
     DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
     DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
-    TransferProperties transferProperties = transfer.getTransferProperties();
+    TransferProperties transferProperties = transferSourceTarget.getTransferProperties();
 
     // Check source
     TransferManager.checkSource(sourceDataPath);
 
     // Check Target
     TransferManager.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
+
+    // Check Data Type
+    TransferManager.checkDataTypeMapping(sourceDataPath, targetDataPath);
 
     /**
      * The listener is passed to the consumers and producers threads
@@ -162,7 +198,7 @@ public class TransferManager {
     /**
      * Single thread ?
      */
-    int targetWorkerCount = transfer.getTransferProperties().getTargetWorkerCount();
+    int targetWorkerCount = transferSourceTarget.getTransferProperties().getTargetWorkerCount();
     if (targetWorkerCount == 1) {
       try (
         SelectStream sourceSelectStream = Tabulars.getSelectStream(sourceDataPath);
@@ -269,6 +305,36 @@ public class TransferManager {
   }
 
   /**
+   * The data type of the columns mapping must be the same
+   * Throws an exception if it's not the case
+   *
+   * @param sourceDataPath
+   * @param targetDataPath
+   */
+  private static void checkDataTypeMapping(DataPath sourceDataPath, DataPath targetDataPath) {
+    Arrays.stream(sourceDataPath.getOrCreateDataDef().getColumnDefs())
+      .forEach(c -> {
+        ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getColumnPosition());
+        if (c.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+          String message = Strings.multiline(
+            "There is a problem with a data loading mapping between two columns",
+            "They have different data type and that may cause a problem during the load",
+            "To resolve this problem, change the columns mapping or change the data type of the target column",
+            "The problem is on the mapping between the source column (" + c + ") and the target column (" + targetColumn + ")",
+            "where the source data type (" + c.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
+          );
+
+          // A date in a varchar should work
+          if (c.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
+            LOGGER.warning(message);
+          } else {
+            throw new RuntimeException(message);
+          }
+        }
+      });
+  }
+
+  /**
    * Before a copy/move operations the target
    * table should exist.
    * <p>
@@ -316,64 +382,95 @@ public class TransferManager {
   }
 
 
-  public List<Transfer> getTransfersToBeExecuted() {
+  /**
+   * This step process all transfers: ie
+   *   * add the data dependencies if any {@link #withDependency(boolean)} - ie foreign
+   *   * add the runtime dependencies on select stream dependency if any {@link DataPath#getSelectStreamDependency()}
+   *
+   * This step is typically run before a {@link #start()}
+   * @return
+   */
+  public List<List<TransferSourceTarget>> processAndGetTransfersToBeExecuted() {
+
+    // The transfer is driven by the source
+    // You want to move/copy a data set from a source to a target
+    // Why driven by source:
+    //    * You could move a whole schema if you just would select to load the fact table with its dependencies
+    //    * the runtime dependency is on the source
     List<DataPath> sourceDataPaths = new ArrayList<>(transfers.keySet());
 
-    // Get the source datapath by child/parent orders
-    List<DataPath> dagDataPaths = ForeignKeyDag
+    // Get the source data path by child/parent orders
+    // Ie dim/child/foreign first, parent/fact last
+    List<DataPath> dagSourceDataPaths = ForeignKeyDag
       .get(sourceDataPaths)
       .setWithDependency(this.withDependencies)
       .getCreateOrderedTables();
 
-    // If this with dependencies, we may miss some transfer
-    // we add them here
+    // If dependencies were added in the step before,
+    // we miss some transfer, we add them below
     if (this.withDependencies) {
       // The target is the first one defined
       DataPath target = transfers.values().iterator().next().getTargetDataPath();
-      for (DataPath sourceDataPath : dagDataPaths) {
+      for (DataPath sourceDataPath : dagSourceDataPaths) {
         TransferSourceTarget transferSourceTarget = transfers.get(sourceDataPath);
         if (transferSourceTarget == null) {
           if (Tabulars.isDocument(target)) {
             target = target.getSibling(sourceDataPath.getName());
           }
-          transfers.put(sourceDataPath, TransferSourceTarget.of(sourceDataPath, target));
+          transfers.put(sourceDataPath, new TransferSourceTarget(sourceDataPath, target));
         }
       }
     }
 
+    // Set the property to each transfer
+    transfers.values().forEach(t->t.setProperty(transferProperties));
+
     // Building the transfers that we are finally going to execute
-    List<Transfer> finalTransfers = new ArrayList<>();
-    for (DataPath dataPath : dagDataPaths) {
+    // Do we have a runtime dependency
+    // A list of source that should be loaded together
+    List<List<DataPath>> groupedSourceDataPath = new ArrayList<>();
+    for (DataPath dataPath : dagSourceDataPaths) {
       DataPath selectStreamDependency = dataPath.getSelectStreamDependency();
       if (selectStreamDependency != null) {
-        finalTransfers.stream().forEach(
-          t -> {
-            if (t.getSources().contains(selectStreamDependency)) {
-              t.addSourceTargetDataPath(transfers.get(dataPath));
-            }
+        List<DataPath> source = groupedSourceDataPath
+          .stream()
+          .filter(l->l.contains(dataPath))
+          .findFirst()
+          .orElse(null);;
+          if (source==null){
+            groupedSourceDataPath.add(Arrays.asList(dataPath));
+          } else {
+            source.add(dataPath);
           }
-        );
       } else {
-        finalTransfers.add(
-          Transfer.of()
-            .addSourceTargetDataPath(transfers.get(dataPath))
-        );
+        //noinspection ArraysAsListWithZeroOrOneArgument
+        groupedSourceDataPath.add(Arrays.asList(dataPath));
       }
     }
-    return finalTransfers;
+
+    // Finally transform the grouped source data path into grouped transfer source
+    List<List<TransferSourceTarget>> transfersSourceTargets = groupedSourceDataPath.stream()
+      .map(ldp -> ldp.stream().map(dp -> transfers.get(dp)).collect(Collectors.toList()))
+      .collect(Collectors.toList());
+
+    return transfersSourceTargets;
 
   }
 
 
   public List<TransferListener> start() {
 
-    List<Transfer> transfers = getTransfersToBeExecuted();
+    // Process the transfer
+    List<List<TransferSourceTarget>> transfers = processAndGetTransfersToBeExecuted();
+
+    // Run
     List<TransferListener> transferListeners = new ArrayList<>();
-    for (Transfer transfer : transfers) {
-      if (transfer.sourceTargets.size() > 1) {
-        transferListeners.addAll(dependantTransfer(transfer));
+    for (List<TransferSourceTarget> transfer : transfers) {
+      if (transfer.size() > 1) {
+        List<TransferListener> dependantTransferListeners = dependantTransfer(transfer);
+        transferListeners.addAll(dependantTransferListeners);
       } else {
-        TransferListener transferlistener = atomicTransfer(transfer);
+        TransferListener transferlistener = atomicTransfer(transfer.get(0));
         transferListeners.add(transferlistener);
       }
     }
@@ -406,8 +503,8 @@ public class TransferManager {
    * @return
    */
   public TransferManager addTransfer(DataPath source, DataPath target) {
-    assert source!=null:"The source cannot be null in a transfer";
-    assert target!=null:"The target cannot be null in a transfer";
+    assert source != null : "The source cannot be null in a transfer";
+    assert target != null : "The target cannot be null in a transfer";
 
     if (Tabulars.isContainer(target)) {
       String name = source.getName();
@@ -417,7 +514,7 @@ public class TransferManager {
       target = target.getChildAsTabular(name);
     }
 
-    transfers.put(source, TransferSourceTarget.of(source, target));
+    transfers.put(source, new TransferSourceTarget(source, target));
 
     return this;
   }
@@ -426,6 +523,10 @@ public class TransferManager {
   public TransferManager addTransfers(List<DataPath> sources, DataPath target) {
     sources.forEach(s -> this.addTransfer(s, target));
     return this;
+  }
+
+  public TransferProperties getProperties() {
+    return this.transferProperties;
   }
 }
 

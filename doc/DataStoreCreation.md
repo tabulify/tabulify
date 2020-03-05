@@ -25,3 +25,7 @@
 
 
   
+## Support
+
+  * [Looker](https://docs.looker.com/setup-and-management/database-config)
+  

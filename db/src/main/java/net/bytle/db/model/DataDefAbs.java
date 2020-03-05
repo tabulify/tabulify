@@ -175,7 +175,7 @@ public abstract class DataDefAbs implements RelationDef {
    */
   @Override
   public RelationDef addUniqueKey(String... columnNames) {
-    getOrCreateUniqueKey(String.join("_",columnNames)+"_uk", columnNames);
+    getOrCreateUniqueKey(String.join("_",columnNames)+"_UK".toUpperCase(), columnNames);
     return this;
   }
 
