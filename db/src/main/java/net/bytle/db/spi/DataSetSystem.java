@@ -3,7 +3,6 @@ package net.bytle.db.spi;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 
 import java.util.List;
 
@@ -50,7 +49,7 @@ public abstract class DataSetSystem implements DataSystem {
 
 
   @Override
-  public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public void move(DataPath source, DataPath target) {
     throw new RuntimeException("A data set cannot move its data paths. It can only read them");
   }
 
@@ -78,12 +77,12 @@ public abstract class DataSetSystem implements DataSystem {
   }
 
   @Override
-  public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener copy(DataPath source, DataPath target) {
     throw new RuntimeException("A data set cannot copy (write) data. It can only read them");
   }
 
   @Override
-  public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener insert(DataPath source, DataPath target) {
     throw new RuntimeException("A data set cannot insert into its data paths. It can only read them");
   }
 

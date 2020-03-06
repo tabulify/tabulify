@@ -1,9 +1,6 @@
 package net.bytle.type;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Maps {
 
@@ -47,5 +44,22 @@ public class Maps {
         }
         return result;
 
+    }
+
+  /**
+   * A build such as in Java 9 to build a map
+   * @param elements - an even number of elements
+   * @param <T>
+   * @return a {@link HashMap} with all the elements given
+   */
+    public static <T> Map<T,T> of(T... elements){
+        Map<T,T> map = new HashMap<>();
+        if (elements.length % 2 !=0){
+          throw new RuntimeException("The number of elements must be an even number. The number of elements given ("+elements.length+") is uneven.");
+        }
+        for (int i=0;i<elements.length;i=i+2){
+          map.put(elements[i],elements[i+1]);
+        }
+        return map;
     }
 }

@@ -6,7 +6,6 @@ import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.type.Strings;
 
 import java.util.HashMap;
@@ -72,7 +71,7 @@ public class MemoryDataSystem implements DataSystem {
   }
 
   @Override
-  public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public void move(DataPath source, DataPath target) {
     throw new RuntimeException("Not yet implemented");
   }
 
@@ -108,14 +107,15 @@ public class MemoryDataSystem implements DataSystem {
   }
 
   @Override
-  public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener copy(DataPath source, DataPath target) {
     throw new RuntimeException("Not yet implemented");
   }
 
   @Override
-  public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener insert(DataPath source, DataPath target) {
     throw new RuntimeException("Not yet implemented");
   }
+
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {

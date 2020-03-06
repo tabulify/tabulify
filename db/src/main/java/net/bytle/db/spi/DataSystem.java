@@ -4,7 +4,6 @@ import net.bytle.db.database.DataStore;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 
 import java.util.List;
 
@@ -43,8 +42,7 @@ public interface DataSystem {
 
   List<DataPath> getChildrenDataPath(DataPath dataPath);
 
-  void move(DataPath source, DataPath target, TransferProperties transferProperties);
-
+  void move(DataPath source, DataPath target);
 
 
   Boolean isEmpty(DataPath queue);
@@ -66,9 +64,21 @@ public interface DataSystem {
    */
   String getString(DataPath dataPath);
 
-  TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties);
+  /**
+   * Cop the source to the target
+   * @param source
+   * @param target
+   * @return
+   */
+  TransferListener copy(DataPath source, DataPath target);
 
-  TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties);
+  /**
+   * Insert the source data into the target
+   * @param source
+   * @param target
+   * @return
+   */
+  TransferListener insert(DataPath source, DataPath target);
 
   /**
    * @param dataPath the ancestor data path

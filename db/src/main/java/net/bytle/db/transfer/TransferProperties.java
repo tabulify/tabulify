@@ -1,12 +1,16 @@
 package net.bytle.db.transfer;
 
-import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.DataPath;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A transfer process may transfer multiple {@link TransferSourceTarget transfer source target} at once
+ * The properties below are process properties
+ * ie properties that are not related to the source and/of target data path
+ */
 public class TransferProperties {
 
   public static final Integer DEFAULT_COMMIT_FREQUENCY = 99999;
@@ -33,7 +37,7 @@ public class TransferProperties {
 
   /**
    * The location of the metrics data (ie snapshot of the counters by time)
-   * See {@link #setMetricsPath(DataPathAbs)}
+   * See {@link #setMetricsPath(DataPath)}
    */
   private DataPath metricsPath;
 
@@ -65,11 +69,7 @@ public class TransferProperties {
    */
   private Integer feedbackFrequency;
 
-  /**
-   * The load operations
-   * See {@link #setLoadOperation(TransferLoadOperation)}
-   */
-  private TransferLoadOperation loadOperation = TransferLoadOperation.INSERT;
+
 
   /**
    * The target operation
@@ -179,19 +179,7 @@ public class TransferProperties {
     return this;
   }
 
-  /**
-   * Set load option:
-   * * insert (append),
-   * * update,
-   * * merge (upsert)
-   *
-   * @param transferLoadOperation - an enum of {@link TransferLoadOperation}
-   * @return the {@link TransferProperties} instance itself for chaining instantiation
-   */
-  public TransferProperties setLoadOperation(TransferLoadOperation transferLoadOperation) {
-    this.loadOperation = transferLoadOperation;
-    return this;
-  }
+
 
   /**
    * Set operation on the target

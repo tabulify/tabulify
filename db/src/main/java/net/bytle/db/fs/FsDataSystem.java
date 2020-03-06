@@ -6,7 +6,6 @@ import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.fs.Fs;
 
@@ -178,10 +177,9 @@ public class FsDataSystem implements DataSystem {
    *
    * @param source             - the source data path
    * @param target             - the target data path
-   * @param transferProperties - the properties of the transfer
    */
   @Override
-  public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public void move(DataPath source, DataPath target) {
     FsDataPath fsSource = (FsDataPath) source;
     FsDataPath fsTarget = (FsDataPath) target;
     try {
@@ -226,7 +224,7 @@ public class FsDataSystem implements DataSystem {
   }
 
   @Override
-  public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener copy(DataPath source, DataPath target) {
     FsDataPath fsSource = (FsDataPath) source;
     if (!exists(fsSource)) {
       throw new RuntimeException("The source file (" + source + ") does not exists");
@@ -244,9 +242,10 @@ public class FsDataSystem implements DataSystem {
   }
 
   @Override
-  public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener insert(DataPath source, DataPath target) {
     throw new RuntimeException("Not yet implemented");
   }
+
 
   @Override
   public List<DataPath> getDescendants(DataPath dataPath) {

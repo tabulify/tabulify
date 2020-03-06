@@ -1,7 +1,6 @@
 package net.bytle.db.transfer;
 
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.queue.MemoryQueueDataPath;
@@ -61,11 +60,10 @@ public class TransferManager {
    *
    * @param source
    * @param target
-   * @param transferProperties
    * @return
    */
-  public static TransferListener transfer(DataPath source, DataPath target, TransferProperties transferProperties) {
-    return of().addTransfer(source, target).setTransferProperties(transferProperties).start().get(0);
+  public static TransferListener transfer(DataPath source, DataPath target) {
+    return of().addTransfer(source, target).start().get(0);
   }
 
   public TransferManager setTransferProperties(TransferProperties transferProperties) {
@@ -94,7 +92,7 @@ public class TransferManager {
 
     for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
       TransferManager.checkSource(transferSourceTarget.getSourceDataPath());
-      TransferManager.createOrCheckTargetFromSource(transferSourceTarget.getSourceDataPath(), transferSourceTarget.getTargetDataPath());
+      transferSourceTarget.createOrCheckTargetFromSource();
     }
 
     List<TransferListener> transferListeners = new ArrayList<>();
@@ -175,13 +173,12 @@ public class TransferManager {
 
     DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
     DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
-    TransferProperties transferProperties = transferSourceTarget.getTransferProperties();
 
     // Check source
     TransferManager.checkSource(sourceDataPath);
 
     // Check Target
-    TransferManager.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
+    transferSourceTarget.createOrCheckTargetFromSource();
 
     // Check Data Type
     TransferManager.checkDataTypeMapping(transferSourceTarget);
@@ -196,7 +193,7 @@ public class TransferManager {
     /**
      * Single thread ?
      */
-    int targetWorkerCount = transferSourceTarget.getTransferProperties().getTargetWorkerCount();
+    int targetWorkerCount = getProperties().getTargetWorkerCount();
     if (targetWorkerCount == 1) {
       try (
         SelectStream sourceSelectStream = Tabulars.getSelectStream(sourceDataPath);
@@ -342,52 +339,7 @@ public class TransferManager {
     });
   }
 
-  /**
-   * Before a copy/move operations the target
-   * table should exist.
-   * <p>
-   * If the target table:
-   * - does not exist, creates the target table from the source
-   * - exist, control that the column definition is the same
-   *
-   * @param source the source data path
-   * @param target the target data path
-   */
-  public static void createOrCheckTargetFromSource(DataPath source, DataPath target) {
-    // Check target
-    final Boolean exists = Tabulars.exists(target);
-    if (!exists) {
-      target.getOrCreateDataDef().copyDataDef(source);
-      Tabulars.create(target);
-    } else {
-      checkOrCreateTargetStructureFromSource(source, target);
-    }
-  }
 
-  /**
-   * Check that the target has the same structure than the source.
-   * Create it if it does not exist
-   *
-   * @param source the source data path
-   * @param target the target data path
-   */
-  public static void checkOrCreateTargetStructureFromSource(DataPath source, DataPath target) {
-    // If this for instance, the move of a file, the file may exist
-    // but have no content and therefore no structure
-    if (target.getOrCreateDataDef().getColumnsSize() != 0) {
-      for (ColumnDef columnDef : source.getOrCreateDataDef().getColumnDefs()) {
-        ColumnDef targetColumnDef = target.getOrCreateDataDef().getColumnDef(columnDef.getColumnName());
-        if (targetColumnDef == null) {
-          String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-            " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new RuntimeException(message);
-        }
-      }
-    } else {
-      target.getOrCreateDataDef().copyDataDef(source);
-    }
-  }
 
 
   /**
@@ -431,8 +383,6 @@ public class TransferManager {
       }
     }
 
-    // Set the property to each transfer
-    transfers.values().forEach(t -> t.setProperty(transferProperties));
 
     // Building the transfers that we are finally going to execute
     // Do we have a runtime dependency
@@ -446,7 +396,7 @@ public class TransferManager {
           .filter(l -> l.contains(dataPath))
           .findFirst()
           .orElse(null);
-        ;
+
         if (source == null) {
           groupedSourceDataPath.add(Arrays.asList(dataPath));
         } else {

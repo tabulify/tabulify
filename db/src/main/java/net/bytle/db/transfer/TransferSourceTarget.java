@@ -1,7 +1,9 @@
 package net.bytle.db.transfer;
 
+import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.Tabulars;
 import net.bytle.type.MapBiDirectional;
 
 import java.util.Arrays;
@@ -10,23 +12,33 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A class that model a transfer:
- * * make a relation between a source and a target
- * * make a relation between columns
- * * and got the properties
+ * A class that
+ *  * models a source target relationship (on data path but also columns level, see {@link #withColumnMappingByName()}
+ *  * has all source / target check method
+ *  * has source/target properties such as:
+ *       * {@link #withLoadOperation(TransferLoadOperation)}
+ *       * and columns mapping
+ *
+ * For process related properties, see {@link TransferProperties}
+ *
  */
 public class TransferSourceTarget {
 
 
   private final DataPath target;
   private final DataPath source;
-  private TransferProperties transferProperties;
 
   // How the column mapping of the transfer is done
   private int columnMappingMethod = COLUMN_MAPPING_BY_POSITION;
   // The method
   // The default
   private static final int COLUMN_MAPPING_BY_POSITION = 1;
+
+  /**
+   * The load operations
+   * See {@link #withLoadOperation(TransferLoadOperation)}
+   */
+  private TransferLoadOperation loadOperation = TransferLoadOperation.INSERT;
 
   /**
    * By name, you use the function {@link #withColumnMappingByName()} to set it
@@ -39,7 +51,7 @@ public class TransferSourceTarget {
   /**
    * The variable that holds the custom column mapping that was set by {@link #withColumnMappingByMap(Map)}
    */
-  private MapBiDirectional<Integer, Integer> columnMappingByMap = null;
+  private MapBiDirectional<Integer, Integer> columnMappingByMap = new MapBiDirectional<>();
 
 
   public TransferSourceTarget(DataPath sourceDataPath, DataPath targetDataPath) {
@@ -60,14 +72,6 @@ public class TransferSourceTarget {
     return " " + source + " > " + target + " ";
   }
 
-  public TransferProperties getTransferProperties() {
-    return transferProperties;
-  }
-
-  public TransferSourceTarget setProperty(TransferProperties transferProperties) {
-    this.transferProperties = transferProperties;
-    return this;
-  }
 
   /**
    *
@@ -91,6 +95,9 @@ public class TransferSourceTarget {
 
   /**
    * The column mapping will be done by {@link ColumnDef#getColumnName() column name}
+   *
+   * By default, the column mapping is done by column position.
+   * You can also give a custom column mapping relationship with the {@link #withColumnMappingByMap(Map)} function
    *
    * @return
    */
@@ -139,4 +146,73 @@ public class TransferSourceTarget {
       .collect(Collectors.toList());
 
   }
+
+  /**
+   * Add a column mapping between the source and the target
+   * @param sourceColumnPosition
+   * @param targetColumnPosition
+   * @return
+   */
+  public TransferSourceTarget addColumnMapping(int sourceColumnPosition, int targetColumnPosition) {
+    columnMappingByMap.put(sourceColumnPosition,targetColumnPosition);
+    return this;
+  }
+
+  /**
+   * Check that the target has the same structure than the source.
+   * Create it if it does not exist
+   *
+   */
+  private void checkOrCreateTargetStructureFromSource() {
+    // If this for instance, the move of a file, the file may exist
+    // but have no content and therefore no structure
+    if (target.getOrCreateDataDef().getColumnsSize() != 0) {
+      for (ColumnDef columnDef : source.getOrCreateDataDef().getColumnDefs()) {
+        ColumnDef targetColumnDef = target.getOrCreateDataDef().getColumnDef(columnDef.getColumnName());
+        if (targetColumnDef == null) {
+          String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+            " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+          DbLoggers.LOGGER_DB_ENGINE.severe(message);
+          throw new RuntimeException(message);
+        }
+      }
+    } else {
+      target.getOrCreateDataDef().copyDataDef(source);
+    }
+  }
+
+  /**
+   * Before a copy/move operations the target
+   * table should exist.
+   * <p>
+   * If the target table:
+   * - does not exist, creates the target table from the source
+   * - exist, control that the column definition is the same
+   *
+   */
+  public void createOrCheckTargetFromSource() {
+    // Check target
+    final Boolean exists = Tabulars.exists(target);
+    if (!exists) {
+      target.getOrCreateDataDef().copyDataDef(source);
+      Tabulars.create(target);
+    } else {
+      checkOrCreateTargetStructureFromSource();
+    }
+  }
+
+  /**
+   * Set load option:
+   * * insert (append),
+   * * update,
+   * * merge (upsert)
+   *
+   * @param transferLoadOperation - an enum of {@link TransferLoadOperation}
+   * @return the {@link TransferProperties} instance itself for chaining instantiation
+   */
+  public TransferSourceTarget withLoadOperation(TransferLoadOperation transferLoadOperation) {
+    this.loadOperation = transferLoadOperation;
+    return this;
+  }
+
 }

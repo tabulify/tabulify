@@ -11,9 +11,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
 import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferLoadOperation;
 import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.transfer.TransferProperties;
 import net.bytle.regexp.Globs;
 import net.bytle.type.Strings;
 import net.bytle.type.TailQueue;
@@ -227,21 +225,6 @@ public class Tabulars {
   }
 
 
-  /**
-   * @param source - the source to move
-   * @param target - a target data path container or document
-   *               If the target is a container, the target will have the name of the source
-   */
-  public static void move(DataPath source, DataPath target) {
-
-    if (Tabulars.isContainer(target)) {
-      target = target.getChild(source.getName());
-    }
-    move(source, target, TransferProperties.of());
-
-  }
-
-
   public static boolean isEmpty(DataPath queue) {
     return queue.getDataStore().getDataSystem().isEmpty(queue);
   }
@@ -364,12 +347,16 @@ public class Tabulars {
    * * on the same data store, it's a rename operation,
    * * not on the same data store, it's a transfer and a delete from the source
    *
-   * @param source
-   * @param target
-   * @param transferProperties
+   * @param source - the source to move
+   * @param target - a target data path container or document
+   *               If the target is a container, the target will have the name of the source
    * @return a {@link TransferListener} or null if it was no transfer
    */
-  public static TransferListener move(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public static TransferListener move(DataPath source, DataPath target) {
+
+    if (Tabulars.isContainer(target)) {
+      target = target.getChild(source.getName());
+    }
 
     TransferListener transferListener = null;
 
@@ -377,10 +364,10 @@ public class Tabulars {
     if (sameDataSystem(source, target)) {
       // same provider (fs or jdbc)
       final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
-      sourceDataSystem.move(source, target, transferProperties);
+      sourceDataSystem.move(source, target);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      transferListener = TransferManager.transfer(source, target, transferProperties);
+      transferListener = TransferManager.transfer(source, target);
       Tabulars.drop(source);
     }
 
@@ -392,12 +379,11 @@ public class Tabulars {
   }
 
   /**
-   * @param source
-   * @param target             - the target document or a container (if this is a container, the target will be a document with the name of the source)
-   * @param transferProperties
+   * @param source - a source document data path
+   * @param target - a target document or container (If this is a container, the target document will get the name of the source document)
    * @return
    */
-  public static TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public static TransferListener copy(DataPath source, DataPath target) {
 
     if (Tabulars.isContainer(target)) {
       target = target.getChild(source.getName());
@@ -408,45 +394,31 @@ public class Tabulars {
 
     if (sameDataSystem(source, target)) {
       // same provider (fs or jdbc)
-      transferListener = source.getDataStore().getDataSystem().copy(source, target, transferProperties);
+      transferListener = source.getDataStore().getDataSystem().copy(source, target);
     } else {
       // different provider (fs to jdbc or jdbc to fs)
-      transferListener = TransferManager.transfer(source, target, transferProperties);
+      transferListener = TransferManager.transfer(source, target);
     }
 
     return transferListener;
 
   }
 
-  /**
-   * @param source - a source document data path
-   * @param target - a target document or container (If this is a container, the target document will get the name of the source document)
-   * @return
-   */
-  public static TransferListener copy(DataPath source, DataPath target) {
-    return copy(source, target, TransferProperties.of());
-  }
-
-  public static TransferListener insert(DataPath source, DataPath target, TransferProperties transferProperties) {
-    assert transferProperties != null : "The transfer properties should not be null";
-
-    TransferListener transferListener = null;
-    transferProperties.setLoadOperation(TransferLoadOperation.INSERT);
-    final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
-    if (sourceDataSystem.equals(target.getDataStore())) {
-      // same provider (fs or jdbc)
-      sourceDataSystem.insert(source, target, transferProperties);
-    } else {
-      // different provider (fs to jdbc or jdbc to fs)
-      TransferManager.checkOrCreateTargetStructureFromSource(source, target);
-      transferListener = TransferManager.transfer(source, target, transferProperties);
-    }
-    return transferListener;
-  }
 
   public static TransferListener insert(DataPath source, DataPath target) {
-    return insert(source, target, TransferProperties.of());
+
+    TransferListener transferListener = null;
+    final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
+    if (sourceDataSystem.getClass().equals(target.getDataStore().getDataSystem().getClass())) {
+      // same provider (fs or jdbc)
+      transferListener = sourceDataSystem.insert(source, target);
+    } else {
+      // different provider (for instance, fs to jdbc or jdbc to fs)
+      transferListener = TransferManager.transfer(source, target);
+    }
+    return transferListener;
   }
+
 
   /**
    * @param dataPath the data path
