@@ -186,7 +186,7 @@ public class TransferManager {
     TransferManager.createOrCheckTargetFromSource(sourceDataPath, targetDataPath);
 
     // Check Data Type
-    TransferManager.checkDataTypeMapping(sourceDataPath, targetDataPath);
+    TransferManager.checkDataTypeMapping(transferSourceTarget);
 
     /**
      * The listener is passed to the consumers and producers threads
@@ -308,24 +308,29 @@ public class TransferManager {
    * The data type of the columns mapping must be the same
    * Throws an exception if it's not the case
    *
-   * @param sourceDataPath
-   * @param targetDataPath
+   *
+   * @param transferSourceTarget
    */
-  private static void checkDataTypeMapping(DataPath sourceDataPath, DataPath targetDataPath) {
-    Arrays.stream(sourceDataPath.getOrCreateDataDef().getColumnDefs())
-      .forEach(c -> {
-        ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getColumnPosition());
-        if (c.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+  private static void checkDataTypeMapping(TransferSourceTarget transferSourceTarget) {
+
+    DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
+    DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
+
+    Map<Integer, Integer> columnPositionMapping = transferSourceTarget.getColumnMapping();
+    columnPositionMapping.entrySet().forEach(c -> {
+        ColumnDef<Object> sourceColumn = sourceDataPath.getOrCreateDataDef().getColumnDef(c.getKey()-1);
+        ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getValue()-1);
+        if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
           String message = Strings.multiline(
             "There is a problem with a data loading mapping between two columns",
             "They have different data type and that may cause a problem during the load",
             "To resolve this problem, change the columns mapping or change the data type of the target column",
-            "The problem is on the mapping between the source column (" + c + ") and the target column (" + targetColumn + ")",
-            "where the source data type (" + c.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
+            "The problem is on the mapping ("+c+") between the source column (" + sourceColumn + ") and the target column (" + targetColumn + ")",
+            "where the source data type (" + sourceColumn.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
           );
 
           // A date in a varchar should work
-          if (c.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
+          if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
             LOGGER.warning(message);
           } else {
             throw new RuntimeException(message);
@@ -527,6 +532,11 @@ public class TransferManager {
 
   public TransferProperties getProperties() {
     return this.transferProperties;
+  }
+
+  public TransferManager addTransfer(TransferSourceTarget transferSourceTarget) {
+    transfers.put(transferSourceTarget.getSourceDataPath(),transferSourceTarget);
+    return this;
   }
 }
 

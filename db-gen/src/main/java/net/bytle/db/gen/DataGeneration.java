@@ -12,6 +12,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferManager;
+import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.log.Log;
 import net.bytle.type.Strings;
 
@@ -43,7 +44,7 @@ public class DataGeneration {
    * The table to load mapping
    * The target table is the driver, this is why it's in the first position
    */
-  private final Map<DataPath, GenDataPath> transfers = new HashMap<>();
+  private final Map<DataPath, GenDataPath> sourceTargets = new HashMap<>();
   // private final Map<ColumnDef, ForeignKeyDef> columnForeignKeyMap = new HashMap<>();
   //private final Map<ColumnDef, UniqueKeyDef> columnUniqueKeyMap = new HashMap<>();
 //  private List<ColumnDef> primaryColumns = new ArrayList<>();
@@ -98,8 +99,13 @@ public class DataGeneration {
     preLoad();
 
     TransferManager transferManager = TransferManager.of();
-    transfers.keySet().forEach(dp -> {
-        transferManager.addTransfer(transfers.get(dp),dp);
+    sourceTargets.keySet().forEach(dp -> {
+        // Set the column mapping by name
+        // The column on the generator may have not the same column position than the target
+        // but have the same name, we set then the column mapping to be by name (and not by position - default)
+        TransferSourceTarget transferSourceTarget = new TransferSourceTarget(sourceTargets.get(dp), dp)
+          .withColumnMappingByName();
+        transferManager.addTransfer(transferSourceTarget);
       }
     );
     List<TransferListener> transferListeners = transferManager.start();
@@ -112,34 +118,37 @@ public class DataGeneration {
    * When all transfers has been added,
    * this function will build the transfer
    * ie:
-   *   * add the dependent table if the option {@link #loadDependencies(Boolean)} is true
-   *   * add the missing generators and take into account the target constraints (foreign key generator)
-   *   * verify that the size to insert is not abyssal (ie bigger than {@link #MAX_INSERT})
-   *
+   * * add the dependent table if the option {@link #loadDependencies(Boolean)} is true
+   * * add the missing generators and take into account the target constraints (foreign key generator)
+   * * verify that the size to insert is not abyssal (ie bigger than {@link #MAX_INSERT})
+   * <p>
    * You can get the modified data generator path by calling the {@link #getGenDataPaths()}
    */
   public DataGeneration preLoad() {
 
-    // Check self referencing key
-    transfers.keySet().forEach(dp->{
+    // Metadata check
+    // Check that there is no self referencing key
+    // ie a column that references itself so that we got a cycle
+    sourceTargets.keySet().forEach(dp -> {
       List<ForeignKeyDef> fk = getSelfReferencingForeignKeys(dp);
-      if (fk.size()>0){
+      if (fk.size() > 0) {
         throw new RuntimeException(Strings.multiline(
-          "The data path ("+dp+") has one more foreign key that references itself",
-          "We have the following self referencing foreign key: "+fk.stream()
-            .map(f->f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
+          "The data path (" + dp + ") has one more foreign key that references itself",
+          "We have the following self referencing foreign key: " + fk.stream()
+            .map(f -> f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
             .collect(Collectors.joining(" - "))));
       }
     });
 
     // Check that there is only one foreign key on one column
-    transfers.keySet().forEach(dp->{
+    // ie a foreign column that have two foreign table references (not supported)
+    sourceTargets.keySet().forEach(dp -> {
       List<ForeignKeyDef> fk = getSecondForeignKeysOnTheSameColumn(dp);
-      if (fk.size()>0){
+      if (fk.size() > 0) {
         throw new RuntimeException(Strings.multiline(
-          "The data path ("+dp+") has more than one foreign key definition on a column and that's not permitted",
-          "We have the following double foreign keys: "+fk.stream()
-            .map(f->f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
+          "The data path (" + dp + ") has more than one foreign key definition on a column and that's not permitted",
+          "We have the following double foreign keys: " + fk.stream()
+            .map(f -> f.getChildColumns().stream().map(ColumnDef::getColumnName).collect(Collectors.joining(", ")))
             .collect(Collectors.joining(" - "))));
       }
     });
@@ -147,12 +156,12 @@ public class DataGeneration {
     // Target Parent check
     // Parent not in the table set to load ?
     // If yes, add a transfer with the parent tables
-    List<DataPath> targetDataPaths = new ArrayList<>(transfers.keySet());
+    List<DataPath> targetDataPaths = new ArrayList<>(sourceTargets.keySet());
     for (DataPath targetDataPath : targetDataPaths) {
       if (targetDataPath.getOrCreateDataDef().getForeignKeys().size() != 0) {
         for (ForeignKeyDef foreignKeyDef : targetDataPath.getOrCreateDataDef().getForeignKeys()) {
           DataPath foreignDataPath = foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath();
-          if (!transfers.containsKey(foreignDataPath)) {
+          if (!sourceTargets.containsKey(foreignDataPath)) {
             long rows = Tabulars.getSize(foreignDataPath);
             if (rows == 0) {
               if (this.loadParent != null && this.loadParent) {
@@ -168,7 +177,7 @@ public class DataGeneration {
     }
 
     // The load parent option above may have added a transfer
-    targetDataPaths = new ArrayList<>(transfers.keySet());
+    targetDataPaths = new ArrayList<>(sourceTargets.keySet());
 
     // Merge the data def
     // We do this only now because the transfers may be added
@@ -176,13 +185,14 @@ public class DataGeneration {
     // the primary key should be already present
     // We start with the foreign table (ie createOrderedtables) to finish to the fact table
     for (DataPath targetDataPath : ForeignKeyDag.get(targetDataPaths).getCreateOrderedTables()) {
-      GenDataPath sourceDataPath = transfers.get(targetDataPath);
+      GenDataPath sourceDataPath = sourceTargets.get(targetDataPath);
       sourceDataPath.getOrCreateDataDef().mergeDataDef(targetDataPath);
     }
 
+
     // Source
     // Building the missing data generators
-    transfers.values().forEach(sourceDataPath -> sourceDataPath.getOrCreateDataDef().buildMissingGenerators());
+    sourceTargets.values().forEach(sourceDataPath -> sourceDataPath.getOrCreateDataDef().buildMissingGenerators());
 
     // Foreign data generators building
     for (DataPath targetDataPath : targetDataPaths) {
@@ -202,7 +212,7 @@ public class DataGeneration {
           // Get the foreign column
           String foreignTableName = targetDataPath.getName();
           String foreignColumnName = foreignKey.getChildColumns().get(0).getColumnName();
-          GenColumnDef foreignColumn = transfers.values()
+          GenColumnDef foreignColumn = sourceTargets.values()
             .stream()
             .filter(dp -> dp.getName().equals(foreignTableName))
             .flatMap(dp -> Arrays.stream(dp.getOrCreateDataDef().getColumnDefs()))
@@ -213,7 +223,7 @@ public class DataGeneration {
 
           // Try to get the primary table generator
           final String primaryKeyTableName = foreignKey.getForeignPrimaryKey().getDataDef().getDataPath().getName();
-          GenDataPath genPrimaryTable = transfers.values()
+          GenDataPath genPrimaryTable = sourceTargets.values()
             .stream()
             .filter(dp -> dp.getName().equals(primaryKeyTableName))
             .findFirst()
@@ -253,7 +263,7 @@ public class DataGeneration {
     }
 
     // Check that the size is not abyssal
-    transfers.values().forEach(dp -> {
+    sourceTargets.values().forEach(dp -> {
       Tabulars.createIfNotExist(dp);
       long numberOfRowToInsert = Tabulars.getSize(dp);
       if (numberOfRowToInsert > MAX_INSERT) {
@@ -270,6 +280,7 @@ public class DataGeneration {
   /**
    * Do we load the foreign target table ?
    * Default: false
+   *
    * @param loadParent
    * @return
    */
@@ -342,12 +353,12 @@ public class DataGeneration {
       targetDataPath = targetDataPath.getChild(sourceDataPath.getName());
     }
     // Add the transfers
-    transfers.put(targetDataPath, sourceDataPath);
+    sourceTargets.put(targetDataPath, sourceDataPath);
     return this;
 
   }
 
   public List<GenDataPath> getGenDataPaths() {
-    return transfers.values().stream().collect(Collectors.toList());
+    return sourceTargets.values().stream().collect(Collectors.toList());
   }
 }
