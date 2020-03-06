@@ -19,6 +19,11 @@ public interface SelectStream extends AutoCloseable {
   long getRow();
 
 
+  /**
+   *
+   * @param columnIndex -  an index starting at zero
+   * @return
+   */
   Object getObject(int columnIndex);
 
 

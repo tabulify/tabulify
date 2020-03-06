@@ -24,14 +24,12 @@ import java.util.stream.IntStream;
 
 
 /**
- *
  * A transfer manager.
- *
- *   * You add you transfer with {@link #addTransfer(DataPath, DataPath)} or {@link #addTransfers(List, DataPath)}
- *   * You set your properties via {@link #getProperties()}
- *   * You say if you also want to transfer the source foreign table via {@link #withDependency(boolean)}
- *   * and you {@link #start()}
- *
+ * <p>
+ * * You add you transfer with {@link #addTransfer(DataPath, DataPath)} or {@link #addTransfers(List, DataPath)}
+ * * You set your properties via {@link #getProperties()}
+ * * You say if you also want to transfer the source foreign table via {@link #withDependency(boolean)}
+ * * and you {@link #start()}
  */
 public class TransferManager {
 
@@ -209,7 +207,9 @@ public class TransferManager {
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         while (sourceSelectStream.next()) {
+          // Retrieve the objects
           List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateDataDef().getColumnsSize())
+            .map(i->transferSourceTarget.getColumnMapping().get(i))
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -308,7 +308,6 @@ public class TransferManager {
    * The data type of the columns mapping must be the same
    * Throws an exception if it's not the case
    *
-   *
    * @param transferSourceTarget
    */
   private static void checkDataTypeMapping(TransferSourceTarget transferSourceTarget) {
@@ -318,25 +317,25 @@ public class TransferManager {
 
     Map<Integer, Integer> columnPositionMapping = transferSourceTarget.getColumnMapping();
     columnPositionMapping.entrySet().forEach(c -> {
-        ColumnDef<Object> sourceColumn = sourceDataPath.getOrCreateDataDef().getColumnDef(c.getKey()-1);
-        ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getValue()-1);
-        if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
-          String message = Strings.multiline(
-            "There is a problem with a data loading mapping between two columns",
-            "They have different data type and that may cause a problem during the load",
-            "To resolve this problem, change the columns mapping or change the data type of the target column",
-            "The problem is on the mapping ("+c+") between the source column (" + sourceColumn + ") and the target column (" + targetColumn + ")",
-            "where the source data type (" + sourceColumn.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
-          );
+      ColumnDef<Object> sourceColumn = sourceDataPath.getOrCreateDataDef().getColumnDef(c.getKey() - 1);
+      ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getValue() - 1);
+      if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+        String message = Strings.multiline(
+          "There is a problem with a data loading mapping between two columns",
+          "They have different data type and that may cause a problem during the load",
+          "To resolve this problem, change the columns mapping or change the data type of the target column",
+          "The problem is on the mapping (" + c + ") between the source column (" + sourceColumn + ") and the target column (" + targetColumn + ")",
+          "where the source data type (" + sourceColumn.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
+        );
 
-          // A date in a varchar should work
-          if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
-            LOGGER.warning(message);
-          } else {
-            throw new RuntimeException(message);
-          }
+        // A date in a varchar should work
+        if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
+          LOGGER.warning(message);
+        } else {
+          throw new RuntimeException(message);
         }
-      });
+      }
+    });
   }
 
   /**
@@ -389,10 +388,11 @@ public class TransferManager {
 
   /**
    * This step process all transfers: ie
-   *   * add the data dependencies if any {@link #withDependency(boolean)} - ie foreign
-   *   * add the runtime dependencies on select stream dependency if any {@link DataPath#getSelectStreamDependency()}
-   *
+   * * add the data dependencies if any {@link #withDependency(boolean)} - ie foreign
+   * * add the runtime dependencies on select stream dependency if any {@link DataPath#getSelectStreamDependency()}
+   * <p>
    * This step is typically run before a {@link #start()}
+   *
    * @return
    */
   public List<List<TransferSourceTarget>> processAndGetTransfersToBeExecuted() {
@@ -428,7 +428,7 @@ public class TransferManager {
     }
 
     // Set the property to each transfer
-    transfers.values().forEach(t->t.setProperty(transferProperties));
+    transfers.values().forEach(t -> t.setProperty(transferProperties));
 
     // Building the transfers that we are finally going to execute
     // Do we have a runtime dependency
@@ -439,14 +439,15 @@ public class TransferManager {
       if (selectStreamDependency != null) {
         List<DataPath> source = groupedSourceDataPath
           .stream()
-          .filter(l->l.contains(dataPath))
+          .filter(l -> l.contains(dataPath))
           .findFirst()
-          .orElse(null);;
-          if (source==null){
-            groupedSourceDataPath.add(Arrays.asList(dataPath));
-          } else {
-            source.add(dataPath);
-          }
+          .orElse(null);
+        ;
+        if (source == null) {
+          groupedSourceDataPath.add(Arrays.asList(dataPath));
+        } else {
+          source.add(dataPath);
+        }
       } else {
         //noinspection ArraysAsListWithZeroOrOneArgument
         groupedSourceDataPath.add(Arrays.asList(dataPath));
@@ -535,7 +536,7 @@ public class TransferManager {
   }
 
   public TransferManager addTransfer(TransferSourceTarget transferSourceTarget) {
-    transfers.put(transferSourceTarget.getSourceDataPath(),transferSourceTarget);
+    transfers.put(transferSourceTarget.getSourceDataPath(), transferSourceTarget);
     return this;
   }
 }

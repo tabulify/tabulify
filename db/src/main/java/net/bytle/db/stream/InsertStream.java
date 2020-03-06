@@ -27,7 +27,7 @@ public interface InsertStream extends AutoCloseable {
 
     /**
      *
-     * @param values - The values to insert
+     * @param values - The values to insert in a positional order
      * @return the {@link InsertStream} for insert chaining
      */
     InsertStream insert(List<Object> values);

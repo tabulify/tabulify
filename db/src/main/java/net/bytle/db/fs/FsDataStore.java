@@ -7,6 +7,7 @@ import net.bytle.db.spi.ProcessingEngine;
 
 import java.net.URI;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -28,6 +29,7 @@ public class FsDataStore extends DataStore {
 
   /**
    * Accessible via {@link #getLocalFileSystem()}
+   * A sort of wrapper around {@link FileSystems#getDefault()}
    */
   static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
   private final FileSystem fileSystem;
