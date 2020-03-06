@@ -206,15 +206,16 @@ public class TransferManager {
         transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
-        while (sourceSelectStream.next()) {
+        // Get the objects from the source in a target order
+        List<Integer> sourceColumnPositionInTargetOrder = transferSourceTarget.getSourceColumnPositionInTargetOrder();
 
-          // Get the objects from the source in a target order
-          List<Object> objects = transferSourceTarget.getSourceColumnPositionInTargetOrder()
+        // Run
+        while (sourceSelectStream.next()) {
+          List<Object> objects = sourceColumnPositionInTargetOrder
             .stream()
             .map(i -> sourceSelectStream.getObject(i - 1))
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
-
         }
 
       }
