@@ -56,8 +56,9 @@ public class MapBiDirectional<K,V> implements Map<K, V> {
    *
    * @return the inverse
    */
-  public Map<V, K> inverse() {
-    return map.entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+  public MapBiDirectional<V, K> inverse() {
+    return
+      map.entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey, (e1,e2)->e1, MapBiDirectional::new));
   }
 
   @Override

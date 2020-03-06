@@ -207,12 +207,14 @@ public class TransferManager {
         transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         while (sourceSelectStream.next()) {
-          // Retrieve the objects
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateDataDef().getColumnsSize())
-            .map(i->transferSourceTarget.getColumnMapping().get(i))
-            .mapToObj(sourceSelectStream::getObject)
+
+          // Get the objects from the source in a target order
+          List<Object> objects = transferSourceTarget.getSourceColumnPositionInTargetOrder()
+            .stream()
+            .map(i -> sourceSelectStream.getObject(i - 1))
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
+
         }
 
       }
@@ -303,6 +305,7 @@ public class TransferManager {
     return transferListener;
 
   }
+
 
   /**
    * The data type of the columns mapping must be the same

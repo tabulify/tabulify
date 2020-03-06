@@ -2,8 +2,10 @@ package net.bytle.db.transfer;
 
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
+import net.bytle.type.MapBiDirectional;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -37,7 +39,7 @@ public class TransferSourceTarget {
   /**
    * The variable that holds the custom column mapping that was set by {@link #withColumnMappingByMap(Map)}
    */
-  private Map<Integer, Integer> columnMappingByMap = null;
+  private MapBiDirectional<Integer, Integer> columnMappingByMap = null;
 
 
   public TransferSourceTarget(DataPath sourceDataPath, DataPath targetDataPath) {
@@ -68,16 +70,18 @@ public class TransferSourceTarget {
   }
 
   /**
-   * @return a map of the source and target by their column position
+   *
+   * @return a {@link MapBiDirectional bidirectional map} of the source and target by their column position
    */
-  public Map<Integer, Integer> getColumnMapping() {
+  public MapBiDirectional<Integer, Integer> getColumnMapping() {
     switch (columnMappingMethod) {
       case COLUMN_MAPPING_BY_POSITION:
+        // one on one (1=1, 2=2, ...)
         return Arrays.stream(source.getOrCreateDataDef().getColumnDefs())
-          .collect(Collectors.toMap(ColumnDef::getColumnPosition, ColumnDef::getColumnPosition));
+          .collect(Collectors.toMap(ColumnDef::getColumnPosition, ColumnDef::getColumnPosition, (e1, e2) -> e1, MapBiDirectional::new));
       case COLUMN_MAPPING_BY_NAME:
         return Arrays.stream(source.getOrCreateDataDef().getColumnDefs())
-          .collect(Collectors.toMap(ColumnDef::getColumnPosition, c -> target.createDataDef().getColumn(c.getColumnName()).getColumnPosition()));
+          .collect(Collectors.toMap(ColumnDef::getColumnPosition, c -> target.createDataDef().getColumn(c.getColumnName()).getColumnPosition(), (e1, e2) -> e1, MapBiDirectional::new));
       case COLUMN_MAPPING_BY_MAP:
         return columnMappingByMap;
       default:
@@ -102,7 +106,8 @@ public class TransferSourceTarget {
    * @return
    */
   public TransferSourceTarget withColumnMappingByMap(Map<Integer, Integer> columnMappingByMap) {
-    this.columnMappingByMap = columnMappingByMap;
+    this.columnMappingByMap = new MapBiDirectional();
+    this.columnMappingByMap.putAll(columnMappingByMap);
     this.columnMappingMethod = COLUMN_MAPPING_BY_MAP;
     return this;
   }
@@ -115,5 +120,23 @@ public class TransferSourceTarget {
   public TransferSourceTarget withColumnMappingByPosition() {
     this.columnMappingMethod = COLUMN_MAPPING_BY_POSITION;
     return this;
+  }
+
+  /**
+   *
+   * @return the column position of the source in the target order
+   * This function is used during loading to retrieve the objects in a target order from the source
+   * The id is the {@link ColumnDef#getColumnPosition() column position} and
+   * you should extract 1 from to the column index used in {@link net.bytle.db.stream.SelectStream#getObject(int)}
+   */
+  public List<Integer> getSourceColumnPositionInTargetOrder() {
+
+    MapBiDirectional<Integer, Integer> columnMapping = getColumnMapping();
+    return columnMapping.values()
+      .stream()
+      .sorted()
+      .map(targetId->columnMapping.getKey(targetId))
+      .collect(Collectors.toList());
+
   }
 }
