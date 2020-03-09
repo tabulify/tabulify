@@ -168,6 +168,8 @@ public class MemoryDataSystem implements DataSystem {
 
     // Create the structure
     ((MemoryDataPath) dataPath).create();
+    // Add it
+    storageMemDataPaths.put(dataPath.getPath(), (MemoryDataPath) dataPath);
 
   }
 

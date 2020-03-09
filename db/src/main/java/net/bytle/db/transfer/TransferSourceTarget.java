@@ -115,9 +115,10 @@ public class TransferSourceTarget {
    * @return
    */
   public TransferSourceTarget withColumnMappingByMap(Map<Integer, Integer> columnMappingByMap) {
-    this.columnMappingByMap = new MapBiDirectional();
-    this.columnMappingByMap.putAll(columnMappingByMap);
-    this.columnMappingMethod = COLUMN_MAPPING_BY_MAP;
+    // Reset the data to empty map
+    this.columnMappingByMap = new MapBiDirectional<>();
+    // Add each column - columnMapping function is the driver (it performs the test, set the method,...)
+    columnMappingByMap.forEach(this::addColumnMapping);
     return this;
   }
 
@@ -156,6 +157,8 @@ public class TransferSourceTarget {
    * @return
    */
   public TransferSourceTarget addColumnMapping(int sourceColumnPosition, int targetColumnPosition) {
+    assert source.getOrCreateDataDef().getColumnDef(sourceColumnPosition-1)!=null: "There is no column at the position ("+sourceColumnPosition+") for the source ("+source+")";
+    assert target.getOrCreateDataDef().getColumnDef(targetColumnPosition-1)!=null: "There is no column at the position ("+targetColumnPosition+") for the source ("+target+")";
     this.columnMappingMethod=COLUMN_MAPPING_BY_MAP;
     columnMappingByMap.put(sourceColumnPosition, targetColumnPosition);
     return this;
@@ -227,7 +230,8 @@ public class TransferSourceTarget {
    */
   protected void checkColumnMappingDataType() {
 
-    getColumnMapping().entrySet().forEach(c -> {
+    MapBiDirectional<Integer, Integer> columnMapping = getColumnMapping();
+    columnMapping.entrySet().forEach(c -> {
       ColumnDef<Object> sourceColumn = source.getOrCreateDataDef().getColumnDef(c.getKey() - 1);
       ColumnDef<Object> targetColumn = target.getOrCreateDataDef().getColumnDef(c.getValue() - 1);
       if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
