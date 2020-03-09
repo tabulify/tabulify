@@ -1,26 +1,29 @@
 package net.bytle.db.json;
 
-import net.bytle.db.fs.FsDataPath;
-import net.bytle.db.fs.FsBinaryDataPath;
-import net.bytle.db.fs.FsBinaryFileManager;
-import net.bytle.db.fs.FsDataSystem;
+import net.bytle.db.fs.*;
+import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 
 import java.nio.file.Path;
 
-public class JsonManager extends FsBinaryFileManager {
+public class JsonManager extends FsBinaryFileManager implements FsFileManager {
+
 
 
 
   @Override
-  public FsDataPath createDataPath(FsDataSystem fsTableSystem, Path path) {
-    return new JsonDataPath(fsTableSystem, path);
+  public SelectStream getSelectStream(FsDataPath fsDataPath) {
+    return new JsonSelectStream((JsonDataPath) fsDataPath);
   }
 
+  @Override
+  public InsertStream getInsertStream(FsDataPath fsDataPath) {
+    throw new RuntimeException("Not yet implemented");
+  }
 
   @Override
-  public SelectStream getSelectStream(FsBinaryDataPath fsDataPath) {
-    return new JsonSelectStream((JsonDataPath) fsDataPath);
+  public FsDataPath createDataPath(FsDataStore fsDataStore, Path path) {
+    return new JsonDataPath(fsDataStore, path);
   }
 
 

@@ -6,9 +6,10 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
-import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SelectStream;
-import net.bytle.db.transfer.*;
+import net.bytle.db.transfer.TransferListener;
+import net.bytle.db.transfer.TransferListenerAtomic;
+import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -612,7 +613,6 @@ public class SqlDataSystem implements DataSystem {
    *
    * @param source
    * @param target
-   * @param transferProperties
    */
   @Override
   public void move(DataPath source, DataPath target) {

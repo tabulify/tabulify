@@ -2,7 +2,8 @@ package net.bytle.db.fs;
 
 import net.bytle.db.spi.DataStoreProvider;
 
-import java.util.Arrays;
+import java.net.URI;
+import java.nio.file.spi.FileSystemProvider;
 
 public class FsDataStoreProvider extends DataStoreProvider {
 
@@ -41,18 +42,18 @@ public class FsDataStoreProvider extends DataStoreProvider {
     }
 
   /**
-   * Returns the URI scheme that identifies this provider.
-   * TODO: get the accepted scheme dynamically from the NIOFS providers
-   * @return true
+   *
+   * @return true if there is a file system provider that takes into account his url
    */
   @Override
   public boolean accept(String url) {
-    String[] acceptedSchemes = {LOCAL_FILE_SCHEME, "http", "https"};
-    return Arrays.stream(acceptedSchemes)
-      .map(scheme->url.toLowerCase().startsWith(scheme))
-      .filter(b->b)
-      .findFirst()
-      .orElse(false);
+    URI uri = URI.create(url);
+    for (FileSystemProvider fileSystemProvider : FileSystemProvider.installedProviders()) {
+      if (uri.getScheme().equals(fileSystemProvider.getScheme())) {
+        return true;
+      }
+    }
+    return false;
   }
 
 

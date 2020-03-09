@@ -227,7 +227,7 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     return this.properties;
   }
 
-  protected DataStore setProperties(Map<String, String> properties) {
+  public DataStore setProperties(Map<String, String> properties) {
     this.properties = properties;
     return this;
   }

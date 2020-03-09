@@ -10,6 +10,8 @@ import java.nio.file.Path;
 
 public class GenFsDataPath extends FsDataPathAbs implements FsDataPath, GenDataPath {
 
+  public static final String EXTENSION = "--datagen.yml";
+
   public GenFsDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);
   }
@@ -36,7 +38,7 @@ public class GenFsDataPath extends FsDataPathAbs implements FsDataPath, GenDataP
    */
   @Override
   public String getName() {
-    return super.getName().replace(GenFsManagerProvider.EXTENSION, "");
+    return super.getName().replace(EXTENSION, "");
   }
 
 

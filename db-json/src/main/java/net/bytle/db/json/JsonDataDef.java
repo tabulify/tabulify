@@ -9,7 +9,6 @@ import net.bytle.db.model.TableDef;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 public class JsonDataDef extends TableDef {
 
@@ -21,7 +20,7 @@ public class JsonDataDef extends TableDef {
   }
 
   @Override
-  public List<net.bytle.db.gen.GenColumnDef> getColumnDefs() {
+  public ColumnDef[] getColumnDefs() {
     buildColumnNamesIfNeeded();
     return super.getColumnDefs();
   }
@@ -44,7 +43,7 @@ public class JsonDataDef extends TableDef {
   }
 
   private void buildColumnNamesIfNeeded() {
-    if (super.getColumnDefs().size() == 0) {
+    if (super.getColumnDefs().length == 0) {
       try {
         JsonFactory jsonFactory = new JsonFactory();
         Path nioPath = jsonDataPath.getNioPath();

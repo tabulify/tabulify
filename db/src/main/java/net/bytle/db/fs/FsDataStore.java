@@ -5,6 +5,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
 import net.bytle.db.spi.ProcessingEngine;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -16,6 +17,14 @@ import java.nio.file.Paths;
  */
 public class FsDataStore extends DataStore {
 
+  /**
+   * Create a data store from a path
+   * This is a convenient way to create a local file system or a http data store
+   * from a simple path
+   *
+   * @param path
+   * @return
+   */
   public static FsDataStore of(Path path) {
     FsDataStore fsDataStore;
     if (path.toUri().getScheme().equals("file")){
@@ -32,19 +41,21 @@ public class FsDataStore extends DataStore {
    * A sort of wrapper around {@link FileSystems#getDefault()}
    */
   static final FsDataStore LOCAL_FILE_SYSTEM = new FsDataStore("file", Paths.get(".").toAbsolutePath().toString());
-  private final FileSystem fileSystem;
+  private FileSystem fileSystem;
 
 
   public FsDataStore(String name, String url) {
 
     super(name, url);
     fileSystem = Paths.get(url).getFileSystem();
+
   }
 
   public FsDataStore(String name, String url, FileSystem fileSystem) {
 
     super(name, url);
     this.fileSystem = fileSystem;
+
   }
 
   public static FsDataStore getLocalFileSystem() {
@@ -53,6 +64,13 @@ public class FsDataStore extends DataStore {
 
 
   FileSystem getFileSystem() {
+    if (this.fileSystem==null){
+      try {
+        fileSystem = FileSystems.newFileSystem(URI.create(getConnectionString()), getProperties());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return this.fileSystem;
   }
 
@@ -69,12 +87,16 @@ public class FsDataStore extends DataStore {
 
   @Override
   public void close() {
-
+    try {
+      getFileSystem().close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public boolean isOpen() {
-    return false;
+    return getFileSystem().isOpen();
   }
 
   @Override

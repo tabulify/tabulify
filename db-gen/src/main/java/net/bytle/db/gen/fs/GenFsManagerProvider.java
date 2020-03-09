@@ -6,13 +6,13 @@ import net.bytle.db.fs.FsFileManagerProvider;
 import java.nio.file.Path;
 
 public class GenFsManagerProvider extends FsFileManagerProvider {
-  public static final String EXTENSION = "--datagen.yml";
+
   private GenFsManager genManager;
 
   @Override
   public Boolean accept(Path path) {
 
-    if (path.toString().toLowerCase().endsWith(EXTENSION)){
+    if (path.toString().toLowerCase().endsWith(GenFsDataPath.EXTENSION)){
       return true;
     } else {
       return false;

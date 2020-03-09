@@ -59,7 +59,7 @@ class HttpStatic {
 
   /**
    * A wrapper around a connection because the agent is
-   * everywhere mandatoru.
+   * everywhere mandatory.
    *
    * @param url
    * @return
@@ -70,7 +70,6 @@ class HttpStatic {
       if (!(urlConnection instanceof HttpURLConnection))
       {
         throw new RuntimeException("The URL is not using HTTP/HTTPS: " + url);
-
       }
       HttpURLConnection connection = (HttpURLConnection) urlConnection;
       if (urlConnection instanceof HttpsURLConnection){
