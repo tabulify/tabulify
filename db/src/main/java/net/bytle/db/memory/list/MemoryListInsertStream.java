@@ -44,6 +44,7 @@ public class MemoryListInsertStream extends InsertStreamAbs implements InsertStr
   private void process_batch_info() {
     insertStreamListener.addRows(currentRowInBatch);
     insertStreamListener.incrementBatch();
+    insertStreamListener.incrementCommit(); // There is actually no commit in memory, just to say consistent with the abstract insertion flow
     currentRowInBatch = 0;
     batchExecutionCount++;
     if (Math.floorMod(batchExecutionCount, feedbackFrequency) == 0) {

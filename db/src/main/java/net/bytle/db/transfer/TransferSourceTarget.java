@@ -4,8 +4,11 @@ import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.log.Log;
 import net.bytle.type.MapBiDirectional;
+import net.bytle.type.Strings;
 
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -13,17 +16,17 @@ import java.util.stream.Collectors;
 
 /**
  * A class that
- *  * models a source target relationship (on data path but also columns level, see {@link #withColumnMappingByName()}
- *  * has all source / target check method
- *  * has source/target properties such as:
- *       * {@link #withLoadOperation(TransferLoadOperation)}
- *       * and columns mapping
- *
+ * * models a source target relationship (on data path but also columns level, see {@link #withColumnMappingByName()}
+ * * has all source / target check method
+ * * has source/target properties such as:
+ * * {@link #withLoadOperation(TransferLoadOperation)}
+ * * and columns mapping
+ * <p>
  * For process related properties, see {@link TransferProperties}
- *
  */
 public class TransferSourceTarget {
 
+  public static final Log LOGGER = Log.getLog(TransferSourceTarget.class);
 
   private final DataPath target;
   private final DataPath source;
@@ -74,7 +77,6 @@ public class TransferSourceTarget {
 
 
   /**
-   *
    * @return a {@link MapBiDirectional bidirectional map} of the source and target by their column position
    */
   public MapBiDirectional<Integer, Integer> getColumnMapping() {
@@ -95,7 +97,7 @@ public class TransferSourceTarget {
 
   /**
    * The column mapping will be done by {@link ColumnDef#getColumnName() column name}
-   *
+   * <p>
    * By default, the column mapping is done by column position.
    * You can also give a custom column mapping relationship with the {@link #withColumnMappingByMap(Map)} function
    *
@@ -130,7 +132,6 @@ public class TransferSourceTarget {
   }
 
   /**
-   *
    * @return the column position of the source in the target order
    * This function is used during loading to retrieve the objects in a target order from the source
    * The id is the {@link ColumnDef#getColumnPosition() column position} and
@@ -142,38 +143,42 @@ public class TransferSourceTarget {
     return columnMapping.values()
       .stream()
       .sorted()
-      .map(targetId->columnMapping.getKey(targetId))
+      .map(targetId -> columnMapping.getKey(targetId))
       .collect(Collectors.toList());
 
   }
 
   /**
    * Add a column mapping between the source and the target
+   *
    * @param sourceColumnPosition
    * @param targetColumnPosition
    * @return
    */
   public TransferSourceTarget addColumnMapping(int sourceColumnPosition, int targetColumnPosition) {
-    columnMappingByMap.put(sourceColumnPosition,targetColumnPosition);
+    this.columnMappingMethod=COLUMN_MAPPING_BY_MAP;
+    columnMappingByMap.put(sourceColumnPosition, targetColumnPosition);
     return this;
   }
 
   /**
    * Check that the target has the same structure than the source.
    * Create it if it does not exist
-   *
    */
   private void checkOrCreateTargetStructureFromSource() {
     // If this for instance, the move of a file, the file may exist
     // but have no content and therefore no structure
     if (target.getOrCreateDataDef().getColumnsSize() != 0) {
-      for (ColumnDef columnDef : source.getOrCreateDataDef().getColumnDefs()) {
-        ColumnDef targetColumnDef = target.getOrCreateDataDef().getColumnDef(columnDef.getColumnName());
-        if (targetColumnDef == null) {
-          String message = "Unable to move the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
-            " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
-          DbLoggers.LOGGER_DB_ENGINE.severe(message);
-          throw new RuntimeException(message);
+      // Move
+      if (loadOperation.equals(TransferLoadOperation.MOVE) || loadOperation.equals(TransferLoadOperation.COPY)) {
+        for (ColumnDef columnDef : source.getOrCreateDataDef().getColumnDefs()) {
+          ColumnDef targetColumnDef = target.getOrCreateDataDef().getColumnDef(columnDef.getColumnName());
+          if (targetColumnDef == null) {
+            String message = "Unable to " + loadOperation + " the data unit (" + source.toString() + ") because it exists already in the target location (" + target.toString() + ") with a different structure" +
+              " (The source column (" + columnDef.getColumnName() + ") was not found in the target data unit)";
+            DbLoggers.LOGGER_DB_ENGINE.severe(message);
+            throw new RuntimeException(message);
+          }
         }
       }
     } else {
@@ -188,7 +193,6 @@ public class TransferSourceTarget {
    * If the target table:
    * - does not exist, creates the target table from the source
    * - exist, control that the column definition is the same
-   *
    */
   public void createOrCheckTargetFromSource() {
     // Check target
@@ -213,6 +217,36 @@ public class TransferSourceTarget {
   public TransferSourceTarget withLoadOperation(TransferLoadOperation transferLoadOperation) {
     this.loadOperation = transferLoadOperation;
     return this;
+  }
+
+  /**
+   *
+   * This function will check that the {@link #getColumnMapping() column mapping}
+   * More particularly that the target data type must be able to receive the source data
+   * Throws an {@link RuntimeException} if it's not the case
+   */
+  protected void checkColumnMappingDataType() {
+
+    getColumnMapping().entrySet().forEach(c -> {
+      ColumnDef<Object> sourceColumn = source.getOrCreateDataDef().getColumnDef(c.getKey() - 1);
+      ColumnDef<Object> targetColumn = target.getOrCreateDataDef().getColumnDef(c.getValue() - 1);
+      if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
+        String message = Strings.multiline(
+          "There is a problem with a data loading mapping between two columns",
+          "They have different data type and that may cause a problem during the load",
+          "To resolve this problem, change the columns mapping or change the data type of the target column",
+          "The problem is on the mapping (" + c + ") between the source column (" + sourceColumn + ") and the target column (" + targetColumn + ")",
+          "where the source data type (" + sourceColumn.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
+        );
+
+        // A date in a varchar should work
+        if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
+          LOGGER.warning(message);
+        } else {
+          throw new RuntimeException(message);
+        }
+      }
+    });
   }
 
 }

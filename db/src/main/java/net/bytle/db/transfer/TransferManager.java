@@ -4,13 +4,11 @@ package net.bytle.db.transfer;
 import net.bytle.db.Tabular;
 import net.bytle.db.engine.ForeignKeyDag;
 import net.bytle.db.memory.queue.MemoryQueueDataPath;
-import net.bytle.db.model.ColumnDef;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.log.Log;
-import net.bytle.type.Strings;
 
 import java.sql.Types;
 import java.util.*;
@@ -181,7 +179,7 @@ public class TransferManager {
     transferSourceTarget.createOrCheckTargetFromSource();
 
     // Check Data Type
-    TransferManager.checkDataTypeMapping(transferSourceTarget);
+    transferSourceTarget.checkColumnMappingDataType();
 
     /**
      * The listener is passed to the consumers and producers threads
@@ -305,39 +303,7 @@ public class TransferManager {
   }
 
 
-  /**
-   * The data type of the columns mapping must be the same
-   * Throws an exception if it's not the case
-   *
-   * @param transferSourceTarget
-   */
-  private static void checkDataTypeMapping(TransferSourceTarget transferSourceTarget) {
 
-    DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
-    DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
-
-    Map<Integer, Integer> columnPositionMapping = transferSourceTarget.getColumnMapping();
-    columnPositionMapping.entrySet().forEach(c -> {
-      ColumnDef<Object> sourceColumn = sourceDataPath.getOrCreateDataDef().getColumnDef(c.getKey() - 1);
-      ColumnDef<Object> targetColumn = targetDataPath.getOrCreateDataDef().getColumnDef(c.getValue() - 1);
-      if (sourceColumn.getDataType().getTypeCode() != targetColumn.getDataType().getTypeCode()) {
-        String message = Strings.multiline(
-          "There is a problem with a data loading mapping between two columns",
-          "They have different data type and that may cause a problem during the load",
-          "To resolve this problem, change the columns mapping or change the data type of the target column",
-          "The problem is on the mapping (" + c + ") between the source column (" + sourceColumn + ") and the target column (" + targetColumn + ")",
-          "where the source data type (" + sourceColumn.getDataType().getTypeName() + ") is different than the target data type (" + targetColumn.getDataType().getTypeName() + ")"
-        );
-
-        // A date in a varchar should work
-        if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
-          LOGGER.warning(message);
-        } else {
-          throw new RuntimeException(message);
-        }
-      }
-    });
-  }
 
 
 

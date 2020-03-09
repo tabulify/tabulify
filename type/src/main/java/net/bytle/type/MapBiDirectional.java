@@ -106,6 +106,9 @@ public class MapBiDirectional<K,V> implements Map<K, V> {
   }
 
 
-
+  @Override
+  public String toString() {
+    return  map.toString();
+  }
 
 }

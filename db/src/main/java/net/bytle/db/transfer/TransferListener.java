@@ -56,42 +56,18 @@ public class TransferListener extends ThreadListenerAbs implements ThreadListene
 
   }
 
-  /**
-   * The number of commit performed
-   */
-  public void incrementCommit() {
 
 
+  public int getCommits() {
+    return insertListener.stream().mapToInt(InsertStreamListener::getCommits).sum();
   }
 
-  /**
-   * The number of batch executed
-   */
-  public void incrementBatch() {
-
-
-  }
-
-  /**
-   * The number of rows processed
-   *
-   * @param rows The number of records added
-   */
-  public void addRows(int rows) {
-
-
-  }
-
-  public Integer getCommits() {
-    return null;
-  }
-
-  public Long getRowCount() {
+  public long getRowCount() {
     return insertListener.stream().mapToLong(InsertStreamListener::getRowCount).sum();
   }
 
-  public Integer getBatchCount() {
-    return null;
+  public int getBatchCount() {
+    return insertListener.stream().mapToInt(InsertStreamListener::getBatchCount).sum();
   }
 
 
