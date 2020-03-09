@@ -5,6 +5,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSystem;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferListenerStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferSourceTarget;
 import net.bytle.fs.Fs;
@@ -230,15 +231,15 @@ public class FsDataSystem implements DataSystem {
       throw new RuntimeException("The source file (" + source + ") does not exists");
     }
     FsDataPath fsTarget = (FsDataPath) target;
-    TransferListener transferListener = TransferListener.of(new TransferSourceTarget(fsSource, fsTarget))
+    TransferListenerStream transferListenerStream = (TransferListenerStream) new TransferListenerStream(new TransferSourceTarget(fsSource, fsTarget))
       .startTimer();
     try {
       Files.copy(fsSource.getNioPath(), fsTarget.getNioPath());
     } catch (IOException e) {
-      transferListener.addException(e);
+      transferListenerStream.addException(e);
       throw new RuntimeException(e);
     }
-    return transferListener.stopTimer();
+    return transferListenerStream.stopTimer();
   }
 
   @Override

@@ -253,4 +253,23 @@ public class TransferSourceTarget {
     });
   }
 
+  /**
+   * Check a tabular source before moving
+   * * check if it exists (except for query)
+   * * check if it has a structure
+   *
+   */
+  public void checkSource() {
+    // Check source
+    if (!Tabulars.exists(source)) {
+      // Is it a query definition
+      if (source.getQuery() == null) {
+        throw new RuntimeException("We cannot move the source data path (" + source + ") because it does not exist");
+      }
+    }
+    if (source.getOrCreateDataDef().getColumnDefs().length == 0) {
+      throw new RuntimeException("We cannot move this tabular data path (" + source + ") because it has no columns.");
+    }
+  }
+
 }

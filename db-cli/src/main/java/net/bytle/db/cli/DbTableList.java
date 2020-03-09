@@ -98,7 +98,7 @@ public class DbTableList {
             Collections.sort(dataPathsByDataStore);
             for (DataPath dataPath : dataPathsByDataStore) {
               if (!noCountColumn) {
-                Integer count = Tabulars.getSize(dataPath);
+                long count = Tabulars.getSize(dataPath);
                 insertStream.insert(dataPath.getName(), count);
               } else {
                 insertStream.insert(dataPath.getName());
@@ -121,7 +121,7 @@ public class DbTableList {
               Collections.sort(dataPathsByDataStore);
               for (DataPath dataPath : dataPathsByDataStore) {
                 if (!noCountColumn) {
-                  Integer count = Tabulars.getSize(dataPath);
+                  long count = Tabulars.getSize(dataPath);
                   insertStream.insert(dataStore.getName(), dataPath.getName(), count);
                 } else {
                   insertStream.insert(dataStore.getName(), dataPath.getName());

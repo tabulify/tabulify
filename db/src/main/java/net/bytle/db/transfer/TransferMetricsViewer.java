@@ -21,7 +21,7 @@ public class TransferMetricsViewer implements Runnable {
     private final DataPath queue;
     private final AtomicBoolean producerWorkIsDone;
     private final Integer queueSize;
-    private final TransferListener transferListener;
+    private final TransferListenerStream transferListenerStream;
     private final DataPath metricsFilePath;
     private final AtomicBoolean consumerWorkIsDone;
 
@@ -31,14 +31,14 @@ public class TransferMetricsViewer implements Runnable {
 
             DataPath queue,
             TransferProperties transferProperties,
-            TransferListener transferListener,
+            TransferListenerStream transferListenerStream,
             AtomicBoolean producerWorkIsDone,
             AtomicBoolean consumerWorkIsDone) {
 
         this.queue = queue;
         this.producerWorkIsDone = producerWorkIsDone;
         this.queueSize = transferProperties.getQueueSize();
-        this.transferListener = transferListener;
+        this.transferListenerStream = transferListenerStream;
         this.metricsFilePath = transferProperties.getMetricsPath();
         this.consumerWorkIsDone = consumerWorkIsDone;
 
@@ -91,7 +91,7 @@ public class TransferMetricsViewer implements Runnable {
                 TransferLog.LOGGER.fine("Viewer: " + Thread.currentThread().getName() + ": The buffer (between producer and consumer) is "+ratio+"% full (Size:"+size+", MaxSize:"+this.queueSize +")");
 
 
-                for (InsertStreamListener insertStreamListener : transferListener.getInsertStreamListeners()) {
+                for (InsertStreamListener insertStreamListener : transferListenerStream.getInsertStreamListeners()) {
 
                     // Commits
                     Integer commits = insertStreamListener.getCommits();
@@ -125,7 +125,7 @@ public class TransferMetricsViewer implements Runnable {
             TransferLog.LOGGER.fine("End of the viewer");
 
         } catch (InterruptedException | IOException e) {
-            this.transferListener.addException(e);
+            this.transferListenerStream.addException(e);
             throw new RuntimeException(e);
         }
 

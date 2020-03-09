@@ -113,8 +113,8 @@ public class DbTableTransfer {
           try (InsertStream insertStream = Tabulars.getInsertStream(result)) {
             resultSetListeners.forEach(l -> {
                 insertStream.insert(
-                  l.getSourceTarget().getSourceDataPath().toString(),
-                  l.getSourceTarget().getTargetDataPath().toString(),
+                  l.getTransferSourceTarget().getSourceDataPath().toString(),
+                  l.getTransferSourceTarget().getTargetDataPath().toString(),
                   l.getResponseTime(),
                   l.getRowCount(),
                   l.getExitStatus() != 0 ? l.getExitStatus() : "",

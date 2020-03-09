@@ -10,6 +10,7 @@ import net.bytle.db.resultSetDiff.DataSetDiff;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
+import net.bytle.db.transfer.TransferListenerStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferManager;
 import net.bytle.regexp.Globs;
@@ -350,7 +351,7 @@ public class Tabulars {
    * @param source - the source to move
    * @param target - a target data path container or document
    *               If the target is a container, the target will have the name of the source
-   * @return a {@link TransferListener} or null if it was no transfer
+   * @return a {@link TransferListenerStream} or null if it was no transfer
    */
   public static TransferListener move(DataPath source, DataPath target) {
 

@@ -4,7 +4,7 @@ import net.bytle.db.spi.DataPath;
 
 import java.util.List;
 
-public interface InsertStream extends AutoCloseable {
+public interface InsertStream extends AutoCloseable  {
 
 
     /**
@@ -79,7 +79,7 @@ public interface InsertStream extends AutoCloseable {
     DataPath getDataPath();
 
     /**
-     * Does the next insert will send a batch
+     * Does the next insert will send a batch (ie flush to disk or to database)
      *
      * @return
      */

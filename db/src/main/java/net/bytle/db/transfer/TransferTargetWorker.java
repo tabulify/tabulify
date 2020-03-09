@@ -35,7 +35,7 @@ public class TransferTargetWorker implements Runnable {
     @Override
     public void run() {
         String name = "Consumer: " + Thread.currentThread().getName();
-        TransferListener transferListener = TransferListener.of(transferSourceTarget);
+        TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
         try (
 
             InsertStream insertStream = Tabulars.getInsertStream(transferSourceTarget.getTargetDataPath())
@@ -48,8 +48,8 @@ public class TransferTargetWorker implements Runnable {
 
         ){
 
-            transferListener.addInsertListener(insertStream.getInsertStreamListener());
-            transferListener.addSelectListener(selectStream.getSelectStreamListener());
+            transferListenerStream.addInsertListener(insertStream.getInsertStreamListener());
+            transferListenerStream.addSelectListener(selectStream.getSelectStreamListener());
 
             List<Object> objects;
             while (true) {
@@ -65,7 +65,7 @@ public class TransferTargetWorker implements Runnable {
             }
 
         } catch (Exception e) {
-            transferListener.addException(e);
+            transferListenerStream.addException(e);
             throw new RuntimeException(e);
         }
 

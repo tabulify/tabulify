@@ -5,7 +5,7 @@ import net.bytle.db.spi.DataPath;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class InsertStreamAbs implements InsertStream, AutoCloseable {
+public abstract class InsertStreamAbs implements Stream, InsertStream, AutoCloseable {
 
     protected final DataPath dataPath;
     protected InsertStreamListener insertStreamListener = InsertStreamListener.get(this);

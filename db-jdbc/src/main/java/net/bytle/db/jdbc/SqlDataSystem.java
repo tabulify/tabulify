@@ -6,11 +6,9 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.InsertStreamListener;
 import net.bytle.db.stream.SelectStream;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferManager;
-import net.bytle.db.transfer.TransferProperties;
-import net.bytle.db.transfer.TransferSourceTarget;
+import net.bytle.db.transfer.*;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,43 +123,43 @@ public class SqlDataSystem implements DataSystem {
   }
 
   @Override
-  public TransferListener copy(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener copy(DataPath source, DataPath target) {
 
+    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source,target);
     // Check the source
-    TransferManager.checkSource(source);
+    transferSourceTarget.checkSource();
 
     // Check the target
-    TransferManager.createOrCheckTargetFromSource(source, target);
+    transferSourceTarget.createOrCheckTargetFromSource();
 
     // The target table should be without rows
     long size = Tabulars.getSize(target);
     assert size == 0 : "In a copy operation, the target table should be empty. This is not the case. The target table (" + target + ") has (" + size + ") rows";
 
-    // insert into select statement
+    // Insert into select statement
     SqlDataPath sourceJdbcDataPath = (SqlDataPath) source;
     String insertInto = DbDml.getInsertIntoStatement(sourceJdbcDataPath, (SqlDataPath) target);
-    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source, target);
-    TransferListener transferListener = TransferListener.of(transferSourceTarget);
+    TransferListenerAtomic transferListenerStream = new TransferListenerAtomic(transferSourceTarget);
     try {
       Statement statement = sourceJdbcDataPath.getDataStore().getCurrentConnection().createStatement();
       Boolean resultSetReturned = statement.execute(insertInto);
       if (!resultSetReturned) {
         int updateCount = statement.getUpdateCount();
-        transferListener.addRows(updateCount);
+        transferListenerStream.incrementRows(updateCount);
         JdbcDataSystemLog.LOGGER_DB_JDBC.info(updateCount + " records where moved from (" + source.toString() + ") to (" + target.toString() + ")");
       }
     } catch (SQLException e) {
       final String msg = "Error when executing the insert into statement: " + insertInto;
       JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
-      transferListener.addException(e);
+      transferListenerStream.addException(e);
       throw new RuntimeException(msg, e);
     }
-    return transferListener;
+    return transferListenerStream;
 
   }
 
   @Override
-  public TransferProperties insert(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public TransferListener insert(DataPath source, DataPath target) {
     throw new RuntimeException("Not yet implemented");
   }
 
@@ -617,7 +615,7 @@ public class SqlDataSystem implements DataSystem {
    * @param transferProperties
    */
   @Override
-  public void move(DataPath source, DataPath target, TransferProperties transferProperties) {
+  public void move(DataPath source, DataPath target) {
 
     throw new RuntimeException("Renaming a table is not yet implemented");
 

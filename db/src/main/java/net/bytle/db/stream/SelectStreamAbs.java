@@ -6,7 +6,7 @@ import java.sql.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public abstract class SelectStreamAbs implements SelectStream {
+public abstract class SelectStreamAbs implements Stream, SelectStream {
 
 
   private final DataPath dataPath;

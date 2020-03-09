@@ -11,6 +11,7 @@ import net.bytle.db.gen.DataGeneration;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
 import static net.bytle.db.cli.Words.NOT_STRICT;
@@ -69,7 +71,7 @@ public class DbTableFill {
     final CliParser cliParser = Clis.getParser(cliCommand, args);
     final Boolean loadParent = cliParser.getBoolean(LOAD_DEPENDENCIES);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-    final Integer totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION);
+    final long totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION).longValue();
     final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
     final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
 
@@ -94,11 +96,12 @@ public class DbTableFill {
           withOrWithoutParent = "with the dependencies (the parent/foreign table)";
         }
         LOGGER.info("Starting filling the tables for the data store " + dataStore + " " + withOrWithoutParent);
-        List<DataPath> dataPathsLoaded = DataGeneration.of()
+        List<TransferListener> transferListeners = DataGeneration.of()
           .addTables(dataPathsByDataStore, totalNumberOfRows)
           .loadDependencies(loadParent)
           .load();
-        dataPathsLoadedByDataStore.put(dataStore, dataPathsLoaded);
+        List<DataPath> targetLoaded = transferListeners.stream().map(t -> t.getTransferSourceTarget().getTargetDataPath()).collect(Collectors.toList());
+        dataPathsLoadedByDataStore.put(dataStore, targetLoaded);
 
       }
       cliTimer.stop();

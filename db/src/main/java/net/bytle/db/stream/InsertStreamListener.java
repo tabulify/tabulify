@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by gerard on 12-01-2017.
  * An object listener to of informations from the threads
  * <p>
  * Example:

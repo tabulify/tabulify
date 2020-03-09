@@ -18,21 +18,21 @@ public class TransferSourceWorker implements Runnable {
     private final DataPath sourceDataPath;
     private final DataPath queue;
     private final Integer feedbackFrequency;
-    private final TransferListener transferListener;
+    private final TransferListenerStream transferListenerStream;
 
 
     /**
      * @param sourceDataPath
      * @param queue          (The target data path, a blocking queue !)
      * @param transferProperties - The properties of the transfer
-     * @param transferListener - The cross thread listeners used in the viewer thread
+     * @param transferListenerStream - The cross thread listeners used in the viewer thread
      */
-    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, TransferProperties transferProperties, TransferListener transferListener) {
+    public TransferSourceWorker(DataPath sourceDataPath, DataPath queue, TransferProperties transferProperties, TransferListenerStream transferListenerStream) {
 
         this.sourceDataPath = sourceDataPath;
         this.queue = queue;
         this.feedbackFrequency = transferProperties.getFeedbackFrequency();
-        this.transferListener = transferListener;
+        this.transferListenerStream = transferListenerStream;
 
     }
 
@@ -53,9 +53,9 @@ public class TransferSourceWorker implements Runnable {
         ) {
 
             // The feedback
-            transferListener.addSelectListener(selectStream.getSelectStreamListener());
+            transferListenerStream.addSelectListener(selectStream.getSelectStreamListener());
             InsertStreamListener insertStreamListener = insertStream.getInsertStreamListener();
-            transferListener.addInsertListener(insertStreamListener);
+            transferListenerStream.addInsertListener(insertStreamListener);
 
             // The transfer
             int columnCount = sourceDataPath.getOrCreateDataDef().getColumnsSize();
@@ -70,7 +70,7 @@ public class TransferSourceWorker implements Runnable {
 
         } catch (Exception e) {
 
-            transferListener.addException(e);
+            transferListenerStream.addException(e);
             throw new RuntimeException(e);
 
         }

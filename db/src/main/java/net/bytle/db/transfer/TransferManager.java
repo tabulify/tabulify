@@ -89,7 +89,7 @@ public class TransferManager {
 
 
     for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
-      TransferManager.checkSource(transferSourceTarget.getSourceDataPath());
+      transferSourceTarget.checkSource();
       transferSourceTarget.createOrCheckTargetFromSource();
     }
 
@@ -97,17 +97,17 @@ public class TransferManager {
 
     List<List<Object>> streamTransfers = new ArrayList<>();
     for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
-      TransferListener transferListener = TransferListener.of(transferSourceTarget);
-      transferListeners.add(transferListener);
-      transferListener.startTimer();
+      TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
+      transferListeners.add(transferListenerStream);
+      transferListenerStream.startTimer();
       SelectStream sourceSelectStream = Tabulars.getSelectStream(transferSourceTarget.getSourceDataPath());
       InsertStream targetInsertStream = Tabulars.getInsertStream(transferSourceTarget.getTargetDataPath());
       List<Object> mapStream = new ArrayList<>();
       mapStream.add(sourceSelectStream);
       mapStream.add(targetInsertStream);
       streamTransfers.add(mapStream);
-      transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
-      transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
+      transferListenerStream.addInsertListener(targetInsertStream.getInsertStreamListener());
+      transferListenerStream.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
     }
 
@@ -134,25 +134,6 @@ public class TransferManager {
     return transferListeners;
   }
 
-  /**
-   * Check a tabular source before moving
-   * * check if it exists (except for query)
-   * * check if it has a structure
-   *
-   * @param sourceDataPath
-   */
-  public static void checkSource(DataPath sourceDataPath) {
-    // Check source
-    if (!Tabulars.exists(sourceDataPath)) {
-      // Is it a query definition
-      if (sourceDataPath.getQuery() == null) {
-        throw new RuntimeException("We cannot move the source data path (" + sourceDataPath + ") because it does not exist");
-      }
-    }
-    if (sourceDataPath.getOrCreateDataDef().getColumnDefs().length == 0) {
-      throw new RuntimeException("We cannot move this tabular data path (" + sourceDataPath + ") because it has no columns.");
-    }
-  }
 
   /**
    * Transfer of data from one source to one target
@@ -173,7 +154,7 @@ public class TransferManager {
     DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
 
     // Check source
-    TransferManager.checkSource(sourceDataPath);
+    transferSourceTarget.checkSource();
 
     // Check Target
     transferSourceTarget.createOrCheckTargetFromSource();
@@ -185,8 +166,8 @@ public class TransferManager {
      * The listener is passed to the consumers and producers threads
      * to ultimately ends in the view thread to report life on the process
      */
-    TransferListener transferListener = TransferListener.of(transferSourceTarget);
-    transferListener.startTimer();
+    TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
+    transferListenerStream.startTimer();
 
     /**
      * Single thread ?
@@ -198,8 +179,8 @@ public class TransferManager {
         InsertStream targetInsertStream = Tabulars.getInsertStream(targetDataPath)
       ) {
 
-        transferListener.addInsertListener(targetInsertStream.getInsertStreamListener());
-        transferListener.addSelectListener(sourceSelectStream.getSelectStreamListener());
+        transferListenerStream.addInsertListener(targetInsertStream.getInsertStreamListener());
+        transferListenerStream.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
         // Get the objects from the source in a target order
         List<Integer> sourceColumnPositionInTargetOrder = transferSourceTarget.getSourceColumnPositionInTargetOrder();
@@ -214,8 +195,8 @@ public class TransferManager {
         }
 
       }
-      transferListener.stopTimer();
-      return transferListener;
+      transferListenerStream.stopTimer();
+      return transferListenerStream;
 
     }
 
@@ -247,7 +228,7 @@ public class TransferManager {
     try {
 
       // Start the producer thread
-      TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDataPath, queue, transferProperties, transferListener);
+      TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDataPath, queue, transferProperties, transferListenerStream);
       Thread producer = new Thread(transferSourceWorker);
       producer.start();
 
@@ -266,7 +247,7 @@ public class TransferManager {
       }
 
       // Start the viewer
-      TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, transferListener, producerWorkIsDone, consumerWorkIsDone);
+      TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, transferListenerStream, producerWorkIsDone, consumerWorkIsDone);
       Thread viewer = new Thread(transferMetricsViewer);
       viewer.start();
 
@@ -297,8 +278,8 @@ public class TransferManager {
       throw new RuntimeException(e);
     }
 
-    transferListener.stopTimer();
-    return transferListener;
+    transferListenerStream.stopTimer();
+    return transferListenerStream;
 
   }
 
