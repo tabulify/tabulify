@@ -17,31 +17,12 @@ package net.bytle.viz;
  */
 public class AnsiColors {
 
-  // Windows
-  // https://superuser.com/questions/413073/windows-console-with-ansi-colors-handling/1105718#1105718
-  // Enable https://github.com/rg3/youtube-dl/issues/15758
-  static final String ESC = "\033"; // octal \033 or unicode \u001B
-
-  // Escape sequence
-  // List at
-  // https://en.wikipedia.org/wiki/ANSI_escape_code#Escape_sequences
-  static final String ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER = ESC + '['; // Most useful,
-  static final String ESCAPE_SEQUENCE_RESET_TO_INITIAL_STATE = ESC + 'c'; // Resets the device to its original state
-
-  // CSI (Control Sequence Indicator)
-  // https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
-
-  // CSI CUB (Cursor Back) 1000 back - move cursor left by 1000 characters
-  // Cursor Back = CSI + n + D
-  // https://en.wikipedia.org/wiki/ANSI_escape_code#Terminal_output_sequences
-  public static final String CURSOR_MOVE_BACK = AnsiColors.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + "1000" + 'D';
-  public static final String CURSOR_MOVE_UP = AnsiColors.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + "1" + 'A'; // Move up one
 
   // CSI SGR
   // https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
   // CSI code m
   public static final char M = 'm';
-  static final String ANSI_RESET = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + 0 + M; // Reset (Each display attribute remains in effect until a following occurrence of SGR resets it)
+  static final String ANSI_RESET = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + 0 + M; // Reset (Each display attribute remains in effect until a following occurrence of SGR resets it)
 
   // CSI Colors
   // https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
@@ -52,11 +33,11 @@ public class AnsiColors {
   public static final int COLORS_RED_BRIGHT_FOREGROUND = 91;
   public static final int COLORS_BLACK_FOREGROUND_CODE = 30;
   public static final int COLORS_WHITE_BACKGROUND_CODE = 47;
-  static final String COLORS_RED = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_RED_FOREGROUND_CODE + M; // Red
-  static final String COLORS_RED_BRIGHT = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_RED_BRIGHT_FOREGROUND + M; // Bright Red
-  static final String COLORS_BLACK = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_BLACK_FOREGROUND_CODE + M; // Black
-  static final String COLORS_BLACK_ON_WHITE = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_BLACK_FOREGROUND_CODE + ';' + COLORS_WHITE_BACKGROUND_CODE + M;
-  static final String COLORS_RESET = ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + 39 + ';' + 49 + M; // Reset colors attributes
+  static final String COLORS_RED = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_RED_FOREGROUND_CODE + M; // Red
+  static final String COLORS_RED_BRIGHT = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_RED_BRIGHT_FOREGROUND + M; // Bright Red
+  static final String COLORS_BLACK = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_BLACK_FOREGROUND_CODE + M; // Black
+  static final String COLORS_BLACK_ON_WHITE = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + COLORS_BLACK_FOREGROUND_CODE + ';' + COLORS_WHITE_BACKGROUND_CODE + M;
+  static final String COLORS_RESET = ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + 39 + ';' + 49 + M; // Reset colors attributes
 
 
   /**
@@ -69,7 +50,7 @@ public class AnsiColors {
       if (i % 10 == 0) {
         System.out.println();
       }
-      System.out.print(String.format(AnsiColors.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + "38;5;%s" + AnsiColors.M + " %d " + AnsiColors.ANSI_RESET, i, i));
+      System.out.print(String.format(ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER + "38;5;%s" + AnsiColors.M + " %d " + AnsiColors.ANSI_RESET, i, i));
     }
   }
 
@@ -83,7 +64,7 @@ public class AnsiColors {
    *  colorize("original text","38;5;33")
    */
   String colorize(String string, String color_sequence) {
-    return ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER+color_sequence +M+string+ANSI_RESET;
+    return ControlSequence.ESCAPE_SEQUENCE_CONTROL_SEQUENCE_INTRODUCER+color_sequence +M+string+ANSI_RESET;
   }
 
 

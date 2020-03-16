@@ -1,9 +1,12 @@
 package net.bytle.type;
 
 import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static net.bytle.type.UtilDate.getFormat;
 
 /**
  * Static function on the {@link Date} data type
@@ -43,5 +46,24 @@ public class SqlDates {
   public static long dayBetween(Date from, Date to) {
     return DAYS.between(from.toLocalDate(),to.toLocalDate());
   }
+
+
+
+  public static Date fromString(String s) {
+    try {
+      SimpleDateFormat simpleDateFormat = new SimpleDateFormat(getFormat(s));
+      java.util.Date date = simpleDateFormat.parse(s);
+      return fromDateUtil(date);
+    } catch (ParseException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Date fromDateUtil(java.util.Date date){
+    return new java.sql.Date(date.getTime());
+  }
+
+
+
 
 }

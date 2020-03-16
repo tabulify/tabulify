@@ -7,6 +7,9 @@ import java.util.Map;
 
 /**
  * The relational structure of the data
+ *
+ * FYI
+ * @see <a href=https://calcite.apache.org/docs/model.html#table>Calcite table</a>
  */
 public interface RelationDef {
 

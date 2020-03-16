@@ -15,7 +15,7 @@ public class ProgressIndicator {
     System.out.println("Loading...");
     IntStream.range(0, 100).forEach(i -> {
         sleep(100);
-        System.out.print(AnsiColors.CURSOR_MOVE_BACK + " " + i + "%");
+        System.out.print(CursorMove.CURSOR_MOVE_BACK + " " + i + "%");
       }
     );
 
@@ -32,7 +32,7 @@ public class ProgressIndicator {
     IntStream.range(0, total).forEach(i -> {
       int actualCharacters = (i + 1) / characterEvery;
       String bar = "[" + (new String(new char[actualCharacters]).replace("\0", "#")) + (new String(new char[totalCharacters - actualCharacters]).replace("\0", " ")) + "]";
-        System.out.println(AnsiColors.CURSOR_MOVE_BACK + bar);
+        System.out.println(CursorMove.CURSOR_MOVE_BACK + bar);
       }
     );
   }

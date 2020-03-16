@@ -37,13 +37,29 @@ public class SqlDataPath extends DataPathAbs {
    *            > QUERY
    *            > ....SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
    */
-  private String type = TABLE_TYPE;
-  public static final String TABLE_TYPE = "TABLE";
-  public static final String VIEW_TYPE = "VIEW";
-  public static final String QUERY_TYPE = "QUERY";
-  public static final String SCHEMA_TYPE = "SCHEMA"; // container
-  public static final String CATALOG_TYPE = "CATALOG"; // container
-  public static final String SYSTEM_TYPE = "SYSTEM"; // container
+  private Type type = Type.TABLE;
+
+  /**
+   * A view
+   *
+   * Just FYI: <a href=https://calcite.apache.org/docs/model.html#view>The calcite definition</a>
+   */
+  public enum Type {
+    TABLE,
+    VIEW,
+    QUERY,
+    SCHEMA, // container
+    CATALOG, // Container
+    SYSTEM; // Container
+
+    static Type fromString(final String s) {
+      if (s.toUpperCase().equals(TABLE.toString())) {
+        return TABLE;
+      }
+      throw new RuntimeException("Unknown type");
+    }
+
+  }
 
 
   /**
@@ -56,7 +72,7 @@ public class SqlDataPath extends DataPathAbs {
    */
   protected SqlDataPath(SqlDataStore jdbcDataStore, String query) {
     this.jdbcDataStore = jdbcDataStore;
-    this.setType(QUERY_TYPE);
+    this.setType(Type.QUERY);
     this.setQuery(query);
     this.name = null;
     this.schema = jdbcDataStore.getCurrentSchema();
@@ -86,12 +102,12 @@ public class SqlDataPath extends DataPathAbs {
     if (this.name == null){
       if (this.schema==null){
         if (this.catalog==null) {
-          type = SYSTEM_TYPE;
+          type = Type.SYSTEM;
         } else {
-          type = CATALOG_TYPE;
+          type = Type.CATALOG;
         }
       } else {
-        type = SCHEMA_TYPE;
+        type = Type.SCHEMA;
       }
     }
 
@@ -255,7 +271,7 @@ public class SqlDataPath extends DataPathAbs {
     if (catalog != null) {
       return catalog;
     }
-    if (type.equals(QUERY_TYPE)) {
+    if (type == Type.QUERY) {
       return "query";
     }
     return null;
@@ -291,14 +307,14 @@ public class SqlDataPath extends DataPathAbs {
 
   public boolean isDocument() {
     assert type!=null: "The type of data path ("+this+") is null, we can't therefore determine if it's a document";
-    if (type.equals(SCHEMA_TYPE) || type.equals(CATALOG_TYPE) || type.equals(SYSTEM_TYPE)) {
+    if (type == Type.SCHEMA || type == Type.CATALOG || type == Type.SYSTEM) {
       return false;
     } else {
       return true;
     }
   }
 
-  public SqlDataPath setType(String type) {
+  public SqlDataPath setType(Type type) {
     this.type = type;
     return this;
   }
@@ -306,8 +322,9 @@ public class SqlDataPath extends DataPathAbs {
   /**
    * @return
    */
+  @Override
   public String getType() {
-    return this.type;
+    return this.type.toString();
   }
 
 

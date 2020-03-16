@@ -2,6 +2,9 @@ package net.bytle.type;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
 
 public class Doubles {
 
@@ -19,5 +22,18 @@ public class Doubles {
         return bd.doubleValue();
 
     }
+
+  /**
+   * Format for parsing long
+   */
+  private final NumberFormat numberFormat = NumberFormat.getInstance(Locale.ROOT);
+
+  Double fromString(String s){
+    try {
+      return numberFormat.parse(s).doubleValue();
+    } catch (ParseException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
 }
