@@ -33,14 +33,6 @@
         group: "{{ gogs_user }}"
         mode: 'u=rwx,g=rx,o=rx'
 
-    - name: Create Gogs log folder
-      file:
-        path: "{{ gogs_log_dir }}"
-        state: directory
-        owner: "{{ gogs_user }}"
-        group: "{{ gogs_user }}"
-        mode: 0755
-
     - name: Check if Gogs is already installed.
       stat:
         path: "{{ gogs_bin_file }}"
@@ -75,17 +67,56 @@
             creates: "{{ gogs_home }}/gogs"
             copy: false
 
-    # https://gogs.io/docs/intro/faqs#how-do-i-run-gogs-at-startup-with-systemd%3F
-    - name: Copy the systemd nexus.service file
-      template:
-        src: gogs.service
-        dest: /etc/systemd/system/gogs.service
-        mode: 0644
-      notify:
-        - 'gogs reload'
+    - name: Copy the conf files / create the directory
+      block:
+        # https://gogs.io/docs/intro/faqs#how-do-i-run-gogs-at-startup-with-systemd%3F
+        - name: Copy the systemd gogs.service file
+          template:
+            src: gogs.service
+            dest: /etc/systemd/system/gogs.service
+            mode: 0644
+          notify: 'gogs reload'
+        - name: Create the Gogs conf folder
+          file:
+            path: "{{ gogs_config_dir }}"
+            state: directory
+            owner: "{{ gogs_user }}"
+            group: "{{ gogs_user }}"
+            mode: 0700
+          notify: 'gogs reload'
+        - name: Copy the conf file
+          template:
+            src: app.ini
+            dest: "{{ gogs_config_dir }}/app.ini"
+            mode: 0700
+          notify: 'gogs reload'
+        - name: Create Gogs directory Repository
+          file:
+            path: "{{ gogs_repositories }}"
+            state: directory
+            owner: "{{ gogs_user }}"
+            group: "{{ gogs_user }}"
+            mode: 0700
+          notify: 'gogs reload'
+        - name: Create Gogs data directory
+          file:
+            path: "{{ gogs_data_dir }}"
+            state: directory
+            owner: "{{ gogs_user }}"
+            group: "{{ gogs_user }}"
+            mode: 0700
+          notify: 'gogs reload'
+        - name: Create Gogs log folder
+          file:
+            path: "{{ gogs_log_dir }}"
+            state: directory
+            owner: "{{ gogs_user }}"
+            group: "{{ gogs_user }}"
+            mode: 0740
+          notify: 'gogs reload'
 
-#- name: Ensure Gogs is running.
-#  service:
-#    name: gogs
-#    state: started
-#    enabled: yes
+    - name: Ensure Gogs is running.
+      service:
+        name: gogs
+        state: started
+        enabled: yes

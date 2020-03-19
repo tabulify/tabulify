@@ -22,8 +22,8 @@
     - name: Install gnico
       role: gnico
       tags: gnico
-    - name: Install git
-      role: git
-      tags: git
+    - name: Install Gogs
+      role: gogs
+      tags: gogs
 
 
