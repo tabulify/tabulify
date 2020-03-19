@@ -34,3 +34,6 @@ New user 'admin' has been successfully created!
 ```
   * Login to the interface
 
+## FYI
+
+  * [installation of Git on a server without Gogs](https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server)
