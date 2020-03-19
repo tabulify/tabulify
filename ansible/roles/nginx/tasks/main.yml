@@ -65,6 +65,13 @@
     backup: yes
   notify: reload nginx
 
+- name: Gogs | Configuring Gogs
+  become: true
+  template:
+    src: gogs-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/gogs.conf"
+    backup: yes
+  notify: reload nginx
 
 - name: Nginx conf verif | Verification of the configuration
   become: true

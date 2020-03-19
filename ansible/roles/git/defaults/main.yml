@@ -1,0 +1,28 @@
+---
+
+# App environment (suffix, prefix) use everywhere
+gogs_name: gogs
+gogs_binary_url: https://github.com/gogs/gogs/releases/download/v0.11.91/linux_amd64.zip
+
+# The user
+gogs_user: gogs
+gogs_user_group: gogs
+gogs_user_home: '/home/{{ gogs_user }}'
+
+# The target installation environment
+gogs_base: /opt
+gogs_home: "{{ gogs_base }}/{{ gogs_name }}"
+gogs_bin_file: "{{ gogs_home }}/gogs"
+gogs_log_dir: "{{ gogs_home }}/log"
+gogs_config_file_name: app.ini
+gogs_config_file: "{{ gogs_home }}/custom/conf/{{ gogs_config_file_name }}"
+gogs_repositories: "{{ gogs_home }}/gogs-repositories"
+gogs_data_path_relative: data/gogs
+gogs_data_path: "{{ gogs_home }}/{{ gogs_data_path_relative }}"
+gogs_port: 3001
+gogs_fqdn: "{{ gogs_name }}.bytle.net"
+
+# The temp installation environment
+gogs_install_dir: '/tmp/{{gogs_user}}'
+gogs_install_file: '{{gogs_install_dir}}/gogs.zip'
+

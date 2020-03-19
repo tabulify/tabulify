@@ -1,0 +1,31 @@
+[Unit]
+Description=Gogs
+After=syslog.target
+After=network.target
+
+
+[Service]
+Type=simple
+User={{ gogs_user }}
+Group={{ gogs_user_group }}
+WorkingDirectory={{ gogs_home }}
+ExecStart={{ gogs_bin_file }} web -port {{ gogs_port }}
+Restart=always
+Environment=USER={{ gogs_user }} HOME={{ gogs_home}}
+
+# Modify these two values and uncomment them if you have
+# repos with lots of files and get an HTTP error 500 because
+# of that
+###
+#LimitMEMLOCK=infinity
+#LimitNOFILE=65535
+
+# Some distributions may not support these hardening directives. If you cannot start the service due
+# to an unknown option, comment out the ones not supported by your version of systemd.
+ProtectSystem=full
+PrivateDevices=yes
+PrivateTmp=yes
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

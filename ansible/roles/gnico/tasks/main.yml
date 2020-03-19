@@ -48,17 +48,13 @@
     - name: 'Get and set the downloaded latest jar path'
       set_fact:
         gnico_fat_jar_path: '{{ maven_download.dest }}'
-    - name: Copy the systemd nexus.service file
+    - name: Copy the systemd gnico.service file
       template:
         src: gnico.service
         dest: /etc/systemd/system/gnico.service
         mode: 0644
       notify:
         - 'gnico reload'
-    - name: Restart gnico
-      systemd:
-        state: restarted
-        name: gnico
     - name: Test that the service is up
       uri:
         url: http://localhost:8083/ip/143.176.206.80
