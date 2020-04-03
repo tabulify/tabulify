@@ -20,3 +20,8 @@ See: DatabaseMetadata function:
   * supportsCoreSQLGrammar() - Retrieves whether this database supports the ODBC Core SQL grammar.
   * supportsExtendedSQLGrammar() - Retrieves whether this database supports the ODBC Extended SQL grammar.
   *	supportsMinimumSQLGrammar() - Retrieves whether this database supports the ODBC Minimum SQL grammar.
+  
+## Note
+
+  * [RxJdbc](https://github.com/davidmoten/rxjava-jdbc)
+  * [Hikari Connection Pool](https://github.com/brettwooldridge/HikariCP)

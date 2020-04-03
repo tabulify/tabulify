@@ -1,5 +1,13 @@
 # Design
 
+## About
+
+Variation of the [Everything is a file](https://en.wikipedia.org/wiki/Everything_is_a_file) paradigm where:
+
+  * Everything is a `tabular` 
+  * Everything is a file with a `tabular` descriptor.
+  * The `tabular path` is the addressing system and the `tabular descriptor` being the byte stream I/O interface. 
+
 ## Gold rule
 
   * No Global Cache (in memory) - Wel Persistence
