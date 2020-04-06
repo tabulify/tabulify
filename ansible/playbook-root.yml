@@ -25,5 +25,8 @@
     - name: Install Gogs
       role: gogs
       tags: gogs
+    - name: Install Prometheus Exporter
+      role: prometheus
+      tags: prometheus
 
 

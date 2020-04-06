@@ -1,0 +1,67 @@
+- name: Install
+  become: yes
+  block:
+    - name: "Create the group {{ prometheus_user_group }}"
+      group:
+        name: '{{ prometheus_user_group }}'
+        state: present
+    - name: "Create the user {{ prometheus_user_name }}"
+      user:
+        name: '{{ prometheus_user_name }}'
+        comment: User for the prometheus app
+        shell: /bin/bash
+        state: present
+        group: '{{ prometheus_user_group }}'
+    - name: Create the install path {{ prometheus_install_dir }}
+      file:
+        state: directory
+        path: '{{ prometheus_install_dir }}'
+        group: '{{ prometheus_user_name }}'
+        owner: '{{ prometheus_user_group }}'
+        mode: 'u=rwx,g=rx,o=rx'
+    - name: Download
+      #    when: gogs_bin.stat.islnk is not defined
+      block:
+      - name: Create Prometheus Install dir
+        file:
+          path: "{{ prometheus_install_dir }}"
+          state: directory
+          owner: "{{ prometheus_user_name }}"
+          group: "{{ prometheus_user_group }}"
+          mode: 'u=rwx,g=rx,o=rx'
+
+      - name: Download Node exporter
+        get_url:
+          url: "{{ prometheus_node_exporter_binary_url }}"
+          dest: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
+          owner: "{{ prometheus_user_name }}"
+          group: "{{ prometheus_user_group }}"
+          checksum: "{{ prometheus_node_exporter_checksum }}"
+
+      - name: Unzip Node exporter
+        unarchive:
+          src: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
+          dest: "{{ prometheus_install_dir }}"
+          owner: "{{ prometheus_user_name }}"
+          group: "{{ prometheus_user_group }}"
+          #creates: "{{ gogs_home }}/gogs"
+          copy: false
+
+#      - name: 'Get and set the downloaded latest jar path'
+#        set_fact:
+#          gnico_fat_jar_path: '{{ maven_download.dest }}'
+#      - name: Copy the systemd gnico.service file
+#        template:
+#          src: gnico.service
+#          dest: /etc/systemd/system/gnico.service
+#          mode: 0644
+#        notify:
+#          - 'gnico reload'
+#      - name: Test that the service is up
+#        uri:
+#          url: http://localhost:8083/ip/143.176.206.80
+#          method: GET
+#        register: ipcall
+#        until: ipcall.status == 200
+#        delay: 5 # Every 5 seconds
+#        retries: 5 # 5 * 5 seconds = 25
