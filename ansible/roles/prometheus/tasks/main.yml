@@ -19,8 +19,12 @@
         group: '{{ prometheus_user_name }}'
         owner: '{{ prometheus_user_group }}'
         mode: 'u=rwx,g=rx,o=rx'
+    - name: Check if Gogs is already installed.
+      stat:
+        path: "{{ prometheus_home }}/node_exporter"
+      register: node_exporter_exe
     - name: Download
-      #    when: gogs_bin.stat.islnk is not defined
+      when: not node_exporter_exe.stat.exists
       block:
 
       - name: Create Prometheus Install dir
