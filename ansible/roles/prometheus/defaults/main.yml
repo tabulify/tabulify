@@ -27,7 +27,8 @@ prometheus_install_dir: '/tmp/{{prometheus_user_name}}'
 
 # Node Exporter
 prometheus_node_exporter_version: 1.0.0-rc.0
-prometheus_node_exporter_binary_url: "https://github.com/prometheus/node_exporter/releases/download/v{{prometheus_node_exporter_version}}/node_exporter-{{prometheus_node_exporter_version}}.linux-amd64.tar.gz"
+prometheus_node_exporter_name: "node_exporter-{{prometheus_node_exporter_version}}.linux-amd64"
+prometheus_node_exporter_binary_url: "https://github.com/prometheus/node_exporter/releases/download/v{{prometheus_node_exporter_version}}/{{ prometheus_node_exporter_name }}.tar.gz"
 prometheus_node_exporter_checksum: md5:02b59d17fc7b58df81632f9fbdce01b5
 prometheus_install_file: '{{prometheus_install_dir}}/prometheus.zip'
 

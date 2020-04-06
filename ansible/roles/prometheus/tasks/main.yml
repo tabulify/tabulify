@@ -12,16 +12,17 @@
         shell: /bin/bash
         state: present
         group: '{{ prometheus_user_group }}'
-    - name: Create the install path {{ prometheus_install_dir }}
+    - name: Create the home path {{ prometheus_home }}
       file:
         state: directory
-        path: '{{ prometheus_install_dir }}'
+        path: '{{ prometheus_home }}'
         group: '{{ prometheus_user_name }}'
         owner: '{{ prometheus_user_group }}'
         mode: 'u=rwx,g=rx,o=rx'
     - name: Download
       #    when: gogs_bin.stat.islnk is not defined
       block:
+
       - name: Create Prometheus Install dir
         file:
           path: "{{ prometheus_install_dir }}"
@@ -46,6 +47,11 @@
           group: "{{ prometheus_user_group }}"
           #creates: "{{ gogs_home }}/gogs"
           copy: false
+      - name: Move file
+        become: yes
+        become_user: "{{ prometheus_user_name }}"
+        shell:
+          cmd: "/bin/cp {{ prometheus_install_dir }}/{{ prometheus_node_exporter_name }}/* {{ prometheus_home }}"
 
 #      - name: 'Get and set the downloaded latest jar path'
 #        set_fact:
