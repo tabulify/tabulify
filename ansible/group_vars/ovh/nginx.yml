@@ -8,6 +8,7 @@ ovh_domains:
   - nexus.bytle.net
   - api.bytle.net
   - gogs.bytle.net
+  - '{{ prometheus_node_exporter_fqdn }}'
 
 cloudflare_domains:
   - '{{ gnico_fqdn_api }}'

@@ -1,11 +1,11 @@
-# from https://help.sonatype.com/repomanager3/installation/run-behind-a-reverse-proxy#RunBehindaReverseProxy-Example:ReverseProxySSLTerminationatBasePath
+
 server {
 
     listen       443 ssl http2;
     listen       [::]:443 ssl http2;
 
     # Change `example.com` to match your domain name.
-    server_name {{ gogs_fqdn }};
+    server_name {{ prometheus_node_exporter_fqdn }};
 
     # allow large uploads of files
     client_max_body_size 1G;
@@ -13,15 +13,15 @@ server {
     # optimize downloading files larger than 1G
     # proxy_max_temp_file_size 2G;
 
-    ssl_certificate_key "/etc/letsencrypt/live/{{ gogs_name }}.bytle.net/privkey.pem";
-    ssl_certificate "/etc/letsencrypt/live/{{ gogs_name }}.bytle.net/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/{{ prometheus_node_exporter_fqdn }}/privkey.pem";
+    ssl_certificate "/etc/letsencrypt/live/{{ prometheus_node_exporter_fqdn }}/fullchain.pem";
     ssl_session_cache shared:SSL:1m;
     ssl_session_timeout  10m;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
     location / {
-        proxy_pass http://127.0.0.1:{{ gogs_port }};
+        proxy_pass http://127.0.0.1:{{ prometheus_node_exporter_port }};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -33,6 +33,6 @@ server {
 # redirect ssl
 server {
     listen 80;
-    server_name {{ gogs_fqdn }};
-    return 301 https://{{ gogs_fqdn }}$request_uri;
+    server_name {{ prometheus_node_exporter_fqdn }};
+    return 301 https://{{ prometheus_node_exporter_fqdn }}$request_uri;
 }

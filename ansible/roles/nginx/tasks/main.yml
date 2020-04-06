@@ -73,6 +73,14 @@
     backup: yes
   notify: reload nginx
 
+- name: Prometheus | Configuring Prometheus
+  become: true
+  template:
+    src: prometheus-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/prometheus.conf"
+    backup: yes
+  notify: reload nginx
+
 - name: Nginx conf verif | Verification of the configuration
   become: true
   command: '/sbin/nginx -t'

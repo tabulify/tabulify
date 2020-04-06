@@ -51,7 +51,7 @@
           group: "{{ prometheus_user_group }}"
           #creates: "{{ gogs_home }}/gogs"
           copy: false
-      - name: Move file
+      - name: Copy files
         become: yes
         become_user: "{{ prometheus_user_name }}"
         shell:

@@ -32,3 +32,7 @@ prometheus_node_exporter_binary_url: "https://github.com/prometheus/node_exporte
 prometheus_node_exporter_checksum: md5:02b59d17fc7b58df81632f9fbdce01b5
 prometheus_install_file: '{{prometheus_install_dir}}/prometheus.zip'
 
+prometheus_node_exporter_subdomain_name: prometheus
+prometheus_node_exporter_fqdn: "{{prometheus_node_exporter_subdomain_name}}.bytle.net"
+prometheus_node_exporter_port: 9100
+
