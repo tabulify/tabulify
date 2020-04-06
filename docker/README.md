@@ -2,10 +2,14 @@
 
 
 ## About
-Prometheus in docker in order to monitor the services.
+Prometheus in docker in order to monitor:
+
+  * the VPS machine
+  * and for now a windows laptop
 
 ## Steps
 
+  * Install Wmi Exporter on your Windows Laptop
   * Run [prometheus-docker-run.cmd](prometheus-docker-run.cmd)
   * You get a container called `prom`
   * You can stop it
