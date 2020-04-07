@@ -24,3 +24,9 @@ Based on:
 
   * https://github.com/mrlesmithjr/ansible-netdata 
   * https://docs.netdata.cloud/packaging/installer/#install-netdata-on-linux-manually
+
+## FYI
+
+  * [Prometheus as Backend](https://docs.netdata.cloud/backends/prometheus/)
+  * [Netdata, Prometheus, Grafana](https://docs.netdata.cloud/backends/prometheus/)
+  * [Netdata with Prometheus](https://docs.netdata.cloud/backends/prometheus/)
