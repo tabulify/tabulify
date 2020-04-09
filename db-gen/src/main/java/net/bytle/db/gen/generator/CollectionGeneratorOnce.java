@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  *
  * @param <T>
  */
-public interface CollectionGeneratorOnce<T> extends CollectionGenerator, Supplier {
+public interface CollectionGeneratorOnce<T> extends CollectionGenerator<T>, Supplier<T> {
 
 
   /**
