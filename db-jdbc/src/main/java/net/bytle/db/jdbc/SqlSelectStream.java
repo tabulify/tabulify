@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.SqlDataPath.QUERY_TYPE;
-
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
@@ -103,8 +101,9 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
   private ResultSet getResultSet() {
     if (resultSet == null) {
-      switch (jdbcDataPath.getType()) {
-        case QUERY_TYPE:
+      SqlDataPath.Type type = SqlDataPath.Type.fromString(jdbcDataPath.getType());
+      switch (type) {
+        case QUERY:
           query = jdbcDataPath.getQuery();
           break;
         default:

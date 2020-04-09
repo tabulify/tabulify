@@ -11,7 +11,7 @@ import java.util.List;
  * and it will generate (ie give back) one record
  * at a time with a maximum of N
  */
-public class ProvidedDataGenerator<T> implements CollectionGeneratorOnce<T> {
+public class ProvidedDataGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T> {
 
 
   /**

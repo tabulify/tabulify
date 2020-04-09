@@ -49,7 +49,12 @@ public class FsDataStoreProvider extends DataStoreProvider {
   public boolean accept(String url) {
     URI uri = URI.create(url);
     for (FileSystemProvider fileSystemProvider : FileSystemProvider.installedProviders()) {
-      if (uri.getScheme().equals(fileSystemProvider.getScheme())) {
+      String scheme = uri.getScheme();
+      if (scheme==null){
+        // an URL for tpcds return null for scheme
+        scheme = uri.getSchemeSpecificPart();
+      }
+      if (scheme.equals(fileSystemProvider.getScheme())) {
         return true;
       }
     }

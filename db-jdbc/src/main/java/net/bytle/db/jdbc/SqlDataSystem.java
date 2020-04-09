@@ -52,8 +52,9 @@ public class SqlDataSystem implements DataSystem {
 
     SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
 
-    switch (jdbcDataPath.getType()) {
-      case SqlDataPath.QUERY_TYPE:
+    SqlDataPath.Type type = SqlDataPath.Type.fromString(jdbcDataPath.getType());
+    switch (type) {
+      case QUERY:
         return true;
       default:
         boolean tableExist;
@@ -517,24 +518,25 @@ public class SqlDataSystem implements DataSystem {
     SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
     StringBuilder dropTableStatement = new StringBuilder();
     dropTableStatement.append("drop ");
-    switch (jdbcDataPath.getType()) {
-      case SqlDataPath.TABLE_TYPE:
+    SqlDataPath.Type type = SqlDataPath.Type.fromString(jdbcDataPath.getType());
+    switch (type) {
+      case TABLE:
         dropTableStatement.append("table ");
         break;
-      case SqlDataPath.VIEW_TYPE:
+      case VIEW:
         dropTableStatement.append("view ");
         break;
       default:
-        throw new RuntimeException("The drop of the table type (" + jdbcDataPath.getType() + ") is not implemented");
+        throw new RuntimeException("The drop of the table type (" + type + ") is not implemented");
     }
     dropTableStatement.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
     try (
       Statement statement = jdbcDataPath.getDataStore().getCurrentConnection().createStatement()
     ) {
 
-      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Trying to drop " + jdbcDataPath.getType() + " " + dataPath.toString());
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info("Trying to drop " + type + " " + dataPath.toString());
       statement.execute(dropTableStatement.toString());
-      JdbcDataSystemLog.LOGGER_DB_JDBC.info(jdbcDataPath.getType() + " " + dataPath.toString() + " dropped");
+      JdbcDataSystemLog.LOGGER_DB_JDBC.info(type + " " + dataPath.toString() + " dropped");
 
     } catch (SQLException e) {
       String msg = Strings.multiline("Dropping of the data path (" + jdbcDataPath + ") was not successful with the statement `" + dropTableStatement.toString() + "`"

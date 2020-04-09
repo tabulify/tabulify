@@ -25,7 +25,7 @@ public class GenFsDataPath extends FsDataPathAbs implements FsDataPath, GenDataP
   }
 
   @Override
-  public net.bytle.db.jdbc.SqlDataPath.Type getType() {
+  public String getType() {
     return "generator";
   }
 

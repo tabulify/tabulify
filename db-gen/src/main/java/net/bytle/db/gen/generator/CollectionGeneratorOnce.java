@@ -3,6 +3,8 @@ package net.bytle.db.gen.generator;
 
 import net.bytle.db.gen.GenColumnDef;
 
+import java.util.function.Supplier;
+
 /**
  * A data generator generates a value for:
  * * one
@@ -11,7 +13,7 @@ import net.bytle.db.gen.GenColumnDef;
  *
  * @param <T>
  */
-public interface CollectionGeneratorOnce<T> extends CollectionGenerator {
+public interface CollectionGeneratorOnce<T> extends CollectionGenerator, Supplier {
 
 
   /**
@@ -47,9 +49,6 @@ public interface CollectionGeneratorOnce<T> extends CollectionGenerator {
    * If the generator is a multi-column generator, it will throw an errors
    */
   GenColumnDef<T> getColumn();
-
-
-
 
 
 }

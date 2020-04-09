@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
+public class FkDataCollectionGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T> {
 
 
   private final ForeignKeyDef foreignKeyDef;
@@ -50,10 +50,10 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
    * @return a new generated data object every time it's called
    */
   @Override
-  public Object getNewValue() {
+  public T getNewValue() {
 
     value = histogramCollectionGenerator.getNewValue();
-    return value;
+    return (T) value;
 
   }
 
@@ -61,8 +61,8 @@ public class FkDataCollectionGenerator<T> implements CollectionGeneratorOnce {
    * @return a generated value (used in case of derived data
    */
   @Override
-  public Object getActualValue() {
-    return value;
+  public T getActualValue() {
+    return (T) value;
   }
 
   /**

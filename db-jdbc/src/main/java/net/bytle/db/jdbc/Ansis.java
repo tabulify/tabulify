@@ -40,7 +40,7 @@ public class Ansis {
         final String cat_name = tableResultSet.getString("TABLE_CAT");
         final String type_name = tableResultSet.getString("TABLE_TYPE");
         SqlDataPath childDataPath = jdbcDataPath.getDataStore().getDefaultDataPath(cat_name, schema_name, table_name)
-          .setType(type_name);
+          .setType(SqlDataPath.Type.fromString(type_name));
         jdbcDataPaths.add(childDataPath);
       }
 

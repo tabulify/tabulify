@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.jdbc.SqlDataPath.QUERY_TYPE;
 
 public class SqlDataDef extends TableDef implements RelationDef {
 
@@ -44,7 +43,7 @@ public class SqlDataDef extends TableDef implements RelationDef {
       } else {
 
         // Does this data path a query is
-        if (dataPath.getType().equals(QUERY_TYPE)) {
+        if (dataPath.getType().equals(SqlDataPath.Type.QUERY.toString())) {
           // The select stream build the data def
           selectStream = SqlSelectStream.of(dataPath);
           selectStream.runtimeDataDef(this);
@@ -111,7 +110,7 @@ public class SqlDataDef extends TableDef implements RelationDef {
       ResultSet tableResultSet = this.getDataPath().getDataStore().getCurrentConnection().getMetaData().getTables(catalog, schema, tableName, types);
       boolean exists = tableResultSet.next(); // For TYPE_FORWARD_ONLY
       if (exists) {
-        this.getDataPath().setType(tableResultSet.getString("TABLE_TYPE"));
+        this.getDataPath().setType(SqlDataPath.Type.fromString(tableResultSet.getString("TABLE_TYPE")));
       }
       tableResultSet.close();
 

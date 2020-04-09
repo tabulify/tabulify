@@ -53,10 +53,12 @@ public class SqlDataPath extends DataPathAbs {
     SYSTEM; // Container
 
     static Type fromString(final String s) {
-      if (s.toUpperCase().equals(TABLE.toString())) {
-        return TABLE;
+      for (Type type : Type.values()) {
+        if (s.toUpperCase().equals(type.toString())) {
+          return type;
+        }
       }
-      throw new RuntimeException("Unknown type");
+      throw new RuntimeException("("+s+") is an unknown type");
     }
 
   }

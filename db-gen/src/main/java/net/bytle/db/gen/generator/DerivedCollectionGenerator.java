@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 
-public class DerivedCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
+public class DerivedCollectionGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T> {
 
   public static final String TYPE = "derived";
 

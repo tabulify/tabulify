@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NameGenerator<T> implements CollectionGeneratorOnce {
+public class NameGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T> {
 
 
   private final GenColumnDef<String> columnDef;
@@ -48,8 +48,8 @@ public class NameGenerator<T> implements CollectionGeneratorOnce {
   }
 
   @Override
-  public String getActualValue() {
-    return actualValue;
+  public T getActualValue() {
+    return (T) actualValue;
   }
 
   @Override

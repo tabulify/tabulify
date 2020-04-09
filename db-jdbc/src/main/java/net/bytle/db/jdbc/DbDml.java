@@ -121,7 +121,7 @@ public class DbDml {
         insertIntoBuilder.append("INSERT INTO " + JdbcDataSystemSql.getFullyQualifiedSqlName(target) + " (");
         insertIntoBuilder.append(JdbcDataSystemSql.getQueryColumnsStatement(target));
         insertIntoBuilder.append(") ");
-        if (source.getType().equals(SqlDataPath.QUERY_TYPE)){
+        if (source.getType().equals(SqlDataPath.Type.QUERY.toString())){
 
             insertIntoBuilder.append(source.getQuery());
 

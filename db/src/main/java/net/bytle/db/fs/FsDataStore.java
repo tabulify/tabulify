@@ -91,6 +91,12 @@ public class FsDataStore extends DataStore {
       getFileSystem().close();
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } catch (UnsupportedOperationException e){
+      if (getFileSystem().getClass().getSimpleName().equals("WindowsFileSystem")){
+        // yes it's unsupported
+      } else {
+        throw e;
+      }
     }
   }
 

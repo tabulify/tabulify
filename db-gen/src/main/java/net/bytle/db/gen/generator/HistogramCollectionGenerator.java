@@ -25,7 +25,7 @@ import java.util.Map;
  * See another example at
  * https://commons.apache.org/proper/commons-math/apidocs/org/apache/commons/math4/distribution/EnumeratedDistribution.html
  */
-public class HistogramCollectionGenerator<T> implements CollectionGeneratorOnce<T> {
+public class HistogramCollectionGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(HistogramCollectionGenerator.class);
 

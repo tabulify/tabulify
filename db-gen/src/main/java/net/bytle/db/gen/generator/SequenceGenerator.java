@@ -41,7 +41,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * * minValue  only active if the step is negative
  */
 
-public class SequenceGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
+public class SequenceGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
 
 
   public static final Date MIN_DATE = new Date(Long.MIN_VALUE);

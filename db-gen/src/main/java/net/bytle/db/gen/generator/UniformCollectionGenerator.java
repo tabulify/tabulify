@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 /**
  * Distribution Generator that will return a value randomly chosen between a min and a max
  */
-public class UniformCollectionGenerator<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
+public class UniformCollectionGenerator<T> extends CollectionGeneratorOnceAbs<T> implements CollectionGeneratorOnce<T>, CollectionGeneratorScale<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UniformCollectionGenerator.class);
 
