@@ -1,6 +1,8 @@
 # Design
 
-## About
+## Framework
+
+### Everything is a tabular
 
 Variation of the [Everything is a file](https://en.wikipedia.org/wiki/Everything_is_a_file) paradigm where:
 
@@ -8,7 +10,11 @@ Variation of the [Everything is a file](https://en.wikipedia.org/wiki/Everything
   * Everything is a file with a `tabular` descriptor.
   * The `tabular path` is the addressing system and the `tabular descriptor` being the byte stream I/O interface. 
 
-## Gold rule
+### Batch and streaming convergence
+
+Reprocessing: process real-time data and re-process historical data in the same framework
+
+## Code Gold rule
 
   * No Global Cache (in memory) - Wel Persistence
   * Cache can be a local ephemeral cache in a function (example a function that build in one call several tables for instance)
