@@ -16,7 +16,8 @@ import java.nio.file.Paths;
 import java.util.Date;
 
 /**
- * The log are done with the <a href="http://logging.apache.org/log4j/2.x/manual/appenders.html#RoutingAppender">Routes</a>
+ * The log are done with the
+ * <a href="http://logging.apache.org/log4j/2.x/manual/appenders.html#RoutingAppender">Routes</a>
  */
 public class AnalyticsLogger implements Handler<RoutingContext> {
 

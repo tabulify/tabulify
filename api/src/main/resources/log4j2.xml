@@ -35,6 +35,14 @@
         <SizeBasedTriggeringPolicy size="250 MB"/>
       </Policies>
     </RollingFile>
+    <RollingFile name="Csp"
+                 fileName="logs/csp.jsonl"
+                 filePattern="logs/csp/$${date:yyyy-MM}/csp-%d{MM-dd-yyyy}-%i.jsonl">
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
     <RollingFile name="AnalyticsError"
                  fileName="logs/analytics-error.log"
                  filePattern="logs/error/analytics-%d{MM-dd-yyyy}-%i.log">
@@ -55,6 +63,9 @@
     </Logger>
     <Logger name="net.bytle.api.http.WebLogger" level="debug" additivity="false">
       <AppenderRef ref="Web"/>
+    </Logger>
+    <Logger name="net.bytle.api.http.CspLogger" level="info" additivity="false">
+      <AppenderRef ref="Csp"/>
     </Logger>
   </Loggers>
 </Configuration>

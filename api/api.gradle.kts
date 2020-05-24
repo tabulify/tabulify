@@ -106,7 +106,7 @@ sourceSets {
 tasks.compileJava {
   targetCompatibility = JavaVersion.VERSION_1_8.toString()
   sourceCompatibility = JavaVersion.VERSION_1_8.toString()
-  dependsOn(":annotationProcessing")
+  dependsOn("annotationProcessing")
 }
 
 tasks.compileTestJava {

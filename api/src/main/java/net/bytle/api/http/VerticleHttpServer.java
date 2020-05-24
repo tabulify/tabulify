@@ -163,6 +163,11 @@ public class VerticleHttpServer extends AbstractVerticle {
     router.post(AnalyticsLogger.ANALYTICS_URL_PATH).handler(analyticsLogger);
     router.get(AnalyticsLogger.ANALYTICS_URL_PATH).handler(analyticsLogger);
 
+    // Csp report
+    CspLogger cspLogger = new CspLogger();
+    router.post(CspLogger.ENDPOINT).handler(cspLogger);
+    router.get(CspLogger.ENDPOINT).handler(cspLogger);
+
     // Healthy services ?
     router.get("/alive").handler(HealthCheckHandler.create(vertx));
     router.get("/healthy").handler(HealthCheckHandler.createWithHealthChecks(handlerPokemon.getHealthchecks()));
