@@ -36,8 +36,8 @@
       </Policies>
     </RollingFile>
     <RollingFile name="Csp"
-                 fileName="logs/csp.jsonl"
-                 filePattern="logs/csp/$${date:yyyy-MM}/csp-%d{MM-dd-yyyy}-%i.jsonl">
+                 fileName="logs/csp/csp.jsonl"
+                 filePattern="logs/csp/$${date:yyyy-MM}/csp-${ctx:event_slug}-%d{yyyy-dd-MM}-%i.jsonl">
       <Policies>
         <TimeBasedTriggeringPolicy/>
         <SizeBasedTriggeringPolicy size="250 MB"/>

@@ -61,13 +61,15 @@ public class SqlDataSystem implements DataSystem {
         String[] types = {"TABLE", "VIEW"};
 
         final String schemaPattern = jdbcDataPath.getSchema() != null ? jdbcDataPath.getSchema().getName() : null;
+        String catalog = jdbcDataPath.getCatalog();
+        String name = jdbcDataPath.getName();
         try (
           ResultSet tableResultSet = jdbcDataPath.getDataStore().getCurrentConnection()
             .getMetaData()
             .getTables(
-              jdbcDataPath.getCatalog(),
+              catalog,
               schemaPattern,
-              jdbcDataPath.getName(),
+              name,
               types)
         ) {
           tableExist = tableResultSet.next(); // For TYPE_FORWARD_ONLY

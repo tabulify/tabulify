@@ -33,7 +33,12 @@ public class CspLogger implements Handler<RoutingContext> {
   /**
    * Where the log files should be
    */
-  public static final Path LOG_PATH = Paths.get(Log.LOG_DIR_NAME, LOGGER_NAME);
+  public static final Path LOG_DIR_PATH = Paths.get(Log.LOG_DIR_NAME, LOGGER_NAME);
+
+  /**
+   * The log files
+   */
+  public static final Path LOG_FILE_PATH = LOG_DIR_PATH.resolve(LOGGER_NAME+".jsonl");
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
