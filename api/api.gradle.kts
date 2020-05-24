@@ -60,7 +60,7 @@ val mainVerticle = "net.bytle.api.MainVerticle"
 
 
 tasks.named<ShadowJar>("shadowJar") {
-  archiveBaseName.set("app")
+  // archiveBaseName.set("app") if you want to change the name of the jar to app-0.0.1-all.jar
   mergeServiceFiles("META-INF/services/io.vertx.core.spi.VerticleFactory")
   manifest {
     attributes(mapOf("Main-Class" to mainClassName))
