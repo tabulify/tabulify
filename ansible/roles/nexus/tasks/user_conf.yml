@@ -4,7 +4,7 @@
 
 - name: 'Configure Nexus properties file ({{ nexus_data_directory}}/etc/nexus.properties)'
   lineinfile:
-    dest: "{{ nexus_data_directory}}/etc/nexus.properties"
+    path: "{{ nexus_data_directory}}/etc/nexus.properties"
     state: present
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
@@ -15,6 +15,22 @@
       line: "application-host=0.0.0.0" # bind to all host
     - regexp: "^nexus-context-path="
       line: "nexus-context-path={{ nexus_context_path }}"
+  notify:
+    - nexus reload
+
+- name: 'Configure the Java memory requirement'
+  lineinfile:
+    path: "{{nexus_application_directory}}/bin/nexus.vmoptions"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regexp: '^-Xms'
+      line: '-Xms{{nexus_java_memory}}m'
+    - regexp: '^-Xmx'
+      line: '-Xmx{{nexus_java_memory}}m'
+    - regexp: '^-XX:MaxDirectMemorySize='
+      line: '-XX:MaxDirectMemorySize={{nexus_java_memory}}m'
   notify:
     - nexus reload
 

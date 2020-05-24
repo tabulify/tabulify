@@ -55,3 +55,8 @@ nexus_link: nexus-latest
 
 # ip address or range of ip where we open the firewall
 nexus_white_ip_address: []
+
+
+# Memory
+nexus_java_memory: 512
+
