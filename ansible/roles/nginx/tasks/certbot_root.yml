@@ -68,12 +68,12 @@
   cron:
     name: 'letsencrypt_renewal_{{item}}'
     special_time: weekly
-    job: letsencrypt --renew certonly --dns-ovh --dns-ovh-credentials /root/.secrets/certbot/ovh.ini --dns-ovh-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
+    job: letsencrypt certonly --dns-ovh --dns-ovh-credentials /root/.secrets/certbot/ovh.ini --dns-ovh-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
   with_items: "{{ovh_domains}}"
 
 - name: Add Cloudflare letsencrypt cronjob for cert renewal
   cron:
     name: 'letsencrypt_renewal_{{item}}'
     special_time: weekly
-    job: letsencrypt --renew certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini --dns-cloudflare-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
+    job: letsencrypt certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini --dns-cloudflare-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }} && systemctl reload nginx
   with_items: "{{cloudflare_domains}}"
