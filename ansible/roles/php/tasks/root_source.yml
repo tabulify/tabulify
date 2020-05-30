@@ -1,3 +1,6 @@
+# Install from the source
+# not finished
+# https://www.php.net/manual/en/install.unix.nginx.php
 
 - name: Download php source file
   get_url:
@@ -19,6 +22,6 @@
 - name: Extract php source
   unarchive:
     src: /opt/php-7.2.31.tar.gz
-    dest: /opt/php
+    dest: /opt
     remote_src: yes
 
