@@ -1,11 +1,17 @@
-
 gnico_repository_pwd: '{{ vault_gnico_repository_pwd }}'
 
-gnico_port: 8083
-gnico_app: apignico
-
-# The app has two different endpoint
+# gerardnico.com (php)
 gnico_fqdn: 'gerardnico.com'
+gnico_root_dir: '/opt/gnico.com'
+gnico_user: 'gerardni'
+gnico_user_pwd: '{{ vault_gnico_user_pwd }}'
+gnico_group: '{{ user_group }}'
+gnico_fpm_port: 9000 # port of the php-fpm process for the domain gerardnico.com
+gnico_log_prefix: 'gnico'
+
+# gnico app (api)
+# The app has two different endpoint
 gnico_fqdn_api: 'api.{{ gnico_fqdn }}'
 gnico_fqdn_analytics: 'analytics.{{ gnico_fqdn }}'
-
+gnico_port: 8083
+gnico_app: apignico

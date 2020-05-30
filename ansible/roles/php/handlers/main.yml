@@ -1,0 +1,6 @@
+
+- name: fpm_reload
+  systemd:
+    name: "php-fpm"
+    state: reloaded
+  become: true

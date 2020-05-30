@@ -1,0 +1,23 @@
+
+- name: "Create the gerardnico user"
+  user:
+    name: "{{ gnico_user }}"
+    password: "{{ gnico_user_pwd | password_hash('sha512') }}"
+    group: '{{ gnico_group }}'
+    comment: gerardnico user
+
+- name: Gnico.com | Root Directory creation
+  become: true
+  file:
+    state: directory
+    path: '{{ gnico_root_dir }}'
+    owner: '{{ gnico_user_name }}'
+    mode: 'u=rwx,g=rwx'
+
+- name: Gnico | Configuring Gnico
+  become: true
+  template:
+    src: php-fpm-gnico.conf.j2
+    dest: "/etc/php-fpm.d/gnico.conf"
+  notify:
+    fpm_reload

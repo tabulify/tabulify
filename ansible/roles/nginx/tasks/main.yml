@@ -40,6 +40,14 @@
     backup: yes
   notify: reload nginx
 
+- name: Gnico | Configuring Gnico
+  become: true
+  template:
+    src: gnico-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/gnico.conf.j2"
+    backup: yes
+  notify: reload nginx
+
 - name: Netdata | Configuring Netdata
   become: true
   template:
@@ -57,13 +65,6 @@
     backup: yes
   notify: reload nginx
 
-- name: Gnico | Configuring Gnico
-  become: true
-  template:
-    src: gnico-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/gnico.conf"
-    backup: yes
-  notify: reload nginx
 
 - name: Gogs | Configuring Gogs
   become: true
@@ -80,6 +81,7 @@
     dest: "/etc/nginx/conf.d/prometheus.conf"
     backup: yes
   notify: reload nginx
+
 
 - name: Nginx conf verif | Verification of the configuration
   become: true

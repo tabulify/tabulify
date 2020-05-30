@@ -4,12 +4,18 @@
     msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
   when: ansible_os_family != "RedHat" # Centos
 
-- name: Root task
+- name: Php Installation
   become: true
-  import_tasks: 'root_remi.yml'
+  import_tasks: 'root_install_remi.yml'
 
+- name: Php configuration
+  become: true
+  import_tasks: 'root_configuration.yml'
 
+- name: Php Add the website gerardnico.com
+  become: true
+  import_tasks: 'root_gnico_site.yml'
 
-#- name: Confirm PHP version is correct.
-#  shell: php -v | grep -F '{{ php_version }}'
-#  changed_when: false
+- name: Php service (Should be started)
+  become: true
+  import_tasks: 'root_service.yml'

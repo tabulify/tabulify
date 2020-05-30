@@ -6,3 +6,5 @@ php_version: '7.2'
 # ansible_distribution_major_version is the linux major distribution version (ie 6,7..)
 remi_repo_url: "http://rpms.remirepo.net/enterprise/remi-release-{{ ansible_distribution_major_version }}.rpm"
 remi_repo_gpg_key_url: "http://rpms.remirepo.net/RPM-GPG-KEY-remi"
+
+

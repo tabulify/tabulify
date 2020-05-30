@@ -38,7 +38,7 @@ server {
     }
 }
 
-
+# Analytics
 server {
     listen       443 ssl http2;
     listen       [::]:443 ssl http2;
@@ -68,6 +68,39 @@ server {
         proxy_store off;
 
     }
+}
+
+# Root
+# As stated https://www.php.net/manual/en/install.unix.nginx.php
+server {
+    listen       443 ssl http2;
+    listen       [::]:443 ssl http2;
+
+    # Change `example.com` to match your domain name.
+    server_name {{ gnico_fqdn }};
+
+    ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn }}/privkey.pem";
+    ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn }}/fullchain.pem";
+    ssl_session_cache shared:SSL:1m;
+    ssl_session_timeout  10m;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # serve
+    location / {
+        root   {{ gnico_root_dir }};
+        index  index.php index.html index.htm;
+    }
+
+    # send the php file to php-fpm
+    location ~* \.php$ {
+            fastcgi_index  index.php;
+            fastcgi_pass   127.0.0.1:{{ gnico_fpm_port }};
+            include        fastcgi_params;
+            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            fastcgi_param  SCRIPT_NAME      $fastcgi_script_name;
+    }
+
 }
 
 
