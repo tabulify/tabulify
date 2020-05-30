@@ -1,0 +1,15 @@
+
+- name: Fail if not Redhat
+  fail:
+    msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
+  when: ansible_os_family != "RedHat" # Centos
+
+- name: Root task
+  become: true
+  import_tasks: 'root_task.yml'
+
+
+
+#- name: Confirm PHP version is correct.
+#  shell: php -v | grep -F '{{ php_version }}'
+#  changed_when: false

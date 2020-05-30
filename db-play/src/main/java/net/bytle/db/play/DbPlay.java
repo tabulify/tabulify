@@ -1,12 +1,14 @@
 package net.bytle.db.play;
 
 import net.bytle.db.DatastoreVault;
-import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.jdbc.SqlDataStore;
+import net.bytle.db.Tabular;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.ForeignKeyDag;
+import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
 import net.bytle.type.Maps;
 import org.yaml.snakeyaml.Yaml;
@@ -14,50 +16,30 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A play object
+ */
 public class DbPlay {
 
-  private static Path sqlDir;
-  private static Path playDir;
-  static private Path dataDir;
-  static private Path outDir;
-  private static DatastoreVault datastoreVault;
-  private static Path workingDir;
+  private Path playFile;
+  private Path homeDirectory;
+  private Tabular tabular;
 
 
-  public static void main(String[] args) throws IOException {
+  /**
+   * The play file and the play home
+   *
+   * @throws IOException
+   */
+  public void run() throws IOException {
 
-    Path workingPath = null;
-    Path playFile = null;
-    if (args.length > 0) {
-      playFile = Paths.get(args[0]);
-      workingPath = Paths.get(".");
-    } else {
-      System.err.println("A play should be given as first parameters");
-      System.exit(1);
-    }
-    if (args.length > 1) {
-      workingPath = Paths.get(args[1]);
-      playFile = workingPath.resolve(args[0]);
-    }
-    if (!Files.exists(playFile)) {
-      System.err.println("The play file (" + playFile.toAbsolutePath().toString() + ") does not exist");
-      System.exit(1);
-    }
-
-    workingDir = workingPath;
-    dataDir = workingPath.resolve("data");
-    playDir = workingPath.resolve("play");
-    outDir = workingPath.resolve("out");
-
-    sqlDir = workingPath.resolve("sql");
-    Path dsnDir = workingPath.resolve("dsn");
-    datastoreVault = DatastoreVault.of(dsnDir.resolve("dsn.ini"));
-
+    Path dsnDir = homeDirectory.resolve("dsn");
+    tabular = Tabular.tabular()
+      .setDataStoreVault(dsnDir.resolve("dsn.ini"));
 
     // The Yaml entry class
     Yaml yaml = new Yaml();
@@ -116,23 +98,22 @@ public class DbPlay {
     }
   }
 
-  private static void cleanTask(Map<String, Object> task) {
+  private void cleanTask(Map<String, Object> task) {
+
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the clean operations: " + desc);
     String target = (String) Maps.getPropertyCaseIndependent(task, "target");
-    SqlDataStore jdbcDataStore = datastoreVault.getDataStore(target);
-    DataPath dataPath = DataPaths.of(jdbcDataStore, ".");
-    List<DataPath> children = DataPaths.getChildren(dataPath);
-    ForeignKeyDag.get(children).getDropOrderedTables()
-      .stream().forEach(
-      s -> {
-        Tabulars.drop(s);
-      }
-    );
+    DataStore dataStore = this.tabular.getDataStore(target);
+
+    DataPath dataPath = dataStore.getCurrentDataPath();
+    List<DataPath> children = Tabulars.getChildren(dataPath);
+    ForeignKeyDag.get(children).getDropOrderedTables().stream().forEach(Tabulars::drop);
     System.out.println("The clean operations has succeeded and has deleted the following tables " + children);
+
   }
 
-  private static void loadTask(Map<String, Object> task) {
+  private void loadTask(Map<String, Object> task) {
+
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the load operations: " + desc);
 
@@ -142,7 +123,15 @@ public class DbPlay {
     DataPath sourceDataPath;
     Path sourcePath = null;
     Object sourceValue = Maps.getPropertyCaseIndependent(task, "source");
-    if (sourceValue.getClass().equals(String.class)){
+    DataPath source;
+    if (sourceValue instanceof String) {
+      source = this.tabular.getDataPath((String) sourceValue);
+    } else {
+      throw new RuntimeException("The source is not a string but a "+sourceValue.getClass().toString());
+    }
+
+
+    if (sourceValue.getClass().equals(String.class)) {
       // A file
       sourcePath = dataDir.resolve((String) sourceValue);
       sourceDataPath = DataPaths.of(sourcePath);
@@ -154,28 +143,28 @@ public class DbPlay {
       }
     } else {
       // A query
-      Map<String,Object> targetValues = (Map<String, Object>) sourceValue;
+      Map<String, Object> targetValues = (Map<String, Object>) sourceValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
       jdbcDataStore = datastoreVault.getDataStore(dsn);
       targetPath = (String) Maps.getPropertyCaseIndependent(targetValues, "sql");
       Path targetSqlFile = sqlDir.resolve(targetPath);
-      sourceDataPath = DataPaths.ofQuery(jdbcDataStore,Fs.getFileContent(targetSqlFile));
+      sourceDataPath = DataPaths.ofQuery(jdbcDataStore, Fs.getFileContent(targetSqlFile));
     }
 
     // Target
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     DataPath targetDataPath;
-    if (targetValue.getClass().equals(String.class)){
+    if (targetValue.getClass().equals(String.class)) {
       jdbcDataStore = datastoreVault.getDataStore((String) targetValue);
       String sourceFileName = sourcePath.getFileName().toString();
       targetPath = Fs.getFileNameWithoutExtension(sourceFileName);
       targetDataPath = DataPaths.of(jdbcDataStore, targetPath);
     } else {
-      Map<String,Object> targetValues = (Map<String, Object>) targetValue;
+      Map<String, Object> targetValues = (Map<String, Object>) targetValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
       jdbcDataStore = datastoreVault.getDataStore(dsn);
       String targetPathValue = (String) Maps.getPropertyCaseIndependent(targetValues, "name");
-      if (dsn.equals("file")){
+      if (dsn.equals("file")) {
         Path targetValueAsPath = workingDir.resolve(targetPathValue);
         targetDataPath = DataPaths.of(targetValueAsPath);
       } else {
@@ -184,12 +173,11 @@ public class DbPlay {
     }
 
 
-
     Tabulars.transfer(sourceDataPath, targetDataPath);
     System.out.println("The load operations has terminated");
   }
 
-  private static void sqlTask(Map<String, Object> task) {
+  private void sqlTask(Map<String, Object> task) {
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the sql operations: " + desc);
     String sourceValue = (String) Maps.getPropertyCaseIndependent(task, "source");
@@ -213,5 +201,24 @@ public class DbPlay {
     DataPath dataPath = DataPaths.ofQuery(sourceJdbcDataStore, Fs.getFileContent(sqlFile));
     Tabulars.transfer(dataPath, targetDataPath);
   }
+
+  public static DbPlay of() {
+    return new DbPlay();
+  }
+
+  public DbPlay setPlayFile(Path playFile) {
+    this.playFile = playFile;
+    return this;
+  }
+
+  public DbPlay setHomDirectory(Path homeDirectory) {
+    this.homeDirectory = homeDirectory;
+    return this;
+  }
+
+  public Path getDataDir() {
+    return homeDirectory.resolve("data");
+  }
+
 
 }

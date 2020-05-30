@@ -1,0 +1,10 @@
+
+- desc: 'Clean'
+  task: clean
+  target: gcs
+
+- desc: 'Load the data'
+  task: load
+  source: 2020-05-04vs2020-05-05.xlsx
+  target: gcs
+

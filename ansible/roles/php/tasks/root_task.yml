@@ -1,0 +1,24 @@
+
+- name: Download php source file
+  get_url:
+    url: 'https://www.php.net/distributions/php-7.2.31.tar.gz'
+    dest: /opt
+    checksum: sha256:796837831ccebf00dc15921ed327cfbac59177da41b33044d9a6c7134cdd250c
+
+- name: Be sure that tar is present
+  yum:
+    name: tar
+    state: present
+
+- name: Create the php home
+  file:
+    path: /opt/php
+    state: directory
+    mode: 0755
+
+- name: Extract php source
+  unarchive:
+    src: /opt/php-7.2.31.tar.gz
+    dest: /opt/php
+    remote_src: yes
+

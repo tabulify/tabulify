@@ -28,5 +28,8 @@
     - name: Install Prometheus Exporter
       role: prometheus
       tags: prometheus
+    - name: Install Php
+      role: php
+      tags: php
 
 
