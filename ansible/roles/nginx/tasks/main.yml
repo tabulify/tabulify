@@ -44,7 +44,7 @@
   become: true
   template:
     src: gnico-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/gnico.conf.j2"
+    dest: "/etc/nginx/conf.d/gnico.conf"
     backup: yes
   notify: reload nginx
 
