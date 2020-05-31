@@ -14,8 +14,14 @@
 
 - name: Php Add the website gerardnico.com
   become: true
-  import_tasks: 'root_gnico_site.yml'
+  import_tasks: 'root_fpm_configuration.yml'
 
 - name: Php service (Should be started)
   become: true
   import_tasks: 'root_service.yml'
+
+- name: Fpm service should be running
+  become: true
+  systemd:
+    name: "php-fpm"
+    state: started

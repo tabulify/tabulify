@@ -8,13 +8,3 @@
     regexp: "^[;]{0,1}cgi.fix_pathinfo="
     line: "cgi.fix_pathinfo=1"
 
-
-# Rename the standard default www process pool
-# we are not using it
-- name: Rename the base www.conf file
-  stat: path=/etc/php-fpm.d/www.conf
-  register: www_conf
-
-- name: Rename if the file exist
-  command: mv /etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf.backup
-  when: www_conf.stat.exists

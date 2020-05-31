@@ -1,12 +1,8 @@
 
 # gerardnico.com (php)
 gnico_fqdn: 'gerardnico.com'
-gnico_root_dir: '/opt/gnico.com'
-gnico_user: 'gerardni'
-gnico_user_pwd: '{{ vault_gnico_user_pwd }}'
-gnico_group: 'gerardni'
-gnico_fpm_port: 9000 # port of the php-fpm process for the domain gerardnico.com
-gnico_log_prefix: 'gnico'
+gnico_root_dir: '{{ www_root_dir }}/datacadamia'
+
 
 # gnico app (api)
 # The app has two different endpoint

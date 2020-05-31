@@ -95,7 +95,7 @@ server {
     # send the php file to php-fpm
     location ~* \.php$ {
             fastcgi_index  index.php;
-            fastcgi_pass   127.0.0.1:{{ gnico_fpm_port }};
+            fastcgi_pass   127.0.0.1:{{ fpm_spool_www_port }};
             include        fastcgi_params;
             fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
             fastcgi_param  SCRIPT_NAME      $fastcgi_script_name;
