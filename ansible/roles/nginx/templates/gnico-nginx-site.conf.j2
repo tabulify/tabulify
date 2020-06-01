@@ -120,20 +120,18 @@ server {
         include {{ nginx_etc_path }}/fastcgi_params;
     }
 
-    location ~ ^/lib.*\.(gif|png|ico|jpg)$ {
-      expires 30d;
+    location ~ ^/lib.*\.(gif|png|ico|jpg|css)$ {
+      expires 4h; # w3school and google are less than that
     }
 
     # Block access to data folders
-    location ^~ /conf/ { return 403; }
-    location ^~ /dokudata/ { return 403; }
     location ~ /(dokudata|conf|bin|inc)/ {
-        deny all;
+      return 444; # deny all; # same as return 403
     }
 
     # Block access to .htaccess files
     location ~ /\.ht {
-      deny  all;
+      return 444; # Better than ; deny  all; # same as return 403
     }
 
 }

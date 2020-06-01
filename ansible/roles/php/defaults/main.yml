@@ -12,7 +12,7 @@ www_root_dir: '/opt/www'
 # fpm
 # the service process that will get the request from nginx and send them to php
 fpm_spool_www_name: 'www'
-fpm_spool_www_user: 'www-user' # the default is www-data but as it will be a ssh open account we make it more difficult to find
-fpm_spool_www_group: 'www-user'
-fpm_spool_www_user_pwd: '{{ vault_fpm_spool_www_user_pwd }}'
+www_user: 'www-user' # the default is www-data but as it will be a ssh open account we make it more difficult to find
+www_group: 'www-user'
+www_user_pwd: '{{ vault_www_user_pwd }}'
 fpm_spool_www_port: 9000 # port of the php-fpm process

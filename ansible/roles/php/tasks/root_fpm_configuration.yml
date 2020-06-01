@@ -1,22 +1,15 @@
 
 - name: "Create the www group"
   group:
-    name: "{{ fpm_spool_www_group }}"
+    name: "{{ www_group }}"
 
 - name: "Create the www user"
   user:
-    name: "{{ fpm_spool_www_user }}"
-    password: "{{ fpm_spool_www_user_pwd | password_hash('sha512') }}"
-    group: '{{ fpm_spool_www_group }}'
+    name: "{{ www_user }}"
+    password: "{{ www_user_pwd | password_hash('sha512') }}"
+    group: '{{ www_group }}'
     comment: the user that runs the fpm www spool
 
-- name: WWW | Root Directory creation
-  file:
-    state: directory
-    path: '{{ www_root_dir }}'
-    owner: '{{ fpm_spool_www_user }}'
-    group: '{{ fpm_spool_www_group }}'
-    mode: 'u=rwx,g=rwx'
 
 - name: Www | Configuring the default pool
   template:

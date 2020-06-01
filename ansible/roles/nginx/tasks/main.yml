@@ -40,6 +40,10 @@
     backup: yes
   notify: reload nginx
 
+- name: 'Www - static www folder configuration'
+  become: true
+  include: www.yml
+
 - name: 'Gnico - Configuration'
   become: true
   include: gnico.yml

@@ -1,0 +1,25 @@
+- name: WWW | Root Directory creation
+  file:
+    state: directory
+    path: '{{ www_root_dir }}'
+    owner: '{{ www_user }}'
+    group: '{{ www_group }}'
+    mode: 'u=rwx,g=rwx'
+
+# Nginx should be able to serve static file
+# This is also mandatory for php file
+- name: WWW | Add Nginx in the same group
+  user:
+    name: 'nginx'
+    groups: '{{ www_group }}'
+    append: true
+
+# Too long
+#- name: www | Base directory and Ownership
+#  file:
+#    path: '{{ www_root_dir }}'
+#    state: directory
+#    mode: 0770
+#    owner: '{{ www_user }}'
+#    group: '{{ www_group }}'
+#    recurse: yes

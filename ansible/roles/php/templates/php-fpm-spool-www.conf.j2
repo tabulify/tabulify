@@ -22,9 +22,9 @@
 ; Note: The user is mandatory. If the group is not set, the default user's group
 ;       will be used.
 ; RPM: apache user chosen to provide access to the same directories as httpd
-user = {{ fpm_spool_www_user }}
+user = {{ www_user }}
 ; RPM: Keep a group allowed to write in log dir.
-group = {{ fpm_spool_www_group }}
+group = {{ www_group }}
 
 ; The address on which to accept FastCGI requests.
 ; Valid syntaxes are:
