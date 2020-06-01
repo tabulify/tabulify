@@ -1,3 +1,5 @@
+# nginx log
+gnico_log_dir: '/var/log/nginx/{{ gnico_fqdn }}'
 
 # gerardnico.com (php)
 gnico_fqdn: 'gerardnico.com'

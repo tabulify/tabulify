@@ -1,0 +1,2 @@
+# The path of the config directory
+nginx_etc_path: /etc/nginx

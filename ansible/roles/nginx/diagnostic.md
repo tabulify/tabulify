@@ -1,4 +1,14 @@
 
+
+## Log file
+
+They are by default at:
+
+  * /var/log/nginx/
+  * /var/log/nginx/{{ web site }}
+
+/var/log/nginx/gerardnico.com
+
 ## Conf file
 
 They can be found at: 

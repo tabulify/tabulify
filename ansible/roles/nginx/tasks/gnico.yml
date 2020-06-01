@@ -1,0 +1,23 @@
+
+- name: Gnico | Base directory and Ownership
+  file:
+    path: '{{ gnico_root_dir }}'
+    state: directory
+    mode: 0770
+    owner: '{{ fpm_spool_www_user }}'
+    group: '{{ fpm_spool_www_group }}'
+    recurse: yes
+
+- name: Gnico | Access Log directory
+  file:
+    path: '{{ gnico_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ fpm_spool_www_group }}'
+
+- name: Gnico | Configuring Gnico
+  template:
+    src: gnico-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/gnico.conf"
+    backup: yes
+  notify: reload nginx
