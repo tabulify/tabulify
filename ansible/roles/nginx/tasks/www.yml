@@ -11,7 +11,7 @@
 - name: WWW | Add Nginx in the same group
   user:
     name: 'nginx'
-    groups: '{{ www_group }}'
+    groups: '{{ www_group }}, apache' # apache group is used in /var/lib/php
     append: true
 
 # Too long

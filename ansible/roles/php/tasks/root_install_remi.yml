@@ -24,9 +24,21 @@
 # Modules can be seen with `php --modules` command
 - name: Install Php gd modules
   yum:
-    name: php-gd
+    name:
+      - php-gd
+      - php-imagick
     state: present
     enablerepo: remi-php74
+
+## Needed for manager404
+- name: Install Extra Php package needed by the plugin
+  yum:
+    name:
+      - php-pdo
+      - php-sqlite3
+    state: present
+    enablerepo: remi-php74
+
 
 # Nginx does not contain native PHP processing and need php-fpm (fastCGI process manager)
 - name: Install php-fpm command line

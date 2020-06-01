@@ -1,2 +1,17 @@
 # The path of the config directory
 nginx_etc_path: /etc/nginx
+
+# ALways
+# from https://www.php.net/manual/en/install.unix.nginx.php
+# to prevent Nginx from passing requests to the PHP-FPM backend
+# if the file does not exists, in order to prevent arbitrarily script injection.
+php_cgi.fix_pathinfo: 1
+
+# prod
+#php_error_reporting: 'E_ALL & ~E_DEPRECATED & ~E_STRICT'
+#php_display_error: 'Off'
+
+# dev
+php_error_reporting: 'E_ALL'
+php_display_error: 'On'
+

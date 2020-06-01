@@ -8,6 +8,9 @@ the default php via the the remi repository.
 Because the web server is Nginx, [php-fpm](php-fpm.md) was installed.
 It's a service that makes a bridge between php and nginx.
 
+## Diagnostic
+
+See [diagnostic](diagnostic.md)
 
 ## Documentation / Reference
 

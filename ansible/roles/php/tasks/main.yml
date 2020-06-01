@@ -8,9 +8,13 @@
   become: true
   import_tasks: 'root_install_remi.yml'
 
+- name: Create the user used for the pool
+  become: true
+  import_tasks: 'root_create_user.yml'
+
 - name: Php configuration
   become: true
-  import_tasks: 'root_configuration.yml'
+  import_tasks: 'root_php_conf.yml'
 
 - name: Php Add the website gerardnico.com
   become: true

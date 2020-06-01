@@ -1,8 +1,7 @@
 
-
 - name: Www | Configuring the default pool
   template:
-    src: php-fpm-spool-www.conf.ini
-    dest: "/etc/php-fpm.d/www.conf"
+    src: php.ini
+    dest: "/etc/php.ini"
   notify:
     fpm_reload
