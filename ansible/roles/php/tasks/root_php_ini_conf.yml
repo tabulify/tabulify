@@ -1,0 +1,34 @@
+# php.ini configuration
+# we don't change the php.ini because installation of module
+# may add some configuration in there
+
+# from https://www.php.net/manual/en/install.unix.nginx.php
+# to prevent Nginx from passing requests to the PHP-FPM backend
+# if the file does not exists, in order to prevent arbitrarily script injection.
+- name: 'Php.ini pathinfo'
+  lineinfile:
+    dest: "/etc/php.ini"
+    state: present
+    regexp: "^[;]{0,1}cgi.fix_pathinfo="
+    line: "cgi.fix_pathinfo=1"
+  notify:
+    fpm_reload
+# To be able to change quickly the status
+- name: 'Php.ini Display Errors'
+  lineinfile:
+    dest: "/etc/php.ini"
+    state: present
+    regexp: "^[;]{0,1}display_errors"
+    line: "display_errors = {{ php_display_error }}"
+  notify:
+    fpm_reload
+
+# To be able to change quickly the status
+- name: 'Php.ini Error reporting'
+  lineinfile:
+    dest: "/etc/php.ini"
+    state: present
+    regexp: "^[;]{0,1}error_reporting"
+    line: "error_reporting = {{ php_error_reporting }}"
+  notify:
+    fpm_reload

@@ -1,7 +1,0 @@
-
-- name: Www | Configuring the default pool
-  template:
-    src: php.ini
-    dest: "/etc/php.ini"
-  notify:
-    fpm_reload

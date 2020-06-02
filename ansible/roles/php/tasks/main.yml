@@ -14,7 +14,7 @@
 
 - name: Php configuration
   become: true
-  import_tasks: 'root_php_conf.yml'
+  import_tasks: 'root_php_ini_conf.yml'
 
 - name: Php Add the website gerardnico.com
   become: true

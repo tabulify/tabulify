@@ -1,18 +1,51 @@
 ---
 
-
-
+###################################
+# Repo
+###################################
 # ansible_distribution_major_version is the linux major distribution version (ie 6,7..)
 remi_repo_url: "http://rpms.remirepo.net/enterprise/remi-release-{{ ansible_distribution_major_version }}.rpm"
 remi_repo_gpg_key_url: "http://rpms.remirepo.net/RPM-GPG-KEY-remi"
 
+###################################
+# Web server
+###################################
 # A www root directory where the php website will be placed
+# this directory should be readable by php and the web server (ie nginx)
 www_root_dir: '/opt/www'
 
+###################################
 # fpm
+###################################
 # the service process that will get the request from nginx and send them to php
 fpm_spool_www_name: 'www'
 www_user: 'www-user' # the default is www-data but as it will be a ssh open account we make it more difficult to find
 www_group: 'www-user'
 www_user_pwd: '{{ vault_www_user_pwd }}'
 fpm_spool_www_port: 9000 # port of the php-fpm process
+
+# The log should have the www-group
+# when installing apache got the ownership
+fpm_base_log: /var/log/php-fpm
+# Without this configuration
+# the error are going nowhere
+# The error_log config has no effect
+fpm_error_log: '{{ fpm_base_log }}/{{ fpm_spool_www_name }}-error.log'
+
+###################################
+### php.ini
+###################################
+# ALways
+# from https://www.php.net/manual/en/install.unix.nginx.php
+# to prevent Nginx from passing requests to the PHP-FPM backend
+# if the file does not exists, in order to prevent arbitrarily script injection.
+php_cgi.fix_pathinfo: 1
+
+# Prod reporting
+php_error_reporting: 'E_ALL & ~E_DEPRECATED & ~E_STRICT'
+#php_error_reporting: 'E_ALL' #dev
+
+php_display_error: 'Off'
+#php_display_error: 'On' # dev
+
+# the error_log has no effect, see php-fpm error log config

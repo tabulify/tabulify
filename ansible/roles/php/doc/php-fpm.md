@@ -59,5 +59,12 @@ systemctl status php-fpm
 ```
 
 ## Log
-  * For php-fpm: /var/log/php-fpm/errors.log
-  * For a website (a pool), in the conf file `php_admin_value[error_log] = /var/log/php-fpm/gnico-error.log`
+
+  * For php-fpm: 
+```bash
+cat /var/log/php-fpm/errors.log
+```
+  * For a website (a pool), in the conf file `php_admin_value[error_log] = /var/log/php-fpm/www-error.log`
+```bash
+cat /var/log/php-fpm/www-error.log
+```

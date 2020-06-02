@@ -22,22 +22,43 @@
 # Needed by Dokuwiki (Graphic library)
 # https://www.dokuwiki.org/requirements
 # Modules can be seen with `php --modules` command
-- name: Install Php gd modules
+- name: Install Php modules as on ovh
   yum:
     name:
+      - php-bcmath
+      - php-dba
+      - php-dom
+      - php-gmp
       - php-gd
       - php-imagick
+      - php-imap
+      - php-intl
+      - php-mbstring
+      - php-memcached
+      - php-mysqli
+      - php-mysqlnd
+      - php-pdo # Needed for manager404
+      - php-mysql
+      - php-opcache
+      - php-posix
+      - php-simplexml
+      - php-soap
+      - php-sodium
+      - php-sqlite3 # Needed for manager404
+      - php-sysvmsg
+      - php-sysvsem
+      - php-sysvshm
+      - php-wddx
+      - php-xml
+      - php-xmlreader
+      - php-xmlrpc
+      - php-xmlwriter
+      - php-xsl
+      - php-zip
     state: present
     enablerepo: remi-php74
 
-## Needed for manager404
-- name: Install Extra Php package needed by the plugin
-  yum:
-    name:
-      - php-pdo
-      - php-sqlite3
-    state: present
-    enablerepo: remi-php74
+
 
 
 # Nginx does not contain native PHP processing and need php-fpm (fastCGI process manager)
