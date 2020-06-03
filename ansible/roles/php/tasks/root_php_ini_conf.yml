@@ -19,7 +19,7 @@
     dest: "/etc/php.ini"
     state: present
     regexp: "^[;]{0,1}display_errors"
-    line: "display_errors = {{ php_display_error }}"
+    line: "display_errors = {{ php_display_errors }}"
   notify:
     fpm_reload
 

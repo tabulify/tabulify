@@ -8,14 +8,8 @@ the default php via the the remi repository.
 Because the web server is Nginx, [php-fpm](doc/php-fpm.md) was installed.
 It's a service that makes a bridge between php and nginx.
 
-Apache is already installed on centos
+[Apache](#Apache) is already installed on Centos
 
-systemctl status  httpd
-● httpd.service - The Apache HTTP Server
-   Loaded: loaded (/usr/lib/systemd/system/httpd.service; disabled; vendor preset: disabled)
-   Active: inactive (dead)
-     Docs: man:httpd(8)
-           man:apachectl(8)
 
 ## Diagnostic
 
@@ -124,4 +118,19 @@ Additional .ini files parsed:      /etc/php.d/20-bz2.ini,
 /etc/php.d/20-phar.ini,
 /etc/php.d/20-sockets.ini,
 /etc/php.d/20-tokenizer.ini
+```
+
+## Ter info
+
+### Apache
+
+```bash
+systemctl status  httpd
+```
+```text
+● httpd.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+     Docs: man:httpd(8)
+           man:apachectl(8)
 ```
