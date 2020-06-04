@@ -1,0 +1,8 @@
+# nginx log
+datacadamia_log_dir: '/var/log/nginx/{{ datacadamia_fqdn }}'
+
+# gerardnico.com (php)
+datacadamia_fqdn: 'datacadamia.com'
+datacadamia_root_dir: '{{ www_root_dir }}/datacadamia'
+
+

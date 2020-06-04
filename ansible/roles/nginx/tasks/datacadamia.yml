@@ -1,0 +1,16 @@
+
+
+- name: Datacadamia | Access Log directory
+  file:
+    path: '{{ datacadamia_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: Datacadamia | Datacadamia
+  become: true
+  template:
+    src: datacadamia-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/datacadamia.conf"
+    backup: yes
+  notify: reload nginx

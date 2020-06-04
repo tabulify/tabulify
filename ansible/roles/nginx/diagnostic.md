@@ -9,6 +9,11 @@ They are by default at:
 
 /var/log/nginx/gerardnico.com
 
+Example: Log in as root and check the log
+```bash
+tail -f  /var/log/nginx/gerardnico.com/https-error.log
+```
+
 ## Conf file
 
 They can be found at: 

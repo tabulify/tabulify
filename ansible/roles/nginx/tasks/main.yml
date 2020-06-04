@@ -48,6 +48,9 @@
   become: true
   include: gnico.yml
 
+- name: 'Datacadamia - Configuration'
+  become: true
+  include: datacadamia.yml
 
 - name: Netdata | Configuring Netdata
   become: true
@@ -82,6 +85,7 @@
     dest: "/etc/nginx/conf.d/prometheus.conf"
     backup: yes
   notify: reload nginx
+
 
 
 - name: Nginx conf verif | Verification of the configuration

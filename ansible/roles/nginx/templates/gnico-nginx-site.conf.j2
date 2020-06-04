@@ -1,86 +1,11 @@
-# Define a group of server
-# http://nginx.org/en/docs/http/ngx_http_upstream_module.html
-upstream {{ gnico_app }} {
-    server 127.0.0.1:{{ gnico_port }};
-    # A keepalive directive sets the maximum number of upstream idle connections that can remain open at any given time (for each Nginx worker process).
-    keepalive 64;
-}
-
-# Api
-server {
-    listen       443 ssl http2;
-    listen       [::]:443 ssl http2;
-
-    # Change `example.com` to match your domain name.
-    server_name {{ gnico_fqdn_api }};
-
-    ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn_api }}/privkey.pem";
-    ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn_api }}/fullchain.pem";
-    ssl_session_cache shared:SSL:1m;
-    ssl_session_timeout  10m;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
 
 
-    location / {
-
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto "https";
-        proxy_pass http://{{ gnico_app }};
-        proxy_http_version 1.1;
-        proxy_pass_request_headers on;
-        proxy_set_header Connection "keep-alive";
-        proxy_store off;
-
-    }
-}
-
-# Analytics
-server {
-    listen       443 ssl http2;
-    listen       [::]:443 ssl http2;
-
-    # Change `example.com` to match your domain name.
-    server_name {{ gnico_fqdn_analytics }};
-
-    ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn_analytics }}/privkey.pem";
-    ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn_analytics }}/fullchain.pem";
-    ssl_session_cache shared:SSL:1m;
-    ssl_session_timeout  10m;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-
-
-    location / {
-
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto "https";
-        proxy_pass http://127.0.0.1:{{ gnico_port }}/analytics;
-        proxy_http_version 1.1;
-        proxy_pass_request_headers on;
-        proxy_set_header Connection "keep-alive";
-        proxy_store off;
-
-    }
-}
 
 # Root
-# As stated https://www.php.net/manual/en/install.unix.nginx.php
-# and here: https://www.nginx.com/resources/wiki/start/topics/recipes/dokuwiki/
-# and here https://www.dokuwiki.org/tips:httpslogin#nginx
 server {
 
     # Change `example.com` to match your domain name.
     server_name {{ gnico_fqdn }};
-
-    # where are the files
-    root   {{ gnico_root_dir }};
 
     # the logs
     access_log  {{ gnico_log_dir }}/https-access.log;
@@ -90,21 +15,7 @@ server {
     listen       443 ssl http2;
     listen       [::]:443 ssl http2;
 
-    # Compression
-    # [Article] https://docs.nginx.com/nginx/admin-guide/web-server/compression/
-    # [Reference] http://nginx.org/en/docs/http/ngx_http_gzip_module.html
-    # [Good blog] https://www.digitalocean.com/community/tutorials/how-to-add-the-gzip-module-to-nginx-on-ubuntu-14-04
-    gzip on;
-    gzip_disable "msie6"; # not for IE6 :)
-    # add other mime than html
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml;
-    # minimal byte
-    gzip_min_length 1000;
-    gzip_comp_level 6;
-    gzip_vary on;
-    gzip_proxied any;
-
-    # certificates
+    # ssl is needed to be able to redirect
     ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn }}/privkey.pem";
     ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn }}/fullchain.pem";
     ssl_session_cache shared:SSL:1m;
@@ -112,41 +23,7 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    # Serve
-    # try files send $uri and $uri/ to the location block @dokuwiki
-    location / {
-        index  doku.php;
-        try_files $uri $uri/ @dokuwiki;
-    }
-
-    location @dokuwiki {
-        rewrite ^/_media/(.*) /lib/exe/fetch.php?media=$1 last;
-        rewrite ^/_detail/(.*) /lib/exe/detail.php?media=$1 last;
-        rewrite ^/_export/([^/]+)/(.*) /doku.php?do=export_$1&id=$2 last;
-        rewrite ^/(.*) /doku.php?id=$1 last;
-    }
-
-    # send the php file to php-fpm
-    # doc, see http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html
-    location ~ \.php$ {
-        fastcgi_pass  127.0.0.1:{{ fpm_spool_www_port }};
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        include {{ nginx_etc_path }}/fastcgi_params;
-    }
-
-    location ~ ^/lib.*\.(gif|png|ico|jpg|css)$ {
-      expires 4h; # w3school and google are less than that
-    }
-
-    # Block access to data folders
-    location ~ /(dokudata|conf|bin|inc)/ {
-      return 444; # deny all; # same as return 403
-    }
-
-    # Block access to .htaccess files
-    location ~ /\.ht {
-      return 444; # Better than ; deny  all; # same as return 403
-    }
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
 
 }
 
@@ -154,7 +31,7 @@ server {
 server {
     listen 80;
     server_name {{ gnico_fqdn }};
-    return 301 https://{{ gnico_fqdn }}$request_uri;
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
     access_log  /var/log/nginx/{{ gnico_fqdn }}/http-access.log;
     error_log  /var/log/nginx/{{ gnico_fqdn }}/http-error.log;
 }
