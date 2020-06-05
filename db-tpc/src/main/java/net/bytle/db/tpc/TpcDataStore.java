@@ -3,23 +3,26 @@ package net.bytle.db.tpc;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
+import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.ProcessingEngine;
 
 import static net.bytle.db.tpc.TpcDataPath.CURRENT_WORKING_DIRECTORY;
 
 public class TpcDataStore extends DataStore {
 
-  private final TpcDataSetSystem tpcDataSetSystem;
 
-  public TpcDataStore(String name, String url, TpcDataSetSystem tpcDataSetSystem) {
+  private final TpcDataSetSystem tpcDataSystem;
+
+  public TpcDataStore(String name, String url) {
     super(name, url);
-    this.tpcDataSetSystem = tpcDataSetSystem;
+    tpcDataSystem = new TpcDataSetSystem(this);
   }
 
   @Override
-  public TpcDataSetSystem getDataSystem() {
-    return tpcDataSetSystem;
+  public DataSystem getDataSystem() {
+    return tpcDataSystem;
   }
+
 
   @Override
   public DataPath getDefaultDataPath(String... names) {
@@ -32,6 +35,11 @@ public class TpcDataStore extends DataStore {
     } else {
       return getDataModel().getAndCreateDataPath(name);
     }
+  }
+
+  @Override
+  public DataPath getTypedDataPath(String type, String... parts) {
+    throw new RuntimeException("Not yet implemented");
   }
 
   @Override
@@ -52,6 +60,11 @@ public class TpcDataStore extends DataStore {
   @Override
   public ProcessingEngine getProcessingEngine() {
     throw new RuntimeException("The tpc data source does not have a processing engine");
+  }
+
+  @Override
+  public <T> T getObject(Object object, Class<T> clazz) {
+    throw new RuntimeException("Not yet implemented");
   }
 
   private TpcdsModel tpcModel;

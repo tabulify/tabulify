@@ -440,7 +440,7 @@ public class Tabulars {
    * @param limit  - the number of element returned
    * @return extract the head element of source into target for a size of limit
    */
-  public static DataPath extractHead(DataPath source, DataPath target, Long limit) {
+  public static DataPath extractHead(DataPath source, DataPath target, Integer limit) {
 
 
     // Head
@@ -552,7 +552,7 @@ public class Tabulars {
 
   }
 
-  public static DataPath head(DataPath dataPath, long limit) {
+  public static DataPath head(DataPath dataPath, Integer limit) {
 
     DataPath target = MemoryDataStore.of("head", "head").getAndCreateRandomDataPath();
     extractHead(dataPath, target, limit);

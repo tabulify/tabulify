@@ -33,7 +33,7 @@ public class DataDefs {
    * @param secondTable
    * @return the first table object updated
    */
-  public static void mergeProperties(TableDef firstTable, TableDef secondTable) {
+  public static void mergeProperties(RelationDef firstTable, RelationDef secondTable) {
 
     Map<String, Object> firstTableProp = firstTable.getProperties();
     for (Map.Entry<String, Object> entry : secondTable.getProperties().entrySet()) {

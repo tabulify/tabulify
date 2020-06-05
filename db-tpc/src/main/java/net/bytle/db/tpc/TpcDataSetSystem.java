@@ -15,10 +15,16 @@ public class TpcDataSetSystem extends DataSetSystem {
   // A property in the datastore that give the scale used
   // The size of the generated data in Gb (works only for tpc schema)
   public static final String SCALE = "scale";
+  private final TpcDataStore tpcDataStore;
 
+  public TpcDataSetSystem(TpcDataStore tpcDataStore) {
+    this.tpcDataStore = tpcDataStore;
+  }
 
-
-
+  @Override
+  public DataStore getDataStore() {
+    return this.tpcDataStore;
+  }
 
   @Override
   public Boolean exists(DataPath dataPath) {
@@ -64,7 +70,7 @@ public class TpcDataSetSystem extends DataSetSystem {
   }
 
   @Override
-  public Integer size(DataPath dataPath) {
+  public long size(DataPath dataPath) {
     throw new RuntimeException("Not yet implemented");
   }
 
@@ -105,10 +111,7 @@ public class TpcDataSetSystem extends DataSetSystem {
       .collect(Collectors.toList());
   }
 
-  @Override
-  public DataStore createDataStore(String name, String url) {
-    return new TpcDataStore(name,url, this);
-  }
+
 
 
 }

@@ -167,7 +167,7 @@ public class DbQueryExecute {
             for (DataPath dataPath : queries) {
 
               cliTimer = Timer.getTimer("execute").start();
-              Integer rowCount = null;
+              Long rowCount = null;
               String status = "";
               String message = "";
               try {

@@ -19,7 +19,7 @@ public final class TailQueue<E> extends AbstractQueue<E> {
    * that add the last element to the tail and remove the head if the queue is over capacity.
    * @param maxSize - the max number of element. It should be greater than zero
    */
-  public TailQueue(int maxSize) {
+  public TailQueue(Integer maxSize) {
     assert maxSize>0: "The size should be a positive integer";
     this.queue = new ArrayDeque<E>(maxSize);
     this.maxSize = maxSize;

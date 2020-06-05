@@ -35,8 +35,7 @@ public interface SelectStream extends AutoCloseable {
    *   * building the data def
    *   * or before running a select stream
    *
-   * @param relationDef - the relationDef to build
-   * @return the data def build from the select stream
+   * @param relationDef - the relationDef that must be build
    *
    * Example:
    *   * a query is build from the result set

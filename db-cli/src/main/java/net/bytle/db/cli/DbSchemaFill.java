@@ -7,12 +7,11 @@ import net.bytle.cli.CliUsage;
 import net.bytle.cli.Clis;
 import net.bytle.db.Tabular;
 import net.bytle.db.gen.DataGeneration;
-import net.bytle.db.gen.DataGens;
-import net.bytle.db.gen.GenDataPath;
 import net.bytle.db.gen.fs.GenFsDataPath;
 import net.bytle.db.model.DataDefs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
+import net.bytle.db.transfer.TransferListener;
 import net.bytle.fs.Fs;
 import net.bytle.timer.Timer;
 import net.bytle.type.Strings;
@@ -20,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -31,7 +29,6 @@ import static net.bytle.db.cli.Words.NOT_STRICT;
 
 
 /**
- *
  * load data in a schema
  */
 public class DbSchemaFill {
@@ -49,10 +46,10 @@ public class DbSchemaFill {
       .setDescription("Load generated data into the tables of a schema");
     cliCommand.addExample(Strings.multiline(
       "Load all data generation unit into a sqlite database",
-        CliUsage.getFullChainOfCommand(cliCommand)+" *"+ GenFsDataPath.EXTENSION+" @sqlite"
+      CliUsage.getFullChainOfCommand(cliCommand) + " *" + GenFsDataPath.EXTENSION + " @sqlite"
     ));
     cliCommand.argOf(Words.GLOB_PATTERN_DATADEF_FILE)
-      .setDescription("A glob pattern that defines one or more data generation file (ie dir/*"+ GenFsDataPath.EXTENSION+")");
+      .setDescription("A glob pattern that defines one or more data generation file (ie dir/*" + GenFsDataPath.EXTENSION + ")");
     cliCommand.argOf(SCHEMA_URI)
       .setDescription("A Data Uri that points to a schema (example for the default one `@datastore`")
       .setMandatory(true);
@@ -165,14 +162,14 @@ public class DbSchemaFill {
         withOrWithoutDependencies = "and";
       }
       String withOrWithoutDataDef = "without data definitions ";
-      if (dataGenYmls!=null){
-        withOrWithoutDataDef="with ("+dataGenYmls.size()+") data definitions defined by the glob pattern (" + dataDefGlobArg + ") ";
+      if (dataGenYmls != null) {
+        withOrWithoutDataDef = "with (" + dataGenYmls.size() + ") data definitions defined by the glob pattern (" + dataDefGlobArg + ") ";
       }
-      LOGGER.info("Loading generated data "+withOrWithoutDataDef + withOrWithoutDependencies + " the dependencies (foreign tables)");
+      LOGGER.info("Loading generated data " + withOrWithoutDataDef + withOrWithoutDependencies + " the dependencies (foreign tables)");
 
       // Start loading
       Timer cliTimer = Timer.getTimer("schema fill").start();
-      List<DataPath> loadedDataPaths = dataGeneration
+      List<TransferListener> loadedDataPaths = dataGeneration
         .load();
       cliTimer.stop();
 
@@ -182,7 +179,11 @@ public class DbSchemaFill {
 
 
       LOGGER.info("The following tables where loaded:");
-      for (DataPath dataPath : loadedDataPaths) {
+      List<DataPath> targetDataPaths = loadedDataPaths
+        .stream()
+        .map(s -> s.getTransferSourceTarget().getTargetDataPath())
+        .collect(Collectors.toList());
+      for (DataPath dataPath : targetDataPaths){
         LOGGER.info("  * " + dataPath + ", Size (" + Tabulars.getSize(dataPath) + ")");
       }
 

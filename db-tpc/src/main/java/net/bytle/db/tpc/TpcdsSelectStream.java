@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Clob;
+import java.sql.Date;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -95,7 +96,7 @@ public class TpcdsSelectStream implements SelectStream {
   }
 
   @Override
-  public int getRow() {
+  public long getRow() {
     return row;
   }
 
@@ -105,9 +106,10 @@ public class TpcdsSelectStream implements SelectStream {
   }
 
   @Override
-  public RelationDef getSelectDataDef() {
-    return dataPath.getOrCreateDataDef();
+  public void runtimeDataDef(RelationDef relationDef) {
+
   }
+
 
   @Override
   public Double getDouble(int columnIndex) {
@@ -167,5 +169,15 @@ public class TpcdsSelectStream implements SelectStream {
   @Override
   public DataPath getDataPath() {
     return this.dataPath;
+  }
+
+  @Override
+  public Date getDate(int columnIndex) {
+    throw new RuntimeException("Not yet implemented");
+  }
+
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    throw new RuntimeException("Not yet implemented");
   }
 }
