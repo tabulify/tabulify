@@ -42,7 +42,7 @@ public class CsvManager extends FsBinaryFileManager {
     if (csvFormat.getRecordSeparator()==null){
       csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());
     }
-    if (csvDataDef.getHeaderRowCount() > 0) {
+    if (csvDataDef.getHeaderRowId() > 0) {
       final String[] headers = Arrays.stream(csvDataDef.getColumnDefs())
         .map(ColumnDef::getColumnName).toArray(String[]::new);
       if (headers.length != 0) {

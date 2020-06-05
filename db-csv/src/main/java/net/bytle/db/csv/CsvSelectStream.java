@@ -134,7 +134,7 @@ public class CsvSelectStream extends SelectStreamAbs {
       lineNumberInTextFile = 0;
 
       // Pass the header
-      while (lineNumberInTextFile < dataDef.getHeaderRowCount()) {
+      while (lineNumberInTextFile < dataDef.getHeaderRowId()) {
         safeIterate();
       }
 

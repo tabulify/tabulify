@@ -7,6 +7,7 @@ dependencies {
   compile(project(":bytle-type"))
   compile(project(":bytle-db"))
   compile(project(":bytle-fs"))
+  compile(project(":bytle-db-csv"))
   compile(project(":bytle-db-jdbc"))
   compile(project(":bytle-db-sqlite"))
 }

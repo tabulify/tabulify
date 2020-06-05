@@ -189,11 +189,11 @@ public class CsvDataDef extends LineDataDef {
   /**
    * @return the header row number or 0 if it does not exist
    */
-  public int getHeaderRowCount() {
+  public int getHeaderRowId() {
     return headerRowCount;
   }
 
-  public CsvDataDef setHeaderRowCount(int headerRowCount) {
+  public CsvDataDef setHeaderRowId(int headerRowCount) {
     this.headerRowCount = headerRowCount;
     return this;
   }

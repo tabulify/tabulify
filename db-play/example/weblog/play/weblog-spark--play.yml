@@ -1,0 +1,15 @@
+
+
+- desc: 'Engine execution'
+  engine: spark
+
+  - desc: 'Load the users CSV'
+    task: load
+    source: users.csv
+    target: sqlite
+
+  - name: 'Load the users CSV'
+    task: load
+    source: users.csv
+    target: sqlite
+

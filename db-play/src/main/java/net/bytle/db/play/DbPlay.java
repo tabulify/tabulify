@@ -1,12 +1,12 @@
 package net.bytle.db.play;
 
-import net.bytle.db.DatastoreVault;
 import net.bytle.db.Tabular;
+import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.database.DataStore;
 import net.bytle.db.engine.ForeignKeyDag;
+import net.bytle.db.jdbc.SqlDataPath;
 import net.bytle.db.jdbc.SqlDataStore;
 import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.DataPaths;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.uri.DataUri;
 import net.bytle.fs.Fs;
@@ -25,8 +25,24 @@ import java.util.Map;
  */
 public class DbPlay {
 
+  /**
+   * The path of the play file
+   */
   private Path playFile;
+
+  /**
+   * The path of the project (called also root or project directory)
+   */
   private Path homeDirectory;
+
+  /**
+   * The base path for all sql query
+   */
+  private Path sqlDir;
+
+  /**
+   * The tabular (ie the environment that will run the play)
+   */
   private Tabular tabular;
 
 
@@ -112,77 +128,82 @@ public class DbPlay {
 
   }
 
+  /**
+   * A load
+   * @param task
+   */
   private void loadTask(Map<String, Object> task) {
 
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the load operations: " + desc);
 
+
     // Source
-    SqlDataStore jdbcDataStore;
-    String targetPath;
-    DataPath sourceDataPath;
-    Path sourcePath = null;
     Object sourceValue = Maps.getPropertyCaseIndependent(task, "source");
-    DataPath source;
+    String source;
     if (sourceValue instanceof String) {
-      source = this.tabular.getDataPath((String) sourceValue);
+      source = (String) sourceValue;
     } else {
       throw new RuntimeException("The source is not a string but a "+sourceValue.getClass().toString());
     }
 
+    // File in data dir
+    Path dataDir = this.getDataDir();
+    Path sourceFile = dataDir.resolve(source);
+    DataPath sourceDataPath = null;
+    if (Files.exists(sourceFile)){
+      sourceDataPath = tabular.getDataPath(sourceFile);
+    }
+    if (sourceDataPath == null){
+      throw new RuntimeException("Unable to locate the source");
+    }
 
-    if (sourceValue.getClass().equals(String.class)) {
-      // A file
-      sourcePath = dataDir.resolve((String) sourceValue);
-      sourceDataPath = DataPaths.of(sourcePath);
-      if (sourceDataPath.getClass().equals(CsvDataPath.class)) {
-        sourceDataPath = ((CsvDataPath) sourceDataPath)
-          .getDataDef()
-          .setHeaderRowCount(1)
-          .getDataPath();
-      }
-    } else {
-      // A query
+    // Csv
+    if (sourceDataPath instanceof CsvDataPath){
+      sourceDataPath = ((CsvDataPath) sourceDataPath)
+        .getOrCreateDataDef()
+        .setHeaderRowId(1)
+        .getDataPath();
+    }
+
+    /**
+     * Sql (Query, ...)
+     */
+    if (sourceDataPath instanceof SqlDataPath){
       Map<String, Object> targetValues = (Map<String, Object>) sourceValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      jdbcDataStore = datastoreVault.getDataStore(dsn);
-      targetPath = (String) Maps.getPropertyCaseIndependent(targetValues, "sql");
-      Path targetSqlFile = sqlDir.resolve(targetPath);
-      sourceDataPath = DataPaths.ofQuery(jdbcDataStore, Fs.getFileContent(targetSqlFile));
     }
+
 
     // Target
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
-    DataPath targetDataPath;
-    if (targetValue.getClass().equals(String.class)) {
-      jdbcDataStore = datastoreVault.getDataStore((String) targetValue);
-      String sourceFileName = sourcePath.getFileName().toString();
-      targetPath = Fs.getFileNameWithoutExtension(sourceFileName);
-      targetDataPath = DataPaths.of(jdbcDataStore, targetPath);
+    DataPath targetDataPath = null;
+    DataStore jdbcDataStore;
+    if (targetValue instanceof String) {
+      // Uri
+      DataUri datUri = DataUri.of((String) targetValue);
+      jdbcDataStore = tabular.getDataStore(datUri.getDataStore());
+      String path = datUri.getPath();
+      if (path == null){
+        path = sourceDataPath.getName();
+      }
+      targetDataPath = jdbcDataStore.getDefaultDataPath(path);
     } else {
       Map<String, Object> targetValues = (Map<String, Object>) targetValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
-      jdbcDataStore = datastoreVault.getDataStore(dsn);
       String targetPathValue = (String) Maps.getPropertyCaseIndependent(targetValues, "name");
-      if (dsn.equals("file")) {
-        Path targetValueAsPath = workingDir.resolve(targetPathValue);
-        targetDataPath = DataPaths.of(targetValueAsPath);
-      } else {
-        targetDataPath = DataPaths.of(jdbcDataStore, targetPathValue);
-      }
     }
 
 
-    Tabulars.transfer(sourceDataPath, targetDataPath);
+    Tabulars.copy(sourceDataPath, targetDataPath);
     System.out.println("The load operations has terminated");
   }
 
   private void sqlTask(Map<String, Object> task) {
+
     String desc = (String) Maps.getPropertyCaseIndependent(task, "desc");
     System.out.println("Starting the sql operations: " + desc);
     String sourceValue = (String) Maps.getPropertyCaseIndependent(task, "source");
-    DatastoreVault datastoreVault = DatastoreVault.of(dataDir.resolve("dsn.ini"));
-    SqlDataStore sourceJdbcDataStore = datastoreVault.getDataStore(sourceValue);
     Object targetValue = Maps.getPropertyCaseIndependent(task, "target");
     String targetDsn = null;
     String targetName = null;
@@ -191,15 +212,15 @@ public class DbPlay {
       targetDsn = (String) Maps.getPropertyCaseIndependent(targetMap, "dsn");
       targetName = (String) Maps.getPropertyCaseIndependent(targetMap, "name");
     }
-    SqlDataStore targetJdbcDataStore = datastoreVault.getDataStore(targetDsn);
+    SqlDataStore targetJdbcDataStore = (SqlDataStore) tabular.getDataStore(targetDsn);
     String sqlValue = (String) Maps.getPropertyCaseIndependent(task, "sql");
     if (targetName == null) {
       targetName = Fs.getFileNameWithoutExtension(sqlValue);
     }
-    DataPath targetDataPath = DataPaths.of(targetJdbcDataStore, targetName);
+    DataPath targetDataPath = targetJdbcDataStore.getDefaultDataPath( targetName);
     Path sqlFile = sqlDir.resolve(sqlValue);
-    DataPath dataPath = DataPaths.ofQuery(sourceJdbcDataStore, Fs.getFileContent(sqlFile));
-    Tabulars.transfer(dataPath, targetDataPath);
+    DataPath dataPath = targetJdbcDataStore.getQueryDataPath(Fs.getFileContent(sqlFile));
+    Tabulars.copy(dataPath, targetDataPath);
   }
 
   public static DbPlay of() {

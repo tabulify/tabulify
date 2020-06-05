@@ -25,7 +25,7 @@ public class NameGenerator<T> extends CollectionGeneratorOnceAbs<T> implements C
     try {
       CsvDataPath csvDataPath = CsvDataPath.of(Paths.get(uri.toURI()))
         .getOrCreateDataDef()
-        .setHeaderRowCount(1)
+        .setHeaderRowId(1)
         .getDataPath();
       Map<String, Double> distProb = new HashMap<>();
       try(SelectStream selectStream = Tabulars.getSelectStream(csvDataPath)){
