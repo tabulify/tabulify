@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,7 +93,7 @@ public class DbPlay {
             String desc = currentTaskName == null ? "the first task" : "the task after the task (" + currentTaskName + ")";
             throw new RuntimeException("The task property is mandatory and was not found for " + desc);
           }
-          currentTaskName = taskName;
+          currentTaskName = taskName.toLowerCase();
           switch (currentTaskName) {
             case "clean":
               cleanTask(task);
@@ -130,6 +131,7 @@ public class DbPlay {
 
   /**
    * A load
+   *
    * @param task
    */
   private void loadTask(Map<String, Object> task) {
@@ -140,36 +142,47 @@ public class DbPlay {
 
     // Source
     Object sourceValue = Maps.getPropertyCaseIndependent(task, "source");
-    String source;
+    Map<String, Object> sourceDef = new HashMap<>();
+
     if (sourceValue instanceof String) {
-      source = (String) sourceValue;
+      sourceDef.put("uri", sourceValue);
+    } else if (sourceValue instanceof Map){
+      sourceDef = (Map<String, Object>) sourceValue;
     } else {
-      throw new RuntimeException("The source is not a string but a "+sourceValue.getClass().toString());
+      throw new RuntimeException("The source is not a string or a map but a " + sourceValue.getClass().toString());
     }
+
+    // Building the source data path
+    DataPath sourceDataPath = null;
 
     // File in data dir
-    Path dataDir = this.getDataDir();
-    Path sourceFile = dataDir.resolve(source);
-    DataPath sourceDataPath = null;
-    if (Files.exists(sourceFile)){
-      sourceDataPath = tabular.getDataPath(sourceFile);
-    }
-    if (sourceDataPath == null){
-      throw new RuntimeException("Unable to locate the source");
+    if (sourceDef.containsKey("file")){
+      String file = (String) sourceDef.get("file");
+      Path dataDir = this.getDataDir();
+      Path sourceFile = dataDir.resolve(file);
+      if (Files.exists(sourceFile)) {
+        sourceDataPath = tabular.getDataPath(sourceFile);
+      }
+      if (sourceDataPath == null) {
+        throw new RuntimeException("Unable to locate the source");
+      }
+      // Csv
+      if (sourceDataPath instanceof CsvDataPath) {
+        if (sourceDef.containsKey("header")) {
+          Integer headerRowId = (Integer) sourceDef.get("header");
+          sourceDataPath = ((CsvDataPath) sourceDataPath)
+            .getOrCreateDataDef()
+            .setHeaderRowId(headerRowId)
+            .getDataPath();
+        }
+      }
     }
 
-    // Csv
-    if (sourceDataPath instanceof CsvDataPath){
-      sourceDataPath = ((CsvDataPath) sourceDataPath)
-        .getOrCreateDataDef()
-        .setHeaderRowId(1)
-        .getDataPath();
-    }
 
     /**
      * Sql (Query, ...)
      */
-    if (sourceDataPath instanceof SqlDataPath){
+    if (sourceDataPath instanceof SqlDataPath) {
       Map<String, Object> targetValues = (Map<String, Object>) sourceValue;
       String dsn = (String) Maps.getPropertyCaseIndependent(targetValues, "dsn");
     }
@@ -184,7 +197,7 @@ public class DbPlay {
       DataUri datUri = DataUri.of((String) targetValue);
       jdbcDataStore = tabular.getDataStore(datUri.getDataStore());
       String path = datUri.getPath();
-      if (path == null){
+      if (path == null) {
         path = sourceDataPath.getName();
       }
       targetDataPath = jdbcDataStore.getDefaultDataPath(path);
@@ -217,7 +230,7 @@ public class DbPlay {
     if (targetName == null) {
       targetName = Fs.getFileNameWithoutExtension(sqlValue);
     }
-    DataPath targetDataPath = targetJdbcDataStore.getDefaultDataPath( targetName);
+    DataPath targetDataPath = targetJdbcDataStore.getDefaultDataPath(targetName);
     Path sqlFile = sqlDir.resolve(sqlValue);
     DataPath dataPath = targetJdbcDataStore.getQueryDataPath(Fs.getFileContent(sqlFile));
     Tabulars.copy(dataPath, targetDataPath);

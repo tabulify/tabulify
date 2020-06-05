@@ -11,7 +11,7 @@ public class DataUri implements Comparable<DataUri> {
   public static final String HASH_TAG = "#";
   public static final String AT_STRING = "@";
 
-  private final String uri ;
+  private final String uri;
   private String query = null;
   private String fragment = null;
   private String path;
@@ -24,10 +24,9 @@ public class DataUri implements Comparable<DataUri> {
     this.uri = uri;
 
     int atIndex = uri.indexOf(AT_STRING);
-    if (atIndex == -1) {
-      throw new RuntimeException("The at (@) string is mandatory in a data uri and was not found");
-    }
-    if (atIndex != 0) {
+
+    // The at (@) string is optional;
+    if (atIndex != -1) {
       path = uri.substring(0, atIndex);
     }
 
@@ -88,7 +87,7 @@ public class DataUri implements Comparable<DataUri> {
 
   public String toString() {
     // We miss the query and fragment parts but they are actually not used
-    if (path==null) {
+    if (path == null) {
       return AT_STRING + dataStore;
     } else {
       return path + AT_STRING + dataStore;

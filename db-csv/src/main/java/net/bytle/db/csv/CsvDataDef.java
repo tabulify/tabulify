@@ -208,16 +208,25 @@ public class CsvDataDef extends LineDataDef {
 
   @Override
   public ColumnDef[] getColumnDefs() {
+    if (!columnsWereBuild){
+      this.scanAndAddColumnNames();
+    }
     return super.getColumnDefs();
   }
 
   @Override
   public <T> ColumnDef<T> getColumnDef(String columnName) {
+    if (!columnsWereBuild){
+      this.scanAndAddColumnNames();
+    }
     return super.getColumnDef(columnName);
   }
 
   @Override
   public <T> ColumnDef<T> getColumnDef(Integer columnIndex) {
+    if (!columnsWereBuild){
+      this.scanAndAddColumnNames();
+    }
     return super.getColumnDef(columnIndex);
   }
 
@@ -273,7 +282,15 @@ public class CsvDataDef extends LineDataDef {
               default:
                 for (int i = 0; i < size; i++) {
                   if (headerRowCount > 0) {
-                    this.addColumn(headerRecord.get(i));
+                    String columnName = headerRecord.get(i);
+
+                    // Suppress ""
+                    if (columnName.charAt(0)== '"' && columnName.charAt(columnName.length()-1) == '"'){
+                      columnName = columnName.substring(1,columnName.length()-1);
+                    }
+
+                    this.addColumn(columnName);
+
                   } else {
                     String columnName = String.valueOf(i + 1);
                     this.addColumn(columnName);

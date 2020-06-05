@@ -250,7 +250,7 @@ public class SqlDataStore extends DataStore {
       connection = DriverManager.getConnection(this.getConnectionString(), connectionProperties);
 
     } catch (SQLException e) {
-      String msg = "Unable to connect to the database (" + this.getName() + ")with the following URL (" + this.getConnectionString() + "). Error: " + e.getMessage();
+      String msg = "Unable to connect to the database (" + this.getName() + ") with the following URL (" + this.getConnectionString() + "). Error: " + e.getMessage();
       JdbcDataSystemLog.LOGGER_DB_JDBC.severe(msg);
       throw new RuntimeException(e);
     }
