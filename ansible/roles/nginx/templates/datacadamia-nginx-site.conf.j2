@@ -48,6 +48,10 @@ server {
     location / {
         index  doku.php;
         try_files $uri $uri/ @dokuwiki;
+
+        # cors
+        add_header 'Access-Control-Allow-Origin' 'https://fiddle.jshell.net';
+
     }
 
     location @dokuwiki {
