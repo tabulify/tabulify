@@ -23,7 +23,8 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    add_header 'Referrer-Policy' 'unsafe-url';
+    return 301 https://{{ datacadamia_fqdn }}$request_uri?referer=https://{{ gnico_fqdn }}$request_uri;
 
 }
 
@@ -31,7 +32,7 @@ server {
 server {
     listen 80;
     server_name {{ gnico_fqdn }};
-    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    return 301 https://{{ datacadamia_fqdn }}$request_uri?referer=https://{{ gnico_fqdn }}$request_uri;
     access_log  /var/log/nginx/{{ gnico_fqdn }}/http-access.log;
     error_log  /var/log/nginx/{{ gnico_fqdn }}/http-error.log;
 }
