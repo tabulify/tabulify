@@ -19,9 +19,9 @@
     - name: Install netdata
       role: netdata
       tags: netdata
-    - name: Install gnico
-      role: gnico
-      tags: gnico
+    - name: Install backend
+      role: backend
+      tags: backend
     - name: Install Gogs
       role: gogs
       tags: gogs

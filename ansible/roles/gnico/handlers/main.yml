@@ -1,9 +1,0 @@
----
-
-- name: 'gnico reload'
-  become: yes
-  systemd:
-    name: 'gnico.service'
-    enabled: 'yes'
-    daemon_reload: yes
-    state: restarted

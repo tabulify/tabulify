@@ -6,14 +6,13 @@ ovh_domains:
   - bytle.net
   - netdata.bytle.net
   - nexus.bytle.net
-  - api.bytle.net
   - gogs.bytle.net
+  - '{{ backend_fqdn_api }}'
+  - '{{ backend_fqdn_analytics }}'
   - '{{ datacadamia_fqdn }}'
   - '{{ prometheus_node_exporter_fqdn }}'
 
 cloudflare_domains:
-  - '{{ gnico_fqdn_api }}'
-  - '{{ gnico_fqdn_analytics }}'
   - '{{ gnico_fqdn }}'
 
 

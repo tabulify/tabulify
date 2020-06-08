@@ -1,0 +1,15 @@
+backend_app_name: backend
+# user that will run the jar
+backend_user_name: '{{ backend_app_name }}'
+backend_user_group: '{{ backend_app_name }}'
+
+# install path
+backend_install_path: '/opt/{{ backend_app_name }}'
+backend_cache_dir: '{{ backend_install_path }}/cache'
+
+# Download info (snapshot latest)
+backend_repository_url: http://127.0.0.1:8082/repository/maven-snapshots
+backend_repository_user: admin
+backend_repository_pwd: changeme
+
+

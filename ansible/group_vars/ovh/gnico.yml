@@ -6,10 +6,4 @@ gnico_fqdn: 'gerardnico.com'
 gnico_root_dir: '{{ www_root_dir }}/datacadamia'
 
 
-# gnico app (api)
-# The app has two different endpoint
-gnico_repository_pwd: '{{ vault_gnico_repository_pwd }}'
-gnico_fqdn_api: 'api.{{ gnico_fqdn }}'
-gnico_fqdn_analytics: 'analytics.{{ gnico_fqdn }}'
-gnico_port: 8083
-gnico_app: apignico
+

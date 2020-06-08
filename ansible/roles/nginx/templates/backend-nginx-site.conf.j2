@@ -1,7 +1,7 @@
 # Define a group of server
 # http://nginx.org/en/docs/http/ngx_http_upstream_module.html
-upstream {{ gnico_app }} {
-    server 127.0.0.1:{{ gnico_port }};
+upstream {{ backend_app_name }} {
+    server 127.0.0.1:{{ backend_port }};
     # A keepalive directive sets the maximum number of upstream idle connections that can remain open at any given time (for each Nginx worker process).
     keepalive 64;
 }
@@ -13,10 +13,10 @@ server {
     listen       [::]:443 ssl http2;
 
     # Change `example.com` to match your domain name.
-    server_name {{ gnico_fqdn_api }};
+    server_name {{ bytle_fqdn_api }};
 
-    ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn_api }}/privkey.pem";
-    ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn_api }}/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/{{ bytle_fqdn_api }}/privkey.pem";
+    ssl_certificate "/etc/letsencrypt/live/{{ bytle_fqdn_api }}/fullchain.pem";
     ssl_session_cache shared:SSL:1m;
     ssl_session_timeout  10m;
     ssl_ciphers HIGH:!aNULL:!MD5;
@@ -30,7 +30,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto "https";
-        proxy_pass http://{{ gnico_app }};
+        proxy_pass http://{{ backend_app_name }};
         proxy_http_version 1.1;
         proxy_pass_request_headers on;
         proxy_set_header Connection "keep-alive";
@@ -45,10 +45,10 @@ server {
     listen       [::]:443 ssl http2;
 
     # Change `example.com` to match your domain name.
-    server_name {{ gnico_fqdn_analytics }};
+    server_name {{ bytle_fqdn_analytics }};
 
-    ssl_certificate_key "/etc/letsencrypt/live/{{ gnico_fqdn_analytics }}/privkey.pem";
-    ssl_certificate "/etc/letsencrypt/live/{{ gnico_fqdn_analytics }}/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/{{ bytle_fqdn_analytics }}/privkey.pem";
+    ssl_certificate "/etc/letsencrypt/live/{{ bytle_fqdn_analytics }}/fullchain.pem";
     ssl_session_cache shared:SSL:1m;
     ssl_session_timeout  10m;
     ssl_ciphers HIGH:!aNULL:!MD5;
@@ -62,7 +62,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto "https";
-        proxy_pass http://127.0.0.1:{{ gnico_port }}/analytics;
+        proxy_pass http://127.0.0.1:{{ backend_app_name }}/analytics;
         proxy_http_version 1.1;
         proxy_pass_request_headers on;
         proxy_set_header Connection "keep-alive";
