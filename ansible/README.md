@@ -41,6 +41,12 @@ then
 ```bash
 ansible-vault encrypt_string --vault-id passphrase.sh 'the_password_to_encrypt'
 ```
+
+Decryption
+```bash
+echo '<ansible vault string>' | tr -d ' ' | ansible-vault decrypt --vault-id passphrase.sh && echo
+```
+
 ## Documentation
 
   * [Securisation](https://docs.ovh.com/fr/vps/conseils-securisation-vps/)

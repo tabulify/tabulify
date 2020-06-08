@@ -126,7 +126,7 @@ public class VerticleHttpServer extends AbstractVerticle {
     router.route().handler(new WebLogger(LoggerFormat.DEFAULT));
 
     // Cors
-    String corsPattern = "https:\\/\\/(.*)gerardnico.com";
+    String corsPattern = "https:\\/\\/(.*)(gerardnico.com|bytle.net|datacadamia.com|tabulify.com)";
     String env = System.getProperty("env");
     if (env != null && env.equals("development")) {
       corsPattern = "http:\\/\\/localhost:([0-9]*)";
