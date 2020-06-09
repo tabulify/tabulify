@@ -52,6 +52,14 @@
   become: true
   include: datacadamia.yml
 
+- name: 'Backend - Configuration'
+  become: true
+  template:
+    src: backend-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/backend.conf"
+    backup: yes
+  notify: reload nginx
+
 - name: Netdata | Configuring Netdata
   become: true
   template:

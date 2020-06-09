@@ -44,6 +44,7 @@
     src: dns_provider/ovh.ini
     dest: "/root/.secrets/certbot/ovh.ini"
     backup: yes
+    mode: 600
 
 # Global key: https://dash.cloudflare.com/profile/api-tokens
 # as this is the only one supported
@@ -53,6 +54,7 @@
     src: dns_provider/cloudflare.ini
     dest: "/root/.secrets/certbot/cloudflare.ini"
     backup: yes
+    mode: 600
 
 # Create one certificate with the name of the first domain
 # that's why bytle.net is the first one
