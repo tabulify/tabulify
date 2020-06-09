@@ -1,14 +1,40 @@
-# Bytle APIs
+# Bytle backend (API / Analytics)
 
 ## About
-Web Service Endpoint
+Backend Web Service Endpoint
+
 
 ## Deployment
 
-[Dev](../doc/Dev.md) setup to get the registry credentials then:
+This is to release every time
+  * Create the file `~\.gradle\gradle.properties` with the user password
+```ini
+backendUserPwd = xxxxxxx
+```
+  * then
+```
+cd api
+gradle clean test shadowJar release
+```
+
+## Upload 
+
+Add the nexus password in your user `~\.gradle\gradle.properties` as stated here: [Dev](../doc/Dev.md)
+```ini
+nexusPwd = xxxxxxx
+```
+  * then
 ```
 cd api
 gradle clean test uploadShadow
+```
+
+
+## Installation
+
+This is for the first server installation.
+
+```
 cd ../ansible
 gradle deployGnico
 ```
@@ -33,15 +59,15 @@ To run your application:
 
   * The service log 
 ```bash
-journalctl -f -u gnico
+journalctl -f -u backend
 ```
   * The analytics error log
 ```bash
-tail -f /opt/gnico/logs/analytics-error.log
+tail -f /opt/backend/logs/analytics-error.log
 ```
   * The web request log
 ```bash
-tail -f /opt/gnico/logs/web.log
+tail -f /opt/backend/logs/web.log
 ```
 
 ## Help

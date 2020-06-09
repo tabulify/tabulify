@@ -11,6 +11,8 @@ plugins {
 val vertxVersion = "3.8.4"
 val sourceCompatibility = JavaVersion.VERSION_1_8
 
+val sshAntTask = configurations.create("sshAntTask")
+
 // https://docs.gradle.org/5.2.1/userguide/java_library_plugin.html
 // compileOnly = only for the compilation not for the test
 dependencies {
@@ -47,10 +49,12 @@ dependencies {
   // Test
   testImplementation("io.vertx:vertx-unit:$vertxVersion")
 
+  sshAntTask("org.apache.ant:ant-jsch:1.9.2")
+
 }
 
-val nexusUsername: String by project
-val nexusPassword: String by project
+val nexusUserName: String by project
+val nexusUserPwd: String by project
 val nexusUrl: String by project
 
 val mainClassName = "net.bytle.api.Launcher"
@@ -61,6 +65,7 @@ val mainVerticle = "net.bytle.api.MainVerticle"
 
 tasks.named<ShadowJar>("shadowJar") {
   // archiveBaseName.set("app") if you want to change the name of the jar to app-0.0.1-all.jar
+
   mergeServiceFiles("META-INF/services/io.vertx.core.spi.VerticleFactory")
   manifest {
     attributes(mapOf("Main-Class" to mainClassName))
@@ -126,15 +131,15 @@ tasks.getByName<Upload>("uploadShadow") {
     "mavenDeployer" {
       "repository"("url" to "${nexusUrl}/repository/maven-releases/") {
         "authentication"(
-          "userName" to nexusUsername,
-          "password" to nexusPassword
+          "userName" to nexusUserName,
+          "password" to nexusUserPwd
         )
       }
       "snapshotRepository"(
         "url" to "${nexusUrl}/repository/maven-snapshots/") {
         "authentication"(
-          "userName" to nexusUsername,
-          "password" to nexusPassword)
+          "userName" to nexusUserName,
+          "password" to nexusUserPwd)
       }
     }
   }
@@ -145,15 +150,96 @@ tasks.getByName<Upload>("uploadArchives") {
     "mavenDeployer" {
       "repository"("url" to "${nexusUrl}/repository/maven-releases/") {
         "authentication"(
-          "userName" to nexusUsername,
-          "password" to nexusPassword)
+          "userName" to nexusUserName,
+          "password" to nexusUserPwd)
       }
       "snapshotRepository"("url" to "${nexusUrl}/repository/maven-snapshots/") {
         "authentication"(
-          "userName" to nexusUsername,
-          "password" to nexusPassword)
+          "userName" to nexusUserName,
+          "password" to nexusUserPwd)
       }
     }
   }
 }
+
+// https://docs.gradle.org/current/userguide/ant.html
+// https://docs.gradle.org/current/userguide/tutorial_using_tasks.html#sec:using_ant_tasks_tutorial
+// https://gist.github.com/chilicat/6486392
+
+val archivesBaseName: String by project
+
+
+tasks.register("release") {
+  doLast {
+
+    // Variable
+    val backendServerHost: String by project
+    val backendServerPort: String by project
+    val backendUserName: String by project
+    val backendUserPwd: String by project
+    val backendAppName: String by project
+    val backendAppHome: String by project
+    val backendAppArchive: String = "bytle-api-0.0.1-SNAPSHOT-all";
+    /**
+     * Stop the service and rename the jar file
+     */
+    // Add the class path for ssexex
+    ant.withGroovyBuilder {
+      "taskdef"("name" to "sshexec",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.SSHExec",
+        "classpath" to sshAntTask.asPath)
+    }
+    // https://ant.apache.org/manual/Tasks/sshexec.html
+    // The echo done at the end is to make the command always successful
+    val command = "sudo systemctl stop $backendAppName ; mv ${backendAppHome}/${backendAppArchive}.jar ${backendAppHome}/${backendAppArchive}.\$(date \"+%Y.%m.%d-%H.%M.%S\").jar ; echo Done"
+    ant.withGroovyBuilder {
+      "sshexec"(
+        "command" to command,
+        "host" to backendServerHost,
+        "username" to backendUserName,
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true
+      )
+    }
+
+    /**
+     * Upload the file
+     */
+    ant.withGroovyBuilder {
+      "taskdef"("name" to "scp",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.Scp",
+        "classpath" to sshAntTask.asPath)
+    }
+    // https://ant.apache.org/manual/Tasks/scp.html
+    var file = "build/libs/${backendAppArchive}.jar"
+    ant.withGroovyBuilder {
+      "scp"(
+        "file" to file,
+        "sftp" to "true",
+        "todir" to "${backendUserName}@${backendServerHost}:${backendAppHome}",
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true
+      )
+    }
+
+    ant.withGroovyBuilder {
+      "sshexec"(
+        "command" to "sudo systemctl start $backendAppName",
+        "host" to backendServerHost,
+        "username" to backendUserName,
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true
+      )
+    }
+
+  }
+}
+
+
 
