@@ -65,6 +65,11 @@
         src: '{{backend_app_name}}.service'
         dest: '/etc/systemd/system/{{backend_app_name}}.service'
         mode: 0644
+    - name: Copy the sudoer file
+      template:
+        src: '{{backend_app_name}}.sudoer'
+        dest: '/etc/sudoers.d/{{backend_app_name}}'
+        mode: 0750
     # Not in the handlers because handler happens at the end
     - name: 'backend reload when the service file has changed'
       when: service_file is changed

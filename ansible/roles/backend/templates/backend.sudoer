@@ -1,0 +1,2 @@
+Cmnd_Alias BACKEND_SERVICES = /usr/bin/systemctl start {{ backend_app_name }}, /usr/bin/systemctl stop {{ backend_app_name }}, /usr/bin/systemctl reload {{ backend_app_name }}, /usr/bin/systemctl restart {{ backend_app_name }}, /usr/bin/systemctl status {{ backend_app_name }}, /usr/bin/systemctl enable {{ backend_app_name }}
+{{ backend_user_name }} ALL = (ALL) NOPASSWD: BACKEND_SERVICES
