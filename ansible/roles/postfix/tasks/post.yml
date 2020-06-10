@@ -1,0 +1,46 @@
+---
+
+- name: Ensure postfix is installed.
+  package:
+    name: postfix
+    state: present
+
+- name: Ensure sendmail is not
+  package:
+    name: sendmail
+    state: absent
+
+- name: Install the local client mail
+  package:
+    name: mailx
+    state: present
+
+- name: Update Postfix configuration.
+  notify: restart postfix
+  lineinfile:
+    dest: /etc/postfix/main.cf
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: inet_interfaces  # receive email only from localhost
+      value: "localhost"
+    - name: myhostname
+      value: "mail.bytle.net"
+    - name: mydomain
+      value: "bytle.net"
+    - name: myorigin # origin to send email as user@$mydomain"
+      value: "$mydomain"
+    - name: mynetworks_style # trusted network addresses are specified by subnet
+      value: "subnet"
+    - name: mynetworks
+      value: "127.0.0.1/32 143.176.206.82/32"
+    - name: relay_domains # don't relay mail from other hosts. safe: never forward mail from strangers
+      value: ""
+    - name: relayhost # direct delivery to Internet
+      value: ""
+
+- name: Ensure postfix is started and enabled at boot.
+  service:
+    name: postfix
+    state: started
+    enabled: true

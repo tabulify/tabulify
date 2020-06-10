@@ -1,37 +1,11 @@
 ---
-- name: Ensure postfix is installed.
-  package:
-    name: postfix
-    state: present
 
-- name: Ensure sendmail is not
-  package:
-    name: sendmail
-    state: absent
+- name: Fail if not Redhat
+  fail:
+    msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
+  when: ansible_os_family != "RedHat" # Centos
 
-# mailutils package what's that
 
-- name: Update Postfix configuration.
-  lineinfile:
-    dest: /etc/postfix/main.cf
-    line: "{{ item.name }} = {{ item.value }}"
-    regexp: "^#{1,0}{{ item.name }} ="
-  with_items:
-    - name: myhostname
-      value: "mail.bytle.net"
-    - name: mydomain
-      value: "bytle.net"
-    # origin to send email as user@$mydomain"
-    - name: myorigin
-      value: "$mydomain"
-    - name: inet_interfaces
-      value: "{{ postfix_inet_interfaces }}"
-    - name: inet_protocols
-      value: "{{ postfix_inet_protocols }}"
-  notify: restart postfix
-
-- name: Ensure postfix is started and enabled at boot.
-  service:
-    name: postfix
-    state: started
-    enabled: true
+- name: Root postfix task
+  import_tasks: 'post.yml'
+  become: true

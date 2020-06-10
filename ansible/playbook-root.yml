@@ -2,35 +2,35 @@
 - hosts: ovh
   tasks:
   roles:
-    - name: Ovh common
-      role: ovh-sec
-      tags: ovh
-    - name: Install Nginx
-      role: nginx
-      tags: nginx
-    - name: Install openjdk
-      role: openjdk
-      openjdk_version: 1.8.0
-      tags: java
-    - name: Install nexus
-      role: nexus
-      nexus_version: 3.19.1-01
-      tags: nexus
-    - name: Install netdata
-      role: netdata
-      tags: netdata
-    - name: Install backend
-      role: backend
-      tags: backend
-    - name: Install Gogs
-      role: gogs
-      tags: gogs
-    - name: Install Prometheus Exporter
-      role: prometheus
-      tags: prometheus
-    - name: Install Php
-      role: php
-      tags: php
+#    - name: Ovh common
+#      role: ovh-sec
+#      tags: ovh
+#    - name: Install Nginx
+#      role: nginx
+#      tags: nginx
+#    - name: Install openjdk
+#      role: openjdk
+#      openjdk_version: 1.8.0
+#      tags: java
+#    - name: Install nexus
+#      role: nexus
+#      nexus_version: 3.19.1-01
+#      tags: nexus
+#    - name: Install netdata
+#      role: netdata
+#      tags: netdata
+#    - name: Install backend
+#      role: backend
+#      tags: backend
+#    - name: Install Gogs
+#      role: gogs
+#      tags: gogs
+#    - name: Install Prometheus Exporter
+#      role: prometheus
+#      tags: prometheus
+#    - name: Install Php
+#      role: php
+#      tags: php
     - name: Install postfix
       role: postfix
       tags: postfix
