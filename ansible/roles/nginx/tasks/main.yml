@@ -31,6 +31,7 @@
 - name: 'Certbot - Certificate'
   become: true
   include: certbot_root.yml
+  tags: nginx-cert
 
 - name: Nginx | Configuring Nginx
   become: true
@@ -51,6 +52,12 @@
 - name: 'Datacadamia - Configuration'
   become: true
   include: datacadamia.yml
+  tags: nginx-datacadamia
+
+- name: 'Bytle - Configuration'
+  become: true
+  include: bytle.yml
+  tags: nginx-bytle
 
 - name: 'Backend - Configuration'
   become: true
@@ -76,6 +83,7 @@
     dest: "/etc/nginx/conf.d/nexus.conf"
     backup: yes
   notify: reload nginx
+  tags: nginx-conf
 
 
 - name: Gogs | Configuring Gogs

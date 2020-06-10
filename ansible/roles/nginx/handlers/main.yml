@@ -1,9 +1,10 @@
 ---
 
 #
-- name: reload systemd nginx
+- name: reload nginx
   systemd:
     name: "nginx"
+    state: reloaded
     daemon_reload: true
   become: true
 
@@ -33,3 +34,4 @@
   systemd:
     state: reloaded
     name: firewalld
+

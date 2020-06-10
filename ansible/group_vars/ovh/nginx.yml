@@ -2,15 +2,19 @@
 
 letsencrypt_email: nico@bytle.net
 
+# Certificate
+# The first name is where the file is stored
 ovh_domains:
-  - bytle.net
-  - netdata.bytle.net
-  - nexus.bytle.net
-  - gogs.bytle.net
+  - '{{ bytle_fqdn }}'
+  - '{{ bytle_farmer_fqdn }}'
+  - '{{ bytle_onepager_fqdn }}'
+  - '{{ netdata_fqdn }}'
+  - '{{ nexus_fqdn }}'
+  - '{{ gogs_fqdn }}'
   - '{{ backend_fqdn_api }}'
   - '{{ backend_fqdn_analytics }}'
-  - '{{ datacadamia_fqdn }}'
   - '{{ prometheus_node_exporter_fqdn }}'
+  - '{{ datacadamia_fqdn }}'
 
 cloudflare_domains:
   - '{{ gnico_fqdn }}'

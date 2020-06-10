@@ -3,22 +3,24 @@
 ## About
 How to set up a dev environment
 
-## Gradle
-MAven was deprecated
+## Nexus
 
-Create a `gradle.properties` file at the root of the project
-
+  * Create the file `~\.gradle\gradle.properties` with the nexus password
 ```ini
-nexusUrl=https://nexus.bytle.net
-nexusUsername=admin
-nexusPassword=xxx
+nexusPwd = xxxxxxx
 ```
 
 
-
 ## Java 
+
 Download the last JDK8 (Java SE Development Kit)
-    
+
+In the `~\.gradle\gradle.properties` add its path
+
+```ini
+org.gradle.java.home=C:/java/jdk1.8.0_231
+```
+
 ## Idea
    
   * Download Idea
@@ -35,9 +37,6 @@ Error:java: Annotation processing is not supported for module cycles. Please ens
 ```
 
 
-## Bytle Db Dev doc
-
-See [doc](../db-cli/src/doc/README.md)
 
 ## Create the store location
 

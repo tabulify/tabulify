@@ -18,7 +18,7 @@
         path: '{{ prometheus_home }}'
         group: '{{ prometheus_user_name }}'
         owner: '{{ prometheus_user_group }}'
-        mode: 'u=rwx,g=rx,o=rx'
+        mode: 'u=rwx,g=rwx,o=rx'
     - name: Check if Gogs is already installed.
       stat:
         path: "{{ prometheus_home }}/node_exporter"

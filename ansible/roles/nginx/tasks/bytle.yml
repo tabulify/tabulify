@@ -1,0 +1,78 @@
+
+# Base directory
+
+- name: Bytle | Base directory (where all website are)
+  tags: nginx-conf
+  file:
+    path: '{{ bytle_base_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+    owner: '{{ www_user }}'
+    #recurse: true
+
+- name: Bytle | Base Log directory
+  tags: nginx-conf
+  file:
+    path: '{{ bytle_base_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+    #recurse: true
+
+# Bytle.net
+
+- name: Bytle | Access Log directory
+  file:
+    path: '{{ bytle_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+  tags: nginx-conf
+
+- name: Bytle | Bytle Conf
+  become: true
+  template:
+    src: bytle-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/bytle.conf"
+    backup: yes
+  notify: reload nginx
+  tags: nginx-conf
+
+# farmer.bytle.net
+
+- name: Bytle Farmer | Access Log directory
+  file:
+    path: '{{ bytle_farmer_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+  tags: nginx-conf
+
+- name: Bytle Farmer | Nginx Conf
+  become: true
+  template:
+    src: bytle-farmer-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/bytle-farmer.conf"
+    backup: yes
+  notify: reload nginx
+  tags: nginx-conf
+
+# onepager.bytle.net
+
+- name: Bytle Onepager | Access Log directory
+  file:
+    path: '{{ bytle_onepager_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+  tags: nginx-conf
+
+- name: Bytle Farmer | Nginx Conf
+  become: true
+  template:
+    src: bytle-onepager-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/bytle-onepager.conf"
+    backup: yes
+  notify: reload nginx
+  tags: nginx-conf

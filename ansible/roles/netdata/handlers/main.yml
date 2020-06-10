@@ -28,9 +28,4 @@
     enabled: true
   become: true
 
-- name: reload nginx
-  become: true
-  systemd:
-    state: reloaded
-    name: nginx
 

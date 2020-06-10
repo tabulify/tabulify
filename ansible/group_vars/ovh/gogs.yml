@@ -1,3 +1,4 @@
+gogs_fqdn: gogs.bytle.net
 gogs_mail_enabled: true
 gogs_mail_user: postmaster@gerardnico.com
 gogs_mail_from: gogs@bytle.net
