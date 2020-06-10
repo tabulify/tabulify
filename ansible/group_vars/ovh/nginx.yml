@@ -18,6 +18,8 @@ ovh_domains:
 
 cloudflare_domains:
   - '{{ gnico_fqdn }}'
+  - '{{ gnico_farmer_fqdn }}'
+  - '{{ gnico_nico_fqdn }}'
 
 
 dns_ovh_application_key: !vault |
