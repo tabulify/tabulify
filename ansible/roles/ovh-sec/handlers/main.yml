@@ -28,11 +28,4 @@
     daemon_reload: yes
     state: restarted
 
-- name: 'sendmail reload'
-  become: yes
-  systemd:
-    name: 'sendmail'
-    enabled: 'yes'
-    daemon_reload: yes
-    state: restarted
 

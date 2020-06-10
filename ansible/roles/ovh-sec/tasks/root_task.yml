@@ -6,9 +6,6 @@
 - name: Sshd
   import_tasks: 'root_sshd.yml'
 
-- name: Sendmail
-  import_tasks: 'root_sendmail.yml'
-
 - name: Fail2ban
   import_tasks: 'root_fail2ban.yml'
 

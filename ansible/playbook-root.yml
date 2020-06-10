@@ -31,5 +31,8 @@
     - name: Install Php
       role: php
       tags: php
+    - name: Install postfix
+      role: postfix
+      tags: postfix
 
 
