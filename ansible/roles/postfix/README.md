@@ -43,6 +43,19 @@ mail_owner = postfix
 
 ## Security
 
+By default, Postfix relays mail
+  * from "trusted" clients (IP address matches $mynetworks) to any destination,
+  * from "untrusted" clients to destinations that match $relay_domains or subdomains thereof, except addresses with sender-specified routing.
+
+The default relay_domains value is $mydestination.
+ 
+In addition to the above, the Postfix SMTP server by default accepts mail that Postfix is final destination for:
+  * destinations that match $inet_interfaces or $proxy_interfaces,
+  * destinations that match $mydestination
+  * destinations that match $virtual_alias_domains,
+  * destinations that match $virtual_mailbox_domains.
+These destinations do not need to be listed in $relay_domains.
+
 Postfix forwards mail only:
   * from clients in trusted networks, 
   * from clients that have authenticated with SASL, 

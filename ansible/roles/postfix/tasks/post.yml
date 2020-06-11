@@ -22,10 +22,12 @@
     line: "{{ item.name }} = {{ item.value }}"
     regexp: "^[#]{0,1}{{ item.name }}"
   with_items:
+    - name: mydestination # store email only for this domain (this is the default)
+      value: "$myhostname, localhost.$mydomain, localhost"
     - name: inet_interfaces  # receive email only from localhost
       value: "localhost"
     - name: myhostname
-      value: "mail.bytle.net"
+      value: "server01.bytle.net"
     - name: mydomain
       value: "bytle.net"
     - name: myorigin # origin to send email as user@$mydomain"

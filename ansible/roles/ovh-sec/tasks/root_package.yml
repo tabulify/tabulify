@@ -1,8 +1,8 @@
 
-- name: 'Package - Upgrade all packages'
-  yum:
-    name=*
-    state=latest
+#- name: 'Package - Upgrade all packages'
+#  yum:
+#    name=*
+#    state=latest
 
 - name: Package - Add the EPEL repository
   yum_repository:
@@ -25,6 +25,12 @@
 - name: "Package - Install wget"
   yum:
     name: wget
+    enablerepo: epel
+    state: present
+
+- name: "Package - Install zip"
+  yum:
+    name: zip
     enablerepo: epel
     state: present
 
