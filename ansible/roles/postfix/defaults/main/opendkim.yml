@@ -1,0 +1,22 @@
+
+# The conf file
+dkim_conf_path: /etc/opendkim.conf
+
+# The key / domain mapping file
+dkim_key_table_path: /etc/opendkim/KeyTable
+
+# The location of the keys
+dkim_keys_path: /etc/opendkim/keys
+
+# The key selector (Hostname)
+dkim_selector: '{{ ansible_fqdn }}'
+
+# The location of the key
+dkim_key_path: '{{ dkim_keys_path }}/{{ dkim_selector }}.private'
+
+# The domain
+dkim_domain: 'bytle.net'
+
+
+
+

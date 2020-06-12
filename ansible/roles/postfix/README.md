@@ -33,6 +33,13 @@ To find out what default settings are overruled by the main.cf.
 postconf -n 
 ``` 
 
+To lookup a conf:
+```bash
+postconf -h parameter
+# example
+postconf -h mydomain
+```
+
 ## Service
 
 The service runs under the user `postfix` (created at install ) configured at `/etc/postfix/main.cf`
@@ -47,6 +54,8 @@ By default, Postfix relays mail
   * from "trusted" clients (IP address matches $mynetworks) to any destination,
   * from "untrusted" clients to destinations that match $relay_domains or subdomains thereof, except addresses with sender-specified routing.
 
+The [SMTP server](http://www.postfix.org/smtpd.8.html) rejects mail for unknown recipients. See [KNOWN VERSUS UNKNOWN RECIPIENT CONTROLS](http://www.postfix.org/smtpd.8.html) 
+ 
 The default relay_domains value is $mydestination.
  
 In addition to the above, the Postfix SMTP server by default accepts mail that Postfix is final destination for:

@@ -1,0 +1,34 @@
+
+- name: Ensure opendkim is installed.
+  package:
+    name: opendkim
+    state: present
+    enablerepo: epel
+
+- name: Update opendkim configuration.
+  lineinfile:
+    dest: '{{ dkim_conf_path }}'
+    line: "{{ item.name }} {{ item.value }}"
+    regexp: "^(#\\s)?{{ item.name }}"
+  with_items:
+    - name: KeyTable # Mapping between domain and private key
+      value: "refile:{{ dkim_key_table_path }}"
+
+- name: Stat the key
+  register: dkim_key_file
+  stat:
+    path: '{{dkim_key_path}}'
+
+- name: Fail if not present
+  when: not dkim_key_file.stat.exists
+  fail:
+    msg: "The key file '{{ dkim_key_path }}' does not exist. It should be created manually as this is not part of the play."
+
+- name: Update opendkim key map configuration.
+  lineinfile:
+    dest: '{{ dkim_key_table_path }}'
+    line: "{{ item.name }} {{ item.value }}"
+    regexp: "{{ item.name }}"
+  with_items:
+    - name: '{{ dkim_selector }}._domainkey.{{ dkim_domain }}'
+      value: '{{ dkim_domain }}:{{ dkim_selector }}:{{ dkim_key_path }}'

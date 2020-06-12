@@ -9,3 +9,9 @@
 - name: Root postfix task
   import_tasks: 'post.yml'
   become: true
+
+- name: Root opendkim task
+  import_tasks: 'root_opendkim.yml'
+  become: true
+  tags: dkim
+
