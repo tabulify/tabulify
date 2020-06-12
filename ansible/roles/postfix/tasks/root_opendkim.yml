@@ -11,10 +11,12 @@
     line: "{{ item.name }} {{ item.value }}"
     regexp: "^(#\\s)?{{ item.name }}"
   with_items:
-    - name: KeyTable # Mapping between domain and private key
+    - name: KeyTable # Mapping between DNS selector and private key
       value: "refile:{{ dkim_key_table_path }}"
+    - name: SigningTable # Mapping between address and DNS selector
+      value: "refile:{{ dkim_signing_table_path }}"
 
-- name: Stat the key
+- name: Stat the private key
   register: dkim_key_file
   stat:
     path: '{{dkim_key_path}}'
@@ -24,11 +26,21 @@
   fail:
     msg: "The key file '{{ dkim_key_path }}' does not exist. It should be created manually as this is not part of the play."
 
-- name: Update opendkim key map configuration.
+- name: Update opendkim keymap file
   lineinfile:
     dest: '{{ dkim_key_table_path }}'
     line: "{{ item.name }} {{ item.value }}"
     regexp: "{{ item.name }}"
   with_items:
-    - name: '{{ dkim_selector }}._domainkey.{{ dkim_domain }}'
+    - name: '{{ dkim_dns_key }}'
       value: '{{ dkim_domain }}:{{ dkim_selector }}:{{ dkim_key_path }}'
+
+- name: Update opendkim SigningTable file
+  lineinfile:
+    dest: '{{ dkim_signing_table_path }}'
+    line: "*@{{ item.name }} {{ item.value }}"
+    regexp: "\\*@{{ item.name }}"
+  with_items:
+    - name: '{{ dkim_domain }}'
+      value: '{{ dkim_dns_key }}'
+

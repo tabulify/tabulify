@@ -18,5 +18,8 @@ dkim_key_path: '{{ dkim_keys_path }}/{{ dkim_selector }}.private'
 dkim_domain: 'bytle.net'
 
 
+# The path to the SigningTable
+dkim_signing_table_path: /etc/opendkim/SigningTable
 
+dkim_dns_key: '{{ dkim_selector }}._domainkey.{{ dkim_domain }}'
 
