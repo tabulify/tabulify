@@ -18,7 +18,7 @@
 - name: Update Postfix configuration.
   notify: restart postfix
   lineinfile:
-    dest: /etc/postfix/main.cf
+    dest: "{{ postfix_conf_path }}"
     line: "{{ item.name }} = {{ item.value }}"
     regexp: "^[#]{0,1}{{ item.name }}"
   with_items:

@@ -41,6 +41,7 @@ then
 ```bash
 ansible-vault encrypt_string --vault-id passphrase.sh 'the_password_to_encrypt'
 ```
+cat cert.pem | ansible-vault encrypt_string --vault-id passphrase.sh
 
 Decryption
 ```bash

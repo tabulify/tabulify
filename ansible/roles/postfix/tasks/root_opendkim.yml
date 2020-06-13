@@ -5,28 +5,59 @@
     state: present
     enablerepo: epel
 
-- name: Update opendkim configuration.
+- name: Set opendkim configuration.
+  notify: restart opendkim
   lineinfile:
     dest: '{{ dkim_conf_path }}'
     line: "{{ item.name }} {{ item.value }}"
     regexp: "^(#\\s)?{{ item.name }}"
   with_items:
+    - name: Socket # the socket communication
+      value: "inet:{{ dkim_socket_port }}@localhost"
     - name: KeyTable # Mapping between DNS selector and private key
       value: "refile:{{ dkim_key_table_path }}"
     - name: SigningTable # Mapping between address and DNS selector
       value: "refile:{{ dkim_signing_table_path }}"
+    - name: Mode # Selects operating modes. Valid modes are s (sign) and v (verify). Default is v.
+      value: "sv"
 
-- name: Stat the private key
-  register: dkim_key_file
-  stat:
-    path: '{{dkim_key_path}}'
+- name: Unset opendkim configuration.
+  notify: restart opendkim
+  lineinfile:
+    dest: '{{ dkim_conf_path }}'
+    line: "# {{ item.name }} {{ item.value }}"
+    regexp: "^(#\\s)?{{ item.name }}"
+  with_items:
+    - name: InternalHosts
+      value: "refile:/etc/opendkim/TrustedHosts"
+    - name: ExternalIgnoreList
+      value: "refile:/etc/opendkim/TrustedHosts"
 
-- name: Fail if not present
-  when: not dkim_key_file.stat.exists
-  fail:
-    msg: "The key file '{{ dkim_key_path }}' does not exist. It should be created manually as this is not part of the play."
+- name: Ownership of the key directory
+  file:
+    path: '{{ dkim_keys_path }}'
+    owner: '{{ dkim_owner }}'
+    group: '{{ dkim_group }}'
+    mode: '0700'
+
+
+- name: Private Key
+  copy:
+    content: "{{ dkim_private_key }}"
+    dest: "{{ dkim_key_path }}"
+    owner: '{{ dkim_owner }}'
+    group: '{{ dkim_owner }}'
+    mode: "0600"
+
+- name: Ownership of the key
+  file:
+    path: '{{ dkim_key_path }}'
+    owner: '{{ dkim_owner }}'
+    group: '{{ dkim_group }}'
+    mode: '0600'
 
 - name: Update opendkim keymap file
+  notify: restart opendkim
   lineinfile:
     dest: '{{ dkim_key_table_path }}'
     line: "{{ item.name }} {{ item.value }}"
@@ -36,6 +67,7 @@
       value: '{{ dkim_domain }}:{{ dkim_selector }}:{{ dkim_key_path }}'
 
 - name: Update opendkim SigningTable file
+  notify: restart opendkim
   lineinfile:
     dest: '{{ dkim_signing_table_path }}'
     line: "*@{{ item.name }} {{ item.value }}"
@@ -43,4 +75,32 @@
   with_items:
     - name: '{{ dkim_domain }}'
       value: '{{ dkim_dns_key }}'
+
+
+
+- name: Update Postfix configuration.
+  notify: restart postfix
+  lineinfile:
+    dest: '{{postfix_conf_path}}'
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: smtpd_milters # smtp-only
+      value: "inet:localhost:{{ dkim_socket_port }}"
+    - name: non_smtpd_milters  # command line
+      value: "inet:localhost:{{ dkim_socket_port }}"
+
+- name: Ensure dkim is started and enabled at boot.
+  service:
+    name: opendkim
+    state: started
+    enabled: true
+
+- name: Verification of the DNS Zone against the private key
+  register: dns_test_result
+  changed_when: "dns_test_result.rc != 0"
+  failed_when: "dns_test_result.rc != 0"
+  shell:
+    cmd: "opendkim-testkey -d {{ dkim_domain }} -s {{ dkim_selector }} -k {{ dkim_key_path }}"
+
 

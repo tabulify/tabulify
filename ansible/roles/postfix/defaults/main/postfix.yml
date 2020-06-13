@@ -1,0 +1,3 @@
+---
+
+postfix_conf_path: '/etc/postfix/main.cf'
