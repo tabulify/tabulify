@@ -3,7 +3,8 @@ all: # keys must be unique, i.e. only one 'hosts' per group
     ovh: # groups
         hosts:
           ovh-vps: # ansible_user and ansible_password are in the variables
-            ansible_host: vps748761.ovh.net
+            # ansible_host should be the static hostname in a FQDN format.
+            ansible_host: server01.bytle.net
             ansible_port: '{{ ssh_actual_port }}'
             ansible_become_pass: '{{ user_password }}'
 

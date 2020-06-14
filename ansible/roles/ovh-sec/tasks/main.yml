@@ -5,6 +5,19 @@
     msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
   when: ansible_os_family != "RedHat" # Centos
 
-- name: Root task
+- name: Network
   become: true
-  import_tasks: 'root_task.yml'
+  import_tasks: 'root_network.yml'
+  tags: network
+
+- name: Package
+  become: true
+  import_tasks: 'root_package.yml'
+
+- name: Sshd
+  become: true
+  import_tasks: 'root_sshd.yml'
+
+- name: Fail2ban
+  become: true
+  import_tasks: 'root_fail2ban.yml'

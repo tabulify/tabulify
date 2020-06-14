@@ -27,7 +27,7 @@
     - name: inet_interfaces  # receive email only from localhost
       value: "localhost"
     - name: myhostname # The internet hostname of this mail system.
-      value: "server01.bytle.net"
+      value: "{{ ansible_host }}"
     - name: mydomain
       value: "bytle.net"
     - name: myorigin # origin to send email as user@$mydomain" The domain  name that locally-posted mail appears to come from, and that locally posted mail is delivered to.

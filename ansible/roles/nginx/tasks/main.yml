@@ -28,10 +28,7 @@
     state: enabled
   notify: firewalld reload
 
-- name: 'Certbot - Certificate'
-  become: true
-  include: certbot_root.yml
-  tags: nginx-cert
+
 
 - name: Nginx | Configuring Nginx
   become: true

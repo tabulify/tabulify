@@ -1,0 +1,19 @@
+# Certificate
+# The first name is where the file is stored
+ovh_domains:
+  - '{{ bytle_fqdn }}'
+  - '{{ bytle_farmer_fqdn }}'
+  - '{{ bytle_onepager_fqdn }}'
+  - '{{ netdata_fqdn }}'
+  - '{{ nexus_fqdn }}'
+  - '{{ gogs_fqdn }}'
+  - '{{ backend_fqdn_api }}'
+  - '{{ backend_fqdn_analytics }}'
+  - '{{ prometheus_node_exporter_fqdn }}'
+  - '{{ datacadamia_fqdn }}'
+
+cloudflare_domains:
+  - '{{ gnico_fqdn }}'
+  - '{{ gnico_farmer_fqdn }}'
+  - '{{ gnico_nico_fqdn }}'
+

@@ -1,0 +1,15 @@
+
+- name: 'Modify hostname'
+  hostname:
+    name: '{{ ansible_host }}'
+
+- name: 'Configure the IP Name'
+  lineinfile:
+    dest: "/etc/hosts"
+    state: present
+    regexp: "^{{ item.ip }}"
+    line: "{{ item.ip }} {{ item.hosts }}"
+  with_items:
+    - ip: '{{ ansible_default_ipv4.address }}'
+      hosts: "{{ ansible_host }}  {{ ansible_host.split('.', 1)[0] }}"
+

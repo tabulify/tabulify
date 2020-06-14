@@ -19,6 +19,20 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh --tags netdata
 ```
 
+## Ad hoc
+
+  * Getting a variable value
+
+```bash
+ansible -i inventories/ovh-vps.yml --vault-id passphrase.sh  -m debug -a var=ansible_host all
+```
+
+  * Getting an expression
+  
+```bash
+ansible -i inventories/ovh-vps.yml --vault-id passphrase.sh -m debug -a "msg={{ ansible_host.split('.', 1)[0] }}" all
+```
+
 ## Application available
 
   * https://nexus.bytle.net (Port 8082)
