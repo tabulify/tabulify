@@ -28,6 +28,9 @@
     - name: Install Prometheus Exporter
       role: prometheus
       tags: prometheus
+    - name: Install Certbot and asks for the certificate
+      role: certbot
+      tags: certbot
     - name: Install Php
       role: php
       tags: php

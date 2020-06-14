@@ -13,3 +13,13 @@ Certificate are used:
 
   * Add the domain in the [domains](./defaults/main/domains.yml) file
   * Run this role
+
+```bash
+ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh --tags certbot
+``` 
+
+
+## TODO May be 
+
+Ansible has also a module called [acme_certificate](https://docs.ansible.com/ansible/2.9/modules/acme_certificate_module.html#acme-certificate-module)
+
