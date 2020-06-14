@@ -5,6 +5,8 @@
 
 An [Ansible](https://www.ansible.com) role to install/configure [Netdata](https://my-netdata.io/)
 
+https://packagecloud.io/netdata/netdata/install#manual-rpm
+
 
 ## Usage
 

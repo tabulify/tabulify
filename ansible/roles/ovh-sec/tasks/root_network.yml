@@ -3,13 +3,11 @@
   hostname:
     name: '{{ hostname }}'
 
-- name: 'Configure the IP Name'
-  lineinfile:
-    dest: "/etc/hosts"
-    state: present
-    regexp: "^{{ item.ip }}"
-    line: "{{ item.ip }} {{ item.hosts }}"
+- name: Configure the IP Name
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ item.ip }} {{ item.name }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK Hostname"
   with_items:
-    - ip: '{{ ansible_default_ipv4.address }}'
-      hosts: "{{ hostname }}  {{ hostname.split('.', 1)[0] }}"
-
+    - { name: "{{ hostname }}  {{ hostname.split('.', 1)[0] }}", ip: 127.0.0.1 }
