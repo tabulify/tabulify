@@ -1,0 +1,48 @@
+---
+
+- name: Determine if the certificate already exist
+  stat:
+    path: "{{ postfix_tls_cert }}"
+  register: postfix_tls_cert_file
+
+- name: Fail if the certificate does not exists
+  when: not postfix_tls_cert_file.stat.exists
+  fail:
+    msg: "The certificate ({{ postfix_tls_cert }}) does not exist, you should create it first (with certbot for instance)"
+
+- name: Determine if the key already exist
+  stat:
+    path: "{{ postfix_tls_key }}"
+  register: postfix_tls_key_file
+
+- name: Fail if the key does not exists
+  when: not postfix_tls_key_file.stat.exists
+  fail:
+    msg: "The key ({{ postfix_tls_key }}) does not exist, you should create it first (with certbot for instance)"
+
+- name: Update Postfix TLS configuration.
+  notify: restart postfix
+  lineinfile:
+    dest: "{{ postfix_conf_path }}"
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: smtpd_tls_cert_file # cert
+      value: "{{ postfix_tls_cert }}"
+    - name: smtpd_tls_key_file  # key
+      value: "{{ postfix_tls_key }}"
+    - name: smtpd_tls_security_level
+      value: "encrypt" # always encrypt
+    - name: smtpd_tls_loglevel
+      value: "1" # log level 1 Log only a summary message on TLS handshake completion
+    - name: smtpd_tls_received_header
+      value: "yes" # Request that the Postfix SMTP server produces Received: message headers
+    - name: smtp_tls_security_level
+      value: "encrypt" # smtp client always encrypt
+    - name: smtp_tls_note_starttls_offer
+      value: "yes" # Log the hostname of a remote SMTP server that offers STARTTLS, when TLS is not already enabled for that server.
+    - name: smtp_tls_loglevel
+      value: "1" # log level 1 Log only a summary message on TLS handshake completion
+
+
+

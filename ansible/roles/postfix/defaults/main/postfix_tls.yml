@@ -1,0 +1,4 @@
+---
+
+postfix_tls_cert: '/etc/letsencrypt/live/{{ hostname }}/fullchain.pem'
+postfix_tls_key: '/etc/letsencrypt/live/{{ hostname }}/privkey.pem'

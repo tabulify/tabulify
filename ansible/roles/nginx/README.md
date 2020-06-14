@@ -1,13 +1,19 @@
 # Nginx
 
+## About
+
+This role install ansible and configure every website.
+
+The certificate are generated with the [cerbot](../certbot/README.md) role.
+
 ## Conf
 
-The server blocks should be added to `/etc/nginx/conf.d`
+The template are server blocks that are added to `/etc/nginx/conf.d`
 
 
 ## Test
 
-To test a DNS change you can use the map function of the chrome browser.
+To test a DNS change, you can use the map function of the chrome browser.
 
 ```bash
 chrome.exe --host-resolver-rules="MAP gerardnico.com 212.186.33.26"
