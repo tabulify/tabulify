@@ -20,3 +20,8 @@
   become: true
   tags: dkim
 
+- name: Virtual alias domain
+  import_tasks: 'post_virtual.yml'
+  become: true
+  tags: postfix_virtual
+

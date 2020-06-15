@@ -1,4 +1,10 @@
 ---
+
+# should be first
+- name: rebuild postfix virtual index
+  command: "postmap {{ postfix_virtual_alias_file }}"
+  become: true
+
 - name: restart postfix
   service: name=postfix state=restarted
   become: true
@@ -7,3 +13,5 @@
 - name: restart opendkim
   service: name=opendkim state=restarted
   become: true
+
+

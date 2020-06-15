@@ -1,0 +1,29 @@
+---
+
+
+- name: Update Postfix Virtual table alias file
+  notify: restart postfix
+  lineinfile:
+    dest: "{{ postfix_conf_path }}"
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: virtual_alias_domains # the definition of the domain that may have alias
+      value: "{{ virtual_alias_domains | join(' ') }}"
+    - name: virtual_alias_maps # the alias repository (should be already present)
+      value: "hash:{{ postfix_virtual_alias_file }}"
+
+- name: Update Virtual table alias table
+  notify:
+    - rebuild postfix virtual index
+    - restart postfix
+  blockinfile:
+    path: '{{ postfix_virtual_alias_file }}'
+    block: '{{ postfix_virtual_alias_lines }}'
+    marker: "# {mark} ANSIBLE MANAGED BLOCK Postfix Virtual alias"
+
+
+
+
+
+

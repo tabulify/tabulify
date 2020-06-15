@@ -1,0 +1,14 @@
+virtual_alias_domains:
+  - bytle.net
+  - datacadamia.com
+  - gerardnico.com
+
+# The default but as it must be used on several place we make a variable
+postfix_virtual_alias_file: /etc/postfix/virtual
+
+# One line by item
+postfix_virtual_alias_lines: |
+  netdata@bytle.net gerardnico@gmail.com
+  root@bytle.net    gerardnico@gmail.com
+
+
