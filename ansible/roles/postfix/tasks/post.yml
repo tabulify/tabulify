@@ -25,7 +25,11 @@
     - name: mydestination # store email only for this domain (this is the default)
       value: "$myhostname, localhost.$mydomain, localhost"
     - name: inet_interfaces  # The  network interface  addresses that this system receives mail on.
-      value: "localhost"
+      value: "all"
+    - name: smtp_bind_address
+      value: "0.0.0.0"
+    - name: smtp_bind_address6
+      value: "::"
     - name: myhostname # The internet hostname of this mail system.
       value: "{{ hostname }}"
     - name: mydomain
@@ -47,10 +51,4 @@
     state: started
     enabled: true
 
-- name: 'Firewalld - Add port 25'
-  become: true
-  firewalld:
-    port: '25/tcp'
-    permanent: yes
-    state: enabled
-  notify: firewalld reload
+

@@ -12,22 +12,9 @@
     state: "started"
     enabled: true
 
-- name: 'Firewalld - Add port 443'
-  become: true
-  firewalld:
-    port: '443/tcp'
-    permanent: yes
-    state: enabled
-  notify: firewalld reload
-
-- name: 'Firewalld - Add port 80 for a SSL redirect'
-  become: true
-  firewalld:
-    port: '80/tcp'
-    permanent: yes
-    state: enabled
-  notify: firewalld reload
-
+# OVH firewall
+#- name: 'Firewall - Add port 443'
+#- name: 'Firewall - Add port 80 for a SSL redirect'
 
 
 - name: Nginx | Configuring Nginx

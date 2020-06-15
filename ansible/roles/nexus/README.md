@@ -8,6 +8,9 @@ The extraction/installation process creates two sibling [directories](https://he
   * an application directory 
   * and a data directory, sometimes called the "Sonatype Work" directory
 
+## Port
+
+8443 should be in the ovh firewall
 
 ## Prerequisites and dependency
 

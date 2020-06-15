@@ -21,3 +21,4 @@
 - name: Fail2ban
   become: true
   import_tasks: 'root_fail2ban.yml'
+  tags: fail2ban

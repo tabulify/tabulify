@@ -9,12 +9,6 @@
     daemon_reload: yes
     state: restarted
 
-- name: "firewalld reload"
-  become: yes
-  systemd:
-    state: reloaded
-    name: firewalld
-
 
 - name: reload nginx
   become: true

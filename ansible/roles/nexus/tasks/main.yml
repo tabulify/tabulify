@@ -33,10 +33,6 @@
     - name: Install service systemd
       include_tasks: 'root_service_systemd.yml'
 
-- name: Firewall
-  become: true
-  import_tasks: 'root_firewall.yml'
-
 - name: Nexus Configuration
   become: true
   become_user: '{{ nexus_user }}'

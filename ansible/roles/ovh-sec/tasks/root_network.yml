@@ -10,4 +10,12 @@
       {{ item.ip }} {{ item.name }}
     marker: "# {mark} ANSIBLE MANAGED BLOCK Hostname"
   with_items:
-    - { name: "{{ hostname }}  {{ hostname.split('.', 1)[0] }}", ip: 127.0.0.1 }
+    - { name: "{{ hostname }}  {{ hostname.split('.', 1)[0] }}", ip: '{{ ansible_default_ipv4.address }}' }
+
+# Firewall is on the cloud provider
+# Firewall is now on the cloud provider - permits to change it even if we can't connect
+- name: Disable firewalld
+  systemd:
+    name: firewalld
+    enabled: no
+    state: stopped
