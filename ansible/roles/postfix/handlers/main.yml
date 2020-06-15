@@ -14,4 +14,8 @@
   service: name=opendkim state=restarted
   become: true
 
-
+- name: firewalld reload
+  become: yes
+  systemd:
+    state: reloaded
+    name: firewalld

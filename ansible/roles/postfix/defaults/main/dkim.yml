@@ -9,7 +9,7 @@ dkim_key_table_path: /etc/opendkim/KeyTable
 dkim_keys_path: /etc/opendkim/keys
 
 # The key selector (Hostname)
-dkim_selector: '{{ ansible_fqdn }}'
+dkim_selector: '{{ ansible_hostname }}'
 
 # The location of the key
 dkim_key_path: '{{ dkim_keys_path }}/{{ dkim_selector }}.private'

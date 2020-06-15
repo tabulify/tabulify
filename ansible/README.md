@@ -21,6 +21,12 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 
 ## Ad hoc
 
+  * Getting all facts
+
+```bash
+ansible -i inventories/ovh-vps.yml --vault-id passphrase.sh  -m setup all
+```
+
   * Getting a variable value
 
 ```bash

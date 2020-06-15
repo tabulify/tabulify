@@ -10,7 +10,7 @@
     name: sendmail
     state: absent
 
-- name: Install the local client mail
+- name: Install a local client mail
   package:
     name: mailx
     state: present
@@ -46,3 +46,11 @@
     name: postfix
     state: started
     enabled: true
+
+- name: 'Firewalld - Add port 25'
+  become: true
+  firewalld:
+    port: '25/tcp'
+    permanent: yes
+    state: enabled
+  notify: firewalld reload
