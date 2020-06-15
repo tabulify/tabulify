@@ -1,0 +1,19 @@
+---
+
+
+- name: Update Postfix SASL configuration.
+  notify: restart postfix
+  lineinfile:
+    dest: "{{ postfix_conf_path }}"
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: smtpd_sasl_auth_enable  # cert
+      value: "yes"
+    - name: smtpd_sasl_security_options
+      value: "noanonymous"
+    - name: smtpd_client_restrictions # no anonymous connection
+      value: permit_sasl_authenticated, reject
+
+
+

@@ -13,7 +13,7 @@
 - name: Root postfix tls configuration
   import_tasks: 'post_tls.yml'
   become: true
-  tags: post_tls
+  tags: postfix_tls
 
 - name: Root opendkim task
   import_tasks: 'root_opendkim.yml'
