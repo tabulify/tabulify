@@ -4,14 +4,11 @@
 
 This role install the mail transfer agent `Postfix` in order to be able to send email.
 
-Port 25 needs to be open in order for it to receive mail from the internet.
-Port 25 should accept anonymous connections, but not for relaying
 
-Port 587 is considered a submission port. It is also what clients use to send mail out using your server. 
-port 587 should only allow authenticated connections
+## TODO
 
-
-
+  * mail for root should always be aliased to a real user [Ref](http://www.postfix.org/postconf.5.html#mailbox_command)
+ 
 https://linuxlasse.net/linux/howtos/Blacklist_and_Whitelist_with_Postfix
 https://ethitter.com/2016/03/blocking-sender-ips-in-postfix/
 https://serverfault.com/questions/481477/in-postfix-how-to-enforce-tls-auth-over-587-while-leaving-tls-optional-for-25

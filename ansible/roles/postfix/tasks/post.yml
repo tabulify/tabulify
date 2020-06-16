@@ -44,6 +44,13 @@
       value: ""
     - name: relayhost # direct delivery to Internet
       value: ""
+    - name: smtpd_reject_footer # Optional information that is appended after each Postfix SMTP server 4XX or 5XX response.
+      value: |
+        For assistance, send an email to gnickeau@gmail.com
+        and provide the following information in your problem report:
+          * time ($localtime),
+          * client ($client_address)
+          * and server ($server_name).
 
 - name: Ensure postfix is started and enabled at boot.
   service:

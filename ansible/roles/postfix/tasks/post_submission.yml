@@ -27,3 +27,11 @@
 #  -o smtpd_sender_restrictions=$mua_sender_restrictions
 #  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
 #  -o milter_macro_daemon_name=ORIGINATING
+
+- name: Ensure sasl is started and enabled at boot.
+  service:
+    name: saslauthd
+    state: started
+    enabled: true
+
+

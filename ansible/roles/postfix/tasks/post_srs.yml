@@ -1,0 +1,96 @@
+# When forwarding with virtual alias
+# The sender (ie gmail for instance) does not allow me to send email
+# SRS - Sender Rewriting Scheme (SRS) permits to do that
+# And to have a good SPF
+
+
+# The SRS rewrite is the process of turning
+#   * user@example.com
+# into
+#   * SRS0+XXXX+ZZ+example.com+user@srs.mailhoster.org.
+
+# If you need to forward a mail for any of your customer's domains,
+# you can simply forward it with the srs.mailhoster.org domain;
+# as long as your mail server is authorized to send on behalf of srs.mailhoster.org,
+# the SPF validation will succeed.
+# The bounce will still work as expected, since you are handling mails for srs.mailhoster.org,
+# and the bounce address is fully contained within the rewritten one.
+
+# https://github.com/roehling/postsrsd/issues/75#issuecomment-373432015
+
+# https://github.com/roehling/postsrsd
+# Default config (/etc/default/postsrsd)
+
+#
+# During the installation, a secret key is generated and stored in /etc/postsrsd.secret.
+# This key is used to generate the unique rewrite address and to protect against
+#
+
+- name: Stat conf file {{ srs_conf_file }}
+  register: srs_conf_file_stat
+  stat:
+    path: '{{srs_conf_file}}'
+
+- name: Install SRS if needed
+  when: not srs_conf_file_stat.stat.exists
+  block:
+  - name: Make install
+    yum:
+      name: cmake
+      state: present
+
+  - name: Create temporary directory
+    file:
+      state: directory
+      path: '{{ srs_temp_dir }}'
+
+  - name: Create build directory
+    file:
+      state: directory
+      path: '{{ srs_temp_build_dir }}'
+
+  - name: Download SRS
+    uri:
+      url: 'https://github.com/roehling/postsrsd/archive/master.zip'
+      method: GET
+      dest: '{{ srs_temp_dir }}/master.zip'
+      creates: '{{ srs_temp_dir }}/master.zip'
+
+  - name: Extract
+    unarchive:
+      src: '{{ srs_temp_dir }}/master.zip'
+      dest: '{{ srs_temp_dir }}'
+      remote_src: yes
+      creates: '{{ srs_temp_dir }}/postsrsd-master'
+
+  # The default is to install in /usr/local
+  # https://www.pathname.com/fhs/pub/fhs-2.3.html#USRLOCALLOCALHIERARCHY
+
+  - name: Make
+    make:
+      chdir: '{{ srs_temp_dir }}/postsrsd-master'
+      target: install
+
+
+- name: Update Postfix configuration.
+  notify: restart postfix
+  lineinfile:
+    dest: "{{ postfix_conf_path }}"
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^[#]{0,1}{{ item.name }}"
+  with_items:
+    - name: sender_canonical_maps # send it to the SRS port
+      value: "tcp:localhost:10001"
+    - name: sender_canonical_classes  #
+      value: "envelope_sender"
+    - name: recipient_canonical_maps
+      value: "tcp:localhost:10002"
+    - name: recipient_canonical_classes
+      value: "envelope_recipient,header_recipient"
+
+
+- name: Ensure postsrs is started and enabled at boot.
+  service:
+    name: postsrsd
+    state: started
+    enabled: true

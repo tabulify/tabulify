@@ -25,3 +25,8 @@
   become: true
   tags: postfix_virtual
 
+- name: Sender Rewriting Scheme (SRS)
+  import_tasks: 'post_srs.yml'
+  become: true
+  tags: postfix_srs
+

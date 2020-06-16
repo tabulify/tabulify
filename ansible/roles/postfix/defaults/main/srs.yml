@@ -1,0 +1,9 @@
+
+srs_temp_dir: /tmp/srs
+srs_temp_build_dir: /tmp/srs/build
+
+
+srs_conf_file: /etc/default/postsrsd
+
+
+
