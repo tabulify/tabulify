@@ -12,7 +12,7 @@
     - regexp: "^application-port="
       line: "application-port={{ nexus_port }}"
     - regexp: "^application-host="
-      line: "application-host=0.0.0.0" # bind to all host
+      line: "application-host=localhost" # bind only to localhost (nginx)
     - regexp: "^nexus-context-path="
       line: "nexus-context-path={{ nexus_context_path }}"
   notify:
