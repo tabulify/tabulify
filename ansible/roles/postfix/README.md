@@ -12,7 +12,8 @@ port 587 should only allow authenticated connections
 
 
 
-
+https://linuxlasse.net/linux/howtos/Blacklist_and_Whitelist_with_Postfix
+https://ethitter.com/2016/03/blocking-sender-ips-in-postfix/
 https://serverfault.com/questions/481477/in-postfix-how-to-enforce-tls-auth-over-587-while-leaving-tls-optional-for-25
 
 ## Conf

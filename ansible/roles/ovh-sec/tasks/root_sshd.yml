@@ -1,28 +1,23 @@
-- name: "User - Create the login group"
-  group:
-    name: '{{ user_group }}'
-    state: present
+
+- name: Copy the sudoer file
+  template:
+    src: 'wheel.sudoer'
+    dest: '/etc/sudoers.d/wheel'
+    mode: 0750
+
 
 - name: "User - Create the login user"
   user:
-    name: '{{ user_name }}'
-    comment: Installation user
+    name: '{{ ssh_user_name }}'
+    comment: The SSH user
     state: present
-    group: '{{ user_group }}'
+    group: 'users'
     groups:
-      - wheel # To be able to run all commands
-    password: "{{ user_password | password_hash('sha512') }}"
+      - wheel # The sudo admin group
+    password: "{{ ssh_user_password | password_hash('sha512') }}"
 
 
-- name: Update the /etc/ssh/sshd_config file
-  lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: "^Port"
-    line: "Port {{ ssh_target_port }}"
-    insertafter: EOF
-    state: present
-  notify: ssh reload
-
+# May be we could have add that in the wheel.sudoer file
 - name: Sshd - No root login
   lineinfile:
     dest: /etc/ssh/sshd_config

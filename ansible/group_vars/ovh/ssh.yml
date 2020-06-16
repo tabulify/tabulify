@@ -1,4 +1,0 @@
-
-
-ssh_target_port: 2222
-ssh_actual_port: '{{ssh_target_port}}'

@@ -7,6 +7,6 @@ all: # keys must be unique, i.e. only one 'hosts' per group
             ansible_host: vps748761.ovh.net
             # hostname should be the static hostname in a FQDN format.
             hostname: server01.bytle.net
-            ansible_port: '{{ ssh_actual_port }}'
-            ansible_become_pass: '{{ user_password }}'
+            ansible_port: 22
+            ansible_become_pass: '{{ ssh_user_password }}'
 

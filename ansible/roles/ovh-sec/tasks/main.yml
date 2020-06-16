@@ -13,10 +13,12 @@
 - name: Package
   become: true
   import_tasks: 'root_package.yml'
+  tags: package
 
 - name: Sshd
   become: true
   import_tasks: 'root_sshd.yml'
+  tags: ssh
 
 - name: Fail2ban
   become: true
