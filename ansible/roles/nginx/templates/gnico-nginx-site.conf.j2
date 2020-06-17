@@ -24,7 +24,7 @@ server {
     ssl_prefer_server_ciphers on;
 
     add_header 'Referrer-Policy' 'unsafe-url';
-    return 301 https://{{ datacadamia_fqdn }}$request_uri?referer=https://{{ gnico_fqdn }}$request_uri;
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
 
 }
 
@@ -32,6 +32,6 @@ server {
 server {
     listen 80;
     server_name {{ gnico_fqdn }};
-    return 301 https://{{ datacadamia_fqdn }}$request_uri?referer=https://{{ gnico_fqdn }}$request_uri;
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
 }
 

@@ -1,0 +1,9 @@
+
+
+nginx_status_name: 'nginx_status'
+
+nginx_status_temp_dir: '/tmp/{{ nginx_status_name }}'
+
+nginx_status_version: v0.1.18
+
+nginx_status_archive:  '{{ nginx_status_version }}.zip'

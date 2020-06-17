@@ -1,0 +1,44 @@
+
+
+
+- name: Install Virtual Status if needed
+#  when: not srs_conf_file_stat.stat.exists
+  block:
+#    - name: Make install
+#      yum:
+#        name: cmake
+#        state: present
+
+    - name: Create temporary directory
+      file:
+        state: directory
+        path: '{{ nginx_status_temp_dir }}'
+
+    - name: Create build directory
+      file:
+        state: directory
+        path: '{{ nginx_status_temp_dir }}'
+
+    - name: Download Nginx Virtual Status
+      uri:
+        url: 'https://github.com/vozlt/nginx-module-vts/archive/{{ nginx_status_archive }}'
+        method: GET
+        dest: '{{ nginx_status_temp_dir }}/{{ nginx_status_archive }}'
+        creates: '{{ nginx_status_temp_dir }}/{{ nginx_status_archive }}'
+
+    - name: Extract
+      unarchive:
+        src: '{{ nginx_status_temp_dir }}/{{ nginx_status_archive }}'
+        dest: '{{ nginx_status_temp_dir }}'
+        remote_src: yes
+        creates: '{{ nginx_status_archive }}/postsrsd-master'
+
+    # The default is to install in /usr/local
+    # https://www.pathname.com/fhs/pub/fhs-2.3.html#USRLOCALLOCALHIERARCHY
+
+#    - name: Make
+#      make:
+#        chdir: '{{ srs_temp_dir }}/postsrsd-master'
+#        target: install
+
+

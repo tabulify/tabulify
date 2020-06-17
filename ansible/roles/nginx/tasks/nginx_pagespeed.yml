@@ -1,0 +1,101 @@
+
+# From
+# https://www.modpagespeed.com/doc/build_ngx_pagespeed_from_source
+# based on
+# psol: https://developers.google.com/speed/pagespeed/psol
+# PageSpeed Optimization Libraries
+#
+
+- name: Install Pagespeed if not yet done
+#  when: not srs_conf_file_stat.stat.exists
+  block:
+#    - name: Make install
+#      yum:
+#        name: cmake
+#        state: present
+
+    - name: Install dependencies package
+      yum:
+        name:
+          - gcc-c++
+          - pcre-devel
+          - zlib-devel
+          - make
+          - unzip
+          - libuuid-devel
+        state: present
+
+    - name: Create temporary directory for pagespeed
+      file:
+        state: directory
+        path: '{{ nginx_pagespeed_temp_dir }}'
+
+    - name: Download Nginx Pagespeed module
+      uri:
+        url: 'https://github.com/apache/incubator-pagespeed-ngx/archive/{{ nginx_pagespeed_archive }}'
+        method: GET
+        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
+
+    - name: Extract Pagespeed archive
+      unarchive:
+        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
+        dest: '{{ nginx_pagespeed_temp_dir }}'
+        remote_src: yes
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
+
+    # The bitsize name is part of the downloaded URL
+    # You can see it into cat ./scripts/format_binary_url.sh
+    - name: Set the bit size name if 64
+      when: ansible_userspace_bits == "64"
+      set_fact:
+        bit_size_name: x64
+    - name: Set the bit size name if not 64
+      when: ansible_userspace_bits != "64"
+      set_fact:
+        bit_size_name: ia32
+
+    - name: Download the PageSpeed Optimization Libraries (PSOL)
+      uri:
+        url: 'https://dl.google.com/dl/page-speed/psol/{{ nginx_psol_archive }}'
+        method: GET
+        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+
+    - name: Extract the PageSpeed Optimization Libraries
+      unarchive:
+        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
+        remote_src: yes
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/psol'
+
+    - name: Download Nginx {{ nginx_archive }}
+      uri:
+        url: 'http://nginx.org/download/{{ nginx_archive }}'
+        method: GET
+        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
+
+    - name: Extract Nginx {{ nginx_archive }}
+      unarchive:
+        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
+        dest: '{{ nginx_pagespeed_temp_dir }}'
+        remote_src: yes
+        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
+
+    - name: Configure the compile
+      command:
+        argv: "[ '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}/configure' ] + {{ nginx_configure_arguments }} + ['--add-dynamic-module=={{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}']"
+        chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
+
+    - name: Make the module
+      command:
+        cmd: "/bin/make j -2 > build.log 2>&1"
+        chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
+
+#    - name: Make
+#      make:
+#        chdir: '{{ srs_temp_dir }}/postsrsd-master'
+#        target: install
+
+
