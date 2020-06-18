@@ -6,11 +6,11 @@
 #
 # Usage example
 #  name: Compile and copy
-#  include_tasks: nginx_compile_dynamic_module.yml
-#    vars:
-#      nginx_dynamic_library_name: 'ngx_pagespeed.so'
-#      nginx_dynamic_library_source_path: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
-
+#  import_tasks: nginx_compile_dynamic_module.yml
+#  vars:
+#    nginx_dynamic_library_name: 'ngx_pagespeed.so'
+#    nginx_dynamic_library_source_path: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
+#    nginx_with_cc_opt: '-DNGX_HTTP_HEADERS ' # extra compile option needed by paggspeed with a space at the end
 
 # The prerequis package for compiling nginx
 #
@@ -54,18 +54,29 @@
     remote_src: yes
     creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
 
-- name: Configure the compile
+# This steps configure the makefile
+#
+# Other configure automation found https://github.com/leev/ngx_http_geoip2_module/issues/82#issuecomment-580728987
+#    nginx -V 2>&1 | egrep  "^configure" | cut -d: -f2 > /tmp/nginx_build_options.txt
+#    sh -c "./configure $(cat /tmp/nginx_build_options.txt) --add-dynamic-module=..."
+#
+- name: Configure the compile for {{ nginx_dynamic_library_name }}
   shell:
+    # the logic is just to cut at -- but one parameter should not --param
     cmd: |
       IFS=$'\t'; ./configure \
-        "$(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | cut -c2- )"  \
-        --add-dynamic-module={{ nginx_dynamic_library_source_path }} > configure.log 2>&1
+        --add-dynamic-module={{ nginx_dynamic_library_source_path }} \
+        $(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | sed $'s/\t--param/ --param/g' | tr -d "'" | cut -c2- )  \
+        > configure-stdout-ansible-cmd.log 2>&1
     chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
     creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/{{ nginx_dynamic_library_name }}'
 
-- name: Make the module
+
+
+- name: Make the module {{ nginx_dynamic_library_name }}
   shell:
-    cmd: "cgexec -g cpu:{{ cgroup_cpu_50 }} make > build.log 2>&1" # limited to 50%
+    cmd: | # limited to 50%
+      cgexec -g cpu:{{ cgroup_cpu_50 }} make > make-stdout-ansible-cmd.log 2>&1
     chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
     creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/{{ nginx_dynamic_library_name }}'
 

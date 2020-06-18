@@ -1,6 +1,9 @@
 ---
 
-#
+- name: verify config
+  become: true
+  command: '/sbin/nginx -t'
+
 - name: reload nginx
   systemd:
     name: "nginx"
@@ -28,5 +31,6 @@
     state: "restarted"
     enabled: true
   become: true
+
 
 

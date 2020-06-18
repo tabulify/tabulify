@@ -1,0 +1,10 @@
+# The parameters that are need to build the dynamic modules with nginx
+
+# Needed to know the version because the module
+# need to be compiled against the NGINX version installed
+nginx_version: 1.16.1
+nginx_archive: 'nginx-{{ nginx_version }}.tar.gz'
+nginx_archive_dir_name: 'nginx-{{ nginx_version }}'
+
+# A temporary directory
+nginx_build_base_dir: /tmp/nginx

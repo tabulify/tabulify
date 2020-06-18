@@ -54,40 +54,54 @@
   notify: reload nginx
 
 - name: Netdata | Configuring Netdata
+  notify:
+    - verify config
+    - reload nginx
   become: true
+  tags: nginx-netdata, nginx-conf
   template:
     src: netdata-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/netdata.conf"
     backup: yes
-  notify: reload nginx
 
 # https://www.nginx.com/resources/wiki/start/topics/examples/javaservers/
 - name: Nexus | Configuring Nexus
+  notify:
+    - verify config
+    - reload nginx
   become: true
+  tags: nginx-nexus, nginx-conf
   template:
     src: nexus-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/nexus.conf"
     backup: yes
-  notify: reload nginx
-  tags: nginx-conf
+
 
 
 - name: Gogs | Configuring Gogs
+  tags: nginx-gogs, nginx-conf
+  notify:
+    - verify config
+    - reload nginx
   become: true
   template:
     src: gogs-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/gogs.conf"
-    backup: yes
-  notify: reload nginx
 
 - name: Prometheus | Configuring Prometheus
   become: true
+  notify:
+    - verify config
+    - reload nginx
+  tags: nginx-conf, nginx-prom
   template:
     src: prometheus-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/prometheus.conf"
-    backup: yes
-  notify: reload nginx
 
+- name: Nginx | Installation modules
+  become: true
+  include: nginx_modules.yml
+  tags: nginx_modules
 
 
 - name: Nginx conf verif | Verification of the configuration
@@ -95,10 +109,3 @@
   command: '/sbin/nginx -t'
   register: nginx_conf
   changed_when: "nginx_conf.rc != 0"
-
-
-
-- name: Nginx | Installation modules
-  become: true
-  include: nginx_modules.yml
-  tags: nginx_modules

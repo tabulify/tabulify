@@ -1,7 +1,7 @@
 
 
 nginx_status_version: 0.1.18
-
+nginx_status_module_file_name: 'ngx_http_vhost_traffic_status_module.so'
 nginx_status_archive:  'v{{ nginx_status_version }}.zip'
 # the name of the directory after unzip
 nginx_status_archive_dir_name: 'nginx-module-vts-{{ nginx_status_version }}'

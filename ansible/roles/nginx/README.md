@@ -24,6 +24,6 @@ cd /D "C:\Program Files (x86)\Google\Chrome\Application\"
 chrome.exe --host-resolver-rules="MAP bytle.net  164.132.99.202, MAP gerardnico.com 164.132.99.202, MAP datacadamia.com 164.132.99.202"
 ```
 
-## TODO
 
-  * https://www.modpagespeed.com/doc/build_ngx_pagespeed_from_source
+
+  

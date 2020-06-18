@@ -1,16 +1,16 @@
 
 # Set the module path
 - name: Get the modules path
-  changed_when: "rc_nginx_module_path.rc != 0"
-  failed_when: "rc_nginx_module_path.rc != 0"
-  register: rc_nginx_module_path
+  changed_when: "rc_nginx_prefix.rc != 0"
+  failed_when: "rc_nginx_prefix.rc != 0"
+  register: rc_nginx_prefix
   shell:
     cmd: |
-      nginx -V 2>&1 | grep 'configure arguments' | sed 's/--/\n--/g' | grep modules-path | cut --delimiter '=' --fields=2- | tr -d ' '
+      nginx -V 2>&1 | grep 'configure arguments' | sed 's/--/\n--/g' | grep prefix | cut --delimiter '=' --fields=2- | tr -d ' '
 
 - name: Set the module path as variable
   set_fact:
-    nginx_modules_path: '{{rc_nginx_module_path.stdout}}'
+    nginx_modules_path: '{{rc_nginx_prefix.stdout}}/modules'
 
 #################
 # Pagespeed
@@ -18,7 +18,7 @@
 - name: Stat the page speed dynamic library
   register: nginx_pagespeed_library_path
   stat:
-    path: '{{ nginx_modules_path }}/ngx_pagespeed.so'
+    path: '{{ nginx_modules_path }}/{{ nginx_pagespeed_module_file_name }}'
 
 - name: Install Pagespeed if not yet done
   when: not nginx_pagespeed_library_path.stat.exists
@@ -33,7 +33,7 @@
 - name: Stat the nginx-module-vts dynamic library
   register: nginx_status_library_path
   stat:
-    path: '{{ nginx_modules_path }}/ngx_http_vhost_traffic_status_module.so'
+    path: '{{ nginx_modules_path }}/{{ nginx_status_module_file_name }}'
 
 - name: Install Vts if not yet done
   when: not nginx_status_library_path.stat.exists
