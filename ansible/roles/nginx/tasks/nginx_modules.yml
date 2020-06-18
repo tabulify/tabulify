@@ -1,0 +1,25 @@
+
+# Set the module path
+- name: Get the modules path
+  changed_when: "rc_nginx_module_path.rc != 0"
+  failed_when: "rc_nginx_module_path.rc != 0"
+  register: rc_nginx_module_path
+  shell:
+    cmd: |
+      nginx -V 2>&1 | grep 'configure arguments' | sed 's/--/\n--/g' | grep modules-path | cut --delimiter '=' --fields=2- | tr -d ' '
+
+- name: Set the module path as variable
+  set_fact:
+    nginx_modules_path: '{{rc_nginx_module_path.stdout}}'
+
+
+- name: Stat the page speed dynamic library
+  register: nginx_pagespeed_library_path
+  stat:
+    path: '{{ nginx_modules_path }}/ngx_pagespeed.so'
+
+- name: Install Pagespeed if not yet done
+#  when: not nginx_pagespeed_library_path.stat.exists
+  block:
+  - name: Nginx | Installation Pagespeed
+    include_tasks: nginx_pagespeed.yml

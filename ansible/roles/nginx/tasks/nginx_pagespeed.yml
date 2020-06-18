@@ -5,126 +5,61 @@
 # PageSpeed Optimization Libraries
 #
 
-- name: Install Pagespeed if not yet done
-  #  when: not srs_conf_file_stat.stat.exists
-  block:
-    #    - name: Make install
-    #      yum:
-    #        name: cmake
-    #        state: present
+- name: Install pagespeed dependencies package
+  yum:
+    name:
+      - gcc-c++
+      - pcre-devel
+      - zlib-devel
+      - make
+      - unzip
+      - libuuid-devel
+    state: present
 
-    # Prerequis package for compiling nginx
-    # Error when compiling for module
-    #  - redhat-rpm-config: cannot access /usr/lib/rpm/redhat/redhat-hardened-ld: No such file or directory
-    #  - openssl-devel: configure: error: SSL modules require the OpenSSL library.
-    - name: Install Nginx dependencies package
-      yum:
-        name:
-          - redhat-rpm-config
-          - openssl-devel
-          - gc
-          - gcc
-          - gcc-c++
-          - pcre-devel
-          - zlib-devel
-          - make
-          - wget
-          - libxml2-devel
-          - libxslt-devel
-          - gd-devel
-          - perl-ExtUtils-Embed
-          - GeoIP-devel
-          - gperftools
-          - gperftools-devel
-          - libatomic_ops-devel
-          - perl-ExtUtils-Embed
-        state: present
+- name: Create temporary directory for pagespeed
+  file:
+    state: directory
+    path: '{{ nginx_build_base_dir }}'
 
-    - name: Install pagespeed dependencies package
-      yum:
-        name:
-          - gcc-c++
-          - pcre-devel
-          - zlib-devel
-          - make
-          - unzip
-          - libuuid-devel
-        state: present
+- name: Download Nginx Pagespeed module
+  uri:
+    url: 'https://github.com/apache/incubator-pagespeed-ngx/archive/{{ nginx_pagespeed_archive }}'
+    method: GET
+    dest: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive }}'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive }}'
 
-    - name: Create temporary directory for pagespeed
-      file:
-        state: directory
-        path: '{{ nginx_pagespeed_temp_dir }}'
-
-    - name: Download Nginx Pagespeed module
-      uri:
-        url: 'https://github.com/apache/incubator-pagespeed-ngx/archive/{{ nginx_pagespeed_archive }}'
-        method: GET
-        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
-
-    - name: Extract Pagespeed archive
-      unarchive:
-        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive }}'
-        dest: '{{ nginx_pagespeed_temp_dir }}'
-        remote_src: yes
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
-
-    # The bitsize name is part of the downloaded URL
-    # You can see it into cat ./scripts/format_binary_url.sh
-    - name: Set the bit size name if 64
-      when: ansible_userspace_bits == "64"
-      set_fact:
-        bit_size_name: x64
-    - name: Set the bit size name if not 64
-      when: ansible_userspace_bits != "64"
-      set_fact:
-        bit_size_name: ia32
-
-    - name: Download the PageSpeed Optimization Libraries (PSOL)
-      uri:
-        url: 'https://dl.google.com/dl/page-speed/psol/{{ nginx_psol_archive }}'
-        method: GET
-        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
-
-    - name: Extract the PageSpeed Optimization Libraries
-      unarchive:
-        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
-        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
-        remote_src: yes
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}/psol'
-
-    - name: Download Nginx {{ nginx_archive }}
-      uri:
-        url: 'http://nginx.org/download/{{ nginx_archive }}'
-        method: GET
-        dest: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
-
-    - name: Extract Nginx {{ nginx_archive }}
-      unarchive:
-        src: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive }}'
-        dest: '{{ nginx_pagespeed_temp_dir }}'
-        remote_src: yes
-        creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
-
-    - name: Configure the compile
-      shell:
-        cmd: |
-          IFS=$'\t'; ./configure \
-            "$(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | cut -c2- )"  \
-            --add-dynamic-module={{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }} > configure.log 2>&1
-        chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
-
-    - name: Make the module
-      shell:
-        cmd: "cgexec -g cpu:cpu_50 make > build.log 2>&1" # limited to 50%
-        chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
-
-#    - name: Make
-#      make:
-#        chdir: '{{ srs_temp_dir }}/postsrsd-master'
-#        target: install
+- name: Extract Pagespeed archive
+  unarchive:
+    src: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive }}'
+    dest: '{{ nginx_build_base_dir }}'
+    remote_src: yes
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
 
 
+# The bitsize name is part of the downloaded URL
+# You can see it into cat ./scripts/format_binary_url.sh
+- name: Set the bit size name if 64
+  when: ansible_userspace_bits == "64"
+  set_fact:
+    bit_size_name: x64
+- name: Set the bit size name if not 64
+  when: ansible_userspace_bits != "64"
+  set_fact:
+    bit_size_name: ia32
+
+- name: Download the PageSpeed Optimization Libraries (PSOL)
+  uri:
+    url: 'https://dl.google.com/dl/page-speed/psol/{{ nginx_psol_archive }}'
+    method: GET
+    dest: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+
+- name: Extract the PageSpeed Optimization Libraries
+  unarchive:
+    src: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}/{{ nginx_psol_archive }}'
+    dest: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
+    remote_src: yes
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}/psol'
+
+- name: Compile and copy
+  include_tasks: nginx_compile_dynamic_module.yml

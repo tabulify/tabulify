@@ -2,7 +2,7 @@
 # A name
 nginx_pagespeed_name: 'nginx_pagespeed'
 # The installation dir
-nginx_pagespeed_temp_dir: '/tmp/{{ nginx_pagespeed_name }}'
+nginx_build_base_dir: '/tmp/{{ nginx_pagespeed_name }}'
 
 # Pagespeed is based on psol (PageSpeed Optimization Libraries)
 # It's also downloaded

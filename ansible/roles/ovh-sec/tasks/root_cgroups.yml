@@ -15,11 +15,12 @@
     enabled: 'yes'
     state: started
 
-- name: Create the 50 group
+- name: Create the CPU 50 group {{ cgroup_cpu_50 }}
   when:
   shell:
     cmd: |
-      cgcreate -g cpu:/cpu_50;
-      cgset -r cpu.shares=512 cpu_50
+      cgcreate -g cpu:/{{ cgroup_cpu_50 }};
+      cgset -r cpu.shares=512 {{ cgroup_cpu_50 }}
+
 
 

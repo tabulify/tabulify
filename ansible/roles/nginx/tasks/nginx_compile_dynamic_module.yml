@@ -1,0 +1,67 @@
+
+
+
+
+
+# Prerequis package for compiling nginx
+# Error when compiling for module
+#  - redhat-rpm-config: cannot access /usr/lib/rpm/redhat/redhat-hardened-ld: No such file or directory
+#  - openssl-devel: configure: error: SSL modules require the OpenSSL library.
+- name: Install Nginx dependencies package
+  yum:
+    name:
+      - redhat-rpm-config
+      - openssl-devel
+      - gc
+      - gcc
+      - gcc-c++
+      - pcre-devel
+      - zlib-devel
+      - make
+      - wget
+      - libxml2-devel
+      - libxslt-devel
+      - gd-devel
+      - perl-ExtUtils-Embed
+      - GeoIP-devel
+      - gperftools
+      - gperftools-devel
+      - libatomic_ops-devel
+      - perl-ExtUtils-Embed
+    state: present
+
+- name: Download Nginx {{ nginx_archive }}
+  uri:
+    url: 'http://nginx.org/download/{{ nginx_archive }}'
+    method: GET
+    dest: '{{ nginx_build_base_dir }}/{{ nginx_archive }}'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive }}'
+
+- name: Extract Nginx {{ nginx_archive }}
+  unarchive:
+    src: '{{ nginx_build_base_dir }}/{{ nginx_archive }}'
+    dest: '{{ nginx_build_base_dir }}'
+    remote_src: yes
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
+
+- name: Configure the compile
+  shell:
+    cmd: |
+      IFS=$'\t'; ./configure \
+        "$(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | cut -c2- )"  \
+        --add-dynamic-module={{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }} > configure.log 2>&1
+    chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/ngx_pagespeed.so'
+
+- name: Make the module
+  shell:
+    cmd: "cgexec -g cpu:{{ cgroup_cpu_50 }} make > build.log 2>&1" # limited to 50%
+    chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/ngx_pagespeed.so'
+
+- name: Move the module
+  shell:
+    cmd: |
+      cp ngx_pagespeed.so \
+        {{ nginx_modules_path }}
+    chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs'

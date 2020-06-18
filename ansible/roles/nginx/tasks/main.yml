@@ -97,12 +97,8 @@
   changed_when: "nginx_conf.rc != 0"
 
 
-#- name: Nginx | Installation Nginx Status Page
-#  become: true
-#  include: nginx_status.yml
-#  tags: nginx_status
 
-- name: Nginx | Installation Nginx Pagespeed
+- name: Nginx | Installation modules
   become: true
-  include: nginx_pagespeed.yml
-  tags: nginx_pagespeed
+  include: nginx_modules.yml
+  tags: nginx_modules
