@@ -1,6 +1,7 @@
 
 server {
 
+
     listen       443 ssl http2;
     listen       [::]:443 ssl http2;
 
@@ -28,6 +29,13 @@ server {
 
         stub_status;
 
+    }
+
+
+    # https://github.com/vozlt/nginx-module-vts
+    location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
     }
 
     location / {
