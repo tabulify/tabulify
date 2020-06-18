@@ -12,14 +12,31 @@
   set_fact:
     nginx_modules_path: '{{rc_nginx_module_path.stdout}}'
 
-
+#################
+# Pagespeed
+#################
 - name: Stat the page speed dynamic library
   register: nginx_pagespeed_library_path
   stat:
     path: '{{ nginx_modules_path }}/ngx_pagespeed.so'
 
 - name: Install Pagespeed if not yet done
-#  when: not nginx_pagespeed_library_path.stat.exists
+  when: not nginx_pagespeed_library_path.stat.exists
   block:
   - name: Nginx | Installation Pagespeed
-    include_tasks: nginx_pagespeed.yml
+    import_tasks: nginx_pagespeed.yml
+
+#################
+# Vts
+#################
+
+- name: Stat the nginx-module-vts dynamic library
+  register: nginx_status_library_path
+  stat:
+    path: '{{ nginx_modules_path }}/ngx_http_vhost_traffic_status_module.so'
+
+- name: Install Vts if not yet done
+  when: not nginx_status_library_path.stat.exists
+  block:
+    - name: Nginx | Installation Virtual Status Host
+      include_tasks: nginx_status.yml

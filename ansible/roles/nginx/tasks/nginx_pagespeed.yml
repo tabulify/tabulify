@@ -62,4 +62,8 @@
     creates: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}/psol'
 
 - name: Compile and copy
-  include_tasks: nginx_compile_dynamic_module.yml
+  import_tasks: nginx_compile_dynamic_module.yml
+  vars:
+    nginx_dynamic_library_name: 'ngx_pagespeed.so'
+    nginx_dynamic_library_source_path: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
+

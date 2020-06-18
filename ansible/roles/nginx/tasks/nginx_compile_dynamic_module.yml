@@ -1,10 +1,20 @@
+# This module will compile a module into dynamic library
+#
+# You need to pass the following variable
+#  * nginx_dynamic_library_name: the name of the library
+#  * nginx_dynamic_library_source_path: the path of the source where the module source should be downloaded and unzipped
+#
+# Usage example
+#  name: Compile and copy
+#  include_tasks: nginx_compile_dynamic_module.yml
+#    vars:
+#      nginx_dynamic_library_name: 'ngx_pagespeed.so'
+#      nginx_dynamic_library_source_path: '{{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }}'
 
 
-
-
-
-# Prerequis package for compiling nginx
-# Error when compiling for module
+# The prerequis package for compiling nginx
+#
+# Error when compiling for module has lead to the install of the below packages
 #  - redhat-rpm-config: cannot access /usr/lib/rpm/redhat/redhat-hardened-ld: No such file or directory
 #  - openssl-devel: configure: error: SSL modules require the OpenSSL library.
 - name: Install Nginx dependencies package
@@ -49,19 +59,19 @@
     cmd: |
       IFS=$'\t'; ./configure \
         "$(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | cut -c2- )"  \
-        --add-dynamic-module={{ nginx_build_base_dir }}/{{ nginx_pagespeed_archive_dir_name }} > configure.log 2>&1
+        --add-dynamic-module={{ nginx_dynamic_library_source_path }} > configure.log 2>&1
     chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
-    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/ngx_pagespeed.so'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/{{ nginx_dynamic_library_name }}'
 
 - name: Make the module
   shell:
     cmd: "cgexec -g cpu:{{ cgroup_cpu_50 }} make > build.log 2>&1" # limited to 50%
     chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}'
-    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/ngx_pagespeed.so'
+    creates: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs/{{ nginx_dynamic_library_name }}'
 
 - name: Move the module
   shell:
     cmd: |
-      cp ngx_pagespeed.so \
+      cp {{ nginx_dynamic_library_name }} \
         {{ nginx_modules_path }}
     chdir: '{{ nginx_build_base_dir }}/{{ nginx_archive_dir_name }}/objs'
