@@ -24,3 +24,8 @@
   become: true
   import_tasks: 'root_fail2ban.yml'
   tags: fail2ban
+
+- name: Cgroups # Resource consumption
+  become: true
+  import_tasks: 'root_cgroups.yml'
+  tags: cgroups

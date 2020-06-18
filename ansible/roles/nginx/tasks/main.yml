@@ -5,32 +5,6 @@
     name: 'nginx-{{ nginx_version }}'
     state: present
 
-# Prerequis package for compiling nginx
-# Error when compiling for module
-#  - redhat-rpm-config: cannot access /usr/lib/rpm/redhat/redhat-hardened-ld: No such file or directory
-#  - openssl-devel: configure: error: SSL modules require the OpenSSL library.
-- name: Install Redhat Rpm Package
-  yum:
-    name:
-      - redhat-rpm-config
-      - openssl-devel
-      - gc
-      - gcc
-      - gcc-c++
-      - pcre-devel
-      - zlib-devel
-      - make
-      - wget
-      - libxml2-devel
-      - libxslt-devel
-      - gd-devel
-      - perl-ExtUtils-Embed
-      - GeoIP-devel
-      - gperftools
-      - gperftools-devel
-      - libatomic_ops-devel
-      - perl-ExtUtils-Embed
-    state: present
 
 - name: Start nginx
   become: true

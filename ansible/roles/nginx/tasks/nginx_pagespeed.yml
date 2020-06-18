@@ -1,4 +1,3 @@
-
 # From
 # https://www.modpagespeed.com/doc/build_ngx_pagespeed_from_source
 # based on
@@ -7,14 +6,41 @@
 #
 
 - name: Install Pagespeed if not yet done
-#  when: not srs_conf_file_stat.stat.exists
+  #  when: not srs_conf_file_stat.stat.exists
   block:
-#    - name: Make install
-#      yum:
-#        name: cmake
-#        state: present
+    #    - name: Make install
+    #      yum:
+    #        name: cmake
+    #        state: present
 
-    - name: Install dependencies package
+    # Prerequis package for compiling nginx
+    # Error when compiling for module
+    #  - redhat-rpm-config: cannot access /usr/lib/rpm/redhat/redhat-hardened-ld: No such file or directory
+    #  - openssl-devel: configure: error: SSL modules require the OpenSSL library.
+    - name: Install Nginx dependencies package
+      yum:
+        name:
+          - redhat-rpm-config
+          - openssl-devel
+          - gc
+          - gcc
+          - gcc-c++
+          - pcre-devel
+          - zlib-devel
+          - make
+          - wget
+          - libxml2-devel
+          - libxslt-devel
+          - gd-devel
+          - perl-ExtUtils-Embed
+          - GeoIP-devel
+          - gperftools
+          - gperftools-devel
+          - libatomic_ops-devel
+          - perl-ExtUtils-Embed
+        state: present
+
+    - name: Install pagespeed dependencies package
       yum:
         name:
           - gcc-c++
@@ -84,13 +110,16 @@
         creates: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
 
     - name: Configure the compile
-      command:
-        argv: "[ '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}/configure' ] + {{ nginx_configure_arguments }} + ['--add-dynamic-module=={{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }}']"
+      shell:
+        cmd: |
+          IFS=$'\t'; ./configure \
+            "$(nginx -V 2>&1 | grep 'configure arguments' | cut --delimiter ':' --fields=2- | sed $'s/ --/\t--/g' | cut -c2- )"  \
+            --add-dynamic-module={{ nginx_pagespeed_temp_dir }}/{{ nginx_pagespeed_archive_dir_name }} > configure.log 2>&1
         chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
 
     - name: Make the module
-      command:
-        cmd: "/bin/make j -2 > build.log 2>&1"
+      shell:
+        cmd: "cgexec -g cpu:cpu_50 make > build.log 2>&1" # limited to 50%
         chdir: '{{ nginx_pagespeed_temp_dir }}/{{ nginx_archive_dir_name }}'
 
 #    - name: Make
