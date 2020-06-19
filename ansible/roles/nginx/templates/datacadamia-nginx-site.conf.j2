@@ -57,6 +57,10 @@ server {
         autoindex_format html;
     }
 
+    # page 404
+    # test https://datacadamia.com/lib/images/toolbar/https://datacadamia.com/lib/plugins/note/images/tb_tip.png
+    error_page 404 /40x.html;
+
     # Serve
     # try files send $uri and $uri/ to the location block @dokuwiki
     location / {
