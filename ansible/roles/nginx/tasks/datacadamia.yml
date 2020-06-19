@@ -8,9 +8,10 @@
     group: '{{ www_group }}'
 
 - name: Datacadamia | Datacadamia
-  become: true
+  notify:
+    - verify config
+    - reload nginx
   template:
     src: datacadamia-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/datacadamia.conf"
     backup: yes
-  notify: reload nginx

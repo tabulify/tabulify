@@ -54,6 +54,7 @@ server {
 
     }
 
+    # rewrite
     location @dokuwiki {
         rewrite ^/_media/(.*) /lib/exe/fetch.php?media=$1 last;
         rewrite ^/_detail/(.*) /lib/exe/detail.php?media=$1 last;
@@ -82,6 +83,13 @@ server {
     location ~ /\.ht {
       return 444; # Better than ; deny  all; # same as return 403
     }
+
+    # Doc location
+    location /doc {
+        index index.html index.htm
+        autoindex on;
+    }
+
 
 }
 
