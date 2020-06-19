@@ -59,6 +59,7 @@ server {
 
     # page 404
     # test https://datacadamia.com/lib/images/toolbar/https://datacadamia.com/lib/plugins/note/images/tb_tip.png
+    # don't forget - fastcgi_intercept_errors http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_intercept_errors
     error_page 404 /40x.html;
 
     # Serve
@@ -83,6 +84,7 @@ server {
     # send the php file to php-fpm
     # doc, see http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html
     location ~ \.php$ {
+        fastcgi_intercept_errors on; # to send the 404 back
         fastcgi_pass  127.0.0.1:{{ fpm_spool_www_port }};
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include {{ nginx_etc_path }}/fastcgi_params;
