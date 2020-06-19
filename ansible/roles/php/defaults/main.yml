@@ -21,7 +21,8 @@ www_root_dir: '/opt/www'
 fpm_spool_www_name: 'www'
 www_user: 'www-user' # the default is www-data but as it will be a ssh open account we make it more difficult to find
 www_group: 'www-user'
-www_user_pwd: !vault |
+www_user_pwd: '{{ www_user_pwd_vault }}' # not the vault directly otherwise argument 1 must be string,
+www_user_pwd_vault: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   37653862623031666463363162613335356336636231366665393962306234643064323030396339
   3066363762363638633462646361333134393134376232660a323830646161366537613261656530

@@ -14,12 +14,3 @@
     groups: '{{ www_group }}, apache' # apache group is used in /var/lib/php
     append: true
 
-# Too long
-#- name: www | Base directory and Ownership
-#  file:
-#    path: '{{ www_root_dir }}'
-#    state: directory
-#    mode: 0770
-#    owner: '{{ www_user }}'
-#    group: '{{ www_group }}'
-#    recurse: yes

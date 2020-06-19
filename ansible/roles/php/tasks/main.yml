@@ -11,6 +11,7 @@
 - name: Create the user used for the pool
   become: true
   import_tasks: 'root_create_user.yml'
+  tags: php-admin
 
 - name: Php configuration
   become: true

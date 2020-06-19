@@ -13,6 +13,12 @@
     state: "started"
     enabled: true
 
+- name: Nginx | Admin
+  become: true
+  include: nginx_admin.yml
+  tags: nginx-admin
+
+
 # OVH firewall
 #- name: 'Firewall - Add port 443'
 #- name: 'Firewall - Add port 80 for a SSL redirect'
@@ -47,11 +53,23 @@
 
 - name: 'Backend - Configuration'
   become: true
+  notify:
+    - verify config
+    - reload nginx
   template:
     src: backend-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/backend.conf"
-    backup: yes
-  notify: reload nginx
+
+- name: 'Localhost - Configuration'
+  become: true
+  tags: nginx-conf, nginx-localhost
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: localhost-nginx.conf.j2
+    dest: "/etc/nginx/conf.d/localhost.conf"
+
 
 - name: Netdata | Configuring Netdata
   notify:
