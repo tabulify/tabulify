@@ -3,7 +3,7 @@
 
 - name: Update Postfix SASL configuration.
   notify: restart postfix
-  lineinfile:
+  blockinfile:
     dest: "{{ postfix_conf_path }}"
     line: "{{ item.name }} = {{ item.value }}"
     regexp: "^[#]{0,1}{{ item.name }}"

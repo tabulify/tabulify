@@ -14,6 +14,8 @@ server {
     root   {{ datacadamia_root_dir }};
 
     # the logs
+    # doc: http://nginx.org/en/docs/debugging_log.html
+    rewrite_log on;
     access_log  {{ datacadamia_log_dir }}/https-access.log;
     error_log  {{ datacadamia_log_dir }}/https-error.log;
 
@@ -65,7 +67,11 @@ server {
     # Serve
     # try files send $uri and $uri/ to the location block @dokuwiki
     location / {
+
         index  doku.php;
+
+        # http://nginx.org/en/docs/http/ngx_http_core_module.html#try_files
+        # If none of the files are found, an internal redirect to the uri specified in the last parameter is made.
         try_files $uri $uri/ @dokuwiki;
 
         # cors
@@ -83,8 +89,19 @@ server {
 
     # send the php file to php-fpm
     # doc, see http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html
+    # example, see https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/
+    # this block proxy requests to PHP FPM via the FCGI protocol
     location ~ \.php$ {
-        fastcgi_intercept_errors on; # to send the 404 back
+
+        # 404 if someone try a php file
+        if (!-f $document_root$fastcgi_script_name) {
+               return 404;
+        }
+        # not
+        # fastcgi_intercept_errors on;
+        # because it would send an error when the page does not exist on dokuwiki
+        # and I don't know why.
+
         fastcgi_pass  127.0.0.1:{{ fpm_spool_www_port }};
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include {{ nginx_etc_path }}/fastcgi_params;
