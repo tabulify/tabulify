@@ -50,6 +50,13 @@ server {
       return 301 $scheme://$host/$1$is_args$query_string;
     }
 
+    # Doc location
+    location /doc {
+        # directory listing on
+        autoindex on;
+        autoindex_format html;
+    }
+
     # Serve
     # try files send $uri and $uri/ to the location block @dokuwiki
     location / {
@@ -89,12 +96,6 @@ server {
     # Block access to .htaccess files
     location ~ /\.ht {
       return 444; # Better than ; deny  all; # same as return 403
-    }
-
-    # Doc location
-    location /doc {
-        index index.html index.htm
-        autoindex on;
     }
 
 
