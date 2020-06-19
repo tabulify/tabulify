@@ -43,6 +43,13 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
+    # wiki redirect
+    location ~ /wiki/(.*) {
+      # No fragments, see https://stackoverflow.com/questions/2286402/url-fragment-and-302-redirects
+      # a call to https://datacadamia.com/wiki/feed.php should redirect
+      return 301 $scheme://$host/$1$is_args$query_string;
+    }
+
     # Serve
     # try files send $uri and $uri/ to the location block @dokuwiki
     location / {
@@ -89,6 +96,7 @@ server {
         index index.html index.htm
         autoindex on;
     }
+
 
 
 }
