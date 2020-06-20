@@ -40,7 +40,7 @@
 - name: 'Gnico - Configuration'
   become: true
   include: gnico.yml
-  tags: nginx-conf-gnico, nginx-conf
+  tags: nginx-gnico, nginx-conf
 
 - name: 'Datacadamia - Configuration'
   become: true
