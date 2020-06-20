@@ -1,4 +1,0 @@
-# The IP address and port to listen to. This is a space separated list of
-# IPv4 or IPv6 address and ports. The default will bind to all IP addresses
-netdata_bind_to:
-  - "localhost" # nginx
