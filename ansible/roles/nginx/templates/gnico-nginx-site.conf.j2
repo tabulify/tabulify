@@ -33,5 +33,24 @@ server {
     listen 80;
     server_name {{ gnico_fqdn }};
     return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    access_log  /var/log/nginx/{{ gnico_log_dir }}/http-access.log;
+    error_log  /var/log/nginx/{{ gnico_log_dir }}/http-error.log;
 }
 
+# redirect www http
+server {
+    listen 80;
+    server_name www.{{ gnico_fqdn }};
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    access_log  /var/log/nginx/{{ gnico_log_dir }}/http-access-www.log;
+    error_log  /var/log/nginx/{{ gnico_log_dir }}/http-error-www.log;
+}
+
+# redirect www https
+server {
+    listen 443;
+    server_name www.{{ gnico_fqdn }};
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    access_log  /var/log/nginx/{{ gnico_log_dir }}/https-access-www.log;
+    error_log  /var/log/nginx/{{ gnico_log_dir }}/https-error-www.log;
+}
