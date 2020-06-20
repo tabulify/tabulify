@@ -34,6 +34,7 @@
 
 - name: 'Www - static www folder configuration'
   become: true
+  tags: nginx-www
   include: www.yml
 
 - name: 'Gnico - Configuration'

@@ -16,12 +16,14 @@
         group: '{{ backend_user_group }}'
         password: "{{ backend_user_pwd | password_hash('sha512') }}"
     - name: Create the install path {{ backend_install_path }}
+      tags: backend-admin
       file:
         state: directory
         path: '{{ backend_install_path }}'
         group: '{{ backend_user_name }}'
         owner: '{{ backend_user_group }}'
         mode: 'u=rwx,g=rwx,o='
+        recurse: true
     - name: Create the cache dir
       file:
         state: directory

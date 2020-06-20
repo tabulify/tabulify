@@ -9,15 +9,17 @@
   import_tasks: 'root_install_remi.yml'
 
 - name: Create the user used for the pool
+  tags: php-admin
   become: true
   import_tasks: 'root_create_user.yml'
-  tags: php-admin
 
 - name: Php configuration
+  tags: php-admin
   become: true
   import_tasks: 'root_php_ini_conf.yml'
 
-- name: Php Add the website gerardnico.com
+- name: Php fpm configuration
+  tags: php-admin
   become: true
   import_tasks: 'root_fpm_configuration.yml'
 

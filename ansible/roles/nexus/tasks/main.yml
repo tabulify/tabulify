@@ -2,15 +2,16 @@
 # tasks file for nexus
 
 
-- name: Nexus user ceration
+- name: Nexus user creation and directory
+  tags: nexus-admin
   become: true
-  import_tasks: 'root_nexus_user.yml'
+  import_tasks: 'root_admin.yml'
 
 - name: Check if the data directory exists
   become: true
+  register: data_directory_exists
   stat:
     path: '{{ nexus_application_directory }}'
-  register: data_directory_exists
 
 - name: Install
   become: true

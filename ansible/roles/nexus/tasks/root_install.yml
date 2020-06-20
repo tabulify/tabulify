@@ -4,18 +4,6 @@
 # https://help.sonatype.com/repomanager3/installation/installation-methods
 
 
-- name: "Ensure Nexus directories exist"
-  file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ nexus_user }}"
-    group: "{{ nexus_group }}"
-    mode: 0755
-  with_items:
-    - "{{ nexus_root }}"
-    - "{{ nexus_install_temp }}"
-    - "{{ nexus_pid_dir }}"
-
 
 - name: "Download Nexus at ({{ nexus_install_temp }}/{{ nexus_distribution_name }})"
   get_url:

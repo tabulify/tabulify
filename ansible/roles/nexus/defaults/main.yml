@@ -5,7 +5,7 @@ nexus_group: nexus
 nexus_user: nexus
 
 # The location where the tar installation file is extracted
-nexus_root: /opt
+nexus_root: /opt/nexus
 
 nexus_pid_dir: /var/run/nexus
 nexus_shell: /sbin/nologin

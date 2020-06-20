@@ -15,6 +15,15 @@
     group: '{{ www_group }}'
     mode: 0770
 
+- name: Fpm - libmemcache directory seems to be used by fpm
+  file:
+    state: directory
+    path: '/opt/libmemcached'
+    owner: '{{ www_user }}'
+    group: '{{ www_group }}'
+    mode: 0770
+    recurse: true
+
 - name: Fpm - Creating the log file (fpm should be able to write on it)
   file:
     state: touch

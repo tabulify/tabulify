@@ -26,12 +26,14 @@
         home: "{{ gogs_user_home }}"
 
     - name: Create Gogs Home
+      tags: gogs-admin
       file:
         path: "{{ gogs_home }}"
         state: directory
         owner: "{{ gogs_user }}"
         group: "{{ gogs_user }}"
-        mode: 'u=rwx,g=rx,o=rx'
+        mode: 'u=rwx,g=rwx,o='
+        recurse: true
 
     - name: Check if Gogs is already installed.
       stat:

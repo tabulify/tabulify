@@ -1,0 +1,23 @@
+
+- name: "Create nexus group ({{ nexus_group }})"
+  group: name="{{ nexus_group }}"
+
+- name: "Create nexus user"
+  user:
+    name: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    home: "/home/{{ nexus_user }}"
+
+
+- name: "Ensure Nexus directories exist"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    mode: 0770
+    recurse: true
+  with_items:
+    - "{{ nexus_root }}"
+    - "{{ nexus_install_temp }}"
+    - "{{ nexus_pid_dir }}"
