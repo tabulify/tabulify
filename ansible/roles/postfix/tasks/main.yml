@@ -13,20 +13,25 @@
 - name: Root postfix tls configuration
   import_tasks: 'post_tls.yml'
   become: true
-  tags: postfix_tls
+  tags: postfix-tls
 
 - name: Root opendkim task
+  tags: dkim
   import_tasks: 'root_opendkim.yml'
   become: true
-  tags: dkim
 
 - name: Virtual alias domain
   import_tasks: 'post_virtual.yml'
   become: true
-  tags: postfix_virtual
+  tags: postfix-virtual
 
 - name: Sender Rewriting Scheme (SRS)
   import_tasks: 'post_srs.yml'
   become: true
-  tags: postfix_srs
+  tags: postfix-srs
+
+- name: SMTP port 587 (submission)
+  tags: postfix-sub
+  become: true
+  import_tasks: 'post_submission.yml'
 
