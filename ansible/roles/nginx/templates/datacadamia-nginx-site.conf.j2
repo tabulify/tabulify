@@ -134,3 +134,20 @@ server {
     error_log  /var/log/nginx/{{ datacadamia_fqdn }}/http-error.log;
 }
 
+# redirect www
+server {
+    listen 80;
+    server_name www.{{ datacadamia_fqdn }};
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    access_log  /var/log/nginx/{{ datacadamia_fqdn }}/http-access-www.log;
+    error_log  /var/log/nginx/{{ datacadamia_fqdn }}/http-error-www.log;
+}
+
+# redirect www
+server {
+    listen 443;
+    server_name www.{{ datacadamia_fqdn }};
+    return 301 https://{{ datacadamia_fqdn }}$request_uri;
+    access_log  /var/log/nginx/{{ datacadamia_fqdn }}/https-access-www.log;
+    error_log  /var/log/nginx/{{ datacadamia_fqdn }}/https-error-www.log;
+}

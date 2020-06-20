@@ -36,7 +36,7 @@
   tags: postfix-srs
 
 - name: SMTP port 587 (submission)
-  tags: postfix-sub
+  tags: postfix-submission
   become: true
   import_tasks: 'post_submission.yml'
 
