@@ -13,7 +13,7 @@
 - name: Create the user mail accounts
   become: true
   tags: postfix-mail-account
-  import_tasks: 'post.yml'
+  import_tasks: 'post_mail_accounts.yml'
 
 - name: Root postfix tls configuration
   import_tasks: 'post_tls.yml'
