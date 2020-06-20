@@ -1,0 +1,11 @@
+
+# Create the mail account
+- name: "Create the user {{ backend_user_name }}"
+  user:
+    name: '{{ item.name }}'
+    comment: 'Mail User {{ item.name }}'
+    state: present
+    system: yes
+    password: "{{ item.pwd | password_hash('sha512') }}"
+  with_items: '{{ post_mail_accounts }}'
+

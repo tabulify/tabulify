@@ -10,6 +10,11 @@
   import_tasks: 'post.yml'
   become: true
 
+- name: Create the user mail accounts
+  become: true
+  tags: postfix-mail-account
+  import_tasks: 'post.yml'
+
 - name: Root postfix tls configuration
   import_tasks: 'post_tls.yml'
   become: true
