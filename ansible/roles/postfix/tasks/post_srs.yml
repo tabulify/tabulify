@@ -26,7 +26,7 @@
 # This key is used to generate the unique rewrite address and to protect against
 #
 
-- name: Stat conf file {{ srs_conf_file }}
+- name: Postfix SRS | Stat conf file {{ srs_conf_file }}
   register: srs_conf_file_stat
   stat:
     path: '{{srs_conf_file}}'
@@ -88,8 +88,16 @@
     - name: recipient_canonical_classes
       value: "envelope_recipient,header_recipient"
 
+# The destination of the key is in the srs configuration (/etc/default/postsrsd)
+- name: Postfix SRS | Copy the secret
+  copy:
+    content: "{{ srs_secret }}\n"
+    dest: "/etc/postsrsd.secret"
+    owner: 'root'
+    group: 'root'
+    mode: "0600"
 
-- name: Ensure postsrs is started and enabled at boot.
+- name: Postfix SRS | Ensure postsrs is started and enabled at boot.
   service:
     name: postsrsd
     state: started
