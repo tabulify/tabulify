@@ -52,14 +52,7 @@
   include: bytle.yml
   tags: nginx-bytle
 
-- name: 'Backend - Configuration'
-  become: true
-  notify:
-    - verify config
-    - reload nginx
-  template:
-    src: backend-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/backend.conf"
+
 
 - name: 'Localhost - Configuration'
   become: true

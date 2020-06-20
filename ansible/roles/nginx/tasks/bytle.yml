@@ -70,9 +70,46 @@
 
 - name: Bytle Farmer | Nginx Conf
   become: true
+  notify:
+    - verify config
+    - reload nginx
   template:
     src: bytle-onepager-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/bytle-onepager.conf"
     backup: yes
-  notify: reload nginx
+
+# API backend
+- name: Bytle API | log dir
   tags: nginx-conf
+  file:
+    path: '{{ backend_fqdn_api_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: 'Bytle Api | Configuration'
+  become: true
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: bytle-api-nginx.conf.j2
+    dest: "/etc/nginx/conf.d/bytle-api.conf"
+
+# Analytics backend
+- name: Bytle Analytics | log dir
+  tags: nginx-conf
+  file:
+    path: '{{ backend_fqdn_analytics_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: 'Bytle analytics | Configuration'
+  become: true
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: bytle-analytics-nginx.conf.j2
+    dest: "/etc/nginx/conf.d/bytle-analytics.conf"
