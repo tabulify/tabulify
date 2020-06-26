@@ -59,7 +59,6 @@
   tags: nginx-conf
 
 # onepager.bytle.net
-
 - name: Bytle Onepager | Access Log directory
   file:
     path: '{{ bytle_onepager_log_dir }}'
@@ -68,15 +67,31 @@
     group: '{{ www_group }}'
   tags: nginx-conf
 
-- name: Bytle Farmer | Nginx Conf
-  become: true
+- name: Bytle One Pager| Nginx Conf
   notify:
     - verify config
     - reload nginx
   template:
     src: bytle-onepager-nginx-site.conf.j2
     dest: "/etc/nginx/conf.d/bytle-onepager.conf"
-    backup: yes
+
+# webcomponents.bytle.net
+- name: Bytle WebCompo | Access Log directory
+  tags: nginx-webcompo
+  file:
+    path: '{{ bytle_webcompo_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: Bytle WebCompo | Nginx Conf
+  tags: nginx-webcompo
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: bytle-webcompo-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/bytle-webcompo.conf"
 
 # API backend
 - name: Bytle API | log dir

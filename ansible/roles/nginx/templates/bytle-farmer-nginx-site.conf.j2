@@ -46,6 +46,10 @@ server {
     # Serve
     # try files send $uri and $uri/ to the location block @dokuwiki
     location / {
+
+        allow {{ nginx_allowed_subnet }};
+        deny  all;
+
         index doku.php;
         try_files $uri $uri/ @dokuwiki;
 

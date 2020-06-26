@@ -20,3 +20,8 @@ bytle_onepager_fqdn: 'onepager.{{ bytle_fqdn }}'
 bytle_onepager_root_dir: '{{ bytle_base_dir}}/{{ bytle_farmer_fqdn }}'
 bytle_onepager_log_dir: '{{ bytle_base_log_dir }}/{{ bytle_onepager_fqdn }}'
 
+# webcomponents.bytle.net domain
+bytle_webcompo_fqdn: 'webcomponents.{{ bytle_fqdn }}'
+bytle_webcompo_root_dir: '{{ bytle_base_dir}}/{{ bytle_farmer_fqdn }}'
+bytle_webcompo_log_dir: '{{ bytle_base_log_dir }}/{{ bytle_webcompo_fqdn }}'
+
