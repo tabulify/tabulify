@@ -4,7 +4,9 @@
 
 This role install the mail transfer agent `Postfix` in order to be able to send email.
 
+## How to
 
+  * [Add new mail alias](mail.md)
 ## TODO
 
   * mail for root should always be aliased to a real user [Ref](http://www.postfix.org/postconf.5.html#mailbox_command)

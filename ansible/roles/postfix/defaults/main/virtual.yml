@@ -2,20 +2,25 @@ virtual_alias_domains:
   - bytle.net
   - datacadamia.com
   - gerardnico.com
+  - combostrap.com
 
 # The default but as it must be used on several place we make a variable
 postfix_virtual_alias_file: /etc/postfix/virtual
 
 # One line by item
 postfix_virtual_alias_lines: |
-  netdata@bytle.net     gnickeau@gmail.com
-  fail2ban@bytle.net    gnickeau@gmail.com
-  root@bytle.net        gnickeau@gmail.com
-  nico@bytle.net        gnickeau@gmail.com
-  info@bytle.net        gnickeau@gmail.com
-  info@datacadamia.com  gnickeau@gmail.com
-  nico@datacadamia.com  gnickeau@gmail.com
-  info@gerardnico.com   gnickeau@gmail.com
-  nico@gerardnico.com   gnickeau@gmail.com
+  netdata@bytle.net       gnickeau@gmail.com
+  fail2ban@bytle.net      gnickeau@gmail.com
+  root@bytle.net          gnickeau@gmail.com
+  nico@bytle.net          gnickeau@gmail.com
+  info@bytle.net          gnickeau@gmail.com
+  info@datacadamia.com    gnickeau@gmail.com
+  nico@datacadamia.com    gnickeau@gmail.com
+  info@gerardnico.com     gnickeau@gmail.com
+  nico@gerardnico.com     gnickeau@gmail.com
+  support@combostrap.com  gnickeau@gmail.com
+  info@combostrap.com     gnickeau@gmail.com
+  security@combostrap.com     gnickeau@gmail.com
+
 
 

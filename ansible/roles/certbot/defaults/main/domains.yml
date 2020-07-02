@@ -3,7 +3,6 @@
 ovh_domains:
   - '{{ bytle_fqdn }}'
   - '{{ bytle_farmer_fqdn }}'
-  - '{{ bytle_webcompo_fqdn }}'
   - '{{ bytle_onepager_fqdn }}'
   - '{{ netdata_fqdn }}'
   - '{{ nexus_fqdn }}'
@@ -12,6 +11,8 @@ ovh_domains:
   - '{{ backend_fqdn_analytics }}'
   - '{{ prometheus_node_exporter_fqdn }}'
   - '{{ datacadamia_fqdn }}'
+  - '{{ combo_fqdn }}'
+  - '{{ combo_demo_fqdn }}'
   - '{{ hostname }}'
 
 cloudflare_domains:

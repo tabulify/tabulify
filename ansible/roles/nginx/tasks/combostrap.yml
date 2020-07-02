@@ -1,0 +1,35 @@
+# combostrap
+- name: Combostrap | Access Log directory
+  tags: nginx-combo
+  file:
+    path: '{{ combo_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: Combostrap | Nginx Conf
+  tags: nginx-combo
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: combo-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/combo.conf"
+
+# demo.combostrap.com
+- name: Combostrap demo | Access Log directory
+  tags: nginx-combo-demo
+  file:
+    path: '{{ combo_demo_log_dir }}'
+    state: directory
+    mode: 0770
+    group: '{{ www_group }}'
+
+- name: Combostrap Demo | Nginx Conf
+  tags: nginx-combo-demo
+  notify:
+    - verify config
+    - reload nginx
+  template:
+    src: combo-demo-nginx-site.conf.j2
+    dest: "/etc/nginx/conf.d/combo-demo.conf"

@@ -52,6 +52,11 @@
   include: bytle.yml
   tags: nginx-bytle
 
+- name: 'Combostrap - Configuration'
+  become: true
+  include: combostrap.yml
+  tags: nginx-combo
+
 
 
 - name: 'Localhost - Configuration'
