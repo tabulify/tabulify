@@ -1,5 +1,12 @@
 # Diagnostic page 
 
+
+## Error 500
+
+Go the FPM logging
+
+   /var/log/php-fpm
+
 ## Go around Cloudflare
 
 
