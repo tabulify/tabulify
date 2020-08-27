@@ -1,0 +1,47 @@
+
+
+# create the home dir
+- file:
+    path: "{{ letsencrypt_home_dir }}"
+    state: directory
+    mode: 0744
+
+# Renewal bash file creation
+- name: Delete renewal bash file
+  file:
+    path: "{{ letsencrypt_renewal_script }}"
+    state: absent
+
+- name: Create renewal bash file
+  file:
+    path: "{{ letsencrypt_renewal_script }}"
+    state: touch
+    mode: 0744
+
+# Ovh
+- name: Add Ovh letsencrypt renewal in the script
+  lineinfile:
+    path: "{{ letsencrypt_renewal_script }}"
+    line: letsencrypt certonly --dns-ovh --dns-ovh-credentials /root/.secrets/certbot/ovh.ini --dns-ovh-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }}
+  with_items: "{{ovh_domains}}"
+
+# Cloudflare
+- name: Add Cloudflare letsencrypt renewal in the script
+  lineinfile:
+    path: "{{ letsencrypt_renewal_script }}"
+    line: letsencrypt certonly --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini --dns-cloudflare-propagation-seconds 60 -n --agree-tos -m {{ letsencrypt_email }} -d {{ item }}
+  with_items: "{{cloudflare_domains}}"
+
+- name: Add the nginx reload
+  lineinfile:
+    path: "{{ letsencrypt_renewal_script }}"
+    line: systemctl reload nginx
+
+# certificate are available for three month
+- name: Add letsencrypt cronjob for cert renewal
+  cron:
+    name: 'letsencrypt_renewal'
+    day: '8'
+    job: "{{ letsencrypt_renewal_script }}"
+
+

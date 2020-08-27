@@ -5,7 +5,7 @@
     owner: '{{ www_user }}'
     group: '{{ www_group }}'
     mode: 'u=rwx,g=rwx,o='
-    recurse: true
+#    recurse: true
 
 # Nginx should be able to serve static file
 # This is also mandatory for php file

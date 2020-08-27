@@ -10,7 +10,6 @@ ovh_domains:
   - '{{ backend_fqdn_api }}'
   - '{{ backend_fqdn_analytics }}'
   - '{{ prometheus_node_exporter_fqdn }}'
-  - '{{ datacadamia_fqdn }}'
   - '{{ combo_fqdn }}'
   - '{{ combo_demo_fqdn }}'
   - '{{ hostname }}'
@@ -19,4 +18,5 @@ cloudflare_domains:
   - '{{ gnico_fqdn }}'
   - '{{ gnico_farmer_fqdn }}'
   - '{{ gnico_nico_fqdn }}'
+  - '{{ datacadamia_fqdn }}'
 

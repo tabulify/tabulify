@@ -18,6 +18,11 @@ Certificate are used:
 ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh --tags certbot
 ``` 
 
+## Log
+
+```
+/var/log/letsencrypt/letsencrypt.log
+```
 
 ## TODO May be 
 

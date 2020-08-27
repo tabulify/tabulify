@@ -1,5 +1,5 @@
 
 
 letsencrypt_email: nico@bytle.net
-
-
+letsencrypt_home_dir: /root/certbot
+letsencrypt_renewal_script: "{{ letsencrypt_home_dir }}/renewal.sh"
