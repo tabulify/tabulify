@@ -4,10 +4,13 @@ import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
 public class SqliteProvider extends JdbcDataStoreExtensionProvider {
 
-   public final String URL_PREFIX = "jdbc:sqlite:";
+  public final String URL_PREFIX = "jdbc:sqlite:";
+
   @Override
   public SqliteDataStore getJdbcDataStore(String name, String url) {
-    return new SqliteDataStore(name,url);
+
+    return new SqliteDataStore(name, url);
+
   }
 
   @Override

@@ -62,12 +62,6 @@ public class SqlDataStore extends DataStore {
     super(name, url);
   }
 
-  public static SqlDataStore of(String name, String url) {
-
-    return new SqlDataStore(name, url);
-
-  }
-
 
   /**
    * This is a JDBC connection parameter

@@ -1,20 +1,20 @@
 package net.bytle.db.sqlserver;
 
-import net.bytle.db.jdbc.SqlDataStore;
-import net.bytle.db.jdbc.JdbcDataStoreExtension;
+import net.bytle.db.database.DataStore;
 import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
 
 public class SqlServerDataStoreExtensionProvider extends JdbcDataStoreExtensionProvider {
 
+  public final String URL_PREFIX = "jdbc:sqlserver:";
+
   @Override
-  public String getProductName() {
-    return "Microsoft SQL Server";
+  public DataStore getJdbcDataStore(String name, String url) {
+    return new SqlServerDataStore(name, url);
   }
 
   @Override
-  public JdbcDataStoreExtension getJdbcDataStoreExtension(SqlDataStore jdbcDataStore) {
-    return new SqlServerDataStoreExtension(jdbcDataStore);
+  public boolean accept(String url) {
+    return url.startsWith(URL_PREFIX);
   }
-
 
 }

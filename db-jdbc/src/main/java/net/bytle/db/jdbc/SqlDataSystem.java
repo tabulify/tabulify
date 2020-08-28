@@ -222,27 +222,19 @@ public class SqlDataSystem implements DataSystem {
    */
   protected List<String> createTableStatements(SqlDataPath dataPath) {
 
-    SqlDataPath jdbcDataPath = (SqlDataPath) dataPath;
-
     List<String> statements = new ArrayList<>();
-    StringBuilder createTableStatement = new StringBuilder()
-      .append("create table ");
-    final String schemaName = JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath);
-    if (schemaName != null && !schemaName.equals("")) {
-      createTableStatement.append(schemaName).append(".");
-    }
-    createTableStatement
-      .append(jdbcDataPath.getName())
-      .append(" (\n")
-      .append(createColumnsStatement(dataPath))
-      .append(" )\n");
-    statements.add(createTableStatement.toString());
+    String createTableStatement = "create table " +
+      JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath) +
+      " (\n" +
+      createColumnsStatement(dataPath) +
+      " )\n";
+    statements.add(createTableStatement);
 
     // Primary Key
     final PrimaryKeyDef primaryKey = dataPath.getOrCreateDataDef().getPrimaryKey();
     if (primaryKey != null) {
       if (primaryKey.getColumns().size() != 0) {
-        String createPrimaryKeyStatement = createPrimaryKeyStatement(jdbcDataPath);
+        String createPrimaryKeyStatement = createPrimaryKeyStatement(dataPath);
         if (createPrimaryKeyStatement != null) {
           statements.add(createPrimaryKeyStatement);
         }
@@ -250,7 +242,7 @@ public class SqlDataSystem implements DataSystem {
     }
 
     // Foreign key
-    for (ForeignKeyDef foreignKeyDef : jdbcDataPath.getOrCreateDataDef().getForeignKeys()) {
+    for (ForeignKeyDef foreignKeyDef : dataPath.getOrCreateDataDef().getForeignKeys()) {
       String createForeignKeyStatement = createForeignKeyStatement(foreignKeyDef);
       if (createForeignKeyStatement != null) {
         statements.add(createForeignKeyStatement);
@@ -258,7 +250,7 @@ public class SqlDataSystem implements DataSystem {
     }
 
     // Unique key
-    for (UniqueKeyDef uniqueKeyDef : jdbcDataPath.getOrCreateDataDef().getUniqueKeys()) {
+    for (UniqueKeyDef uniqueKeyDef : ((SqlDataPath) dataPath).getOrCreateDataDef().getUniqueKeys()) {
       String createUniqueKeyStatement = createUniqueKeyStatement(uniqueKeyDef);
       statements.add(createUniqueKeyStatement);
     }
