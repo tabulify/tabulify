@@ -256,7 +256,7 @@ public class Fs {
   }
 
 
-  private static Path getUserHome() {
+  public static Path getUserHome() {
     final String home = System.getProperty("user.home");
     return Paths.get(home);
   }

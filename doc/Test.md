@@ -1,6 +1,18 @@
-# Db Test
+# Test
 
 
+
+## Test container
+
+By default, the test container will be started, run and stop
+When developing, this can lead to a lot of wait time.
+
+For the project that supports it (Example: [sqlServer](../db-sqlserver/src/test/java/net/bytle/db/sqlserver/SqlServerTest.java), you can then create a file `~\.bytle.proeprties` 
+and add the following properties to avoid that.
+
+```ini
+container.start=false
+```
 
 
 ## Reactor
