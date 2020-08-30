@@ -232,6 +232,9 @@ public class CsvDataDef extends LineDataDef {
 
   @Override
   public int getColumnsSize() {
+    if (!columnsWereBuild){
+      this.scanAndAddColumnNames();
+    }
     return super.getColumnsSize();
   }
 

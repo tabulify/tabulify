@@ -102,7 +102,7 @@ public class DatabaseVerticle extends AbstractVerticle {
         if (!Files.exists(csvPath)) {
           try {
             // Download the zip locally
-            URL zipFile = new URL("https://gerardnico.com/datafile/IpToCountry.zip");
+            URL zipFile = new URL("https://datacadamia.com/datafile/IpToCountry.zip");
             Path source = Paths.get(zipFile.toURI());
             Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
             Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);

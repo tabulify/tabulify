@@ -4,15 +4,16 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.TableDef;
+import net.bytle.db.textline.LineDataDef;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class JsonDataDef extends TableDef {
+public class JsonDataDef extends LineDataDef {
 
   private final JsonDataPath jsonDataPath;
+  private boolean columnsWereBuild = false;
 
   public JsonDataDef(JsonDataPath dataPath) {
     super(dataPath);
@@ -43,7 +44,8 @@ public class JsonDataDef extends TableDef {
   }
 
   private void buildColumnNamesIfNeeded() {
-    if (super.getColumnDefs().length == 0) {
+    if (super.getColumnDefs().length == 0 && !this.columnsWereBuild) {
+      this.columnsWereBuild=true;
       try {
         JsonFactory jsonFactory = new JsonFactory();
         Path nioPath = jsonDataPath.getNioPath();

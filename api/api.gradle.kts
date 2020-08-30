@@ -46,8 +46,11 @@ dependencies {
   compile("io.vertx:vertx-health-check:$vertxVersion")
   compile("io.vertx:vertx-dropwizard-metrics:$vertxVersion")
   compile("io.vertx:vertx-circuit-breaker:$vertxVersion")
+  // Authentication
+  compile("io.vertx:vertx-auth-common:$vertxVersion")
   // Test
   testImplementation("io.vertx:vertx-unit:$vertxVersion")
+  testCompile("org.testcontainers:cassandra:1.14.3")
 
   sshAntTask("org.apache.ant:ant-jsch:1.9.2")
 

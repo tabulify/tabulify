@@ -2,10 +2,11 @@ package net.bytle.db.json;
 
 import net.bytle.db.fs.FsDataStore;
 import net.bytle.db.fs.FsBinaryDataPath;
+import net.bytle.db.textline.LineDataPath;
 
 import java.nio.file.Path;
 
-public class JsonDataPath extends FsBinaryDataPath {
+public class JsonDataPath extends LineDataPath {
 
   public JsonDataPath(FsDataStore fsDataStore, Path path) {
     super(fsDataStore, path);
@@ -18,4 +19,6 @@ public class JsonDataPath extends FsBinaryDataPath {
     }
     return (JsonDataDef) this.relationDef;
   }
+
+
 }

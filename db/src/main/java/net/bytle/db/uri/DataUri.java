@@ -25,9 +25,12 @@ public class DataUri implements Comparable<DataUri> {
 
     int atIndex = uri.indexOf(AT_STRING);
 
-    // The at (@) string is optional;
+    // The at (@) string is optional
     if (atIndex != -1) {
       path = uri.substring(0, atIndex);
+      if (path.equals("")){
+        path = null;
+      }
     }
 
     // Data Store parsing
