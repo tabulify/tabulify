@@ -14,6 +14,8 @@ and add the following properties to avoid that.
 container.start=false
 ```
 
+  * For a singleton, see also [doc](https://www.testcontainers.org/test_framework_integration/manual_lifecycle_control/#singleton-containers)
+  * For GitLab, see [doc](https://www.testcontainers.org/supported_docker_environment/continuous_integration/gitlab_ci/)
 
 ## Reactor
 
