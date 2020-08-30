@@ -120,7 +120,14 @@ public class DatabaseVerticle extends AbstractVerticle {
           DataPath csvDataPath = tabular.getDataPath(csvPath);
           Tabulars.copy(csvDataPath, ipTable);
         } catch (Exception e) {
-          LOGGER.error("Csv Loading error {}", e.getCause().getMessage());
+          Throwable cause = e.getCause();
+          String message;
+          if (cause !=null){
+            message = cause.getMessage();
+          } else {
+            message = "No message, throwable was null";
+          }
+          LOGGER.error("Csv Loading error. Message: {}", message);
           future.fail(e);
         }
 
