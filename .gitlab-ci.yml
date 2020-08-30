@@ -1,6 +1,6 @@
 # https://www.testcontainers.org/supported_docker_environment/continuous_integration/gitlab_ci/
 
-# DinD service is required for Testcontainers
+# DinD service (Docker In Docker Image) is required for Testcontainers
 services:
   - docker:dind
 
@@ -10,12 +10,15 @@ variables:
   # Improve performance with overlayfs.
   DOCKER_DRIVER: overlay2
 
+# Test Job
 test:
   image: gradle:5.6.4-jdk8
   stage: test
-  script: ./gradlew test -PnexusUserPwd=$NEXUS_PWD
+  script: ./gradlew test -PnexusUserPwd=$NEXUS_PWD --stacktrace --info
   artifacts:
     reports:
-      junit: build/test-results/test/**/TEST-*.xml
+      # https://docs.gitlab.com/ee/ci/pipelines/job_artifacts.html#artifactsreportsjunit
+      junit: '*/build/test-results/test/TEST-*.xml'
+
 
 

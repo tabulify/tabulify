@@ -23,6 +23,8 @@ JVM:          1.8.0_251 (Oracle Corporation 25.251-b08)
 OS:           Windows 10 10.0 amd64
 ```
 
+The version is used in the [.gitlab-ci.yml file](../.gitlab-ci.yml)
+
 ## Nexus
 
   * Create the file `~\.gradle\gradle.properties` with the nexus password
