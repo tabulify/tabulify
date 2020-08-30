@@ -13,5 +13,5 @@ variables:
 test:
   image: gradle:5.0
   stage: test
-  script: ./gradlew test
+  script: ./gradlew test -PnexusUserPwd=$NEXUS_PWD
 
