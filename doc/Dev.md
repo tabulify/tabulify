@@ -3,6 +3,26 @@
 ## About
 How to set up a dev environment
 
+## Version
+
+  * Gradle: 5.6.4
+  
+```
+gradlew -v
+```
+```text
+Gradle 5.6.4
+
+Build time:   2019-11-01 20:42:00 UTC
+Revision:     dd870424f9bd8e195d614dc14bb140f43c22da98
+
+Kotlin:       1.3.41
+Groovy:       2.5.4
+Ant:          Apache Ant(TM) version 1.9.14 compiled on March 12 2019
+JVM:          1.8.0_251 (Oracle Corporation 25.251-b08)
+OS:           Windows 10 10.0 amd64
+```
+
 ## Nexus
 
   * Create the file `~\.gradle\gradle.properties` with the nexus password
