@@ -32,6 +32,7 @@ dependencies {
   compile(project(":bytle-db"))
   compile(project(":bytle-db-jdbc"))
   compile(project(":bytle-fs"))
+  compile(project(":bytle-db-csv"))
   // File system
   compile(project(":bytle-http"))
   compile(project(":bytle-zip"))

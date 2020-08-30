@@ -18,7 +18,7 @@ public class CsvManager extends LineManager {
 
   private static CsvManager csvManager;
 
-  public static CsvManager getCsvManagerSingeleton() {
+  public static CsvManager getCsvManagerSingleton() {
     if (csvManager == null) {
       csvManager = new CsvManager();
     }

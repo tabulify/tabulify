@@ -17,8 +17,15 @@ test:
   script: ./gradlew test -PnexusUserPwd=$NEXUS_PWD --stacktrace --info
   artifacts:
     reports:
+      # Error can be seen in the pipeline test tab
       # https://docs.gitlab.com/ee/ci/pipelines/job_artifacts.html#artifactsreportsjunit
       junit: '*/build/test-results/test/TEST-*.xml'
+  # Only on master or scheduled
+  # https://docs.gitlab.com/ee/ci/yaml/#onlyrefsexceptrefs
+  only:
+    refs:
+      - master
+      - schedules
 
 
 

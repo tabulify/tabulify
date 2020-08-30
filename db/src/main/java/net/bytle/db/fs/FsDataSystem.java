@@ -81,7 +81,8 @@ public class FsDataSystem implements DataSystem {
     }
     // No file manager found
     if (Files.isRegularFile(path)) {
-      DbLoggers.LOGGER_DB_ENGINE.warning("No file structure was found for the file (" + path + "). It got therefore the default file manager.");
+      DbLoggers.LOGGER_DB_ENGINE.warning("No file manager was found for the file (" + path + "). It got therefore the default file manager.");
+      DbLoggers.LOGGER_DB_ENGINE.warning("Did you add the manager for the file in the class path ?");
       fileManager = FsBinaryFileManager.getSingeleton();
     } else {
       fileManager = FsDirectoryManager.getSingeleton();

@@ -41,6 +41,6 @@ public class CsvDataPath extends LineDataPath {
 
   @Override
   public CsvManager getFileManager() {
-    return CsvManager.getCsvManagerSingeleton();
+    return CsvManager.getCsvManagerSingleton();
   }
 }
