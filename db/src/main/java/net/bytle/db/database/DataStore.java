@@ -467,6 +467,16 @@ public abstract class DataStore implements Comparable<DataStore>, AutoCloseable 
     getSqlDataTypeManager().addSqlDataType(sqlDataType);
   }
 
+  /**
+   * When running in a non-strict mode,
+   * the process will try to correct common error/warning
+   *
+   * Example:
+   *   * A field in a CSV file that is wrapped in double quote will be unwrapped even if the double quote is not set in the structure
+   *
+   * @param strict
+   * @return
+   */
   public DataStore setStrict(boolean strict) {
     this.strict = strict;
     return this;

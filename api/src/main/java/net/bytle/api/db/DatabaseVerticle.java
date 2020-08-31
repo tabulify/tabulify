@@ -96,6 +96,7 @@ public class DatabaseVerticle extends AbstractVerticle {
       Tabular tabular = Tabular.tabular();
       DataPath ipTable = tabular
         .createDataStore(dataStoreName, url)
+        .setStrict(false)
         .getDefaultDataPath("IP");
       if (Tabulars.getSize(ipTable) == 0) {
         Path csvPath = Paths.get("./IpToCountry.csv");

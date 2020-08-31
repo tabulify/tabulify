@@ -115,7 +115,18 @@ public class CsvSelectStream extends SelectStreamAbs {
       }
     }
     try {
-      return currentRecord.get(columnIndex);
+      String value = currentRecord.get(columnIndex);
+
+      if (!csvDataPath.getDataStore().isStrict()) {
+        String quoteCharacter = "\"";
+        if (value.substring(0, 1).equals(quoteCharacter)) {
+          if (value.substring(value.length()-1).equals(quoteCharacter)){
+            value = value.substring(1,value.length()-1);
+          }
+        }
+      }
+
+      return value;
     } catch (Exception e) {
       throw new RuntimeException("Error on the record (" + getRow() + ") when trying to retrieve the column (" + columnIndex + "). Records values are (" + currentRecord + ") ", e);
     }
