@@ -157,9 +157,9 @@ public class TransferSourceTarget {
    * @return
    */
   public TransferSourceTarget addColumnMapping(int sourceColumnPosition, int targetColumnPosition) {
-    assert source.getOrCreateDataDef().getColumnDef(sourceColumnPosition-1)!=null: "There is no column at the position ("+sourceColumnPosition+") for the source ("+source+")";
-    assert target.getOrCreateDataDef().getColumnDef(targetColumnPosition-1)!=null: "There is no column at the position ("+targetColumnPosition+") for the source ("+target+")";
-    this.columnMappingMethod=COLUMN_MAPPING_BY_MAP;
+    assert source.getOrCreateDataDef().getColumnDef(sourceColumnPosition - 1) != null : "There is no column at the position (" + sourceColumnPosition + ") for the source (" + source + ")";
+    assert target.getOrCreateDataDef().getColumnDef(targetColumnPosition - 1) != null : "There is no column at the position (" + targetColumnPosition + ") for the source (" + target + ")";
+    this.columnMappingMethod = COLUMN_MAPPING_BY_MAP;
     columnMappingByMap.put(sourceColumnPosition, targetColumnPosition);
     return this;
   }
@@ -223,7 +223,6 @@ public class TransferSourceTarget {
   }
 
   /**
-   *
    * This function will check that the {@link #getColumnMapping() column mapping}
    * More particularly that the target data type must be able to receive the source data
    * Throws an {@link RuntimeException} if it's not the case
@@ -244,7 +243,11 @@ public class TransferSourceTarget {
         );
 
         // A date in a varchar should work
-        if (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR) {
+        // A string in bigint should work if there is only numbers
+        if (
+          (sourceColumn.getDataType().getTypeCode() == Types.DATE && targetColumn.getDataType().getTypeCode() == Types.VARCHAR)
+            || (sourceColumn.getDataType().getTypeCode() == Types.VARCHAR && targetColumn.getDataType().getTypeCode() == Types.BIGINT)
+        ) {
           LOGGER.warning(message);
         } else {
           throw new RuntimeException(message);
@@ -257,7 +260,6 @@ public class TransferSourceTarget {
    * Check a tabular source before moving
    * * check if it exists (except for query)
    * * check if it has a structure
-   *
    */
   public void checkSource() {
     // Check source
