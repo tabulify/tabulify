@@ -14,6 +14,7 @@ import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -129,7 +130,7 @@ public class SqlDataSystem implements DataSystem {
   @Override
   public TransferListener copy(DataPath source, DataPath target) {
 
-    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source,target);
+    TransferSourceTarget transferSourceTarget = new TransferSourceTarget(source, target);
     // Check the source
     transferSourceTarget.checkSource();
 
@@ -630,9 +631,10 @@ public class SqlDataSystem implements DataSystem {
 
   /**
    * Execute a sql statement
+   *
    * @param statement
    */
-  public void execute(String statement){
+  public void execute(String statement) {
     try (Statement sqlStatement = this.getDataStore().getCurrentConnection().createStatement()) {
       sqlStatement.execute(statement);
     } catch (SQLException e) {
@@ -648,4 +650,35 @@ public class SqlDataSystem implements DataSystem {
     return jdbcDataStore;
   }
 
+
+  /**
+   * Return an object to be set in a prepared statement (for instance)
+   * before insertion
+   *
+   * Example:
+   *   * if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as a oracle.sql.BINARY_DOUBLE
+   *   * if you want to load a string into a bigint, you need to transform it
+   *
+   * @param targetColumnType
+   * @param targetColumnType the target column type
+   * @return an object to be loaded
+   */
+  public Object castLoadObjectIfNecessary(Object sourceObject, int targetColumnType) {
+
+    String clazz = sourceObject.getClass().toString();
+
+    switch (clazz){
+      case "java.lang.String":
+        String stringSourceObject = (String) sourceObject;
+        switch (targetColumnType){
+          case (Types.BIGINT):
+             sourceObject = new BigInteger(stringSourceObject);
+             break;
+        }
+        break;
+    }
+
+    return sourceObject;
+
+  }
 }

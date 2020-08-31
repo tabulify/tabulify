@@ -18,7 +18,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
   private final RelationDef targetMetaDef;
-  private final SqlDataPath jdbcDataPath;
+  private final SqlDataPath targetDataPath;
 
   private PreparedStatement preparedStatement;
   private Connection connection;
@@ -28,25 +28,25 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
   private Boolean supportNamedParameters;
   private Statement statement;
 
-  private SqlInsertStream(SqlDataPath jdbcDataPath) {
-    super(jdbcDataPath);
-    this.jdbcDataPath = jdbcDataPath;
-    this.targetMetaDef = jdbcDataPath.getOrCreateDataDef();
+  private SqlInsertStream(SqlDataPath targetDataPath) {
+    super(targetDataPath);
+    this.targetDataPath = targetDataPath;
+    this.targetMetaDef = targetDataPath.getOrCreateDataDef();
     init();
   }
 
-  public synchronized static SqlInsertStream of(SqlDataPath jdbcDataPath) {
-    if (!Tabulars.exists(jdbcDataPath)) {
-      throw new RuntimeException("You can't open an insert stream on the SQL table (" + jdbcDataPath + ") because it does not exist.");
+  public synchronized static SqlInsertStream of(SqlDataPath sqlDataPath) {
+    if (!Tabulars.exists(sqlDataPath)) {
+      throw new RuntimeException("You can't open an insert stream on the SQL table (" + sqlDataPath + ") because it does not exist.");
     }
-    return new SqlInsertStream(jdbcDataPath);
+    return new SqlInsertStream(sqlDataPath);
 
   }
 
   @Override
   public InsertStream insert(List<Object> values) {
 
-    final int columnsSize = this.jdbcDataPath.getOrCreateDataDef().getColumnsSize();
+    final int columnsSize = this.targetDataPath.getOrCreateDataDef().getColumnsSize();
     final int valuesSize = values.size();
     assert valuesSize == columnsSize : "The number of values to insert (" + valuesSize + ") is not the same than the number of columns (" + columnsSize + ")";
 
@@ -62,9 +62,8 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
           try {
             if (sourceObject != null) {
 
-              Object loadObject = Ansis.castLoadObjectIfNecessary(preparedStatement.getConnection(), targetColumnType, sourceObject);
+              Object loadObject = targetDataPath.getDataStore().getDataSystem().castLoadObjectIfNecessary(sourceObject,targetColumnType);
               preparedStatement.setObject(i + 1, loadObject, targetColumnType);
-
 
             } else {
 
@@ -72,8 +71,11 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
             }
           } catch (Exception e) {
-
-            String message = e + ", Object:" + sourceObject.getClass() + ", Value:" + sourceObject + ", columnDataType:" + targetColumnType + " Column:" + column.getFullyQualifiedName();
+            String sourceObjectClass = "null";
+            if (sourceObject!=null){
+              sourceObjectClass = sourceObject.getClass().toString();
+            }
+            String message = e + ", SourceObject:" + sourceObjectClass + ", SourceValue:" + sourceObject + ", TargetColumnDataType:" + targetColumnType + " ("+column.getDataType().getTypeName()+"), TargetColumn:" + column.getFullyQualifiedName();
             throw new RuntimeException(message, e);
 
           }
@@ -145,10 +147,10 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   private void init() {
 
-    if (jdbcDataPath.getDataStore().getMaxWriterConnection() == 1) {
-      connection = jdbcDataPath.getDataStore().getCurrentConnection();
+    if (targetDataPath.getDataStore().getMaxWriterConnection() == 1) {
+      connection = targetDataPath.getDataStore().getCurrentConnection();
     } else {
-      connection = jdbcDataPath.getDataStore().getNewConnection("InsertStream Table " + jdbcDataPath);
+      connection = targetDataPath.getDataStore().getNewConnection("InsertStream Table " + targetDataPath);
     }
     if (sourceMetaDef == null) {
       sourceMetaDef = targetMetaDef;
@@ -231,9 +233,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       insertStreamListener.addRows(currentRowInLogicalBatch);
 
 
-      LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + jdbcDataPath);
-      LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + jdbcDataPath);
-      LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + jdbcDataPath);
+      LOGGER.info(insertStreamListener.getRowCount() + " rows loaded (Total) in the table " + targetDataPath);
+      LOGGER.info(insertStreamListener.getCommits() + " commit(s) (Total) in the table " + targetDataPath);
+      LOGGER.info(insertStreamListener.getBatchCount() + " batches(s) (Total) in the table " + targetDataPath);
 
       resourceClose();
 
@@ -274,7 +276,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       if (!connection.getAutoCommit()) {
         connection.commit();
         insertStreamListener.incrementCommit();
-        LOGGER.info("commit in the table " + jdbcDataPath);
+        LOGGER.info("commit in the table " + targetDataPath);
       } else {
         throw new RuntimeException("Don't send a commit on a autocommit session");
       }

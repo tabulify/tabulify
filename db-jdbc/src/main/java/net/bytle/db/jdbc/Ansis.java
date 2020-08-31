@@ -249,29 +249,7 @@ public class Ansis {
   }
 
 
-  /**
-   * Return an object to be set in a prepared statement (for instance)
-   * Example: if you want to load a double in an Oracle BINARY_DOUBLE, you need to cast it first as a
-   * oracle.sql.BINARY_DOUBLE
-   *
-   * @param targetConnection the target connection
-   * @param targetColumnType the target column type
-   * @param sourceObject     the java object to be loaded
-   * @return
-   */
-  public static Object castLoadObjectIfNecessary(Connection targetConnection, int targetColumnType, Object sourceObject) {
 
-    String databaseProductName;
-    try {
-      databaseProductName = targetConnection.getMetaData().getDatabaseProductName();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-
-    // See oracle
-    return sourceObject;
-
-  }
 
   public static void dropForeignKey(ForeignKeyDef foreignKeyDef) {
     /**
