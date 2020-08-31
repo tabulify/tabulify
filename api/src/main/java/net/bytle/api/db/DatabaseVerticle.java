@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.serviceproxy.ServiceBinder;
 import net.bytle.db.Tabular;
+import net.bytle.db.csv.CsvDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import org.flywaydb.core.Flyway;
@@ -96,7 +97,6 @@ public class DatabaseVerticle extends AbstractVerticle {
       Tabular tabular = Tabular.tabular();
       DataPath ipTable = tabular
         .createDataStore(dataStoreName, url)
-        .setStrict(false)
         .getDefaultDataPath("IP");
       if (Tabulars.getSize(ipTable) == 0) {
         Path csvPath = Paths.get("./IpToCountry.csv");
@@ -118,7 +118,10 @@ public class DatabaseVerticle extends AbstractVerticle {
           }
         }
         try {
-          DataPath csvDataPath = tabular.getDataPath(csvPath);
+          CsvDataPath csvDataPath = ((CsvDataPath) tabular.getDataPath(csvPath))
+            .getOrCreateDataDef()
+            .setQuoteCharacter('"')
+            .getDataPath();
           Tabulars.copy(csvDataPath, ipTable);
         } catch (Exception e) {
 
