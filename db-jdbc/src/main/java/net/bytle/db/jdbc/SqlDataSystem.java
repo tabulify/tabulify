@@ -10,11 +10,11 @@ import net.bytle.db.stream.SelectStream;
 import net.bytle.db.transfer.TransferListener;
 import net.bytle.db.transfer.TransferListenerAtomic;
 import net.bytle.db.transfer.TransferSourceTarget;
+import net.bytle.type.Cast;
 import net.bytle.type.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -665,18 +665,17 @@ public class SqlDataSystem implements DataSystem {
    */
   public Object castLoadObjectIfNecessary(Object sourceObject, int targetColumnType) {
 
-    String clazz = sourceObject.getClass().toString();
 
-    switch (clazz){
-      case "java.lang.String":
-        String stringSourceObject = (String) sourceObject;
-        switch (targetColumnType){
-          case (Types.BIGINT):
-             sourceObject = new BigInteger(stringSourceObject);
-             break;
-        }
+    Class<?> targetClass = null;
+    switch (targetColumnType){
+      case (Types.BIGINT):
+        targetClass = java.math.BigInteger.class;
         break;
     }
+    if (targetClass!=null){
+        sourceObject = Cast.cast(sourceObject,targetClass);
+    }
+
 
     return sourceObject;
 
