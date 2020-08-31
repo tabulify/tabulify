@@ -21,8 +21,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
-import static net.bytle.db.cli.Words.NOT_STRICT;
+import static net.bytle.db.cli.Words.*;
 
 
 /**
@@ -33,9 +32,9 @@ public class DbTableFill {
   private static final Logger LOGGER = LoggerFactory.getLogger(DbTableFill.class);
 
 
-  static final String NUMBER_OF_ROWS_OPTION = "rows";
   private static final String LOAD_DEPENDENCIES = "load-parent";
   private static final String DATA_URI_PATTERNS = "DataUriPattern...";
+  private static final String AUTO = "auto";
 
 
   public static void run(CliCommand cliCommand, String[] args) {
@@ -43,17 +42,15 @@ public class DbTableFill {
 
     cliCommand
       .setDescription(Strings.multiline(
-        "Load generated data into one or more tables",
-        "By default, the data would be randomly generated.",
-        "You should use a data definition file to define a data generation behaviors that is not random."))
-      .addExample(Strings.multiline("To load the tables from the database `sqlite` with random data:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "random  *@sqlite"))
-      .addExample(Strings.multiline("To load the tables `D_TIME` from the datastore `sqlite` with random data:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "random  D_TIME@sqlite"))
+        "Load generated data into one or more tables.",
+        "This command select the tables to be loaded",
+        "You should use a data definition file to define a data generation behaviors that is not automatic."))
+      .addExample(Strings.multiline("To load the tables `D_TIME` from the datastore `sqlite` with data:",
+        CliUsage.getFullChainOfCommand(cliCommand) + AUTO + " D_TIME@sqlite"))
       .addExample(Strings.multiline("To load the table `D_TIME` with the data definition file `D_TIME--datagen.yml` present in the current directory:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME--datagen.yml  D_TIME@datastore"))
+        CliUsage.getFullChainOfCommand(cliCommand) + "D_TIME D_TIME@datastore"))
       .addExample(Strings.multiline("To load all the tables that have a data definition file in the current directory:",
-        CliUsage.getFullChainOfCommand(cliCommand) + "*--datadef.yml   *@datastore"));
+        CliUsage.getFullChainOfCommand(cliCommand) + "* @datastore"));
     cliCommand.argOf(DATA_URI_PATTERNS)
       .setDescription("One or more data URI patterns (Example: table@database, glob@datastore or table--datadef.yml@database)")
       .setMandatory(true);
@@ -64,14 +61,13 @@ public class DbTableFill {
     cliCommand.flagOf(LOAD_DEPENDENCIES)
       .setDescription("If this flag is present, the dependencies of the selected tables (ie parent/foreign tables) will be also filled with data")
       .setDefaultValue(false);
-    cliCommand.optionOf(NUMBER_OF_ROWS_OPTION)
-      .setDescription("This option defines the total number of rows that the table(s) must have. For a number of rows defined by table, you should set it in a datadef file.");
+    cliCommand.optionOf(ROWS);
 
     // Args
     final CliParser cliParser = Clis.getParser(cliCommand, args);
     final Boolean loadParent = cliParser.getBoolean(LOAD_DEPENDENCIES);
     final Path storagePathValue = cliParser.getPath(DATASTORE_VAULT_PATH);
-    final long totalNumberOfRows = cliParser.getInteger(NUMBER_OF_ROWS_OPTION).longValue();
+    final long totalNumberOfRows = cliParser.getInteger(ROWS).longValue();
     final Boolean notStrictRun = cliParser.getBoolean(NOT_STRICT);
     final List<String> dataUriPatterns = cliParser.getStrings(DATA_URI_PATTERNS);
 

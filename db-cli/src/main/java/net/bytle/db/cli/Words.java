@@ -2,6 +2,7 @@ package net.bytle.db.cli;
 
 import net.bytle.cli.CliCommand;
 import net.bytle.db.DatastoreVault;
+import net.bytle.db.gen.DataGeneration;
 
 /**
  * Created by gerard on 20-06-2017.
@@ -77,6 +78,7 @@ public class Words {
     public static final String NOT_STRICT = "no-strict";
     public static final String FORCE = "force";
     static final String NO_COUNT = "no-count";
+    static final String ROWS = "rows";
 
     // Move options
     static final String TARGET_WORKER_OPTION = "tw";
@@ -118,6 +120,10 @@ public class Words {
                 .setDescription("The path where the database information are stored")
                 .setDefaultValue(DatastoreVault.DEFAULT_STORAGE_FILE)
                 .setEnvName(ENV_DATASTORE_VAULT_PATH);
+
+        cliCommand.globalWordOf(ROWS)
+          .setDescription("This option defines the default total number of rows that the table(s) must have. For a number of rows defined by table, you should set it in a datadef file.")
+          .setDefaultValue(DataGeneration.MAX_INSERT);
 
     }
 

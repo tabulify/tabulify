@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static net.bytle.db.cli.Words.DATASTORE_VAULT_PATH;
-import static net.bytle.db.cli.Words.NOT_STRICT;
+import static net.bytle.db.cli.Words.*;
 
 
 /**
@@ -45,11 +44,15 @@ public class DbSchemaFill {
     cliCommand
       .setDescription("Load generated data into the tables of a schema");
     cliCommand.addExample(Strings.multiline(
-      "Load all data generation unit into a sqlite database",
-      CliUsage.getFullChainOfCommand(cliCommand) + " *" + GenFsDataPath.EXTENSION + " @sqlite"
+      "Load auto generated data into a sqlite database",
+      CliUsage.getFullChainOfCommand(cliCommand) + " @sqlite"
     ));
-    cliCommand.argOf(Words.GLOB_PATTERN_DATADEF_FILE)
-      .setDescription("A glob pattern that defines one or more data generation file (ie dir/*" + GenFsDataPath.EXTENSION + ")");
+    cliCommand.addExample(Strings.multiline(
+      "Load data into a sqlite database with data definition files located in the dir directory",
+      CliUsage.getFullChainOfCommand(cliCommand) + " "+ CliParser.PREFIX_LONG_OPTION+Words.GLOB_PATTERN_DATADEF_FILE +" dir/*" + " @sqlite"
+    ));
+    cliCommand.optionOf(Words.GLOB_PATTERN_DATADEF_FILE)
+      .setDescription("A glob pattern that select one or more data generation file (ie `dir/*` will search for all files `*" + GenFsDataPath.EXTENSION + "` in the `dir` directory)");
     cliCommand.argOf(SCHEMA_URI)
       .setDescription("A Data Uri that points to a schema (example for the default one `@datastore`")
       .setMandatory(true);
@@ -57,9 +60,11 @@ public class DbSchemaFill {
       .setDescription("if set, it will not throw an error for a minor problem (example if a data def has not a yml extension,...) ")
       .setDefaultValue(false);
     cliCommand.flagOf(WITH_DEPENDENCIES)
-      .setDescription("if set, it will load also the dependencies with random generated data (ie foreign tables)")
+      .setDescription("if set, it will load also the dependencies (ie foreign tables)")
       .setDefaultValue(false);
     cliCommand.optionOf(DATASTORE_VAULT_PATH);
+    cliCommand.optionOf(ROWS);
+
 
     // Parser and args
     CliParser cliParser = Clis.getParser(cliCommand, args);
@@ -183,7 +188,7 @@ public class DbSchemaFill {
         .stream()
         .map(s -> s.getTransferSourceTarget().getTargetDataPath())
         .collect(Collectors.toList());
-      for (DataPath dataPath : targetDataPaths){
+      for (DataPath dataPath : targetDataPaths) {
         LOGGER.info("  * " + dataPath + ", Size (" + Tabulars.getSize(dataPath) + ")");
       }
 

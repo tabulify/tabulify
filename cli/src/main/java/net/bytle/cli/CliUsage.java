@@ -267,7 +267,7 @@ public class CliUsage {
             chainOfCommand.append(" ");
         }
 
-        return chainOfCommand.toString();
+        return chainOfCommand.toString().trim();
 
     }
 }

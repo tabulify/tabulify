@@ -1,6 +1,11 @@
 # Db Cli
 
 
+## Dev
+
+To run the actual cli, use:
+   * the [tabul Gradle Wrapper](tabul.cmd)
+   * or [tabcli Gradle Wrapper](tabli.cmd)
 
 ## Utility
 
@@ -8,4 +13,4 @@
   
 ## Gradle
 
-  * https://docs.gradle.org/current/dsl/org.gradle.jvm.application.tasks.CreateStartScripts.html
+  * [StartScript](https://docs.gradle.org/current/dsl/org.gradle.jvm.application.tasks.CreateStartScripts.html)
