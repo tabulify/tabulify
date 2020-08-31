@@ -1,6 +1,9 @@
 # Test
 
 
+## CI/CD
+
+The CI test is performed on the master branch via [gitlab](GitLab.md).
 
 ## Test container
 

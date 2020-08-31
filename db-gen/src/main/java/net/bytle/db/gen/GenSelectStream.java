@@ -26,7 +26,6 @@ public class GenSelectStream extends SelectStreamAbs {
 
     super(dataPath);
     this.genDataPath = dataPath;
-    this.genDataPath.getOrCreateDataDef().buildMissingGenerators();
 
   }
 

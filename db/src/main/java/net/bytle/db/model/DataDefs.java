@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 /**
  * DataDef(s)tatic functions
  * They are not meant to be used directly, use a {@link RelationDef object instead}
- *
  */
 public class DataDefs {
 
@@ -138,7 +137,6 @@ public class DataDefs {
   }
 
 
-
   /**
    * Add the foreign key from the source to the target
    * if the foreign tables exist in the target
@@ -154,7 +152,7 @@ public class DataDefs {
       // Does the table exist in the target
       if (Tabulars.exists(targetForeignDataPath)) {
         PrimaryKeyDef targetPrimaryKey = targetForeignDataPath.getOrCreateDataDef().getPrimaryKey();
-        assert targetPrimaryKey!=null: "Foreign Key not copied: The foreign data path (" + targetForeignDataPath + ") exists but does not have any primary key. There is a inconsistency bug somewhere.";
+        assert targetPrimaryKey != null : "Foreign Key not copied: The foreign data path (" + targetForeignDataPath + ") exists but does not have any primary key. There is a inconsistency bug somewhere.";
         List<String> targetForeignPrimaryKeyColumns = targetPrimaryKey.
           getColumns().stream()
           .map(ColumnDef::getColumnName)
@@ -315,4 +313,15 @@ public class DataDefs {
       return reason.toString();
     }
   }
+
+  public static void addUniqueKeys(RelationDef fromDataDef, DataDefAbs targetDataDef) {
+    for (UniqueKeyDef uniqueKeyDef : fromDataDef.getUniqueKeys()) {
+      final String[] columns = uniqueKeyDef.getColumns().stream()
+        .map(ColumnDef::getColumnName)
+        .toArray(String[]::new);
+      targetDataDef.addUniqueKey(columns);
+    }
+  }
+
 }
+

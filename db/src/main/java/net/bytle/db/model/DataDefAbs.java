@@ -373,6 +373,9 @@ public abstract class DataDefAbs implements RelationDef {
     // Add the foreign keys
     DataDefs.addForeignKeys(fromDataDef, this);
 
+    // Add the unique keys
+    DataDefs.addUniqueKeys(fromDataDef, this);
+
     return this;
 
   }

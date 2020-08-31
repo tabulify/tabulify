@@ -99,18 +99,17 @@ public class DataGeneration {
     preLoad();
 
     TransferManager transferManager = TransferManager.of();
-    sourceTargets.keySet().forEach(dp -> {
+    sourceTargets.keySet().forEach(dataPath -> {
         // Set the column mapping by name
         // The column on the generator may have not the same column position than the target
         // but have the same name, we set then the column mapping to be by name (and not by position - default)
-        TransferSourceTarget transferSourceTarget = new TransferSourceTarget(sourceTargets.get(dp), dp)
+        TransferSourceTarget transferSourceTarget = new TransferSourceTarget(sourceTargets.get(dataPath), dataPath)
           .withColumnMappingByName();
         transferManager.addTransfer(transferSourceTarget);
       }
     );
-    List<TransferListener> transferListeners = transferManager.start();
 
-    return transferListeners;
+    return transferManager.start();
 
   }
 
@@ -190,8 +189,7 @@ public class DataGeneration {
     }
 
 
-    // Source
-    // Building the missing data generators
+    // Building the data generators not defined
     sourceTargets.values().forEach(sourceDataPath -> sourceDataPath.getOrCreateDataDef().buildMissingGenerators());
 
     // Foreign data generators building
