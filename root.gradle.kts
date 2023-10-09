@@ -12,9 +12,8 @@ val jacksonVersion = "2.13.4"
 val subethaVersion = "6.0.7"
 val jakartaEmailVersion = "2.0.1" // should be the same as in SimpleEmail (don't know how to do that)
 val simpleEmailVersion =  "8.1.3"
-// DnsJava: The version used by James SPF
-// https://mvnrepository.com/artifact/org.apache.james.jspf/apache-jspf/1.0.3
-val dnsJavaVersion =  "3.5.1"
+// DnsJava
+val dnsJavaVersion =  "3.5.2"
 
 ext {
   set("vertxVersion", vertxVersion)
