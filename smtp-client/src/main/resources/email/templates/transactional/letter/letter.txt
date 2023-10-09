@@ -1,0 +1,20 @@
+[# th:if="${not salutation}" ][(${salutation})][/]
+[# th:if="${intros != null}" ][# th:each="intro : ${intros}"]
+[(${intro})]
+[/][/]
+
+[# th:if="${actions != null}"][# th:each="action : ${actions}"] - [(${action.description})]
+  [(${action.url})]
+[/][/]
+
+[# th:if="${outros != null}" ][# th:each="outro : ${outros}"]
+[(${outro})]
+[/][/]
+
+[# th:if="${closings != null}"][# th:each="closing : ${closings}"]
+[(${closing})]
+[/][/]
+
+----
+[(${brand.name})]
+[(${brand.url})]

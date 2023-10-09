@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# You run it with
+# * for root
+# ```
+# resticw
+# ```
+# * for other users
+# ```
+# sudo -u restic resticw
+# ```
+
+export RESTIC_PASSWORD={{ restic_password }}
+export RESTIC_REPOSITORY={{ restic_repository_datacadamia }}
+
+# shellcheck disable=SC2048
+# shellcheck disable=SC2086
+restic $*
+
+exit $?

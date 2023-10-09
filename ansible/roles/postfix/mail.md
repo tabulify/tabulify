@@ -1,9 +1,9 @@
-# How to add a new domain and its mail 
+# How to add a new domain and its mail
 
 
 ## Steps
 
-  * Go to the configuration file [virtual](./defaults/main/virtual.yml)
+  * Go to the configuration file [virtual](./defaults/main/dkim.yml)
   * Add the domain
   * Add the alias
   * Run the role

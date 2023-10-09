@@ -2,9 +2,11 @@ package net.bytle.db.memory.list;
 
 import net.bytle.db.memory.MemoryDataPathAbs;
 import net.bytle.db.memory.MemoryDataPathType;
+import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.exception.NoColumnException;
 
 import java.sql.Clob;
 import java.util.List;
@@ -15,7 +17,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class MemoryListSelectStream extends SelectStreamAbs implements SelectStream {
 
-  private List<List<Object>> values;
+  private final List<List<Object>> values;
+  @SuppressWarnings("FieldCanBeLocal")
   private final MemoryDataPathAbs memoryDataPath;
 
   // Index is used for a list for a queue
@@ -26,8 +29,8 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
     super(memoryListDataPath);
     this.memoryDataPath = memoryListDataPath;
     List<List<Object>> values = memoryListDataPath.getValues();
-    if (values == null){
-      throw  new RuntimeException("The memory data path ("+memoryListDataPath+") does not exist (or was not created before insertion)");
+    if (values == null) {
+      throw new RuntimeException("The memory data path (" + memoryListDataPath + ") does not exist (or was not created before insertion)");
     }
     this.values = values;
   }
@@ -42,7 +45,6 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
 
 
   /**
-   *
    * @param timeout  - the timeout to wait (only for {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE | queue structure)
    * @param timeUnit - the timeunit to wait (only for queue structure)
    * @return true if there is still an element or false
@@ -71,17 +73,8 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
   @Override
   public String getString(int columnIndex) {
 
-    final int index = columnIndex;
-    if (index < currentRow.size()) {
-      final Object o = currentRow.get(index);
-      if (o == null) {
-        return null;
-      } else {
-        return o.toString();
-      }
-    } else {
-      return "";
-    }
+    return getObject(columnIndex, String.class);
+
   }
 
 
@@ -93,18 +86,19 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
 
   @Override
   public Object getObject(int columnIndex) {
-    return currentRow.get(columnIndex);
+    return currentRow.get(columnIndex - 1);
   }
 
   @Override
-  public void runtimeDataDef(RelationDef relationDef) {
-
+  public RelationDef getRuntimeRelationDef() {
+    return this.getDataPath().getOrCreateRelationDef();
   }
 
 
   @Override
   public Double getDouble(int columnIndex) {
-    return (double) getObject(columnIndex);
+
+    return getObject(columnIndex, Double.class);
   }
 
   @Override
@@ -114,32 +108,30 @@ public class MemoryListSelectStream extends SelectStreamAbs implements SelectStr
 
   @Override
   public Integer getInteger(int columnIndex) {
-    return (Integer) getObject(columnIndex);
+
+    return getObject(columnIndex, Integer.class);
   }
 
   @Override
   public Object getObject(String columnName) {
-    throw new RuntimeException("Not yet implemented");
+    ColumnDef columnDef;
+    try {
+      columnDef = this.getRuntimeRelationDef().getColumnDef(columnName);
+    } catch (NoColumnException e) {
+      return null;
+    }
+    Integer position = columnDef.getColumnPosition();
+    return getObject(position, Object.class);
   }
 
   @Override
-  public List<Object> getObjects() {
+  public List<?> getObjects() {
     return currentRow;
   }
 
   @Override
   public void beforeFirst() {
-        rowIndex = -1;
-  }
-
-  @Override
-  public void execute() {
-    // nothing to do here
-  }
-
-  @Override
-  public <T> T getObject(String columnName, Class<T> clazz) {
-    return (T) getObject(columnName);
+    rowIndex = -1;
   }
 
 

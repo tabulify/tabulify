@@ -21,7 +21,7 @@ public final class TailQueue<E> extends AbstractQueue<E> {
    */
   public TailQueue(Integer maxSize) {
     assert maxSize>0: "The size should be a positive integer";
-    this.queue = new ArrayDeque<E>(maxSize);
+    this.queue = new ArrayDeque<>(maxSize);
     this.maxSize = maxSize;
   }
 

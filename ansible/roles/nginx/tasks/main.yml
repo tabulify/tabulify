@@ -1,128 +1,119 @@
 
+
+- name: Disable SELinux
+  become: true
+  register: selinux
+  selinux:
+    state: disabled
+
+- name: Reboot required for selinux
+  when: selinux is changed
+  fail:
+    msg: "selinux has changed, you should reboot the server first"
+
 - name: Install Nginx {{ nginx_version }}
   become: true
   yum:
-    name: 'nginx-{{ nginx_version }}'
+#    name: 'nginx-{{ nginx_version }}' - not a good idea otherwise we don't get the update and we may have problem in the upgrade
+    name: 'nginx'
     state: present
 
 
-- name: Start nginx
-  become: true
-  service:
-    name: "nginx"
-    state: "started"
-    enabled: true
+# TODO : upgrade
+#- name: Nginx | Firewall
+#  become: true
+#  include: nginx_firewall.yml
+#  tags: firewall
+
 
 - name: Nginx | Admin
   become: true
   include: nginx_admin.yml
   tags: nginx-admin
 
-
-# OVH firewall
-#- name: 'Firewall - Add port 443'
-#- name: 'Firewall - Add port 80 for a SSL redirect'
-
-
-- name: Nginx | Configuring Nginx
+- name: Nginx | LogRotate
   become: true
+  include: nginx_logrotate.yml
+  tags: nginx-logrotate
+
+- name: Nginx | Configuring Nginx with global variables
+  become: true
+  tags: nginx-conf
   template:
     src: nginx.conf
     dest: "/etc/nginx/nginx.conf"
     backup: yes
   notify: reload nginx
 
+- name: "Nginx | Internal Tool Configuration"
+  become: true
+  tags: nginx-conf, nginx-internal-tool
+  block:
+    - include_tasks: nginx_internal_tool.yml
+  notify: reload nginx
+
 - name: 'Www - static www folder configuration'
   become: true
   tags: nginx-www
-  include: www.yml
+  block:
+    - include_tasks: www.yml
 
-- name: 'Gnico - Configuration'
-  become: true
-  include: gnico.yml
-  tags: nginx-gnico, nginx-conf
+- name: "Copy tcp site template configuration"
+  with_filetree: 'host_files/{{ inventory_hostname }}/nginx/tcp/'
+  include_tasks: nginx_template_conf.yml
+  vars:
+    fqdn: '{{ item.path | basename | splitext | first }}'
+    file: 'host_files/{{ inventory_hostname }}/nginx/tcp/{{ item.path }}'
+    protocol: 'tcp'
+  when: item.state != 'directory'
 
-- name: 'Datacadamia - Configuration'
-  become: true
-  include: datacadamia.yml
-  tags: nginx-datacadamia
+- name: "Copy http fqdn template configuration"
+  with_filetree: 'host_files/{{ inventory_hostname }}/nginx/http/fqdn-based/'
+  include_tasks: nginx_template_conf.yml
+  vars:
+    fqdn: '{{ item.path | basename | splitext | first }}'
+    file: 'host_files/{{ inventory_hostname }}/nginx/http/fqdn-based/{{ item.path }}'
+    protocol: 'http'
+  when: item.state != 'directory'
 
-- name: 'Bytle - Configuration'
-  become: true
-  include: bytle.yml
-  tags: nginx-bytle
-
-- name: 'Combostrap - Configuration'
-  become: true
-  include: combostrap.yml
-  tags: nginx-combo
-
-
+- name: "Copy http dokuwiki farmer animal template configuration"
+  with_items: "{{ nginx_dokuwiki_domains }}"
+  include_tasks: nginx_template_conf.yml
+  vars:
+    fqdn: '{{ item }}'
+    file: 'host_files/{{ inventory_hostname }}/nginx/http/dokuwiki-based/dokuwiki.conf'
+    protocol: 'http'
 
 - name: 'Localhost - Configuration'
   become: true
   tags: nginx-conf, nginx-localhost
-  notify:
-    - verify config
-    - reload nginx
+  notify: reload nginx
   template:
-    src: localhost-nginx.conf.j2
-    dest: "/etc/nginx/conf.d/localhost.conf"
+    src: localhost-nginx.conf
+    dest: "{{nginx_etc_path_conf}}/http/localhost.conf"
 
-
-- name: Netdata | Configuring Netdata
-  notify:
-    - verify config
-    - reload nginx
-  become: true
-  tags: nginx-netdata, nginx-conf
-  template:
-    src: netdata-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/netdata.conf"
-    backup: yes
-
-# https://www.nginx.com/resources/wiki/start/topics/examples/javaservers/
-- name: Nexus | Configuring Nexus
-  notify:
-    - verify config
-    - reload nginx
-  become: true
-  tags: nginx-nexus, nginx-conf
-  template:
-    src: nexus-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/nexus.conf"
-    backup: yes
-
-
-
-- name: Gogs | Configuring Gogs
-  tags: nginx-gogs, nginx-conf
-  notify:
-    - verify config
-    - reload nginx
-  become: true
-  template:
-    src: gogs-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/gogs.conf"
-
-- name: Prometheus | Configuring Prometheus
-  become: true
-  notify:
-    - verify config
-    - reload nginx
-  tags: nginx-conf, nginx-prom
-  template:
-    src: prometheus-nginx-site.conf.j2
-    dest: "/etc/nginx/conf.d/prometheus.conf"
 
 - name: Nginx | Installation modules
   become: true
   include: nginx_modules.yml
   tags: nginx_modules
 
+# All monitoring is done via netdata
+#- name: Nginx | Amplify - Installation Monitoring agent
+#  become: true
+#  include: nginx_amplify.yml
+#  tags: nginx-amplify
 
-- name: Nginx conf verif | Verification of the configuration
+- name: Nginx conf verification | Verification of the configuration
   become: true
   command: '/sbin/nginx -t'
   register: nginx_conf
-  changed_when: "nginx_conf.rc != 0"
+  failed_when: "nginx_conf.rc != 0"
+
+- name: ReStart nginx (if the conf verification was successful)
+  become: true
+  when: "nginx_conf.rc == 0"
+  service:
+    name: "nginx"
+    state: "restarted"
+    enabled: true

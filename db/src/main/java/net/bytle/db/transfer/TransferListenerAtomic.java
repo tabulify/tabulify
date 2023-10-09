@@ -3,21 +3,21 @@ package net.bytle.db.transfer;
 /**
  * This is a class to get the transfer statistics
  * from transfer operations that are not using the {@link net.bytle.db.stream.Stream}
+ *
  * This is the case in sql for instance with a `insert into`
  * There is only one operation
  *
  * FYI: The transfer listener from stream is {@link TransferListenerStream}
- *  *
+ *
  */
-public class TransferListenerAtomic extends TransferListenerAbs{
+public class TransferListenerAtomic extends TransferListenerAbs {
 
 
-  private int rows;
+  private long rows;
 
   public TransferListenerAtomic(TransferSourceTarget transferSourceTarget) {
     super(transferSourceTarget);
   }
-
 
   @Override
   public int getCommits() {
@@ -25,7 +25,7 @@ public class TransferListenerAtomic extends TransferListenerAbs{
   }
 
   @Override
-  public long getRowCount() {
+  public Long getRowCount() {
     return rows;
   }
 
@@ -38,4 +38,5 @@ public class TransferListenerAtomic extends TransferListenerAbs{
     this.rows = this.rows + rows;
     return this;
   }
+
 }

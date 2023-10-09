@@ -33,7 +33,7 @@ public class FsShortFileName {
     return found;
   }
 
-  String getShortName() {
+  public String getShortName() {
     return shortName;
   }
 }

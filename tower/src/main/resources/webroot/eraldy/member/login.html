@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title th:text="${title}">Title</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"
+          integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V"
+          crossorigin="anonymous"></script>
+  <meta name="csrf-token" th:content="${csrf}">
+  <script src="./assets/login.js" async></script>
+</head>
+<body>
+<div class="container mt-5">
+
+  <h1 th:utext="${h1}">Login</h1>
+
+  <p>Hy,</p>
+
+  <p>Welcome to the login page of the </p>
+
+  <p th:utext="${description}"></p>
+
+  <form id="login-form" class="row g-3 needs-validation mb-2" th:action="${action}" novalidate>
+    <input type="hidden" name="redirect_uri" th:value="${redirect_uri}">
+    <input type="hidden" name="state" th:value="${state}">
+    <input type="hidden" name="response_type" th:value="${response_type}">
+    <div class="col-12 mb-2">
+      <label for="inputName" class="form-label h6">Your Name:</label>
+      <input type="text" class="form-control" placeholder="Joe" id="inputName" name="loginName" required>
+      <div id="nameHelp" class="form-text">How people are calling you. Most people enters their firstname.
+        <br>Your name is used in the greeting of letters.
+      </div>
+      <div class="valid-feedback">
+        Looks good!
+      </div>
+      <div class="invalid-feedback">
+        Please enter your name.
+      </div>
+    </div>
+    <div class="col-12 mb-2">
+      <label for="inputEmail" class="form-label h6">Your Email address:</label>
+      <input type="email" class="form-control" id="inputEmail" name="subscriberEmail" placeholder="joe@example.com"
+             aria-describedby="emailHelp" required>
+      <div id="emailHelp" class="form-text">The address where we should email you.</div>
+      <div class="invalid-feedback">
+        Please enter a valid email.
+      </div>
+    </div>
+    <div class="col-12 mb-2">
+      <small class="text-muted">
+        <b>Legal</b>: By clicking below to subscribe, you acknowledge that you have read and agree
+        to the legal <a th:href="${termsurl}" href="https://datacadamia.com/legal/privacy" target="_blank">terms
+        and conditions</a> document.
+      </small>
+    </div>
+    <div class="col-12 col-md-4 mb-2">
+      <button type="submit" class="btn btn-primary">Subscribe</button>
+    </div>
+  </form>
+
+
+  <!-- Modal -->
+  <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="resultModalLabel">Thank you</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Message
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div th:if="true!=true" class="mt-5">
+  <h6>Debug: Variables</h6>
+  <table class="table">
+    <tr>
+      <th scope="col">Variable Name</th>
+      <th scope="col">Value</th>
+    </tr>
+    <tr th:each="var : ${#vars.getVariableNames()}">
+      <td th:text="${var}"></td>
+      <td th:text="${#vars.getVariable(var)}"></td>
+    </tr>
+  </table>
+</div>
+<div class="mt-5">
+  <!-- to add some space to let the user scroll down to get the subscribe button to the middle of the page -->
+</div>
+</body>
+</html>

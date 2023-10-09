@@ -1,0 +1,423 @@
+package net.bytle.tower.eraldy.objectProvider;
+
+
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
+import io.vertx.json.schema.ValidationException;
+import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
+import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Manage the get/upsert of a {@link Registration} object asynchronously
+ * <p>
+ * They don't have any id as the table can be become huge
+ */
+public class ListRegistrationProvider {
+
+
+  protected static final Logger LOGGER = LoggerFactory.getLogger(ListRegistrationProvider.class);
+
+  static final String TABLE_NAME = "realm_list_registration";
+
+  private static final Map<Vertx, ListRegistrationProvider> mapRegistrationProviderByVertx = new HashMap<>();
+
+  public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
+  private static final String REGISTRATION_PREFIX = "registration";
+  public static final String STATUS_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "status";
+  public static final String ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String LIST_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String USER_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  private static final String SHORT_PREFIX = "reg";
+  static final String REALM_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  public static final String REGISTERED_STATUS = "registered";
+  private static final String DATA_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "data";
+  private final Vertx vertx;
+  private static final String CREATION_TIME_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private static final String MODIFICATION_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+
+
+  public ListRegistrationProvider(Vertx routingContext) {
+    this.vertx = routingContext;
+  }
+
+  public static ListRegistrationProvider create(Vertx vertx) {
+    ListRegistrationProvider registrationProvider = ListRegistrationProvider.mapRegistrationProviderByVertx.get(vertx);
+    if (registrationProvider != null) {
+      return registrationProvider;
+    }
+    registrationProvider = new ListRegistrationProvider(vertx);
+    ListRegistrationProvider.mapRegistrationProviderByVertx.put(vertx, registrationProvider);
+    return registrationProvider;
+  }
+
+  /**
+   * @param registration - the publication to make public
+   * @return the publication without id, realm and with a guid
+   */
+  public Registration toPublicClone(Registration registration) {
+
+    return toClone(registration, false);
+  }
+
+  /**
+   * @param registration - the registration
+   * @param forTemplate  - if true, the data have default (for instance, the username would never be empty)
+   */
+  private Registration toClone(Registration registration, boolean forTemplate) {
+
+    Registration registrationClone = JsonObject.mapFrom(registration).mapTo(Registration.class);
+
+    /**
+     * User
+     */
+    User subscriberUser = registration.getSubscriber();
+    if (subscriberUser != null) {
+      User publicCloneWithoutRealm;
+      UserProvider userProvider = UserProvider.createFrom(vertx);
+      if (!forTemplate) {
+        publicCloneWithoutRealm = userProvider.toPublicCloneWithoutRealm(subscriberUser);
+      } else {
+        publicCloneWithoutRealm = userProvider.toTemplateCloneWithoutRealm(subscriberUser);
+      }
+      registrationClone.setSubscriber(publicCloneWithoutRealm);
+    }
+
+    /**
+     * List
+     */
+    ListProvider listProvider = ListProvider.create(vertx);
+    RegistrationList registrationList = registration.getList();
+    if (!forTemplate) {
+      registrationList = listProvider.toPublicClone(registrationList);
+    } else {
+      registrationList = listProvider.toTemplateClone(registrationList);
+    }
+    registrationClone.setList(registrationList);
+
+
+    return registrationClone;
+  }
+
+
+  /**
+   * @param registration the registration to upsert
+   * @return the realm with the id
+   */
+  public Future<Registration> upsertRegistration(Registration registration) {
+
+
+    User subscriberUser = registration.getSubscriber();
+    if (subscriberUser == null) {
+      return Future.failedFuture(new InternalError("The subscriber user is mandatory when inserting a publication subscription"));
+    }
+    Long subscriberId = subscriberUser.getLocalId();
+    if (subscriberId == null) {
+      throw new InternalException("The subscriber id of a user object should not be null");
+    }
+    RegistrationList registrationList = registration.getList();
+    if (registrationList == null) {
+      return Future.failedFuture(new InternalError("The list is mandatory when upserting a registration"));
+    }
+
+    /**
+     * Realm check
+     */
+    if (!(subscriberUser.getRealm().getLocalId().equals(registrationList.getRealm().getLocalId()))) {
+      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + registrationList.getRealm().getHandle() + " and the subscriber (" + subscriberUser.getRealm().getHandle() + ")"));
+    }
+
+    Long listId = registrationList.getLocalId();
+    if (listId == null) {
+      return Future.failedFuture(new InternalError("The list id is mandatory when inserting a registration"));
+    }
+
+    /**
+     * No upsert sql statement (see identifier.md)
+     * (Even if this case it had been possible
+     * because there is no object id)
+     */
+    return updateRegistrationAndGetRowSet(registration)
+      .compose(rowSet -> {
+        if (rowSet.rowCount() == 0) {
+          return insertRegistration(registration);
+        }
+        this.computeGuid(registration);
+        return Future.succeededFuture(registration);
+      });
+
+  }
+
+  private Future<RowSet<Row>> updateRegistrationAndGetRowSet(Registration registration) {
+
+    String sql = "UPDATE \n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+      " SET\n" +
+      "  " + STATUS_COLUMN + " = $1,\n" +
+      "  " + DATA_COLUMN + " = $2,\n" +
+      "  " + MODIFICATION_COLUMN + " = $3\n" +
+      "where\n" +
+      "  " + REALM_COLUMN + " = $4\n" +
+      "AND  " + ID_COLUMN + " = $5\n" +
+      "AND  " + USER_COLUMN + " = $6\n";
+
+    return JdbcPoolCs.getJdbcPool(this.vertx)
+      .preparedQuery(sql)
+      .execute(Tuple.of(
+        REGISTERED_STATUS,
+        this.getDatabaseObject(registration),
+        DateTimeUtil.getNowUtc(),
+        registration.getList().getRealm().getLocalId(),
+        registration.getList().getLocalId(),
+        registration.getSubscriber().getLocalId()
+      ))
+      .onFailure(e -> LOGGER.error("Registration Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
+  }
+
+  private Future<Registration> insertRegistration(Registration registration) {
+
+    String sql = "INSERT INTO\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      "  " + REALM_COLUMN + ",\n" +
+      "  " + ID_COLUMN + ",\n" +
+      "  " + USER_COLUMN + ",\n" +
+      "  " + DATA_COLUMN + ",\n" +
+      "  " + STATUS_COLUMN + ",\n" +
+      "  " + CREATION_TIME_COLUMN + "\n" +
+      "  )\n" +
+      " values ($1, $2, $3, $4, $5, $6)";
+
+
+    return JdbcPoolCs.getJdbcPool(this.vertx)
+      .preparedQuery(sql)
+      .execute(Tuple.of(
+        registration.getList().getRealm().getLocalId(),
+        registration.getList().getLocalId(),
+        registration.getSubscriber().getLocalId(),
+        this.getDatabaseObject(registration),
+        REGISTERED_STATUS,
+        DateTimeUtil.getNowUtc()
+      ))
+      .onFailure(e -> LOGGER.error("Registration Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
+      .compose(rows -> {
+        this.computeGuid(registration);
+        return Future.succeededFuture(registration);
+      });
+
+  }
+
+  private JsonObject getDatabaseObject(Registration registration) {
+    JsonObject data = JsonObject.mapFrom(registration);
+    data.remove("list");
+    data.remove("subscriber");
+    data.remove(Guid.GUID);
+    return data;
+  }
+
+
+  private Future<Registration> getRegistrationFromRow(Row row) {
+
+    Long realmId = row.getLong(REALM_COLUMN);
+    Future<Realm> realmFuture = RealmProvider.createFrom(vertx)
+      .getRealmFromId(realmId);
+
+    return realmFuture
+      .compose(realm -> {
+
+        Long listId = row.getLong(LIST_ID_COLUMN);
+        Future<RegistrationList> publicationFuture = ListProvider.create(vertx).getListById(listId, realm);
+
+        Long subscriberId = row.getLong(USER_COLUMN);
+        Future<User> publisherFuture = UserProvider.createFrom(vertx)
+          .getUserById(subscriberId, realm);
+
+        return Future
+          .all(publicationFuture, publisherFuture)
+          .onFailure(e -> {
+            throw new InternalException(e);
+          })
+          .compose(mapper -> {
+
+            JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
+            Registration registration = Json.decodeValue(jsonAppData.toBuffer(), Registration.class);
+
+            RegistrationList registrationListResult = mapper.resultAt(0);
+            User subscriberResult = mapper.resultAt(1);
+
+            registration.setList(registrationListResult);
+            registration.setSubscriber(subscriberResult);
+
+//        LocalDateTime creationTime = row.getOffsetDateTime(SUBSCRIPTION_PREFIX + COLUMN_PART_SEP + CREATION_TIME);
+//        subscription.setCreationTime(creationTime);
+
+            return Future.succeededFuture(registration);
+          });
+      });
+
+
+  }
+
+  public Future<Registration> getRegistrationByGuid(String registrationGuid) {
+
+    Guid guidObject;
+    try {
+      guidObject = this.getGuidObject(registrationGuid);
+    } catch (CastException e) {
+      throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
+    }
+
+    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    String sql = "SELECT * " +
+      "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      " WHERE " +
+      REALM_COLUMN + " = $1\n" +
+      "AND " + LIST_ID_COLUMN + " = $2\n " +
+      "and " + USER_COLUMN + " = $3";
+    return jdbcPool.preparedQuery(sql)
+      .execute(Tuple.of(
+        guidObject.getRealmId(),
+        guidObject.getFirstObjectId(),
+        guidObject.getSecondObjectId())
+      )
+      .onFailure(e -> LOGGER.error("Unable to retrieve the registration. Error: " + e.getMessage() + ". Sql: \n" + sql, e))
+      .compose(userRows -> {
+
+        if (userRows.size() == 0) {
+          return Future.succeededFuture();
+        }
+
+        if (userRows.size() > 1) {
+          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration guid " + guidObject);
+          return Future.failedFuture(internalException);
+        }
+
+        Row row = userRows.iterator().next();
+        return getRegistrationFromRow(row);
+      });
+  }
+
+  private Guid getGuidObject(String registrationGuid) throws CastException {
+    return Guid.createObjectFromRealmIdAndTwoObjectId(SHORT_PREFIX, registrationGuid, vertx);
+  }
+
+
+  public Future<java.util.List<RegistrationShort>> getRegistrations(String listGuid) {
+    Guid guid;
+    try {
+      guid = ListProvider.create(vertx).getGuidObject(listGuid);
+    } catch (CastException e) {
+      return Future.failedFuture(e);
+    }
+    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    return jdbcPool.preparedQuery(
+        "SELECT registration_list_id as list_id, registration_user_id as user_id, user_email as subscriber_email " +
+          " FROM cs_realms.realm_list_registration  registration " +
+          " JOIN cs_realms.realm_user \"user\" " +
+          " on registration.registration_user_id = \"user\".user_id" +
+          " WHERE " +
+          " registration.registration_realm_id = $1" +
+          " AND registration.registration_list_id = $2"
+      )
+      .execute(Tuple.of(
+        guid.getRealmId(),
+        guid.getFirstObjectId()
+      ))
+      .onFailure(FailureStatic::failFutureWithTrace)
+      .compose(registrationRows -> {
+
+        java.util.List<RegistrationShort> futureSubscriptions = new ArrayList<>();
+        if (registrationRows.size() == 0) {
+          return Future.succeededFuture(futureSubscriptions);
+        }
+
+        for (Row row : registrationRows) {
+
+
+          RegistrationShort registrationShort = new RegistrationShort();
+          Long listId = row.getLong("list_id");
+          Long userId = row.getLong("user_id");
+          registrationShort.setGuid(Guid.getGuid(listId, userId, vertx));
+          String subscriberEmail = row.getString("subscriber_email");
+          registrationShort.setSubscriberEmail(subscriberEmail);
+
+          futureSubscriptions.add(registrationShort);
+
+        }
+        /**
+         * https://vertx.io/docs/vertx-core/java/#_future_coordination
+         * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
+         */
+        return Future.succeededFuture(futureSubscriptions);
+
+      });
+  }
+
+  public Future<Registration> getRegistrationByListGuidAndSubscriberEmail(String listGuid, String subscriberEmail) {
+    Guid listGuidObject;
+    try {
+      listGuidObject = ListProvider.create(vertx).getGuidObject(listGuid);
+    } catch (CastException e) {
+      throw ValidationException.create("The listGuid is not valid", "listGuid", listGuid);
+    }
+
+    String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
+      + " JOIN cs_realms." + UserProvider.TABLE_NAME + " userTable"
+      + " ON userTable.user_id = cs_realms.realm_list_registration.registration_user_id"
+      + " WHERE "
+      + " registration_realm_id = $1 "
+      + "AND registration_list_id = $2 "
+      + "and userTable.user_email = $3";
+    Tuple parameters = Tuple.of(
+      listGuidObject.getRealmId(),
+      listGuidObject.getFirstObjectId(),
+      subscriberEmail
+    );
+    return JdbcPoolCs.getJdbcPool(this.vertx).preparedQuery(sql)
+      .execute(parameters)
+      .onFailure(e -> LOGGER.error("Get registration by list guid and subscriber email error: " + e.getMessage(), e))
+      .compose(userRows -> {
+
+        if (userRows.size() == 0) {
+          return Future.succeededFuture();
+        }
+
+        if (userRows.size() > 1) {
+          return Future.failedFuture(new InternalError("Too much registration for list (" + listGuidObject + "), email (" + subscriberEmail + ")"));
+        }
+
+        Row row = userRows.iterator().next();
+        return getRegistrationFromRow(row);
+      });
+  }
+
+  private void computeGuid(Registration registration) {
+    if (registration.getGuid() != null) {
+      return;
+    }
+    String guid = Guid.createGuidStringFromRealmAndTwoObjectId(
+      SHORT_PREFIX,
+      registration.getList().getRealm(),
+      registration.getList().getLocalId(),
+      registration.getSubscriber().getLocalId(),
+      vertx);
+    registration.setGuid(guid);
+  }
+
+
+  public Registration toTemplateClone(Registration registration) {
+    return toClone(registration, true);
+  }
+}

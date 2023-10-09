@@ -20,7 +20,8 @@ import java.util.stream.Collectors;
 public class HttpFileSystemProvider extends FileSystemProvider {
 
 
-  private Map<URI, HttpFileSystem> httpFileSystems = new HashMap<>();
+  private static final Map<URI, HttpFileSystem> httpFileSystems = new HashMap<>();
+
 
   @Override
   public String getScheme() {
@@ -30,6 +31,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
 
   @Override
   public final HttpFileSystem newFileSystem(final URI uri, final Map<String, ?> env) {
+
     try {
       HttpFileSystem httpFileSystem = httpFileSystems.get(uri);
       if (httpFileSystem == null) {
@@ -40,6 +42,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
+
   }
 
   @Override
@@ -47,18 +50,20 @@ public class HttpFileSystemProvider extends FileSystemProvider {
     return httpFileSystems.get(uri);
   }
 
-  @Override
-  public final HttpPath getPath(final URI uri) {
-    /**
-     * This function may be called directly via {@link java.nio.file.Paths#get(URI)}
-     * the file system was then may be not created
-      */
 
+  @Override
+  public final HttpRequestPath getPath(final URI uri) {
+
+    /**
+     * This function may be called directly via {@link java.nio.file.Paths}
+     * the file system was then may be not created
+     */
     HttpFileSystem fileSystem = getFileSystem(uri);
-    if (fileSystem==null){
+    if (fileSystem == null) {
       fileSystem = newFileSystem(uri, null);
     }
-    return fileSystem.getPath(uri);
+
+    return fileSystem.getPath(uri.getPath());
 
 
   }
@@ -70,7 +75,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
 
     if (options.isEmpty() ||
       (options.size() == 1 && options.contains(StandardOpenOption.READ))) {
-      return new HttpSeekableByteChannel((HttpPath) path);
+      return new HttpSeekableByteChannel((HttpRequestPath) path);
     } else {
       throw new UnsupportedOperationException(
         String.format("Only %s is supported for %s, but %s options(s) are provided",
@@ -81,7 +86,7 @@ public class HttpFileSystemProvider extends FileSystemProvider {
   @Override
   public final DirectoryStream<Path> newDirectoryStream(final Path dir,
                                                         final DirectoryStream.Filter<? super Path> filter) throws IOException {
-    throw new UnsupportedOperationException("Not implemented");
+    throw new UnsupportedOperationException("HTTP does not support the notion of directory");
   }
 
   /**
@@ -125,49 +130,68 @@ public class HttpFileSystemProvider extends FileSystemProvider {
 
   @Override
   public final FileStore getFileStore(final Path path) {
-    throw new UnsupportedOperationException("Not implemented");
+    return new HttpFileStore();
   }
 
+  /**
+   * check access is meaning less in HTTP.
+   * <p>
+   * Why ?
+   * A `HEAD` method may be not authorized (405)
+   * while a `GET` is
+   *
+   * @param path  - the path to check
+   * @param modes - the access modes
+   * @throws IOException - if the file is not accessible or does not exists
+   */
   @Override
   public final void checkAccess(final Path path, final AccessMode... modes) throws IOException {
 
-    if (modes.length==0){
-      try {
+    if (!((HttpRequestPath) path).getFileSystem().shouldCheckAccess()) {
+      return;
+    }
+
+    if (modes.length == 0) {
+
+      // check the existence of the file
+      HttpRequestPath httpPath = (HttpRequestPath) path;
+      HttpURLConnection fetch = HttpStatic.getHttpFetchObject(httpPath);
+      fetch.setRequestMethod("HEAD");
+      fetch.connect();
+      int responseCode = fetch.getResponseCode();
+      if (responseCode != HttpURLConnection.HTTP_OK) {
+        // if (Arrays.asList(HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_UNAUTHORIZED).contains(responseCode)) {
+        /**
+         * For the {@link Files#exists(Path, LinkOption...)}
+         * you need to throw a IO exception
+         *
+         * For the {@link Files#notExists(Path, LinkOption...)}
+         * you need to throw a IO exception (not
+         */
+        throw new NoSuchFileException(httpPath + ". The http request was not successful, we got the following response code: " + responseCode);
+
+      }
+
+    } else {
+      // Read
+      if (modes.length == 1 && modes[0] == AccessMode.READ) {
+
         // check the existence of the file
-        HttpPath httpPath = (HttpPath) path;
-        HttpURLConnection connection = HttpStatic.getConnection(httpPath.getUrl());
+        HttpRequestPath httpPath = (HttpRequestPath) path;
+        HttpURLConnection connection = HttpStatic.getHttpFetchObject(httpPath);
         connection.setRequestMethod("HEAD");
         connection.connect();
         int responseCode = connection.getResponseCode();
-        if (responseCode !=HttpURLConnection.HTTP_OK){
-          if (responseCode==HttpURLConnection.HTTP_NOT_FOUND) {
-            throw new NoSuchFileException(httpPath.toString());
-          } else {
-            throw new RuntimeException("The http request was not successful, we got the following response code "+responseCode);
-          }
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+          /**
+           * IO Exception is needed for {@link Files#isAccessible(Path, AccessMode...)}
+           */
+          throw new IOException("No read permission. The http request was not successful, we got the following response code " + responseCode);
         }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      // Read
-      if (modes.length==1 && modes[0]==AccessMode.READ){
-        try {
-          // check the existence of the file
-          HttpPath httpPath = (HttpPath) path;
-          HttpURLConnection connection = HttpStatic.getConnection(httpPath.getUrl());
-          connection.setRequestMethod("HEAD");
-          connection.connect();
-          int responseCode = connection.getResponseCode();
-          if (responseCode!=HttpURLConnection.HTTP_OK){
-              throw new SecurityException("No read permission. The http request was not successful, we got the following response code "+responseCode);
-          }
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+
       } else {
-        // A IOException is catched by the isAccessible function
-        throw new IOException("Http cannot handle the following modes "+ Arrays.stream(modes).map(Enum::toString).collect(Collectors.joining(",")));
+        // A IOException is caught by the isAccessible function
+        throw new IOException("Http cannot handle the following modes " + Arrays.stream(modes).map(Enum::toString).collect(Collectors.joining(",")));
       }
     }
 
@@ -182,20 +206,52 @@ public class HttpFileSystemProvider extends FileSystemProvider {
   @Override
   public final <A extends BasicFileAttributes> A readAttributes(final Path path,
                                                                 final Class<A> type, final LinkOption... options) throws IOException {
-    return (A) new HttpBasicFileAttributes((HttpPath) path);
+    //noinspection unchecked
+    return (A) new HttpBasicFileAttributes((HttpRequestPath) path);
   }
 
   @Override
   public final Map<String, Object> readAttributes(final Path path, final String attributes,
                                                   final LinkOption... options) throws IOException {
-    throw new UnsupportedOperationException("Not implemented");
+    if (options.length != 0) {
+      throw new UnsupportedOperationException("Link options are not implemented");
+    }
+    Map<String, Object> values = new HashMap<>();
+    for (String attribute : attributes.split(",")) {
+      Object value = ((HttpRequestPath) path).readAttribute(attribute);
+      /**
+       * {@link Files#getAttribute(Path, String, LinkOption...)} }
+       * is checking only the attribute without the namespace strange
+       */
+      String attributeWithoutNamespace = this.getAttributeWithoutNamespace(attribute);
+      values.put(attributeWithoutNamespace, value);
+    }
+    return values;
+  }
+
+  /**
+   * @param attribute - the attribute to get
+   * @return the attribute without the namespace
+   */
+  private String getAttributeWithoutNamespace(String attribute) {
+    int pos = attribute.indexOf(':');
+    String name;
+    if (pos == -1) {
+      name = attribute;
+    } else {
+      name = (pos == attribute.length()) ? "" : attribute.substring(pos + 1);
+    }
+    return name;
   }
 
   @Override
   public final void setAttribute(final Path path, final String attribute, final Object value,
                                  final LinkOption... options) throws IOException {
-    throw new UnsupportedOperationException(this.getClass().getName() +
-      " is read-only: cannot set attributes to paths");
+    if (options == null) {
+      throw new UnsupportedOperationException(this.getClass().getName() +
+        " is read-only: cannot set attributes to paths");
+    }
+    ((HttpRequestPath) path).setAttribute(attribute, value);
   }
 
   @Override

@@ -15,23 +15,24 @@ class HttpStatic {
 
   /**
    * Doc: https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
-   *
+   * <p>
    * The Content-Length header is not required.
    * Generated pages don't send it, they instead use things like Transfer-Encoding: chunked
    * Where the end of the response is signaled by a zero size chunk; or by forgoing persistent connections (via Connection: close) and simply closing the connection when the response is fully sent.
-   *
+   * <p>
    * If the request is for a static file, there's a good chance that Content-Length will be present
    * and you can get the size without downloading the file.
-   *
+   * <p>
    * But in the general case, the only fully viable way is by actually downloading the full response.
    *
-   * @param url
-   * @return
+   * See also {@link HttpResponse#getSize()}
+   * @param httpRequestPath - the request path
+   * @return the size
    */
-  static long getSize(URL url) {
+  static Long getSizeWithHeadRequest(HttpRequestPath httpRequestPath) {
     final HttpURLConnection connection;
     try {
-      connection = getConnection(url);
+      connection = getHttpFetchObject(httpRequestPath);
       connection.setRequestMethod("HEAD");
       connection.setRequestProperty("Accept-Encoding", "identity"); // no compression, nor modification
       connection.connect();
@@ -48,7 +49,8 @@ class HttpStatic {
       size = connection.getContentLengthLong();
 
       if (size == -1) {
-        throw new RuntimeException("The content-length header was not present in the response. We cannot therefore define the size for the URL ("+url+")");
+        HttpLog.LOGGER.fine("The content-length header was not present in the response. We cannot therefore define the size for the path (" + httpRequestPath + ")");
+        return null;
       }
 
     } finally {
@@ -61,27 +63,37 @@ class HttpStatic {
    * A wrapper around a connection because the agent is
    * everywhere mandatory.
    *
-   * @param url
-   * @return
+   * @param httpPath - the path request to fetch
+   * @return the connection (fetch object, response comes after connect)
+   *
+   * TODO: Returns a request
    */
-  static HttpURLConnection getConnection(URL url) {
+  static HttpURLConnection getHttpFetchObject(HttpRequestPath httpPath) {
     try {
+
+      URL url = httpPath.toUri().toURL();
       URLConnection urlConnection = url.openConnection();
-      if (!(urlConnection instanceof HttpURLConnection))
-      {
+      if (!(urlConnection instanceof HttpURLConnection)) {
         throw new RuntimeException("The URL is not using HTTP/HTTPS: " + url);
       }
       HttpURLConnection connection = (HttpURLConnection) urlConnection;
-      if (urlConnection instanceof HttpsURLConnection){
+      if (urlConnection instanceof HttpsURLConnection) {
         // Trust all certificates
         // TODO: implement it as option
         ((HttpsURLConnection) urlConnection).setSSLSocketFactory(Ssls.getTrustAllCertificateSocketFactory());
       }
       connection.addRequestProperty("User-Agent", HttpFileSystem.USER_AGENT);
+      if (httpPath.getFileSystem().hasPassword()) {
+        connection.addRequestProperty("Authorization", "Basic " + httpPath.getFileSystem().getBasicAuthenticationString());
+      }
+      if (url.getHost().endsWith("api.mailchimp.com") && !httpPath.getFileSystem().hasPassword()) {
+        throw new RuntimeException("A API key should be given as password property for the mailchimp API");
+      }
       return connection;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
+
 
 }

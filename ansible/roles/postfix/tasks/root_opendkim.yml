@@ -60,22 +60,17 @@
   notify: restart opendkim
   lineinfile:
     dest: '{{ dkim_key_table_path }}'
-    line: "{{ item.name }} {{ item.value }}"
-    regexp: "{{ item.name }}"
-  with_items:
-    - name: '{{ dkim_dns_key }}'
-      value: '{{ dkim_domain }}:{{ dkim_selector }}:{{ dkim_key_path }}'
+    line: "{{ dkim_selector }}._domainkey.{{ item.name }} {{ item.name }}:{{ dkim_selector }}:{{ dkim_key_path }}"
+    regexp: "{{ dkim_selector }}._domainkey.{{ item.name }}"
+  with_items: "{{ dkim_domains }}"
 
 - name: Update opendkim SigningTable file
   notify: restart opendkim
   lineinfile:
     dest: '{{ dkim_signing_table_path }}'
-    line: "*@{{ item.name }} {{ item.value }}"
+    line: "*@{{ item.name }} {{ dkim_selector }}._domainkey.{{ item.name }}"
     regexp: "\\*@{{ item.name }}"
-  with_items:
-    - name: '{{ dkim_domain }}'
-      value: '{{ dkim_dns_key }}'
-
+  with_items: "{{ dkim_domains }}"
 
 
 - name: Update Postfix configuration.
@@ -101,6 +96,8 @@
   changed_when: "dns_test_result.rc != 0"
   failed_when: "dns_test_result.rc != 0"
   shell:
-    cmd: "opendkim-testkey -d {{ dkim_domain }} -s {{ dkim_selector }} -k {{ dkim_key_path }}"
+    cmd: "opendkim-testkey -d {{ item.name }} -s {{ dkim_selector }} -k {{ dkim_key_path }}"
+  with_items: "{{ dkim_domains }}"
+  tags: dkim-test-key
 
 

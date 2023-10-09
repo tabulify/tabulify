@@ -1,0 +1,15 @@
+
+- name: Apps
+  become: true
+  include: apps.yml
+  tags: apps
+
+- name: Tower
+  become: true
+  include: tower.yml
+  tags: app-tower
+
+- name: Tabli
+  become: true
+  include: tabli.yml
+  tags: app-tabli

@@ -1,22 +1,20 @@
 package net.bytle.db.gen;
 
 import net.bytle.db.gen.generator.CollectionGenerator;
-import net.bytle.db.gen.generator.CollectionGeneratorMultiple;
-import net.bytle.db.gen.generator.CollectionGeneratorOnce;
-import net.bytle.db.gen.generator.DerivedCollectionGenerator;
 import net.bytle.db.model.ColumnDef;
-import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStreamAbs;
-import net.bytle.type.Typess;
+import net.bytle.type.Casts;
 
 import java.sql.Clob;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GenSelectStream extends SelectStreamAbs {
 
   private final GenDataPath genDataPath;
+
   long actualRowId = 0;
 
   // For each column def, it's value (ie a row)
@@ -27,43 +25,13 @@ public class GenSelectStream extends SelectStreamAbs {
     super(dataPath);
     this.genDataPath = dataPath;
 
-  }
-
-  /**
-   * Recursive function that create data for each column for a row
-   * The function is recursive to be able to handle direct relationship between columns (ie derived generator)
-   *
-   * @param columnDef
-   * @param columnValues
-   */
-  private void populateColumnValues(Map<ColumnDef, Object> columnValues, GenColumnDef columnDef) {
-
-    if (columnValues.get(columnDef) == null) {
-
-      CollectionGenerator collectionGenerator = columnDef.getGenerator();
-
-      if (collectionGenerator instanceof DerivedCollectionGenerator) {
-        DerivedCollectionGenerator dataGeneratorDerived = (DerivedCollectionGenerator) collectionGenerator;
-        GenColumnDef parentColumn = dataGeneratorDerived.getParentGenerator().getColumn();
-        // The column value of the parent must be generated before
-        if (columnValues.get(parentColumn) == null) {
-          populateColumnValues(columnValues, parentColumn);
-        }
-        columnValues.put(columnDef, ((DerivedCollectionGenerator) collectionGenerator).getNewValue());
-      }
-      if (collectionGenerator instanceof CollectionGeneratorOnce) {
-        columnValues.put(columnDef, ((CollectionGeneratorOnce) collectionGenerator).getNewValue());
-      } else {
-        columnValues.put(columnDef, ((CollectionGeneratorMultiple) collectionGenerator).getNewValue(columnDef));
-      }
-
-    }
 
   }
+
 
   @Override
   public boolean next() {
-    if (actualRowId >= genDataPath.getOrCreateDataDef().getSize()) {
+    if (actualRowId >= genDataPath.getCount()) {
       return false;
     } else {
       actualRowId++;
@@ -74,20 +42,37 @@ public class GenSelectStream extends SelectStreamAbs {
 
   private void buildRow() {
     row = new HashMap<>();
-    for (GenColumnDef columnDef : genDataPath.getOrCreateDataDef().getColumnDefs()) {
-      populateColumnValues(row, columnDef);
+    List<CollectionGenerator<?>> collectionGenerators = CollectionGenerator.createDag()
+      .addRelations(
+        genDataPath.getOrCreateRelationDef()
+          .getAllColumnDefs()
+          .stream()
+          .map(c -> (c.getOrCreateGenerator(c.getClazz()))
+            .setColumnDef(c))
+          .collect(Collectors.toList())
+      )
+      .getCreateOrdered();
+    for(CollectionGenerator<?> c: collectionGenerators){
+      GenColumnDef columnDef = c.getColumnDef();
+      Object newValue = c.getNewValue();
+      row.put(columnDef, newValue);
     }
 
   }
 
   @Override
   public void close() {
-    Arrays.stream(this.genDataPath.getOrCreateDataDef().getColumnDefs()).forEach(c->c.getGenerator().reset());
+    genDataPath.getOrCreateRelationDef()
+      .getColumnDefs()
+      .forEach(c ->
+        c.getOrCreateGenerator(c.getClazz())
+          .reset()
+      );
   }
 
   @Override
   public String getString(int columnIndex) {
-    return getObject(columnIndex).toString();
+    return String.valueOf(getObject(columnIndex));
   }
 
   @Override
@@ -100,15 +85,18 @@ public class GenSelectStream extends SelectStreamAbs {
     if (actualRowId == 0) {
       throw new RuntimeException("You are on the row 0, you need to use the next function before retrieving a value");
     }
-    return row.keySet().stream()
-      .filter(c -> c.getColumnPosition().equals(columnIndex + 1))
-      .map(c -> row.get(c))
+
+    ColumnDef columnDef = row.keySet().stream()
+      .filter(c -> c.getColumnPosition().equals(columnIndex))
       .findFirst()
       .orElse(null);
-  }
 
-  @Override
-  public void runtimeDataDef(RelationDef relationDef) {
+    /**
+     * Because the value generated may be null
+     * we don't get the value in the stream
+     */
+    return row.get(columnDef);
+
 
   }
 
@@ -116,14 +104,14 @@ public class GenSelectStream extends SelectStreamAbs {
   @Override
   public Double getDouble(int columnIndex) {
 
-    return Typess.safeCast(getObject(columnIndex), Double.class);
+    return Casts.castSafe(getObject(columnIndex), Double.class);
 
   }
 
   @Override
   public Clob getClob(int columnIndex) {
 
-    return Typess.safeCast(getObject(columnIndex), Clob.class);
+    return Casts.castSafe(getObject(columnIndex), Clob.class);
 
   }
 
@@ -133,15 +121,17 @@ public class GenSelectStream extends SelectStreamAbs {
   }
 
   @Override
-  public List<Object> getObjects() {
-    return Arrays.stream(genDataPath.getOrCreateDataDef().getColumnDefs())
+  public List<?> getObjects() {
+    return genDataPath
+      .getOrCreateRelationDef().getColumnDefs()
+      .stream()
       .map(c -> row.get(c))
       .collect(Collectors.toList());
   }
 
   @Override
   public Integer getInteger(int columnIndex) {
-    return Typess.safeCast(getObject(columnIndex), Integer.class);
+    return Casts.castSafe(getObject(columnIndex), Integer.class);
   }
 
   @Override
@@ -155,16 +145,6 @@ public class GenSelectStream extends SelectStreamAbs {
   @Override
   public void beforeFirst() {
     throw new RuntimeException("Not yet supported for data generation path");
-  }
-
-  @Override
-  public void execute() {
-
-  }
-
-  @Override
-  public <T> T getObject(String columnName, Class<T> clazz) {
-    return (T) getObject(columnName);
   }
 
 

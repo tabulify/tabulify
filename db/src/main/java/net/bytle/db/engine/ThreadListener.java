@@ -8,12 +8,12 @@ import java.util.List;
 public interface ThreadListener {
 
 
-  List<RuntimeException> getExceptions();
+  List<Exception> getExceptions();
 
   void addException(Exception e);
 
   int getExitStatus();
 
-  String getErrorMessage();
+  List<String> getErrorMessages();
 
 }

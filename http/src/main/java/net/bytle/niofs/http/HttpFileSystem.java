@@ -1,15 +1,14 @@
 package net.bytle.niofs.http;
 
+import net.bytle.type.Base64Utility;
+import net.bytle.type.Casts;
+
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 final class HttpFileSystem extends FileSystem {
 
@@ -17,12 +16,64 @@ final class HttpFileSystem extends FileSystem {
   static final String USER_AGENT = "Bytle NioFs Http";
   private final HttpFileSystemProvider provider;
   private final URL url;
-  private final Map<String, ?> env;
+  @SuppressWarnings({"FieldCanBeLocal", "MismatchedQueryAndUpdateOfCollection"})
+  private final Map<String, Object> envs = new HashMap<>();
+  private Object user;
 
-  public HttpFileSystem(HttpFileSystemProvider provider, URL url, final Map<String, ?> env) {
+  private Object password;
+
+  public HttpFileSystem(HttpFileSystemProvider provider, URL url, final Map<String, ?> envs) {
+
     this.provider = provider;
     this.url = url;
-    this.env = env;
+
+    if (envs != null) {
+      for (Map.Entry<String, ?> env : envs.entrySet()) {
+
+        String attribute = env.getKey();
+        Object value = env.getValue();
+
+        HttpRequestAttribute attributeObject;
+        try {
+          attributeObject = Casts.cast(attribute, HttpRequestAttribute.class);
+          switch (attributeObject) {
+            case USER:
+              this.setUser(value);
+              break;
+            case PASSWORD:
+              this.setPassword(value);
+              break;
+          }
+        } catch (Exception e) {
+          // not known
+          this.envs.put(attribute, value);
+        }
+
+      }
+    }
+
+
+  }
+
+  HttpFileSystem setUser(Object user) {
+    this.user = user;
+    return this;
+  }
+
+  public boolean hasPassword() {
+    return this.password != null;
+  }
+
+  public String getBasicAuthenticationString() {
+    Objects.requireNonNull(this.user, "User should be provided for basic authentication string");
+    Objects.requireNonNull(this.password, "Password should be provided for basic authentication string");
+    return Base64Utility.stringToBase64UrlString(this.user + ":" + this.password);
+  }
+
+
+  HttpFileSystem setPassword(Object password) {
+    this.password = password;
+    return this;
   }
 
   @Override
@@ -56,8 +107,12 @@ final class HttpFileSystem extends FileSystem {
 
   @Override
   public Iterable<Path> getRootDirectories() {
-    throw new UnsupportedOperationException("Not implemented");
+
+    HttpRequestPath rootPath = getPath(this.getSeparator());
+    return Collections.singletonList(rootPath);
+
   }
+
 
   @Override
   public Iterable<FileStore> getFileStores() {
@@ -70,19 +125,16 @@ final class HttpFileSystem extends FileSystem {
   }
 
   @Override
-  public HttpPath getPath(final String first, final String... more) {
-    throw new UnsupportedOperationException("Not implemented");
-  }
+  public HttpRequestPath getPath(final String first, final String... more) {
 
-
-
-  HttpPath getPath(final URI uri) {
-    try {
-      return new HttpPath(this, uri.toURL());
-    } catch (MalformedURLException e) {
-      throw new RuntimeException();
+    String path = first;
+    if (more.length > 0) {
+      path += getSeparator() + String.join(getSeparator(), more);
     }
+    return new HttpRequestPath(this, path);
+
   }
+
 
   @Override
   public PathMatcher getPathMatcher(final String syntaxAndPattern) {
@@ -119,4 +171,33 @@ final class HttpFileSystem extends FileSystem {
   public int hashCode() {
     return Objects.hash(url);
   }
+
+  /**
+   * @return return if we check the access (readability, existence) with the `HEAD` method
+   */
+  public boolean shouldCheckAccess() {
+    /**
+     * No, by default because `HEAD` has a side effect in the fact that it may be
+     * just not authorized (405) while a `GET` will
+     *
+     */
+    return false;
+  }
+
+  public String getWorkingStringPath() {
+    String path = this.url.getPath();
+    if (path.equals("")) {
+      return this.getRootCharacter();
+    }
+    return path;
+  }
+
+  public URL getConnectionUrl() {
+    return this.url;
+  }
+
+  public String getRootCharacter() {
+    return this.getSeparator();
+  }
+
 }

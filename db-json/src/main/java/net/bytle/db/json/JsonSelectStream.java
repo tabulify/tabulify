@@ -6,15 +6,14 @@ import com.fasterxml.jackson.core.JsonToken;
 import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.fs.Fs;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Clob;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class JsonSelectStream extends SelectStreamAbs {
 
@@ -25,6 +24,12 @@ public class JsonSelectStream extends SelectStreamAbs {
 
   // A map to hold
   private Map<String, String> currentRecordKeyValue;
+
+  /**
+   * A pointer to know in case of a JSON file
+   * if the whole JSON file was read
+   */
+  private boolean wholeJsonFileWasRead = false;
 
   public JsonSelectStream(JsonDataPath dataPath) {
     super(dataPath);
@@ -41,18 +46,31 @@ public class JsonSelectStream extends SelectStreamAbs {
   @Override
   public boolean next() {
     try {
-      String currentLine = reader.readLine();
-      if (currentLine == null) {
-        return false;
+      String currentLine;
+      if (Fs.getExtension(jsonDataPath.getAbsoluteNioPath()).equalsIgnoreCase("jsonl")) {
+        currentLine = reader.readLine();
+        if (currentLine == null) {
+          return false;
+        }
       } else {
-        lineNumber++;
+        if (!wholeJsonFileWasRead) {
+          currentLine = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+          wholeJsonFileWasRead = true;
+        } else {
+          return false;
+        }
+      }
+
+      lineNumber++;
+      currentRecordKeyValue = new HashMap<>();
+
+      if (this.jsonDataPath.getStructure() == JsonStructure.PROPERTIES) {
         JsonParser jsonParser = jsonFactory.createParser(currentLine);
         if (jsonParser.nextToken() != JsonToken.START_OBJECT) {
           throw new IOException("The line (" + lineNumber + ") is not a Json object because it does not start with " + JsonToken.START_OBJECT + " (" + currentLine + ")");
         }
 
         // Iterate over object fields
-        currentRecordKeyValue = new HashMap<>();
         while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
 
           String columnName = jsonParser.getCurrentName();
@@ -63,8 +81,11 @@ public class JsonSelectStream extends SelectStreamAbs {
         }
 
         jsonParser.close();
-        return true;
+      } else if (this.jsonDataPath.getStructure() == JsonStructure.DOCUMENT) {
+        currentRecordKeyValue.put(this.jsonDataPath.getColumnName(), currentLine);
       }
+      return true;
+
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -76,13 +97,8 @@ public class JsonSelectStream extends SelectStreamAbs {
 
   }
 
-  @Override
-  public String getString(int columnIndex) {
-    return currentRecordKeyValue.get(getColumnName(columnIndex));
-  }
-
   private String getColumnName(int columnIndex) {
-    return jsonDataPath.getOrCreateDataDef().getColumnDef(columnIndex).getColumnName();
+    return jsonDataPath.getOrCreateRelationDef().getColumnDef(columnIndex).getColumnName();
   }
 
   @Override
@@ -95,36 +111,6 @@ public class JsonSelectStream extends SelectStreamAbs {
     return currentRecordKeyValue.get(getColumnName(columnIndex));
   }
 
-  @Override
-  public void runtimeDataDef(RelationDef relationDef) {
-
-  }
-
-
-  @Override
-  public Double getDouble(int columnIndex) {
-    return Double.parseDouble(getString(columnIndex));
-  }
-
-  @Override
-  public Clob getClob(int columnIndex) {
-    throw new UnsupportedOperationException("Get a clob is not implemented");
-  }
-
-  @Override
-  public boolean next(Integer timeout, TimeUnit timeUnit) {
-    throw new UnsupportedOperationException("No Json stream iteration implemented");
-  }
-
-  @Override
-  public List<Object> getObjects() {
-    throw new RuntimeException("Not Implemented");
-  }
-
-  @Override
-  public Integer getInteger(int columnIndex) {
-    return Integer.parseInt(getString(columnIndex));
-  }
 
   @Override
   public Object getObject(String columnName) {
@@ -135,21 +121,14 @@ public class JsonSelectStream extends SelectStreamAbs {
   public void beforeFirst() {
     try {
       lineNumber = 0;
-      reader = Files.newBufferedReader(jsonDataPath.getNioPath());
+      reader = Files.newBufferedReader(jsonDataPath.getAbsoluteNioPath());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   @Override
-  public void execute() {
-    // no external request, nothing to do
+  public RelationDef getRuntimeRelationDef() {
+    return this.jsonDataPath.getOrCreateRelationDef();
   }
-
-  @Override
-  public <T> T getObject(String columnName, Class<T> clazz) {
-    throw new RuntimeException("Not Implemented");
-  }
-
-
 }

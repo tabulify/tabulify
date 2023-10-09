@@ -1,27 +1,25 @@
 package net.bytle.db.csv;
 
-import net.bytle.db.fs.FsBinaryFileManager;
+import net.bytle.db.fs.binary.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
-
-import java.nio.file.Path;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 public class CsvManagerProvider extends FsFileManagerProvider {
-  private CsvManager csvManager;
+
+  private CsvManagerFs csvManager;
 
   @Override
-  public Boolean accept(Path path) {
+  public Boolean accept(MediaType mimeType) {
 
-    if (path.toString().toLowerCase().endsWith("csv")){
-      return true;
-    } else {
-      return false;
-    }
+    // you may also have application/csv, text/csv ...
+    return mimeType.getSubType().equals(MediaTypes.TEXT_CSV.getSubType());
   }
 
   @Override
   public FsBinaryFileManager getFsFileManager() {
     if (csvManager == null){
-      csvManager = new CsvManager();
+      csvManager = new CsvManagerFs();
     }
     return csvManager;
   }

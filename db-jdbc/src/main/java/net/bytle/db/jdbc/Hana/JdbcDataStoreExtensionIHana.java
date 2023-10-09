@@ -1,7 +1,11 @@
 package net.bytle.db.jdbc.Hana;
 
-import net.bytle.db.jdbc.*;
-import net.bytle.db.model.*;
+import net.bytle.db.engine.ForeignKeyDag;
+import net.bytle.db.jdbc.SqlDataPath;
+import net.bytle.db.jdbc.SqlConnection;
+import net.bytle.db.jdbc.SqlDataSystem;
+import net.bytle.db.model.ColumnDef;
+import net.bytle.db.model.SqlDataType;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -14,7 +18,7 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
 
 
 
-  public JdbcDataStoreExtensionIHana(SqlDataStore jdbcDataStore) {
+  public JdbcDataStoreExtensionIHana(SqlConnection jdbcDataStore) {
     super(jdbcDataStore);
   }
 
@@ -22,7 +26,7 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
     switch (sqlDataType.getTypeCode()) {
       case Types.VARCHAR:
         sqlDataType
-          .setTypeName("NVARCHAR");
+          .setSqlName("NVARCHAR");
     }
   }
 
@@ -54,46 +58,32 @@ public class JdbcDataStoreExtensionIHana extends SqlDataSystem {
    * @return
    */
   @Override
-  public List<String> createTableStatements(SqlDataPath sqlDataPath) {
-
-
-    List<String> statements = new ArrayList<>();
-
-    String statement = "create ";
+  public String createTableStatement(SqlDataPath sqlDataPath) {
 
     // String tableType = tableDef.getCreateProperties().getProperty("after_create");
     //        if (tableType != null){
     //            statement += tableType;
     //        }
-    statement += " table " + sqlDataPath.getName() + " (\n"
-      + createColumnsStatement(sqlDataPath)
-      + "\n)";
-
-    statements.add(statement);
-    final PrimaryKeyDef primaryKey = sqlDataPath.getOrCreateDataDef().getPrimaryKey();
-    if (primaryKey != null) {
-      statements.add(createPrimaryKeyStatement(sqlDataPath));
-    }
-
-    for (ForeignKeyDef foreignKeyDef : sqlDataPath.getOrCreateDataDef().getForeignKeys()) {
-      statements.add(createForeignKeyStatement(foreignKeyDef));
-    }
-
-    for (UniqueKeyDef uniqueKeyDef : sqlDataPath.getOrCreateDataDef().getUniqueKeys()) {
-      statements.add(createUniqueKeyStatement(uniqueKeyDef));
-    }
-
-    return statements;
+    return super.createTableStatement(sqlDataPath);
 
   }
 
 
-
+  /**
+   * https://help.sap.com/viewer/4fe29514fd584807ac9f2a04f6754767/2.0.03/en-US/20fe29f0751910149904f0c5c3201cfa.html
+   * @param sqlDataPaths
+   * @return
+   */
   @Override
-  public String truncateStatement(SqlDataPath dataPath) {
-    StringBuilder truncateStatementBuilder = new StringBuilder().append("truncate from ");
-    truncateStatementBuilder.append(JdbcDataSystemSql.getFullyQualifiedSqlName(dataPath));
-    return truncateStatementBuilder.toString();
+  public List<String> createTruncateStatement(List<SqlDataPath> sqlDataPaths) {
+    List<SqlDataPath> dropOrderDataPaths = ForeignKeyDag.createFromPaths(sqlDataPaths).getDropOrdered();
+    List<String> truncateStatements  = new ArrayList<>();
+    for (SqlDataPath dropOrderDataPath : dropOrderDataPaths) {
+      String stringBuilder = "truncate from " +
+        dropOrderDataPath.toSqlStringPath();
+      truncateStatements.add(stringBuilder);
+    }
+    return truncateStatements;
   }
 
 }

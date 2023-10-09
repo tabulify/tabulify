@@ -1,0 +1,40 @@
+---
+# All default configuration are located at: /etc/cassandra/default.conf
+# The jvm- files replace the cassandra-envsh file used in Cassandra versions prior to Cassandra 3.0.
+# The cassandra-env.sh bash script file is still useful if JVM settings must be dynamically calculated based on system settings. The jvm- files only store static JVM settings.
+#
+# Cassandra start process is:
+#   * The main: /usr/sbin/cassandra
+#   * Call /usr/share/cassandra/cassandra.in.sh
+#
+# Memory (adjusted from https://docs.datastax.com/en/cassandra-oss/3.0/cassandra/operations/opsTuneJVM.html)
+#
+# Heap size is automatically calculated by cassandra-env based on this
+# formula: max(min(1/2 ram, 1024MB), min(1/4 ram, 8GB))
+# That is:
+# - calculate 1/2 ram and cap to 1024MB
+# - calculate 1/4 ram and cap to 8192MB
+# - pick the max
+#
+# you can see the default at
+# the file is read in /etc/cassandra/default.conf/cassandra-env.sh
+# where there is the default calculation
+#
+- name: Cassandra | Configure Java
+  become: true
+  tags: cassandra-conf
+  lineinfile: # https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html
+    path: "{{ cassandra_conf }}/jvm8-server.options"
+    state: present
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertbefore: '# The newline in the end of file is intentional'
+  with_items:
+    - regexp: '^-Xms.*$'
+      line: '-Xms{{ cassandra_max_heap_size }}'
+    - regexp: '^-Xmx.*$'
+      line: '-Xmx{{ cassandra_max_heap_size }}'
+    - regexp: '^-Xmn.*$'
+      line: '-Xmn{{ cassandra_heap_newsize }}'
+  notify:
+    - cassandra restart

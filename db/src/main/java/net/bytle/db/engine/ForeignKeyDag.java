@@ -1,23 +1,29 @@
 package net.bytle.db.engine;
 
+import net.bytle.dag.Dag;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 
+import java.util.Collection;
 import java.util.List;
 
+/**
+ * An utility class to create a dag of {@link DataPath}
+ */
 public class ForeignKeyDag {
 
-  public static Dag get(DataPath dataPath) {
+  public static <T extends DataPath> Dag<T> createFromPaths(T dataPath) {
     if (Tabulars.isContainer(dataPath)) {
-      return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelations(Tabulars.getChildren(dataPath));
+      //noinspection unchecked
+      return (new Dag<T>().addRelations((List<? extends T>) Tabulars.getChildren(dataPath)));
     } else {
-      return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelation(dataPath);
+      return (new Dag<T>()).addRelation(dataPath);
     }
   }
 
-  public static Dag get(List<DataPath> dataPaths) {
+  public static <T extends DataPath> Dag<T> createFromPaths(Collection<T> dataPaths) {
 
-    return (new Dag(Dag.FOREIGN_KEY_DEPENDENCY)).addRelations(dataPaths);
+    return (new Dag<T>()).addRelations(dataPaths);
 
   }
 

@@ -1,23 +1,32 @@
 ---
 
-# Add EPEL
-- name: 'Package - Add the EPEL repository'
+
+# Add the repo
+# https://packagecloud.io/netdata/netdata
+# /etc/yum.repos.d/*
+# `el` in the baseurl means `entreprise linux`
+#
+- name: 'Netdata - Add the netdata repository'
   yum_repository:
-    name: epel
-    description: EPEL YUM repo
-    baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
-    gpgcheck: yes
-- name: "Package - Adds the gpg key from the EPEL repo"
+    name: netdata
+    description: Netdata Repo
+    baseurl: https://packagecloud.io/netdata/netdata/el/$releasever/$basearch/
+    gpgcheck: no
+    repo_gpgcheck: no
+    enabled: yes
+
+# https://packagecloud.io/app/netdata/netdata/gpg
+- name: "Netdata - Adds the gpg key"
   rpm_key:
     state: present
-    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+    key: https://packagecloud.io/netdata/netdata/gpgkey
 
 # Install
-- name: Install
+- name: "Netdata - Install"
   yum:
     name: netdata
     state: present
-    enablerepo: epel
+    enablerepo: netdata
 
 
 

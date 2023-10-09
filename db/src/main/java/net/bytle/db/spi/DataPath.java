@@ -1,41 +1,117 @@
 package net.bytle.db.spi;
 
-import net.bytle.db.database.DataStore;
-import net.bytle.db.engine.Relational;
+import net.bytle.dag.Dependency;
+import net.bytle.exception.NoParentException;
+import net.bytle.exception.NoVariableException;
+import net.bytle.exception.NotFoundException;
+import net.bytle.db.connection.Connection;
+import net.bytle.db.engine.StreamDependencies;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferProperties;
 import net.bytle.db.uri.DataUri;
+import net.bytle.type.Attribute;
+import net.bytle.type.MediaType;
+import net.bytle.type.Variable;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public interface DataPath extends Comparable<DataPath>, Relational {
-
-  DataStore getDataStore();
+/**
+ * A data path is the in-memory representation of a data resource
+ *
+ * It may be used to locate a data container (such as a file or a table)
+ * in a data system (file system, relational database).
+ *
+ */
+public interface DataPath extends Comparable<DataPath>, Dependency, StreamDependencies {
 
   /**
-   * A name is part of the path (if this is not the case, you can set a {@link #setDescription(String)}
    *
-   * @return
+   * @return the connection of this data path
+   */
+  Connection getConnection();
+
+  /**
+   * A name is the name identifier.
+   *
+   * A name is generally the last part of the path
+   *
+   * It should not be null even for a data path without a path (ie anonymous)
+   * Generate a name with a prefix and a generated id in this case
+   *
+   * A File system may add structure information in the name in the suffix.
+   *
+   * Example:
+   *   * data.csv
+   *   * or data--datagen.csv
+   * The name without the suffix is called a  simplified name
+   * @return the name of the resource
    */
   String getName();
 
+  /**
+   *
+   * The name without any suffix used to match database logical name
+   *
+   * Example in `data.csv`, the simplified name is `data`
+   * but you may choose another one to map to another table
+   *
+   * @return A logical name (simplified name)
+   */
+  String getLogicalName();
+
+  /**
+   *
+   * @return the names of the path
+   */
   List<String> getNames();
 
-  String getPath();
+  /**
+   *
+   * @return the relative path in the data system
+   */
+  String getRelativePath();
 
+  /**
+   *
+   * @return the id
+   * It should be equivalent to {@link #toDataUri()})
+   *
+   * Id is also used in the {@link Dependency#getId() dependency}
+   * in order to determine object equality
+   */
   String getId();
 
   /**
-   * @return a {@link RelationDef} object created from the data store metadata or an empty object if it does not exist
+   * @return a {@link DataDef} object created from the data store metadata or an empty object if it does not exist
    *
-   * The function {@link #createDataDef()} create only an empty object
+   * The function {@link #createRelationDef()} create only an empty object
    */
-  RelationDef getOrCreateDataDef();
+  RelationDef getOrCreateRelationDef();
 
-  DataPath setQuery(String query);
 
+
+  /**
+   * A utility function that allows
+   * some {@link #getScript()} script}
+   * processing that is only for query
+   *
+   * For instance, a SQL query does not allow a `;` at the end
+   * @return the query
+   */
   String getQuery();
 
-  DataUri getDataUri();
+  /**
+   *
+   * @return the script
+   */
+  String getScript();
 
   /**
    * @param name - the sibling name
@@ -50,7 +126,7 @@ public interface DataPath extends Comparable<DataPath>, Relational {
    * @param name - a child name
    * @return a child (ie on the path `/a/c`, the child `b` would be `/a/c/b`
    * <p>
-   * This is the equivalent to the {@link #resolve(String...)}
+   * This is the equivalent to the {@link Path#resolve(String)}
    * but where:
    * * you can't use .. and .
    * * you can use only one argument
@@ -59,23 +135,36 @@ public interface DataPath extends Comparable<DataPath>, Relational {
 
   /**
    * This is the equivalent to the {@link java.nio.file.Path#resolve(String)} (String)}
-   * * but where:
    *
-   * @param names
-   * @return
+   * The function will return a data path from a {@link ResourcePath}
+   *
+   * @param stringPath the string path
+   * @return the path
    */
-  DataPath resolve(String... names);
+  DataPath resolve(String stringPath);
 
-  List<DataPath> getForeignKeyDependencies();
+  /**
+   *
+   * @return the dependencies
+   */
+  Set<? extends Dependency> getDependencies();
 
+  /**
+   * @param description the description of the data path
+   * @return the path
+   */
   DataPath setDescription(String description);
 
+  /**
+   *
+   * @return the description of the data path
+   */
   String getDescription();
 
 
   /**
    *
-   * @param name
+   * @param name - the name of the path
    * @return a data path with a tabular structure
    * For instance:
    *   * when you are in a file data system, you will get a csv
@@ -84,32 +173,188 @@ public interface DataPath extends Comparable<DataPath>, Relational {
   DataPath getChildAsTabular(String name);
 
   /**
-   * The type is the structure of the data path that offerst the data store. ie
-   *   * for a file system:
-   *      * csv
-   *      * json
-   *   * for a memory system:
-   *      * list
-   *      * queue
-   *      * gen
-   *   * for a relational system
-   *      * table
-   *      * view
-   *   ...
-   * @return
+   * The media type defines the content type:
+   *  * for a file system (web): mime type (ie csv, ...)
+   *  * for a memory system: list / queue / gen
+   *  * for a relational system: table, view, query
+   *
+   * The name was taken from the term `Internet media type`
+   * from the mime specification.
+   * <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">MediaType</a>
+   *
+   * @return the media type
    */
-  String getType();
+  MediaType getMediaType();
 
-  DataPath getSelectStreamDependency();
+  /**
+   * When processing a stream, another processing should have run before
+   * This function returns the data path that would generate a dependency stream
+   *
+   * This is the case in TPC-DS where the `returns` are generated from the `sales`
+   * @return the path that depends on this path for a select
+   */
+  DataPath getSelectStreamDependency() throws NotFoundException;
 
   /**
    *
    * @return an empty {@link RelationDef} object
-   * This function is used mostly to create a data def in memory
-   * with test that will not clash with the actual data definition in the data store
+   *
+   * Use it when you don't want to get the  {@link RelationDef} from the underlying {@link DataSystem system}
+   *
+   * If you use the {@link #getOrCreateRelationDef()} }, the underlying metadata
+   * from the system will be used
    *
    * {@link net.bytle.db.sample.BytleSchema} is a good example of usage
    */
-  RelationDef createDataDef();
+  RelationDef createRelationDef();
+
+  /**
+   *
+   * @return a data def or null if it does not exist
+   */
+  RelationDef getRelationDef();
+
+  /**
+   *
+   * @return the data uri
+   */
+  DataUri toDataUri();
+
+  /**
+   *
+   * @return the absolute path string from the data system (not the connection)
+   * ie the full qualified path for a file system
+   */
+  String getAbsolutePath();
+
+
+
+  byte[] getByteDigest(String digestAlgo) throws NoSuchAlgorithmException, IOException;
+
+
+  /**
+   *
+   * @param name the attribute name
+   * @return the variable
+   * @throws NoVariableException - when the variable was not found
+   */
+  Variable getVariable(String name) throws NoVariableException;
+
+  /**
+   *
+   * @param attribute - the attribute
+   * @return the variable
+   * @throws NoVariableException - when the variable was not found
+   */
+  Variable getVariable(Attribute attribute) throws NoVariableException;
+
+  /**
+   * Set an attribute used to defined the data structure
+   * @param key the key
+   * @param value the value
+   * @return the data path for chaining
+   */
+  DataPath addVariable(String key, Object value);
+
+  DataPath addVariable(Attribute key, Object value);
+
+  Set<Variable> getVariables();
+
+  DataPath mergeDataPathVariablesFrom(DataPath source);
+
+  DataPath mergeDataDefinitionFromYamlFile(Path dataDefPath);
+
+  DataPath mergeDataDefinitionFromYamlMap(Map<String, ?> document);
+
+  DataPath setDataAttributes(Map<String, ?> dataAttributes);
+
+  /**
+   * Meta = {@link #getVariables() DataPath Properties}  and {@link #getOrCreateRelationDef() Structure}
+   * @param mergeFrom the source path
+   * @return the path
+   */
+  DataPath mergeDataDefinitionFrom(DataPath mergeFrom);
+
+
+  /**
+   * Set the simple name
+   * This is used inside data definition file
+   * to be able to use another name than the file name
+   * @param logicalName the logical name
+   * @return the path
+   */
+  DataPath setLogicalName(String logicalName);
+
+  /**
+   *
+   * @return true if the data path is a script
+   */
+  boolean isScript();
+
+  /**
+   *
+   * @return the attributes / properties in a data path format
+   */
+  DataPath toVariablesDataPath();
+
+  /**
+   * The size of the data path
+   *
+   * @return  the size on disk in byte
+   */
+  Long getSize();
+
+  /**
+   * Count of the content
+   * * ie count of rows for table
+   * * count of tables for schema
+   *
+   * Count should be on the data path because
+   * this is a single attribute and when you summarize
+   * or pass it along a stream, this is more convenient
+   *
+   * @return the number of record
+   */
+  Long getCount();
+
+  /**
+   * The insert stream permits to insert data into the data resources
+   *
+   * The insert stream may need to know the source to be created
+   * Example: if there is 3 columns in the source and 5 in the target,
+   * the sql created will just be on 3 columns.
+   *
+   * @param transferProperties the transfer properties
+   * @return the object for chaining
+   *
+   */
+  InsertStream getInsertStream(DataPath source, TransferProperties transferProperties);
+
+  /**
+   * Utility function with no source and transfer properties definition
+   * @return the insert stream
+   */
+  InsertStream getInsertStream();
+
+  /**
+   * Return a select stream to get data via a pointer
+   * If there is an error while getting the select stream
+   * such as security, a selection exception is thrown.
+   *
+   * By default, you would throw a runtime error
+   * but for a total computation such as a count that you want to print,
+   * you may catch this exception and go further
+   *
+   * @return the select stream
+   */
+  SelectStream getSelectStream() throws SelectException;
+
+
+  InsertStream getInsertStream(TransferProperties transferProperties);
+
+  DataPath getParent() throws NoParentException;
+
+
+  boolean hasVariable(String name);
 
 }

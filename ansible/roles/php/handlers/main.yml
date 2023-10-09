@@ -4,3 +4,10 @@
     name: "php-fpm"
     state: reloaded
   become: true
+
+- name: phpctl reload
+  become: true
+  systemd:
+    name: '{{ phpctl_name }}'
+    state: reloaded
+    daemon_reload: yes

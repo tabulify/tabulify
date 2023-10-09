@@ -3,9 +3,12 @@
  */
 
 dependencies {
-    compile(project(":bytle-db"))
-    compile(project(":bytle-db-jdbc"))
-    compile("com.microsoft.sqlserver:mssql-jdbc:7.2.2.jre8")
+  api(project(":bytle-db"))
+  api(project(":bytle-db-jdbc"))
+  api("com.microsoft.sqlserver:mssql-jdbc:7.2.2.jre8")
+  testImplementation(project(":bytle-db-gen"))
+  testImplementation(project(":bytle-db-jdbc","test"))
+  testImplementation(project(":bytle-test"))
 }
 
 description = "Sql Server"

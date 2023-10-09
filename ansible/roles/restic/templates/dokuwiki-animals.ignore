@@ -1,0 +1,7 @@
+# dokuwiki backup exclusion from an animal directory
+# we keep only the pages and media
+# Ignore all in data dir
+*/data/*
+# But not these directories
+!*/data/pages
+!*/data/media

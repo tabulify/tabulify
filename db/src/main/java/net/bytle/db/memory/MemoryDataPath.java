@@ -6,24 +6,26 @@ import net.bytle.db.stream.SelectStream;
 
 /**
  * A memory data path does not have any special property
- *
+ * <p>
  * The memory data path are managed by the java garbage collector
  * All store operations (such as truncate, size, ...) are then on the memory data path variable
- *
+ * <p>
+ * TODO: To delete an integrate into the {@link MemoryDataPathAbs}
  */
 public interface MemoryDataPath extends DataPath {
 
 
+
   String PATH_SEPARATOR = "/";
 
-  MemoryDataStore getDataStore();
-  MemoryDataPath getDataPath(String... parts);
-  MemoryDataPath resolve(String... names);
+  MemoryConnection getConnection();
+
+
+  MemoryDataPath resolve(String stringPath);
 
 
   void truncate();
 
-  long size();
 
   /**
    * Create (ie initialize the variable)
@@ -34,6 +36,11 @@ public interface MemoryDataPath extends DataPath {
 
   SelectStream getSelectStream();
 
+  /**
+   * Utility function to set quickly the value to be a text
+   */
+  MemoryDataPath setContent(String text);
 
+  MemoryDataPath setLogicalName(String logicalName);
 
 }

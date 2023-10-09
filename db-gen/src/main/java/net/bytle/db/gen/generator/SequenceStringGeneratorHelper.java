@@ -1,13 +1,15 @@
 package net.bytle.db.gen.generator;
 
 
+import net.bytle.type.Strings;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * A class that helps build a sequence string
- *
- *
+ * A class that helps build a sequence based on characters
  */
 public class SequenceStringGeneratorHelper {
 
@@ -39,41 +41,48 @@ public class SequenceStringGeneratorHelper {
   private static final int MIN_RADIX = 2;
 
   /**
+   * For a simple sequence, use the function {@link #toString(int)}
+   * <p>
+   * This function will generate a string:
+   * * with the length (len)
+   * * with the set of characters defined by the modulo
+   * * from the value i
+   * <p>
+   * If the value does not fill the length of the string, the
+   * first character (a) is used to fill it
+   * <p>
    * Adaptation of {@link Integer#toString(int, int)}
    *
-   * @param i     (Positive Integer)
+   * @param i      (Positive Integer)
    * @param modulo - the modulo
    *               - if 1, it will generate a string with only the a characters
    *               - if 2, it will generate a string with the a and b characters
-   * @param len - the length of the string
-   * @return
+   *               - if 3, it will generate a string with the set of characters (a, b, c)
+   *               - until z ...
+   * @return TODO: {@link CollectionGenerator#MAX_STRING_PRECISION} check in case that the length goes out of the roof ?
    */
-  public static String toString(int i, int modulo, int len) {
-    if (modulo < MIN_RADIX || modulo > MAX_RADIX)
+  public static String toString(int i, int modulo) {
+
+    if (modulo < MIN_RADIX || modulo > MAX_RADIX) {
       modulo = MAX_RADIX;
-
-    if (len > CollectionGeneratorOnce.MAX_STRING_PRECISION) {
-      len = CollectionGeneratorOnce.MAX_STRING_PRECISION;
     }
-    char buf[] = new char[len];
 
-    int charPos = len - 1; // Array - 1
+    List<Character> buf = new ArrayList<>();
 
     while (i >= modulo) {
-      buf[charPos--] = digits[(i % modulo)];
+      buf.add(0, digits[(i % modulo)]);
       i = i / modulo;
     }
-    buf[charPos] = digits[i];
+    buf.add(0, digits[i]);
 
-    // fill the blank with the first character (ie 0)
-    while (charPos > 0) {
-      charPos--;
-      buf[charPos] = digits[0];
-    }
+    return Strings.createFromCharacters(buf).toString();
 
-    return new String(buf, charPos, (len - charPos));
   }
 
+
+  public static int toInt(String s) {
+    return toInt(s, MAX_RADIX);
+  }
 
   /**
    * @param s
@@ -83,29 +92,30 @@ public class SequenceStringGeneratorHelper {
   public static int toInt(String s, int radix) {
 
     if (radix < MIN_RADIX) {
-      throw new IllegalArgumentException("radix " + radix + " less than MIN_RADIX");
+      throw new IllegalStateException("radix " + radix + " less than MIN_RADIX");
     }
 
     if (radix > MAX_RADIX) {
-      throw new IllegalArgumentException("radix " + radix + " greater than MAX_RADIX");
+      throw new IllegalStateException("radix " + radix + " greater than MAX_RADIX");
     }
 
     int result = 0;
     int i = 0;
-    int digit;
+    Integer digitNumber;
 
     int len = s.length();
     while (i < len) {
 
-      final char key = s.charAt(i);
-      digit = digitsMap.get(key);
-      int multi;
-      if (i == len - 1) {
-        multi = 1;
-      } else {
-        multi = (len - (i + 1)) * radix;
+      final char key = s.charAt(s.length()-1-i);
+      digitNumber = digitsMap.get(key);
+      if (digitNumber==null){
+        throw new IllegalStateException("The generation of a string along a sequence is supported only with alphabetical characters. The character ("+key+") from the string ("+s+") is not alphabetic.");
       }
-      result = result + digit * multi;
+
+      int pow = Double.valueOf(Math.pow(radix, i)).intValue();
+      result = result + digitNumber * pow;
+
+
       i++;
 
     }
@@ -113,4 +123,15 @@ public class SequenceStringGeneratorHelper {
     return result;
   }
 
+  /**
+   * The string is generated on the whole set of characters (a-z)
+   *
+   * @param i
+   * @return
+   */
+  public static String toString(int i) {
+
+    return toString(i, MAX_RADIX);
+
+  }
 }

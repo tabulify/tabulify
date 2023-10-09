@@ -1,0 +1,39 @@
+package net.bytle.tower.util;
+
+import io.vertx.core.Future;
+import net.bytle.tower.VerticleHttpServer;
+import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
+
+public class DatacadamiaDomain {
+  public static final String REALM_HANDLE = "datacadamia";
+  private final VerticleHttpServer verticle;
+
+  public DatacadamiaDomain(VerticleHttpServer verticleHttpServer) {
+    this.verticle = verticleHttpServer;
+  }
+
+  public static DatacadamiaDomain getOrCreate(VerticleHttpServer verticleHttpServer) {
+    return new DatacadamiaDomain(verticleHttpServer);
+  }
+
+  public Future<Realm> createRealm() {
+
+    Realm eraldyRealm = EraldyDomain.get().getEraldyRealm();
+    Realm datacadamiaRealm = new Realm();
+    datacadamiaRealm.setHandle(REALM_HANDLE);
+    datacadamiaRealm.setName(REALM_HANDLE + " Realm");
+    datacadamiaRealm.setOrganization(eraldyRealm.getOrganization());
+    User owner = new User();
+    owner.setRealm(eraldyRealm);
+    owner.setEmail("owner@datacadamia.com");
+    return UserProvider.createFrom(this.verticle.getVertx())
+      .upsertUser(owner)
+      .compose(ownerResult -> RealmProvider.createFrom(this.verticle.getVertx())
+        .upsertRealm(datacadamiaRealm));
+
+  }
+}

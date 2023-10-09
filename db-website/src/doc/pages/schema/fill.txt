@@ -1,3 +1,0 @@
-====== Bytle Db - Fill a schema of generated data ======
-
-

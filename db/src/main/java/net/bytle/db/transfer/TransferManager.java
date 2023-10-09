@@ -2,13 +2,20 @@ package net.bytle.db.transfer;
 
 
 import net.bytle.db.Tabular;
+import net.bytle.db.connection.Connection;
 import net.bytle.db.engine.ForeignKeyDag;
+import net.bytle.db.memory.MemoryDataPathType;
 import net.bytle.db.memory.queue.MemoryQueueDataPath;
 import net.bytle.db.spi.DataPath;
+import net.bytle.db.spi.DataSystem;
+import net.bytle.db.spi.SelectException;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.exception.NotFoundException;
 import net.bytle.log.Log;
+import net.bytle.log.Logs;
+import net.bytle.type.Casts;
 
 import java.sql.Types;
 import java.util.*;
@@ -24,13 +31,13 @@ import java.util.stream.IntStream;
  * A transfer manager.
  * <p>
  * * You add you transfer with {@link #addTransfer(DataPath, DataPath)} or {@link #addTransfers(List, DataPath)}
- * * You set your properties via {@link #getProperties()}
+ * * You set your properties via {@link #getTransferProperties()}
  * * You say if you also want to transfer the source foreign table via {@link #withDependency(boolean)}
- * * and you {@link #start()}
+ * * and you {@link #run()}
  */
 public class TransferManager {
 
-  public static final Log LOGGER = Log.getLog(TransferManager.class);
+  public static final Log LOGGER = Logs.createFromClazz(TransferManager.class);
 
   /**
    * If the select stream can only be generated
@@ -51,17 +58,37 @@ public class TransferManager {
   private Map<DataPath, TransferSourceTarget> transfers = new HashMap<>();
 
 
-  private TransferProperties transferProperties = TransferProperties.of();
+  /**
+   * The transfer properties for all transfers
+   * on a {@link TransferSourceTarget}
+   */
+  private TransferProperties transferProperties = TransferProperties.create();
+  private final List<TransferListener> transferListeners = new ArrayList<>();
+  private boolean hasRun = false;
+
+  /**
+   * A list of the operation where the target operation have already run against
+   * the target
+   * Ie if we have several transfer with the same target
+   * We create, truncate the target only once (not for each transfer)
+   */
+  private final List<DataPath> targetsWhereTargetOperationHasAlreadyRun = new ArrayList<>();
+
 
   /**
    * An utility function to start only one transfer
    *
-   * @param source
-   * @param target
-   * @return
+   * @param source - the source
+   * @param target - the target
+   * @return the transfer listener
    */
   public static TransferListener transfer(DataPath source, DataPath target) {
-    return of().addTransfer(source, target).start().get(0);
+    TransferManager start = create().addTransfer(source, target).run();
+    return start.getTransferListeners().get(0);
+  }
+
+  public List<TransferListener> getTransferListeners() {
+    return this.transferListeners;
   }
 
   public TransferManager setTransferProperties(TransferProperties transferProperties) {
@@ -79,35 +106,59 @@ public class TransferManager {
    * easily imagine that in a tree format (Xml, ...), you first need to create
    * the parent to be able to create the child
    * <p>
-   * If a source has no {@link DataPath#getSelectStreamDependency()}, the {@link #atomicTransfer(TransferSourceTarget)}
+   * If a source has no {@link DataPath#getSelectStreamDependency()}, the {@link #runCrossTransfer(TransferSourceTarget)}
    * is normally used
    *
-   * @param transferSourceTargets
-   * @return
+   * @param transferSourceTargets - the source target transfer
+   * @return the listener of the transfer
    */
-  public List<TransferListener> dependantTransfer(List<TransferSourceTarget> transferSourceTargets) {
+  public List<TransferListener> runDependantTransfer(List<TransferSourceTarget> transferSourceTargets) {
 
-
-    for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
-      transferSourceTarget.checkSource();
-      transferSourceTarget.createOrCheckTargetFromSource();
-    }
 
     List<TransferListener> transferListeners = new ArrayList<>();
 
     List<List<Object>> streamTransfers = new ArrayList<>();
     for (TransferSourceTarget transferSourceTarget : transferSourceTargets) {
+      /**
+       * Listeners
+       */
       TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
       transferListeners.add(transferListenerStream);
       transferListenerStream.startTimer();
-      SelectStream sourceSelectStream = Tabulars.getSelectStream(transferSourceTarget.getSourceDataPath());
-      InsertStream targetInsertStream = Tabulars.getInsertStream(transferSourceTarget.getTargetDataPath());
+      /**
+       * Source / Target Operations
+       */
+      transferSourceTarget.sourcePreChecks();
+
+      /**
+       * Target operation run only once by target
+       */
+      if (
+        !targetsWhereTargetOperationHasAlreadyRun.contains(transferSourceTarget.getTargetDataPath())
+      ) {
+        transferSourceTarget.targetPreOperationsAndCheck(transferListenerStream, true);
+        targetsWhereTargetOperationHasAlreadyRun.add(transferSourceTarget.getTargetDataPath());
+      }
+
+
+      /**
+       * Yolo !
+       */
+      SelectStream sourceSelectStream;
+      try {
+        sourceSelectStream = transferSourceTarget.getSourceDataPath().getSelectStream();
+      } catch (SelectException e) {
+        throw new RuntimeException(e);
+      }
+      InsertStream targetInsertStream = transferSourceTarget.getTargetDataPath().getInsertStream(
+        transferSourceTarget.getSourceDataPath(),
+        transferSourceTarget.getTransferProperties()
+      );
       List<Object> mapStream = new ArrayList<>();
       mapStream.add(sourceSelectStream);
       mapStream.add(targetInsertStream);
       streamTransfers.add(mapStream);
       transferListenerStream.addInsertListener(targetInsertStream.getInsertStreamListener());
-      transferListenerStream.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
     }
 
@@ -115,14 +166,14 @@ public class TransferManager {
     boolean showMustGoOn = true;
     while (showMustGoOn) {
       showMustGoOn = false;
-      for (int i = 0; i < streamTransfers.size(); i++) {
+      for (List<Object> streamTransfer : streamTransfers) {
 
-        SelectStream sourceSelectStream = (SelectStream) streamTransfers.get(i).get(0);
-        Boolean next = sourceSelectStream.next();
+        SelectStream sourceSelectStream = (SelectStream) streamTransfer.get(0);
+        boolean next = sourceSelectStream.next();
         if (next) {
           showMustGoOn = true;
-          InsertStream targetInsertStream = (InsertStream) streamTransfers.get(i).get(1);
-          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateDataDef().getColumnsSize())
+          InsertStream targetInsertStream = (InsertStream) streamTransfer.get(1);
+          List<Object> objects = IntStream.range(0, sourceSelectStream.getDataPath().getOrCreateRelationDef().getColumnsSize())
             .mapToObj(sourceSelectStream::getObject)
             .collect(Collectors.toList());
           targetInsertStream.insert(objects);
@@ -136,157 +187,187 @@ public class TransferManager {
 
 
   /**
-   * Transfer of data from one source to one target
+   * Transfer of a data resource from one data source to another
    * <p>
    * There is also a transfer from multiple source to one target
-   * when the source generation is dependent called {@link #dependantTransfer(List)}
+   * when the source generation is dependent called {@link #runDependantTransfer(List)}
    * <p>
    * This function supports the loading of data with multiple threads (ie
    * when the {@link TransferProperties#setTargetWorkerCount(int)} is bigger than one)
    *
-   * @param transferSourceTarget
-   * @return
+   * @param transferSourceTarget - the source target transfer to execute
+   * @return the result
    */
-  private TransferListener atomicTransfer(TransferSourceTarget transferSourceTarget) {
+  private List<TransferListener> runCrossTransfer(TransferSourceTarget transferSourceTarget) {
 
 
     DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
     DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
+    TransferProperties transferProperties = transferSourceTarget.getTransferProperties();
 
-    // Check source
-    transferSourceTarget.checkSource();
-
-    // Check Target
-    transferSourceTarget.createOrCheckTargetFromSource();
-
-    // Check Data Type
-    transferSourceTarget.checkColumnMappingDataType();
+    /**
+     * Check load operation
+     * The load operation is important during the
+     * check of target structure
+     * (ie a {@link TransferOperation#MOVE}
+     * and {@link TransferOperation#COPY} operations
+     * require the same data structure between the target and the source
+     */
+    if (transferProperties.getOperation() == null) {
+      transferProperties.setOperation(TransferOperation.INSERT);
+    }
 
     /**
      * The listener is passed to the consumers and producers threads
      * to ultimately ends in the view thread to report life on the process
      */
     TransferListenerStream transferListenerStream = new TransferListenerStream(transferSourceTarget);
+    transferListenerStream.setType(TransferType.SINGLE_CROSS);
     transferListenerStream.startTimer();
+
+    /**
+     * Pre load checks
+     */
+    // Check source
+    transferSourceTarget.sourcePreChecks();
+    // Check Target
+    targetPreOperationControl(transferSourceTarget);
+    transferSourceTarget.targetPreOperationsAndCheck(transferListenerStream, true);
+
 
     /**
      * Single thread ?
      */
-    int targetWorkerCount = getProperties().getTargetWorkerCount();
+    int targetWorkerCount = getTransferProperties().getTargetWorkerCount();
     if (targetWorkerCount == 1) {
       try (
-        SelectStream sourceSelectStream = Tabulars.getSelectStream(sourceDataPath);
-        InsertStream targetInsertStream = Tabulars.getInsertStream(targetDataPath)
+        SelectStream sourceSelectStream = sourceDataPath.getSelectStream();
+        InsertStream targetInsertStream = targetDataPath.getInsertStream(sourceDataPath, transferProperties)
       ) {
 
+        transferListenerStream.setMethod(targetInsertStream.getMethod());
         transferListenerStream.addInsertListener(targetInsertStream.getInsertStreamListener());
-        transferListenerStream.addSelectListener(sourceSelectStream.getSelectStreamListener());
 
-        // Get the objects from the source in a target order
-        List<Integer> sourceColumnPositionInTargetOrder = transferSourceTarget.getSourceColumnPositionInTargetOrder();
-
+        List<Integer> sourceColumnPositionsInOrder = transferSourceTarget
+          .getTransferColumnMapping()
+          .keySet()
+          .stream()
+          .sorted()
+          .collect(Collectors.toList());
         // Run
         while (sourceSelectStream.next()) {
-          List<Object> objects = sourceColumnPositionInTargetOrder
-            .stream()
-            .map(i -> sourceSelectStream.getObject(i - 1))
-            .collect(Collectors.toList());
+          List<Object> objects = new ArrayList<>();
+          for (Integer sourceColumnPosition : sourceColumnPositionsInOrder ) {
+            Object object = sourceSelectStream.getObject(sourceColumnPosition);
+            objects.add(object);
+          }
           targetInsertStream.insert(objects);
         }
 
+      } catch (SelectException e) {
+        throw new RuntimeException(e);
       }
       transferListenerStream.stopTimer();
-      return transferListenerStream;
+      return Collections.singletonList(transferListenerStream);
 
-    }
+    } else {
 
-    /**
-     * Not every database can make a lot of connection
-     * We may use the last connection object for single connection database such as sqlite.
-     *
-     * Example:
-     *     * their is already a connection through a select for instance
-     *     * and that the database does not support multiple connection (such as Sqlite)
-     **/
-    // One connection is already used in the construction of the database
-    if (targetWorkerCount > targetDataPath.getDataStore().getMaxWriterConnection()) {
-      throw new IllegalArgumentException("The database (" + targetDataPath.getDataStore().getName() + ") does not support more than (" + targetDataPath.getDataStore().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
-    }
-
-
-    // Object flag status
-    AtomicBoolean producerWorkIsDone = new AtomicBoolean(false);
-    AtomicBoolean consumerWorkIsDone = new AtomicBoolean(false);
-
-
-    // The queue between the producer (source) and the consumer (target)
-    long timeout = transferProperties.getTimeOut();
-    MemoryQueueDataPath queue = ((MemoryQueueDataPath) Tabular.tabular().getDataPath("Transfer"))
-      .setTimeout(timeout)
-      .setCapacity(transferProperties.getQueueSize());
-
-    try {
-
-      // Start the producer thread
-      TransferSourceWorker transferSourceWorker = new TransferSourceWorker(sourceDataPath, queue, transferProperties, transferListenerStream);
-      Thread producer = new Thread(transferSourceWorker);
-      producer.start();
-
-      // Start the consumer / target threads
-      ExecutorService targetWorkExecutor = Executors.newFixedThreadPool(targetWorkerCount);
-      for (int i = 0; i < targetWorkerCount; i++) {
-
-        targetWorkExecutor.execute(
-          new TransferTargetWorker(
-            queue,
-            transferSourceTarget,
-            transferProperties,
-            producerWorkIsDone)
-        );
-
+      /**
+       * Not every database can make a lot of connection
+       * We may use the last connection object for single connection database such as sqlite.
+       *
+       * Example:
+       *     * their is already a connection through a select for instance
+       *     * and that the database does not support multiple connection (such as Sqlite)
+       **/
+      // One connection is already used in the construction of the database
+      if (targetWorkerCount > targetDataPath.getConnection().getMetadata().getMaxWriterConnection()) {
+        throw new IllegalArgumentException("The database (" + targetDataPath.getConnection().getName() + ") does not support more than (" + targetDataPath.getConnection().getMetadata().getMaxWriterConnection() + ") connections. We can then not start (" + targetWorkerCount + ") workers. (1) connection is also in use.");
       }
 
-      // Start the viewer
-      TransferMetricsViewer transferMetricsViewer = new TransferMetricsViewer(queue, transferProperties, transferListenerStream, producerWorkIsDone, consumerWorkIsDone);
-      Thread viewer = new Thread(transferMetricsViewer);
-      viewer.start();
 
-      // Wait the producer
-      producer.join(); // Waits for this thread to die.
-      producerWorkIsDone.set(true);
+      // Object flag status
+      AtomicBoolean producerWorkIsDone = new AtomicBoolean(false);
+      AtomicBoolean consumerWorkIsDone = new AtomicBoolean(false);
 
-      // Shut down the targetWorkExecutor Service
-      targetWorkExecutor.shutdown();
-      // And wait the termination
+
+      // The queue between the producer (source) and the consumer (target)
+      int timeout = transferProperties.getTimeOut();
+      Tabular tabular = sourceDataPath.getConnection().getTabular();
+      MemoryQueueDataPath buffer = (MemoryQueueDataPath) ((MemoryQueueDataPath) tabular.getMemoryDataStore()
+        .getTypedDataPath(MemoryDataPathType.QUEUE, "buffer"))
+        .setTimeout(timeout)
+        .setCapacity(transferProperties.getBufferSize())
+        .getOrCreateRelationDef()
+        .mergeStruct(sourceDataPath)
+        .getDataPath();
+      Tabulars.create(buffer);
+
       try {
-        boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.SECONDS);
-        if (!result) {
-          throw new RuntimeException("The timeout of the consumers (" + timeout + " s) elapsed before termination");
+
+        // Start the viewer
+        TransferWorkerMetricsViewer transferWorkerMetricsViewer = new TransferWorkerMetricsViewer(buffer, transferProperties, producerWorkIsDone, consumerWorkIsDone);
+        Thread viewer = new Thread(transferWorkerMetricsViewer);
+        viewer.start();
+
+        // Start the producer thread
+        TransferWorkerProducer transferWorkerProducer = new TransferWorkerProducer(
+          TransferSourceTarget.create(sourceDataPath, buffer, transferProperties),
+          transferWorkerMetricsViewer
+        );
+        Thread producer = new Thread(transferWorkerProducer);
+        producer.start();
+
+        // Start the consumer / target threads
+        ExecutorService targetWorkExecutor = Executors.newFixedThreadPool(targetWorkerCount);
+        for (int i = 0; i < targetWorkerCount; i++) {
+
+          targetWorkExecutor.execute(
+            new TransferWorkerConsumer(
+              TransferSourceTarget.create(buffer, targetDataPath, transferProperties),
+              producerWorkIsDone,
+              transferWorkerMetricsViewer)
+          );
         }
+
+
+        // Wait the producer
+        producer.join(); // Waits for this thread to die.
+        producerWorkIsDone.set(true);
+
+        // Shut down the targetWorkExecutor Service
+        targetWorkExecutor.shutdown();
+        // And wait the termination
+        try {
+          boolean result = targetWorkExecutor.awaitTermination(timeout, TimeUnit.SECONDS);
+          if (!result) {
+            throw new RuntimeException("The timeout of the consumers (" + timeout + " s) elapsed before termination");
+          }
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+
+        // Send a signal to the viewer that the consumer work is done
+        consumerWorkIsDone.set(true);
+
+        // Wait the viewer
+        viewer.join();
+
+        Tabulars.drop(buffer);
+        return Casts.castToListSafe(
+          transferWorkerMetricsViewer.getListenersStream(),
+          TransferListener.class
+        );
+
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
 
-      // Send a signal to the viewer that the consumer work is done
-      consumerWorkIsDone.set(true);
 
-      // Wait the viewer
-      viewer.join();
-
-
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
     }
 
-    transferListenerStream.stopTimer();
-    return transferListenerStream;
 
   }
-
-
-
-
-
 
 
   /**
@@ -294,28 +375,69 @@ public class TransferManager {
    * * add the data dependencies if any {@link #withDependency(boolean)} - ie foreign
    * * add the runtime dependencies on select stream dependency if any {@link DataPath#getSelectStreamDependency()}
    * <p>
-   * This step is typically run before a {@link #start()}
+   * This step is typically run before a {@link #run()}
    *
-   * @return
+   * @return the source transfer to execute
    */
   public List<List<TransferSourceTarget>> processAndGetTransfersToBeExecuted() {
 
-    // The transfer is driven by the source
-    // You want to move/copy a data set from a source to a target
-    // Why driven by source:
-    //    * You could move a whole schema if you just would select to load the fact table with its dependencies
-    //    * the runtime dependency is on the source
+    /**
+     * Be sure to have the same java object for the same
+     * logical target
+     *
+     * In a batch transfer, we create the target structure (column)
+     * only on the first transfer
+     * See {@link #targetsWhereTargetOperationHasAlreadyRun}
+     */
+    Map<String, DataPath> uniqueTargets = transfers.values()
+      .stream()
+      .collect(Collectors.toMap(
+        e -> e.getTargetDataPath().getLogicalName(),
+        TransferSourceTarget::getTargetDataPath,
+        (duplicate1, duplicate2) -> duplicate1)
+      );
+
+    transfers = transfers
+      .entrySet()
+      .stream()
+      .map(e -> {
+        TransferSourceTarget transferSourceTarget = e.getValue();
+        String targetLogicalName = transferSourceTarget.getTargetDataPath().getLogicalName();
+        DataPath targetDataPath = uniqueTargets.get(targetLogicalName);
+        return new TransferSourceTarget(e.getKey(), targetDataPath, transferSourceTarget.getTransferProperties());
+      })
+      .collect(Collectors.toMap(
+        TransferSourceTarget::getSourceDataPath,
+        tst -> tst
+      ));
+
+    /**
+     *
+     * The transfer is driven by the source
+     * You want to move/copy a data set from a source to a target
+     * Why driven by source:
+     *    * You could move a whole schema if you just would select to load the fact table with its dependencies
+     *    * the runtime dependency is on the source
+     */
+
     List<DataPath> sourceDataPaths = new ArrayList<>(transfers.keySet());
 
-    // Get the source data path by child/parent orders
-    // Ie dim/child/foreign first, parent/fact last
+    /**
+     * Select the source
+     * Get the source data path by child/parent orders
+     * Ie dim/child/foreign first, parent/fact last
+     */
     List<DataPath> dagSourceDataPaths = ForeignKeyDag
-      .get(sourceDataPaths)
+      .createFromPaths(sourceDataPaths)
       .setWithDependency(this.withDependencies)
-      .getCreateOrderedTables();
+      .getCreateOrdered();
 
-    // If dependencies were added in the step before,
-    // we miss some transfer, we add them below
+    /**
+     * Adding transfer for dependencies if any
+     *
+     * If dependencies were added in the step before,
+     * we miss some transfer, we add them below
+     */
     if (this.withDependencies) {
       // The target is the first one defined
       DataPath target = transfers.values().iterator().next().getTargetDataPath();
@@ -325,63 +447,170 @@ public class TransferManager {
           if (Tabulars.isDocument(target)) {
             target = target.getSibling(sourceDataPath.getName());
           }
-          transfers.put(sourceDataPath, new TransferSourceTarget(sourceDataPath, target));
+          transfers.put(sourceDataPath, new TransferSourceTarget(sourceDataPath, target, this.transferProperties));
         }
       }
     }
 
-
-    // Building the transfers that we are finally going to execute
-    // Do we have a runtime dependency
-    // A list of source that should be loaded together
+    /**
+     * Building the transfers that we are finally going to execute
+     * Do we have a runtime dependency (stream)
+     * A list of source that should be loaded together
+     */
     List<List<DataPath>> groupedSourceDataPath = new ArrayList<>();
     for (DataPath dataPath : dagSourceDataPaths) {
-      DataPath selectStreamDependency = dataPath.getSelectStreamDependency();
-      if (selectStreamDependency != null) {
-        List<DataPath> source = groupedSourceDataPath
+
+      boolean dependency;
+      try {
+        dataPath.getSelectStreamDependency();
+        dependency = true;
+      } catch (NotFoundException e) {
+        dependency = false;
+      }
+
+      if (dependency) {
+        /**
+         * Do we have already the source in the grouped source
+         */
+        List<DataPath> sourceInGroupedSource = groupedSourceDataPath
           .stream()
           .filter(l -> l.contains(dataPath))
           .findFirst()
           .orElse(null);
 
-        if (source == null) {
-          groupedSourceDataPath.add(Arrays.asList(dataPath));
+        /**
+         * If the source is not in grouped path create it
+         * otherwise add it
+         */
+        if (sourceInGroupedSource == null) {
+          groupedSourceDataPath.add(Collections.singletonList(dataPath));
         } else {
-          source.add(dataPath);
+          sourceInGroupedSource.add(dataPath);
         }
+
       } else {
-        //noinspection ArraysAsListWithZeroOrOneArgument
-        groupedSourceDataPath.add(Arrays.asList(dataPath));
+
+        groupedSourceDataPath.add(Collections.singletonList(dataPath));
+
       }
+
     }
 
-    // Finally transform the grouped source data path into grouped transfer source
-    List<List<TransferSourceTarget>> transfersSourceTargets = groupedSourceDataPath.stream()
-      .map(ldp -> ldp.stream().map(dp -> transfers.get(dp)).collect(Collectors.toList()))
+    /**
+     * Finally transform the grouped source data path into grouped transfer source
+     * and return
+     */
+    return groupedSourceDataPath
+      .stream()
+      .map(ldp -> ldp.stream()
+        .map(transfers::get)
+        .collect(Collectors.toList())
+      )
       .collect(Collectors.toList());
-
-    return transfersSourceTargets;
 
   }
 
 
-  public List<TransferListener> start() {
+  public TransferManager run() {
+
+    // Circuit breaker
+    if (this.hasRun) {
+      throw new IllegalStateException("This manager has already ran, you can't run it again");
+    }
+    this.hasRun = true;
 
     // Process the transfer
     List<List<TransferSourceTarget>> transfers = processAndGetTransfersToBeExecuted();
 
+    // Before
+
     // Run
-    List<TransferListener> transferListeners = new ArrayList<>();
-    for (List<TransferSourceTarget> transfer : transfers) {
-      if (transfer.size() > 1) {
-        List<TransferListener> dependantTransferListeners = dependantTransfer(transfer);
+    for (List<TransferSourceTarget> listTransferSourceTarget : transfers) {
+      if (listTransferSourceTarget.size() > 1) {
+
+        List<TransferListener> dependantTransferListeners = runDependantTransfer(listTransferSourceTarget);
         transferListeners.addAll(dependantTransferListeners);
+
       } else {
-        TransferListener transferlistener = atomicTransfer(transfer.get(0));
-        transferListeners.add(transferlistener);
+
+        TransferSourceTarget firstTransferSourceTarget = listTransferSourceTarget.get(0);
+        if (sameDataStore(firstTransferSourceTarget)) {
+
+          // same provider (fs or jdbc)
+          Connection connection = firstTransferSourceTarget.getSourceDataPath().getConnection();
+          final DataSystem sourceDataSystem = connection.getDataSystem();
+          try {
+
+            // Check Target
+            targetPreOperationControl(firstTransferSourceTarget);
+            TransferListener transferListener = sourceDataSystem.transfer(
+              firstTransferSourceTarget.getSourceDataPath(),
+              firstTransferSourceTarget.getTargetDataPath(),
+              firstTransferSourceTarget.getTransferProperties()
+            );
+            transferListeners.add(transferListener);
+
+          } catch (UnsupportedOperationException e) {
+            /**
+             * The operation may be not implemented
+             *
+             * Example: {@link TransferOperation#UPSERT} may be only implemented at the record level
+             * and not at a set level
+             */
+
+            if (Tabulars.exists(firstTransferSourceTarget.getTargetDataPath())) {
+              // example: case of a move (ie copy + delete)
+              // the copy is successful but the `delete` is not
+              throw new UnsupportedOperationException("The target file was created but there was an unsupported operation. Error: " + e.getMessage(), e);
+            } else {
+              String msg = "The system (" + sourceDataSystem + ") of the data store (" + connection + ") does not support the (" + firstTransferSourceTarget.getTransferProperties().getOperation() + ") transfer operation locally, we are performing it with cross data transfer. Error: " + e.getMessage();
+              LOGGER.warning(msg);
+              transferListeners.addAll(runCrossTransfer(firstTransferSourceTarget));
+            }
+          }
+
+        } else {
+
+          transferListeners.addAll(runCrossTransfer(firstTransferSourceTarget));
+
+        }
+
+        /**
+         * Do we need to drop the source
+         */
+        if (
+          this.transferProperties.transferSourceOperations.contains(TransferResourceOperations.DROP)
+            || this.transferProperties.getOperation() == TransferOperation.MOVE
+        ) {
+          if (Tabulars.exists(firstTransferSourceTarget.getSourceDataPath())) {
+            Tabulars.drop(firstTransferSourceTarget.getSourceDataPath());
+          }
+        }
       }
     }
-    return transferListeners;
+    return this;
+  }
+
+  /**
+   * The target pre operation should run only once
+   * by batch and by target, this method controls this behaviour
+   *
+   * @param transferSourceTarget - a transfer source target to control
+   */
+  private void targetPreOperationControl(TransferSourceTarget transferSourceTarget) {
+    if (
+      !targetsWhereTargetOperationHasAlreadyRun.contains(transferSourceTarget.getTargetDataPath())
+    ) {
+      transferSourceTarget.getTransferProperties().setRunPreDataOperation(true);
+      targetsWhereTargetOperationHasAlreadyRun.add(transferSourceTarget.getTargetDataPath());
+    } else {
+      transferSourceTarget.getTransferProperties().setRunPreDataOperation(false);
+    }
+  }
+
+
+  private boolean sameDataStore(TransferSourceTarget transferSourceTarget) {
+    return transferSourceTarget.getSourceDataPath().getConnection().getServiceId().equals(transferSourceTarget.getTargetDataPath().getConnection().getServiceId());
   }
 
   public TransferManager() {
@@ -392,22 +621,22 @@ public class TransferManager {
    * the dependent select stream will also be loaded, created
    * otherwise an error is thrown
    *
-   * @param b
-   * @return
+   * @param b - with or without dependency
+   * @return the object for chaining
    */
   public TransferManager withDependency(boolean b) {
     this.withDependencies = b;
     return this;
   }
 
-  public static TransferManager of() {
+  public static TransferManager create() {
     return new TransferManager();
   }
 
   /**
-   * @param source
-   * @param target if the target is a container, the target will become a child of it with the name of the source
-   * @return
+   * @param source - the source of the transfer
+   * @param target - if the target is a container, the target will become a child of it with the name of the source
+   * @return the object for chaining
    */
   public TransferManager addTransfer(DataPath source, DataPath target) {
     assert source != null : "The source cannot be null in a transfer";
@@ -421,7 +650,7 @@ public class TransferManager {
       target = target.getChildAsTabular(name);
     }
 
-    transfers.put(source, new TransferSourceTarget(source, target));
+    transfers.put(source, new TransferSourceTarget(source, target, this.transferProperties));
 
     return this;
   }
@@ -432,7 +661,7 @@ public class TransferManager {
     return this;
   }
 
-  public TransferProperties getProperties() {
+  public TransferProperties getTransferProperties() {
     return this.transferProperties;
   }
 
@@ -440,6 +669,34 @@ public class TransferManager {
     transfers.put(transferSourceTarget.getSourceDataPath(), transferSourceTarget);
     return this;
   }
+
+  public TransferManager addTargetOperation(TransferResourceOperations transferResourceOperations) {
+    transferProperties.addTargetOperations(transferResourceOperations);
+    return this;
+  }
+
+  public int getExitStatus() {
+    if (!this.hasRun) {
+      throw new IllegalStateException("To get the exit status, you need to run it first");
+    }
+    return transferListeners.stream().mapToInt(TransferListener::getExitStatus).sum();
+  }
+
+  public String getError() {
+    if (!this.hasRun) {
+      throw new IllegalStateException("To get an error, you need to run it first");
+    }
+    return String.join(", ",
+      transferListeners.stream()
+        .map(TransferListener::getErrorMessages)
+        .reduce(Collections.emptyList(), (a, b) -> {
+          b.addAll(a);
+          return b;
+        }));
+
+  }
+
+
 }
 
 

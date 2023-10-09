@@ -3,13 +3,24 @@
 ## About
 
 This role install php version 7.4 on Centos via an update of
-the default php via the the remi repository.
+the default php via the remi repository following the [wizard](https://rpms.remirepo.net/wizard/)
+
 
 Because the web server is Nginx, [php-fpm](doc/php-fpm.md) was installed.
 It's a service that makes a bridge between php and nginx.
 
 [Apache](#Apache) is already installed on Centos
 
+## Run
+
+```bash
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags php
+```
+
+## Repository
+
+  * `remi-safe`: Common dependencies are available in remi-safe repository, which is enabled by default
+  * `remi-php74`: You enable the repo with the version that is needed
 
 ## Diagnostic
 
@@ -32,7 +43,7 @@ There is two kind of php packages:
 
 ## Version
 
-### Before installation 
+### Before installation
 
 On Centos, `php` is already installed version 5.4
 

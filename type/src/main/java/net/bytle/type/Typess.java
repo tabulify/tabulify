@@ -1,26 +1,35 @@
 package net.bytle.type;
 
+import java.math.BigInteger;
+import java.util.Date;
+
 public class Typess {
 
+
   /**
-   * @param object - the object to cast
-   * @param clazz - the class to cast
-   * @param <T>
-   * @return null if the object is null, throw an exception if the class is not the expected one
-   * the object to the asked clazz
+   * The number of element for data type
+   * By default, {@link Long#MAX_VALUE}
+   * @param clazz
+   * @return
    */
-  @SuppressWarnings("unchecked")
-  public static <T> T safeCast(Object object, Class<T> clazz) {
-    if (object == null) {
-      return null;
-    } else {
-      if (object.getClass().equals(clazz)) {
-        return (T) object;
-      } else {
-        throw new RuntimeException("The class of the object is " + object.getClass() + " but we expect a (" + clazz + ") (Value: " + object + ")");
-      }
+  public static  Long getMaxByClass(Class clazz) {
+
+    /**
+     * For the date, the {@link Date constructor} is based on a long
+     * By default, no date will go so far,
+     * this is then a good approximation
+     */
+    long maxSize = Long.MAX_VALUE;
+    if (clazz.equals(BigInteger.class)){
+      /**
+       * From the doc
+       */
+      maxSize = (long) Math.pow(2, Integer.MAX_VALUE);
+    } else if (clazz.equals(Integer.class)){
+      maxSize = (long) Integer.MAX_VALUE;
+    } else if (clazz.equals(Short.class)){
+      maxSize = (long) Short.MAX_VALUE;
     }
+    return maxSize;
   }
-
-
 }

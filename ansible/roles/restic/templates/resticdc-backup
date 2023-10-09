@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo -------------------
+echo Restic Datacadamia Backup
+echo -------------------
+# You can pass options
+# example
+# ```
+# resticdc-backup --dry-run --verbose --verbose
+# ```
+
+pushd /opt/www/datacadamia.com || exit 1
+# shellcheck disable=SC2048
+# shellcheck disable=SC2086
+resticdc backup $* --exclude-file=/home/restic/.config/dokuwiki-dokudata.ignore .
+exit=$?
+popd || exit 1
+
+exit $exit

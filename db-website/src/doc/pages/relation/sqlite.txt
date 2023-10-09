@@ -1,9 +1,0 @@
-====== Sqlite ======
-
-
-===== About =====
-''Bytle Db'' supports [[https://www.sqlite.org/index.html|sqlite]] as a local [[database:start|database]].
-
-
-===== Management =====
-==== Add ====

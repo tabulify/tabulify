@@ -1,0 +1,8 @@
+{
+  "${group}": {
+    "${asin}": {
+      "price": "${price}",
+      "description": "${description}"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+pipeline:
+  - name: "Select"
+    comment: "This operation select the resources to send"
+    operation: "select"
+    args:
+      data-selector: "email/*.csv@howto"
+  - name: "Send"
+    comment: "Send the selected resources as email attachment"
+    operation: "send"
+    args:
+      target-uri: "@smtp" # smtp is the default smtp connection and is therefore optional
+      to: "support@tabulify.com"
+      subject: "Demo: How to send resources"
+      txt: |
+        Please, find attached the report data

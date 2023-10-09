@@ -61,6 +61,8 @@
             checksum: md5:43342d80762e0fe1122d3d647dec3150
 
         - name: Unzip Gogs
+          become: true
+          become_user: "{{ gogs_user }}" # otherwise the permission are not right (https://github.com/ansible/ansible/issues/35426#issuecomment-679923154)
           unarchive:
             src: "{{ gogs_install_dir }}/gogs.zip"
             dest: "{{ gogs_base }}"

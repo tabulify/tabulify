@@ -1,0 +1,25 @@
+---
+
+- name: Restic | Rclone Installation Prerequisites
+  become: true
+  tags: rclone
+  block:
+    - include: 'rclone_install.yml'
+
+- name: Restic | Installation
+  become: true
+  block:
+    - include: 'restic_install.yml'
+
+
+- name: Restic | Configuration
+  become: true
+  tags: restic-conf
+  block:
+    - include: 'restic_config.yml'
+
+- name: Restic | Datacadamia
+  become: true
+  tags: restic-dc
+  block:
+    - include: 'restic_datacadamia.yml'

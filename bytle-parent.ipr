@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <option name="DEFAULT_COMPILER" value="Javac"/>
+    <resourceExtensions>
+      <entry name=".+\.(properties|xml|html|dtd|tld)"/>
+      <entry name=".+\.(gif|png|jpeg|jpg)"/>
+    </resourceExtensions>
+    <wildcardResourcePatterns>
+      <entry name="!?*.class"/>
+      <entry name="!?*.scala"/>
+      <entry name="!?*.groovy"/>
+      <entry name="!?*.java"/>
+    </wildcardResourcePatterns>
+    <annotationProcessing enabled="false" useClasspath="true"/>
+    <bytecodeTargetLevel target="11"/>
+  </component>
+  <component name="CopyrightManager" default="">
+    <module2copyright/>
+  </component>
+  <component name="DependencyValidationManager">
+    <option name="SKIP_IMPORT_STATEMENTS" value="false"/>
+  </component>
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false"/>
+  <component name="GradleUISettings">
+    <setting name="root"/>
+  </component>
+  <component name="GradleUISettings2">
+    <setting name="root"/>
+  </component>
+  <component name="IdProvider" IDEtalkID="11DA1DB66DD62DDA1ED602B7079FE97C"/>
+  <component name="JavadocGenerationManager">
+    <option name="OUTPUT_DIRECTORY"/>
+    <option name="OPTION_SCOPE" value="protected"/>
+    <option name="OPTION_HIERARCHY" value="true"/>
+    <option name="OPTION_NAVIGATOR" value="true"/>
+    <option name="OPTION_INDEX" value="true"/>
+    <option name="OPTION_SEPARATE_INDEX" value="true"/>
+    <option name="OPTION_DOCUMENT_TAG_USE" value="false"/>
+    <option name="OPTION_DOCUMENT_TAG_AUTHOR" value="false"/>
+    <option name="OPTION_DOCUMENT_TAG_VERSION" value="false"/>
+    <option name="OPTION_DOCUMENT_TAG_DEPRECATED" value="true"/>
+    <option name="OPTION_DEPRECATED_LIST" value="true"/>
+    <option name="OTHER_OPTIONS" value=""/>
+    <option name="HEAP_SIZE"/>
+    <option name="LOCALE"/>
+    <option name="OPEN_IN_BROWSER" value="true"/>
+  </component>
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/bytle-parent.iml" filepath="$PROJECT_DIR$/bytle-parent.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/base/bytle-base.iml" filepath="$PROJECT_DIR$/base/bytle-base.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/cassandra/bytle-cassandra.iml" filepath="$PROJECT_DIR$/cassandra/bytle-cassandra.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/cli/bytle-cli.iml" filepath="$PROJECT_DIR$/cli/bytle-cli.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/command/bytle-command.iml" filepath="$PROJECT_DIR$/command/bytle-command.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/crypto/bytle-crypto.iml" filepath="$PROJECT_DIR$/crypto/bytle-crypto.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db/bytle-db.iml" filepath="$PROJECT_DIR$/db/bytle-db.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-assembly/bytle-db-assembly.iml" filepath="$PROJECT_DIR$/db-assembly/bytle-db-assembly.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-cli/bytle-db-cli.iml" filepath="$PROJECT_DIR$/db-cli/bytle-db-cli.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-csv/bytle-db-csv.iml" filepath="$PROJECT_DIR$/db-csv/bytle-db-csv.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-excel/bytle-db-excel.iml" filepath="$PROJECT_DIR$/db-excel/bytle-db-excel.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-flow/bytle-db-flow.iml" filepath="$PROJECT_DIR$/db-flow/bytle-db-flow.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-flow-email/bytle-db-flow-email.iml" filepath="$PROJECT_DIR$/db-flow-email/bytle-db-flow-email.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-flow-template/bytle-db-flow-template.iml" filepath="$PROJECT_DIR$/db-flow-template/bytle-db-flow-template.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-gen/bytle-db-gen.iml" filepath="$PROJECT_DIR$/db-gen/bytle-db-gen.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-gen-entities/bytle-db-gen-entities.iml" filepath="$PROJECT_DIR$/db-gen-entities/bytle-db-gen-entities.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-jdbc/bytle-db-jdbc.iml" filepath="$PROJECT_DIR$/db-jdbc/bytle-db-jdbc.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-json/bytle-db-json.iml" filepath="$PROJECT_DIR$/db-json/bytle-db-json.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-mysql/bytle-db-mysql.iml" filepath="$PROJECT_DIR$/db-mysql/bytle-db-mysql.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-oracle/bytle-db-oracle.iml" filepath="$PROJECT_DIR$/db-oracle/bytle-db-oracle.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-parquet/bytle-db-parquet.iml" filepath="$PROJECT_DIR$/db-parquet/bytle-db-parquet.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-play/bytle-db-play.iml" filepath="$PROJECT_DIR$/db-play/bytle-db-play.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-sqlite/bytle-db-sqlite.iml" filepath="$PROJECT_DIR$/db-sqlite/bytle-db-sqlite.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-sqlserver/bytle-db-sqlserver.iml" filepath="$PROJECT_DIR$/db-sqlserver/bytle-db-sqlserver.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-transfer/bytle-db-transfer.iml" filepath="$PROJECT_DIR$/db-transfer/bytle-db-transfer.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-web-document/bytle-db-web-document.iml" filepath="$PROJECT_DIR$/db-web-document/bytle-db-web-document.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-website/bytle-db-website.iml" filepath="$PROJECT_DIR$/db-website/bytle-db-website.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/db-yaml/bytle-db-yaml.iml" filepath="$PROJECT_DIR$/db-yaml/bytle-db-yaml.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/dns/bytle-dns.iml" filepath="$PROJECT_DIR$/dns/bytle-dns.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/doctest/bytle-doctest.iml" filepath="$PROJECT_DIR$/doctest/bytle-doctest.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/fs/bytle-fs.iml" filepath="$PROJECT_DIR$/fs/bytle-fs.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/http/bytle-http.iml" filepath="$PROJECT_DIR$/http/bytle-http.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/log/bytle-log.iml" filepath="$PROJECT_DIR$/log/bytle-log.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/os/bytle-os.iml" filepath="$PROJECT_DIR$/os/bytle-os.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/regexp/bytle-regexp.iml" filepath="$PROJECT_DIR$/regexp/bytle-regexp.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/sftp/bytle-sftp.iml" filepath="$PROJECT_DIR$/sftp/bytle-sftp.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/smtp-client/bytle-smtp-client.iml" filepath="$PROJECT_DIR$/smtp-client/bytle-smtp-client.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/smtp-server/bytle-smtp-server.iml" filepath="$PROJECT_DIR$/smtp-server/bytle-smtp-server.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/template/bytle-template.iml" filepath="$PROJECT_DIR$/template/bytle-template.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/test/bytle-test.iml" filepath="$PROJECT_DIR$/test/bytle-test.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/timer/bytle-timer.iml" filepath="$PROJECT_DIR$/timer/bytle-timer.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/tower/bytle-tower.iml" filepath="$PROJECT_DIR$/tower/bytle-tower.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/tower-edge/bytle-tower-edge.iml" filepath="$PROJECT_DIR$/tower-edge/bytle-tower-edge.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/type/bytle-type.iml" filepath="$PROJECT_DIR$/type/bytle-type.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/vertx/bytle-vertx.iml" filepath="$PROJECT_DIR$/vertx/bytle-vertx.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/vertx-openapi/bytle-vertx-openapi.iml" filepath="$PROJECT_DIR$/vertx-openapi/bytle-vertx-openapi.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/viz/bytle-viz.iml" filepath="$PROJECT_DIR$/viz/bytle-viz.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/web-document/bytle-web-document.iml" filepath="$PROJECT_DIR$/web-document/bytle-web-document.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/xml/bytle-xml.iml" filepath="$PROJECT_DIR$/xml/bytle-xml.iml"/>
+      <module fileurl="file://$PROJECT_DIR$/zip/bytle-zip.iml" filepath="$PROJECT_DIR$/zip/bytle-zip.iml"/>
+    </modules>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" assert-keyword="true" jdk-15="true" project-jdk-type="JavaSDK" assert-jdk-15="true" project-jdk-name="11">
+    <output url="file://$PROJECT_DIR$/out"/>
+  </component>
+  <component name="SvnBranchConfigurationManager">
+    <option name="mySupportsUserInfoFilter" value="true"/>
+  </component>
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs=""/>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ArtifactsStructureConfigurable.UI">
+        <UIState>
+          <splitter-proportions>
+            <SplitterProportionsDataImpl/>
+          </splitter-proportions>
+          <settings/>
+        </UIState>
+      </state>
+      <state key="Copyright.UI">
+        <UIState>
+          <splitter-proportions>
+            <SplitterProportionsDataImpl/>
+          </splitter-proportions>
+        </UIState>
+      </state>
+      <state key="ProjectJDKs.UI">
+        <UIState>
+          <splitter-proportions>
+            <SplitterProportionsDataImpl>
+              <option name="proportions">
+                <list>
+                  <option value="0.2"/>
+                </list>
+              </option>
+            </SplitterProportionsDataImpl>
+          </splitter-proportions>
+          <last-edited>1.6</last-edited>
+        </UIState>
+      </state>
+      <state key="ScopeChooserConfigurable.UI">
+        <UIState>
+          <splitter-proportions>
+            <SplitterProportionsDataImpl/>
+          </splitter-proportions>
+          <settings/>
+        </UIState>
+      </state>
+    </states>
+  </component>
+</project>

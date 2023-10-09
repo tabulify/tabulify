@@ -43,6 +43,10 @@ DataGeneration.of()
 
   * https://en.wikipedia.org/wiki/Test_data_generation
 
+## Library
+
+  * [java-faker](https://github.com/DiUS/java-faker) (TODO?)
+
 ## Data Generation
 
   * Data Generator. See [filler](https://www.cri.ensmp.fr/people/coelho/datafiller.html) [Code](https://www.cri.ensmp.fr/people/coelho/datafiller)

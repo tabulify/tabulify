@@ -1,0 +1,21 @@
+---
+
+- name: "Copy the node configuration files"
+  with_fileglob: 'host_files/{{ inventory_hostname }}/presto/*'
+  template:
+    src: '{{ item }}'
+    dest: "{{ presto_etc_dir }}/{{ item|basename }}"
+    backup: no
+    owner: '{{ presto_user }}'
+    group: '{{ presto_group }}'
+
+
+- name: "Copy the connectors"
+  with_fileglob: 'host_files/{{ inventory_hostname }}/presto/connectors/*'
+  template:
+    src: '{{ item }}'
+    dest: "{{ presto_catalog_dir }}/{{ item|basename }}"
+    backup: no
+    owner: '{{ presto_user }}'
+    group: '{{ presto_group }}'
+

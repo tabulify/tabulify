@@ -1,0 +1,4 @@
+net.bytle.db.memory.MemoryConnectionProvider
+net.bytle.db.fs.FsConnectionProvider
+net.bytle.db.tpc.TpcConnectionProvider
+net.bytle.db.noop.NoopConnectionProvider

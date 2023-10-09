@@ -1,86 +1,99 @@
 package net.bytle.timer;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 public class Timer {
 
 
-    private static Date startTime;
-    private final String name;
 
-    @Override
-    public String toString() {
-        return name;
+  private final String name;
+
+  public static Timer createFromUuid() {
+    return new Timer(UUID.randomUUID().toString());
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  private Instant startTime;
+  private Instant endTime;
+
+  private long SECONDS_IN_MILLI = 1000;
+  private long MINUTES_IN_MILLI = 1000 * 60;
+  private long HOURS_IN_MILLI = 1000 * 60 * 60;
+
+
+  private Long responseTimeInMs;
+
+  private Timer(String name) {
+    this.name = name;
+    startTime = Instant.now();
+  }
+
+  static public Timer create(String name) {
+    return new Timer(name);
+  }
+
+
+  public String getName() {
+
+    return name;
+  }
+
+  public Timer start() {
+    startTime = Instant.now();
+    return this;
+  }
+
+  public void stop() {
+
+    if (responseTimeInMs == null) {
+      endTime = Instant.now();
+      responseTimeInMs = ChronoUnit.MILLIS.between(startTime, endTime);
+    } else {
+      throw new IllegalStateException("The timer was already stopped");
     }
 
+  }
 
 
-    private Date endTime;
-
-    long SECONDS_IN_MILLI = 1000;
-    long MINUTES_IN_MILLI = 1000 * 60;
-    long HOURS_IN_MILLI = 1000 * 60 * 60;
-
-
-    private long responseTimeInMs;
-
-    private Timer(String name) {
-        this.name = name;
+  public long getResponseTimeInMilliSeconds() {
+    if (responseTimeInMs == null) {
+      stop();
     }
+    return responseTimeInMs;
+  }
 
-    static public Timer getTimer(String name) {
-        return new Timer(name);
-    }
+  /**
+   * @return the response time in (hour:minutes:seconds.milli)
+   */
 
+  public String getResponseTimeInString() {
 
-    public String getName() {
+    long elapsedHours = getResponseTimeInMilliSeconds() / HOURS_IN_MILLI;
 
-        return name;
-    }
+    long diff = getResponseTimeInMilliSeconds() % HOURS_IN_MILLI;
+    long elapsedMinutes = diff / MINUTES_IN_MILLI;
 
-    public Timer start() {
-        startTime = new Date();
-        return this;
-    }
+    diff = diff % MINUTES_IN_MILLI;
+    long elapsedSeconds = diff / SECONDS_IN_MILLI;
 
-    public void stop() {
-        endTime = new Date();
-        responseTimeInMs = endTime.getTime() - startTime.getTime();
+    diff = diff % SECONDS_IN_MILLI;
+    long elapsedMilliSeconds = diff;
 
+    return elapsedHours + ":" + elapsedMinutes + ":" + elapsedSeconds + "." + elapsedMilliSeconds;
 
-    }
+  }
 
-
-    @SuppressWarnings("WeakerAccess")
-    public long getResponseTimeInMilliSeconds() {
-        return responseTimeInMs;
-    }
-
-    /**
-     * @return the response time in (hour:minutes:seconds.milli)
-     */
-
-    public String getResponseTime() {
-        long elapsedHours = responseTimeInMs / HOURS_IN_MILLI;
-
-        long diff = responseTimeInMs % HOURS_IN_MILLI;
-        long elapsedMinutes = diff / MINUTES_IN_MILLI;
-
-        diff = diff % MINUTES_IN_MILLI;
-        long elapsedSeconds = diff / SECONDS_IN_MILLI;
-
-        diff = diff % SECONDS_IN_MILLI;
-        long elapsedMilliSeconds = diff;
-
-        return elapsedHours + ":" + elapsedMinutes + ":" + elapsedSeconds + "." + elapsedMilliSeconds;
-
-    }
-
-  public Date getStartTime() {
+  public Instant getStartTime() {
     return startTime;
   }
 
-  public Date getEndTime() {
+  public Instant getEndTime() {
     return endTime;
   }
 }

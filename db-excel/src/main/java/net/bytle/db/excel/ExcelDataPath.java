@@ -1,18 +1,19 @@
 package net.bytle.db.excel;
 
-import net.bytle.db.fs.FsBinaryDataPath;
-import net.bytle.db.fs.FsDataStore;
+import net.bytle.db.fs.FsConnection;
+import net.bytle.db.fs.binary.FsBinaryDataPath;
+import net.bytle.type.MediaTypes;
 
 import java.nio.file.Path;
 
 public class ExcelDataPath extends FsBinaryDataPath {
 
-  public ExcelDataPath(FsDataStore fsDataStore, Path path) {
-    super(fsDataStore, path);
+  public ExcelDataPath(FsConnection fsConnection, Path path) {
+    super(fsConnection, path, MediaTypes.EXCEL_FILE);
   }
 
   @Override
-  public ExcelDataDef getOrCreateDataDef() {
+  public ExcelDataDef getOrCreateRelationDef() {
     return new ExcelDataDef(this);
   }
 

@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Same idea as:
@@ -16,7 +15,18 @@ import java.util.stream.Collectors;
 public class MapBiDirectional<K,V> implements Map<K, V> {
 
   Map<K, V> map = new HashMap<>();
+  Map<V, K> inverseMap = new HashMap<>();
 
+  public MapBiDirectional(Map<K, V> map) {
+    this.map = map;
+    for (Entry<K,V> entry:map.entrySet()){
+      inverseMap.put(entry.getValue(),entry.getKey());
+    }
+  }
+
+  public MapBiDirectional() {
+
+  }
 
   @Override
   public int size() {
@@ -57,19 +67,20 @@ public class MapBiDirectional<K,V> implements Map<K, V> {
    * @return the inverse
    */
   public MapBiDirectional<V, K> inverse() {
-    return
-      map.entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey, (e1,e2)->e1, MapBiDirectional::new));
+    return new MapBiDirectional<>(inverseMap);
   }
 
   @Override
   public V put(K key, V value) {
-    K keyed = inverse().get(value);
+    K keyed = inverseMap.get(value);
     if (keyed ==null && key ==null){
       throw new RuntimeException("The value ("+value+") is already mapped to the null key");
     } else if (keyed!=null && !keyed.equals(key)){
       throw new RuntimeException("The value ("+value+") is already mapped to the key ("+keyed+"). You can't add it to the key ("+key+")");
     } else {
+      inverseMap.put(value,key);
       return map.put(key, value);
+
     }
   }
 

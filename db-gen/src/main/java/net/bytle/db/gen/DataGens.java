@@ -14,14 +14,14 @@ import java.util.List;
  */
 public class DataGens {
 
-  private static final Log LOGGER = DataGeneration.GEN_LOG;
+  private static final Log LOGGER = GenLog.LOGGER;
 
   public static void suppressSelfReferencingForeignKeys(DataPath schemaDef) {
 
     int counter = 0;
     for (ForeignKeyDef foreignKeyDef : getSelfReferencingForeignKeys(schemaDef)) {
       counter++;
-      DataPath foreignKeyDataPath = foreignKeyDef.getTableDef().getDataPath();
+      DataPath foreignKeyDataPath = foreignKeyDef.getRelationDef().getDataPath();
       Tabulars.dropOneToManyRelationship(foreignKeyDataPath, foreignKeyDataPath);
     }
     if (counter == 0) {
@@ -50,8 +50,8 @@ public class DataGens {
     }
 
     for (DataPath dataPathToCheck : dataPathToChecks) {
-      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateDataDef().getForeignKeys()) {
-        if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath())) {
+      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateRelationDef().getForeignKeys()) {
+        if (dataPathToCheck.equals(foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath())) {
           foreignKeyDefs.add(foreignKeyDef);
         }
       }
@@ -78,7 +78,7 @@ public class DataGens {
 
     for (DataPath dataPathToCheck : dataPathToChecks) {
       List<ColumnDef> columnDefs = new ArrayList<>();
-      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateDataDef().getForeignKeys()) {
+      for (ForeignKeyDef foreignKeyDef : dataPathToCheck.getOrCreateRelationDef().getForeignKeys()) {
         for (ColumnDef columnDef : foreignKeyDef.getChildColumns()) {
           if (columnDefs.contains(columnDef)) {
             foreignKeyDefs.add(foreignKeyDef);
@@ -97,9 +97,10 @@ public class DataGens {
 
     int counter = 0;
     for (ForeignKeyDef foreignKeyDef : getSecondForeignKeysOnTheSameColumn(schemaDef)) {
-      counter = counter+1;
+      counter = counter + 1;
       Tabulars.dropOneToManyRelationship(foreignKeyDef);
     }
+    //noinspection ConstantConditions
     if (counter == 0) {
       LOGGER.info("No more than one foreign key on the same column was found.");
     } else {

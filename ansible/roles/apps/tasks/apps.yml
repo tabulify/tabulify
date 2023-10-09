@@ -1,0 +1,24 @@
+- name: Install
+  become: yes
+  block:
+    - name: "Create the group {{ apps_user_group }}"
+      group:
+        name: '{{ apps_user_group }}'
+        state: present
+    - name: "Create the user {{ apps_user_name }}"
+      user:
+        name: '{{ apps_user_name }}'
+        comment: User for the backend app
+        shell: /bin/bash
+        state: present
+        group: '{{ apps_user_group }}'
+        password: "{{ apps_user_pwd | password_hash('sha512') }}"
+    - name: Create the install path {{ apps_install_path }}
+      tags: backend-admin
+      file:
+        state: directory
+        path: '{{ apps_install_path }}'
+        group: '{{ apps_user_name }}'
+        owner: '{{ apps_user_group }}'
+        mode: 'u=rwx,g=rwx,o='
+        recurse: true

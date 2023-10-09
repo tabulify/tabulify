@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<api batchcomplete="">
+  <query>
+    <normalized>
+      <n from="Relation_(database)" to="Relation (database)"/>
+    </normalized>
+    <pages>
+      <page _idx="23720058" pageid="23720058" ns="0" title="Relation (database)" description="The base data structure of relational databases">
+        <categories>
+          <cl ns="14" title="Category:Articles with example SQL code"/>
+          <cl ns="14" title="Category:Database management systems"/>
+          <cl ns="14" title="Category:Relational model"/>
+        </categories>
+      </page>
+    </pages>
+  </query>
+</api>

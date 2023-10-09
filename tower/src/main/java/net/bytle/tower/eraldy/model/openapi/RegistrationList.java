@@ -1,0 +1,238 @@
+package net.bytle.tower.eraldy.model.openapi;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.net.URI;
+import java.util.Objects;
+
+/**
+ * A list where user can register  RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+ **/
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class RegistrationList   {
+
+  private Long localId;
+  private String guid;
+  private String handle;
+  private String name;
+  private String title;
+  private String description;
+  private User ownerUser;
+  private App ownerApp;
+  private Realm realm;
+  private URI registrationUrl;
+
+  /**
+  * The empty constructor is
+  * needed for the construction of the pojo
+  * with the Jackson library
+  */
+  @SuppressWarnings("unused")
+  public RegistrationList () {
+  }
+
+  /**
+  * @return localId The list identifier in the realm scope. Without the realm, this id have duplicate.
+  */
+  @JsonProperty("localId")
+  public Long getLocalId() {
+    return localId;
+  }
+
+  /**
+  * @param localId The list identifier in the realm scope. Without the realm, this id have duplicate.
+  */
+  @SuppressWarnings("unused")
+  public void setLocalId(Long localId) {
+    this.localId = localId;
+  }
+
+  /**
+  * @return guid The global list id where the user can register
+  */
+  @JsonProperty("guid")
+  public String getGuid() {
+    return guid;
+  }
+
+  /**
+  * @param guid The global list id where the user can register
+  */
+  @SuppressWarnings("unused")
+  public void setGuid(String guid) {
+    this.guid = guid;
+  }
+
+  /**
+  * @return handle A handle (unique code) for the list
+  */
+  @JsonProperty("handle")
+  public String getHandle() {
+    return handle;
+  }
+
+  /**
+  * @param handle A handle (unique code) for the list
+  */
+  @SuppressWarnings("unused")
+  public void setHandle(String handle) {
+    this.handle = handle;
+  }
+
+  /**
+  * @return name The name of the list
+  */
+  @JsonProperty("name")
+  public String getName() {
+    return name;
+  }
+
+  /**
+  * @param name The name of the list
+  */
+  @SuppressWarnings("unused")
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+  * @return title The title of the list used in heading
+  */
+  @JsonProperty("title")
+  public String getTitle() {
+    return title;
+  }
+
+  /**
+  * @param title The title of the list used in heading
+  */
+  @SuppressWarnings("unused")
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  /**
+  * @return description The description of the list
+  */
+  @JsonProperty("description")
+  public String getDescription() {
+    return description;
+  }
+
+  /**
+  * @param description The description of the list
+  */
+  @SuppressWarnings("unused")
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  /**
+  * @return ownerUser
+  */
+  @JsonProperty("ownerUser")
+  public User getOwnerUser() {
+    return ownerUser;
+  }
+
+  /**
+  * @param ownerUser Set ownerUser
+  */
+  @SuppressWarnings("unused")
+  public void setOwnerUser(User ownerUser) {
+    this.ownerUser = ownerUser;
+  }
+
+  /**
+  * @return ownerApp
+  */
+  @JsonProperty("ownerApp")
+  public App getOwnerApp() {
+    return ownerApp;
+  }
+
+  /**
+  * @param ownerApp Set ownerApp
+  */
+  @SuppressWarnings("unused")
+  public void setOwnerApp(App ownerApp) {
+    this.ownerApp = ownerApp;
+  }
+
+  /**
+  * @return realm
+  */
+  @JsonProperty("realm")
+  public Realm getRealm() {
+    return realm;
+  }
+
+  /**
+  * @param realm Set realm
+  */
+  @SuppressWarnings("unused")
+  public void setRealm(Realm realm) {
+    this.realm = realm;
+  }
+
+  /**
+  * @return registrationUrl The public page where to register for this list
+  */
+  @JsonProperty("registrationUrl")
+  public URI getRegistrationUrl() {
+    return registrationUrl;
+  }
+
+  /**
+  * @param registrationUrl The public page where to register for this list
+  */
+  @SuppressWarnings("unused")
+  public void setRegistrationUrl(URI registrationUrl) {
+    this.registrationUrl = registrationUrl;
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    RegistrationList registrationList = (RegistrationList) o;
+    return Objects.equals(localId, registrationList.localId) &&
+        Objects.equals(guid, registrationList.guid) &&
+        Objects.equals(handle, registrationList.handle) &&
+        Objects.equals(name, registrationList.name) &&
+        Objects.equals(title, registrationList.title) &&
+        Objects.equals(description, registrationList.description) &&
+        Objects.equals(ownerUser, registrationList.ownerUser) &&
+        Objects.equals(ownerApp, registrationList.ownerApp) &&
+        Objects.equals(realm, registrationList.realm) &&
+        Objects.equals(registrationUrl, registrationList.registrationUrl);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(localId, guid, handle, name, title, description, ownerUser, ownerApp, realm, registrationUrl);
+  }
+
+  @Override
+  public String toString() {
+    return "class RegistrationList {\n" +
+    "}";
+  }
+
+  /**
+   * Convert the given object to string with each line indented by 4 spaces
+   * (except the first line).
+   */
+  private String toIndentedString(Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+}

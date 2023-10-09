@@ -1,0 +1,13 @@
+MaxRecordCount: 30
+Columns:
+  - name: id
+    type: integer
+    comment: A id column to see easily the number of values generated
+    DataGenerator:
+      type: sequence
+  - name: seq_char
+    type: varchar
+    precision: 2
+    comment: A column with a sequence character generator
+    DataGenerator:
+      type: sequence

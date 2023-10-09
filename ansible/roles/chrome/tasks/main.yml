@@ -1,0 +1,10 @@
+
+
+
+- name: Chrome Driver should be present
+  become: true
+  yum:
+    name: chromedriver
+    state: present
+
+

@@ -1,0 +1,140 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta name="viewport" content="width=device-width"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <title data-th-text="${heading}">Title</title>
+  <!-- 4 because 5 has variable that the inliner does not support -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <style>
+
+    .preheader {
+      color: transparent;
+      display: none;
+      height: 0;
+      max-height: 0;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      mso-hide: all;
+      visibility: hidden;
+      width: 0;
+    }
+
+    .powered-by a {
+      text-decoration: none;
+    }
+
+    p {
+      padding-bottom: 13px;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+  </style>
+</head>
+<body>
+<!-- Preview -->
+<span class="preheader" data-th-text="${preview}">This is pre-header text. Some client will add it in the preview available in the email list view. (Gmail does).</span>
+
+<!-- Salutations -->
+<p><span data-th-text="${salutation}">Salutation</span><span data-th-text="' '+${recipientName}"> Recipient</span>,</p>
+
+<!-- The first paragraphs -->
+<div data-th-each="intro : ${intros}">
+  <p data-th-utext="${intro}">`Intros` explains in one or more two sentences why we send the
+    email.</p>
+</div>
+<!-- Action -->
+<p data-th-each="action : ${actions}">
+  <a href="https://combostrap.com"
+     data-th-attr="href=${action.url},title=${action.description}"
+     data-th-utext="${action.name}"
+     target="_blank"
+     class="action">
+    A compelling CTA. i.e., NOT "click
+    here" »</a>
+</p>
+
+<!-- After the call to actions -->
+<div data-th-each="outro : ${outros}">
+  <p data-th-utext="${outro}">`Outros` are paragraphs located after the actions that gives
+    information less important</p>
+</div>
+<div style="padding-top: 25px;" data-th-each="closing : ${closings}">
+  <p data-th-utext="${closing}">`Closing` ends the message with a happy ending and your name.</p>
+</div>
+
+<!-- Valediction -->
+<p>
+  <span data-th-utext="${valediction}">Valediction</span>,<br>
+  <span data-th-utext="${senderName}">Sender name</span>
+</p>
+
+<!-- Signature -->
+<p style="font-size: 13px;">
+  <img th:if="${senderAvatar} != null"
+       style="height: 56px; width: 56px; padding-bottom: 10px"
+       th:src="${senderAvatar}"
+       th:alt="${senderFullName}"
+       alt="Photo"
+       src="https://via.placeholder.com/80"/><br>
+  <span style="font-weight: bold;" th:utext="${senderFullName} != null ? ${senderFullName} : ${senderName}">Sender Full Name</span><br>
+  <span th:if="${senderAvatar} != null"><span th:utext="${senderTitle}">Sender Title</span><br></span>
+  <a th:href="@{mailto:{to}(to=${senderEmail})}" th:utext="${senderEmail}">sender@email.com</a>
+</p>
+
+<!-- Adverts (ie PS) -->
+<div th:if="${brand.url} != null">
+  <a href="https://combostrap.com"
+     data-th-attr="href=${brand.url},title=${brand.name}"
+     data-th-alt="'Link to '+${brand.name}"
+     target="_blank">
+    <img src="https://combostrap.com/_media/android-chrome-192x192.png"
+         data-th-attr="src=${brand.logoUrl},title=${brand.name},width=${brand.logoWidth}"
+         data-th-alt="'Logo of '+${brand.name}"
+         alt="Logo of brand"
+         height="auto"
+         width="25px"
+         style="border:0;display:block;outline:none;text-decoration:none;margin-bottom:10px"/>
+    <div data-th-text="${brand.name}">Brand Name</div>
+  </a>
+</div>
+
+
+<!-- Support for Gmail Go-To Actions -->
+<!-- https://developers.google.com/gmail/markup/reference/go-to-action -->
+<script data-th-inline="javascript" data-th-if="${goToAction != null}" type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "EmailMessage",
+    "potentialAction": {
+      "@type": "ViewAction",
+      "url": "[(${goToAction.url})]",
+      "name": "[(${goToAction.name})]"
+    },
+    "description": "[(${goToAction.description})]"
+  }
+</script>
+
+<!--/*@thymesVar id="debug" type="java.lang.Boolean"*/-->
+<div th:if="${debug} == true" class="mt-5">
+  <h6>Debug: Variables</h6>
+  <table class="table">
+    <tr>
+      <th scope="col">Variable Name</th>
+      <th scope="col">Value</th>
+    </tr>
+    <tr th:each="var : ${#vars.getVariableNames()}">
+      <td th:text="${var}"></td>
+      <td th:text="${#vars.getVariable(var)}"></td>
+    </tr>
+  </table>
+</div>
+<p>
+
+</body>
+</html>

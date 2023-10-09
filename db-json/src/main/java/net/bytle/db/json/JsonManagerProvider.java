@@ -1,25 +1,30 @@
 package net.bytle.db.json;
 
-import net.bytle.db.fs.FsBinaryFileManager;
+import net.bytle.db.fs.binary.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
-
-import java.nio.file.Path;
+import net.bytle.type.MediaType;
 
 public class JsonManagerProvider extends FsFileManagerProvider {
 
-  static private JsonManager jsonManager;
+  static private JsonManagerFs jsonManager;
 
   @Override
-  public Boolean accept(Path path) {
+  public Boolean accept(MediaType mediaType) {
 
-    return path.toString().toLowerCase().endsWith("json") || path.toString().toLowerCase().endsWith("jsonl");
+
+    for (MediaType acceptedMediaType : JsonDataPath.ACCEPTED_MEDIA_TYPES) {
+      if (mediaType.getSubType().equals(acceptedMediaType.getSubType())){
+        return true;
+      }
+    }
+    return false;
 
   }
 
   @Override
   public FsBinaryFileManager getFsFileManager() {
     if (jsonManager == null){
-      jsonManager = new JsonManager();
+      jsonManager = new JsonManagerFs();
     }
     return jsonManager;
   }

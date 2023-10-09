@@ -1,10 +1,13 @@
 package net.bytle.db.memory.list;
 
 
+import net.bytle.db.memory.MemoryConnection;
 import net.bytle.db.memory.MemoryDataPathAbs;
-import net.bytle.db.memory.MemoryDataStore;
+import net.bytle.db.memory.MemoryDataPathType;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,22 +15,17 @@ import java.util.List;
 public class MemoryListDataPath extends MemoryDataPathAbs {
 
 
-  /**
-   * Type
-   */
-  public static final String TYPE = "LIST";
+
   private List<List<Object>> values = new ArrayList<>();
 
-  public MemoryListDataPath(MemoryDataStore memoryDataStore, String path) {
-    super(memoryDataStore, path);
+  public MemoryListDataPath(MemoryConnection memoryConnection, String path) {
+
+    super(memoryConnection, path, MemoryDataPathType.LIST);
+
   }
 
-  public static MemoryListDataPath of(MemoryDataStore memoryDataStore, String path) {
-    return new MemoryListDataPath(memoryDataStore, path);
-  }
-
-  public String getType() {
-    return TYPE;
+  public static MemoryListDataPath of(MemoryConnection memoryConnection, String path) {
+    return new MemoryListDataPath(memoryConnection, path);
   }
 
 
@@ -37,8 +35,13 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
   }
 
   @Override
-  public long size() {
-    return values.size();
+  public Long getCount() {
+    return (long) values.size();
+  }
+
+  @Override
+  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+    return new MemoryListInsertStream(this);
   }
 
   @Override
@@ -50,11 +53,6 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     return values;
   }
 
-  @Override
-  public InsertStream getInsertStream(){
-    return new MemoryListInsertStream(this);
-  }
-
 
 
   @Override
@@ -62,5 +60,14 @@ public class MemoryListDataPath extends MemoryDataPathAbs {
     return new MemoryListSelectStream(this);
   }
 
+  @Override
+  public DataPath getParent() {
+    return this.getConnection().getCurrentDataPath();
+  }
+
+  @Override
+  public Long getSize() {
+    return (long) values.size();
+  }
 
 }

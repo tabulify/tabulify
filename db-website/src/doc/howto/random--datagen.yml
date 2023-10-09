@@ -1,0 +1,65 @@
+MaxRecordCount: 30
+Columns:
+  - name: id
+    type: integer
+    comment: A id column to see easily the number of values generated
+    DataGenerator:
+      type: sequence
+  - name: int
+    type: integer
+    comment: A column with a random integer generator
+    DataGenerator:
+      type: random
+      min: 0
+      max: 5
+  - name: rand_float
+    type: float
+    comment: A column with a random float generator
+    DataGenerator:
+      type: random
+      min: 0.0
+      max: 8.0
+  - name: rand_double
+    type: double
+    comment: A column with a random double generator
+    DataGenerator:
+      type: random
+      min: 0.0
+      max: 8.0
+  - name: numeric
+    type: numeric
+    scale: 2
+    comment: A column with a random numeric generator with a scale of 2
+    DataGenerator:
+      type: random
+      min: 10.40
+      max: 19.50
+  - name: rand_date
+    type: date
+    comment: A column with a random date generator
+    DataGenerator:
+      type: random
+      min: 2020-10-01
+      max: 2020-11-01
+  - name: rand_timestamp
+    type: timestamp
+    comment: A column with a random timestamp generator
+    DataGenerator:
+      type: random
+      min: 2020-10-01 01:00:00
+      max: 2020-10-01 02:00:00
+  - name: rand_time
+    type: time
+    comment: A column with a random time generator
+    DataGenerator:
+      type: random
+      min: 01:00:00
+      max: 02:00:00
+  - name: string
+    type: varchar
+    comment: A column with a random string
+    DataGenerator:
+      type: random
+      min: a
+      max: zzzzzzzz
+

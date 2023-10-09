@@ -19,3 +19,23 @@ srs_secret_vault: !vault |
   3038666261636530610a653061316437306433636562333037653036663463383131616334303163
   34613964623133393532306235343834316532346532366435633737653366386231
 
+
+##
+## Disabled (Default value master.conf)
+##
+srs_service_state: "stopped"
+srs_service_enabled: false
+srs_sender_canonical_maps: ""
+srs_sender_canonical_classes: "envelope_sender, header_sender"
+srs_recipient_canonical_maps: ""
+srs_recipient_canonical_classes: "envelope_recipient, header_recipient"
+
+##
+## Enabled
+##
+#srs_service_state: "started"
+#srs_service_enabled: true
+#srs_sender_canonical_maps: "tcp:localhost:10001"
+#srs_sender_canonical_classes: "envelope_sender"
+#srs_recipient_canonical_maps: "tcp:localhost:10002"
+#srs_recipient_canonical_classes: "envelope_recipient,header_recipient"

@@ -4,6 +4,9 @@ package net.bytle.db.transfer;
 import net.bytle.db.engine.ThreadListenerAbs;
 import net.bytle.timer.Timer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The base implementation of a {@link TransferListener}
  *
@@ -13,7 +16,20 @@ public abstract class TransferListenerAbs extends ThreadListenerAbs implements T
   //The source target of this transfer
   private final TransferSourceTarget transferSourceTarget;
 
-  private Timer timer = Timer.getTimer("total");
+  private Timer timer = Timer.create("total");
+
+  /**
+   * The transfer method used
+   */
+  private TransferMethod method;
+
+  /**
+   *
+   * @param transferSourceTarget
+   */
+  private List<TransferResourceOperations> targetDataOperations = new ArrayList<>();
+  private List<TransferResourceOperations> sourceDataOperations = new ArrayList<>();;
+  private TransferType transferType;
 
   public TransferListenerAbs(TransferSourceTarget transferSourceTarget) {
     this.transferSourceTarget = transferSourceTarget;
@@ -41,11 +57,50 @@ public abstract class TransferListenerAbs extends ThreadListenerAbs implements T
   }
 
   @Override
-  public long getResponseTime() {
-    return timer.getResponseTimeInMilliSeconds();
+  public Timer getTimer() {
+    return timer;
   }
 
+  @Override
+  public TransferMethod getMethod() {
+    return this.method;
+  }
 
+  public TransferListener setMethod(TransferMethod transferMethod){
+    this.method = transferMethod;
+    return this;
+  }
 
+  @Override
+  public TransferListener addTargetOperation(TransferResourceOperations transferResourceOperations){
+    this.targetDataOperations.add(transferResourceOperations);
+    return this;
+  }
 
+  @Override
+  public TransferListener addSourceOperation(TransferResourceOperations transferResourceOperations){
+    this.sourceDataOperations.add(transferResourceOperations);
+    return this;
+  }
+
+  @Override
+  public List<TransferResourceOperations> getTargetDataOperations() {
+    return this.targetDataOperations;
+  }
+
+  @Override
+  public List<TransferResourceOperations> getSourceDataOperations() {
+    return this.sourceDataOperations;
+  }
+
+  @Override
+  public TransferListener setType(TransferType transferType){
+    this.transferType = transferType;
+    return this;
+  }
+
+  @Override
+  public TransferType getType() {
+    return this.transferType;
+  }
 }

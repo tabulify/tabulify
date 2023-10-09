@@ -1,0 +1,32 @@
+<mjml>
+  <mj-head>
+    <mj-title>Email Confirmation</mj-title>
+    <mj-attributes>
+      <mj-text font-family="Ubuntu, Helvetica, Arial, sans-serif" color="#000000"></mj-text>
+    </mj-attributes>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column width="60%">
+        <mj-image width="50px" src="https://tabulify.com/_media/android-chrome-192x192.png"></mj-image>
+        <mj-text align="center"font-size="30px" font-family="Helvetica">Email Confirmation</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-hero>
+      <mj-divider border-color="#2780E3"></mj-divider>
+    </mj-hero>
+    <mj-section >
+      <mj-column  width="60%">
+        <mj-text align="center" font-size="18px"  >We are glad you are here.</mj-text>
+        <mj-text align="center" font-size="16px" font-family="Helvetica">Press the button below to activate your account:</mj-text>
+        <mj-button font-family="Helvetica" font-size="18px" background-color="#2780E3" color="white" href="https://tabulify.com">
+          Activate my account
+        </mj-button>
+        <mj-text align="center" font-size="16px">Just to confirm you are you and to prevent any misuse of your email without your permission.</mj-text>
+        <mj-social icon-size="30px" mode="horizontal" padding="30px">
+          <mj-social-element name="twitter-noshare" href="https://twitter.com/tabulify"></mj-social-element>
+        </mj-social>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

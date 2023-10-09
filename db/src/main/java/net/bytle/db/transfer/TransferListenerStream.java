@@ -2,14 +2,14 @@ package net.bytle.db.transfer;
 
 import net.bytle.db.engine.ThreadListener;
 import net.bytle.db.stream.InsertStreamListener;
-import net.bytle.db.stream.SelectStreamListener;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
- * An {@link TransferListener} to get information from a transfer with {@link net.bytle.db.stream.Stream streams}
+ *
+ * A transfer listener stream is a listener for a transfer
+ * that use the streams (ie {@link net.bytle.db.stream.SelectStream} and {@link net.bytle.db.stream.InsertStream}
+ * as opposed to the transfer that uses the data system capability (for instance Files.copy)
+ *
+ * This {@link TransferListener} can hold feedback information of the {@link net.bytle.db.stream.Stream streams}
  *
  *
  */
@@ -17,13 +17,7 @@ public class TransferListenerStream extends TransferListenerAbs implements Threa
 
 
 
-  /**
-   * The insert listeners are read to give live feedback
-   * because they are also written, we make them thread safe with the synchronizedList
-   */
-  private List<InsertStreamListener> insertListener = Collections.synchronizedList(new ArrayList<>());
-  private List<SelectStreamListener> selectListener = new ArrayList<>();
-
+  private InsertStreamListener insertListener;
 
 
   public TransferListenerStream(TransferSourceTarget transferSourceTarget) {
@@ -50,33 +44,31 @@ public class TransferListenerStream extends TransferListenerAbs implements Threa
 
   @Override
   public int getCommits() {
-    return insertListener.stream().mapToInt(InsertStreamListener::getCommits).sum();
+    return insertListener.getCommits();
   }
 
   @Override
-  public long getRowCount() {
-    return insertListener.stream().mapToLong(InsertStreamListener::getRowCount).sum();
+  public Long getRowCount() {
+    return insertListener.getRowCount();
   }
 
   @Override
   public int getBatchCount() {
-    return insertListener.stream().mapToInt(InsertStreamListener::getBatchCount).sum();
+    return insertListener.getBatchCount();
   }
 
 
-  public TransferListener addInsertListener(InsertStreamListener listener) {
-    this.insertListener.add(listener);
+  public TransferListener addInsertListener(InsertStreamListener insertStreamListener) {
+    this.insertListener = insertStreamListener;
     return this;
   }
 
-  public TransferListener addSelectListener(SelectStreamListener selectStreamListener) {
-    this.selectListener.add(selectStreamListener);
-    return this;
-  }
 
-  public List<InsertStreamListener> getInsertStreamListeners() {
+  public InsertStreamListener getInsertStreamListeners() {
     return this.insertListener;
   }
+
+
 
 
 }

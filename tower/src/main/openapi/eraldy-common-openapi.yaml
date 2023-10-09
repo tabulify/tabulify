@@ -1,0 +1,1223 @@
+openapi: 3.0.3
+paths: { }
+info:
+  title: Eraldy Common API Definition
+  description: This is common open api definition
+  version: "v2023-06-18"
+components:
+  schemas:
+    AnalyticsEventPost:
+      description: "The structure of the received data"
+      # https://swagger.io/docs/specification/data-models/data-types/#free-form
+      type: object # Not string, vertx transform application/json in JsonObject
+      additionalProperties: true
+      # unfortunately, the open-api server generator does not use the model object in the api (it used the map <String,Object>), we take over
+      # when using additionalProperties
+      # (vertx schema validation works well with the below description)
+    #      required:
+    #        - event-name
+    #      properties:
+    #        event-name:
+    #          type: string
+    #          description: The event name identification
+    #          example: page-view
+    AnalyticsEventChannel:
+      description: where the request originated from server, browser or mobile
+      type: string
+      enum:
+        - server # create by the server
+        - browser # create by the browser
+        - mobile # create by a mobile app
+    AnalyticsOperatingSystem:
+      description: The os data
+      type: object
+      properties:
+        name:
+          type: string
+          description: the name
+        version:
+          type: string
+          description: the version
+        arch:
+          type: string
+          description: the architecture
+    AnalyticsUrchinTrackingModule:
+      description: |
+        The UTM data
+        See:
+        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
+        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
+        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            The Campaign ID is used to identify a specific ad campaign or promotion
+            This is a required key for GA4 data import.
+          example: summer-sale, abc.123
+        campaign:
+          type: string
+          description: Product, slogan, promo code
+          example: spring_sale
+        source:
+          type: string
+          description: |
+            Referrer.
+            Identifies which site sent the traffic, and is a required parameter
+            Example: the referrer (e.g. google, newsletter)
+          example: summer-mailer
+        medium:
+          type: string
+          description: |
+            Marketing medium (e.g. cpc, banner, email)
+            Identifies what type of link was used, such as cost per click or email.
+          example: email
+        term:
+          type: string
+          description: |
+            Identifies search terms, the paid keywords
+        content:
+          type: string
+          description: |
+            Identifies what specifically was clicked to bring the user to the site,
+            such as a banner ad or a text link.
+            It is often used for A/B testing and content-targeted ads
+        referrer:
+          type: string
+          format: uri
+          description: |
+            Identifies the referrer URL as it's not passed by default by browser HTTP request
+            and therefore not available in the `document.referrer` attribute
+            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
+            utm_source is also a referer but in a named format
+    AnalyticsEventContext:
+      description: |
+        The event context
+        A dictionary of extra information that provides useful context about a event
+        We follow https://segment.com/docs/connections/spec/common/#context
+      type: object
+      properties:
+        timezone:
+          type: string
+          description: the timezone id (ie Europe/London)
+        locale:
+          type: string
+          description: the locale (in a browser, this is the language setting)
+        ip:
+          type: string
+          description: The ip (the remote client ip)
+          example: 143.176.206.76
+        userAgent:
+          type: string
+          description: The user agent string
+        channel:
+          $ref: '#/components/schemas/AnalyticsEventChannel'
+        os:
+          $ref: '#/components/schemas/AnalyticsOperatingSystem'
+        utm:
+          $ref: '#/components/schemas/AnalyticsUrchinTrackingModule'
+        browser:
+          $ref: '#/components/schemas/AnalyticsBrowser'
+        realm:
+          $ref: '#/components/schemas/Realm'
+    AnalyticsBrowser:
+      type: object
+      description: Track browser specific information
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: the address uri in the browser
+        referrer:
+          type: string
+          format: uri
+          description: |
+            The `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
+    AnalyticsEvent:
+      description: |
+        The event. They are the things that happen in our product.
+
+        We follow a mix of
+        * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
+        * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
+
+        The segment spec separates the event property from the context as we do.
+      type: object
+      properties:
+        id:
+          type: string
+          description: |
+            A unique identifier for each event.
+
+            It allows to delete duplicate.
+
+            It's known for:
+            * segment as messageId
+            * mixpanel as $insert_id
+        name:
+          type: string
+          description: the event name
+        properties:
+          description: The additional event properties
+          additionalProperties:
+            type: object # may be number, string, boolean
+        deviceId:
+          type: string
+          description: |
+            The device id (a uuid4 or a fingerprint for instance)
+
+            It's also known as the user anonymous id because this is the user identifier
+            when the user is unknown.
+
+            When you send a message, a userId or a deviceId is required in order to identify a user.
+
+            We prefer the term device id (mixpanel) over anonymous id (segment) because it's
+            more meaningful. We track the device.
+
+            It's created on the client side and stored by the client more permanently
+            (via a cookie for the browser and stored in local storage for durability).
+
+            It's not the same as a session id because:
+            * a session id may be regenerated (when the user sign in for instance).
+            * the device id does not have any security feature. You can't login
+        user:
+          description: The user that created this event
+          $ref: '#/components/schemas/User'
+        context:
+          $ref: '#/components/schemas/AnalyticsEventContext'
+        receptionTime:
+          type: string
+          format: date-time
+          description: The timestamp of when a message was received (if created and send by a client)
+        sendingTime:
+          type: string
+          format: date-time
+          description: |
+            The timestamp of when a message was sent to the analytics endpoint api
+            Time: With Ga, you cannot set the time, It uses the notion of queue
+            https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
+        creationTime:
+          type: string
+          format: date-time
+          description: The timestamp when the object was created
+    IpInfo:
+      title: IpInfo
+      description: The geo-localization information based on Ip
+      type: object
+      properties:
+        ip:
+          type: string
+          description: The ip, the data is based on
+          example: 143.176.206.76
+        country:
+          type: string
+          description: The country name
+          example: Netherlands
+        country2:
+          type: string
+          description: The country ISO code on two characters
+          example: NL
+        country3:
+          type: string
+          description: The country ISO code on three characters
+          example: NLD
+    Service:
+      type: object
+      description: |
+        Service
+      properties:
+        id:
+          format: int64
+          type: integer
+          description: The service id in the realm
+          example: 1
+        guid:
+          type: string
+          description: The service global id, if you want to update the uri identifier
+          example: "xmllKD23"
+        uri:
+          type: string
+          description: An unique identifier (uri like) for the service
+          example: "smtp://user@host:port or user@twitter"
+        type:
+          type: string
+          description: >
+            The type of the service (smtp, ...) that define the data type
+          example: "smtp"
+        data:
+          type: object
+          description: The configuration for the service
+        impersonatedUser:
+          description: The user that the service impersonates or empty if this is a service/app account
+          $ref: '#/components/schemas/User'
+        realm:
+          $ref: '#/components/schemas/Realm'
+    ServiceApp:
+      type: object
+      description: |
+        Service
+      properties:
+        id:
+          format: int64
+          type: integer
+          description: The service scope id in the realm
+          example: 1
+        guid:
+          type: string
+          description: The service scope global id
+          example: "xmllKD23"
+        service:
+          $ref: '#/components/schemas/Service'
+          description: The service scoped
+        app:
+          $ref: '#/components/schemas/App'
+          description: The app that uses this service
+        realm:
+          $ref: '#/components/schemas/Realm'
+    ServiceUser:
+      type: object
+      description: |
+        Service
+      properties:
+        id:
+          format: int64
+          type: integer
+          description: The service scope id in the realm
+          example: 1
+        guid:
+          type: string
+          description: The service scope global id
+          example: "xmllKD23"
+        service:
+          $ref: '#/components/schemas/Service'
+          description: The service user scoped
+        user:
+          $ref: '#/components/schemas/User'
+          description: The user for who this service is
+        realm:
+          $ref: '#/components/schemas/Realm'
+    ServiceSmtp:
+      type: object
+      description: |
+        Smtp Mail Service configuration creation and/or modification
+      properties:
+        host:
+          type: string
+          format: hostname
+          description: The smtp server hostname
+          example: "mail.example.com"
+        port:
+          type: integer
+          description: The smtp server port (generally 587 or 25)
+          example: "587"
+        startTls:
+          type: string
+          description: SSL Secure connection (one of required, optional, disable)
+          example: "required"
+        userName:
+          type: string
+          description: Login Username
+          example: "john"
+        password:
+          type: string
+          description: Login Password
+          example: "secret"
+    Campaign:
+      type: object
+      description: |
+        Service
+      properties:
+        id:
+          format: int64
+          type: integer
+          description: The campaign id
+          example: 1
+        guid:
+          type: string
+          description: The campaign id
+          example: "xmllKD23"
+        name:
+          type: string
+          description: The name of the campaign
+        type:
+          type: string
+          description: The type of the campaign (smtp, ...) that define the data type
+          example: "email"
+        data:
+          type: object
+          description: The configuration for the campaign
+    App:
+      title: An app
+      description: An app is the container for branding elements (such as logo, color)
+      type: object
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+              property = "guid",
+              scope = Realm.class)'
+      # required fields are part of the toString
+      required:
+        - guid
+        - uri
+      properties:
+        localId:
+          format: int64
+          type: integer
+          description: The app identifier in the realm (without the realm, the id may have duplicate)
+          example: 1
+        guid:
+          type: string
+          description: The global publisher id (realm id + publisher id)
+          example: "xmmmN"
+          # other application have things like that:
+          # jNT9BcNlEjwlfhnBnPNSdsk5Lcij2F0r
+        uri:
+          type: string
+          format: uri
+          description: The uri of the app (unique for all apps on the realm, this is equivalent to the authentication scope)
+          example: 'https://doe.com'
+        clientId:
+          type: string
+          description: The client id used to connect
+        name:
+          type: string
+          description: The name of the app
+          example: 'Doe'
+        home:
+          type: string
+          format: uri
+          description: The home url
+          example: "https://doe.com"
+        slogan:
+          type: string
+          description: The slogan of the app
+          example: "Doe, Be You"
+        logo:
+          type: string
+          format: uri
+          description: The uri of the app logo
+          example: "https://doe.com/_media/android-chrome-192x192.png"
+        primaryColor:
+          type: string
+          description: The css primary color of the theme (rgb in hexadecimal)
+          example: "#3498db"
+        user:
+          description: The user uses for all app level communications, the face of the app
+          $ref: '#/components/schemas/User'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        terms:
+          type: string
+          format: uri
+          description: The location of the terms and conditions document
+    User:
+      title: A user
+      description: A user
+      type: object
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+              property = "guid",
+              scope = User.class)'
+      required:
+        - guid
+        - email
+        - handle
+      items:
+      properties:
+        guid:
+          type: string
+          description: |
+            It is the global identifier
+            * a string representation of realm id + user local id
+            * never changes.
+            It's the public id that:
+            * you can see in the url
+            * send to external application such as Analytics SAAS provider.
+
+            The database id (ie realm id + user local id) is not public.
+          example: xmmmN
+        localId:
+          type: integer
+          format: int64
+          description: |
+            The user id in the realm in the database (ie local to the realm)
+
+            We have called it local to avoid to really indicate
+            that is not the true id.
+
+            You can't check with this id if this is the same user
+            as this is the id inside the realm, there is other id
+            with the same value in another realm.
+          example: 1
+        handle:
+          type: string
+          description: The handle of the user
+          example: 'foo'
+        email:
+          type: string
+          format: email
+          description: The email of the user
+          example: 'john@doe.com'
+        name:
+          type: string
+          description: The short and informal name of the user (used in signature, known also as the given, calling or first name)
+          example: 'John'
+        fullname:
+          type: string
+          description: The long and formal name of the user (used in address)
+          example: 'John Doe'
+        title:
+          type: string
+          description: The title of the user (a short user description such as a role used in signature)
+          example: 'Chief Executive Officer'
+        disabled:
+          type: boolean
+          description: Soft deleted
+        disabledReason:
+          type: string
+          description: The reason of the soft delete
+        avatar:
+          type: string
+          format: uri
+          description: The avatar image of the user
+          example: 'https://en.gravatar.com/userimage/john.doe.png'
+        bio:
+          # bio is used in place of description for a person
+          # because it's commonly used (GitHub, twitter)
+          type: string
+          description: A description for the user
+        website:
+          type: string
+          format: uri
+          description: A link to a user website
+          example: 'https://mywebsite'
+        location:
+          type: string
+          description: The location of the user
+          example: 'The world'
+        creationTime:
+          type: string
+          format: date-time
+          description: The creation time of the user
+        modificationTime:
+          type: string
+          format: date-time
+          description: The last modification time of the user
+        realm:
+          $ref: '#/components/schemas/Realm'
+    UserPostBody:
+      title: A post to modify a user
+      description: |
+        A user.
+        If the guid is given, it's used to identify the user
+        otherwise, it's the email
+      type: object
+      properties:
+        userGuid:
+          type: string
+          description: The global/string user id
+          example: "xmmmN"
+        realmGuid:
+          type: string
+          description: The realm Guid
+        realmHandle:
+          type: string
+          description: The realm Handle
+        userEmail:
+          type: string
+          format: email
+          description: The email of the user
+          example: 'john@doe.com'
+        userName:
+          type: string
+          description: The short and informal name of the user (used in signature)
+          example: 'John'
+        userFullname:
+          type: string
+          description: The long and formal name of the user (used in address)
+          example: 'John Doe'
+        userTitle:
+          type: string
+          description: The title of the user (A short description)
+          example: 'Chief Officer'
+        userAvatar:
+          type: string
+          format: uri
+          description: An image avatar of a user
+          example: 'https://en.gravatar.com/userimage/john.doe.png'
+    RegistrationList:
+      title: "A list where user can register"
+      description: |
+        A list where user can register
+
+        RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+      type: object
+      # required fields are part of the toString
+      required:
+        - guid
+        - handle
+      properties:
+        localId:
+          format: int64
+          type: integer
+          description: The list identifier in the realm scope. Without the realm, this id have duplicate.
+          example: 1
+        guid:
+          type: string
+          description: The global list id where the user can register
+          example: xmmmN
+        handle:
+          type: string
+          description: A handle (unique code) for the list
+          example: "newsletter"
+        name:
+          type: string
+          description: The name of the list
+          example: Mailing list
+        title:
+          type: string
+          description: The title of the list used in heading
+          example: "The top Newsletters"
+        description:
+          type: string
+          description: The description of the list
+          example: "The last news ...."
+        ownerUser:
+          description: The user owner of the list
+          $ref: '#/components/schemas/User'
+        ownerApp:
+          description: The app owner of the list
+          $ref: '#/components/schemas/App'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        registrationUrl:
+          description: The public page where to register for this list
+          type: string
+          format: uri
+    PasswordCredentials:
+      title: The password credentials object
+      description: |
+        The data needed to login with a login/password
+      type: object
+      required:
+        - loginRealm
+        - loginPassword
+        - loginHandle
+      properties:
+        loginRealm:
+          type: string
+          description: The realm of the user
+          example: "doe"
+        loginHandle:
+          type: string
+          description: The email of the user
+          format: email
+          example: "john@doe.com"
+        loginPassword:
+          type: string
+          description: The password of the user
+    ListSummary:
+      title: A list summary
+      description: A list summary
+      type: object
+      properties:
+        guid:
+          type: string
+          description: The public list id
+          example: xmmmN
+        handle:
+          type: string
+          description: The handle of the list
+        appUri:
+          type: string
+          description: The app uri
+        subscriberCount:
+          description: The number of subscribers
+          type: integer
+    ServiceSmtpPostBody:
+      type: object
+      description: |
+        Smtp Mail Service creation and/or modification
+
+        * For the service, for an upsert, you may give the service Guid or the service Uri
+        * For the impersonated user, you may give an email or its guid
+      properties:
+        serviceGuid:
+          type: string
+          description: The service global id, if you want to update the identifier
+          example: "xmllKD23"
+        serviceUri:
+          type: string
+          description: The service uri
+          example: "smtp://localhost"
+        realmGuid:
+          type: string
+          description: The realm guid
+        realmHandle:
+          type: string
+          description: The realm handle
+        impersonatedUserEmail:
+          type: string
+          description: >
+            The user email for cold email,
+            Null for system/app service
+          example: "john@doe.com"
+        impersonatedUserGuid:
+          type: string
+          description: >
+            The user guid for cold email,
+            Null for system/app service
+          example: "xmllYYYY"
+        smtpHost:
+          type: string
+          format: hostname
+          description: The smtp server hostname
+          example: "mail.example.com"
+        smtpPort:
+          type: integer
+          description: The smtp server port
+          example: "587"
+        smtpStartTls:
+          type: string
+          description: SSL Secure connection (one of required, optional, disable)
+          example: "required"
+        smtpUserName:
+          type: string
+          description: Login Username
+          example: "john"
+        smtpPassword:
+          type: string
+          description: Login Password
+          example: "secret"
+    CampaignEmailPostBody:
+      type: object
+      description: |
+        Email Campaign creation and/or modification
+      properties:
+        campaignGuid:
+          type: string
+          description: The service global id, if you want to update the identifier
+          example: "xmllKD23"
+        campaignHandle:
+          type: string
+          description: The campaign handle (unique code)
+          example: "202201-fresh-start"
+        emailSubject:
+          type: string
+          description: The email subject
+        listGuid:
+          type: string
+          description: The list audience (the valid subscribers to the list)
+    ListPostBody:
+      type: object
+      description: |
+        List creation and/or modification
+
+        For creation, the mandatory data are:
+          * the name
+          * the publisher app (guid or uri and realm)
+
+        If the communication channel should be personal, the publisher (guid / email) can be given.
+
+        For modification, you need to give the list guid or the unique handle.
+      properties:
+        listGuid:
+          type: string
+          description: The public list id, if you want to update the list handle
+          example: "xmllKD23"
+        listHandle:
+          type: string
+          description: A unique name / code for the list
+          example: "Newsletter"
+        listName:
+          type: string
+          description: The name of the list used in listing
+          example: "Newsletters"
+        listTitle:
+          type: string
+          description: The title of the list used in heading/title
+          example: "The top Newsletters"
+        listDescription:
+          type: string
+          description: The description of the list
+          example: "The last news ...."
+        ownerAppGuid:
+          description: the owner app guid
+          type: string
+          format: hostname
+          example: "doe.com"
+        ownerAppUri:
+          description: the owner app uri
+          type: string
+          format: uri
+          example: "https://doe.com"
+        realmGuid:
+          description: the realm guid (needed if the handle are used, ie user email or app uri)
+          type: string
+        realmHandle:
+          description: the realm handle (needed if the app uri)
+          type: string
+        ownerUserEmail:
+          description: if the communication channel is personal and not transactional, the email of the publisher
+          type: string
+          format: email
+          example: "john@doe.com"
+        ownerUserGuid:
+          description: if the communication channel is personal and not transactional, the guid of the publisher
+          type: string
+          example: "xklls"
+    RegistrationShort:
+      title: A registration to a list
+      type: object
+      properties:
+        guid:
+          type: string
+          description: The public registration id
+          example: xmmmN
+        subscriberEmail:
+          description: The subscriber email
+          type: string
+    Registration:
+      title: A registration to a list
+      description: A registration
+      type: object
+      properties:
+        guid:
+          type: string
+          description: The public registration id
+          example: xmmmN
+        status:
+          type: string
+          description: The status of the registration
+        list:
+          description: The list
+          $ref: '#/components/schemas/RegistrationList'
+        subscriber:
+          description: The subscriber
+          $ref: '#/components/schemas/User'
+        confirmationTime:
+          description: The confirmation time
+          type: string
+        #          format: date-time (does not work with OpenAPI verxt router)
+        confirmationIp:
+          description: The confirmation ip
+          type: string
+        optInTime:
+          description: The opt-in time
+          type: string
+        #          format: date (does not work with OpenAPI verxt router)
+        optInIp:
+          description: The opt-in ip
+          type: string
+        optInUri:
+          description: The opt-in uri
+          type: string
+          format: uri
+        flow:
+          description: The flow of registration
+          $ref: '#/components/schemas/RegistrationFlow'
+    RegistrationFlow:
+      description: How the user has been registered
+      type: string
+      enum:
+        - oauth # the user has clicked on the oauth button
+        - email # the user has given its email
+    ListRegistrationPostBody:
+      title: Registration Request to a list
+      description: |
+        The data needed to register a user to a list
+        Note that a user email or a user id is required
+        (OpenAPI cannot describe that in a elegant way)
+        a user email or id is mandatory
+        a list id or guid is mandatory
+      type: object
+      required:
+        - subscriberEmail
+        - listGuid
+        - redirectUri
+      properties:
+        subscriberEmail:
+          type: string
+          description: The email of the user that want to subscribe
+          format: email
+          example: "john@doe.com"
+        listGuid:
+          type: string
+          description: The public list id where the user should be registered
+        redirectUri:
+          type: string
+          format: uri
+          description: where to redirect the user
+          example: "https://example.com/page"
+    ExitStatusResponse:
+      title: Error Response to a request
+      description: |
+        A response with a status code and status message
+
+        Example of error on Github:
+        {
+          "message": "Requires authentication",
+          "documentation_url": "https://docs.github.com/rest/reference/users#list-email-addresses-for-the-authenticated-user"
+        }
+
+        Example of error in Google hiting https://www.googleapis.com/oauth2/v1/userinfo
+        {
+          "error": {
+            "code": 401,
+            "message": "Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+            "status": "UNAUTHENTICATED"
+          }
+        }
+      type: object
+      properties:
+        code:
+          type: integer
+          description: The status code
+          example: 200
+        message:
+          type: string
+          description: A feedback message
+          example: A success message or a error message if the status code is not 200
+    AppPostBody:
+      type: object
+      description: |
+        App creation, modification
+        If:
+          * the guid is defined, it will be used to update the existing app.
+          * not, the uri is used instead.
+        The user (guid or email) is mandatory (the public face of the app)
+        The realm (guid or handle) is also mandatory
+      properties:
+        appGuid:
+          type: string
+          description: The guid of an existing app (to update the uri if necessary)
+        appUri:
+          type: string
+          format: uri
+          description: The unique uri of the app
+          example: "https://doe.com"
+        realmGuid:
+          type: string
+          description: the realm Guid
+        realmHandle:
+          type: string
+          description: the realm handle
+        userGuid:
+          type: string
+          description: The guid of the public app user
+          example: 'xLOKKMmm'
+        userEmail:
+          type: string
+          format: email
+          description: The email of the public app user
+          example: 'john@doe.com'
+        appName:
+          type: string
+          description: A shortname
+          example: "Doe"
+        appSlogan:
+          type: string
+          description: The app slogan
+          example: "Doe, be you"
+        appHome:
+          type: string
+          format: uri
+          description: The url of the app
+          example: "https://doe.com"
+        appLogo:
+          type: string
+          format: uri
+          description: The uri of a logo
+          example: "https://doe.com/_media/android-chrome-192x192.png"
+        appPrimaryColor:
+          type: string
+          description: The css primary color of the theme (rgb in hexadecimal)
+          example: "#3498db"
+        appTerms:
+          type: string
+          format: uri
+          description: The url of the terms and conditions document
+          example: "https://doe.com/terms"
+    CspObject:
+      # https://w3c.github.io/webappsec-csp/#deprecated-serialize-violation
+      title: The csp object
+      description: A CSP violation report object
+      type: object
+      required:
+        - csp-report
+      properties:
+        csp-report:
+          $ref: '#/components/schemas/CspReport'
+    CspReport:
+      # https://w3c.github.io/webappsec-csp/#deprecated-serialize-violation
+      type: object
+      description: the csp report
+      additionalProperties:
+        type: string
+      properties:
+        document-uri:
+          type: string
+          description: The result of executing Strip URL for use in reports on violation’s url.
+        referrer:
+          type: string
+          description: The result of executing Strip URL for use in reports on violation’s referrer.
+        blocked-uri:
+          type: string
+          description: The result of executing Strip URL for use in reports on violation’s referrer.
+    RealmPostBody:
+      type: object
+      description: Realm creation
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: A name
+        handle:
+          type: string
+          maxLength: 10
+          description: A handle (only alphabetical characters)
+          example: "example"
+    EmailIdentifier:
+      type: object
+      description: An object that identifies an user by its email and realm
+      required:
+        - userEmail
+        - realmHandle
+      properties:
+        userEmail:
+          type: string
+          # we don't set the format because the openapi validation is not really helpful for the end client
+          # we do the validation ourselves
+          # format: email
+          description: An email
+        realmHandle:
+          type: string
+          description: The realm handle
+    Realm:
+      type: object
+      description: |
+        A realm.
+
+        It identifies a protection space where the user and their credentials
+        are stored.
+
+        * In a marketing level, it represents a brand. When people log in, they see the realm logo.
+        * In a web/dns level, it would be a domain name (and apps would be subdomain)
+        * In a security level, this is the authentication realm.
+        * In an infrastructure level, this is called a tenant.
+
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+        generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+        property = "guid",
+        scope = Realm.class)'
+      required: # much more a or
+        - guid
+        - handle
+      properties:
+        localId:
+          type: integer
+          format: int64
+          description: The realm id in the database
+        guid:
+          type: string
+          format: int64
+          description: |
+            The public id
+            (derived from the database id)
+        name:
+          type: string
+          description: The name of the realm
+          # The name is generally not modfiable as it's used for hosting.
+        organization:
+          $ref: '#/components/schemas/Organization'
+          description: The organization owner
+        ownerUser:
+          $ref: '#/components/schemas/User'
+          description: |
+            The owner user
+            Shown as support on the identity page (login, reset, ...)
+        handle:
+          type: string
+          description: |
+            A handle, the name used as:
+              - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
+              - database schema
+        defaultApp:
+          description: The default application of the realm
+          allOf:
+            - $ref: '#/components/schemas/App'
+    Organization:
+      description: |
+        Organization for the users using the Combostrap product
+        (Not from the user of other Realm)
+      type: object
+      properties:
+        guid:
+          type: string
+          description: The string representation of the organization id
+          example: org-xmmmN
+        localId:
+          type: integer
+          format: int64
+          description: The organization id in the database
+          example: 1
+        name:
+          type: string
+          description: Organization name
+    OrganizationUser:
+      description: |
+        A user in the organization
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            organization:
+              $ref: '#/components/schemas/Organization'
+    UserAnalytics:
+      description: "User and Analytics"
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            lastActiveTime:
+              type: string
+              format: date-time
+              description: the last active time (should be on date level)
+    RealmAnalytics:
+      description: "Realm Analytics (count, ...)"
+      allOf:
+        - $ref: "#/components/schemas/Realm"
+        - type: object
+          properties:
+            userCount:
+              type: integer
+              description: The number of users for the realm
+              # userCount and not usersCount
+              # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
+              # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
+            appCount:
+              type: integer
+              description: The number of apps for the realm
+            listCount:
+              type: integer
+              description: The number of lists for the realm
+            subscriberCount:
+              type: integer
+              description: The number of subscribers for the realm
+    #    FatRealm:
+    #      description: The public realm (The real returned from an API request)
+    #      type: object
+    #      allOf:
+    #        - $ref: "#/components/schemas/Realm"
+    #        - $ref: "#/components/schemas/RealmAnalytics"
+    RealmWithAppUris:
+      type: object
+      description: |
+        A realm with the app Uri that it supports
+      properties:
+        guid:
+          type: string
+          format: int64
+          description: The public id
+        name:
+          type: string
+          description: A name
+        handle:
+          type: string
+          description: the handle
+        app_uris:
+          type: array
+          items:
+            type: string
+            format: uri
+            description: a app uri
+  requestBodies:
+    CspViolationReportBody:
+      # https://w3c.github.io/webappsec-csp/#deprecated-serialize-violation
+      description: The body of a CSP Violation Report
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CspObject'
+    ServiceSmtpPostBody:
+      description: The data needed to create a smtp mail service
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceSmtpPostBody'
+    CampaignEmailPostBody:
+      description: The data needed to create an email campaign
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignEmailPostBody'
+    ListPostBody:
+      description: The data needed to create a list
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListPostBody'
+    AppPostBody:
+      description: The data needed to create / modify a app
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppPostBody'
+    UserPostBody:
+      description: The data needed to create / modify a user
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserPostBody'
+    ListRegistrationPostBody:
+      description: The data needed to register a user to a list
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+    RealmPostBody:
+      description: The data needed to create a realm
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RealmPostBody'
+    EmailPostBody:
+      description: A json object with only a email
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailIdentifier'
+  # Doc: https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
+  securitySchemes:
+    basicAuth: # binding name (arbitrary name used in code and in the file)
+      type: http
+      scheme: basic
+    apiKeyAuth: # binding name (arbitrary name used in code and in the file)
+      type: apiKey
+      in: header       # can be "header", "query" or "cookie"
+      name: x-api-key  # name of the header, query parameter or cookie
+    cookieAuth: # binding name (arbitrary name used in code and in the file)
+      type: apiKey
+      in: cookie
+      name: cs-session-id
+    bearerAuth: # binding name (arbitrary name used in code and in the file)
+      type: http
+      scheme: bearer
+      bearerFormat: JWS

@@ -3,3 +3,9 @@
 letsencrypt_email: nico@bytle.net
 letsencrypt_home_dir: /root/certbot
 letsencrypt_renewal_script: "{{ letsencrypt_home_dir }}/renewal.sh"
+
+# Where the certificate are stored
+# Each certificate are stored in the sub-directory
+# example for the domain yolo.voila.net
+# the certificate are located at /etc/letsencrypt/live/yolo.voila.net
+letsencrypt_cert_base_dir: /etc/letsencrypt/live

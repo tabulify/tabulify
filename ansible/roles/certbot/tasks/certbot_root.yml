@@ -28,7 +28,7 @@
     state: present
     enablerepo: epel
 
-- name: Create secret directoy
+- name: Create secret directory
   file:
     state: directory
     path: "/root/.secrets/certbot"
@@ -60,16 +60,19 @@
 # that's why bytle.net is the first one
 - name: Get the Ovh certificate
   with_items: "{{ovh_domains}}"
-  include: certbot_certonly_ovh.yml letsencrypt_domain={{ item }}
+  include_tasks: certbot_certonly_ovh.yml
+  vars:
+    letsencrypt_domain: '{{ item }}'
   tags: certbot-ovh
 
-- name: Get the Cloudflare certificate
-  with_items: "{{cloudflare_domains}}"
-  include: certbot_certonly_cloudflare.yml letsencrypt_domain={{ item }}
+- name: Get the Cloudflare certificate {{ item.key }}
+  with_dict: "{{cloudflare_domains}}"
+  include_tasks: certbot_certonly_cloudflare.yml
+  vars:
+    letsencrypt_domain: '{{ item.value.fqdn }}'
+    letsencrypt_dir: '{{ item.value.dir }}'
   tags: certbot-cloudflare
-
 
 - name: Certbot - Cert Renewal
   import_tasks: certbot_renewal.yml
   tags: certbot-renewal
-

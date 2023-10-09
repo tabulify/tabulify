@@ -5,6 +5,8 @@
 description = "Db Csv"
 
 dependencies {
-  compile(project(":bytle-db"))
-  compile("org.apache.commons:commons-csv:1.7")
+  api(project(":bytle-db"))
+  implementation(project(":bytle-db-flow"))
+  implementation(project(":bytle-type"))
+  implementation("org.apache.commons:commons-csv:1.7")
 }

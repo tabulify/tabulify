@@ -1,43 +1,63 @@
 package net.bytle.db.model;
 
+import net.bytle.db.diff.DataPathDataComparison;
 import net.bytle.db.spi.DataPath;
+import net.bytle.exception.NoColumnException;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * The relational structure of the data
+ * Represents a relational structure
+ * <p>
+ * In the merge and copy function, the below term are used:
+ * * A `relation` is a combination of the columns and the local constraints (Unique keys and Primary Key)
+ * * A `relationWithForeignKey` is the whole object (ie a `relation` and the foreign Keys)
+ * * A `relationWithoutLocalConstraint` is the columns only
  *
- * FYI
  * @see <a href=https://calcite.apache.org/docs/model.html#table>Calcite table</a>
  */
 public interface RelationDef {
 
 
   /**
-   * @param columnName
-   * @return a column def by its name
+   * @param columnName the column name
+   * @return a column def by its name or null if it does not exist
    */
-  <T> ColumnDef<T> getColumnDef(String columnName);
+  ColumnDef getColumnDef(String columnName) throws NoColumnException;
 
   /**
-   * @param columnIndex
+   * @param columnIndex the column index
    * @return a column def by its index (starting at 0)
    */
-  <T> ColumnDef<T> getColumnDef(Integer columnIndex);
+  ColumnDef getColumnDef(Integer columnIndex);
 
   /**
    * Get or create column
-   *
+   * <p>
    * This is the unique factory method that create the column object
    * All other add method call this method
    *
-   * @param columnName
-   * @param clazz
-   * @param <T>
-   * @return
+   * @param columnName the column name
+   * @param clazz       - to have a minimal compile type checking
+   * @param sqlDataType the type
    */
-  <T> ColumnDef<T> getOrCreateColumn(String columnName, Class<T> clazz);
+  ColumnDef getOrCreateColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz);
+
+
+  /**
+   * @param columnName - The column name
+   * @param clazz      - The type of the column (Java needs the type to be a sort of type safe)
+   * @return a new columnDef even if the column already existed
+   */
+  ColumnDef createColumn(String columnName, SqlDataType sqlDataType, Class<?> clazz);
+
+  /**
+   * An utility function that create a column from a Java Clazz
+   * This is to implement a sort of type control mostly on generation function
+   *
+   */
+  ColumnDef getOrCreateColumn(String columnName, Class<?> clazz);
+
 
   PrimaryKeyDef getPrimaryKey();
 
@@ -61,30 +81,20 @@ public interface RelationDef {
 
   void deleteForeignKey(ForeignKeyDef foreignKeyDef);
 
-  Object getProperty(String key);
-
-  DataDefAbs addProperty(String key, Object value);
-
-  Map<String, Object> getProperties();
-
   ForeignKeyDef foreignKeyOf(PrimaryKeyDef primaryKey, List<String> columns);
 
   PrimaryKeyDef primaryKeyOf(String... columnNames);
-
-  DataPath getDataPath();
-
 
   /**
    * @return the number of columns
    */
   int getColumnsSize();
 
-  @Override
-  String toString();
-
   RelationDef addColumn(String s);
 
   RelationDef addColumn(String columnName, Integer typeCode);
+
+  RelationDef addColumn(String columnName, Class<?> clazz);
 
   RelationDef addColumn(String columnName, Integer typeCode, Boolean nullable);
 
@@ -98,60 +108,55 @@ public interface RelationDef {
 
   /**
    * The column definition by their position
-   * @return
-   */
-  ColumnDef[] getColumnDefs();
-
-  /**
-   * Copy the data definitions (columns,..)
-   * This function is used to create another data path
-   * and to quickly copy its structure
-   * @param sourceDataPath
-   * @return
-   */
-  RelationDef copyDataDef(DataPath sourceDataPath);
-
-
-
-  /**
    *
-   * @param columnName
-   * @param clazz
-   * @param <T>
-   * @return the column checked against the clazz
-   * This is an utility function that permits to have type safe statement
    */
-  <T> ColumnDef<T> getColumn(String columnName, Class<T> clazz);
+  <D extends ColumnDef> List<D> getColumnDefs();
 
-  /**
-   *
-   * @param columnName
-   * @return a column def or null if the column does not exist
-   */
-  ColumnDef getColumn(String columnName);
-
-  /**
-   * Merge the data definition.
-   * This function was created to extend a data generation definition
-   * to its insert target. As the data generation may be only defined for one
-   * column.
-   * @param fromDataPath
-   * @return
-   */
-  RelationDef mergeDataDef(DataPath fromDataPath);
-
-  /**
-   * Add all properties of a source to a target
-   * @param source
-   * @return
-   */
-  RelationDef addAllProperties(RelationDef source);
 
   /**
    * Drop all columns
    * This function is used principally in test
    * to be sure that there is no columns that comes from the backend metadata store
-   * @return
+   *
    */
-  RelationDef dropAllColumns();
+  RelationDef dropAll();
+
+  RelationDef removeMetadataPrimaryKey();
+
+  RelationDef removeMetadataUniqueKey(UniqueKeyDef uniqueKeyDef);
+
+  RelationDef removeAllMetadataUniqueKeys();
+
+  DataPathDataComparison compareData(DataPath target);
+
+
+  /**
+   * So much used that we shortcut it
+   *
+   */
+  DataPath getDataPath();
+
+  RelationDef mergeStructWithoutConstraints(DataPath fromDataPath);
+
+  RelationDefAbs copyStruct(DataPath from);
+
+  RelationDef copyPrimaryKeyFrom(DataPath from);
+
+  RelationDef mergeDataDef(DataPath fromDataPath);
+
+  RelationDef copyForeignKeysFrom(DataPath source);
+
+  RelationDef mergeStruct(DataPath fromDataPath);
+
+  RelationDef copyDataDef(DataPath fromDataPath);
+
+  /**
+   * Get the columns list in a relational data path format
+   *
+   */
+  DataPath toColumnsDataPathBy(ColumnAttribute columnOrder, ColumnAttribute... columnAttributes);
+
+
+  boolean hasColumn(String columnName);
+
 }

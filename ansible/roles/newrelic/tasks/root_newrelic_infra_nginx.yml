@@ -1,0 +1,17 @@
+# New Relic Infrastructure Nginx Integration
+# It adds the log
+# https://github.com/newrelic/nri-nginx
+# https://docs.newrelic.com/docs/infrastructure/host-integrations/host-integrations-list/nginx/nginx-integration/
+- name: New Relic Infra - Nginx - Installation
+  yum:
+    name: "nri-nginx"
+    state: "present"
+  notify:
+    newrelic_infra_restart
+- name: New Relic Infra - Nginx - Conf
+  template:
+    src: 'infra/nginx-config.yml'
+    dest: '/etc/newrelic-infra/integrations.d/nginx-config.yml'
+    mode: 0774
+  notify:
+    newrelic_infra_restart

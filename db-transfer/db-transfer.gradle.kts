@@ -1,13 +1,12 @@
 
 dependencies {
-  testCompile(project(":bytle-db"))
-  testCompile(project(":bytle-db-csv"))
-  testCompile(project(":bytle-db-gen"))
-  testCompile(project(":bytle-log"))
-  testCompile(project(":bytle-db-sqlite"))
-  testCompile(project(":bytle-db-jdbc"))
-  testCompile(project(":bytle-fs"))
-  testCompile(project(":bytle-db-tpc"))
+  testImplementation(project(":bytle-db"))
+  testImplementation(project(":bytle-db-csv"))
+  testImplementation(project(":bytle-db-gen"))
+  testImplementation(project(":bytle-log"))
+  testImplementation(project(":bytle-db-sqlite"))
+  testImplementation(project(":bytle-db-jdbc"))
+  testImplementation(project(":bytle-fs"))
 }
 
 description = "Db Transfer"

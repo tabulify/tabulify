@@ -1,0 +1,11 @@
+
+- name: fpm_reload
+  systemd:
+    name: "php-fpm"
+    state: reloaded
+  become: true
+- name: newrelic_infra_restart
+  systemd:
+    name: "newrelic-infra"
+    state: restarted
+  become: true

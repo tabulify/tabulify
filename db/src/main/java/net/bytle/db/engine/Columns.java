@@ -1,6 +1,7 @@
 package net.bytle.db.engine;
 
 import net.bytle.db.model.ColumnDef;
+import net.bytle.type.Casts;
 
 
 /**
@@ -10,21 +11,15 @@ import net.bytle.db.model.ColumnDef;
 public class Columns {
 
 
-    @SuppressWarnings("unchecked")
-    public static <T> ColumnDef<T> safeCast(ColumnDef columnDef, Class<T> clazz) {
-        if (columnDef.getClazz().equals(clazz)){
-            return (ColumnDef<T>) columnDef;
-        } else {
-            throw new RuntimeException("The class of the column ("+columnDef.getColumnName()+") is " + columnDef.getClazz() + " and not " + clazz);
-        }
+
+    public static <T> T getMin(Class<T> clazz, ColumnDef columnDef){
+      Object min = columnDef.getRelationDef().getDataPath().getConnection().getProcessingEngine().getMin(columnDef);
+      return Casts.castSafe(min, clazz);
     }
 
-    public static <T> T getMin(ColumnDef<T> columnDef){
-        return columnDef.getDataDef().getDataPath().getDataStore().getProcessingEngine().getMin(columnDef);
-    }
-
-    public static <T> T getMax(ColumnDef<T> columnDef) {
-        return columnDef.getDataDef().getDataPath().getDataStore().getProcessingEngine().getMax(columnDef);
+    public static <T> T getMax(Class<T> clazz, ColumnDef columnDef) {
+      Object max = columnDef.getRelationDef().getDataPath().getConnection().getProcessingEngine().getMax(columnDef);
+      return Casts.castSafe(max, clazz);
     }
 
 }

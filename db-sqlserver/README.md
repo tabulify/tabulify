@@ -23,3 +23,7 @@ docker run ^
 ```cmd
 docker start sqlserver
 ```
+
+## Connection Properties
+
+[Connection Properties](https://docs.microsoft.com/en-us/sql/connect/jdbc/setting-the-connection-properties)

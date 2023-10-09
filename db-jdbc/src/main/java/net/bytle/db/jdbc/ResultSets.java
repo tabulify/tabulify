@@ -92,7 +92,7 @@ public class ResultSets {
 
     }
 
-    public static void addColumns(ResultSetMetaData resultSetMetaData, RelationDef relationDef) {
+    public static void addColumns(ResultSetMetaData resultSetMetaData, RelationDef dataDef) {
 
         // Add the columns
         try {
@@ -100,9 +100,8 @@ public class ResultSets {
             int columnCount = resultSetMetaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
                 final int columnType = resultSetMetaData.getColumnType(i);
-              Class<? extends SqlDataType> aClass = relationDef.getDataPath().getDataStore().getSqlDataType(columnType).getClass();
-              relationDef.getOrCreateColumn(resultSetMetaData.getColumnName(i), aClass)
-                        .typeCode(columnType)
+              SqlDataType sqlDataType = dataDef.getDataPath().getConnection().getSqlDataType(columnType);
+              dataDef.getOrCreateColumn(resultSetMetaData.getColumnName(i), sqlDataType, sqlDataType.getSqlClass())
                         .precision(resultSetMetaData.getPrecision(i))
                         .scale(resultSetMetaData.getScale(i));
             }
@@ -113,12 +112,12 @@ public class ResultSets {
 
     }
 
-    public static void addColumns(ResultSet resultSet, RelationDef relationDef) {
+    public static void addColumns(ResultSet resultSet, RelationDef dataDef) {
 
         try {
 
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-            addColumns(resultSetMetaData, relationDef);
+            addColumns(resultSetMetaData, dataDef);
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -133,7 +132,7 @@ public class ResultSets {
      * @param jdbcDataStore
      * @throws SQLException
      */
-    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, SqlDataStore jdbcDataStore) throws SQLException {
+    public void printDataTypeMapping(ResultSetMetaData resultSetMetaData, SqlConnection jdbcDataStore) throws SQLException {
 
         // Headers
         System.out.println("ColumnId\t" +

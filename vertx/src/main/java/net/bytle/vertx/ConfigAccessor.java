@@ -1,0 +1,158 @@
+package net.bytle.vertx;
+
+import io.vertx.core.json.JsonObject;
+import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * A config accessor helps retrieve configuration
+ * from:
+ * * the conf file (yaml) that does not have any prefix
+ * * the environment that does have a prefix and underscore separator
+ */
+public class ConfigAccessor {
+  private static ConfigAccessor configAccessor;
+  private final JsonObject jsonObject;
+  private final List<String> keys;
+  private final ConfigAccessor parentConfigAccessor;
+
+  /**
+   * @param keys                 - the key or the prefix for the root config accessor
+   * @param jsonObject           - the data for the root or null
+   * @param parentConfigAccessor - the parent or null
+   */
+  private ConfigAccessor(List<String> keys, JsonObject jsonObject, ConfigAccessor parentConfigAccessor) throws IllegalConfiguration {
+    this.parentConfigAccessor = parentConfigAccessor;
+    if (keys.size() == 0) {
+      throw new InternalException("Internal Error: We should have at least one key");
+    }
+    if (this.parentConfigAccessor != null) {
+      JsonObject actualData = parentConfigAccessor.getJsonObject(keys.get(0));
+      for (int i = 1; i < keys.size(); i++) {
+        String key = keys.get(i);
+        actualData = actualData.getJsonObject(key);
+      }
+      if (actualData == null) {
+        throw new IllegalConfiguration("The sub keys (" + String.join(",", keys) + ") has no data");
+      }
+      this.jsonObject = actualData;
+    } else {
+      this.jsonObject = jsonObject;
+      if (this.jsonObject == null) {
+        throw new InternalException("Internal Error: The json object should not be null");
+      }
+    }
+    this.keys = keys;
+  }
+
+  public static ConfigAccessor get() {
+    return configAccessor;
+  }
+
+  public static ConfigAccessor init(String key, JsonObject jsonObject) throws IllegalConfiguration {
+    configAccessor = new ConfigAccessor(Collections.singletonList(key), jsonObject, null);
+    return configAccessor;
+  }
+
+  public static ConfigAccessor empty() throws IllegalConfiguration {
+    return new ConfigAccessor(Collections.singletonList("empty"), new JsonObject(), null);
+  }
+
+  public String getString(String key) {
+    return getString(key, null);
+  }
+
+  public String getString(String key, String def) {
+    String value = this.jsonObject.getString(getEnvName(key));
+    if (value != null) {
+      return value;
+    }
+    return this.jsonObject.getString(key, def);
+  }
+
+  /**
+   * @param key - the searched key
+   * @return - the env name (in generally used in the env)
+   */
+  private String getEnvName(String key) {
+
+    ConfigAccessor parent = this;
+    List<String> keyParts = new ArrayList<>();
+    while (parent != null) {
+      ArrayList<String> parentKeys = new ArrayList<>(parent.keys);
+      Collections.reverse(parentKeys);
+      keyParts.addAll(parentKeys);
+      parent = parent.parentConfigAccessor;
+    }
+    Collections.reverse(keyParts);
+    keyParts.add(key);
+    return String.join("_", keyParts);
+
+  }
+
+  public Integer getInteger(String key) {
+    return getInteger(key, null);
+  }
+
+  public Integer getInteger(String key, Integer defaultValue) {
+    Integer value = this.jsonObject.getInteger(getEnvName(key));
+    if (value != null) {
+      return value;
+    }
+    return this.jsonObject.getInteger(key, defaultValue);
+  }
+
+  public JsonObject getConfig() {
+    return this.jsonObject;
+  }
+
+  public Object getValue(String key) {
+    return getValue(key, null);
+  }
+
+  public Object getValue(String key, Object defaultValue) {
+    Object value = this.jsonObject.getValue(getEnvName(key));
+    if (value != null) {
+      return value;
+    }
+    return this.jsonObject.getValue(key, defaultValue);
+  }
+
+  public Boolean getBoolean(String key) {
+    return getBoolean(key, null);
+  }
+
+  public Boolean getBoolean(String key, Boolean b) {
+    Boolean value = this.jsonObject.getBoolean(getEnvName(key));
+    if (value != null) {
+      return value;
+    }
+    return this.jsonObject.getBoolean(key, b);
+  }
+
+  public JsonObject getJsonObject(String key) {
+    return this.jsonObject.getJsonObject(key);
+  }
+
+  public ConfigAccessor getSubConfigAccessor(String key, String... keys) throws IllegalConfiguration {
+    List<String> finalKeys = new ArrayList<>();
+    finalKeys.add(key);
+    if (keys != null) {
+      finalKeys.addAll(Arrays.asList(keys));
+    }
+    return new ConfigAccessor(finalKeys, null, this);
+  }
+
+  public long getLong(String key, long defaultValue) {
+    Long value = this.jsonObject.getLong(getEnvName(key));
+    if (value != null) {
+      return value;
+    }
+    return this.jsonObject.getLong(key, defaultValue);
+  }
+}

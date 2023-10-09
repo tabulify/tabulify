@@ -1,0 +1,10 @@
+
+- name: "Create drill group ({{ drill_group }})"
+  group: name="{{ drill_group }}"
+
+- name: "Create drill user"
+  user:
+    name: "{{ drill_user }}"
+    group: "{{ drill_group }}"
+
+

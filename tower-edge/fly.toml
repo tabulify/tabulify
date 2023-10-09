@@ -1,0 +1,23 @@
+# fly.toml app configuration file generated for toweredge on 2023-09-19T21:50:17+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "toweredge"
+primary_region = "yul"
+
+[build]
+  image = "net.bytle/edge"
+
+# https://fly.io/docs/reference/configuration/#the-http_service-section
+[http_service]
+  internal_port = 8084
+  force_https = true
+  # https://fly.io/docs/apps/autostart-stop/#configure-automatic-start-and-stop
+  # Whether Fly Proxy should automatically stop Machines when the app is idle for several minutes.
+  auto_stop_machines = true
+  # Whether Fly Proxy should automatically start Machines based on requests and capacity.
+  auto_start_machines = true
+  # The minimum number of Machines to keep running in the primary region when auto_stop_machines = true
+  min_machines_running = 0
+  processes = ["app"]

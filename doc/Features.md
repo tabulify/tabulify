@@ -1,33 +1,5 @@
+# Features
 
-
-## Source Stream
-
-Apache Kafka
-AWS Kinesis
-Http
-Web sockets
-Network Sockets
-Files
-Teradata Listener
-
-## Output Stream & Sinks
-
-Kafka, Kinesis or AMQP Streams
-Databases (SQL, NoSQL)
-Datawarehouses
-Web Services
-Files
-New or Existing Blaze Streams
-
-## Data discovery
-
-Discoverable Formats include:
-
-Line
-CSV
-JSON
-XML
-Binary (Avro/ProtoBuf)
 
 
 ## Data WRANGLING

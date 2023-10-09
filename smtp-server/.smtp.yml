@@ -1,0 +1,49 @@
+# The separators in key are points
+# to be consistent with the configuration of Java Mail
+software.name: Eraldy # software name advertised in the banner
+auth.localhost.required: false # localhost does not need any authentication
+# The services started by ports
+services:
+  2525: # port 2525 (PaperCut got already the port 25)
+    tls.enabled: false # start as plain connection
+    starttls.enabled: true # may upgrade the connection to TLS
+    starttls.required: false # upgrading the connection to TLS is mandatory (false for PaperCut)
+    auth.required: false # no authentication is required
+  465: # SSL port
+    tls.enabled: true # start as TLS connection
+    starttls.enabled: false # as we have a TLS connection
+    auth.required: true # auth is required, it may not for local delivery but we use it to test
+host: mx1.eraldy.dev # the default host (chosen when the connection is not secured (no TLS) as we don't have the requested host)
+hosts: # the hosted hosts by hostname
+  mx1.eraldy.dev: # the host name (ie DNS cname)
+    domain: eraldy.dev # the email domain
+    postmaster: alice@bytle.dev # the postmaster email
+  smtp.eraldy.dev:
+    domain: eraldy.dev
+    postmaster: bob@bytle.dev
+  smtp.datacadamia.dev:
+    domain: datacadamia.dev
+    postmaster: bob@bytle.dev
+
+# System limits
+idle.session.timeout.second: 50 # to allow long debug session
+handshake.timeout.second: 10 # the default
+max.sessions: 50 # the maximum total of connection/sockets
+max.sessions.by.ip: 3 # the maximum total of sockets by remote ip
+max.message.size.bytes: 1024 # the maximum message size in bytes 1 Mo
+max.exception.count.by.session: 3 # the maximum number of exception by session
+max.recipients: 100 # the maximum number of recipients (should be bigger or equal to 100 as specified in the spec)
+
+# quotas by account (same as SES by account)
+quota.remote.delivery: 200 # by day
+quota.remote.delivery.rate: 1 # by second
+
+# Users
+users:
+  eraldy.dev:
+    alice:
+      mailbox: stdout
+      password: secret
+#  combostrap.dev:
+#    dmarc:
+#      mailbox: handler://dmarc

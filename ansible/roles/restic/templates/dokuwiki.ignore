@@ -1,0 +1,17 @@
+# dokuwiki backup exclusion
+bin
+{{ data_dir }}/cache
+{{ data_dir }}/index
+{{ data_dir }}/locks
+{{ data_dir }}/log
+# Old media file: No real value in media_attic
+{{ data_dir }}/media_attic
+# No real value in media_meta: only changes information
+{{ data_dir }}/media_meta
+# to much junk
+{{ data_dir }}/meta
+{{ data_dir }}/tmp
+inc
+lib
+temp
+vendor

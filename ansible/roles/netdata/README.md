@@ -5,30 +5,45 @@
 
 An [Ansible](https://www.ansible.com) role to install/configure [Netdata](https://my-netdata.io/)
 
-https://packagecloud.io/netdata/netdata/install#manual-rpm
+Based on [rpm](https://packagecloud.io/netdata/netdata/install#manual-rpm)
 
-
-## Usage
-
-  * Install the role
-
-````bash
-ansible-galaxy install --roles-path . gerardnico.netdata
-````
-
-  * Copy the [defaults/main.yml](defaults/main/main.yml) into your vars.
-
-  * Use it in your [playbook_example.yml](playbook_example.yml)
 
 ## Reference
 
 Based on:
-
-  * https://github.com/mrlesmithjr/ansible-netdata 
   * https://docs.netdata.cloud/packaging/installer/#install-netdata-on-linux-manually
+
+They have also written in the meantime a playbook. Check it out at
+[Ansible Netdata](https://learn.netdata.cloud/guides/deploy/ansible)
+
+## Conf
+
+  * To get a version of the [conf file](templates/netdata.conf) with all possible properties commented at [Actual Conf](https://netdata.bytle.net/netdata.conf)
+  * To edit or create a conf file, you can use the [edit-conf utility](https://learn.netdata.cloud/docs/configure/nodes#use-edit-config-to-edit-configuration-files)
+
+!!! location is not the same than in the doc !!!
+
+```bash
+/usr/libexec/netdata/edit-config
+```
+
+
+## Diagnostic
+
+See [diagnostic](doc/diagnostic.md)
 
 ## FYI
 
   * [Prometheus as Backend](https://docs.netdata.cloud/backends/prometheus/)
   * [Netdata, Prometheus, Grafana](https://docs.netdata.cloud/backends/prometheus/)
   * [Netdata with Prometheus](https://docs.netdata.cloud/backends/prometheus/)
+
+## Run
+
+```bash
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags netdata
+```
+
+## Documentation
+
+See also the [monitoring documentation](../nginx/doc/monitoring.md)

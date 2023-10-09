@@ -1,0 +1,8 @@
+
+
+- name: Cassandra - Ensure Cassandra is running.
+  systemd:
+    name: cassandra
+    state: started
+    enabled: yes
+

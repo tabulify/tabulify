@@ -1,0 +1,10 @@
+---
+# handlers file
+#
+- name: tower reload
+  become: true
+  systemd:
+    name: tower
+    state: reloaded
+    daemon_reload: yes
+

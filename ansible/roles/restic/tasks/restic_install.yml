@@ -1,0 +1,75 @@
+---
+# Ref: https://restic.readthedocs.io/en/stable/020_installation.html
+# note:
+# Don't update in place with `restic self-update` because it would delete the capabilities
+# We don't use repo because the version is not the last one (see restic_install_via_repo.yml)
+
+- name: Restic - State the binary
+  ansible.builtin.stat:
+    path: /usr/bin/restic
+  register: resticFile
+
+- name: Restic - Install if not present
+  when: not resticFile.stat.exists
+  block:
+    - name: Restic - Download Restic .zip
+      get_url:
+        url: "https://github.com/restic/restic/releases/download/v{{ restic_version }}/restic_{{ restic_version }}_linux_amd64.bz2"
+        dest: "/tmp/restic_{{ restic_version }}_linux_amd64.bz2"
+        force: yes # download always
+        checksum: '{{ restic_checksum }}'
+    - name: Restic - Unzip
+      shell:
+        cmd: |
+          /bin/bzip2 -d /tmp/restic_{{ restic_version }}_linux_amd64.bz2
+        chdir: '/tmp'
+    - name: Restic - Move to bin
+      shell:
+        cmd: |
+          /bin/cp /tmp/restic_{{ restic_version }}_linux_amd64 /usr/bin/restic
+
+- name: Restic - Bash Completion
+  shell:
+    cmd: |
+      restic generate --bash-completion /etc/bash_completion.d/restic
+    chdir: '/usr/bin'
+    creates: '/etc/bash_completion.d/restic'
+
+# https://restic.readthedocs.io/en/stable/080_examples.html#full-backup-without-root
+# On the doc, they install the binary in /home/restic/bin/restic
+# we don't
+
+- name: "Restic - Create the restic group"
+  group:
+    name: 'restic'
+    state: present
+
+- name: "Restic - Create the restic user"
+  user:
+    name: 'restic'
+    comment: The restic user
+    system: true
+    state: present
+    group: restic
+    create_home: true
+    shell: /sbin/nologin
+
+- name: "Restic - File Permission, only root and restic"
+  file:
+    path: '/usr/bin/restic'
+    group: 'restic'
+    owner: root
+    mode: 'u=rwx,g=rwx,o='
+
+# equivalent to
+# setcap cap_dac_read_search=+ep ~restic/bin/restic
+- name: "Restic - Set read capabilities"
+  shell:
+    cmd: |
+      setcap cap_dac_read_search=+ep /usr/bin/restic
+
+
+# To continue ???
+# By default restic init sets repositories up to be group inaccessible.
+# Repositories can be made accessible to members of a system group.
+# https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#group-accessible-repositories

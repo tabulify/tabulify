@@ -1,33 +1,40 @@
 package net.bytle.db.csv;
 
+import net.bytle.db.model.RelationDef;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
 
-  private final CsvDataDef csvDataDef;
+  private final RelationDef csvDataDef;
   final CSVPrinter printer;
   private final CsvDataPath csvDataPath;
 
   public CsvInsertStream(CsvDataPath fsDataPath) {
 
     super(fsDataPath);
-    this.csvDataDef = fsDataPath.getOrCreateDataDef();
+    this.csvDataDef = fsDataPath.getOrCreateRelationDef();
     this.csvDataPath = fsDataPath;
-    CSVFormat csvFormat = csvDataPath.getOrCreateDataDef().getCsvFormat();
+    CSVFormat csvFormat = csvDataPath.getCsvFormat();
     String recordSeparator = csvFormat.getRecordSeparator();
-    if (recordSeparator==null){
+    if (recordSeparator == null) {
       csvFormat = csvFormat.withRecordSeparator(System.lineSeparator());
     }
 
     try {
-      BufferedWriter writer = Files.newBufferedWriter(csvDataPath.getNioPath(), csvDataDef.getCharset(), StandardOpenOption.APPEND);
+      BufferedWriter writer = Files.newBufferedWriter(
+        csvDataPath.getAbsoluteNioPath(),
+        this.getDataPath().getCharset(),
+        StandardOpenOption.APPEND
+      );
       printer = csvFormat
         .print(writer);
     } catch (IOException e) {
@@ -50,6 +57,7 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
   @Override
   public CsvInsertStream insert(List<Object> values) {
     try {
+      this.insertStreamListener.addRows(1);
       printer.printRecord(values);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -81,11 +89,15 @@ public class CsvInsertStream extends InsertStreamAbs implements InsertStream {
   @Override
   public void flush() {
     try {
+      this.insertStreamListener.incrementBatch();
       printer.flush();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-
+  @Override
+  public CsvDataPath getDataPath() {
+    return (CsvDataPath) super.getDataPath();
+  }
 }

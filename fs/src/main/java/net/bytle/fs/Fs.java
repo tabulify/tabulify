@@ -1,43 +1,42 @@
 package net.bytle.fs;
 
 
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
+import net.bytle.crypto.Digest;
+import net.bytle.exception.NotAbsoluteException;
 import net.bytle.os.Oss;
-import net.bytle.regexp.Globs;
-import net.bytle.type.Arrayss;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static net.bytle.os.Oss.LINUX;
 import static net.bytle.os.Oss.WIN;
-import static net.bytle.type.Bytes.printHexBinary;
 
 
 public class Fs {
 
 
-  public static final String GLOB_SEPARATOR = "/";
   private static final Logger LOGGER = LoggerFactory.getLogger(Fs.class);
 
   /**
    * A safe method even if the string is not a path
    *
-   * @param s
-   * @return
+   * @param s - a string to test if s is a path to a valid file
+   * @return true if this a regular file
    */
   public static boolean isFile(String s) {
     try {
@@ -47,31 +46,12 @@ public class Fs {
     }
   }
 
-  /**
-   * @param path
-   * @return a string for the file content with the os line separator
-   * <p>
-   * One liner without getting the OS line separator:
-   * new String(Files.readAllBytes(jsonFile))
-   */
-  public static String getFileContent(Path path) {
-    try {
-
-      return Files.lines(path)
-        .collect(Collectors.joining(System.getProperty("line.separator")));
-
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException("Unable to find the file (" + path.toAbsolutePath().normalize().toString() + ")", e);
-    } catch (Exception e) {
-      throw new RuntimeException("Error on the path ("+path.toString()+")",e);
-    }
-  }
 
   /**
    * Safe is directory method even if the string is not a path
    *
-   * @param s
-   * @return
+   * @param s - a string path
+   * @return true if the string path represents a directory
    */
   public static boolean isDirectory(String s) {
     try {
@@ -130,8 +110,8 @@ public class Fs {
   /**
    * Recursive function usd by {@link #getDescendantFiles(Path)}
    *
-   * @param path
-   * @param pathsCollector
+   * @param path           - a directory or file path where to start from
+   * @param pathsCollector - the object that collects the path
    */
   static void addChildFiles(List<Path> pathsCollector, Path path) {
 
@@ -157,11 +137,11 @@ public class Fs {
   }
 
   /**
-   * @param content
+   * @param content - the file content
    * @return a path to a txt file with the string as content
    */
-  public static Path createTempFile(String content) {
-    return createTempFile(content, ".txt");
+  public static Path createTempFileWithContent(String content) {
+    return createTempFileWithContent(content, ".txt");
   }
 
   /**
@@ -169,13 +149,11 @@ public class Fs {
    * @param suffix  - the file suffix. Example: ".txt"
    * @return a temp file in the temp directory
    */
-  public static Path createTempFile(String content, String suffix) {
+  public static Path createTempFileWithContent(String content, String suffix) {
 
     try {
 
-      Path temp = createTempDirectory(null);
-
-      Path tempFile = Files.createTempFile(temp, null, suffix);
+      Path tempFile = createTempFile(suffix);
       Files.write(tempFile, content.getBytes());
 
       return tempFile;
@@ -186,6 +164,16 @@ public class Fs {
 
     }
 
+  }
+
+  public static Path createTempFile(String suffix) {
+    Path temp = createTempDirectory(null);
+
+    try {
+      return Files.createTempFile(temp, null, suffix);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 
@@ -208,49 +196,52 @@ public class Fs {
   }
 
   /**
-   * @param path
-   * @return See also: http://code.google.com/p/guava-libraries/wiki/HashingExplained
+   * @param path - the file path
+   * @return See also: https://github.com/google/guava/wiki/HashingExplained
    */
   public static String getMd5(Path path) {
-
     if (Files.isDirectory(path)) {
-      throw new RuntimeException("Md5 calculation for directory is not implemented. No md5 for (" + path.toAbsolutePath().toString());
+      throw new RuntimeException("Md5 calculation for directory is not implemented. No md5 for (" + path.toAbsolutePath());
     }
     try {
       byte[] bytes = Files.readAllBytes(path);
-      byte[] hash = MessageDigest.getInstance("MD5").digest(bytes);
-      return printHexBinary(hash);
-    } catch (NoSuchAlgorithmException | IOException e) {
+      return Digest.createFromBytes(Digest.Algorithm.MD5, bytes).getHashHex();
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
 
   /**
-   * Return the AppData Directory
+   * Return the user directory for an application
+   * known as the AppData Directory.
+   * <p>
    * This directory contains data for one user.
    *
-   * @param appName
-   * @return
+   * @param appName - the application name
+   * @return the path for user data for this app
    */
-  public static Path getAppData(String appName) {
+  public static Path getUserAppData(String appName) {
     Path appData;
+    //noinspection SwitchStatementWithTooFewBranches
     switch (Oss.getType()) {
       case WIN:
-        appData = Paths.get(getUserHome().toString(), "AppData", "Local", appName);
-        break;
-      case LINUX:
-        appData = Paths.get(getUserHome().toString(), "." + appName);
+        // ie %LOCALAPPDATA% env variable
+        // C:\Users\gerardnico\AppData\Local
+        // this location does not roam
+        // while %APPDATA% does C:\Users\gerardnico\AppData\roaming
+        appData = getUserHome().resolve("AppData").resolve("Local").resolve(appName);
         break;
       default:
-        throw new RuntimeException("AppData directory for OS " + Oss.getName() + " is not implemented");
+        // Linux ...
+        appData = getUserHome().resolve("." + appName);
     }
 
     try {
       Files.createDirectories(appData);
       return appData;
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Unable to create the user app data directory (" + appData.toAbsolutePath() + ")", e);
     }
 
   }
@@ -281,7 +272,7 @@ public class Fs {
   /**
    * Create a file and all sub-directories if needed
    *
-   * @param path
+   * @param path the file to create
    */
   public static void createFile(Path path) {
     try {
@@ -298,8 +289,8 @@ public class Fs {
    * to write a string to a file
    * without exception handling
    *
-   * @param path
-   * @param s
+   * @param path - the path
+   * @param s    - the content to add to the path
    */
   public static void write(Path path, String s) {
     try {
@@ -312,8 +303,8 @@ public class Fs {
   /**
    * A wrapper around path.relativize(base)
    *
-   * @param path
-   * @param base
+   * @param path - the path to relativize
+   * @param base - the base path
    * @return a relative path
    */
   public static Path relativize(Path path, Path base) {
@@ -366,20 +357,16 @@ public class Fs {
    * This method check if there is a root
    * If this is the case, the path is absolute otherwise not.
    *
-   * @param path
+   * @param path the path
    * @return true if the path has a root (is absolute)
    */
   public static boolean isAbsolute(Path path) {
-    if (path.getRoot() != null) {
-      return true;
-    } else {
-      return false;
-    }
+    return path.getRoot() != null;
   }
 
 
   /**
-   * @param path
+   * @param path - the directory path
    * @return the children path of a directory
    */
   public static List<Path> getChildrenFiles(Path path) {
@@ -396,16 +383,16 @@ public class Fs {
   }
 
   /**
-   * @param segments
+   * @param parts - the parts of the path name
    * @return a local pah from an array string
    */
-  public static Path getPath(String[] segments) {
-    String[] more = Arrays.copyOfRange(segments, 1, segments.length);
-    return Paths.get(segments[0], more);
+  public static Path getPath(String[] parts) {
+    String[] more = Arrays.copyOfRange(parts, 1, parts.length);
+    return Paths.get(parts[0], more);
   }
 
   /**
-   * @param path
+   * @param path the path
    * @return the file name without the extension
    */
   public static String getFileNameWithoutExtension(Path path) {
@@ -431,26 +418,36 @@ public class Fs {
 
   /**
    * Delete a file or a directory (with all its content)
-   * @param path
-   * @return
+   *
+   * @param path the path to delete
+   * @return all deleted path
    */
   private static List<Path> delete(Path path) {
     try {
+
       List<Path> deletedPaths = new ArrayList<>();
+
       if (Files.isDirectory(path)) {
         try (Stream<Path> walk = Files.walk(path)) {
-          deletedPaths = walk.sorted(Comparator.reverseOrder())
-            .filter(s -> !Files.isDirectory(s))
-            .flatMap(s -> Fs.delete(s).stream())
-            .collect(Collectors.toList());
+          walk
+            .map(Path::toFile)
+            .sorted(Comparator.reverseOrder())
+            .forEach(file -> {
+              boolean result = file.delete();
+              if (result) {
+                deletedPaths.add(file.toPath());
+              } else {
+                throw new RuntimeException("Unable to delete the file (" + file + ")");
+              }
+            });
+          return deletedPaths;
         }
-      } else {
-
-        Files.delete(path);
-        deletedPaths.add(path);
-
       }
+
+      Files.delete(path);
+      deletedPaths.add(path);
       return deletedPaths;
+
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -477,6 +474,11 @@ public class Fs {
       Path path = Files.createTempFile(prefix, suffix);
       Files.deleteIfExists(path);
       return path;
+    } catch (AccessDeniedException e) {
+      // the temp directory may be C:\windows
+      // when there is no variable set
+      // that is not accessible
+      throw new RuntimeException("The access to the temporary directory was denied with the following message (" + e.getMessage() + "). \n The root cause may be that your environment does not have any TEMP / TMP variables. \n As a workaround, you can add the following option `-Djava.io.tmpdir=/temp/path` to a writable directory in your script.");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -491,19 +493,25 @@ public class Fs {
     }
   }
 
+  /**
+   * @return the temporary directory
+   * <p>
+   * Environment variable that have an influence:
+   * * TEMP for windows by default: "C:\\Users\\user\\AppData\\Local\\Temp"
+   */
   public static Path getTempDirectory() {
-    try {
-      return Files.createTempDirectory("tmp");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return Paths.get(System.getProperty("java.io.tmpdir"));
   }
 
 
+  public static String getExtension(Path path) {
+    return getExtension(path.getFileName().toString());
+  }
+
   public static String getExtension(String fullFileName) {
     int i = fullFileName.lastIndexOf('.');
-    if (i==-1){
-      return "";
+    if (i == -1) {
+      return null;
     } else {
       return fullFileName.substring(i + 1);
     }
@@ -511,127 +519,219 @@ public class Fs {
 
   /**
    * Return the part of the file without its extension
-   * @param fullFileName
-   * @return
+   *
+   * @param fullFileName a full file name string
+   * @return the extension if any
    */
   public static String getFileNameWithoutExtension(String fullFileName) {
     return fullFileName.substring(0, fullFileName.lastIndexOf('.'));
   }
 
+  /**
+   * Create the directory and all its children if not exist
+   *
+   * @param path a directory path
+   */
   public static void createDirectoryIfNotExists(Path path) {
     try {
       if (Files.notExists(path)) {
-        Files.createDirectory(path);
+        Files.createDirectories(path);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+
   /**
-   * @param glob - a glob
-   * @return a list of file that matches the glob
-   * <p>
-   * ex: the following glob
-   * /tmp/*.md
-   * will return all md file in the tmp directory
+   * @return the first root of the current file system
+   * This is a utility function mostly for test purpose
+   * in order to create a string with a root in it
    */
-  static public List<Path>  getFilesByGlob(String glob) {
+  public static String getFirstRoot() {
 
-    // Get the file system
-    FileSystem fileSystem = Paths.get(".").getFileSystem();
-
-    // Absolute path
-    String finalGlob = glob;
-    Path matchedRootPath = StreamSupport
-      .stream(fileSystem.getRootDirectories().spliterator(), false)
-      .filter(s-> finalGlob.startsWith(s.toString()))
+    return StreamSupport
+      .stream(Paths.get(".").getFileSystem().getRootDirectories().spliterator(), false)
+      .map(Path::toString)
       .findFirst()
       .orElse(null);
 
-    Path startPath;
-    if (matchedRootPath!=null){
-      startPath = matchedRootPath;
-      glob = glob.replace(matchedRootPath.toString(),"");
-    } else {
-      startPath = Paths.get(".");
+  }
+
+  public static String getSeparator() {
+    return Paths.get(".").getFileSystem().getSeparator();
+  }
+
+
+  /**
+   * A wrapper around {@link Files#move(Path, Path, CopyOption...) move} that makes sure
+   * that the target directory is already created
+   *
+   * @param source the source to move
+   * @param target the location of the target
+   */
+  public static void move(Path source, Path target, CopyOption... copyOptions) {
+    try {
+      Fs.createDirectoryIfNotExists(target.getParent());
+      Files.move(source, target, copyOptions);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-
-    String separator = fileSystem.getSeparator();
-    // if windows
-    if (separator.equals("\\")){
-      // if the glog is given manually in the form dir1/dir2
-      glob = glob.replace("/","\\");
-      // the split operator is a regexp, we need then to add a \ to escape it
-      // for the split operations
-      separator = "\\\\";
-    }
-    String[] globNames = glob.split(separator);
-
-    // Init
-    List<Path> currentMatchesPaths = new ArrayList<>();
-    currentMatchesPaths.add(startPath);
-    for (String globPattern: globNames) {
-
-      FsShortFileName sfn = FsShortFileName.of(globPattern);
-      Pattern pattern = null;
-      if (!sfn.isShortFileName()) {
-        pattern = Pattern.compile(Globs.toRegexPattern(globPattern));
-      } else {
-        pattern = Pattern.compile(Globs.toRegexPattern(sfn.getShortName()+"*"),Pattern.CASE_INSENSITIVE);
-      }
-
-      // The list where the actual matches path will be stored
-      List<Path> matchesPath = new ArrayList<>();
-      for (Path currentPath : currentMatchesPaths) {
-        // There is also newDirectoryStream
-        // https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html#newDirectoryStream-java.nio.file.Path-java.lang.String-
-        // but yeah ...
-        if (Files.isDirectory(currentPath)) {
-          try {
-            List<Path> paths = Fs.getChildrenFiles(currentPath);
-            for (Path childrenPath : paths) {
-              if (pattern.matcher(childrenPath.getFileName().toString()).find()) {
-                matchesPath.add(childrenPath);
-              }
-            }
-          } catch (Exception e){
-            if (e.getCause().getClass().equals(java.nio.file.AccessDeniedException.class)) {
-              LOGGER.warn("The path (" + currentPath + ") was denied");
-            } else {
-              throw e;
-            }
-          }
-        } else {
-          if (pattern.matcher(currentPath.getFileName().toString()).find()) {
-            matchesPath.add(currentPath);
-          }
-        }
-      }
-      // Recursion
-      currentMatchesPaths = matchesPath;
-      // Break if there is not match
-      if (matchesPath.size() == 0) {
-        break;
-      }
-    }
-
-    return currentMatchesPaths;
-
   }
 
   /**
-   * A path cannot have special character such as a star
-   * This utility function creates a glob path pattern with the file separator of the local system
-   * @param names - glob patterns
-   * @return a glob path pattern for the local file system
+   * @param path - an absolute or relative path
+   * @param name - a name
+   * @return the path until a certain name was found (name included)
    */
-  public static String createGlobPath(String name, String... names) {
-    names = Arrayss.concat(name, names);
-    return String.join(System.getProperty("file.separator"), names);
+  public static Path getPathUntilName(Path path, String name) {
+
+    Path pathUntil = null;
+    boolean found = false;
+    for (int i = 0; i < path.getNameCount(); i++) {
+      Path subName = path.getName(i);
+      if (pathUntil == null) {
+        if (path.isAbsolute()) {
+          pathUntil = path.getRoot().resolve(subName);
+        } else {
+          pathUntil = subName;
+        }
+      } else {
+        pathUntil = pathUntil.resolve(subName);
+      }
+      if (subName.getFileName().toString().equals(name)) {
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      return pathUntil;
+    } else {
+      return null;
+    }
   }
 
-  public static List<Path> getFilesByGlob(String name, String... names) {
-    return getFilesByGlob(createGlobPath(name,names));
+  /**
+   * http://userguide.icu-project.org/conversion/detection
+   *
+   * @param path - the path
+   * @return a encoding value or null if this is not possible
+   * See possible values at
+   * http://userguide.icu-project.org/conversion/detection#TOC-Detected-Encodings
+   */
+  public static String detectCharacterSet(Path path) {
+    /**
+     * Buffered reader is important because
+     * the detector make us of the mark/reset
+     */
+    try (InputStream bis = new BufferedInputStream(Files.newInputStream(path))) {
+      CharsetDetector charsetDetector = new CharsetDetector();
+      charsetDetector.setText(bis);
+      CharsetMatch match = charsetDetector.detect();
+      if (match == null) {
+        return null;
+      } else {
+        return match.getName();
+      }
+    } catch (Exception e) {
+      /**
+       * If the file is used, we can get a java.nio.file.FileSystemException exception
+       * such as `The process cannot access the file`
+       * Example on windows with `C:/Users/userName/NTUSER.DAT`
+       *
+       * We can also get a problem when basic authentication is mandatory
+       * for http path
+       */
+      FsLog.LOGGER.fine("Error while reading the file (" + path + ")" + e.getMessage());
+      return null;
+    }
+
   }
+
+
+  /**
+   * @param path - the path
+   * @return the string of a text file
+   * <p>
+   */
+  public static String getFileContent(Path path, Charset charset) throws NoSuchFileException {
+
+    try {
+      return new String(Files.readAllBytes(path), charset);
+    } catch (NoSuchFileException e) {
+      throw e;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+  }
+
+  public static String getFileContent(Path path) throws NoSuchFileException {
+    return getFileContent(path, Charset.defaultCharset());
+  }
+
+  public static MediaType detectMediaType(Path path) throws NotAbsoluteException {
+
+    return MediaTypes.createFromPath(path);
+
+  }
+
+  public static boolean isRoot(Path path) {
+    return path.getRoot().equals(path);
+  }
+
+  /**
+   * @param name - the name of the closest path
+   * @return the closest path
+   */
+  public static Path closest(Path path, String name) throws FileNotFoundException {
+
+    Path resolved;
+    Path actual = path;
+    if (!Files.isDirectory(path)) {
+      actual = path.getParent();
+    }
+    // toAbsolute is needed otherwise the loop
+    // will not stop at the root of the file system
+    // but at the root of the relative path
+    actual = actual.toAbsolutePath();
+    while (actual != null) {
+      resolved = actual.resolve(name);
+      if (Files.exists(resolved)) {
+        return resolved;
+      }
+      actual = actual.getParent();
+    }
+    throw new FileNotFoundException("No closest file was found");
+
+  }
+
+  public static Path getUserDesktop() {
+    return Fs.getUserHome()
+      .resolve("Desktop");
+  }
+
+  public static String getInputStreamContent(InputStream inputStream) {
+    Scanner s = new Scanner(inputStream).useDelimiter("\\A");
+    return s.hasNext() ? s.next() : "";
+  }
+
+  public static void setUserAttribute(Path path, String key, String value) throws IOException {
+
+
+    if (!Files.exists(path)) {
+      return;
+    }
+
+    FileStore store = Files.getFileStore(path);
+    if (store.supportsFileAttributeView(UserDefinedFileAttributeView.class)) {
+      UserDefinedFileAttributeView view = Files
+        .getFileAttributeView(path, UserDefinedFileAttributeView.class);
+      ByteBuffer valueByteBuffer = Charset.defaultCharset().encode(value);
+      view.write(key, valueByteBuffer);
+    }
+
+
+  }
+
 }

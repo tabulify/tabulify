@@ -14,14 +14,19 @@ public class Command {
 
 
     private List<String> commandAndArgs = new ArrayList<>();
-    private Path workingDirectory = Paths.get(".");
+    private Path workingDirectory = Paths.get("");
     private Process process;
 
-    public Command(String command) {
-        commandAndArgs.add(command);
+    public Command(Path command) {
+
+      if (!Files.exists(command)){
+        throw new IllegalArgumentException("The command file ("+command.toAbsolutePath().toString()+") does not exist");
+      }
+      commandAndArgs.add(command.toAbsolutePath().toString());
+
     }
 
-    public static Command get(String command) {
+    public static Command create(Path command) {
 
         return new Command(command);
     }
