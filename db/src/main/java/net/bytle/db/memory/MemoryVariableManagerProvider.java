@@ -1,6 +1,8 @@
 package net.bytle.db.memory;
 
 
+import net.bytle.type.MediaType;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -117,8 +119,9 @@ public abstract class MemoryVariableManagerProvider {
     /**
      *
      * @return true if the variable manager accepts the type
+     * @param type
      */
-    public abstract Boolean accept(String type);
+    public abstract Boolean accept(MediaType type);
 
     /**
      * Returns an existing {@code work} created by this provider.

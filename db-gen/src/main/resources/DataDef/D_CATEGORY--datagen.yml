@@ -1,9 +1,0 @@
----
-Columns:
-  CAT_DESC:
-    DataGenerator:
-      type: provided
-      Values:
-      - Blue
-      - Green
-      - Yellow

@@ -1,7 +1,0 @@
-====== Foreign Key (fkey) - Relationship between tables ======
-
-
-===== About =====
-A ''foreign key'' represent a relationship between [[table:table|tables]]. It's a [[relation:relation|relational concept]].
-
-The [[start|foreign key module]] groups all operations on ''foreign key''.

@@ -1,21 +1,17 @@
 package net.bytle.db.excel;
 
-import net.bytle.db.fs.FsBinaryFileManager;
 import net.bytle.db.fs.FsFileManagerProvider;
-
-import java.nio.file.Path;
+import net.bytle.db.fs.binary.FsBinaryFileManager;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
 
 public class ExcelManagerProvider extends FsFileManagerProvider {
   private ExcelManager excelManager;
 
   @Override
-  public Boolean accept(Path path) {
+  public Boolean accept(MediaType mediaType) {
 
-    if (path.toString().toLowerCase().endsWith("xlsx")){
-      return true;
-    } else {
-      return false;
-    }
+    return mediaType == MediaTypes.EXCEL_FILE;
 
   }
 

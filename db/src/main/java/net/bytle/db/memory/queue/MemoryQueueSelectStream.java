@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectStream {
 
-  private ArrayBlockingQueue<List<Object>> tabular;
+  private final ArrayBlockingQueue<List<Object>> tabular;
   private final MemoryQueueDataPath memoryQueueDataPath;
 
   // Index is used for a list for a queue
@@ -76,9 +76,8 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   @Override
   public String getString(int columnIndex) {
 
-    final int index = columnIndex;
-    if (index < currentRow.size()) {
-      final Object o = currentRow.get(index);
+    if (columnIndex < currentRow.size()) {
+      final Object o = currentRow.get(columnIndex);
       if (o == null) {
         return null;
       } else {
@@ -102,8 +101,8 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
   }
 
   @Override
-  public void runtimeDataDef(RelationDef relationDef) {
-
+  public RelationDef getRuntimeRelationDef() {
+      return this.getDataPath().getOrCreateRelationDef();
   }
 
 
@@ -124,29 +123,19 @@ public class MemoryQueueSelectStream extends SelectStreamAbs implements SelectSt
 
   @Override
   public Object getObject(String columnName) {
-    throw new RuntimeException("Not yet implemented");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
-  public List<Object> getObjects() {
+  public List<?> getObjects() {
     return currentRow;
   }
 
   @Override
   public void beforeFirst() {
 
-    throw new RuntimeException("The Type (" + memoryQueueDataPath.getType() + ") of the data path (" + memoryQueueDataPath + ") does not support going back to the first argument");
+    throw new RuntimeException("The Type (" + memoryQueueDataPath.getMediaType() + ") of the data path (" + memoryQueueDataPath + ") does not support going back to the first argument");
 
-  }
-
-  @Override
-  public void execute() {
-    // nothing to do here
-  }
-
-  @Override
-  public <T> T getObject(String columnName, Class<T> clazz) {
-    return (T) getObject(columnName);
   }
 
 

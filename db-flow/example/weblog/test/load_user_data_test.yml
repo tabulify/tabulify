@@ -1,0 +1,17 @@
+
+
+test:
+  - name: 'Clean'
+    operation: drop
+    args:
+      data-selector: stg_users@sqlite
+      strict: no # Will not fail the pipeline
+  - name: 'Run the pipeline'
+    operation: run
+    args:
+      data-selector: play/load_user_data*
+  - name: 'Head'
+    operation: head
+    args:
+      data-selector: stg_users@sqlite
+

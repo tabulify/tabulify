@@ -1,48 +1,49 @@
 package net.bytle.db.stream;
 
 import net.bytle.db.model.RelationDef;
-import net.bytle.db.spi.DataPath;
 
-import java.sql.Clob;
-import java.sql.Date;
+import java.sql.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public interface SelectStream extends AutoCloseable {
+public interface SelectStream extends Stream, AutoCloseable {
 
+  /**
+   *
+   * @return true if a new record was found
+   */
   boolean next();
 
   void close();
 
+
   String getString(int columnIndex);
+
 
   long getRow();
 
 
   /**
    *
-   * @param columnIndex -  an index starting at zero
-   * @return
+   * @param columnIndex -  an index starting at one as {@link ResultSet#getObject(int)}
+   * @return the object
    */
   Object getObject(int columnIndex);
 
 
   /**
    *
-   * This is a hook function to build the data def at selection/runtime
+   * This is a function that returns the data def at selection/runtime
    *
-   * This function is used when:
-   *   * building the data def
-   *   * or before running a select stream
+   * This function is used before running a select stream.
    *
-   * @param relationDef - the relationDef that must be build
    *
    * Example:
    *   * a query is build from the result set
    *   * a text file without any defined structure will add a column called `lines`
    *
    */
-  void runtimeDataDef(RelationDef relationDef);
+  RelationDef getRuntimeRelationDef();
 
   Double getDouble(int columnIndex);
 
@@ -60,7 +61,9 @@ public interface SelectStream extends AutoCloseable {
 
   SelectStreamListener getSelectStreamListener();
 
-  List<Object> getObjects();
+  <T> T getObject(int index, Class<T> clazz);
+
+  List<?> getObjects();
 
   SelectStream setName(String name);
 
@@ -73,32 +76,32 @@ public interface SelectStream extends AutoCloseable {
   void beforeFirst();
 
 
-  /**
-   *
-   * If the select stream execute a request before serving the stream
-   * you can execute it explicitly with this function
-   *
-   * This is the case for instance with a query
-   *
-   * Some implementation may have a lazy execution (which means that it's only executed if needed)
-   * but in case of long query, you may want to execute it explicitly in thread for instance.
-   * This function is a good candidate for.
-   */
-  void execute();
 
 
-  DataPath getDataPath();
 
   Date getDate(int columnIndex);
 
   /**
    * Retrieves the value of the designated column in the current row
    * and will to the requested Java data type, if the conversion is supported.
-   * @param columnName
-   * @param clazz
-   * @param <T>
-   * @return
+   * @param columnName the column name
+   * @param clazz the class
+   * @param <T> the t
+   * @return the object cast
+   * @throws ClassCastException if a cast error occurs
    */
-  <T> T getObject(String columnName, Class<T> clazz);
+  <T> T getObject(String columnName, Class<T> clazz) ;
+
+
+  Timestamp getTimestamp(int columnIndex);
+
+  Boolean getBoolean(int columnIndex);
+
+  SQLXML getSqlXml(int columnIndex);
+
+  Time getTime(int columnIndex);
+
+
+  String getString(String columnName);
 
 }

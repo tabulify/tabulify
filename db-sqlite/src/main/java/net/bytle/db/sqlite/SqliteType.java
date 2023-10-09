@@ -1,7 +1,7 @@
 package net.bytle.db.sqlite;
 
 
-import net.bytle.db.database.DataStore;
+import net.bytle.db.connection.Connection;
 import net.bytle.db.model.SqlDataType;
 import net.bytle.log.Log;
 
@@ -9,13 +9,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A class that takes the value of the column type from the PRAGMA table_info();
+ * A class utility used to extract type information from the PRAGMA table_info();
  * and return type information (typeName, Precision and scale)
  */
 public class SqliteType {
 
+  public static final int MAX_NUMERIC_PRECISION = Integer.MAX_VALUE;
   private static final Log LOGGER = Sqlites.LOGGER_SQLITE;
-  private final DataStore datastore;
+  private final Connection datastore;
 
   // https://www.sqlite.org/limits.html#max_length (2^31-1)
   static protected int MAX_LENGTH = 2147483647;
@@ -24,15 +25,15 @@ public class SqliteType {
   Integer scale;
   Integer precision;
 
-  private SqliteType(DataStore dataStore, String type, Integer precision, Integer scale) {
+  private SqliteType(Connection connection, String type, Integer precision, Integer scale) {
     this.type = type;
     this.scale = scale;
     this.precision = precision;
-    this.datastore = dataStore;
+    this.datastore = connection;
   }
 
   /**
-   * @param dataStore
+   * @param connection
    * @param description - A datatype string definition in the form:
    *                    * type(precision, scale)
    *                    * type(precision)
@@ -42,7 +43,7 @@ public class SqliteType {
    * Example: INTEGER(50,2)
    */
 
-  static public SqliteType get(DataStore dataStore, String description) {
+  static public SqliteType create(Connection connection, String description) {
     Pattern pattern = Pattern.compile("\\s*([^(]+)\\s*(?:\\(([^)]+)\\))?\\s*");
     Matcher matcher = pattern.matcher(description);
     String typeName = null;
@@ -67,7 +68,7 @@ public class SqliteType {
       }
 
     }
-    return new SqliteType(dataStore, typeName, precision, scale);
+    return new SqliteType(connection, typeName, precision, scale);
   }
 
   public String getTypeName() {

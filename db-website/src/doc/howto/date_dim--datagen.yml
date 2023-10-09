@@ -1,0 +1,48 @@
+Comment: An example of date dimension generator based on the `date_dim` table of TPCDS
+Columns:
+  - name: d_date_sk
+    comment: A surrogate key
+    Type: integer
+    DataGenerator:
+      type: sequence
+  - name: d_date
+    comment: A business key in date format
+    Type: date
+    DataGenerator:
+      type: sequence
+  - name: d_date_id
+    comment: A business key in string
+    Type: varchar
+    DataGenerator:
+      type: expression
+      ColumnParents: d_date
+      expression: "x.toISOString().substring(0,10)"
+  - name: d_month_seq
+    comment: An ascendant sequence for the month
+    Type: integer
+    DataGenerator:
+      type: expression
+      ColumnParents: d_date
+      expression: "function pad(number) {if (number < 10) { return '0' + number; } return number; }; x.getFullYear()+''+(pad(x.getMonth()+1))"
+  - name: d_day_name
+    comment: The name of the day
+    Type: varchar
+    DataGenerator:
+      type: expression
+      ColumnParents: d_date
+      expression: "var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; days[x.getDay()]"
+  - name: d_moy
+    comment: the month number in year
+    Type: Integer
+    DataGenerator:
+      type: expression
+      ColumnParents: d_date
+      expression: "x.getMonth()+1"
+  - name: d_year
+    comment: The year number
+    Type: Varchar
+    Precision: 4
+    DataGenerator:
+      type: expression
+      ColumnParents: d_date
+      expression: "x.getFullYear()"

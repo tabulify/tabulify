@@ -11,12 +11,12 @@ Certificate are used:
 
 ## Usage
 
-  * Add the domain in the [domains](./defaults/main/domains.yml) file
+  * Add the domain in the [domains](../../host_vars/beau/certbot_domains.yml) file
   * Run this role
 
 ```bash
-ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphrase.sh --tags certbot
-``` 
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags certbot
+```
 
 ## Log
 
@@ -24,7 +24,7 @@ ansible-playbook playbook-root.yml -i inventories/ovh-vps.yml --vault-id passphr
 /var/log/letsencrypt/letsencrypt.log
 ```
 
-## TODO May be 
+## TODO May be
 
 Ansible has also a module called [acme_certificate](https://docs.ansible.com/ansible/2.9/modules/acme_certificate_module.html#acme-certificate-module)
 

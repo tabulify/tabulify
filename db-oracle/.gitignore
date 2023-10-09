@@ -1,1 +1,2 @@
+# don't take the jar driver in the current directory
 *.jar

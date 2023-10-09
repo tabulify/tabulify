@@ -4,9 +4,7 @@
 
 The module test cross data system move/copy - loading actions (insert, update, merge)
 
-This module has only test, the entry code is in 
-  * `Tabulars.move`
-  * and the package `net.bytle.db.transfer`
+This module has only test for the package `net.bytle.db.transfer`
 
 ## Alias
 
@@ -103,3 +101,8 @@ Short-cut alias of the `transfer` method that we may find in `Tabulars`:
     * Insert/Append - get all source data and insert/append them
     * Update - get all source data and update them
     * Merge/Upsert - get all source data and update/insert them
+
+
+### Incremental
+
+  * [Incremental ??](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/materializations/#incremental)

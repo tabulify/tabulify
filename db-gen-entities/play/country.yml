@@ -1,0 +1,57 @@
+name: country data set
+comment: Create a country data set
+
+flow:
+  - name: Define the CSV as data resource
+    op: define
+    data_uri: https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv
+    data_def:
+      logical_name: country
+      delimiterCharacter: ','
+      headerRowId: 1
+      quoteCharacter: '"'
+      columns:
+        - name: 'name'
+          type: varchar
+        - name: 'alpha_2'
+          type: char
+          precision: 2
+        - name: 'alpha_3'
+          type: char
+          precision: 3
+        - name: 'country_code'
+          type: integer
+        - name: 'iso_3166-2-code'
+          type: varchar
+        - name: 'region'
+          type: varchar
+        - name: 'sub-region'
+          type: varchar
+        - name: 'intermediate_region'
+          type: varchar
+        - name: 'region-code'
+          type: integer
+        - name: 'sub_region_code'
+          type: integer
+        - name: 'intermediate-region-code'
+          type: integer
+
+  - name: Copy the CSV to the local temp file system
+    op: copy
+    target_uri: country.csv@temp
+    transfer_properties:
+      target_operation: noReplace # the file is deleted at the end in post operation
+
+  - name: Load it in the database
+    op: copy
+    target_uri: country@sqlite
+    transfer_properties:
+      target_operation: replace
+
+  - name: Print head
+    op: head
+
+#post_flow:
+#  - name: Delete
+#    op: drop
+#    data_selector: country.csv@temp

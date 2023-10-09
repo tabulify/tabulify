@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  # To know if an API operation should come in this API
+  # Ask you if an external developer could use it to create a custom application
+  #
+  # If the endpoint will not be used by an external developer
+  # Add it to the tower API instead
+  #
+  # This API accepts an app token that pass the realm and the app identifier.
+  title: Eraldy Public API
+  description: |
+    This is the public API of Eraldy.
+
+    You need a `app` API key for the non-public operation.
+  # Quote are deleted https://github.com/OpenAPITools/openapi-generator/issues/3196
+  # We can't therefore use a date string as the generated openapi.yaml file has no quote
+  # and the data is seen as date, not as string
+  version: "v2023-06-18"
+servers:
+  - url: 'https://api.eraldy.com'
+# check the openApi.md file to know more about tags.
+tags:
+  - name: ip
+    description: Ip operation
+  - name: csp
+    description: CSP Report
+# Secure by default, if you want to make an operation public, you need to set the security for an operation to the empty array
+# security: []
+security:
+  - apiKeyAuth: [ ]
+  - bearerAuth: [ ]
+components:
+  securitySchemes:
+    apiKeyAuth:
+      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
+    bearerAuth:
+      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
+paths:
+  /ping:
+    get:
+      operationId: "pingGet"
+      summary: A health check endpoint
+      # tag is the prefix of the API
+      security: [ ]
+      tags:
+        - health
+      responses:
+        '200':
+          description: API health status
+  /ip:
+    get:
+      operationId: "ipGet"
+      summary: "Return client information based on the HTTP request ip"
+      tags:
+        - ip
+      responses:
+        '200':
+          description: "Geolocation data based on the IP"
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/IpInfo'
+        '404':
+          description: "Not Found"
+  /ip/{ip}:
+    get:
+      operationId: "ipIpGet"
+      summary: "Return client information based on the ip"
+      tags:
+        - ip
+      security: [ ]
+      parameters:
+        - name: ip
+          description: "The IP (default to the IP of the HTTP request)"
+          # Path parameters are mandatory
+          # https://github.com/OAI/OpenAPI-Specification/issues/622
+          required: true
+          in: path
+          schema:
+            type: string
+            format: ipv4
+            example: "143.176.206.80"
+      responses:
+        '200':
+          description: "Geolocation data based on the IP"
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/IpInfo'
+        '404':
+          description: "Not Found"
+  /realm:
+    get:
+      operationId: "realmGet"
+      # description, the realm is in the token
+      summary: "Return the realm for the request"
+      tags:
+        - realm
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+  /app:
+    get:
+      operationId: appGet
+      summary: |
+        Retrieve the current app
+      tags:
+        - app
+      security:
+        - apiKeyAuth: [ 'read:app' ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+  /list/registration:
+    post:
+      operationId: listRegistrationPost
+      summary: "Register a user to a list"
+      tags:
+        - registration
+      security: [ ]
+      requestBody:
+        required: true
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
+      responses:
+        '200':
+          description: "Email was send for validation"
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ExitStatusResponse'
+        '302':
+          description: "A redirection"
+  /csp/report:
+    post:
+      operationId: cspReportPost
+      # https://w3c.github.io/webappsec-csp/#cspviolationreportbody
+      summary: "Report a CSP Violation"
+      security: [ ]
+      tags:
+        - csp
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/CspViolationReportBody'
+      responses:
+        '200':
+          description: "Report was processed"
+  /analytics/event:
+    post:
+      operationId: analyticsEventPost
+      summary: "Report a analytics event"
+      security: [ ]
+      tags:
+        - analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './eraldy-common-openapi.yaml#/components/schemas/AnalyticsEventPost'
+      responses:
+        '200':
+          description: "Event was processed"
+  /lists:
+    get:
+      operationId: listsGet
+      summary: |
+        Get a list of lists for the app
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      responses:
+        '200':
+          description: "Return a list of lists for the app"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+        '403':
+          description: "Not authenticated"
+  /user:
+    get:
+      operationId: userGet
+      summary: |
+        Get the authenticated user
+      tags:
+        - user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+        '401':
+          description: Requires authentication if not authenticated

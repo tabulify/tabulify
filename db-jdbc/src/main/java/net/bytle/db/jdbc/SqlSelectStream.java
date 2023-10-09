@@ -1,14 +1,11 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.SelectException;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.SelectStreamAbs;
+import net.bytle.type.Strings;
 
-import java.sql.Clob;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.Arrays;
+import java.sql.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -16,27 +13,27 @@ import java.util.stream.Collectors;
 public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
 
 
-  private final SqlDataStore jdbcDataStore;
+  private final SqlConnection jdbcDataStore;
 
-  private SqlDataPath jdbcDataPath;
+  private final SqlDataPath jdbcDataPath;
 
   // The cursor
   private ResultSet resultSet;
 
-  // Just for debugging purpose, in order to see the query that created this stream
-  private String query;
+  private Statement statement;
 
-  public SqlSelectStream(SqlDataPath jdbcDataPath) {
+  public SqlSelectStream(SqlDataPath jdbcDataPath) throws SelectException {
 
     super(jdbcDataPath);
     this.jdbcDataPath = jdbcDataPath;
-    this.jdbcDataStore = jdbcDataPath.getDataStore();
+    this.jdbcDataStore = jdbcDataPath.getConnection();
+    this.getResultSet();
 
 
   }
 
 
-  public static SqlSelectStream of(SqlDataPath jdbcDataPath) {
+  public static SqlSelectStream of(SqlDataPath jdbcDataPath) throws SelectException {
     return new SqlSelectStream(jdbcDataPath);
   }
 
@@ -44,7 +41,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public boolean next() {
     try {
-      return getResultSet().next();
+      return resultSet.next();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -53,7 +50,8 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public void close() {
     try {
-      getResultSet().close();
+      resultSet.close();
+      this.statement.close();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -62,7 +60,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public String getString(int columnIndex) {
     try {
-      return getResultSet().getString(columnIndex + 1);
+      return resultSet.getString(columnIndex);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -71,59 +69,54 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public void beforeFirst() {
     try {
-      if (getResultSet().getType() == ResultSet.TYPE_FORWARD_ONLY) {
-        getResultSet().close();
-        execute();
+      if (resultSet.getType() == ResultSet.TYPE_FORWARD_ONLY) {
+        resultSet.close();
+        resultSet = getResultSet();
       } else {
-        getResultSet().beforeFirst();
+        resultSet.beforeFirst();
       }
-    } catch (SQLException e) {
+    } catch (SQLException | SelectException e) {
       throw new RuntimeException(e);
     }
   }
 
 
-  @Override
-  public void execute() {
+  private ResultSet getResultSet() throws SelectException {
 
-    getResultSet();
-
-  }
-
-  @Override
-  public <T> T getObject(String columnName, Class<T> clazz) {
-    try {
-      return getResultSet().getObject(columnName, clazz);
-    } catch (SQLException e) {
-      return this.getDataPath().getDataStore().getObject(getObject(columnName),clazz);
+    if (resultSet != null) {
+      return resultSet;
     }
-  }
 
-  private ResultSet getResultSet() {
-    if (resultSet == null) {
-      SqlDataPath.Type type = SqlDataPath.Type.fromString(jdbcDataPath.getType());
-      switch (type) {
-        case QUERY:
-          query = jdbcDataPath.getQuery();
-          break;
-        default:
-          query = "select * from " + JdbcDataSystemSql.getFullyQualifiedSqlName(jdbcDataPath);
-      }
+    // Just for debugging purpose, in order to see the query that created this stream
+    String query;
+    if (this.jdbcDataPath.getMediaType() == SqlDataPathType.SCRIPT) {
+      query = this.jdbcDataPath.getQuery();
+    } else {
+      //noinspection SqlDialectInspection
+      query = "select * from " + jdbcDataPath.getConnection().getDataSystem().createFromClause(jdbcDataPath);
+    }
 
-      try {
-        this.resultSet = jdbcDataStore.getCurrentConnection().createStatement().executeQuery(query);
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
+    try {
+      /**
+       * The statement is not in a try statement
+       * to not close it immediately.
+       * Sqlite can not against
+       */
+      statement = jdbcDataStore.getCurrentConnection().createStatement();
+      this.resultSet = statement.executeQuery(query);
+    } catch (SQLException e) {
+      String message = "An error has occurred executing the query." + Strings.EOL + "Error Message: " + e.getMessage() + Strings.EOL + Strings.EOL + "Query: " + Strings.EOL + query;
+      throw new SelectException(message, e);
     }
     return resultSet;
+
   }
 
 
   @Override
   public long getRow() {
     try {
-      return getResultSet().getRow();
+      return resultSet.getRow();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -133,30 +126,52 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public Object getObject(int columnIndex) {
     try {
-      return getResultSet().getObject(columnIndex + 1);
+      return resultSet.getObject(columnIndex);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
 
-
-
   /**
-   * @return
    */
   @Override
-  public void runtimeDataDef(RelationDef ansiDataDef) {
+  public SqlRelationDef getRuntimeRelationDef() {
     try {
-      ResultSetMetaData resultSetMetaData = getResultSet().getMetaData();
-      for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-        int columnType = resultSetMetaData.getColumnType(i);
-        ansiDataDef.addColumn(
-          resultSetMetaData.getColumnName(i),
-          columnType,
-          resultSetMetaData.getPrecision(i),
-          resultSetMetaData.getScale(i));
+      SqlRelationDef sqlRelationDef = this.jdbcDataPath.getOrCreateRelationDef();
+      if (sqlRelationDef == null) {
+        sqlRelationDef = this.jdbcDataPath.getOrCreateRelationDef();
       }
+      if (sqlRelationDef.getColumnsSize() == 0) {
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+          int columnType = resultSetMetaData.getColumnType(i);
+          String columnName = resultSetMetaData.getColumnName(i);
+          /**
+           * Be sure that we didn't get two column
+           * with the same name
+           *
+           * This can be the case for instance when
+           * only the name of a function is returned
+           *
+           * Postgres do it.
+           * For instance:
+           *   * avg(col1), avg(col2)
+           * will return two columns
+           *   * avg, avg
+           *
+           */
+          if (sqlRelationDef.hasColumn(columnName)) {
+            columnName = columnName + i;
+          }
+          sqlRelationDef.addColumn(
+            columnName,
+            columnType,
+            resultSetMetaData.getPrecision(i),
+            resultSetMetaData.getScale(i));
+        }
+      }
+      return sqlRelationDef;
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -166,7 +181,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public Double getDouble(int columnIndex) {
     try {
-      return getResultSet().getDouble(columnIndex + 1);
+      return resultSet.getDouble(columnIndex);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -175,7 +190,7 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public Clob getClob(int columnIndex) {
     try {
-      return getResultSet().getClob(columnIndex + 1);
+      return resultSet.getClob(columnIndex);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -185,9 +200,6 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   /**
    * Retrieves and removes the head of this data path, or returns null if this queue is empty.
    *
-   * @param timeout
-   * @param timeUnit
-   * @return
    */
   @Override
   public boolean next(Integer timeout, TimeUnit timeUnit) {
@@ -195,17 +207,19 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   }
 
   @Override
-  public List<Object> getObjects() {
+  public List<?> getObjects() {
     return
-      Arrays.stream(jdbcDataPath.getOrCreateDataDef().getColumnDefs())
-        .map(c -> getObject(c.getColumnPosition() - 1))
+      jdbcDataPath.getOrCreateRelationDef()
+        .getColumnDefs()
+        .stream()
+        .map(c -> getObject(c.getColumnPosition()))
         .collect(Collectors.toList());
   }
 
   @Override
   public Integer getInteger(int columnIndex) {
     try {
-      return getResultSet().getInt(columnIndex + 1);
+      return resultSet.getInt(columnIndex);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -214,9 +228,27 @@ public class SqlSelectStream extends SelectStreamAbs implements SelectStream {
   @Override
   public Object getObject(String columnName) {
     try {
-      return getResultSet().getObject(columnName);
+      return resultSet.getObject(columnName);
     } catch (SQLException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public <T> T getObject(int index, Class<T> clazz) {
+    try {
+      return resultSet.getObject(index, clazz);
+    } catch (SQLException e) {
+      return this.jdbcDataStore.getObject(getObject(index), clazz);
+    }
+  }
+
+  @Override
+  public <T> T getObject(String columnName, Class<T> clazz) {
+    try {
+      return resultSet.getObject(columnName, clazz);
+    } catch (SQLException e) {
+      return this.jdbcDataStore.getObject(getObject(columnName), clazz);
     }
   }
 

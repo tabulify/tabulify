@@ -1,7 +1,0 @@
-TotalRows: 10000
-Columns:
-  sequence:
-    type: integer
-    comment: a table showing the generation of a sequence
-    DataGenerator:
-      name: sequence

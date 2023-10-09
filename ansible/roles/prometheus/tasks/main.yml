@@ -21,7 +21,7 @@
         owner: '{{ prometheus_user_group }}'
         mode: 'u=rwx,g=rwx,o='
         recurse: true
-    - name: Check if Gogs is already installed.
+    - name: Check if Prometheus is already installed.
       stat:
         path: "{{ prometheus_home }}/node_exporter"
       register: node_exporter_exe

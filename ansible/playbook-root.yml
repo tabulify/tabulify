@@ -2,26 +2,25 @@
 - hosts: ovh
   tasks:
   roles:
-    - name: Ovh common
-      role: ovh-sec
-      tags: ovh
+    - name: Os Common (securistation)
+      role: os
+      tags: os
     - name: Install Nginx
       role: nginx
       tags: nginx
     - name: Install openjdk
       role: openjdk
-      openjdk_version: 1.8.0
-      tags: java
-    - name: Install nexus
-      role: nexus
-      nexus_version: 3.19.1-01
-      tags: nexus
+      tags: openjdk
+#    - name: Install nexus
+#      role: nexus
+#      nexus_version: 3.19.1-01
+#      tags: nexus
     - name: Install netdata
       role: netdata
       tags: netdata
-    - name: Install backend
-      role: backend
-      tags: backend
+    - name: Install apps
+      role: apps
+      tags: apps
     - name: Install Gogs
       role: gogs
       tags: gogs
@@ -37,5 +36,24 @@
     - name: Install postfix
       role: postfix
       tags: postfix
-
-
+    - name: Install drill
+      role: drill
+      tags: drill
+    - name: Install cassandra
+      role: cassandra
+      tags: cassandra
+    - name: Install Chrome
+      role: chrome
+      tags: chrome
+    - name: Install NewRelic
+      role: newrelic
+      tags: newrelic
+    - name: Install Postgres
+      role: postgres
+      tags: postgres
+    - name: Install Restic Backup
+      role: restic
+      tags: restic
+    - name: Install Wireguard (VPN)
+      role: wireguard
+      tags: wireguard

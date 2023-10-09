@@ -1,0 +1,13 @@
+target/
+build/
+.gradle
+**/.gradle/
+**/build/
+.idea
+.idea/*
+*.iml
+.env
+.yarn
+logs
+
+fly.toml

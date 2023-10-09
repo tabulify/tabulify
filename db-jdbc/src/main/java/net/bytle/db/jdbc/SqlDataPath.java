@@ -1,13 +1,26 @@
 package net.bytle.db.jdbc;
 
+import net.bytle.db.fs.FsDataPath;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
-import net.bytle.db.uri.DataUri;
+import net.bytle.db.spi.SelectException;
+import net.bytle.db.spi.Tabulars;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.transfer.TransferSourceTarget;
+import net.bytle.exception.*;
+import net.bytle.fs.Fs;
+import net.bytle.type.Casts;
+import net.bytle.type.Key;
+import net.bytle.type.MediaType;
+import net.bytle.type.Strings;
 
 import java.sql.DatabaseMetaData;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
+
+import static net.bytle.db.jdbc.SqlDataPathType.*;
 
 /**
  * A jdbc data path knows only three parts
@@ -18,152 +31,181 @@ import java.util.stream.Collectors;
 public class SqlDataPath extends DataPathAbs {
 
 
-  public static final String CURRENT_WORKING_DIRECTORY = ".";
-  public static final String PARENT_DIRECTORY = "..";
-  private static final String SEPARATOR = ".";
-  private final String name;
-  private final String schema;
-  private final String catalog;
-  private final SqlDataStore jdbcDataStore;
+  private final SqlConnectionResourcePath sqlConnectionResourcePath;
 
 
-  /**
-   * The type structure is:
-   *   SYSTEM (Example: when there is no notion of catalog of schema, as with SQLite)
-   *      > CATALOG
-   *         > SCHEMA
-   *            > TABLE
-   *            > VIEW
-   *            > QUERY
-   *            > ....SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
-   */
-  private Type type = Type.TABLE;
+  public SqlDataPath(SqlConnection sqlConnection, DataPath scriptDataPath) {
 
-  /**
-   * A view
-   *
-   * Just FYI: <a href=https://calcite.apache.org/docs/model.html#view>The calcite definition</a>
-   */
-  public enum Type {
-    TABLE,
-    VIEW,
-    QUERY,
-    SCHEMA, // container
-    CATALOG, // Container
-    SYSTEM; // Container
+    super(sqlConnection, scriptDataPath);
 
-    static Type fromString(final String s) {
-      for (Type type : Type.values()) {
-        if (s.toUpperCase().equals(type.toString())) {
-          return type;
-        }
-      }
-      throw new RuntimeException("("+s+") is an unknown type");
+    this.mediaType = SCRIPT;
+    this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
+
+    String currentCatalog;
+    try {
+      currentCatalog = sqlConnection.getCurrentCatalog();
+    } catch (NoCatalogException e) {
+      currentCatalog = null;
     }
+    String schema = sqlConnection.getCurrentSchema();
+    /**
+     * We don't read the content of the script and make a hash id
+     * as the resource may not exist
+     */
+    String object = Key.toColumnName(scriptDataPath.getRelativePath() + "_" + scriptDataPath.getConnection() + "_" + sqlConnection);
+    this.sqlConnectionResourcePath = SqlConnectionResourcePath
+      .createOfCatalogSchemaAndObjectName(this.getConnection(), currentCatalog, schema, object);
+
+    /**
+     * Add variable
+     */
+    this.addBuildVariables();
+
+    /**
+     * Logical Name is the name of the file without the extension
+     * If you load `query_1.sql`, you will create a `query_1` table
+     */
+    String logicalName = scriptDataPath.getLogicalName();
+    if (scriptDataPath instanceof FsDataPath) {
+      logicalName = Fs.getFileNameWithoutExtension(((FsDataPath) scriptDataPath).getNioPath());
+    }
+    this.setLogicalName(logicalName);
+
+  }
+
+  private void addBuildVariables() {
+    this.addVariablesFromEnumAttributeClass(SqlDataPathAttribute.class);
+
+    this.getOrCreateVariable(SqlDataPathAttribute.CATALOG).setValueProvider(() -> {
+      try {
+        return this.sqlConnectionResourcePath.getCatalogPartOrDefault();
+      } catch (NoCatalogException e) {
+        return null;
+      }
+    });
+    this.getOrCreateVariable(SqlDataPathAttribute.SCHEMA).setValueProvider(this.sqlConnectionResourcePath::getSchemaPartOrDefault);
 
   }
 
 
+  @Override
+  public SqlDataPathType getMediaType() {
+
+    return (SqlDataPathType) this.mediaType;
+
+  }
+
+
+  public SqlDataPath getParent() throws NoParentException {
+
+    switch (this.getMediaType()) {
+      case SCHEMA:
+        try {
+          return getCatalogDataPath();
+        } catch (NoCatalogException e) {
+          throw new NoParentException("Catalog parent are not supported");
+        }
+      case CATALOG:
+        throw new NoParentException("The catalog (" + this + ") has no parent");
+      default:
+        try {
+          return getSchema();
+        } catch (NoSchemaException e) {
+          throw new NoParentException("Schema parent are not supported");
+        }
+    }
+  }
+
+
   /**
+   * Sql Server does not allow
+   * catalog name in all statement
    *
-   * @param jdbcDataStore
-   * @param query - a query data pth
-   *
-   * To facilitate creation of a SqlDataStore extension, a query data path is
-   * created from a data store via {@link SqlDataStore#getQueryDataPath(String)}
+   * @param numberOfNames - the number of names (1,2)
+   * @return the qualified name of the sql resources (ie  table, schema.table, ...)
    */
-  protected SqlDataPath(SqlDataStore jdbcDataStore, String query) {
-    this.jdbcDataStore = jdbcDataStore;
-    this.setType(Type.QUERY);
-    this.setQuery(query);
-    this.name = null;
-    this.schema = jdbcDataStore.getCurrentSchema();
-    this.catalog = jdbcDataStore.getCurrentCatalog();
+  public String toSqlStringPath(int numberOfNames) {
+
+    switch (numberOfNames) {
+      case 1:
+        return this.getConnection().getDataSystem().createQuotedName(getName());
+      case 2:
+        try {
+          return this.getConnection().getDataSystem().createQuotedName(getSchema().getName()) + "." + this.getConnection().getDataSystem().createQuotedName(getName());
+        } catch (NoSchemaException e) {
+          throw new IllegalStateException("Schema seems to be not expected but the sql path asked was of 2", e);
+        }
+      default:
+        return toSqlStringPath();
+    }
+
+  }
+
+  public SqlConnectionResourcePath getSqlConnectionResourcePath() {
+    return this.sqlConnectionResourcePath;
   }
 
 
   /**
    * The global constructor for table or view.
-   * Query has another one, See {@link #SqlDataPath(SqlDataStore, String)}
+   * Query has another one, See {@link #SqlDataPath(SqlConnection, DataPath)}
    *
-   * @param jdbcDataStore
-   * @param catalog
-   * @param schema
-   * @param name
-   *
-   * To facilitate the SqlDataStore extension, a data path is
-   * created from a data store via {@link SqlDataStore#getSqlDataPath(String, String, String)}
+   * @param sqlConnection the connection
+   * @param path          a relative resource path from the connection
    */
-  protected SqlDataPath(SqlDataStore jdbcDataStore, String catalog, String schema, String name) {
+  protected SqlDataPath(SqlConnection sqlConnection, String path, MediaType mediaType) {
 
-    this.jdbcDataStore = jdbcDataStore;
-    this.catalog = catalog;
-    this.schema = schema;
-    this.name = name;
+    /**
+     * An SQL path does not start from the root but from the leaf.
+     *    * This function should return the given path to create it (by default a relative path. ie
+     *    * mostly the name of the resource (table, view).
+     * An empty path is the special root path {@link SqlDataPathType.ROOT}
+     */
+    super(sqlConnection, path, mediaType);
 
-    if (this.name == null){
-      if (this.schema==null){
-        if (this.catalog==null) {
-          type = Type.SYSTEM;
-        } else {
-          type = Type.CATALOG;
-        }
-      } else {
-        type = Type.SCHEMA;
+    this.sqlConnectionResourcePath = SqlConnectionResourcePath.createOfConnectionPath(sqlConnection, path);
+
+    this.mediaType = this.buildMediaType(mediaType);
+
+
+  }
+
+  private SqlDataPathType buildMediaType(MediaType mediaType) {
+
+    if (mediaType != null && mediaType != UNKNOWN) {
+      if (mediaType instanceof SqlDataPathType) {
+        return (SqlDataPathType) mediaType;
+      }
+      String subType = mediaType.getSubType();
+      try {
+        return Casts.cast(subType, SqlDataPathType.class);
+      } catch (CastException e) {
+        throw IllegalArgumentExceptions.createFromMessageWithPossibleValues("The sql media type (" + mediaType + ") is incorrect.", SqlDataPathType.class, e);
       }
     }
 
+    SqlDataPathType resourcePathMediaType = this.sqlConnectionResourcePath.getSqlMediaType();
+    if (resourcePathMediaType != UNKNOWN) {
+      return resourcePathMediaType;
+    }
+
+    return this.getConnection().getDataSystem().getObjectMediaTypeOrDefault(
+      this.sqlConnectionResourcePath.getCatalogPartOrDefaultOrNull(),
+      this.sqlConnectionResourcePath.getSchemaPartOrDefault(),
+      this.sqlConnectionResourcePath.getObjectPartOrNull()
+    );
   }
 
 
   @Override
-  public SqlDataStore getDataStore() {
-    return jdbcDataStore;
-  }
+  public SqlConnection getConnection() {
 
-  @Override
-  public SqlDataDef getOrCreateDataDef() {
-
-    if (relationDef==null) {
-      relationDef = new SqlDataDef(this,true);
-    }
-    return (SqlDataDef) relationDef;
+    return (SqlConnection) super.getConnection();
 
   }
 
-  @Override
-  public SqlDataDef createDataDef() {
-    if (relationDef==null) {
-      relationDef = new SqlDataDef(this,false);
-    }
-    return (SqlDataDef) relationDef;
-  }
-
-
-  @Override
-  public DataUri getDataUri() {
-    // The data URI is rebuild because the first mean of JdbcDataPath creation
-    // is the JDBC API that gives catalog, schema and name
-
-    StringBuilder stringBuilder = new StringBuilder();
-
-    if (catalog != null) {
-      stringBuilder.append(catalog).append(".");
-    }
-    if (schema != null) {
-      stringBuilder.append(schema).append(".");
-    }
-    if (name != null) {
-      stringBuilder.append(name).append(".");
-    }
-    stringBuilder.append(DataUri.AT_STRING).append(jdbcDataStore.getName());
-
-    return DataUri.of(stringBuilder.toString());
-
-  }
 
   /**
-   *
    * @param name - the sibling name
    * @return a sibling of a table
    * The implementation is not complete,
@@ -172,7 +214,9 @@ public class SqlDataPath extends DataPathAbs {
   @Override
   public SqlDataPath getSibling(String name) {
 
-    return this.getDataStore().getDefaultDataPath(catalog, schema, name);
+    Objects.requireNonNull(name);
+    String path = this.getSqlConnectionResourcePath().getSibling(name).toString();
+    return this.getConnection().getDataPath(path, UNKNOWN);
 
   }
 
@@ -181,62 +225,16 @@ public class SqlDataPath extends DataPathAbs {
     return resolve(name);
   }
 
+  /**
+   * @param stringPath the string path to resolve (there is no relative path, only the child)
+   * @return the child object
+   */
   @Override
-  public SqlDataPath resolve(String... names) {
+  public SqlDataPath resolve(String stringPath) {
 
-    List<String> actualPath = new ArrayList<>();
-    if (catalog != null) {
-      actualPath.add(catalog);
-    }
-    if (schema != null) {
-      actualPath.add(schema);
-    }
-    if (name != null) {
-      actualPath.add(name);
-    }
-    if (names != null) {
-      for (int i = 0; i < names.length; i++) {
-        switch (names[i]) {
-          case ".":
-            // Nothing to do
-            break;
-          case "..":
-            if (actualPath.size() == 0) {
-              throw new RuntimeException("You can't apply two points on this path (..) because you are already on the root path and we can't therefore go to th parent");
-            } else {
-              actualPath.remove(actualPath.size() - 1);
-            }
-            break;
-          default:
-            if (names[i].startsWith("/")) {
-              actualPath = new ArrayList<>();
-              actualPath.add(names[i].substring(1, names[i].length() - 1));
-            } else {
-              actualPath.add((names[i]));
-            }
-        }
-      }
-    }
-    if (this.catalog != null) {
-      return this.getDataStore().getSqlDataPath(
-        actualPath.size() >= 1 ? actualPath.get(0) : null,
-        actualPath.size() >= 2 ? actualPath.get(1) : null,
-        actualPath.size() >= 3 ? actualPath.get(2) : null);
-    } else {
-      if (this.schema != null) {
-        return this.getDataStore().getSqlDataPath(
-          null,
-          actualPath.size() >= 1 ? actualPath.get(0) : null,
-          actualPath.size() >= 2 ? actualPath.get(1) : null
-        );
-      } else {
-        return this.getDataStore().getSqlDataPath(
-          null,
-          null,
-          actualPath.size() >= 1 ? actualPath.get(0) : null
-        );
-      }
-    }
+    Objects.requireNonNull(stringPath);
+    String path = this.getSqlConnectionResourcePath().resolve(stringPath).toString();
+    return new SqlDataPath(this.getConnection(), path, UNKNOWN);
 
   }
 
@@ -246,87 +244,112 @@ public class SqlDataPath extends DataPathAbs {
   }
 
   /**
+   * @return the schema of this object
    * {@link DatabaseMetaData#getMaxSchemaNameLength()}
+   * A schema or a catalog SqlDataPath does not return a schema
+   * <p>
+   * We throw because when searching with the SQL JDBC
+   * you need to pass null and not the empty string
    */
-  public SqlDataPath getSchema() {
+  public SqlDataPath getSchema() throws NoSchemaException {
 
-    if (schema == null) {
-      return null;
-    } else {
-      return this.getDataStore().getSqlDataPath(catalog, schema, null);
-    }
+    return new SqlDataPath(
+      this.getConnection(),
+      this.sqlConnectionResourcePath.getSchemaResourcePath().toString(),
+      SCHEMA
+    );
 
   }
 
 
   /**
+   * A sql data resource may be anonymous (such as a query),
+   * but a name should be given
+   * <p>
    * {@link DatabaseMetaData#getMaxTableNameLength()}
    */
   @Override
   public String getName() {
-    if (name != null) {
-      return name;
-    }
-    if (schema != null) {
-      return schema;
-    }
-    if (catalog != null) {
-      return catalog;
-    }
-    if (type == Type.QUERY) {
-      return "query";
-    }
+    return this.sqlConnectionResourcePath.getName();
+  }
+
+
+  @Override
+  public List<String> getNames() {
+    return this.sqlConnectionResourcePath.getNames();
+  }
+
+
+  /**
+   * An absolute representation of a SCHEMA or CATALOG is relative
+   * ie a SQL path starts from the leaf not from the root
+   *
+   * @return the absolute string path
+   */
+  @Override
+  public String getAbsolutePath() {
+    return this.sqlConnectionResourcePath.toAbsolute().toString();
+  }
+
+  @Override
+  public Long getSize() {
+    SqlLog.LOGGER_DB_JDBC.fine("The size operation is not yet implemented for the connection (" + this.getConnection().getProductName() + ")");
     return null;
   }
 
   @Override
-  public List<String> getNames() {
-    List<String> pathSegments = new ArrayList<>();
-    if (catalog != null) {
-      pathSegments.add(catalog);
+  public Long getCount() {
+
+    long count = 0;
+
+    if (Tabulars.isDocument(this)) {
+
+      DataPath queryDataPath = this.getConnection().createScriptDataPath("select count(1) from " + this.getConnection().getDataSystem().createFromClause(this));
+      try (
+        SelectStream selectStream = queryDataPath.getSelectStream()
+      ) {
+        boolean next = selectStream.next();
+        if (next) {
+          count = selectStream.getInteger(1);
+        }
+      } catch (SelectException e) {
+        boolean strict = this.getConnection().getTabular().isStrict();
+        String message = "Error while trying to get the count of " + this;
+        if (strict) {
+          throw new RuntimeException(message, e);
+        } else {
+          SqlLog.LOGGER_DB_JDBC.warning(message + "\n" + e.getMessage());
+        }
+      }
+    } else {
+      count = Tabulars.getChildren(this).size();
     }
-    if (schema != null) {
-      pathSegments.add(schema);
-    }
-    if (name != null) {
-      pathSegments.add(name);
-    }
-    return pathSegments;
+    return count;
   }
 
   @Override
-  public String getPath() {
-    return getNames().stream()
-      .filter(n -> !n.equals(""))
-      .collect(Collectors.joining(SEPARATOR));
+  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+    TransferSourceTarget transferSourceTarget = TransferSourceTarget.create(source, this, transferProperties);
+    return SqlInsertStream.create(transferSourceTarget);
   }
 
+  @Override
+  public SelectStream getSelectStream() throws SelectException {
+    return new SqlSelectStream(this);
+  }
 
-  public String getCatalog() {
-    return catalog;
+  public SqlDataPath getCatalogDataPath() throws NoCatalogException {
+    return new SqlDataPath(
+      this.getConnection(),
+      this.sqlConnectionResourcePath.getCatalogPath().toString(),
+      CATALOG
+    );
   }
 
 
   public boolean isDocument() {
-    assert type!=null: "The type of data path ("+this+") is null, we can't therefore determine if it's a document";
-    if (type == Type.SCHEMA || type == Type.CATALOG || type == Type.SYSTEM) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  public SqlDataPath setType(Type type) {
-    this.type = type;
-    return this;
-  }
-
-  /**
-   * @return
-   */
-  @Override
-  public String getType() {
-    return this.type.toString();
+    assert mediaType != null : "The type of data path (" + this + ") is null, we can't therefore determine if it's a document";
+    return mediaType != SCHEMA && mediaType != CATALOG;
   }
 
 
@@ -334,5 +357,53 @@ public class SqlDataPath extends DataPathAbs {
   public DataPath getSelectStreamDependency() {
     return null;
   }
+
+  /**
+   * The qualified SQL name with its {@link SqlConnectionMetadata#getIdentifierQuote()}
+   * that can be used in SQL Statement
+   * <p>
+   * example: create view `sqlStringPath` ...
+   *
+   * @return the sql string path
+   */
+  public String toSqlStringPath() {
+
+    return SqlConnectionResourcePath.createOfSqlDataPath(this).toAbsolute().toSqlStatementPath();
+
+  }
+
+  @Override
+  public SqlRelationDef getRelationDef() {
+
+    return (SqlRelationDef) super.getRelationDef();
+  }
+
+  @Override
+  public SqlRelationDef createRelationDef() {
+    this.relationDef = new SqlRelationDef(this, false);
+    return (SqlRelationDef) this.relationDef;
+  }
+
+  /**
+   * @return the script as a query definition (select)
+   * See also {@link SqlDataSystem#createOrGetQuery(SqlDataPath)}
+   * <p>
+   * This function will remove the trailing comma.
+   */
+  @Override
+  public String getQuery() {
+
+    return Strings.createFromString(this.getScript().trim()).rtrim(";").toString();
+
+  }
+
+  @Override
+  public SqlRelationDef getOrCreateRelationDef() {
+    if (getRelationDef() == null) {
+      this.relationDef = new SqlRelationDef(this, true);
+    }
+    return (SqlRelationDef) this.relationDef;
+  }
+
 
 }

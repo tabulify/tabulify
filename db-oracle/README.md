@@ -4,6 +4,8 @@
 
 ## Test Container
 
+### In Hub
+
 We are using this docker image [wnameless/docker-oracle-xe-11g](https://github.com/wnameless/docker-oracle-xe-11g)
 because the official below is too big.
 
@@ -12,9 +14,32 @@ docker run ^
     --name=oracle ^
     -d ^
     -p 1521:1521 ^
+    -p 51521:1521 \
+    -p 55500:5500 \
+    -e ORACLE_PWD=mysecurepassword \
+    -e ORACLE_CHARACTERSET=AL32UTF8 \
     -e ORACLE_ALLOW_REMOTE=true ^
     wnameless/oracle-xe-11g-r2
 ```
+    
+### Official
+Container can also be build from:
+   * [Single Instance](https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance)
+     * [18c](https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance/dockerfiles/18.4.0)
+   * https://blogs.oracle.com/oraclemagazine/deliver-oracle-database-18c-express-edition-in-containers
+
+Example
+```bash
+git clone --depth 1 https://github.com/oracle/docker-images
+cd OracleDatabase\SingleInstance\dockerfiles\18.4.0
+docker build -t gerardnico:oracle:18.4.0 -f Dockerfile.xe .
+```
+
+### Driver
+
+  * ojdbc8 means certified with jdk8
+  * https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc8/
+  * https://www.oracle.com/database/technologies/jdbc-upc-downloads.html
 
 ### Oracle
 

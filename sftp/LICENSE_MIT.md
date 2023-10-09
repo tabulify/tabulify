@@ -1,4 +1,4 @@
-Copyright (c) 2016 - Bytle ([http://www.bytle.net](http://www.bytle.net))
+Copyright (c) 2016 - Bytle ([https://www.bytle.net](https://www.bytle.net))
 All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 

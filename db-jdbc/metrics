@@ -1,0 +1,13 @@
+2020-11-18 19:08:33, Buffer Size, 0
+2020-11-18 19:08:33, Buffer MaxSize, 20000
+2020-11-18 19:08:33, Buffer Ratio, 0.0
+2020-11-18 19:08:38, Buffer Size, 17063
+2020-11-18 19:08:38, Buffer MaxSize, 20000
+2020-11-18 19:08:38, Buffer Ratio, 85.315
+2020-11-18 19:08:38, 0 Commits, Producer: Thread-4
+2020-11-18 19:08:38, 530000 Records, Producer: Thread-4
+2020-11-18 19:08:43, Buffer Size, 0
+2020-11-18 19:08:43, Buffer MaxSize, 20000
+2020-11-18 19:08:43, Buffer Ratio, 0.0
+2020-11-18 19:08:43, 0 Commits, Producer: Thread-4
+2020-11-18 19:08:43, 1000000 Records, Producer: Thread-4

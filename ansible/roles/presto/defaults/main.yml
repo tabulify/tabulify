@@ -1,0 +1,10 @@
+---
+presto_group: presto
+presto_user: presto
+
+presto_base_dir: '/opt/presto'
+# etc: configuration directory
+presto_etc_dir: '{{ presto_base_dir }}/etc'
+presto_data_dir: '/var/presto/data'
+presto_catalog_dir: '{{ presto_base_dir }}/catalog'
+presto_version: '0.270'

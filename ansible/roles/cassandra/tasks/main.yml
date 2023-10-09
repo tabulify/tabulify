@@ -1,0 +1,23 @@
+---
+
+- name: Cassandra | Prerequisites
+  become: true
+  block:
+    - include_tasks: 'cassandra_prerequisites.yml'
+
+- name: Cassandra | Installation
+  become: true
+  block:
+    - include_tasks: 'cassandra_install.yml'
+
+- name: Cassandra | Configuration
+  become: true
+  tags: cassandra-conf
+  block:
+    - include_tasks: 'cassandra_configuration.yml'
+
+- name: Cassandra | Service
+  become: true
+  block:
+    - include_tasks: 'cassandra_service.yml'
+

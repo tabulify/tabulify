@@ -3,6 +3,12 @@
 - name: verify config
   become: true
   command: '/sbin/nginx -t'
+  register: handler_nginx_conf
+  listen:
+    - reload nginx
+    - restart nginx
+    - stop nginx
+  failed_when: "handler_nginx_conf.rc != 0"
 
 - name: reload nginx
   systemd:
@@ -32,5 +38,10 @@
     enabled: true
   become: true
 
-
+- name: reload nginx-amplify
+  systemd:
+    name: "amplify-agent"
+    state: reloaded
+    daemon_reload: true
+  become: true
 

@@ -1,0 +1,19 @@
+- name: Postgresql | Create backup directory
+  file:
+    path: /var/lib/postgresql/backups
+    owner: postgres
+    group: postgres
+    state: directory
+
+- name: Postgresql | Backup cronjobs
+  cron:
+    name: "{{ item[0].name }} {{ item[1] }} postgresql backup"
+    cron_file: "{{ item[0].name }}-postgresql-backup-{{ item[1] }}"
+    job: "mv /var/lib/postgresql/backups/{{ item[0].name }}.{{ item[1] }}.sql.gz /var/lib/postgresql/backups/{{ item[0].name }}.{{ item[1] }}.sql.1.gz; pg_dump {{ item[0].name }} | gzip > /var/lib/postgresql/backups/{{ item[0].name }}.{{ item[1] }}.sql.gz"
+    user: postgres
+    special_time: "{{ item[1] }}"
+    state: present
+  with_nested:
+    - "{{ postgresql_databases }}"
+    - [hourly, daily, weekly, monthly, annually]
+  when: item[0].backup

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Firewall Service file -->
+<service>
+  <short>WireGuard</short>
+  <description>WireGuard is the simple, fast and modern VPN. The port needs to be open if a peer has this host explicitly configured as endpoint.</description>
+  <port protocol="udp" port="{{ wg_server_port }}"/>
+</service>

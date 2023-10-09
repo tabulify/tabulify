@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The [Bytle](http://www.bytle.net) SFTP library is a SFTP File System 
+The [Bytle](http://www.bytle.net) SFTP library is a SFTP File System
 that provides access to the files on an SFTP server (that is, an SSH or SCP server).
 
 ``Bytle Sftp`` is a [Java NIO File System](http://docs.oracle.com/javase/tutorial/essential/io/fileio.html). If you don't have any knowledge of this file system representation, see this [tutorial](http://docs.oracle.com/javase/tutorial/essential/io/fileio.html).
@@ -16,7 +16,7 @@ You can do a lot of IO operation on files and directory such as:
   * [Managing Metadata (File and File Store Attributes)](http://docs.oracle.com/javase/tutorial/essential/io/fileAttr.html)
   * [Reading, Writing, and Creating Files](http://docs.oracle.com/javase/tutorial/essential/io/file.html)
   * [Creating and Reading Directories](http://docs.oracle.com/javase/tutorial/essential/io/dirs.html)
- 
+
 
 
 
@@ -28,7 +28,7 @@ The ``bytle-sftp-X.X.X.jar`` jar file must be in the classpath as Java NIO uses 
 export classpath=../path/To/bytle-sftp-X.X.X.jar
 ```
 
-It's possible to bypass this restriction but the code gets more ugly. See an example [with the groovy class Loader](src/client/groovy/traversing_method_1.groovy). 
+It's possible to bypass this restriction but the code gets more ugly. See an example [with the groovy class Loader](src/client/groovy/traversing_method_1.groovy).
 
 The java version must be version 8:
 
@@ -72,14 +72,14 @@ Path p3 = Paths.get(URI.create("file:///Users/joe/FileTest.java"));
 ```
 To follow the same tutorial with an ``sftp server``, you just need to replace the URI. For Example:
 ```java
-Path p3 = Paths.get(URI.create("sftp://username:password@myHostName"));
+Path p3 = Paths.get(URI.create("ssh://username:password@myHostName"));
 ```
 
 ### By Languages
 
   * with Java: See [Java](src/client/java)
   * with Groovy: See [Groovy](src/client/groovy)
-  
+
 
 ## Implementation
 
@@ -89,12 +89,38 @@ Path p3 = Paths.get(URI.create("sftp://username:password@myHostName"));
   * The file system is not developed for concurrency. You need to open a file system from each threads.
   * The ``Btyle Sftp`` library is a concrete implementation of the [Java NIO FileSystemProvider Interface](http://docs.oracle.com/javase/8/docs/api/java/nio/file/spi/FileSystemProvider.html). See [Developing a Custom File System Provider](http://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/filesystemprovider.html)
   * The Sftp layer is implemented with the [JCraft Jsch library](http://www.jcraft.com/jsch/)
-  
-## Dev  
+
+## Dev
 
   * Test: See the [README](src/test/README.md) files.
 
-  
 
-  
-  
+## Relational Model
+
+For info, see also the JDBC model
+https://cdn.cdata.com/help/EVE/jdbc/pg_table-root.htm
+
+To upload a file to the server you need to specify LocalFile and a Filename.
+```sql
+INSERT INTO Root(Localfile,Filename) VALUES ('D:\\\\ShareFolder\\\\Notes.txt','NewNotes.txt')
+```
+
+To create a new directory on the server you need to specify Filename and set IsDirectory to true.
+```sql
+INSERT INTO Root(Filename,IsDirectory) VALUES ('New Directory',true)
+```
+Update
+Only the name of a file can be updated and FilePath must be specified in the WHERE clause.
+```sql
+UPDATE Root SET Filename='OldNotes.txt' WHERE FilePath='/Documents/Test/NewNotes.txt'
+```
+ * Delete a file by providing the FilePath.
+```sql
+DELETE FROM Root WHERE FilePath='/Documents/Test/OldNotes.txt'
+```
+* Delete a directory by providing the FilePath and set IsDirectory to true.
+```sql
+DELETE FROM Root WHERE FilePath='/Documents/Test' AND IsDirectory=true
+```
+
+

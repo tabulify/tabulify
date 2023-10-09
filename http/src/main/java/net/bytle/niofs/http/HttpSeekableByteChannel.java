@@ -4,7 +4,7 @@ package net.bytle.niofs.http;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -19,15 +19,17 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
 
   // The connection Url
-  private final HttpPath httpPath;
+  private final HttpRequestPath httpPath;
   // The current position in the connection
   private long currentPosition = 0;
-  // The connection
-  private HttpURLConnection currentConnection;
+  // The connection (fetch)
+  private HttpURLConnection fetch;
   // The channel wrapper around the input stream to read in byte and got easy channel status
   private ReadableByteChannel currentChannel;
 
-  HttpSeekableByteChannel(final HttpPath httpPath) {
+  private long byteSize;
+
+  HttpSeekableByteChannel(final HttpRequestPath httpPath) {
     assert httpPath != null : "httpPath cannot be null";
     this.httpPath = httpPath;
     build(currentPosition);
@@ -35,13 +37,24 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
   }
 
   private void build(long start) {
-    currentConnection = HttpStatic.getConnection(httpPath.getUrl());
-    currentConnection.addRequestProperty("Range", "bytes=" + start + "-");
-    try {
-      currentChannel = Channels.newChannel(currentConnection.getInputStream());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+
+    fetch = HttpStatic.getHttpFetchObject(httpPath);
+    fetch.addRequestProperty("Range", "bytes=" + start + "-");
+    fetch.setInstanceFollowRedirects(true);
+
+
+    /**
+     * The size is mandatory for
+     * {@link java.nio.file.Files.readAllBytes()}
+     * because it creates an array in advance to get the data
+     *
+     * If the server does not publish it, we read the input stream
+     * to determine it
+     */
+    HttpResponse httpResponse = HttpResponse.createFrom(fetch);
+    this.byteSize = httpResponse.getSize();
+    currentChannel = Channels.newChannel(new BufferedInputStream(httpResponse.getInputStream()));
+
   }
 
   @Override
@@ -77,7 +90,7 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
     if (newPosition > this.currentPosition) {
 
       final long bytesToSkip = newPosition - this.currentPosition;
-      final long skipped = currentConnection.getInputStream().skip(bytesToSkip);
+      final long skipped = fetch.getInputStream().skip(bytesToSkip);
       logger.debug("Skipped {} bytes out of {} for setting position to {} (previously on {})",
         bytesToSkip, skipped, newPosition, currentPosition);
 
@@ -97,7 +110,10 @@ class HttpSeekableByteChannel implements SeekableByteChannel {
 
   @Override
   public synchronized long size() throws IOException {
-    return new HttpBasicFileAttributes(httpPath).size();
+
+
+    return this.byteSize;
+
   }
 
   @Override

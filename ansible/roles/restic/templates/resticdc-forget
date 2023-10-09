@@ -1,0 +1,41 @@
+#!/bin/bash
+
+echo -------------------
+echo Restic Forget Script
+echo -------------------
+
+echo -------------------
+echo Restic Forget
+echo -------------------
+if ! resticdc forget --keep-hourly 5 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 75; then
+  echo "Forget failed with the code $?"
+  exit 1
+else
+  echo "-----"
+  echo "Forget succeeded"
+  echo " "
+fi
+echo -------------------
+echo Restic Prune
+echo -------------------
+if ! resticdc prune; then # remove the data no more referenced
+  echo "Prune failed with the code $?"
+  exit 1
+else
+  echo "-----"
+  echo "Prune succeeded"
+  echo " "
+fi
+echo -------------------
+echo Restic Check
+echo -------------------
+if ! resticdc check; then # make sure you are alerted if any damages was made to the repo
+  echo "Check failed with the code $?"
+  exit 1
+else
+  echo "-----"
+  echo "Check succeeded"
+  echo " "
+fi
+
+echo "Forget Script succeeded"

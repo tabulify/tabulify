@@ -1,6 +1,11 @@
 package net.bytle.db.fs;
 
 
+import net.bytle.exception.NullValueException;
+import net.bytle.fs.Fs;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
+
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -34,111 +39,125 @@ import java.util.*;
  */
 public abstract class FsFileManagerProvider {
 
-    // lock using when loading providers
-    private static final Object lock = new Object();
+  // lock using when loading providers
+  private static final Object lock = new Object();
 
-    // installed providers
-    private static volatile List<FsFileManagerProvider> installedStructProviders;
+  // installed providers
+  private static volatile List<FsFileManagerProvider> installedStructProviders;
 
-    // Used to avoid recursive loading of installed providers
-    private static boolean loadingProviders = false;
+  // Used to avoid recursive loading of installed providers
+  private static boolean loadingProviders = false;
 
-    private static Void checkPermission() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("FsFileManagerProvider"));
-        return null;
+  private static Void checkPermission() {
+    SecurityManager sm = System.getSecurityManager();
+    if (sm != null)
+      sm.checkPermission(new RuntimePermission("FsFileManagerProvider"));
+    return null;
+  }
+
+  private FsFileManagerProvider(Void ignore) {
+  }
+
+  /**
+   * Initializes a new instance of this class.
+   * <p/>
+   * <p> During construction a provider may safely access files associated
+   * with the default provider but care needs to be taken to avoid circular
+   * loading of other installed providers. If circular loading of installed
+   * providers is detected then an unspecified error is thrown.
+   *
+   * @throws SecurityException If a security manager has been installed and it denies
+   *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
+   */
+  protected FsFileManagerProvider() {
+    this(checkPermission());
+  }
+
+  // loads all installed providers
+  private static List<FsFileManagerProvider> loadInstalledProviders() {
+
+    List<FsFileManagerProvider> fsFileManagerProviders = new ArrayList<>();
+
+    ServiceLoader<FsFileManagerProvider> loadedTableSystemProviders = ServiceLoader
+      .load(FsFileManagerProvider.class, ClassLoader.getSystemClassLoader());
+
+    // ServiceConfigurationError may be throw here
+    for (FsFileManagerProvider provider : loadedTableSystemProviders) {
+
+      fsFileManagerProviders.add(provider);
+
     }
 
-    private FsFileManagerProvider(Void ignore) {
-    }
+    return fsFileManagerProviders;
+  }
 
-    /**
-     * Initializes a new instance of this class.
-     * <p/>
-     * <p> During construction a provider may safely access files associated
-     * with the default provider but care needs to be taken to avoid circular
-     * loading of other installed providers. If circular loading of installed
-     * providers is detected then an unspecified error is thrown.
-     *
-     * @throws SecurityException If a security manager has been installed and it denies
-     *                           {@link RuntimePermission}<tt>("fileSystemProvider")</tt>
-     */
-    protected FsFileManagerProvider() {
-        this(checkPermission());
-    }
+  /**
+   * Returns a list of the installed work providers.
+   * <p/>
+   * <p> The first invocation of this method loads any installed
+   * providers that will be used by the provider Factory class.
+   *
+   * @return An unmodifiable list of the installed service providers.
+   * @throws ServiceConfigurationError When an error occurs while loading a service provider
+   */
+  public static List<FsFileManagerProvider> installedProviders() {
+    if (installedStructProviders == null) {
 
-    // loads all installed providers
-    private static List<FsFileManagerProvider> loadInstalledProviders() {
-
-        List<FsFileManagerProvider> fsFileManagerProviders = new ArrayList<>();
-
-        ServiceLoader<FsFileManagerProvider> loadedTableSystemProviders = ServiceLoader
-                .load(FsFileManagerProvider.class, ClassLoader.getSystemClassLoader());
-
-        // ServiceConfigurationError may be throw here
-        for (FsFileManagerProvider provider : loadedTableSystemProviders) {
-
-            fsFileManagerProviders.add(provider);
-
-        }
-
-        return fsFileManagerProviders;
-    }
-
-    /**
-     * Returns a list of the installed work providers.
-     * <p/>
-     * <p> The first invocation of this method loads any installed
-     * providers that will be used by the provider Factory class.
-     *
-     * @return An unmodifiable list of the installed service providers.
-     * @throws ServiceConfigurationError When an error occurs while loading a service provider
-     */
-    public static List<FsFileManagerProvider> installedProviders() {
+      synchronized (lock) {
         if (installedStructProviders == null) {
+          if (loadingProviders) {
+            throw new Error("Circular loading of installed providers detected");
+          }
+          loadingProviders = true;
 
-            synchronized (lock) {
-                if (installedStructProviders == null) {
-                    if (loadingProviders) {
-                        throw new Error("Circular loading of installed providers detected");
-                    }
-                    loadingProviders = true;
+          List<FsFileManagerProvider> list = AccessController
+            .doPrivileged((PrivilegedAction<List<FsFileManagerProvider>>) FsFileManagerProvider::loadInstalledProviders);
 
-                    List<FsFileManagerProvider> list = AccessController
-                            .doPrivileged((PrivilegedAction<List<FsFileManagerProvider>>) () -> loadInstalledProviders());
-
-                    installedStructProviders = Collections.unmodifiableList(list);
-                }
-            }
+          installedStructProviders = Collections.unmodifiableList(list);
         }
-        return installedStructProviders;
+      }
+    }
+    return installedStructProviders;
+  }
+
+  /**
+   * @return true if the file manager accepts the media type
+   */
+  public abstract Boolean accept(MediaType mediaType);
+
+  /**
+   * Returns file manager created by this provider that is responsible for the creation of the object
+   * <p/>
+   * The work is identified by its {@code URI}. Its exact form
+   * is highly provider dependent.
+   * <p/>
+   * <p> If a security manager is installed then a provider implementation
+   * may require to check a permission before returning a reference to an
+   * existing work.
+   *
+   * @return The sql database
+   * @throws SecurityException If a security manager is installed and it denies an unspecified
+   *                           permission.
+   */
+  public abstract FsFileManager getFsFileManager();
+
+  /**
+   * Accept a file by path and not by mime, this is to be able to
+   * create a file manager that accepts file
+   * such as `--datadef.yml`
+   * This is a wrapper around a configuration file
+   */
+  public boolean accept(Path path) {
+
+    try {
+      String extension = Fs.getExtension(path);
+      return accept(MediaTypes.createFromExtension(extension));
+    } catch (NullValueException e) {
+      // null = no extension, false
+      return false;
     }
 
-    /**
-     *
-     * @return true if the file manager accepts the path
-     */
-    public abstract Boolean accept(Path path);
-
-    /**
-     * Returns an existing {@code work} created by this provider.
-     * <p/>
-     * The work is identified by its {@code URI}. Its exact form
-     * is highly provider dependent.
-     * <p/>
-     * <p> If a security manager is installed then a provider implementation
-     * may require to check a permission before returning a reference to an
-     * existing work.
-     *
-     * @return The sql database
-     * @throws SecurityException           If a security manager is installed and it denies an unspecified
-     *                                     permission.
-     */
-    public abstract FsBinaryFileManager getFsFileManager();
+  }
 
 
-    /**
-     * Others providers methods if needed
-     */
 }

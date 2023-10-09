@@ -1,0 +1,624 @@
+openapi: 3.0.3
+info:
+  description: |
+    This is the public API of Combostrap.
+
+    You need a `app` API key for the non-public operation.
+  title: ComboStrap Application Public API
+  version: v2023-06-18
+servers:
+- url: https://api.combostrap.com
+security:
+- apiKeyAuth: []
+- bearerAuth: []
+tags:
+- description: Ip operation
+  name: ip
+- description: CSP Report
+  name: csp
+paths:
+  /ping:
+    get:
+      operationId: pingGet
+      responses:
+        "200":
+          description: API health status
+      security: []
+      summary: A health check endpoint
+      tags:
+      - health
+      x-accepts: application/json
+  /ip:
+    get:
+      operationId: ipGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpInfo'
+          description: Geolocation data based on the IP
+        "404":
+          description: Not Found
+      summary: Return client information based on the HTTP request ip
+      tags:
+      - ip
+      x-accepts: application/json
+  /ip/{ip}:
+    get:
+      operationId: ipIpGet
+      parameters:
+      - description: The IP (default to the IP of the HTTP request)
+        explode: false
+        in: path
+        name: ip
+        required: true
+        schema:
+          example: 143.176.206.80
+          format: ipv4
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IpInfo'
+          description: Geolocation data based on the IP
+        "404":
+          description: Not Found
+      security: []
+      summary: Return client information based on the ip
+      tags:
+      - ip
+      x-accepts: application/json
+  /realm:
+    get:
+      operationId: realmGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Realm'
+          description: Ok
+      summary: Return the realm for the request
+      tags:
+      - realm
+      x-accepts: application/json
+  /app:
+    get:
+      operationId: appGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/App'
+          description: Ok
+      security:
+      - apiKeyAuth:
+        - read:app
+      summary: |
+        Retrieve the current app
+      tags:
+      - app
+      x-accepts: application/json
+  /list/registration:
+    post:
+      operationId: listRegistrationPost
+      requestBody:
+        $ref: '#/components/requestBodies/ListRegistrationPostBody'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExitStatusResponse'
+          description: Email was send for validation
+        "302":
+          description: A redirection
+      security: []
+      summary: Register a user to a list
+      tags:
+      - registration
+      x-content-type: application/json
+      x-accepts: application/json
+  /csp/report:
+    post:
+      operationId: cspReportPost
+      requestBody:
+        $ref: '#/components/requestBodies/CspViolationReportBody'
+      responses:
+        "200":
+          description: Report was processed
+      security: []
+      summary: Report a CSP Violation
+      tags:
+      - csp
+      x-content-type: application/json
+      x-accepts: application/json
+  /analytics/event:
+    post:
+      operationId: analyticsEventPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsEvent'
+        required: true
+      responses:
+        "200":
+          description: Event was processed
+      security: []
+      summary: Report a analytics event
+      tags:
+      - analytics
+      x-content-type: application/json
+      x-accepts: application/json
+  /lists:
+    get:
+      operationId: listsGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RegistrationList'
+                type: array
+          description: Return a list of lists for the app
+        "403":
+          description: Not authenticated
+      security:
+      - apiKeyAuth:
+        - read:list
+      summary: |
+        Get a list of lists for the app
+      tags:
+      - list
+      x-accepts: application/json
+  /user:
+    get:
+      operationId: userGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Ok
+        "401":
+          description: Requires authentication if not authenticated
+      summary: |
+        Get the authenticated user
+      tags:
+      - user
+      x-accepts: application/json
+components:
+  requestBodies:
+    ListRegistrationPostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+      description: The data needed to register a user to a list
+      required: true
+    CspViolationReportBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CspObject'
+      description: The body of a CSP Violation Report
+      required: true
+  schemas:
+    IpInfo:
+      description: The gelocalization information based on Ip
+      example:
+        country: Netherlands
+        ip: 143.176.206.76
+        country3: NLD
+        country2: NL
+      properties:
+        ip:
+          description: "The ip, the data is based on"
+          example: 143.176.206.76
+          type: string
+        country:
+          description: The country name
+          example: Netherlands
+          type: string
+        country2:
+          description: The country ISO code on two characters
+          example: NL
+          type: string
+        country3:
+          description: The country ISO code on three characters
+          example: NLD
+          type: string
+      title: IpInfo
+      type: object
+    Realm:
+      description: |
+        A realm
+        It identifies a protection space where the user have their credentials
+        On a brand level, it would be a company group that may have several brand/domain
+        where the user should be able to log in with the same credentials
+      example:
+        name: name
+        guid: guid
+        handle: handle
+        id: 0
+      properties:
+        id:
+          description: The local id
+          format: int64
+          type: integer
+        guid:
+          description: The public id
+          format: int64
+          type: string
+        name:
+          description: A name
+          type: string
+        handle:
+          description: |
+            A handle, the name used as:
+              - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
+              - database schema
+          type: string
+      type: object
+    App:
+      description: "An app is the container for branding elements (such as logo, color)"
+      example:
+        terms: https://openapi-generator.tech
+        name: Doe
+        primaryColor: '#3498db'
+        guid: xmmmN
+        logo: https://doe.com/_media/android-chrome-192x192.png
+        realm:
+          name: name
+          guid: guid
+          handle: handle
+          id: 0
+        id: 1
+        uri: https://doe.com
+        slogan: "Doe, Be You"
+        user:
+          disabledReason: disabledReason
+          name: John
+          guid: xmmmN
+          handle: foo
+          disabled: true
+          realm:
+            name: name
+            guid: guid
+            handle: handle
+            id: 0
+          id: 1
+          fullname: John Doe
+          avatar: https://en.gravatar.com/userimage/john.doe.png
+          title: Chief Executive Officer
+          email: john@doe.com
+        home: https://doe.com
+      properties:
+        id:
+          description: The app id in the realm
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global publisher id (realm id + publisher id)
+          example: xmmmN
+          type: string
+        uri:
+          description: "The uri of the app (unique for all apps on the realm, this\
+            \ is equivalent to the authentication scope)"
+          example: https://doe.com
+          format: uri
+          type: string
+        name:
+          description: The name of the app
+          example: Doe
+          type: string
+        home:
+          description: The home url
+          example: https://doe.com
+          format: uri
+          type: string
+        slogan:
+          description: The slogan of the app
+          example: "Doe, Be You"
+          type: string
+        logo:
+          description: The uri of the app logo
+          example: https://doe.com/_media/android-chrome-192x192.png
+          format: uri
+          type: string
+        primaryColor:
+          description: The css primary color of the theme (rgb in hexadecimal)
+          example: '#3498db'
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        terms:
+          description: The location of the terms and conditions document
+          format: uri
+          type: string
+      title: An app
+      type: object
+    User:
+      description: A user
+      example:
+        disabledReason: disabledReason
+        name: John
+        guid: xmmmN
+        handle: foo
+        disabled: true
+        realm:
+          name: name
+          guid: guid
+          handle: handle
+          id: 0
+        id: 1
+        fullname: John Doe
+        avatar: https://en.gravatar.com/userimage/john.doe.png
+        title: Chief Executive Officer
+        email: john@doe.com
+      properties:
+        id:
+          description: The user id in the realm
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global user id (realm id + user id)
+          example: xmmmN
+          type: string
+        handle:
+          description: The handle of the user
+          example: foo
+          type: string
+        email:
+          description: The email of the user
+          example: john@doe.com
+          format: email
+          type: string
+        name:
+          description: The short and informal name of the user (used in signature)
+          example: John
+          type: string
+        fullname:
+          description: The long and formal name of the user (used in address)
+          example: John Doe
+          type: string
+        title:
+          description: The title of the user (a short user description such as a role
+            used in signature)
+          example: Chief Executive Officer
+          type: string
+        disabled:
+          description: Soft deleted
+          type: boolean
+        disabledReason:
+          description: The reason of the soft delete
+          type: string
+        avatar:
+          description: The avatar image of the user
+          example: https://en.gravatar.com/userimage/john.doe.png
+          format: uri
+          type: string
+        realm:
+          $ref: '#/components/schemas/Realm'
+      title: A user
+      type: object
+    ListRegistrationPostBody:
+      description: |
+        The data needed to register a user to a list
+        Note that a user email or a user id is required
+        (OpenAPI cannot describe that in a elegant way)
+        a user email or id is mandatory
+        a list id or guid is mandatory
+      example:
+        subscriberGuId: usr-xJKxx
+        optInUri: https://example.com/page
+        subscriberName: John
+        listGuid: listGuid
+        subscriberEmail: john@doe.com
+      properties:
+        subscriberEmail:
+          description: The email of the user that want to subscribe
+          example: john@doe.com
+          format: email
+          type: string
+        subscriberGuId:
+          description: The id of the user (if the user is already known)
+          example: usr-xJKxx
+          type: string
+        subscriberName:
+          description: The name of the user (used in the email to greet)
+          example: John
+          type: string
+        listGuid:
+          description: The public list id where the user should be registered
+          type: string
+        optInUri:
+          description: The location of the registration form
+          example: https://example.com/page
+          format: uri
+          type: string
+      title: Registration Request to a list
+      type: object
+    ExitStatusResponse:
+      description: A response with a status code and status message
+      example:
+        code: 200
+        message: A success message or a error message if the status code is not 200
+      properties:
+        code:
+          description: The HTTP status code
+          example: 200
+          type: integer
+        message:
+          description: A feedback message
+          example: A success message or a error message if the status code is not
+            200
+          type: string
+      title: Standard Response to a request
+      type: object
+    CspObject:
+      description: A CSP violation report object
+      example:
+        csp-report:
+          referrer: referrer
+          document-uri: document-uri
+          blocked-uri: blocked-uri
+      properties:
+        csp-report:
+          $ref: '#/components/schemas/CspReport'
+      required:
+      - csp-report
+      title: The csp object
+      type: object
+    CspReport:
+      additionalProperties:
+        type: string
+      description: the csp report
+      example:
+        referrer: referrer
+        document-uri: document-uri
+        blocked-uri: blocked-uri
+      properties:
+        document-uri:
+          description: The result of executing Strip URL for use in reports on violation’s
+            url.
+          type: string
+        referrer:
+          description: The result of executing Strip URL for use in reports on violation’s
+            referrer.
+          type: string
+        blocked-uri:
+          description: The result of executing Strip URL for use in reports on violation’s
+            referrer.
+          type: string
+      type: object
+    AnalyticsEvent:
+      additionalProperties: true
+      type: object
+    RegistrationList:
+      description: |
+        A list where user can register
+
+        RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+      example:
+        ownerUser:
+          disabledReason: disabledReason
+          name: John
+          guid: xmmmN
+          handle: foo
+          disabled: true
+          realm:
+            name: name
+            guid: guid
+            handle: handle
+            id: 0
+          id: 1
+          fullname: John Doe
+          avatar: https://en.gravatar.com/userimage/john.doe.png
+          title: Chief Executive Officer
+          email: john@doe.com
+        name: Mailing list
+        guid: xmmmN
+        description: The last news ....
+        handle: newsletter
+        realm:
+          name: name
+          guid: guid
+          handle: handle
+          id: 0
+        id: 1
+        title: The top Newsletters
+        registrationUrl: https://openapi-generator.tech
+        ownerApp:
+          terms: https://openapi-generator.tech
+          name: Doe
+          primaryColor: '#3498db'
+          guid: xmmmN
+          logo: https://doe.com/_media/android-chrome-192x192.png
+          realm:
+            name: name
+            guid: guid
+            handle: handle
+            id: 0
+          id: 1
+          uri: https://doe.com
+          slogan: "Doe, Be You"
+          user:
+            disabledReason: disabledReason
+            name: John
+            guid: xmmmN
+            handle: foo
+            disabled: true
+            realm:
+              name: name
+              guid: guid
+              handle: handle
+              id: 0
+            id: 1
+            fullname: John Doe
+            avatar: https://en.gravatar.com/userimage/john.doe.png
+            title: Chief Executive Officer
+            email: john@doe.com
+          home: https://doe.com
+      properties:
+        id:
+          description: The list id
+          example: 1
+          format: int64
+          type: integer
+        guid:
+          description: The global list id where the user can register
+          example: xmmmN
+          type: string
+        handle:
+          description: A handle (unique code) for the list
+          example: newsletter
+          type: string
+        name:
+          description: The name of the list
+          example: Mailing list
+          type: string
+        title:
+          description: The title of the list used in heading
+          example: The top Newsletters
+          type: string
+        description:
+          description: The description of the list
+          example: The last news ....
+          type: string
+        ownerUser:
+          $ref: '#/components/schemas/User'
+        ownerApp:
+          $ref: '#/components/schemas/App'
+        realm:
+          $ref: '#/components/schemas/Realm'
+        registrationUrl:
+          description: The public page where to register for this list
+          format: uri
+          type: string
+      title: A list where user can register
+      type: object
+  securitySchemes:
+    apiKeyAuth:
+      in: header
+      name: x-api-key
+      type: apiKey
+    bearerAuth:
+      bearerFormat: JWS
+      scheme: bearer
+      type: http

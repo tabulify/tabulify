@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Doc:
+See log4j.md
+and the official doc: https://logging.apache.org/log4j/2.x/manual/configuration.html
+
+The loggers are not here. They are created in the Log4JConfiguration Class
+-->
+<!--
+Configuration Node: attribute definitions are here:
+https://logging.apache.org/log4j/log4j-2.1/manual/configuration.html#Configuration_with_XML
+where `status="trace"` will show internal log4j2 debug statements
+-->
+<Configuration status="warn">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %m%n"/>
+    </Console>
+    <!-- The appenders for analytics event
+    Routing is important because it will evaluate the context variable
+    for each call,
+    Otherwise, it will try to create the RollingFileAppender and you get this error:
+    ERROR StatusConsoleListener Unable to create file logs/analytics/${ctx:realm-guid}/${ctx:event-slug}.jsonl
+    java.io.IOException: The filename, directory name, or volume label syntax is incorrect
+    -->
+    <Routing name="AnalyticsLogger" ignoreExceptions="false">
+      <!--
+      We put a value in pattern to avoid the bellow warning
+      WARN StatusConsoleListener In a Routes element, you must configure either a Script element or a pattern attribute.
+      -->
+      <Routes pattern="toAvoidTheWarning">
+        <Route>
+          <RollingFile
+            name="AnalyticsLogger"
+            fileName="logs/analytics/${ctx:realm-guid}/${ctx:event-slug}.jsonl"
+            filePattern="logs/analytics/${ctx:realm-guid}/history/$${date:yyyy-MM}/analytics_${ctx:realm-guid}_${ctx:event-slug}_%d{yyyy-dd-MM}_%i.jsonl"
+            ignoreExceptions="false">
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout>
+              <pattern>%m%n</pattern>
+            </PatternLayout>
+            <Policies>
+              <TimeBasedTriggeringPolicy/>
+              <SizeBasedTriggeringPolicy size="250 MB"/>
+            </Policies>
+          </RollingFile>
+        </Route>
+      </Routes>
+      <!-- Created appender TTL -->
+      <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
+    </Routing>
+    <!-- HTTP request log -->
+    <RollingFile name="Web"
+                 fileName="logs/web.log"
+                 filePattern="logs/web/$${date:yyyy-MM}/web-%d{MM-dd-yyyy}-%i.log">
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
+    <!-- Csp logs -->
+    <RollingFile name="Csp"
+                 fileName="logs/csp/csp.jsonl"
+                 filePattern="logs/csp/$${date:yyyy-MM}/csp-${ctx:event_slug}-%d{yyyy-dd-MM}-%i.jsonl">
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
+    <!-- Failure log -->
+    <RollingFile name="Failure"
+                 fileName="logs/failure.log"
+                 filePattern="logs/failure/$${date:yyyy-MM}/failure-%d{MM-dd-yyyy}-%i.log">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %m%n"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="50 MB"/>
+      </Policies>
+    </RollingFile>
+  </Appenders>
+  <!-- To avoid this warning message, we add the root logger
+    WARN StatusConsoleListener No Loggers were configured, using default. Is the Loggers element missing?
+  -->
+  <Loggers>
+    <Root level="warn"/>
+  </Loggers>
+
+</Configuration>

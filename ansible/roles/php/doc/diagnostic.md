@@ -6,7 +6,7 @@
 Test:
 
   * [VERSION](https://gerardnico.com/VERSION)
-  * [phpinfo](https://gerardnico.com/phpinfo-nico.php)
+  * [phpinfo](https://datacadamia.com/phpinfo-nico.php)
 
 
 
@@ -21,12 +21,21 @@ tail -f /var/log/nginx/gerardnico.com/https-error.log
 ```
 No error and the bad status is in the access log, it's not nginx.
 
-## Php-fpm is running ?
+## Php-fpm 
 
+### running ? 
 If the `phpinfo` file test is not running, check php-fpm
 
 ```bash
 systemctl status php-fpm
+```
+
+### restart (cache)
+
+When changing PHP code, there may be some bitcode cache called [opcache](https://ma.ttias.be/how-to-clear-php-opcache/).
+
+```bash
+systemctl restart php-fpm
 ```
 
 

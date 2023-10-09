@@ -1,8 +1,8 @@
 # To loop on multiple items, with ansible you do it with an include
 
-- name: Stat the directory (/etc/letsencrypt/live/{{ letsencrypt_domain }})
+- name: Stat the directory (/etc/letsencrypt/live/{{ letsencrypt_dir }})
   stat:
-    path: '/etc/letsencrypt/live/{{ letsencrypt_domain }}'
+    path: '/etc/letsencrypt/live/{{ letsencrypt_dir }}'
   register: domain_dir
 
 - name: Get the certificate for {{ letsencrypt_domain }}

@@ -14,6 +14,7 @@ gogs_base: /opt
 gogs_home: "{{ gogs_base }}/{{ gogs_name }}"
 gogs_bin_file: "{{ gogs_home }}/gogs"
 gogs_log_dir: "{{ gogs_home }}/log"
+# /usr/local/bin/custom/conf/app.ini
 gogs_config_dir: "{{ gogs_home }}/custom/conf"
 gogs_repositories: "{{ gogs_home }}/gogs-repositories"
 gogs_data_name_dir: data
@@ -23,7 +24,7 @@ gogs_port: 3001
 gogs_fqdn: "{{ gogs_name }}.bytle.net"
 
 ## Conf (app.ini)
-gogs_mail_enabled: false
+gogs_mail_enabled: true
 gogs_mail_user: foo@example.com
 gogs_mail_password: changeme
 gogs_mail_host: smtp.example.com:587

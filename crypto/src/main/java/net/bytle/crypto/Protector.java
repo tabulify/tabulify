@@ -1,14 +1,13 @@
 package net.bytle.crypto;
 
-import net.bytle.type.Arrayss;
-import net.bytle.type.Bytes;
-import org.apache.commons.codec.binary.Base64;
+import net.bytle.type.Base64Utility;
 
-import java.util.Arrays;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class implements the encryption and decryption of sensitive data
- * It shows case the use of two transformation but only the first one {@link AdvancedEncryptionStandardTransformation}
+ * <p>
  * is public
  * <p>
  * <p>
@@ -21,150 +20,93 @@ import java.util.Arrays;
 public class Protector {
 
 
-    /**
-     * Length used in the parsing of the ciphertext
-     */
-    private static final int transformationCodeLength = 1;
-    private static final int hmacDigestLength = 32;
-    private static final int protectorVersionLength = 1;
-
-    private final Base64 base64 = new Base64();
+  public static final String SEPARATOR = ">";
+  public static final Charset UTF_8 = StandardCharsets.UTF_8;
+  public static final String DEFAULT_PASS = "r1zilGx22kRCUFjPGXbo";
+  private final boolean defaultPassphrase;
 
 
-    /**
-     * A unique code representing an transformation (ie cipher + mode + padding)
-     * Only AES is for now public
-     */
-    public final static int AES_CODE = AdvancedEncryptionStandardTransformation.CODE;
-    protected final static int PBE_CODE = PasswordBasedEncryptionTransformation.CODE;
-    private Integer transformationCode = AES_CODE;
-
-    // Storage Version / Protector version management
-    // That define for how the data (salt, digest and ciphertext) are stored
-    // There is for now only one storage option but for compatibility issue we encode it
-    private final Integer ProtectorStorageVersion = 1;
+  private final String passphrase;
 
 
-    private String passphrase;
+  /**
+   * @param passphrase the passphrase
+   */
+  private Protector(String passphrase) {
 
-
-    /**
-     * @param passphrase
-     */
-    private Protector(String passphrase) {
-        this.passphrase = passphrase;
-
+    if (passphrase==null){
+      this.passphrase = DEFAULT_PASS;
+      this.defaultPassphrase = true;
+    } else {
+      this.passphrase = passphrase;
+      this.defaultPassphrase = false;
     }
 
+  }
 
-    public static Protector get(String passphrase) {
-        return new Protector(passphrase);
+
+  public static Protector create(String passphrase) {
+
+    return new Protector(passphrase);
+
+  }
+
+
+  /**
+   * @param plaintext the plain text
+   * @return a ciphertext with the following structure
+   */
+  public String encrypt(CryptoSymmetricCipher typeTransformationEnum, String plaintext) {
+    if (plaintext == null) {
+      return null;
+    } else {
+      String storedCryptoMaterial = typeTransformationEnum.encrypt(passphrase, plaintext);
+
+      // Encoding the transformation implementation (One bytes = 255 possible implementation)
+      // This byte gives the transformation version, there is for now only one
+      // The transformation version byte should always be first
+      byte[] transformationId = {typeTransformationEnum.getTransformationId().byteValue()};
+
+      String base64Concat = Base64Utility.bytesToBase64String(transformationId) + SEPARATOR + storedCryptoMaterial;
+      /**
+       * Two times to delete the SEPARATOR
+       */
+      return Base64Utility.bytesToBase64String(base64Concat.getBytes(UTF_8));
     }
+  }
 
+  public String decrypt(String storedEncryptedText){
+    return decrypt(storedEncryptedText,this.passphrase);
+  }
 
-    /**
-     * @param plaintext
-     * @return a ciphertext with the following structure
-     * * first bit: the transformation code (default to 1 ie AES if public)
-     * * second bit: the version (There is for now only one version but this if for backward compatibility)
-     * * next 16 byte: the salt
-     * * next 32 bit: the hmax digest
-     * * the rest: the ciphertext
-     * We can see that the first two bit stay the same. We didn't put them between the salt and the digest
-     * to not show their length.
-     */
-    public String encrypt(String plaintext) {
-        if (plaintext == null) {
-            return null;
-        } else {
-            final TransformationTwoWay cipherTwoWay = getCipher(this.transformationCode);
+  private String decrypt(String storedEncryptedText, String passphrase) {
+    if (storedEncryptedText == null) {
 
-            byte[] cipherSalt = Bytes.getRandomBytes(cipherTwoWay.getSaltLength());
+      return null;
 
-            final byte[] cipherText = cipherTwoWay
-                    .encrypt(plaintext, passphrase, cipherSalt);
+    } else {
 
-            // The secret key for the hmac digest is the same than for AES
-            byte[] secretKey = cipherTwoWay.getKey();
+      byte[] firstBytes = Base64Utility.base64StringToByte(storedEncryptedText);
+      String base64ConcatString = new String(firstBytes, 0, firstBytes.length, UTF_8);
+      String[] components = base64ConcatString.split(SEPARATOR, 2);
 
-            // Always 32 byte
-            byte[] hmacDigest = HmacTransformation.get(secretKey).encrypt(plaintext);
+      // First byte is the version of the crypto transformation
+      final int protectorStorageVersion = Byte.toUnsignedInt(Base64Utility.base64StringToByte(components[0])[0]);
+      CryptoSymmetricCipher typeTransformationEnum = CryptoSymmetricCipher.getFrom(protectorStorageVersion);
 
-            // Encoding the transformation implementation (One bytes = 255 possible implementation)
-            final byte[] cipherCodeArray = new byte[]{this.transformationCode.byteValue()};
-
-            String storage = null;
-            // This byte gives the storage implementation, there is for now only one
-            // But we show here how it works
-            // For instance, we could put the Transformation code at the end and switch the salt and the digest
-            // The protector version byte should always be first
-            if (ProtectorStorageVersion == 1) {
-                final byte[] protectorStorageVersionArray = new byte[]{ProtectorStorageVersion.byteValue()};
-                storage = base64.encodeAsString(Arrayss.concatAll(protectorStorageVersionArray, cipherCodeArray, cipherSalt, hmacDigest, cipherText));
-            }
-            return storage;
-        }
-    }
-
-    public String decrypt(String ciphertext) {
-        if (ciphertext == null) {
-            return null;
-        } else {
-            // Debase64
-            byte[] cipherTextBytes = base64.decode(ciphertext);
-
-            // Parse the string
-            final int boundary0 = Protector.protectorVersionLength;
-            byte[] protectorVersion = Arrays.copyOfRange(cipherTextBytes, 0, boundary0);
-            final int protectorStorageVersion = Byte.toUnsignedInt(protectorVersion[0]);
-            if (protectorStorageVersion == this.ProtectorStorageVersion) {
-
-                final int boundary1 = boundary0 + Protector.transformationCodeLength;
-                byte[] codeByte = Arrays.copyOfRange(cipherTextBytes, boundary0, boundary1);
-                TransformationTwoWay cipherTwoWay = getCipher(Byte.toUnsignedInt(codeByte[0]));
-
-                final int boundary2 = boundary1 + cipherTwoWay.getSaltLength();
-                byte[] saltBytes = Arrays.copyOfRange(cipherTextBytes, boundary1, boundary2);
-                final int boundary3 = boundary2 + hmacDigestLength;
-                byte[] hmacBytes = Arrays.copyOfRange(cipherTextBytes, boundary2, boundary3);
-                final int boundary4 = cipherTextBytes.length;
-                byte[] cipherBytes = Arrays.copyOfRange(cipherTextBytes, boundary3, boundary4);
-
-                // Data Verification
-                final byte[] plaintext = cipherTwoWay
-                        .decrypt(cipherBytes, passphrase, saltBytes);
-                byte[] keyBytes = cipherTwoWay.getKey();
-
-                byte[] hmacDigest = HmacTransformation.get(keyBytes).encrypt(plaintext);
-                if (!(Bytes.equals(hmacDigest, hmacBytes))) {
-                    throw new RuntimeException("Integrity error");
-                }
-                return Cryptos.toString(plaintext);
-
-            } else {
-                throw new RuntimeException("Bad version");
-            }
-        }
-    }
-
-    private TransformationTwoWay getCipher(int cipherCode) {
-        /**
-         * TODO: The link is now done in the code, they could register with the function {@link TransformationAll#getCode()}
-         */
-        switch (cipherCode) {
-            case AES_CODE:
-                return AdvancedEncryptionStandardTransformation.get();
-            case PBE_CODE:
-                return PasswordBasedEncryptionTransformation.get();
-            default:
-                throw new RuntimeException("Unknown cipher");
-        }
+      return typeTransformationEnum.decrypt(passphrase, components[1]);
 
     }
+  }
 
 
-    public Protector setTransformation(int code) {
-        this.transformationCode = code;
-        return this;
-    }
+  public String decryptWithDefault(String valueToDecrypt) {
+    return decrypt(valueToDecrypt,DEFAULT_PASS);
+  }
+
+  public boolean useDefaultPassphrase() {
+    return this.defaultPassphrase;
+  }
+
+
 }

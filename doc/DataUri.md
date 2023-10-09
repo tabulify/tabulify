@@ -46,3 +46,12 @@ The following URI can be directly open by the browser.
 ```
 file:///D:/code/bytle-mono/db-gen/build/reports/tests/test/index.html
 ```
+
+## Others
+```java
+DataUri dataUri = DataUris.of("file://whatever.csv");
+dataUri = DataUris.of("sftp://whatever.csv");
+dataUri = DataUris.of("http://whatever.csv");
+dataUri = DataUris.of("sqlite://schema/whatever");
+RelationDef tableDef = Tabulars.get(dataUri);
+```

@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 public class ThreadListenerAbs implements ThreadListener {
 
 
-  private List<RuntimeException> exceptions = new ArrayList<>();
+  private List<Exception> exceptions = new ArrayList<>();
 
   @Override
-  public List<RuntimeException> getExceptions() {
+  public List<Exception> getExceptions() {
     return this.exceptions;
   }
 
@@ -31,11 +31,11 @@ public class ThreadListenerAbs implements ThreadListener {
   }
 
   @Override
-  public String getErrorMessage() {
+  public List<String> getErrorMessages() {
     return getExceptions()
       .stream()
       .map(Throwable::getMessage)
-      .collect(Collectors.joining(", "));
+      .collect(Collectors.toList());
   }
 
 }

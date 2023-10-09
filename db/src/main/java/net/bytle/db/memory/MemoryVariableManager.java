@@ -9,7 +9,7 @@ public interface MemoryVariableManager {
 
 
 
-  MemoryDataPath createDataPath(MemoryDataStore memoryDataStore, String path);
+  MemoryDataPath createDataPath(MemoryConnection memoryConnection, String path);
 
 
 }

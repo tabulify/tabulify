@@ -1,0 +1,16 @@
+
+- name: 'Select the CSV data resources in the howto connection'
+  operation: select
+  args: # alias for arguments
+    data-selector: '*.csv@howto'
+    target-variable: csvDataPaths
+
+- name: 'List the CSV data path'
+  operation: list
+  args:
+    source-variable: csvDataPaths
+    attribute:
+      - name
+      - count
+      - size
+

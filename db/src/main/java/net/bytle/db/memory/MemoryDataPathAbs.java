@@ -2,7 +2,8 @@ package net.bytle.db.memory;
 
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAbs;
-import net.bytle.db.uri.DataUri;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.type.MediaType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,26 +11,25 @@ import java.util.List;
 public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDataPath {
 
 
-  private final MemoryDataStore memoryDataStore;
+  private final String path;
 
-  private String path;
-
-  public MemoryDataPathAbs(MemoryDataStore memoryDataStore, String path) {
-    this.memoryDataStore = memoryDataStore;
+  public MemoryDataPathAbs(MemoryConnection memoryConnection, String path, MediaType mediaType) {
+    super(memoryConnection, path, mediaType);
     this.path = path;
   }
 
 
   @Override
-  public MemoryDataStore getDataStore() {
-    return memoryDataStore;
+  public MemoryConnection getConnection() {
+    return (MemoryConnection) super.getConnection();
   }
 
 
   @Override
   public String getName() {
-    return getNames().get(getNames().size()-1);
+    return getNames().get(getNames().size() - 1);
   }
+
 
   @Override
   public List<String> getNames() {
@@ -38,55 +38,52 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   }
 
   @Override
-  public String getPath() {
+  public String getRelativePath() {
 
     return path;
 
   }
 
   @Override
-  public DataUri getDataUri() {
-    return DataUri.of().setDataStore(this.memoryDataStore.getName()).setPath(path);
+  public String getAbsolutePath() {
+
+    return this.getRelativePath();
+
   }
+
 
   @Override
   public MemoryDataPath getSibling(String name) {
 
     int i = this.path.lastIndexOf(PATH_SEPARATOR);
     String calculatedPath;
-    if (i==-1){
+    if (i == -1) {
       calculatedPath = name;
     } else {
-      calculatedPath = this.path.substring(0,i) + PATH_SEPARATOR + name;
+      calculatedPath = this.path.substring(0, i) + PATH_SEPARATOR + name;
     }
-    return this.memoryDataStore.getTypedDataPath(getType(),calculatedPath);
+    return this.getConnection().getTypedDataPath(getMediaType(), calculatedPath);
 
   }
 
   @Override
   public MemoryDataPath getChild(String name) {
 
-    if (this.path.equals(MemoryDataStore.WORKING_PATH)) {
-      return this.memoryDataStore.getDefaultDataPath(name);
+    if (this.path.equals(this.getConnection().getCurrentDataPath().getName())) {
+      return this.getConnection().getDataPath(name);
     } else {
-      return this.memoryDataStore.getTypedDataPath(getType(),this.path + PATH_SEPARATOR + name);
+      return this.getConnection().getTypedDataPath(getMediaType(), this.path + PATH_SEPARATOR + name);
     }
 
   }
 
   @Override
-  public MemoryDataPath resolve(String... names) {
-    if (names.length==1) {
-      return getChild(names[0]);
-    } else {
-      throw new RuntimeException("The memory data path system does not have any tree system.");
-    }
+  public MemoryDataPath resolve(String name) {
+
+    return getChild(name);
+
   }
 
-  @Override
-  public MemoryDataPath getDataPath(String... names) {
-    return this.resolve(names);
-  }
 
   @Override
   public DataPath getChildAsTabular(String name) {
@@ -94,5 +91,18 @@ public abstract class MemoryDataPathAbs extends DataPathAbs implements MemoryDat
   }
 
 
+  @Override
+  public MemoryDataPath setContent(String text) {
+    this.getOrCreateRelationDef().addColumn("lines");
+    try (InsertStream insertStream = this.getInsertStream()) {
+      insertStream.insert(text);
+    }
+    return this;
+  }
+
+  @Override
+  public MemoryDataPath setLogicalName(String logicalName) {
+    return (MemoryDataPath) super.setLogicalName(logicalName);
+  }
 
 }

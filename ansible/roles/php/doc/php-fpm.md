@@ -2,35 +2,35 @@
 
 ## About
 
-The `php-fpm` service is used because of nginx that does not have php support natively.
+The `php-fpm` service is used because nginx that does not have php support natively.
 
 ```bash
 sudo systemctl status php-fpm
 ```
 
-Php-fpm is a fastcgi process manager for php that is totally separate from the webserver. The webserver communicates with 
-fpm through a socket and passes the name of the script to execute. 
+Php-fpm is a fastcgi process manager for php that is totally separate from the webserver. The webserver communicates with
+fpm through a socket and passes the name of the script to execute.
 So fpm can run with any web server that is fastcgi compatible.
 
 ## Conf
 
 The conf is at:
-   
-   * /etc/php-fpm.conf 
 
-that includes the pool configuration file 
+   * `/etc/php-fpm.d/www.conf`
 
-  * /etc/php-fpm.d/*.conf
+because it's included by:
+
+   * `/etc/php-fpm.conf`
 
 
 ## Pool
 
 A pool is a process that run under a user.
 
-The default configuration file called www.conf 
-which can be copied to create more pool. 
+The default configuration file called www.conf
+which can be copied to create more pool.
 
-Each file must end with .conf to be recognised 
+Each file must end with .conf to be recognised
 as a pool configuration file by php fpm.
 
 ```apache
@@ -40,7 +40,7 @@ group = mysite_user
 
 The pool name can be seen in the status of FPM
 ```bash
-systemctl status php-fpm 
+systemctl status php-fpm
 ```
 ```text
  php-fpm.service - The PHP FastCGI Process Manager
@@ -60,7 +60,7 @@ systemctl status php-fpm
 
 ## Log
 
-  * For php-fpm: 
+  * For php-fpm:
 ```bash
 cat /var/log/php-fpm/errors.log
 ```
@@ -68,3 +68,9 @@ cat /var/log/php-fpm/errors.log
 ```bash
 cat /var/log/php-fpm/www-error.log
 ```
+
+## Monitoring / Status page
+
+[Php Status](https://prometheus.bytle.net/php-status?full)
+
+https://www.php.net/manual/en/fpm.status.php

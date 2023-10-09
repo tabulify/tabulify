@@ -1,21 +1,16 @@
 package net.bytle.db.spi;
 
+import net.bytle.dag.Dag;
 import net.bytle.db.DbLoggers;
-import net.bytle.db.engine.Dag;
+import net.bytle.db.connection.Connection;
 import net.bytle.db.engine.ForeignKeyDag;
-import net.bytle.db.memory.MemoryDataStore;
+import net.bytle.db.model.Constraint;
 import net.bytle.db.model.ForeignKeyDef;
-import net.bytle.db.model.RelationDef;
-import net.bytle.db.resultSetDiff.DataSetDiff;
-import net.bytle.db.stream.InsertStream;
+import net.bytle.db.model.UniqueKeyDef;
 import net.bytle.db.stream.SelectStream;
 import net.bytle.db.stream.Streams;
-import net.bytle.db.transfer.TransferListenerStream;
-import net.bytle.db.transfer.TransferListener;
-import net.bytle.db.transfer.TransferManager;
-import net.bytle.regexp.Globs;
-import net.bytle.type.Strings;
-import net.bytle.type.TailQueue;
+import net.bytle.db.transfer.*;
+import net.bytle.regexp.Glob;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,25 +23,14 @@ public class Tabulars {
 
   public synchronized static Boolean exists(DataPath dataPath) {
 
-    return dataPath.getDataStore().getDataSystem().exists(dataPath);
+    return dataPath.getConnection().getDataSystem().exists(dataPath);
 
-  }
-
-  public static SelectStream getSelectStream(DataPath dataPath) {
-    if (isContainer(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ") is a container (ie directory) of data path. It has therefore no content and you can't read or select it. If you want to read a container, you first list its childrens");
-    }
-    if (Tabulars.exists(dataPath)) {
-      return dataPath.getDataStore().getDataSystem().getSelectStream(dataPath);
-    } else {
-      throw new RuntimeException("The data unit (" + dataPath.toString() + ") does not exist. You can't therefore ask for a select stream.");
-    }
   }
 
 
   public static void create(DataPath dataPath) {
 
-    dataPath.getDataStore().getDataSystem().create(dataPath);
+    dataPath.getConnection().getDataSystem().create(dataPath);
 
   }
 
@@ -58,10 +42,10 @@ public class Tabulars {
    */
   public static List<DataPath> atomic(List<DataPath> dataPaths) {
     for (DataPath dataPath : dataPaths) {
-      List<ForeignKeyDef> foreignKeys = dataPath.getOrCreateDataDef().getForeignKeys();
+      List<ForeignKeyDef> foreignKeys = dataPath.getOrCreateRelationDef().getForeignKeys();
       for (ForeignKeyDef foreignKeyDef : foreignKeys) {
-        if (!(dataPaths.contains(foreignKeyDef.getForeignPrimaryKey().getDataDef().getDataPath()))) {
-          dataPath.getOrCreateDataDef().deleteForeignKey(foreignKeyDef);
+        if (!(dataPaths.contains(foreignKeyDef.getForeignPrimaryKey().getRelationDef().getDataPath()))) {
+          dataPath.getOrCreateRelationDef().deleteForeignKey(foreignKeyDef);
         }
       }
     }
@@ -77,8 +61,8 @@ public class Tabulars {
    */
   public static void createIfNotExist(List<DataPath> dataPaths) {
 
-    Dag dag = ForeignKeyDag.get(dataPaths);
-    dataPaths = dag.getCreateOrderedTables();
+    Dag dag = ForeignKeyDag.createFromPaths(dataPaths);
+    dataPaths = dag.getCreateOrdered();
     for (DataPath dataPath : dataPaths) {
       createIfNotExist(dataPath);
     }
@@ -87,7 +71,7 @@ public class Tabulars {
 
   public static boolean isContainer(DataPath dataPath) {
 
-    return dataPath.getDataStore().getDataSystem().isContainer(dataPath);
+    return dataPath.getConnection().getDataSystem().isContainer(dataPath);
 
   }
 
@@ -110,18 +94,30 @@ public class Tabulars {
 
   }
 
-  public static void drop(DataPath datapath, DataPath... dataPaths) {
+  public static void drop(DataPath dataPath, DataPath... dataPaths) {
 
-    List<DataPath> allDataPaths = new ArrayList<>();
-    allDataPaths.add(datapath);
-    allDataPaths.addAll(Arrays.asList(dataPaths));
+    if (dataPaths.length != 0) {
 
-    // A dag will build the data def and we may not want want it when dropping only one table
-    Dag dag = ForeignKeyDag.get(allDataPaths);
-    for (DataPath dataPath : dag.getDropOrderedTables()) {
-      dataPath.getDataStore().getDataSystem().drop(dataPath);
+      // Create one list
+      List<DataPath> allDataPaths = new ArrayList<>();
+      allDataPaths.add(dataPath);
+      allDataPaths.addAll(Arrays.asList(dataPaths));
+
+      // A dag will build the data def and we may not want want it when dropping only one table
+      Dag<DataPath> dag = ForeignKeyDag.createFromPaths(allDataPaths);
+      for (DataPath orderedDataPath : dag.getDropOrdered()) {
+        dataPath.getConnection().getDataSystem().drop(orderedDataPath);
+      }
+
+    } else {
+      /**
+       * Needed when we manipulate only one table
+       * (If we delete several at once, we need to update the data def (data structure)
+       * and if we just want to drop it, we may get side effect due
+       * to update of the metadata
+       */
+      dataPath.getConnection().getDataSystem().drop(dataPath);
     }
-
 
   }
 
@@ -135,9 +131,7 @@ public class Tabulars {
    * @param dataPaths - The tables to drop
    */
   public static void drop(List<DataPath> dataPaths) {
-    if (dataPaths.size() == 0) {
-      throw new RuntimeException("The list of data paths to drop cannot be null");
-    } else {
+    if (dataPaths.size() != 0) {
       DataPath[] moreDataPath = {};
       if (dataPaths.size() > 1) {
         moreDataPath = dataPaths.subList(1, dataPaths.size()).toArray(new DataPath[0]);
@@ -154,7 +148,23 @@ public class Tabulars {
    */
   public static void delete(DataPath dataPath) {
 
-    dataPath.getDataStore().getDataSystem().delete(dataPath);
+    dataPath.getConnection().getDataSystem().delete(dataPath);
+
+  }
+
+  public static TransferListener delete(DataPath sourceDataPath, DataPath targetDataPath) {
+
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.DELETE)
+      )
+      .addTransfer(sourceDataPath, targetDataPath)
+      .run()
+      .getTransferListeners()
+      .get(0);
 
   }
 
@@ -174,16 +184,20 @@ public class Tabulars {
   public static void dropIfExists(List<DataPath> dataPaths) {
 
     // A hack to avoid building the data def
-    // Because there is for now no drop options, the getDropOrderedTables
-    // will build the dependency
+    // Because the getDropOrderedTables will build the dependency
     if (dataPaths.size() == 1) {
-      if (exists(dataPaths.get(0))) {
-        drop(dataPaths.get(0));
+      DataPath dataPath = dataPaths.get(0);
+      if (exists(dataPath)) {
+        drop(dataPath);
+      } else {
+        DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
       }
     } else {
-      for (DataPath dataPath : ForeignKeyDag.get(dataPaths).getDropOrderedTables()) {
+      for (DataPath dataPath : ForeignKeyDag.createFromPaths(dataPaths).getDropOrdered()) {
         if (exists(dataPath)) {
           drop(dataPath);
+        } else {
+          DbLoggers.LOGGER_DB_ENGINE.info("The data resource (" + dataPath + ") does not exist and was not dropped");
         }
       }
     }
@@ -191,7 +205,7 @@ public class Tabulars {
   }
 
   public static void truncate(DataPath dataPath) {
-    dataPath.getDataStore().getDataSystem().truncate(dataPath);
+    dataPath.getConnection().getDataSystem().truncate(dataPath);
   }
 
 
@@ -202,21 +216,20 @@ public class Tabulars {
    */
   public static void print(DataPath dataPath) {
 
-    try (SelectStream tableOutputStream = getSelectStream(dataPath)) {
+    try (SelectStream tableOutputStream = dataPath.getSelectStream()) {
       Streams.print(tableOutputStream);
+    } catch (SelectException e) {
+      throw new RuntimeException(e);
     }
 
   }
 
-  public static InsertStream getInsertStream(DataPath dataPath) {
-    return dataPath.getDataStore().getDataSystem().getInsertStream(dataPath);
-  }
 
   public static List<DataPath> move(List<DataPath> sources, DataPath target) {
 
     List<DataPath> targetDataPaths = new ArrayList<>();
-    for (DataPath sourceDataPath : ForeignKeyDag.get(sources).getCreateOrderedTables()) {
-      DataPath targetDataPath = target.getDataStore().getDefaultDataPath(sourceDataPath.getName());
+    for (DataPath sourceDataPath : ForeignKeyDag.createFromPaths(sources).getCreateOrdered()) {
+      DataPath targetDataPath = target.getConnection().getDataPath(sourceDataPath.getName());
       Tabulars.move(sourceDataPath, targetDataPath);
       targetDataPaths.add(targetDataPath);
     }
@@ -227,19 +240,9 @@ public class Tabulars {
 
 
   public static boolean isEmpty(DataPath queue) {
-    return queue.getDataStore().getDataSystem().isEmpty(queue);
+    return queue.getConnection().getDataSystem().isEmpty(queue);
   }
 
-
-  public static long getSize(DataPath dataPath) {
-    if (!Tabulars.exists(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ") does not exist, you can't ask for its size");
-    }
-    if (isContainer(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ")  is a container, it had therefore no size, you can't ask for its size");
-    }
-    return dataPath.getDataStore().getDataSystem().size(dataPath);
-  }
 
   /**
    * @param dataPath
@@ -248,12 +251,12 @@ public class Tabulars {
    * The counter part is {@link #isContainer(DataPath)}
    */
   public static boolean isDocument(DataPath dataPath) {
-    return dataPath.getDataStore().getDataSystem().isDocument(dataPath);
+    return dataPath.getConnection().getDataSystem().isDocument(dataPath);
   }
 
   public static void create(List<DataPath> dataPaths) {
-    Dag dag = ForeignKeyDag.get(dataPaths);
-    dataPaths = dag.getCreateOrderedTables();
+    Dag dag = ForeignKeyDag.createFromPaths(dataPaths);
+    dataPaths = dag.getCreateOrdered();
     for (DataPath dataPath : dataPaths) {
       create(dataPath);
     }
@@ -268,51 +271,23 @@ public class Tabulars {
     if (Tabulars.isDocument(dataPath)) {
       throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
     }
-    return dataPath.getDataStore().getDataSystem().getChildrenDataPath(dataPath);
+    return dataPath.getConnection().getDataSystem().getChildrenDataPath(dataPath);
 
   }
 
   /**
-   * @param dataPath - a parent/container dataPath
-   * @param glob     -  a glob pattern
+   * @param dataPath    - a parent/container dataPath
+   * @param globPattern -  a glob pattern
    * @return the children data path of the parent that matches the glob pattern
    */
-  public static List<DataPath> getChildren(DataPath dataPath, String glob) {
-    final String regex = Globs.toRegexPattern(glob);
+  public static List<DataPath> getChildren(DataPath dataPath, String globPattern) {
+    final Glob glob = Glob.createOf(globPattern);
     return getChildren(dataPath)
       .stream()
-      .filter(s -> s.getName().matches(regex))
+      .filter(s -> glob.matches(s.getName()))
       .collect(Collectors.toList());
   }
 
-
-  /**
-   * @param dataPath - a data path container (a directory, a schema or a catalog)
-   * @return the descendant data paths representing sql tables, schema or files
-   */
-  public static List<DataPath> getDescendants(DataPath dataPath) {
-
-    if (Tabulars.isDocument(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
-    }
-    return dataPath.getDataStore().getDataSystem().getDescendants(dataPath);
-
-  }
-
-
-  /**
-   * @param dataPath a data path container (a directory, a schema or a catalog)
-   * @param glob     a glob that filters the descendant data path returned
-   * @return the descendant data paths representing sql tables, schema or files
-   */
-  public static List<DataPath> getDescendants(DataPath dataPath, String glob) {
-
-    if (Tabulars.isDocument(dataPath)) {
-      throw new RuntimeException("The data path (" + dataPath + ") is a document, it has therefore no children");
-    }
-    return dataPath.getDataStore().getDataSystem().getDescendants(dataPath, glob);
-
-  }
 
   /**
    * @param one  - the primary key table
@@ -321,13 +296,13 @@ public class Tabulars {
    */
   public static List<ForeignKeyDef> dropOneToManyRelationship(DataPath one, DataPath many) {
 
-    List<ForeignKeyDef> foreignKeyDefs = one.getOrCreateDataDef().getForeignKeys().stream()
-      .filter(fk -> fk.getForeignPrimaryKey().getDataDef().getDataPath().equals(many))
+    List<ForeignKeyDef> foreignKeyDefs = one.getOrCreateRelationDef().getForeignKeys().stream()
+      .filter(fk -> fk.getForeignPrimaryKey().getRelationDef().getDataPath().equals(many))
       .collect(Collectors.toList());
 
     foreignKeyDefs.stream()
       .forEach(fk -> {
-        throw new RuntimeException("Not yet implemented");
+        fk.getRelationDef().getDataPath().getConnection().getDataSystem().dropConstraint(fk);
       });
 
     return foreignKeyDefs;
@@ -339,7 +314,7 @@ public class Tabulars {
    * @return the content of a data path in a string format
    */
   public static String getString(DataPath dataPath) {
-    return dataPath.getDataStore().getDataSystem().getString(dataPath);
+    return dataPath.getConnection().getDataSystem().getString(dataPath);
   }
 
   /**
@@ -353,212 +328,217 @@ public class Tabulars {
    *               If the target is a container, the target will have the name of the source
    * @return a {@link TransferListenerStream} or null if it was no transfer
    */
-  public static TransferListener move(DataPath source, DataPath target) {
+  public static TransferListener move(DataPath source, DataPath target, TransferResourceOperations... targetDataOperations) {
 
-    if (Tabulars.isContainer(target)) {
-      target = target.getChild(source.getName());
-    }
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.MOVE)
+          .addTargetOperations(targetDataOperations)
+      )
+      .addTransfer(source, target)
+      .run()
+      .getTransferListeners()
+      .get(0);
 
-    TransferListener transferListener = null;
-
-
-    if (sameDataSystem(source, target)) {
-      // same provider (fs or jdbc)
-      final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
-      sourceDataSystem.move(source, target);
-    } else {
-      // different provider (fs to jdbc or jdbc to fs)
-      transferListener = TransferManager.transfer(source, target);
-      Tabulars.drop(source);
-    }
-
-    return transferListener;
   }
 
   private static boolean sameDataSystem(DataPath source, DataPath target) {
-    return source.getDataStore().getDataSystem().getClass().equals(target.getDataStore().getDataSystem().getClass());
+    return source.getConnection().getDataSystem().getClass().equals(target.getConnection().getDataSystem().getClass());
   }
 
   /**
-   * @param source - a source document data path
-   * @param target - a target document or container (If this is a container, the target document will get the name of the source document)
+   * @param source               - a source document data path
+   * @param target               - a target document or container (If this is a container, the target document will get the name of the source document)
+   * @param targetDataOperations - the target data operations
    * @return
    */
-  public static TransferListener copy(DataPath source, DataPath target) {
+  public static TransferListener copy(DataPath source, DataPath target, TransferResourceOperations... targetDataOperations) {
 
-    if (Tabulars.isContainer(target)) {
-      target = target.getChild(source.getName());
-    }
-
-    TransferListener transferListener;
-
-
-    if (sameDataSystem(source, target)) {
-      // same provider (fs or jdbc)
-      transferListener = source.getDataStore().getDataSystem().copy(source, target);
-    } else {
-      // different provider (fs to jdbc or jdbc to fs)
-      transferListener = TransferManager.transfer(source, target);
-    }
-
-    return transferListener;
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.COPY)
+          .addTargetOperations(targetDataOperations)
+      )
+      .addTransfer(source, target)
+      .run()
+      .getTransferListeners()
+      .get(0);
 
   }
 
 
   public static TransferListener insert(DataPath source, DataPath target) {
 
-    TransferListener transferListener = null;
-    final DataSystem sourceDataSystem = source.getDataStore().getDataSystem();
-    if (sourceDataSystem.getClass().equals(target.getDataStore().getDataSystem().getClass())) {
-      // same provider (fs or jdbc)
-      transferListener = sourceDataSystem.insert(source, target);
-    } else {
-      // different provider (for instance, fs to jdbc or jdbc to fs)
-      transferListener = TransferManager.transfer(source, target);
-    }
-    return transferListener;
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.INSERT)
+      )
+      .addTransfer(source, target)
+      .run()
+      .getTransferListeners()
+      .get(0);
   }
 
 
   /**
    * @param dataPath the data path
-   * @return data paths that references the data path primary via a foreign key
+   * @return the foreign keys that references the data path primary key (known also as exported keys)
    */
-  public static List<DataPath> getReferences(DataPath dataPath) {
-    return dataPath.getDataStore().getDataSystem().getReferences(dataPath);
+  public static List<ForeignKeyDef> getReferences(DataPath dataPath) {
+    return dataPath.getConnection().getDataSystem().getForeignKeysThatReference(dataPath);
   }
 
   public static void dropOneToManyRelationship(ForeignKeyDef foreignKeyDef) {
-    throw new RuntimeException("Not yet implemented");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
 
   /**
-   * @param source - the source data path
-   * @param target - the target data path that will get the elements
-   * @param limit  - the number of element returned
-   * @return extract the head element of source into target for a size of limit
-   */
-  public static DataPath extractHead(DataPath source, DataPath target, Integer limit) {
-
-
-    // Head
-    try (
-      SelectStream selectStream = Tabulars.getSelectStream(source);
-      InsertStream insertStream = Tabulars.getInsertStream(target)
-    ) {
-      RelationDef sourceDataDef = selectStream.getDataPath().getOrCreateDataDef();
-      if (sourceDataDef.getColumnsSize() == 0) {
-        // No row structure even at runtime
-        throw new RuntimeException(Strings.multiline(
-          "The data path (" + source + ") has no row structure. ",
-          "To extract a head, a row structure is needed.",
-          "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
-      }
-      // Structure
-      if (target.getOrCreateDataDef().getColumnsSize() == 0) {
-        target.getOrCreateDataDef().copyDataDef(source);
-      } else {
-        assertEqualsColumnsDefinition(source, target);
-      }
-
-      int i = 0;
-      while (selectStream.next() && i < limit) {
-        i++;
-        insertStream.insert(selectStream.getObjects());
-      }
-    }
-    return target;
-
-  }
-
-  /**
-   * @param source - the source data path
-   * @param target - the target data path that will get the elements
-   * @param limit  - the number of element returned
-   * @return extract the tail element of source into target for a size of limit
-   */
-  public static DataPath extractTail(DataPath source, DataPath target, Integer limit) {
-
-    // Tail
-    TailQueue<List<Object>> queue = new TailQueue<>(limit);
-
-    // Collect it
-    try (
-      SelectStream selectStream = Tabulars.getSelectStream(source);
-    ) {
-      RelationDef dataDef = selectStream.getDataPath().getOrCreateDataDef();
-      if (dataDef.getColumnsSize() == 0) {
-        // No row structure even at runtime
-        throw new RuntimeException(Strings.multiline(
-          "The data path (" + source + ") has no row structure. ",
-          "To extract a tail, a row structure is needed.",
-          "Tip for intern developer: if it's a text file, create a line structure (one row, one cell with one line)"));
-      }
-      // Structure
-      if (target.getOrCreateDataDef().getColumnsSize() == 0) {
-        target.getOrCreateDataDef().copyDataDef(source);
-      } else {
-        assertEqualsColumnsDefinition(source, target);
-      }
-
-      // Collect the tail
-      while (selectStream.next()) {
-        queue.add(selectStream.getObjects());
-      }
-    }
-
-    // Then insert in the target
-    try (
-      InsertStream insertStream = Tabulars.getInsertStream(target);
-    ) {
-      queue.forEach(insertStream::insert);
-    }
-
-    return target;
-
-  }
-
-  public static void tail(DataPath dataPath) {
-
-    DataPath target = MemoryDataStore.of("tail", "tail").getDefaultDataPath("tail");
-    Tabulars.create(target);
-    extractTail(dataPath, target, 10);
-    Tabulars.print(target);
-    Tabulars.drop(target);
-
-  }
-
-  public static Boolean areEquals(DataPath first, DataPath second) {
-    return DataSetDiff.of(first, second).diff().areEquals();
-  }
-
-  /**
-   * Produce an assertion error if the columns definitions are not the same
+   * Drop a constraint
    *
-   * @param first
-   * @param second
+   * @param constraint
    */
-  public static void assertEqualsColumnsDefinition(DataPath first, DataPath second) {
-    String reason = DataSetDiff.compareMetaData(first, second);
-    assert reason.equals("") : "The columns definition between the data path (" + first + ") and (" + second + ") are not the same for the following reason " + reason;
+  public static void dropConstraint(Constraint constraint) {
+    if (constraint != null) {
+      constraint.getRelationDef().getDataPath().getConnection().getDataSystem().dropConstraint(constraint);
+    }
+  }
+
+  /**
+   * Postgres does not allow to truncate a table referenced by a foreign key
+   * if the two tables are not in the same statement
+   * <a href="https://www.postgresql.org/docs/current/sql-truncate.html">Sql Truncate</a>
+   *
+   * @param dataPaths
+   */
+  public static void truncate(List<DataPath> dataPaths) {
+    if (dataPaths.size() == 0) {
+      throw new IllegalStateException("The number of data paths is zero, we can't truncate them");
+    }
+    List<Connection> connections = dataPaths.stream().map(DataPath::getConnection).distinct().collect(Collectors.toList());
+    if (connections.size() != 1) {
+      throw new IllegalStateException("We found more than one datastore (" + connections.stream().map(Connection::getName).collect(Collectors.joining(", ")) + ". This function does not support to truncate tables from two different datastores.");
+    }
+    dataPaths.get(0).getConnection().getDataSystem().truncate(dataPaths);
   }
 
 
-  public static DataPath head(DataPath dataPath) {
+  /**
+   * Drop a target data path and all the foreign keys that
+   * reference it
+   *
+   * @param dataPath
+   */
+  public static void dropForceIfExists(DataPath dataPath) {
 
-    return head(dataPath, 10);
+    if (exists(dataPath)) {
+      dataPath.getConnection().getDataSystem().dropForce(dataPath);
+    }
 
   }
 
-  public static DataPath head(DataPath dataPath, Integer limit) {
+  /**
+   * Drop all constraint of the data path
+   *
+   * @param dataPath
+   */
+  public static void dropForceAllConstraints(DataPath dataPath) {
 
-    DataPath target = MemoryDataStore.of("head", "head").getAndCreateRandomDataPath();
-    extractHead(dataPath, target, limit);
-    // No need yo drop memory structure
-    return target;
+    /**
+     * Drop the primary key
+     */
+    dropForcePrimaryKeyConstraint(dataPath);
 
+    /**
+     * Drop the not null constraints
+     */
+    Tabulars.dropNotNull(dataPath);
+
+    /**
+     * Drop the uniques keys
+     */
+    for (UniqueKeyDef uniqueKey : dataPath.getRelationDef().getUniqueKeys()) {
+      Tabulars.dropConstraint(uniqueKey);
+    }
   }
+
+  public static void dropNotNull(DataPath dataPath) {
+    dataPath.getConnection().getDataSystem().dropNotNullConstraint(dataPath);
+  }
+
+
+  public static void dropForcePrimaryKeyConstraint(DataPath dataPath) {
+    /**
+     * Drop the foreign key that references the primary key of the data path
+     */
+    for (ForeignKeyDef reference : Tabulars.getReferences(dataPath)) {
+      Tabulars.dropConstraint(reference);
+    }
+    Tabulars.dropConstraint(dataPath.getOrCreateRelationDef().getPrimaryKey());
+  }
+
+
+  public static TransferListener transfer(DataPath sourceDataPath, DataPath targetDataPath, TransferProperties transferProperties) {
+    return TransferManager
+      .create()
+      .setTransferProperties(transferProperties)
+      .addTransfer(sourceDataPath, targetDataPath)
+      .run()
+      .getTransferListeners()
+      .get(0);
+  }
+
+
+  public static TransferListener upsert(DataPath sourceDataPath, DataPath targetDataPath, TransferResourceOperations... targetDataOperations) {
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.UPSERT)
+          .addTargetOperations(targetDataOperations)
+      )
+      .addTransfer(sourceDataPath, targetDataPath)
+      .run()
+      .getTransferListeners()
+      .get(0);
+  }
+
+  public static TransferListener update(DataPath sourceDataPath, DataPath targetDataPath, TransferResourceOperations... targetDataOperations) {
+    return TransferManager
+      .create()
+      .setTransferProperties(
+        TransferProperties
+          .create()
+          .setOperation(TransferOperation.UPDATE)
+          .addTargetOperations(targetDataOperations)
+      )
+      .addTransfer(sourceDataPath, targetDataPath)
+      .run()
+      .getTransferListeners()
+      .get(0);
+  }
+
+  /**
+   * @param dataPath
+   * @return true if the data resource is a script
+   */
+  public static boolean isScript(DataPath dataPath) {
+    return dataPath.isScript();
+  }
+
+  public static void execute(DataPath dataPath) {
+    dataPath.getConnection().getDataSystem().execute(dataPath);
+  }
+
 
 }

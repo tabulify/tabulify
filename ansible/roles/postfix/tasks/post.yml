@@ -45,14 +45,38 @@
     - name: relayhost # direct delivery to Internet
       value: ""
 
-# Multiple line, it should be a bloc
-#    - name: smtpd_reject_footer # Optional information that is appended after each Postfix SMTP server 4XX or 5XX response.
-#      value: |
-#        For assistance, send an email to gerardnico@gmail.com
-#          and provide the following information in your problem report:
-#            time ($localtime),
-#            client ($client_address)
-#            and server ($server_name).
+
+- name: Information appended after each Postfix SMTP server 4XX or 5XX response
+  notify: restart postfix
+  blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK smtpd_reject_footer"
+    path: "{{ postfix_conf_path }}"
+    block: |
+      smtpd_reject_footer = \c. For assistance, twitter at @gerardnico and provide the following information
+        in your problem report: time ($localtime), client ($client_address), and server ($server_name).
+
+# Smtp hello restrictions
+- name: smtpd_helo_required
+  notify: restart postfix
+  lineinfile:
+    dest: "{{ postfix_conf_path }}"
+    state: present
+    regexp: "^smtpd_helo_required"
+    line: "smtpd_helo_required = yes"
+
+- name: smtp_helo_restrictions
+  notify: restart postfix
+  blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK smtp_helo_restrictions"
+    path: "{{ postfix_conf_path }}"
+    block: |
+      smtpd_helo_restrictions =
+          permit_mynetworks,
+          permit_sasl_authenticated,
+          reject_non_fqdn_helo_hostname,
+          reject_invalid_helo_hostname,
+          reject_unknown_helo_hostname,
+          permit
 
 - name: Ensure postfix is started and enabled at boot.
   service:

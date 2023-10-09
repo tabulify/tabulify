@@ -1,49 +1,70 @@
 package net.bytle.db.gen.memory;
 
-import net.bytle.db.gen.GenDataDef;
-import net.bytle.db.gen.GenDataPath;
-import net.bytle.db.gen.GenSelectStream;
+import net.bytle.db.gen.*;
+import net.bytle.db.memory.MemoryConnection;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.memory.MemoryDataPathAbs;
-import net.bytle.db.memory.MemoryDataStore;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferProperties;
 
 /**
  * A path specifically created for test
  * when the data gen path is created without a file
- *
+ * <p>
  * If you use a file, use the {@link GenDataPath}
  */
 public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath, GenDataPath {
 
 
-  private static MemoryDataStore memoryDataStore;
-  private GenDataDef genDataDef;
+  private final GenDataPathUtility genDataPathUtility;
 
-  public GenMemDataPath(MemoryDataStore memoryDataStore, String path) {
-    super(memoryDataStore, path);
+  /**
+   * !!!!
+   * Create a genMemDataPath with {@link DataGenerator#createGenDataPath(String)}
+   * !!!
+   *
+   */
+  public GenMemDataPath(MemoryConnection memoryConnection, String path) {
+    super(memoryConnection, path, GenDataPathType.DATA_GEN);
+    this.genDataPathUtility = new GenDataPathUtility(this);
   }
-
-
-  public static GenMemDataPath of(MemoryDataStore memoryDataStore, String path) {
-    return new GenMemDataPath(memoryDataStore, path);
-  }
-
 
 
   @Override
-  public GenDataDef getOrCreateDataDef() {
-    if (genDataDef == null){
-      genDataDef = new GenDataDef(this);
-      super.relationDef = genDataDef;
+  public GenDataPath setMaxRecordCount(Long maxRecordCount) {
+    this.genDataPathUtility.setMaxRecordCount(maxRecordCount);
+    return this;
+  }
+
+  @Override
+  public Long getMaxRecordCount() {
+    return this.genDataPathUtility.getMaxRecordCount();
+  }
+
+  @Override
+  public Long getSize() {
+    return this.genDataPathUtility.getCount();
+  }
+
+  @Override
+  public GenDataPathUtility getGenDataPathUtility() {
+    return this.genDataPathUtility;
+  }
+
+  @Override
+  public GenRelationDef getOrCreateRelationDef() {
+    if (this.relationDef == null) {
+      this.relationDef = new GenRelationDef(this);
     }
-    return genDataDef;
+    return (GenRelationDef) this.relationDef;
   }
 
   @Override
-  public String getType() {
-    return GenDataDef.TYPE;
+  public GenRelationDef createRelationDef() {
+    this.relationDef = new GenRelationDef(this);
+    return (GenRelationDef) this.relationDef;
   }
 
 
@@ -53,8 +74,8 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
   }
 
   @Override
-  public long size() {
-    return this.getOrCreateDataDef().getSize();
+  public Long getCount() {
+    return this.getSize();
   }
 
   @Override
@@ -64,8 +85,8 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
 
 
   @Override
-  public InsertStream getInsertStream() {
-    throw new RuntimeException("You can't insert in a generation data path");
+  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
+    throw new RuntimeException("You can't insert in a generator data resource");
   }
 
   @Override
@@ -73,7 +94,10 @@ public class GenMemDataPath extends MemoryDataPathAbs implements MemoryDataPath,
     return new GenSelectStream(this);
   }
 
-
+  @Override
+  public DataPath getParent() {
+    return this.getConnection().getCurrentDataPath();
+  }
 
 
 }

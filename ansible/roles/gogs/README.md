@@ -37,3 +37,33 @@ New user 'admin' has been successfully created!
 ## FYI
 
   * [installation of Git on a server without Gogs](https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server)
+
+## Migrate (export / import)
+
+From [Doc](https://discuss.gogs.io/t/how-to-backup-restore-and-migrate/991)
+
+  * Backup:
+```bash
+# This is important to go to the install root
+# because the sqlite path is relative
+cd /opt/gogs
+./gogs backup --config=/opt/gogs/custom/conf/app.ini
+```
+```text
+2020/09/29 11:23:07 [ INFO] Backup root directory: /tmp/gogs-backup-955766125
+2020/09/29 11:23:07 [ INFO] Packing backup files to: gogs-backup-20200929112307.zip
+2020/09/29 11:23:08 [ INFO] Dumping repositories in '/opt/gogs/gogs-repositories'
+2020/09/29 11:23:21 [ INFO] Repositories dumped to: /tmp/gogs-backup-955766125/repositories.zip
+2020/09/29 11:23:25 [ INFO] Backup succeed! Archive is located at: gogs-backup-20200929112307.zip
+```
+
+  * Restore
+```bash
+cd /opt/gogs
+mv /tmp/gogs-backup-20200929112307.zip .
+./gogs restore --from="gogs-backup-20200929112307.zip" --config=/opt/gogs/custom/conf/app.ini
+```
+```text
+2020/09/29 09:33:23 [ INFO] Restore backup from: gogs-backup-20200929112307.zip
+2020/09/29 09:33:28 [ INFO] Restore succeed!
+```

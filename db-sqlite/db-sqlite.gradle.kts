@@ -3,10 +3,14 @@
  */
 
 dependencies {
-    compile(project(":bytle-db-jdbc"))
-    compile(project(":bytle-db"))
-    compile(project(":bytle-log"))
-    compile("org.xerial:sqlite-jdbc:3.30.1")
+  api(project(":bytle-db-jdbc"))
+  api(project(":bytle-db"))
+  api(project(":bytle-log"))
+  // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+  api("org.xerial:sqlite-jdbc:3.43.0.0")
+  testImplementation(project(":bytle-db-gen"))
+  testImplementation(project(":bytle-db-jdbc","test"))
+  testImplementation(project(":bytle-test"))
 }
 
 description = "Db Sqlite"

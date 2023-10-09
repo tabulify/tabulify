@@ -1,0 +1,481 @@
+openapi: 3.0.3
+info:
+  title: Member App
+  description: |
+    Member App of [Eraldy](https://eraldy.com)
+    that manages identity and registration
+  # version is mandatory even if not used by VertxOpenAPI
+  # Quote are deleted https://github.com/OpenAPITools/openapi-generator/issues/3196
+  # We can't therefore use a date string as the generated openapi.yaml file has no quote
+  # and the data is seen as date, not as string
+  version: 'v2023-18-06'
+servers:
+  - url: 'https://member.eraldy.com'
+  - url: 'https://member.eraldy.dev' # for dev
+paths:
+  /logout:
+    get:
+      operationId: "logoutGet"
+      summary: The logout endpoint
+      tags:
+        - auth
+      parameters:
+        - name: redirect_uri
+          description: |
+            After a logout, the user is redirect to the login page
+            redirect_uri is the redirection URL after a successful login
+            If the value is not set, the referer is used instead if found
+            or an error is returned
+          in: query
+          schema:
+            type: string
+            # format: uri - not supported by OpenApi generator
+      responses:
+        default:
+          description: successful operation
+  /login:
+    get:
+      operationId: "loginGet"
+      # based on session cookie
+      summary: Login page for the combostrap domain
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+        - $ref: "#/components/parameters/realm_handle"
+      responses:
+        '200':
+          description: "The login HTML page for a user"
+          content:
+            text/html:
+              schema:
+                type: string
+  /login/email:
+    get:
+      operationId: "loginEmailGet"
+      summary: Login page by magic link via email
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+        - $ref: "#/components/parameters/realm_handle"
+      responses:
+        '200':
+          description: "The login page by email"
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: "loginEmailPost"
+      summary: Login by sending an email with a login link
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/LoginEmailPostBody'
+      responses:
+        204:
+          description: "Successful. An email was sent or not if not known"
+  /login/oauth/{provider}:
+    get:
+      operationId: "loginOauthProviderGet"
+      summary: |
+        Redirect to the external oauth authorization end point
+      tags:
+        - auth
+      parameters:
+        - name: provider
+          description: "The OAuth provider"
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ github, google ]
+          example: github
+        - name: list_guid
+          description: "The list guid if the user register to a list"
+          in: query
+          schema:
+            type: string
+          example: 'lis-xxxx'
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/realm_handle"
+        - $ref: "#/components/parameters/realm_guid"
+      responses:
+        '302':
+          description: "The OAuth redirection URL to the authorization end point for the provider"
+  /login/oauth/access_token:
+    get:
+      operationId: "loginOauthAccessTokenGet"
+      summary: Exchange a code for an access token
+      tags:
+        - auth
+      parameters:
+        - name: code
+          description: "The OAuth authorization code"
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: client_id
+          description: "The OAuth application client id"
+          in: query
+          schema:
+            type: string
+        - name: client_secret
+          description: "The OAuth application client secret"
+          in: query
+          schema:
+            type: string
+        - name: redirect_uri
+          description: "The OAuth callback where you received the code"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "The Access token"
+          content:
+            text/json:
+              schema:
+                $ref: '#/components/schemas/OAuthAccessTokenResponse'
+  /login/oauth/authorize:
+    get:
+      operationId: "loginOauthAuthorizeGet"
+      summary: |
+        An oauth authorization end point for Combostrap
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+      responses:
+        '200':
+          description: "The HTML page for a user"
+          content:
+            text/html:
+              schema:
+                type: string
+  /login/password:
+    get:
+      operationId: "loginPasswordGet"
+      # based on session cookie
+      summary: Password Login page
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+        - $ref: "#/components/parameters/realm_handle"
+      responses:
+        '200':
+          description: "The password login HTML page for a user"
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: "loginPasswordPost"
+      # even if the request does not change anything, this is a post
+      # GitHub does it also this way
+      # The Csrf token is passed via HTTP headers
+      summary: The login form end point for password credentials
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/LoginPostBody'
+      responses:
+        302:
+          description: "Successful"
+        401:
+          description: "Bad Credentials, no user or no password found"
+        400:
+          description: "Other errors such as session expired"
+  /login/password/update:
+    get:
+      operationId: "loginPasswordUpdateGet"
+      summary: |
+        Password update form page that is reached when clicking on the reset link
+        received by email
+      tags:
+        - auth
+      responses:
+        '200':
+          description: "The password update form page"
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: "loginPasswordUpdatePost"
+      summary: "Update the password"
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/PasswordOnlyPostBody'
+      responses:
+        302:
+          description: "Successful"
+        400:
+          description: "Other errors such as session expired"
+  /login/password/reset:
+    get:
+      operationId: "loginPasswordResetGet"
+      summary: Password reset page
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+        - $ref: "#/components/parameters/realm_handle"
+      responses:
+        '200':
+          description: "The password reset page"
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: "loginPasswordResetPost"
+      summary: "Login via a link and give the possibility to modify the password"
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/EmailPostBody'
+      responses:
+        '204':
+          # even if the email exists, we don't want to leak info
+          description: "Processed. An email was send for password resetting if it was found."
+        '400':
+          description: "The email provided is not valid"
+  # Note that the validation point for instance (`/register/validation`) is dynamically created
+  # at boot time to get code consistency
+  /register/user:
+    get:
+      operationId: "registerUserGet"
+      summary: "Shows a page where a user can register"
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/client_id"
+        - $ref: "#/components/parameters/response_type"
+        - $ref: "#/components/parameters/state"
+        - $ref: "#/components/parameters/realm_handle"
+      responses:
+        '200':
+          description: "The register HTML page for a user"
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      operationId: "registerUserPost"
+      summary: "Register a user"
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/EmailPostBody'
+      responses:
+        '200':
+          # even if the email exists, we don't want to leak info
+          description: "An email was send for validation"
+        '400':
+          description: "The email is not valid"
+  /register/list/{list_guid}:
+    get:
+      operationId: "registerListListGet"
+      summary: "Shows a page where a user can register to a list"
+      tags:
+        - auth
+      security: [ ]
+      parameters:
+        - name: "list_guid"
+          description: The public list guid where the user should be registered
+          required: true
+          in: path
+          schema:
+            type: string
+        - $ref: "#/components/parameters/redirect_uri"
+      responses:
+        '200':
+          description: "The register list HTML page"
+          content:
+            text/html:
+              schema:
+                type: string
+  /register/list:
+    post:
+      operationId: registerListPost
+      summary: "Register a user to a list by sending an email for validation"
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        required: true
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
+      responses:
+        '200':
+          description: "Email was send for validation"
+        '204':
+          description: "Email was send for validation"
+  # callback
+  /register/list/confirmation/{registration_guid}:
+    get:
+      operationId: "registerListConfirmationRegistrationGet"
+      summary: "Shows a confirmation page for the registration"
+      tags:
+        - auth
+      security: [ ]
+      parameters:
+        - name: "registration_guid"
+          description: The registration guid
+          required: true
+          in: path
+          schema:
+            type: string
+        - $ref: "#/components/parameters/redirect_uri"
+      responses:
+        '200':
+          description: "The registration list confirmation HTML page"
+          content:
+            text/html:
+              schema:
+                type: string
+components:
+  parameters:
+    response_type:
+      name: response_type
+      description: "The response type"
+      in: query
+      required: false # not mandatory for first party redirect
+      schema:
+        type: string
+    client_id:
+      name: client_id
+      description: "The client id (the app guid)"
+      in: query
+      required: false # not mandatory for first party redirect
+      schema:
+        type: string
+    state:
+      name: state
+      description: |
+        The [state](https://datacadamia.com/iam/oauth/state) is a opaque value with the initial navigational state of the user.
+        The state is mandatory because its encoded value permits to validate the callback
+        and therefore to avoid a CSRF.
+      required: false # not mandatory for first party redirect
+      in: query
+      schema:
+        type: string
+    realm_handle:
+      name: realm_handle
+      description: |
+        The realm handle
+      required: false # not mandatory (maybe given via realm handle)
+      in: query
+      schema:
+        type: string
+    realm_guid:
+      name: realm_guid
+      description: |
+        The realm guid
+      required: false # not mandatory (maybe given via realm handle)
+      in: query
+      schema:
+        type: string
+    redirect_uri:
+      name: redirect_uri
+      description: "The redirect uri (known also as callback endpoint)"
+      in: query
+      required: false # not always required (for instance, for list registration)
+      schema:
+        type: string
+        # format: uri (uri is not supported as url parameter format)
+        example: https://client.example.com/callback
+  requestBodies:
+    LoginPostBody:
+      description: The data needed to log a user in by password credentials
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: './eraldy-common-openapi.yaml#/components/schemas/PasswordCredentials'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: './eraldy-common-openapi.yaml#/components/schemas/PasswordCredentials'
+    LoginEmailPostBody:
+      description: The data needed to log a user in by email
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: './eraldy-common-openapi.yaml#/components/schemas/EmailIdentifier'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: './eraldy-common-openapi.yaml#/components/schemas/EmailIdentifier'
+    PasswordOnlyPostBody:
+      description: Password update body
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PasswordOnly'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/PasswordOnly'
+  schemas:
+    OAuthAccessTokenResponse:
+      title: The access token response
+      description: The access token response
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+          description: The access token string as issued by the authorization server (required)
+        token_type:
+          type: string
+          description: The type of token (ie how the token should be passed) (required)
+          example: bearer
+        scope:
+          type: string
+          description: The scopes separated by a comma (Optional)
+          example: repo gist openid profile email
+        expires_in:
+          type: string
+          description: The duration of time the access token is granted for, if the access token expires (Optional)
+        refresh_token:
+          type: string
+          description: A refresh token to obtain another access token (if the access token expired), (Optional)
+    PasswordOnly:
+      title: To update a password
+      description: To update a password
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          description: A password

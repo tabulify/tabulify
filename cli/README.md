@@ -7,13 +7,16 @@
 Bytle Cli is a SDK that helps you to create command line utility on Java.
 
 Example:
+
 ```bash
-cli_name -option command <arg>
+cli_name command -option <arg>
 ```
 
 Categorization of the passed arguments as several word type:
     * command. A command is sub command line utility inside the main command line.
-    * option (an option that does not expect a value is known as a flag)
+    * option 
+      * an option that does not expect a value is known as a flag
+      * an option that expects a value is known as a property
     * or argument (values generally at the end, known also as operand)
 
 ## Concept
@@ -24,11 +27,49 @@ In the Bytle Cli library:
   * The cli is the root CliCommand on the tree (the first one created)
   * A CliCommand expects a list of [word](./src/main/java/net/bytle/cli/CliWord.java) that are categorized as:
      * command
-     * option
-     * and argument
+     * flag
+     * property
+     * argument
 
+## Value Order of Precedence
+
+  * 1 - first command line
+  * 2 - then system property (normally only the config file location)
+  * 3 - then environment variable
+  * 4 - then config property (yaml)
+  * 5 - then default value
+
+Same as in [hadoop](https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/conf/Configuration.html)
+
+## Parsing
+
+There is only two parsing mode:
+  * a module
+  * an end command
+
+### Module Parsing
+A module parsing is a parsing that occurs against a command that is not a leaf
+command in the chain of command.
+
+A module has no arguments.
+
+This parsing will scan the words to find:
+
+   * the command words.
+   * and the options (the options of the first module are generally global options valid for all commands)
+ 
+Because the value of property may be taken for command, the command are expected to be before
+the first option. After the first option, if a command word is found, it's discarded.
+
+### End command parsing
+
+In this parsing, the command is the end command and does not expect any
+child command.
+
+Every words should be known otherwise an error is reported.
 
 ## Usage / Synopsis
+
   * Utility names should be lower case letters between two and nine characters, inclusive.
   * Names of parameters that require substitution by actual values are shown with embedded <underscore> characters.
   * The angle brackets `<>` are used for the symbolic grouping of a phrase representing a single parameter
@@ -40,6 +81,7 @@ utility_name -f option_argument [-f option_argument]... [operand...]
 ```
    
 ## Features
+
   * Hierarchy of command - Several sub-command are possible
   * Usage function that give a standard usage output
   * Input Parsing after definition of the expected word
@@ -55,6 +97,7 @@ utility_name -f option_argument [-f option_argument]... [operand...]
   * All option accepts multiple values
 
 ## Request
+
   * Mapfields support (similar to Java’s system properties -Dkey=value ??) - Example: `-uDAYS=3 -u HOURS=23 -u=MINUTES=59`
   * two dashes `--` separation character between option and argument
   * flag management [Posix clustered short option](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02)

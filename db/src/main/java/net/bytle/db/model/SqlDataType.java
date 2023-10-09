@@ -1,5 +1,9 @@
 package net.bytle.db.model;
 
+import net.bytle.db.DbLoggers;
+import net.bytle.db.connection.Connection;
+
+import java.sql.DatabaseMetaData;
 import java.sql.Types;
 import java.util.*;
 
@@ -12,6 +16,7 @@ import java.util.*;
  * * dataTypeJdbc form the Jdbc Standard
  * <p>
  * <p>
+ * A wrapper around {@link DatabaseMetaData#getTypeInfo()}
  * <p>
  * See also:
  * * https://developers.google.com/public-data/docs/schema/dspl18
@@ -22,36 +27,51 @@ import java.util.*;
  */
 public class SqlDataType {
 
-  public static Set<Integer> numericTypes = new HashSet<>();
-  public static Set<Integer> characterTypes = new HashSet<>();
-  public static Set<Integer> timeTypes = new HashSet<>();
 
+  private final Connection connection;
 
-  static {
+  /**
+   * The {@link Types}
+   */
+  private final Integer typeCode;
 
-    numericTypes.add(Types.NUMERIC); // numeric (10,0) - BigDecimal
-    numericTypes.add(Types.INTEGER);
-    numericTypes.add(Types.SMALLINT);
-    numericTypes.add(Types.DOUBLE); // float
-    numericTypes.add(Types.FLOAT);
-    numericTypes.add(Types.DECIMAL);
+  /**
+   * The driver type code is type code asks by the driver
+   * By default, this is the same than {@link #typeCode}
+   * but for type that are not in the {@link Types sql type}
+   * such as {@link SqlTypes#JSON} for postgres, you need to
+   * sent the {@link Types#OTHER} type code to the
+   * {@link java.sql.PreparedStatement#setObject(int, Object, int)}
+   */
+  private Integer driverTypeCode;
+  /**
+   * The name used in the type code constant
+   * <p>
+   * With the type code {@link Types#REAL}, the name would be `real`
+   * but it may be implemented via a {@link #getSqlName()} `float4` for instance
+   */
+  private String name;
+  /**
+   * The name used in a create statement
+   * <p>
+   * For instance, with the type code {@link Types#REAL}, in postgres, the sql name would be `float4`
+   */
+  private String sqlName;
+  /**
+   * Not sure what this is as name
+   * Name could be translated in the local language ?
+   */
+  private String localTypeName; // localized version of type name (may be null)
 
-    characterTypes.add(Types.VARCHAR);
-    characterTypes.add(Types.CHAR);
-    characterTypes.add(Types.NVARCHAR);
-    characterTypes.add(Types.NCHAR);
-    characterTypes.add(Types.CLOB);
+  /**
+   * The java class expected of the object
+   * that is passed to the driver in the insert
+   */
+  private Class<?> clazz;
 
-    timeTypes.add(Types.DATE);
-    timeTypes.add(Types.TIMESTAMP);
-
-  }
-
-  private Integer typeCode;
-  // Multiple strings (because for instance VARCHAR is called TEXT in Sqlite)
-  // The sqlite driver is also giving TEXT to the VARCHAR sql type
-  // but you may create a column with the VARCHAR keyword ...
-  private List<String> typeNames = new ArrayList<>();
+  /**
+   * Others properties
+   */
   private Integer maxPrecision; // maximum precision
   private String literalPrefix; // prefix used to quote a literal (may be null)
   private String literalSuffix; // suffix used to quote a literal (may be null)
@@ -60,45 +80,110 @@ public class SqlDataType {
   private Boolean caseSensitive; // is it case sensitive
   private Short searchable; // can you use "WHERE" based on this type:
   private Boolean unsignedAttribute; //  is it unsigned
-  private Boolean fixedPrecScale; // can it be a money value.
+  private Boolean fixedPrecisionScale; // can it be a money value.
   private Boolean autoIncrement; // can it be used for an auto-increment value.
-  private String localTypeName; // localized version of type name (may be null)
   private Integer minimumScale; // minimum scale supported
   private Integer maximumScale; // maximum scale supported
-  private Class<?> clazz; // The java class that can hold this data type
+  @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private String description;
+  private Integer defaultPrecision; // The default precision if not specified
+  private Boolean mandatoryPrecision; // if the precision is mandatory in a clause statement
 
-  public SqlDataType(int typeCode) {
+
+  public SqlDataType(Connection datastore, int typeCode) {
+
     this.typeCode = typeCode;
+    switch (this.typeCode) {
+      case Types.CHAR:
+        this.name = "char";
+        break;
+      case Types.VARCHAR:
+        this.name = "varchar";
+        break;
+      case Types.NCHAR:
+        this.name = "nchar";
+        break;
+      case Types.NVARCHAR:
+        this.name = "nvarchar";
+        break;
+      case Types.NUMERIC: // (fixed point number)
+        this.name = "numeric";
+        break;
+      case Types.DECIMAL: // alias name for numeric (fixed point number)
+        this.name = "decimal";
+        break;
+      case Types.INTEGER:
+        this.name = "integer";
+        break;
+      case Types.REAL:
+        this.name = "real";
+        break;
+      case Types.FLOAT:
+        this.name = "float";
+        break;
+      case Types.DOUBLE:
+        this.name = "double";
+        break;
+      case Types.DATE:
+        this.name = "date";
+        break;
+      case Types.TIMESTAMP:
+        this.name = "timestamp";
+        break;
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        this.name = "timestamptz";
+        break;
+      case Types.TIME:
+        this.name = "time";
+        break;
+      case Types.TIME_WITH_TIMEZONE:
+        this.name = "timetz";
+        break;
+      case Types.BOOLEAN:
+        this.name = "boolean";
+        break;
+      case SqlTypes.JSON:
+        this.name = "json";
+        break;
+      case Types.SQLXML:
+        this.name = "xml";
+        break;
+      case Types.CLOB:
+        this.name = "clob";
+        break;
+      case Types.BLOB:
+        this.name = "blob";
+        break;
+      case Types.BIGINT:
+        this.name = "bigint";
+        break;
+      case Types.SMALLINT:
+        this.name = "smallint";
+        break;
+
+    }
+    this.connection = datastore;
   }
 
-  public static SqlDataType of(int typeCode) {
-    return new SqlDataType(typeCode);
+  public static SqlDataType creationOf(Connection datastore, int typeCode) {
+    return new SqlDataType(datastore, typeCode);
   }
 
 
   /**
-   * The Java class that corresponds to the SQL Types.
+   * The Java class that is needed
+   * to load the object with the JDBC driver
    *
-   * @return the java class that may contains this data
+   * @return the java class that may contain this data when loading a {@link java.sql.PreparedStatement#setObject(int, Object)}
    */
-  public Class<?> getClazz() {
+  public Class<?> getSqlClass() {
+
+    if (this.clazz == null) {
+      DbLoggers.LOGGER_DB_ENGINE.warning("The class for the sql type (" + this + ") was null, we have returned a string");
+      return String.class;
+    }
     return this.clazz;
-  }
 
-
-  /**
-   * @return the sql create statement part
-   */
-  public String getCreateStatement(int precision, int scale) {
-    return null;
-  }
-
-  /**
-   * @return the vendor class data type implementation
-   */
-  Class<?> getVendorClass() {
-    return null;
   }
 
 
@@ -106,9 +191,9 @@ public class SqlDataType {
     return typeCode;
   }
 
-  public List<String> getTypeNames() {
-    return typeNames;
-  }
+//  public List<String> getTypeNames() {
+//    return typeNames;
+//  }
 
 
   /**
@@ -182,10 +267,11 @@ public class SqlDataType {
   }
 
   /**
-   * @return can it be a money value.
+   * @return return if it can a money value.
+   * Does not return if the declaration should have or not a
    */
-  public Boolean getFixedPrecScale() {
-    return fixedPrecScale;
+  public Boolean isFixedPrecisionScale() {
+    return fixedPrecisionScale;
   }
 
   /**
@@ -196,7 +282,7 @@ public class SqlDataType {
   }
 
   /**
-   * @return localized version of type name (may be null)
+   * @return localized version of type name (may be null) - in english, french ...
    */
   public String getLocalTypeName() {
     return localTypeName;
@@ -204,6 +290,7 @@ public class SqlDataType {
 
   /**
    * @return minimum scale supported
+   * See {@link DatabaseMetaData#getTypeInfo()}
    */
   public Integer getMinimumScale() {
     return minimumScale;
@@ -213,40 +300,56 @@ public class SqlDataType {
    * @return maximum scale supported
    */
   public Integer getMaximumScale() {
-    return maximumScale == null ? null : Integer.valueOf(maximumScale);
+    return maximumScale == null ? null : maximumScale;
   }
 
 
   @Override
   public String toString() {
-    return "DataType{" +
-      "typeName='" + getTypeNames() + '\'' +
-      ", typeCode=" + getTypeCode() +
-      '}';
+    return getName() + " (" + getTypeCode() + "," + getSqlName() + ")@"+this.connection.getName();
   }
+
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SqlDataType that = (SqlDataType) o;
-    return typeCode.equals(that.typeCode);
+    return connection.equals(that.connection) &&
+      typeCode.equals(that.typeCode) &&
+      sqlName.equals(that.sqlName) &&
+      Objects.equals(maxPrecision, that.maxPrecision) &&
+      Objects.equals(literalPrefix, that.literalPrefix) &&
+      Objects.equals(literalSuffix, that.literalSuffix) &&
+      Objects.equals(createParams, that.createParams) &&
+      Objects.equals(nullable, that.nullable) &&
+      Objects.equals(caseSensitive, that.caseSensitive) &&
+      Objects.equals(searchable, that.searchable) &&
+      Objects.equals(unsignedAttribute, that.unsignedAttribute) &&
+      Objects.equals(fixedPrecisionScale, that.fixedPrecisionScale) &&
+      Objects.equals(autoIncrement, that.autoIncrement) &&
+      Objects.equals(localTypeName, that.localTypeName) &&
+      Objects.equals(minimumScale, that.minimumScale) &&
+      Objects.equals(maximumScale, that.maximumScale) &&
+      Objects.equals(clazz, that.clazz);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(typeCode);
+    return Objects.hash(connection, typeCode, sqlName, maxPrecision, literalPrefix, literalSuffix, createParams, nullable, caseSensitive, searchable, unsignedAttribute, fixedPrecisionScale, autoIncrement, localTypeName, minimumScale, maximumScale, clazz);
   }
 
-  public SqlDataType setTypeName(String typeName) {
-    if (!this.typeNames.contains(typeName.toUpperCase())) {
-      this.typeNames.add(typeName.toUpperCase());
-    }
+  /**
+   * The name used in a SQL statement
+   *
+   */
+  public SqlDataType setSqlName(String typeName) {
+    this.sqlName = typeName;
     return this;
   }
 
-  public SqlDataType setMaxPrecision(int maxPrecision) {
-    if (maxPrecision != 0) {
+  public SqlDataType setMaxPrecision(Integer maxPrecision) {
+    if (maxPrecision != null && maxPrecision != 0) {
       this.maxPrecision = maxPrecision;
     }
     return this;
@@ -287,8 +390,8 @@ public class SqlDataType {
     return this;
   }
 
-  public SqlDataType setFixedPrecScale(Boolean fixedPrecScale) {
-    this.fixedPrecScale = fixedPrecScale;
+  public SqlDataType setFixedPrecisionScale(Boolean fixedPrecisionScale) {
+    this.fixedPrecisionScale = fixedPrecisionScale;
     return this;
   }
 
@@ -308,11 +411,19 @@ public class SqlDataType {
   }
 
   public SqlDataType setMaximumScale(Integer maximumScale) {
-    this.minimumScale = minimumScale;
+    this.maximumScale = maximumScale;
     return this;
   }
 
-  public SqlDataType setClazz(Class<?> clazz) {
+  /**
+   * The java clazz that expects the driver to load the object in
+   * this type
+   *
+   */
+  public SqlDataType setSqlJavaClazz(Class<?> clazz) {
+    if (clazz == null && this.connection.getTabular().isDev()) {
+      throw new IllegalStateException("The class cannot be null for the type (" + this + ")");
+    }
     this.clazz = clazz;
     return this;
   }
@@ -322,7 +433,91 @@ public class SqlDataType {
     return this;
   }
 
-  public String getTypeName() {
-      return typeNames.get(0);
+  /**
+   * The sql name of the type
+   * <p>
+   * ie: if in {@link Types#REAL} it would have the {@link #getName()} real
+   * but it may be implemented via a sql name `float4` for instance
+   **/
+  public String getSqlName() {
+    // SQL Identifier are generally uppercase
+    // but this is equivalent to shooting
+    // It should be taken by a syntax highlighting
+    return sqlName.toLowerCase();
+  }
+
+
+  public boolean isNumeric() {
+    return SqlTypes.numericTypes.contains(this.getTypeCode());
+  }
+
+  /**
+   * The name of the type
+   * if in {@link Types#REAL} it would be real
+   * but it may be implemented via a {@link #getSqlName()} `float4` for instance
+   *
+   */
+  public String getName() {
+    if (this.name != null) {
+      return this.name;
+    } else {
+      return this.sqlName;
+    }
+  }
+
+  public SqlDataType setName(String name) {
+    this.name = name;
+    return this;
+  }
+
+
+  public SqlDataType setDriverTypeCode(Integer driverTypeCode) {
+    this.driverTypeCode = driverTypeCode;
+    return this;
+  }
+
+  /**
+   * @return the target type code for a {@link java.sql.PreparedStatement#setObject(int, Object, int)}
+   * <p>
+   * The {@link #driverTypeCode} if not null otherwise the {@link #typeCode}
+   */
+  public Integer getTargetTypeCode() {
+    if (this.driverTypeCode != null) {
+      return this.driverTypeCode;
+    } else {
+      return this.typeCode;
+    }
+  }
+
+  public Integer getDefaultPrecision() {
+    if (this.defaultPrecision == null) {
+      return this.maxPrecision;
+    } else {
+      return this.defaultPrecision;
+    }
+  }
+
+  /**
+   * The precision that will be created when not given
+   *
+   */
+  public SqlDataType setDefaultPrecision(Integer defaultPrecision) {
+    this.defaultPrecision = defaultPrecision;
+    return this;
+  }
+
+
+  /**
+   * If the precision should be in the statement
+   * Example nvarchar2 for oracle
+   *
+   */
+  public SqlDataType setMandatoryPrecision(Boolean mandatoryPrecision) {
+    this.mandatoryPrecision = mandatoryPrecision;
+    return this;
+  }
+
+  public Boolean getMandatoryPrecision() {
+    return this.mandatoryPrecision;
   }
 }

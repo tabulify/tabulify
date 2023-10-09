@@ -1,0 +1,11 @@
+# dokuwiki backup exclusion
+# we keep only the pages and media
+# Ignore All
+*
+# Not data dir
+!{{ data_dir }}
+# Ignore all in data dir
+{{ data_dir }}/*
+# But not these directories
+!{{ data_dir }}/pages/*
+!{{ data_dir }}/media/*

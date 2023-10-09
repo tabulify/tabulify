@@ -80,13 +80,13 @@
     regexp: "^[#]{0,1}{{ item.name }}"
   with_items:
     - name: sender_canonical_maps # send it to the SRS port
-      value: "tcp:localhost:10001"
+      value: "{{ srs_sender_canonical_maps }}"
     - name: sender_canonical_classes  #
-      value: "envelope_sender"
+      value: "{{ srs_sender_canonical_classes }}"
     - name: recipient_canonical_maps
-      value: "tcp:localhost:10002"
+      value: "{{ srs_recipient_canonical_maps }}"
     - name: recipient_canonical_classes
-      value: "envelope_recipient,header_recipient"
+      value: "{{ srs_recipient_canonical_classes }}"
 
 # The destination of the key is in the srs configuration (/etc/default/postsrsd)
 - name: Postfix SRS | Copy the secret
@@ -100,5 +100,5 @@
 - name: Postfix SRS | Ensure postsrs is started and enabled at boot.
   service:
     name: postsrsd
-    state: started
-    enabled: true
+    state: "{{ srs_service_state }}"
+    enabled: "{{ srs_service_enabled }}"

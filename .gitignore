@@ -6,4 +6,6 @@ build/
 .idea
 .idea/*
 *.iml
-
+.env
+.yarn
+logs

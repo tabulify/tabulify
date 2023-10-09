@@ -1,21 +1,24 @@
 package net.bytle.db.sqlite;
 
-import net.bytle.db.jdbc.JdbcDataStoreExtensionProvider;
+import net.bytle.db.Tabular;
+import net.bytle.db.jdbc.SqlDataStoreProvider;
+import net.bytle.type.Variable;
 
-public class SqliteProvider extends JdbcDataStoreExtensionProvider {
+public class SqliteProvider extends SqlDataStoreProvider {
 
-  public final String URL_PREFIX = "jdbc:sqlite:";
+  public static final String URL_PREFIX = "jdbc:sqlite:";
+  public static final String ROOT = "///";
 
   @Override
-  public SqliteDataStore getJdbcDataStore(String name, String url) {
+  public SqliteConnection getJdbcDataStore(Tabular tabular, Variable name, Variable url) {
 
-    return new SqliteDataStore(name, url);
+    return new SqliteConnection(tabular, name, url);
 
   }
 
   @Override
-  public boolean accept(String url) {
-    return url.startsWith(URL_PREFIX);
+  public boolean accept(Variable url) {
+    return url.getValueOrDefaultAsStringNotNull().startsWith(URL_PREFIX);
   }
 
 }

@@ -6,26 +6,43 @@
 
 - name: Php Installation
   become: true
-  import_tasks: 'root_install_remi.yml'
+  block:
+    - include_tasks: 'root_install_php.yml'
+  tags: php-install
+
+- name: Php | LogRotate
+  become: true
+  block:
+    - include_tasks: 'php_logrotate.yml'
+  tags: php-logrotate
 
 - name: Create the user used for the pool
   tags: php-admin
   become: true
-  import_tasks: 'root_create_user.yml'
+  block:
+    - include_tasks: 'root_create_user.yml'
 
 - name: Php configuration
   tags: php-admin
   become: true
-  import_tasks: 'root_php_ini_conf.yml'
+  block:
+    - include_tasks: 'root_php_ini_conf.yml'
 
 - name: Php fpm configuration
   tags: php-admin
   become: true
-  import_tasks: 'root_fpm_configuration.yml'
+  block:
+    - include_tasks: 'root_fpm_configuration.yml'
 
 - name: Php service (Should be started)
   become: true
-  import_tasks: 'root_service.yml'
+  block:
+    - include_tasks: 'root_service.yml'
+
+- name: Php control
+  become: true
+  block:
+    - include_tasks: 'php_ctl_script.yml'
 
 - name: Fpm service should be running
   become: true

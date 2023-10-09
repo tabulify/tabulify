@@ -1,0 +1,13 @@
+tabli_app_name: 'tabli'
+
+# Where all tabli things resides
+tabli_root_path: '{{ apps_install_path }}/{{ tabli_app_name }}'
+
+# where the shadow app is installed
+tabli_shadow_path: '{{ tabli_root_path }}/shadow'
+
+# bash installation, in `usr/bin` because this is the default path of cron
+tabli_bin_path: '/usr/bin'
+
+
+

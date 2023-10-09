@@ -1,0 +1,15 @@
+# The separators are points
+# to be consistent with the configuration of Java Mail
+services:
+  2525:
+    tls.enabled: false
+  587:
+    tls.enabled: true
+smtp.host: smtp.eraldy.com
+smtp.hosts:
+  smtp.eraldy.com:
+    domain: 'eraldy.com'
+    postmaster: 'nico@bytle.net'
+  smtp.datacadamia.com:
+    domain: 'datacadamia.com'
+    postmaster: 'nico@bytle.net'

@@ -1,9 +1,6 @@
 
 # The nexus port will be available from this ip
-# oegstgeest, atze
 nexus_white_ip_address:
-  - 143.176.206.82
-  - 217.120.19.3
   - 127.0.0.1
 
 # To not conflict with other service

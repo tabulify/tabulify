@@ -1,0 +1,101 @@
+# This file has all configuration and the secret should be fake
+# In production, the secret configuration are moved into the secret conf file
+# If you want to put real secret such as for the oauth, you should copy the value
+# into the file .tower.secret.yml
+---
+jdbc.pool_size: 5
+jdbc.url: jdbc:postgresql://localhost:5433/postgres
+jdbc.password: welcome
+jdbc.user: postgres
+# https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-SEARCH-PATH
+# comma-separated list of schema names
+jdbc.schema_path: 'cs_realms, cs_ip'
+# a test value used in the test
+test: test
+test.secret: test
+# the dkim public key DNS selector
+mail.dkim.selector: "test"
+# this is just a test private key, not real
+mail.dkim.private_key: >
+  MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAKqSazYC8pj/JQmo
+  2ep0m3Shs6WGyHarknUzRJxiHWIVl2CvvOz2aCo4QCFk7nHjJbSQigA/xRrQ+Mzg
+  uNv4n/c+0MjMQscpyhrMYhza89jP3yMRjIEPJxiQzeMgGHTQifiBfB+2a8959YkB
+  oOJZuoY0TOEyB+Lm3j000B4evsRdAgMBAAECgYAdSw38dZ8iJVdABG6ANExqSEbo
+  22/b6XU6iXZ0AOmY6apYoXWpoFudPJHO6l2E04SrMNNyXYFFLLQ9wy4cIOOfs5yB
+  bdZ17tvOqSWT7nsCcuHpUvF89JNXnQvV2xwS6npp/tIuehMfxOxPLdN87Nge7BEy
+  6DCSW7U72pX9zjl1BQJBANv56R9X+XLWjW6n4s0tZ271XVYI4DlRxQHYHP3B7eLm
+  4DJtoHk65WU3kfHUeBNy/9TmpC25Gw6WTDco+mOS8wsCQQDGgVPCqhNDUcZYMeOH
+  X6hm+l8zBeTMF2udQbkl0dRdLFpbMtw3cg+WUjHg3AYv38P2ikSJZzgzdDyZzcxF
+  Hcc3AkBXoBNm8upg/mpUW/gSdzWuk3rcnKiE7LenZmkWBDw4mHNSYyz7XaSnTx2J
+  0XMLfFHAgyd/Ny85/lDZ4C7tn0nFAkEAkS2mz9lJa1PUZ05dZPWuGVqF47AszKNY
+  XlPiEGntEhPNJaQF8TsncT4+IoFouPzDun0XcRKfxOn/JFGiUu5bcwJAGbai+kPl
+  AoyfGLxOLu40IMNOHKhHOq8cm3dOC+HpQYpx96JGaQPY4kl3fos6e43DGp9vyOxv
+  VMj5fan+wzHLcw==
+# For the encryption of data in url
+secret.url.data.encryption: CEyoU8REe3LUNrGa9lEo
+# for the encryption of id
+secret.id: secret
+# for the encryption of password that should be re-read from the database such as smtp password
+secret.symmetric.data.encryption: 22ae28dca7b71b7dcb659a9e7c8cd7f3
+# a nonce, api key for the superuser,
+# hard coded in the test, don't change
+superuser.token: secret
+# does the compilation of template is cached
+template.cache: false
+
+# not production scope environment
+# a smtp server just for testing purpose
+smtp.test.password: xxxxxxxxxxxxxxxxxxxxxxxxxxx
+smtp.test.username: xxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Email on error
+sys.on.error.send.email: false
+
+# The local listening port (define where to start the server)
+# default to 8083 if not defined
+port: 8083
+# The public port, the por in the browser, default to 80 as combo is behind a proxy
+# (This may be needed in dev)
+port.public: 8083
+
+# Define the virtual host of the combo components to allow rerouting on the path
+# used only in test or dev mode
+# for the member component,
+# ie      http://member.nico.lan:8083/combo/member/register/list/lis-yLMzijN
+# same as http://member.nico.lan:8083/register/list/lis-yLMzijN
+# the name has been chosen and is also saved in oauth callback
+# the TLD `dev` was chosen as local TLD to comply with Google Oauth that does not allow
+# internal TLD such as local, ...
+eraldy.apex.domain: 'eraldy.dev'
+
+# Where to forward the request
+# for the frontend apps (member and app)
+eraldy.member.forward.proxy.port: 5175
+eraldy.combo.forward.proxy.port: 5176
+
+# OAuth: These secrets should be copied into the file .tower.secret.yml
+# eraldy.member.oauth.github.client.id: 'xxxxxxxxxxxx'
+# eraldy.member.oauth.github.client.secret: 'xxxxxxxxxxxxxxxxxxxxxx'
+# eraldy.member.oauth.google.client.id: 'xxxxxxxxxxxx'
+# eraldy.member.oauth.google.client.secret: 'xxxxxxxxxxxxxxxxxxxxxx'
+
+# Jwt Auth signing secret
+jwt.auth.secret: 'welcome'
+
+# Salt on password hash
+# if this value change all users need to change their password
+password.hash.salt: 'welcome'
+
+# The secret that sign the CSRF token
+# Higher than 8 bytes
+csrf.secret: 'welcome123'
+
+# Proxy all request through fiddler for debugging purpose
+# By default off, set this to true and starts fiddler to see the internal
+# forward proxy request
+forward.proxy.fiddler: false
+
+# MixPanel > Organisation Settings > Projects > Access Keys
+# These secrets should be copied into the file .tower.secret.yml
+# eraldy.mixpanel.project.token: 'xxxxxxxxxxxxxxx'
+# eraldy.mixpanel.api.secret: 'xxxxxxxxxxxxxxxxxxxxxx'

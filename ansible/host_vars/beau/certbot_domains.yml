@@ -1,0 +1,64 @@
+# Certificate
+# The first name is where the file is stored
+ovh_domains: []
+
+# There is a fqdn and a dir
+# because * is not support in file system
+cloudflare_domains:
+  gerardnico.com:
+    fqdn: '{{ gnico_fqdn }}'
+    dir: '{{ gnico_fqdn }}'
+  farmer.gerardnico.com:
+    fqdn: '{{ gnico_farmer_fqdn }}'
+    dir: '{{ gnico_farmer_fqdn }}'
+  nico.gerardnico.com:
+    fqdn: '{{ gnico_nico_fqdn }}'
+    dir: '{{ gnico_nico_fqdn }}'
+  rixt.gerardnico.com:
+    fqdn: '{{ gnico_rixt_fqdn }}'
+    dir: '{{ gnico_rixt_fqdn }}'
+  datacadamia.com:
+    fqdn: '{{ datacadamia_fqdn }}'
+    dir: '{{ datacadamia_fqdn }}'
+  bytle.net:
+    fqdn: '{{ bytle_fqdn }}'
+    dir: '{{ bytle_fqdn }}'
+  farmer.bytle.net:
+    fqdn: '{{ bytle_farmer_fqdn }}'
+    dir: '{{ bytle_farmer_fqdn }}'
+  netdata.bytle.net:
+    fqdn: '{{ netdata_fqdn }}'
+    dir: '{{ netdata_fqdn }}'
+  nexus.bytle.net:
+    fqdn: '{{ nexus_fqdn }}'
+    dir: '{{ nexus_fqdn }}'
+  gogs.bytle.net:
+    fqdn: '{{ gogs_fqdn }}'
+    dir: '{{ gogs_fqdn }}'
+  prometheus.bytle.net:
+    fqdn: '{{ prometheus_node_exporter_fqdn }}'
+    dir: '{{ prometheus_node_exporter_fqdn }}'
+  combostrap.com:
+    fqdn: '{{ combo_fqdn }}'
+    dir: '{{ combo_fqdn }}'
+  combostrap.com-0001:
+    fqdn: '{{ combo_wildcard_fqdn }}'
+    dir: 'combostrap.com-0001'
+  demo.combostrap.com:
+    fqdn: '{{ combo_demo_fqdn }}'
+    dir: '{{ combo_demo_fqdn }}'
+  tabulify.com:
+    fqdn: '{{ tabulify_fqdn }}'
+    dir: '{{ tabulify_fqdn }}'
+  hostname:
+    fqdn: '{{ hostname }}'
+    dir: '{{ hostname }}'
+  drill.bytle.net:
+    fqdn: '{{ drill_fqdn }}'
+    dir: '{{ drill_fqdn }}'
+  eraldy.com:
+    fqdn: '{{ eraldy_fqdn }}'
+    dir: '{{ eraldy_fqdn }}'
+  persso.com:
+    fqdn: '{{ persso_fqdn }}'
+    dir: '{{ persso_fqdn }}'

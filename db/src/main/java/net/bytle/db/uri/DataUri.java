@@ -1,100 +1,183 @@
 package net.bytle.db.uri;
 
-import java.util.Map;
+import net.bytle.db.Tabular;
+import net.bytle.db.connection.Connection;
+import net.bytle.db.fs.FsConnection;
+import net.bytle.exception.NoPathFoundException;
+import net.bytle.exception.NoPatternFoundException;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 /**
  * A data uri is the string representation of a data path
+ * <p>
+ * It binds together as {@link URI} and a data URI (ie path@system)
  */
 public class DataUri implements Comparable<DataUri> {
 
-  public static final String QUESTION_MARK = "?";
-  public static final String HASH_TAG = "#";
-  public static final String AT_STRING = "@";
 
-  private final String uri;
-  private String query = null;
-  private String fragment = null;
-  private String path;
-  private String dataStore;
+  /**
+   * When a datastore or a path is specified
+   * by a data uri
+   */
+  public static final char BLOCK_OPEN = '(';
+  public static final char BLOCK_CLOSE = ')';
+
+  /**
+   * No path means current path (connection schema or directory)
+   * The empty string is also used when schema, catalog are
+   * not supported (ie sqlite)
+   */
+  public static final String CURRENT_CONNECTION_PATH = "";
 
 
-  private DataUri(String uri) {
-    assert uri != null : "The data uri given is null. If you want to build a data uri, see function of()";
+  private final Connection connection;
+  private final String relativePath;
+  private final DataUri scriptDataUri;
 
-    this.uri = uri;
 
-    int atIndex = uri.indexOf(AT_STRING);
+  private DataUri(Connection connection, String path, DataUri scriptDataUri) {
 
-    // The at (@) string is optional
-    if (atIndex != -1) {
-      path = uri.substring(0, atIndex);
-      if (path.equals("")){
-        path = null;
+    Objects.requireNonNull(connection, "The connection should not be null");
+    this.connection = connection;
+    this.relativePath = path;
+    this.scriptDataUri = scriptDataUri;
+
+
+  }
+
+
+  public static DataUri createFromString(Tabular tabular, String spec) {
+
+    Objects.requireNonNull(spec, "The uri spec should be not null");
+    /**
+     * Trim because an uri that comes from the command line may have
+     * heading space
+     */
+    spec = spec.trim();
+
+
+    // No data Uri given, means the location of the default datastore
+    if (spec.equals("")) {
+      return new DataUri(tabular.getDefaultConnection(), "", null);
+    }
+
+    // URI ?
+    URI uri = null;
+    try {
+      uri = new URI(spec);
+    } catch (URISyntaxException e) {
+      // not an uri
+    }
+
+    /**
+     * "(create_foo.sql@howto)@cd" is a valid uri without any scheme
+     */
+    if (uri != null && uri.getScheme() != null) {
+
+      Path path = Paths.get(uri);
+
+      /**
+       * We choose the parent as working directory because otherwise
+       * we can get a reflection when instantiating the file.
+       * Because we return the path relative to it and if they
+       * are the same, you got a loop in the initialization
+       * if there is message that asks for its data uri
+       */
+      Path workingPath = path.getParent();
+      if (workingPath == null) {
+        workingPath = path;
       }
-    }
+      URI connectionUri = workingPath.toUri();
+      String name = Connection.getConnectionNameFromUri(connectionUri);
+      FsConnection fsConnection = (FsConnection) tabular.getConnection(name);
+      if (fsConnection == null) {
+        fsConnection = (FsConnection) tabular.createRuntimeConnection(name, connectionUri.toString())
+          .setDescription("Connection for the connection URI " + connectionUri);
+      }
 
-    // Data Store parsing
-    int questionMarkIndex = uri.indexOf(QUESTION_MARK);
-    if (questionMarkIndex != -1) {
-      dataStore = uri.substring(atIndex + 1, questionMarkIndex);
-    }
-    int hashTagIndex = uri.indexOf(HASH_TAG);
-    if (dataStore == null && hashTagIndex != -1) {
-      dataStore = uri.substring(atIndex + 1, hashTagIndex);
-    }
+      String relativePath = workingPath.relativize(path).toString();
+      Connection connection = fsConnection;
+      return (new DataUri(connection, relativePath, null));
 
-    if (dataStore == null) {
-      dataStore = uri.substring(atIndex + 1);
-    }
+    } else {
 
-    if (dataStore.equals("")) {
-      throw new RuntimeException("The data store name cannot be null");
-    }
-
-    // Query
-    if (questionMarkIndex != -1) {
-      if (hashTagIndex == -1) {
-        query = uri.substring(questionMarkIndex + 1);
+      // Data Uri
+      DataUriString dataUriString = DataUriString.createFromString(spec);
+      String connectionName = dataUriString.getConnectionName();
+      Connection connection;
+      if (connectionName == null) {
+        connection = tabular.getDefaultConnection();
       } else {
-        query = uri.substring(questionMarkIndex + 1, hashTagIndex);
+        if (connectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
+          connection = tabular.getSdConnection();
+        } else {
+          connection = tabular.getConnection(connectionName);
+        }
       }
+      if (connection == null) {
+        throw new RuntimeException("The connection (" + connectionName + ") given by the data uri (" + spec + ") is unknown.");
+      }
+      String relativePath = null;
+      DataUri scriptDataUri = null;
+      if (!dataUriString.isScriptSelector()) {
+        relativePath = dataUriString.getPath();
+      } else {
+        DataUriString scriptDataUriString = dataUriString.getScriptDataUriString();
+        String scriptConnectionName = scriptDataUriString.getConnectionName();
+        Connection scriptConnection;
+        if (scriptConnectionName.equals(Tabular.SD_LOCAL_FILE_SYSTEM)) {
+          scriptConnection = tabular.getSdConnection();
+        } else {
+          scriptConnection = tabular.getConnection(scriptConnectionName);
+        }
+        if (scriptConnection == null) {
+          throw new RuntimeException("The script connection name (" + scriptConnectionName + ") is unknown in the data uri (" + scriptDataUriString + ")");
+        }
+        String path = scriptDataUriString.getPath();
+        scriptDataUri = new DataUri(scriptConnection, path, null);
+      }
+
+      return new DataUri(connection, relativePath, scriptDataUri);
+
     }
 
-    // Fragment
-    if (hashTagIndex != -1) {
-      fragment = uri.substring(hashTagIndex + 1);
+  }
+
+
+  public static DataUri createFromConnectionAndPath(Connection connection, String path) {
+    return new DataUri(connection, path, null);
+  }
+
+  public static DataUri createFromConnectionAndScriptUri(Connection connection, DataUri scriptUri) {
+    return new DataUri(connection, null, scriptUri);
+  }
+
+  public static DataUri createFromConnection(Connection connection) {
+    return createFromConnectionAndPath(connection, null);
+  }
+
+  public static DataUri createFromConnectionAndPattern(Connection connection, String pattern) {
+    return createFromConnectionAndPath(connection, pattern);
+  }
+
+
+  public String getPath() throws NoPathFoundException {
+
+    if (this.relativePath == null) {
+      throw new NoPathFoundException("No path found for (" + this + ")");
     }
+    return this.relativePath;
 
-  }
-
-  // Private
-  private DataUri() {
-    this.uri = null;
-  }
-
-
-  public static DataUri of(String uri) {
-    assert uri != null : "The uri should not be null";
-    return new DataUri(uri);
-  }
-
-  public static DataUri of() {
-    return new DataUri();
-  }
-
-
-  public String getPath() {
-    return this.path;
   }
 
 
   public String toString() {
-    // We miss the query and fragment parts but they are actually not used
-    if (path == null) {
-      return AT_STRING + dataStore;
-    } else {
-      return path + AT_STRING + dataStore;
-    }
+    return this.toDataUriString().toString();
   }
 
 
@@ -141,31 +224,57 @@ public class DataUri implements Comparable<DataUri> {
     return this.toString().compareTo(o.toString());
   }
 
-  public String getFragment() {
-    return fragment;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DataUri dataUri = (DataUri) o;
+    return toString().equals(dataUri.toString());
   }
 
-  public String getQuery() {
-    return query;
+  @Override
+  public int hashCode() {
+    return Objects.hash(toString());
   }
 
-  public String getDataStore() {
-    return dataStore;
+
+  public Connection getConnection() {
+    return connection;
   }
 
-  public Map<String, String> getQueryParameters() {
+  public String getPattern() throws NoPatternFoundException {
+    try {
+      return this.getPath();
+    } catch (NoPathFoundException e) {
+      throw new NoPatternFoundException("No pattern found for (" + this + ")");
+    }
+  }
 
-    return Uris.getQueryAsMap(query);
+  public boolean isScriptSelector() {
+
+    return this.scriptDataUri != null;
 
   }
 
-  public DataUri setPath(String path) {
-    this.path = path;
-    return this;
+  /**
+   * @return the script data uri (ie path in a data uri form (ie a script)
+   */
+  public DataUri getScriptUri() {
+    return this.scriptDataUri;
   }
 
-  public DataUri setDataStore(String name) {
-    this.dataStore = name;
-    return this;
+  public DataUriString toDataUriString() {
+    if (!isScriptSelector()) {
+      return DataUriString.create()
+        .setConnection(this.connection)
+        .setPath(this.relativePath);
+    } else {
+      return DataUriString.create()
+        .setConnection(this.connection)
+        .setDataUriPath(this.scriptDataUri.toDataUriString());
+    }
   }
+
+
 }

@@ -1,0 +1,91 @@
+
+# The key depends on the version
+- name: Import remi GPG key.
+  rpm_key:
+    key: "https://rpms.remirepo.net/RPM-GPG-KEY-remi"
+    state: present
+
+# A repo where you can find php
+- name: 'Install remi repo {{ remi_repo_url }}'
+  yum:
+    name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_distribution_major_version }}.rpm"
+    state: present
+# ansible_distribution_major_version is the linux major distribution version (ie 6,7..)
+
+# Needed when running (yum -i update) from the command line
+- name: Enable remi-php74
+  ini_file:
+    dest: /etc/yum.repos.d/remi-php74.repo
+    section: remi-php74
+    option: enabled
+    value: '1'
+
+# Needed as it has common dependency (by default enabled)
+- name: Enable remi-safe
+  ini_file:
+    dest: /etc/yum.repos.d/remi-safe.repo
+    section: remi-safe
+    option: enabled
+    value: '1'
+
+# For PHP, you choose the repository which provides the version you want
+# (remi-php56, remi-php70,  remi-php71, remi-php72, remi-php73...).
+- name: Yum update (to update Php to 7.4)
+  yum:
+    name: '*'
+    state: latest
+    enablerepo: remi-php74
+
+# Needed by Dokuwiki (Graphic library)
+# https://www.dokuwiki.org/requirements
+# Modules can be seen with `php --modules` command
+- name: Install Php modules as on ovh
+  yum:
+    name:
+      - php-bcmath
+      - php-cli
+      - php-dba
+      - php-dom
+      - php-gmp
+      - php-gd
+      - php-imagick
+      - php-imap
+      - php-intl
+      - php-mbstring
+      - php-memcached
+      - php-mysqli
+      - php-mysqlnd
+      - php-pdo # Needed for manager404
+      - php-mysql
+      - php-opcache
+      - php-posix
+      - php-simplexml
+      - php-soap
+      - php-sodium
+      - php-sqlite3 # Needed for manager404
+      - php-sysvmsg
+      - php-sysvsem
+      - php-sysvshm
+      - php-wddx
+      - php-xml
+      - php-xmlreader
+      - php-xmlrpc
+      - php-xmlwriter
+      - php-xsl
+      - php-zip
+    state: present
+    enablerepo: remi-php74
+
+
+
+
+# Nginx does not contain native PHP processing and need php-fpm (fastCGI process manager)
+- name: Install php-fpm command line
+  yum:
+    name: php-fpm
+    state: present
+    enablerepo: remi-php74
+
+#- name: Confirm PHP version is correct.
+#  shell: php -v | grep -F '{{ php_version }}'
+#  changed_when: false

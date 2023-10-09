@@ -1,8 +1,8 @@
 
 dependencies {
-    compile(project(":bytle-fs"))
-    compile(project(":bytle-type"))
-    compile(project(":bytle-log"))
+    api(project(":bytle-fs"))
+    api(project(":bytle-type"))
+    api(project(":bytle-log"))
 }
 
 description = "Doctest"

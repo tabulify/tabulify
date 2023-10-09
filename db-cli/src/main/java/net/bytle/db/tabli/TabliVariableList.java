@@ -1,0 +1,161 @@
+package net.bytle.db.tabli;
+
+import net.bytle.cli.CliCommand;
+import net.bytle.cli.CliParser;
+import net.bytle.cli.CliUsage;
+import net.bytle.db.Tabular;
+import net.bytle.db.TabularVariables;
+import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPath;
+import net.bytle.db.stream.InsertStream;
+import net.bytle.exception.CastException;
+import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.regexp.Glob;
+import net.bytle.type.Casts;
+import net.bytle.type.Key;
+import net.bytle.type.Origin;
+import net.bytle.type.Strings;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class TabliVariableList {
+
+
+  public static final String DEFAULT_SELECTOR = "*";
+
+  public static List<DataPath> run(Tabular tabular, CliCommand childCommand) {
+
+    String tip = "To have a nice output because a value may be very lengthy, you should set the width of your terminal to a big number (such as 10000)";
+
+    // Command
+    childCommand
+      .setDescription(
+        "List the configurations",
+        CliUsage.EOL,
+        "Tip:" + tip
+      )
+      .addExample(
+        "List all `tabli` configurations",
+        CliUsage.CODE_BLOCK,
+        CliUsage.getFullChainOfCommand(childCommand) + " *",
+        CliUsage.CODE_BLOCK
+      )
+      .addExample(
+        "List all Home configurations",
+        CliUsage.CODE_BLOCK,
+        CliUsage.getFullChainOfCommand(childCommand) + " " + " *home*",
+        CliUsage.CODE_BLOCK
+      )
+      .addExample(
+        "List all OS Environment variables",
+        CliUsage.CODE_BLOCK,
+        CliUsage.getFullChainOfCommand(childCommand) + " " + TabliWords.TYPE_PROPERTY + " " + Origin.OS,
+        CliUsage.CODE_BLOCK
+      )
+      .addExample(
+        "List all Java configurations",
+        CliUsage.CODE_BLOCK,
+        CliUsage.getFullChainOfCommand(childCommand) + " " + " *java*",
+        CliUsage.CODE_BLOCK
+      );
+
+
+    List<String> origins = Arrays.stream(Origin.values())
+      .map(Origin::toString)
+      .map(Key::toCamelCaseValue)
+      .sorted().collect(Collectors.toList());
+
+    childCommand.addProperty(TabliWords.TYPE_PROPERTY)
+      .setDescription("The type of the configurations to return ('" + String.join(", ", origins) + "' or `all`)")
+      .addDefaultValue(Origin.USER)
+      .addDefaultValue(Origin.PROJECT)
+      .addDefaultValue(Origin.DOTENV)
+      .addDefaultValue(Origin.INTERNAL)
+    ;
+
+    childCommand.addArg(TabliWords.NAME_SELECTORS)
+      .setDescription("One or more glob selector(s) that will filter the output by the key name")
+      .setDefaultValue(DEFAULT_SELECTOR);
+
+
+    // Arguments
+    final CliParser cliParser = childCommand.parse();
+
+    List<Glob> nameSelectors = cliParser.getStrings(TabliWords.NAME_SELECTORS)
+      .stream()
+      .map(Key::toNormalizedKey)
+      .map(Glob::createOf)
+      .collect(Collectors.toList());
+
+
+    /**
+     * If no type is given but a name selector is
+     * we set the type to all to filter on all type of variables
+     */
+    List<Origin> listOrigins;
+    if (
+      nameSelectors.size() >= 1
+        && !nameSelectors.get(0).getPattern().equals(DEFAULT_SELECTOR)
+        && !cliParser.has(TabliWords.TYPE_PROPERTY)
+    ) {
+      // no origin given and a name selector given
+      listOrigins = Collections.singletonList(Origin.ALL);
+      TabliLog.LOGGER_TABLI.info("The `type` of variable was to `all` because a selector was given (without any type option)");
+    } else {
+      listOrigins = cliParser.getStrings(TabliWords.TYPE_PROPERTY)
+        .stream()
+        .map(s -> {
+          try {
+            return Casts.cast(s, Origin.class);
+          } catch (CastException e) {
+            throw IllegalArgumentExceptions.createForArgumentValue(s, TabliWords.TYPE_PROPERTY, Origin.class, e);
+          }
+        })
+        .collect(Collectors.toList());
+    }
+
+    RelationDef feedbackDataDef = tabular.getMemoryDataStore()
+      .getDataPath("configuration-list")
+      .getOrCreateRelationDef()
+      .addColumn("key")
+      .addColumn("value")
+      .addColumn("origin")
+      .addColumn("description");
+
+    TabularVariables tabularVariables = tabular.getEnvVariables();
+    try (InsertStream insertStream = feedbackDataDef.getDataPath().getInsertStream()) {
+      tabularVariables.getVariables()
+        .stream()
+        .filter(e -> {
+          if (listOrigins.contains(Origin.ALL)) {
+            return true;
+          }
+          Origin origin = e.getOrigin();
+          return listOrigins.contains(origin);
+        })
+        .filter(e -> Glob.matchOneOfGlobs(e.getUniqueName(), nameSelectors))
+        .sorted()
+        .forEach(e ->
+          {
+            String capitalizedOrigin = Strings.createFromString(e.getOrigin().getDescription())
+              .toFirstLetterCapitalCase()
+              .toString();
+            Object originalValue = e.getValueOrDefaultAsStringNotNull();
+            insertStream.insert(
+              Key.toCamelCaseValue(e.getAttribute().toString()),
+              originalValue.toString(),
+              capitalizedOrigin,
+              e.getAttribute().getDescription()
+            );
+          }
+        );
+
+    }
+
+    TabliLog.LOGGER_TABLI.tip(tip);
+    return Collections.singletonList(feedbackDataDef.getDataPath());
+  }
+}

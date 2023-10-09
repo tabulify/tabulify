@@ -1,0 +1,13 @@
+[Unit]
+Description={{ phpctl_name }} app
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={{ phpctl_location }} control --service
+Restart=on-failure
+TimeoutStopSec=5
+
+
+[Install]
+WantedBy=multi-user.target

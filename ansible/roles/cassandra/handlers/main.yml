@@ -1,0 +1,31 @@
+---
+# handlers file for ansible-netdata
+#
+- name: cassandra reload
+  become: true
+  systemd:
+    name: cassandra
+    daemon_reload: true
+
+- name: cassandra restart
+  become: true
+  systemd:
+    name: cassandra
+    state: "restarted"
+    enabled: true
+
+- name: cassandra start
+  become: true
+  systemd:
+    name: cassandra
+    state: "started"
+    enabled: true
+
+- name: cassandra stop
+  become: true
+  systemd:
+    name: cassandra
+    state: "stopped"
+    enabled: true
+
+

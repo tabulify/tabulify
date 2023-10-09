@@ -1,0 +1,43 @@
+# A utility to generate the key the first time
+# Used only once to generate the key used in the installation
+
+- name: Wireguard - Private Key stats
+  stat:
+    path: /etc/wireguard/private-key
+  register: wg_private_key
+
+- name: Wireguard - Generate Private Key
+  when: not wg_private_key.stat.exists
+  shell:
+    cmd: |
+      wg genkey > private-key
+    chdir: /etc/wireguard/
+
+- name: Wireguard - Public Key stats
+  stat:
+    path: /etc/wireguard/public-key
+  register: wg_public_key
+
+- name: Wireguard - Generate Public Key
+  when: not wg_public_key.stat.exists
+  shell:
+    cmd: |
+      cat private-key | wg pubkey > public-key
+    chdir: /etc/wireguard/
+
+- name: Wireguard - Pre Shared Key stats
+  stat:
+    path: /etc/wireguard/pre-shared-key
+  register: wg_pre_shared_key
+
+- name: Wireguard - Generate Private Key
+  when: not wg_pre_shared_key.stat.exists
+  shell:
+    cmd: |
+      wg genpsk > pre-shared-key
+    chdir: /etc/wireguard/
+
+- name: Wireguade - Generate Client Keys
+  shell:
+    cmd: |
+      wg genkey | tee private-client-key | wg pubkey > public-client-key

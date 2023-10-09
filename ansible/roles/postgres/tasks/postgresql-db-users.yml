@@ -1,0 +1,27 @@
+
+- name: Postgresql | create databases
+  postgresql_db:
+    name: "{{ item.name }}"
+    encoding: "{{ item.encoding }}"
+    #lc_collate: "{{ item.lc_collate }}"
+    #lc_ctype: "{{ item.lc_ctype }}"
+    #template: template0
+    #port: "{{ postgresql_port }}"
+    state: present
+  with_items: "{{ pg_databases }}"
+  notify:
+    postgres_restart
+
+# https://docs.ansible.com/ansible/2.8/modules/postgresql_user_module.html
+- name: Postgresql | create users
+  postgresql_user:
+    name: "{{ item.key }}"
+    password: "{{ item.value.password }}"
+    db: "{{ item.value.db }}"
+    priv: "{{ item.value.priv }}"
+    expires: "{{ item.value.expires }}"
+    # role_attr_flags: "{{ item.value.attributes }}"
+    # port: "{{ postgresql_port }}"
+    state: present
+  with_dict: "{{ pg_users }}"
+

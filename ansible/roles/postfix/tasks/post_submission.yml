@@ -1,4 +1,11 @@
 ---
+## This play ensure that we can submit mail (ie SMTP installation/configuration)
+
+- name: Ensure saslauthd is installed
+  yum:
+    name: cyrus-sasl
+    state: present
+    enablerepo: epel
 
 # To avoid
 # Jun 20 16:38:01 vps748761 postfix/submission/smtpd[6213]: fatal: no SASL authentication mechanisms

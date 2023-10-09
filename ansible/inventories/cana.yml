@@ -1,0 +1,21 @@
+all: # keys must be unique, i.e. only one 'hosts' per group
+  children:  # key order does not matter, indentation does
+    ovh: # groups
+        hosts:
+          # Note:
+          # ansible_user and ansible_password are overwritten the first with inline args
+          cana:
+            # the host to connect to
+            # original root name: fedora
+            # IPv4 address: 51.79.86.27
+            # IPv6 address: 2607:5300:205:200::3642
+            ansible_host: vps-0cee68c6.vps.ovh.ca
+            # hostname should be the static hostname in a FQDN format.
+            hostname: cana.bytle.net
+            ansible_user: '{{ ssh_user_name }}'
+            ansible_password: '{{ ssh_user_password }}'
+            ansible_port: 22
+            ansible_become_pass: '{{ ssh_user_password }}'
+            root_access_user: fedora # the user that we get when the vps is created
+            openjdk_version: '11' # not 11.0.2
+            php_version: '8.2'

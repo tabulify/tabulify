@@ -20,7 +20,7 @@ If it should have a name, create a view object or a map to track the execution.
 It permits us to do thing like:
 
 ```java
-SelectStream sourceSelectStream = Tabulars.getSelectStream(queryDataPath);
+SelectStream sourceSelectStream = queryDataPath.getSelectStream();
 SelectStream sourceSelectStream = Tabulars.getSize(queryDataPath);
 ```
 
@@ -36,5 +36,5 @@ The internal code becomes difficult
 You don't execute directly a query, you ask for the `Tabulars.getSelectStream`.
 
 ```java
-SelectStream sourceSelectStream = Tabulars.getSelectStream(queryDataPath);
+SelectStream sourceSelectStream = queryDataPath.getSelectStream();
 ```

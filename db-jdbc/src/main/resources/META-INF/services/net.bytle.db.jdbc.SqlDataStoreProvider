@@ -1,0 +1,2 @@
+net.bytle.db.postgres.PostgresProvider
+net.bytle.db.hive.HiveProvider

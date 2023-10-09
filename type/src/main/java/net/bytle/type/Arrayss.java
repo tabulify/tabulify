@@ -1,6 +1,8 @@
 package net.bytle.type;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Arrays utilities
@@ -81,19 +83,48 @@ public class Arrayss {
   }
 
   /**
-   * StackOverflow
+   *
+   * Add an element at the beginning of an array
    *
    * @param first
-   * @param elements
+   * @param second
    * @param <T>
    * @return
    */
-  public static <T> T[] concat(T first, T[] elements) {
-    int totalLength = elements.length + 1;
-    T[] result = Arrays.copyOf(elements, totalLength);
-    result[0]=first;
-    System.arraycopy(elements, 0, result, 1, totalLength-1);
-    return result;
+  public static <T> T[] concat(T first, T[] second) {
+    /*
+      Creating an array from the first elements
+     */
+    T[] firsts = Arrays.copyOf(second, 1);
+    firsts[0]=first;
+
+    return concat(firsts, second);
+  }
+
+  /**
+   * Add an array at the beginning of an array
+   * @param firsts
+   * @param second
+   * @param <T>
+   * @return
+   */
+  public static <T> T[] concat(T[] firsts, T[] second) {
+    /*
+    The length of the final array
+     */
+    int totalLength = second.length + firsts.length;
+    /*
+    Create the target array from the firsts array
+    with the needed length
+     */
+    T[] target = Arrays.copyOf(firsts, totalLength);
+    /*
+    Copy the element of second into target
+    at position firsts.length
+    from the element 0 until second.length of the array second
+     */
+    System.arraycopy(second, 0, target, firsts.length, second.length);
+    return target;
   }
 
   /**
@@ -104,4 +135,36 @@ public class Arrayss {
   public static void print(String[] strings) {
     System.out.println(String.join(",", strings));
   }
+
+  @SafeVarargs
+  public static <T> List<T> asList(T... varargs) {
+    return Arrays.stream(varargs)
+      .collect(Collectors.toList());
+  }
+
+  /**
+   * Utility function that create a comma separated list of values
+   * from a collection
+   *
+   * @param varargs
+   * @return
+   */
+  public static <T> String toJoinedStringWithComma(T... varargs) {
+    return toJoinedString(", ", varargs);
+  }
+
+  /**
+   * Utility function that create a separated list of values
+   * from a varargs
+   *
+   * @param varargs
+   * @return
+   */
+  public static <T> String toJoinedString(String separator, T... varargs) {
+    return Arrays.stream(varargs)
+      .map(Object::toString)
+      .collect(Collectors.joining(separator));
+  }
+
+
 }

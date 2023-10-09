@@ -1,0 +1,26 @@
+---
+
+# tasks file
+- name: Fail if not Redhat
+  fail:
+    msg: "This role supports only the Redhat family. This computer is installed on the following OS ({{ ansible_os_family }})"
+  when: ansible_os_family != "RedHat" # Centos
+
+- name: Fetch Java version
+  shell: java -version 2>&1 | grep version | awk '{print $3}' | sed 's/"//g'
+  register: java_version
+
+- assert:
+    that:
+      - java_version.stdout is version_compare('{{ cassandra_java_version }}', '>=')
+    msg: "Version should be bigger than {{ cassandra_java_version }}"
+
+- name: Cassandra | Add the repository
+  yum_repository:
+    name: '{{ cassandra_package_repo }}'
+    description: Apache Cassandra
+    baseurl: https://downloads.apache.org/cassandra/redhat/40x/
+    gpgcheck: yes
+    gpgkey: https://downloads.apache.org/cassandra/KEYS
+    repo_gpgcheck: yes
+

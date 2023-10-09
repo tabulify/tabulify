@@ -3,9 +3,13 @@
  */
 
 dependencies {
-    compile(project(":bytle-type"))
-    compile(project(":bytle-regexp"))
-    compile(project(":bytle-os"))
+  implementation(project(":bytle-type"))
+  implementation(project(":bytle-regexp"))
+  implementation(project(":bytle-os"))
+  implementation(project(":bytle-log"))
+  implementation(project(":bytle-crypto"))
+  // character set detection
+  implementation("com.ibm.icu:icu4j:68.1")
 }
 
 description = "Fs"

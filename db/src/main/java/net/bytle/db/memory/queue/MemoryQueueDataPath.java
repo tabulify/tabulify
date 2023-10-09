@@ -1,12 +1,14 @@
 package net.bytle.db.memory.queue;
 
+import net.bytle.db.memory.MemoryConnection;
 import net.bytle.db.memory.MemoryDataPath;
 import net.bytle.db.memory.MemoryDataPathAbs;
 import net.bytle.db.memory.MemoryDataPathType;
-import net.bytle.db.memory.MemoryDataStore;
 import net.bytle.db.memory.list.MemoryListDataPath;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.SelectStream;
+import net.bytle.db.transfer.TransferProperties;
 
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -14,11 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryDataPath {
 
-  static final String TYPE = "QUEUE";
 
   /**
    * Blocking timeout properties (s)
-   * See {@link #setTimeout(long)}
+   * See {@link #setTimeout(int)}
    */
   private int timeout = DEFAULT_TIME_OUT;
 
@@ -26,21 +27,21 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   public static final Integer DEFAULT_TIME_OUT = 10;
   private ArrayBlockingQueue<List<Object>> values;
 
-  public MemoryQueueDataPath(MemoryDataStore memoryDataStore, String path) {
-    super(memoryDataStore, path);
+  public MemoryQueueDataPath(MemoryConnection memoryConnection, String path) {
+    super(memoryConnection, path, MemoryDataPathType.QUEUE);
   }
 
   /**
-   * @param timeOut - a timeout in seconds used only when the structure is {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE | blocking }
+   * @param timeoutInSec - a timeout in seconds used only when the structure is {@link MemoryDataPathType#TYPE_BLOCKED_QUEUE | blocking }
    * @return a {@link MemoryListDataPath} instance for chaining initialization
    */
-  public MemoryQueueDataPath setTimeout(long timeOut) {
-    this.timeout = timeout;
+  public MemoryQueueDataPath setTimeout(int timeoutInSec) {
+    this.timeout = timeoutInSec;
     return this;
   }
 
   /**
-   * See {@link #setTimeout(long)}
+   * See {@link #setTimeout(int)}
    *
    * @return Timeout en seconds
    */
@@ -52,7 +53,6 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
    * @param capacity - the max number of element that this path may have
    * @return a {@link MemoryListDataPath} instance for chaining initialization
    * <p>
-   *
    */
   public MemoryQueueDataPath setCapacity(Integer capacity) {
     this.capacity = capacity;
@@ -69,11 +69,6 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
    */
   private Integer capacity = Integer.MAX_VALUE;
 
-  public String getType() {
-    return TYPE;
-  }
-
-
 
   @Override
   public void truncate() {
@@ -81,8 +76,8 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   }
 
   @Override
-  public long size() {
-    return this.values.size();
+  public Long getCount() {
+    return (long) this.values.size();
   }
 
   @Override
@@ -95,7 +90,7 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
   }
 
   @Override
-  public InsertStream getInsertStream() {
+  public InsertStream getInsertStream(DataPath source, TransferProperties transferProperties) {
     return new MemoryQueueInsertStream(this);
   }
 
@@ -104,5 +99,14 @@ public class MemoryQueueDataPath extends MemoryDataPathAbs implements MemoryData
     return new MemoryQueueSelectStream(this);
   }
 
+  @Override
+  public DataPath getParent() {
+    return this.getConnection().getCurrentDataPath();
+  }
+
+  @Override
+  public Long getSize() {
+    return (long) this.values.size();
+  }
 
 }

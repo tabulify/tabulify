@@ -1,0 +1,78 @@
+---
+
+- name: Restic - Install Restic Datacadamia Wrapper
+  template:
+    src: 'resticdc'
+    dest: '/usr/bin/resticdc'
+    mode: 'u=rwx,g=x,o='
+    group: '{{ restic_group }}'
+    owner: '{{ restic_user }}'
+
+#- name: Restic - Install Daily Backup Paths
+#  template:
+#    src: 'restic-daily-backup-paths.txt'
+#    dest: '{{ restic_daily_backup_paths }}'
+#    mode: 'u=rw,g=r,o='
+#    group: '{{ restic_group }}'
+#    owner: '{{ restic_user }}'
+#
+#- name: Restic - Install Restic Hourly Paths
+#  template:
+#    src: 'restic-hourly-backup-paths.txt'
+#    dest: '{{ restic_hourly_backup_paths }}'
+#    mode: 'u=rw,g=r,o='
+#    group: '{{ restic_group }}'
+#    owner: '{{ restic_user }}'
+#
+- name: Restic - Install Restic Datacadamia Backup Script
+  template:
+    src: 'resticdc-backup'
+    dest: '/usr/bin/resticdc-backup'
+    mode: 'u=rwx,g=x,o='
+    group: '{{ restic_group }}'
+    owner: '{{ restic_user }}'
+
+- name: Restic - Schedule Restic Datacadamia Backup Script
+  cron:
+    name: 'resticdc-backup'
+    minute: '5' # every 5 minutes of every hour
+    job: "/usr/bin/resticdc-backup"
+
+- name: Restic - Install Restic Datacadamia Forget Script
+  template:
+    src: 'resticdc-forget'
+    dest: '/usr/bin/resticdc-forget'
+    mode: 'u=rwx,g=x,o='
+    group: '{{ restic_group }}'
+    owner: '{{ restic_user }}'
+
+- name: Restic - Schedule Restic Datacadamia Forget Script
+  cron:
+    name: 'resticdc-forget'
+    # every day at 2:10
+    minute: '10'
+    hour: '2'
+    job: "/usr/bin/resticdc-forget"
+
+
+#- name: Restic - Install the Hourly Animal Ignore File
+#  template:
+#    src: 'dokuwiki-hourly-animals.ignore'
+#    dest: '{{ restic_config }}/dokuwiki-hourly-animals.ignore'
+#    mode: 'u=rw,g=r,o='
+#    group: '{{ restic_group }}'
+#    owner: '{{ restic_user }}'
+
+# As example, we don't use it
+#- name: Restic - Creating Local Repo
+#  file:
+#    state: directory
+#    path: '/srv/restic-repo'
+#    group: 'restic'
+#    mode: 'u=rwx,g=rwx,o='
+
+# name: Restic - Creating Remote Repo
+# It was done manually
+# sudo -E -u restic restic -r rclone:idrive-restic:restic init
+# output:
+# created restic repository a446abc5f9 at rclone:idrive-restic:restic

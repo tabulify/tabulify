@@ -1,0 +1,31 @@
+
+# As we change it, we don't copy it for now
+#- name: Copy the script
+#  copy:
+#    src: script/phpctl
+#    dest:
+#    owner: root
+#    group: root
+#    mode: 0744
+
+- name: "Package - sysstat (for process monitoring and stat, pidstat)"
+  yum:
+    name: sysstat
+    state: present
+
+# A cron job run only once by minute, too long
+- name: Delete cronjob, now a service
+  tags: php-cron
+  cron:
+    name: 'phpctl_monitor'
+    job: "{{ phpctl_location }} monitor >/dev/null 2>&1"
+    state: absent
+
+- name: Copy the systemd php.service file
+  notify: phpctl reload
+  template:
+    src: '{{ phpctl_name }}.service'
+    dest: '/etc/systemd/system/{{ phpctl_name }}.service'
+    mode: 0644
+
+

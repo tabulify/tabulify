@@ -1,0 +1,830 @@
+openapi: 3.0.3
+info:
+  title: ComboStrap Private API
+  description: |
+    This is a non-stable API for the [combostrap application](https://combostrap.com)
+
+    If you need a stable API to manage combostrap,
+    check the [official API](https://api.combostrap.com)
+  # Quote are deleted https://github.com/OpenAPITools/openapi-generator/issues/3196
+  # We can't therefore use a date string as the generated openapi.yaml file has no quote
+  # and the data is seen as date, not as string
+  version: "v2023-06-18"
+servers:
+  - url: 'https://api.eraldy.com/combo/_private'
+# check the openApi.md file to know more about tags.
+tags:
+  - name: env
+    description: Env data
+  - name: realm
+    description: Operations on realm
+  - name: user
+    description: Operations about users
+  - name: list
+    description: Operations about list management (creation, registration)
+  - name: app
+    description: Operations on app
+  - name: registration
+    description: Operations on list registration
+  - name: analytics
+    description: Analytics operation
+  - name: token
+    description: Public API Token creation
+# Secure by default, if you want to make an operation public,
+# you need to set the security for an operation to the empty array
+# security: []
+security:
+  # Listed in the combo-common.yaml
+  - apiKeyAuth: [ ]
+components:
+  securitySchemes:
+    cookieAuth:
+      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/cookieAuth'
+    apiKeyAuth: # binding name (arbitrary name used in code and in the file)
+      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
+paths:
+  /env:
+    get:
+      operationId: "envGet"
+      summary: Return environment data
+      tags:
+        - env
+      responses:
+        '200':
+          description: The env data
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /ping:
+    get:
+      operationId: "pingGet"
+      summary: A health check endpoint
+      # tag is the prefix of the API
+      security: [ ]
+      tags:
+        - health
+      responses:
+        '200':
+          description: API health status
+  # A realm is a container/scope for a user login
+  # A realm may have several apps where the user can log in
+  # with the same credential
+  # We don't use domain because it has strong web connotation
+  # (note there is 197,046,670 domain active, 1,139,467,659 registered)
+  /realm:
+    get:
+      operationId: "realmGet"
+      summary: "Return the realm for the request"
+      tags:
+        - realm
+      parameters:
+        - name: realmGuid
+          description: "The guid of the realm"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: realmHandle
+          description: "The handle of the realm"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+    post:
+      operationId: "realmPost"
+      summary: "Create a realm"
+      tags:
+        - realm
+      security:
+        - apiKeyAuth: [ 'write:realm' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/RealmPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+        '405':
+          description: Method Not Allowed
+          content:
+            'application/json': { }
+            'application/xml': { }
+  /realms:
+    get:
+      operationId: "realmsGet"
+      summary: "Return the list of realms for the connected user"
+      tags:
+        - realm
+      security:
+        - apiKeyAuth: [ 'read:realm' ]
+      responses:
+        '200':
+          description: "Return the list of realms for the connected user"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+        '403':
+          description: "Not authenticated"
+  /realms/owned-by/{userGuid}:
+    get:
+      operationId: "realmsOwnedByGet"
+      summary: "Return the list of realms owned by the user"
+      tags:
+        - realm
+      security:
+        - apiKeyAuth: [ 'read:realm' ]
+      parameters:
+        - name: userGuid
+          description: "The user guid"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "usr-xjkkLmi"
+      responses:
+        '200':
+          description: "Return the list of realms owned by the user"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+        '403':
+          description: "Not authenticated"
+  /realm/{realmGuid}/users/new:
+    get:
+      operationId: "realmUsersNewGet"
+      summary: "Return the list of recent new users for the realm"
+      tags:
+        - realm
+      parameters:
+        - name: realmGuid
+          description: "The guid of the realm"
+          # Path parameters are mandatory
+          # https://github.com/OAI/OpenAPI-Specification/issues/622
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "rea-xjkkLmi"
+      security:
+        - apiKeyAuth: [ 'read:realm' ]
+      responses:
+        '200':
+          description: "The users"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+        '403':
+          description: "Not authenticated"
+  /services:
+    get:
+      operationId: servicesGet
+      summary: "Get all services"
+      tags:
+        - service
+      security:
+        - apiKeyAuth: [ 'read:service' ]
+      parameters:
+        - name: realmGuid
+          description: "The realm guid of the service"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: realmHandle
+          description: "The realm handle of the service"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/Service'
+  /campaign/email:
+    post:
+      operationId: campaignEmailPost
+      summary: "Create an email campaign"
+      tags:
+        - campaign
+      security:
+        - apiKeyAuth: [ 'write:campaign' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/CampaignEmailPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Campaign'
+  /service:
+    get:
+      operationId: serviceGet
+      summary: "Retrieve a service by guid or uri"
+      tags:
+        - service
+      security:
+        - apiKeyAuth: [ 'read:service' ]
+      parameters:
+        - name: serviceGuid
+          description: "The guid of the service"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: serviceUri
+          description: "The unique uri of the service"
+          in: query
+          schema:
+            type: string
+        - name: realmHandle
+          description: "The realm handle of the service (the realm is needed when only the uri is given)"
+          in: query
+          schema:
+            type: string
+        - name: realmGuid
+          description: "The realm guid of the service (the realm is needed when only the uri is given)"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Service'
+  /service/smtp:
+    post:
+      operationId: serviceSmtpPost
+      summary: "Create a SMTP mail service for a app or a user"
+      tags:
+        - service
+      security:
+        - apiKeyAuth: [ 'write:service' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ServiceSmtpPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Service'
+  /app:
+    post:
+      operationId: appPost
+      summary: "Create or modify an app (ie design, ...)"
+      tags:
+        - app
+      security:
+        - apiKeyAuth: [ 'write:app' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/AppPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+    get:
+      operationId: appGet
+      summary: |
+        Retrieve an app by:
+        * id with the appGuid
+        * or by name with the appUri and realm (Handle or Guid)
+      tags:
+        - app
+      security:
+        - apiKeyAuth: [ 'read:app' ]
+      parameters:
+        - name: appGuid
+          description: "The app guid"
+          in: query
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+        - name: appUri
+          description: "The appUri"
+          in: query
+          schema:
+            type: string
+        - name: realmHandle
+          description: "The realm handle"
+          in: query
+          schema:
+            type: string
+        - name: realmGuid
+          description: "The realm guid"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+  /apps:
+    get:
+      operationId: appsGet
+      summary: "List apps for a realm"
+      tags:
+        - app
+      security:
+        - apiKeyAuth: [ 'read:app' ]
+      parameters:
+        - name: realmGuid
+          description: "The realm guid"
+          in: query
+          schema:
+            type: string
+            example: "rea-xjkkLmi"
+        - name: realmHandle
+          description: "The realm Handle"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+  /user/auth:
+    get:
+      operationId: userAuthGet
+      summary: Return the authenticated user
+      tags:
+        - user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
+        '404':
+          description: Not found, not logged in
+  /user:
+    get:
+      operationId: userGet
+      summary: |
+        Get a user by guid or email
+      tags:
+        - user
+      security:
+        - apiKeyAuth: [ 'read:user' ]
+      parameters:
+        - name: userGuid
+          description: "The guid of the user"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: userEmail
+          description: "The email of the user"
+          in: query
+          schema:
+            type: string
+            format: email
+            example: "john@doe.com"
+        - name: realmHandle
+          in: query
+          schema:
+            type: string
+        - name: realmGuid
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+    post:
+      operationId: userPost
+      summary: "Create or modify a user (a guid or a email should be given)"
+      tags:
+        - user
+      security:
+        - apiKeyAuth: [ 'write:user' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/UserPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+  /user/{guid}:
+    get:
+      operationId: userGuidGet
+      # The parameter is guid and not an email because @ is a special URL character
+      # and the openApi router will then not find the route (resource not found)
+      summary: |
+        Get a user by guid
+
+        If you want to use the email has identifier,
+        you should use the `userGet` operation passing the email as query parameter
+      tags:
+        - user
+      security:
+        - apiKeyAuth: [ 'read:user' ]
+      parameters:
+        - name: guid
+          description: "The guid of the user"
+          # Path parameters are mandatory
+          # https://github.com/OAI/OpenAPI-Specification/issues/622
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "xjkkLmi"
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+  /users:
+    get:
+      operationId: usersGet
+      summary: "List users"
+      tags:
+        - user
+      parameters:
+        - name: realmGuid
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: realmHandle
+          in: query
+          schema:
+            type: string
+      security:
+        - apiKeyAuth: [ 'read:user' ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+  /list:
+    get:
+      operationId: listGet
+      summary: |
+        Get list information
+
+        Access by:
+        * id with the listGuid
+        * name with the listHandle and realmHandle
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ 'write:read' ]
+      parameters:
+        - name: listGuid
+          description: "The list guid"
+          in: query
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+        - name: listHandle
+          description: "The list handle"
+          in: query
+          schema:
+            type: string
+        - name: realmHandle
+          description: "The realm handle"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+    post:
+      operationId: listPost
+      summary: "Create a list where users can register"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ 'write:list' ]
+      requestBody:
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListPostBody'
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+  /lists:
+    get:
+      operationId: listsGet
+      summary: |
+        Get a list of lists
+
+        The app should be given via:
+          - the appGuid
+          - or the appUri along with the realmGuid or realmHandle
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: appGuid
+          description: "The app guid"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: appUri
+          description: "The uri of the app"
+          in: query
+          schema:
+            type: string
+#            format: uri - format is not supported for parameters
+        - name: realmGuid
+          description: "The realm Guid"
+          in: query
+          schema:
+            type: string
+        - name: realmHandle
+          description: "The realm Handle"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Return a list of lists for the app"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+        '403':
+          description: "Not authenticated"
+  /lists/summary:
+    get:
+      operationId: listsSummaryGet
+      summary: "Get a list of list in a summary format"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: realmGuid
+          description: "The realm guid"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: realmHandle
+          description: "The realm handle"
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Return a list"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListSummary'
+        '403':
+          description: "Not authenticated"
+  /list/registration:
+    get:
+      operationId: listRegistrationGet
+      summary: "Get a registration object"
+      description: |
+        Get a registration
+          * by id with the registrationGuid
+          * by name with the subscriberEmail and listGuid
+      tags:
+        - registration
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: guid
+          description: "The guid of the registration"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: listGuid
+          description: "The list guid of the registration"
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+        - name: subscriberEmail
+          description: "The email of the subscriber"
+          in: query
+          schema:
+            type: string
+            format: email
+            example: "joe@doe.com"
+      responses:
+        '200':
+          description: "The registration"
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/Registration'
+  /list/registration/validation:
+    get:
+      operationId: listRegistrationValidationGet
+      summary: |
+        The URI of the validation link in the validation
+        letter that the user receive.
+        The user needs to click this link to confirm her/his registration.
+      tags:
+        - registration
+      security: [ ]
+      parameters:
+        - name: data
+          description: "The payload"
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "The validation letter"
+          content:
+            text/html:
+              schema:
+                type: string
+  /list/registration/letter/confirmation:
+    get:
+      operationId: listRegistrationLetterConfirmationGet
+      summary: |
+        Return the confirmation letter after the user has clicked on the validation link.
+
+        To get a confirmation as it's show to a user, you just need to set
+        the subscriber name and the list guid
+
+        The other parameters will overwrite other list information.
+      tags:
+        - registration
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: subscriberName
+          description: "The name of the subscriber"
+          in: query
+          schema:
+            type: string
+            example: "Tony"
+        - name: listGuid
+          description: "The list guid"
+          in: query
+          schema:
+            type: string
+            example: "xklm"
+        - name: listName
+          description: "The name of the list"
+          in: query
+          schema:
+            type: string
+            example: "Weekly Newsletters"
+        - name: ownerName
+          description: "The name of the owner"
+          in: query
+          schema:
+            type: string
+            example: "Harold"
+        - name: ownerEmail
+          description: "The email of the owner"
+          in: query
+          schema:
+            type: string
+            format: email
+            example: "john@doe.com"
+        - name: ownerLogo
+          description: "The logo of the owner"
+          in: query
+          schema:
+            type: string
+            # format: uri - not supported by the openapi code generation
+            example: "https://combostrap.com/_media/android-chrome-192x192.png"
+      responses:
+        '200':
+          description: "The confirmation letter"
+          content:
+            text/html:
+              schema:
+                type: string
+  /list/registration/letter/validation:
+    get:
+      operationId: listRegistrationLetterValidationGet
+      summary: |
+        Return the validation letter with a validation link as send by email.
+      tags:
+        - registration
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: listGuid
+          description: "The list guid"
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "xklm"
+        - name: subscriberName
+          description: "The name of the subscriber"
+          in: query
+          schema:
+            type: string
+            example: "Tony"
+        - name: subscriberEmail
+          description: "The email of the subscriber"
+          in: query
+          schema:
+            type: string
+            example: "john@doe.com"
+        - name: debug
+          description: "Debug will print variable names if set to true"
+          in: query
+          schema:
+            type: boolean
+            example: "true"
+      responses:
+        '200':
+          description: "The confirmation letter"
+          content:
+            text/html:
+              schema:
+                type: string
+  /list/registrations:
+    get:
+      operationId: listRegistrationsGet
+      summary: "List the registrations for a list"
+      tags:
+        - registration
+      security:
+        - apiKeyAuth: [ 'read:list' ]
+      parameters:
+        - name: listGuid
+          description: "The guid of the list"
+          required: true
+          in: query
+          schema:
+            type: string
+            example: "xjkkLmi"
+      responses:
+        '200':
+          description: "List of registrations"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationShort'

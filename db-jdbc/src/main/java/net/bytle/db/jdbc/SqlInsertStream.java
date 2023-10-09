@@ -1,81 +1,161 @@
 package net.bytle.db.jdbc;
 
-import net.bytle.db.DbLoggers;
 import net.bytle.db.model.ColumnDef;
 import net.bytle.db.model.RelationDef;
+import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.Tabulars;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.stream.InsertStreamAbs;
+import net.bytle.db.transfer.TransferMethod;
+import net.bytle.db.transfer.TransferOperation;
+import net.bytle.db.transfer.TransferProperties;
+import net.bytle.db.transfer.TransferSourceTarget;
+import net.bytle.exception.NoColumnException;
 import net.bytle.log.Log;
+import net.bytle.type.Strings;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SqlInsertStream extends InsertStreamAbs implements InsertStream, AutoCloseable {
 
-  public static final Log LOGGER = DbLoggers.LOGGER_DB_ENGINE;
-  private final RelationDef targetMetaDef;
+  public static final Log LOGGER = SqlLog.LOGGER_DB_JDBC;
+
+  /**
+   * Exploded variable from {@link TransferSourceTarget}
+   */
+  private final SqlRelationDef targetMetaDef;
+  private final RelationDef sourceMetaDef;
   private final SqlDataPath targetDataPath;
+  private final SqlDataSystem dataSystem;
+  private final boolean withSqlParameters;
+  private final TransferSourceTarget transferSourceTarget;
 
+  /**
+   * Statement used if {@link TransferProperties#setWithBindVariablesStatement(Boolean)} is true
+   */
   private PreparedStatement preparedStatement;
-  private Connection connection;
-  private String insertStatement;
-  private RelationDef sourceMetaDef;
-  private Boolean supportBatch;
-  private Boolean supportNamedParameters;
-  private Statement statement;
+  /**
+   * Statement used if {@link TransferProperties#setWithBindVariablesStatement(Boolean)} is false
+   */
+  private Statement plainStatement;
 
-  private SqlInsertStream(SqlDataPath targetDataPath) {
-    super(targetDataPath);
-    this.targetDataPath = targetDataPath;
-    this.targetMetaDef = targetDataPath.getOrCreateDataDef();
-    init();
+  /**
+   * Processing variables
+   */
+  private Connection connection;
+  /**
+   * The variable that holds the final statement (parametrized or not)
+   */
+  private String sqlStatement;
+
+
+  /**
+   * Batch support processing variable, the support even if asked
+   * may be not supported
+   */
+  private Boolean supportBatch;
+
+
+  /**
+   * The list of sqlXmlObject that needs to be freed from memory if any at close time
+   */
+  private List<SQLXML> sqlXmlObjects = new ArrayList<>();
+
+  /**
+   * Operation / Method
+   */
+  private TransferMethod transferMethod = super.getMethod();
+  private final TransferOperation transferOperation;
+
+
+  private SqlInsertStream(TransferSourceTarget transferSourceTarget) {
+    super(transferSourceTarget.getTargetDataPath());
+    /**
+     * Explode transferSourceTarget into different variables
+     */
+    this.transferSourceTarget = transferSourceTarget;
+    this.targetDataPath = (SqlDataPath) transferSourceTarget.getTargetDataPath();
+
+    TransferProperties transferProperties = transferSourceTarget.getTransferProperties();
+    this.targetMetaDef = targetDataPath.getOrCreateRelationDef();
+
+    DataPath sourceDataPath = transferSourceTarget.getSourceDataPath();
+    /**
+     * If the source is not defined, we expect the same structure than the target
+     */
+    if (sourceDataPath == null) {
+      sourceDataPath = targetDataPath;
+    }
+    this.sourceMetaDef = sourceDataPath.getOrCreateRelationDef();
+    this.dataSystem = targetDataPath.getConnection().getDataSystem();
+    this.withSqlParameters = transferProperties.withBindVariablesStatement();
+
+    if (transferProperties.getOperation() == null) {
+      transferOperation = this.dataSystem.getDefaultTransferOperation();
+      SqlLog.LOGGER_DB_JDBC.info("The load operation was not set, taking the default (" + transferOperation + ")");
+    } else {
+      transferOperation = transferProperties.getOperation();
+    }
+    preTransfer();
   }
 
-  public synchronized static SqlInsertStream of(SqlDataPath sqlDataPath) {
-    if (!Tabulars.exists(sqlDataPath)) {
-      throw new RuntimeException("You can't open an insert stream on the SQL table (" + sqlDataPath + ") because it does not exist.");
+  public synchronized static SqlInsertStream create(TransferSourceTarget transferSourceTarget) {
+    DataPath targetDataPath = transferSourceTarget.getTargetDataPath();
+    if (!Tabulars.exists(targetDataPath)) {
+      throw new RuntimeException("You can't open an insert stream on the SQL table (" + targetDataPath + ") because it does not exist.");
     }
-    return new SqlInsertStream(sqlDataPath);
-
+    return new SqlInsertStream(transferSourceTarget);
   }
 
   @Override
-  public InsertStream insert(List<Object> values) {
+  public InsertStream insert(List<Object> sourceValues) {
 
-    final int columnsSize = this.targetDataPath.getOrCreateDataDef().getColumnsSize();
-    final int valuesSize = values.size();
-    assert valuesSize == columnsSize : "The number of values to insert (" + valuesSize + ") is not the same than the number of columns (" + columnsSize + ")";
+    final int columnsSize = this.targetDataPath.getOrCreateRelationDef().getColumnsSize();
+    final int valuesSize = sourceValues.size();
 
-    if (this.supportNamedParameters) {
+    if (valuesSize != columnsSize) {
+      LOGGER.fine("The number of values to insert (" + valuesSize + ") is not the same than the number of columns (" + columnsSize + ")");
+    }
+
+    if (this.withSqlParameters) {
 
       try {
         // Columns
-        for (int i = 0; i < valuesSize; i++) {
-
-          Object sourceObject = values.get(i);
-          final ColumnDef column = sourceMetaDef.getColumnDef(i);
-          int targetColumnType = column.getDataType().getTypeCode();
+        int positionInStatement = 0;
+        List<Integer> sourceColumnPositionInStatementOrder = transferSourceTarget.getSourceColumnPositionInStatementOrder();
+        for (Integer columnPosition : sourceColumnPositionInStatementOrder) {
+          positionInStatement++;
+          Object sourceObject = sourceValues.get(columnPosition - 1);
+          final ColumnDef sourceColumn = sourceMetaDef.getColumnDef(columnPosition);
+          final ColumnDef targetColumn;
+          try {
+            targetColumn = transferSourceTarget.getTargetColumnFromSourceColumn(sourceColumn);
+          } catch (NoColumnException e) {
+            throw new IllegalStateException("A target column could not be found for the source (" + sourceColumn + ")");
+          }
+          int targetColumnType = targetColumn.getDataType().getTargetTypeCode();
           try {
             if (sourceObject != null) {
 
-              Object loadObject = targetDataPath.getDataStore().getDataSystem().castLoadObjectIfNecessary(sourceObject,targetColumnType);
-              preparedStatement.setObject(i + 1, loadObject, targetColumnType);
+              Object loadObject = targetDataPath.getConnection().toSqlObject(sourceObject, targetColumn.getDataType());
+              if (sourceColumn.getDataType().getSqlClass().equals(java.sql.SQLXML.class)) {
+                this.sqlXmlObjects.add((SQLXML) loadObject);
+              }
+              preparedStatement.setObject(positionInStatement, loadObject, targetColumnType);
 
             } else {
 
-              preparedStatement.setNull(i + 1, targetColumnType);
+              preparedStatement.setNull(positionInStatement, targetColumnType);
 
             }
           } catch (Exception e) {
             String sourceObjectClass = "null";
-            if (sourceObject!=null){
+            if (sourceObject != null) {
               sourceObjectClass = sourceObject.getClass().toString();
             }
-            String message = e + ", SourceObject:" + sourceObjectClass + ", SourceValue:" + sourceObject + ", TargetColumnDataType:" + targetColumnType + " ("+column.getDataType().getTypeName()+"), TargetColumn:" + column.getFullyQualifiedName();
+            String message = e + ", SourceObjectClass: " + sourceObjectClass + ", SourceObjectValue:" + sourceObject + ", TargetColumnDataType:" + targetColumnType + " (" + sourceColumn.getDataType().getSqlName() + "), TargetColumn: " + sourceColumn.getFullyQualifiedName();
             throw new RuntimeException(message, e);
 
           }
@@ -91,6 +171,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         } else {
 
           preparedStatement.execute();
+          freeSqlXmlObject();
 
         }
       } catch (SQLException e) {
@@ -102,14 +183,14 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
     } else {
 
+      String sql = formatValuesStatement(transferSourceTarget, sqlStatement, sourceValues);
       try {
-        insertStatement = DbDml.getInsertStatement(sourceMetaDef, targetMetaDef, values);
-        statement.execute(insertStatement);
+        plainStatement.execute(sql);
         currentRowInLogicalBatch++;
       } catch (SQLException e) {
 
         resourceClose();
-        throw new RuntimeException("Table: " + targetMetaDef.getDataPath(), e);
+        throw new RuntimeException("Insertion error with the the insert statement:" + Strings.EOL + sql, e);
 
       }
 
@@ -140,22 +221,66 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
 
   }
 
+  /**
+   * @param transferSourceTarget - the transfer
+   * @param printfStatement      -  the printf expression
+   * @param sourceValues         - the source values
+   * @return a statement with values
+   */
+  public static String formatValuesStatement(TransferSourceTarget transferSourceTarget, String printfStatement, List<?> sourceValues) {
+    List<String> sqlValues = new ArrayList<>();
+    for (Integer columnPosition : transferSourceTarget.getSourceColumnPositionInStatementOrder()) {
+      Object sourceObject = sourceValues.get(columnPosition - 1);
+      final ColumnDef sourceColumn = transferSourceTarget.getSourceDataPath().getOrCreateRelationDef().getColumnDef(columnPosition);
+      final ColumnDef targetColumn;
+      try {
+        targetColumn = transferSourceTarget.getTargetColumnFromSourceColumn(sourceColumn);
+      } catch (NoColumnException e) {
+        throw new IllegalStateException("A target column could not be found for the source column (" + sourceColumn + ")");
+      }
+      SqlConnection dataStore = (SqlConnection) transferSourceTarget.getTargetDataPath().getConnection();
+      String sqlValue = dataStore.toSqlString(sourceObject, targetColumn.getDataType());
+      if (!targetColumn.getDataType().isNumeric() && sqlValue != null) {
+        sqlValue = "'" + sqlValue + "'";
+      }
+      sqlValues.add(sqlValue);
+    }
+    // the redundant cast is to pass the value as a varargs and not as a single value
+    //noinspection RedundantCast
+    return String.format(printfStatement, (Object[]) sqlValues.toArray(new Object[0]));
+  }
+
+  /**
+   * Free Xml object created
+   * https://docs.oracle.com/javase/tutorial/jdbc/basics/sqlxml.html#releasing_sqlxml
+   */
+  private void freeSqlXmlObject() {
+    try {
+      for (SQLXML sqlXmlObject : this.sqlXmlObjects) {
+        sqlXmlObject.free();
+      }
+      this.sqlXmlObjects = new ArrayList<>();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Override
   public SqlDataPath getDataPath() {
     return (SqlDataPath) super.getDataPath();
   }
 
-  private void init() {
+  /**
+   * PreTransfer
+   */
+  private void preTransfer() {
 
-    if (targetDataPath.getDataStore().getMaxWriterConnection() == 1) {
-      connection = targetDataPath.getDataStore().getCurrentConnection();
+
+    if (targetDataPath.getConnection().getMetadata().getMaxWriterConnection() == 1) {
+      connection = targetDataPath.getConnection().getCurrentConnection();
     } else {
-      connection = targetDataPath.getDataStore().getNewConnection("InsertStream Table " + targetDataPath);
+      connection = targetDataPath.getConnection().getNewConnection();
     }
-    if (sourceMetaDef == null) {
-      sourceMetaDef = targetMetaDef;
-    }
-
 
     try {
       this.supportBatch = connection.getMetaData().supportsBatchUpdates();
@@ -181,35 +306,16 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       LOGGER.warning("supportsBatchUpdates: was set to " + this.supportBatch);
     }
 
-    // Named parameters / bind variables
-    try {
-      this.supportNamedParameters = connection.getMetaData().supportsNamedParameters();
-      if (!this.supportNamedParameters) {
-        LOGGER.warning("The driver is not supporting named parameters. This would slow the insert/update.");
-      } else {
-        LOGGER.info("The driver is supporting named parameters.");
-      }
-    } catch (SQLException e) {
-      this.supportNamedParameters = false;
-      LOGGER.warning("supportsNamedParameters: An exception was thrown with the following message: " + e.getMessage());
-      LOGGER.warning("supportsNamedParameters: was set to " + this.supportNamedParameters);
+    /**
+     * It's quicker with, than without
+     */
+    if (this.withSqlParameters) {
+      createPreparedStatement();
+    } else {
+      createStatement();
     }
 
-    try {
 
-      if (this.supportNamedParameters) {
-        insertStatement = DbDml.getParameterizedInsertStatement(targetMetaDef, sourceMetaDef);
-        LOGGER.info("Insert Statement:" + insertStatement);
-        preparedStatement = connection.prepareStatement(insertStatement);
-      } else {
-        statement = connection.createStatement();
-      }
-
-    } catch (SQLException e) {
-
-      throw new RuntimeException(e);
-
-    }
   }
 
 
@@ -261,6 +367,7 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       if (this.currentRowInLogicalBatch != 0) {
         preparedStatement.executeBatch();
         insertStreamListener.incrementBatch();
+        freeSqlXmlObject();
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -305,16 +412,9 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
         }
       }
 
-      if (statement != null) {
-        if (!statement.isClosed()) {
-          statement.close();
-        }
-      }
-
-      final SqlDataPath dataPath = (SqlDataPath) targetMetaDef.getDataPath();
-      if (dataPath.getDataStore().getMaxWriterConnection() > 1) {
-        if (connection != null) {
-          connection.close();
+      if (plainStatement != null) {
+        if (!plainStatement.isClosed()) {
+          plainStatement.close();
         }
       }
 
@@ -329,31 +429,116 @@ public class SqlInsertStream extends InsertStreamAbs implements InsertStream, Au
       //
       // Don't set it back to true here
       // TODO: A unit of SqlInsertStream loading (autocommit is needed to not have a lock after a select on sqlite)
-      // SQLITE_BUSY]  The database file is locked (database is locked)
+      // [SQLITE_BUSY]  The database file is locked (database is locked)
       if (!connection.getAutoCommit()) {
         connection.setAutoCommit(true);
       }
-      //
 
-      LOGGER.info(getName() + " stream closed");
+      // Connection close
+      final SqlDataPath dataPath = targetMetaDef.getDataPath();
+      if (!connection.equals(dataPath.getConnection().getCurrentConnection())) {
+        connection.close();
+      }
+
+      LOGGER.fine(getName() + " stream closed");
+
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
 
   }
 
+
   /**
-   * The data inserted may be in an other order
-   * For instance with a query
-   * You may defined the order of the columns by giving a relationDef
-   * with the column ordered
-   *
-   * @param dataDef
-   * @return
+   * This function is called with {@link TransferProperties#withBindVariablesStatement()} is true
    */
-  public SqlInsertStream setSourceDataDef(RelationDef dataDef) {
-    this.sourceMetaDef = dataDef;
-    return this;
+  private void createPreparedStatement() {
+    // Named parameters / bind variables
+    SqlConnection targetDataStore = this.getDataPath().getConnection();
+    boolean supportsNamedParameters = targetDataStore.getMetadata().supportsSqlParameters();
+    if (!supportsNamedParameters) {
+      SqlLog.LOGGER_DB_JDBC.warning("The datastore (" + targetDataStore + ") does not support SQL parameters, the transfer will be done without and will then be slower");
+      createStatement();
+    } else {
+      /**
+       * The statement
+       */
+      switch (transferOperation) {
+        case INSERT:
+        case COPY:
+          sqlStatement = dataSystem.createInsertStatementWithBindVariables(transferSourceTarget);
+          LOGGER.info("Insert Statement: " + sqlStatement);
+          this.transferMethod = TransferMethod.INSERT_WITH_BIND_VARIABLE;
+          break;
+        case UPSERT:
+          sqlStatement = dataSystem.createUpsertStatementWithBindVariables(transferSourceTarget);
+          LOGGER.info("Upsert Statement: " + sqlStatement);
+          this.transferMethod = TransferMethod.UPSERT_WITH_BIND_VARIABLE;
+          break;
+        case UPDATE:
+          sqlStatement = dataSystem.createUpdateStatementWithBindVariables(transferSourceTarget);
+          LOGGER.info("Update Statement: " + sqlStatement);
+          this.transferMethod = TransferMethod.UPDATE_WITH_BIND_VARIABLE;
+          break;
+        case DELETE:
+          sqlStatement = dataSystem.createDeleteStatementWithBindVariables(transferSourceTarget);
+          LOGGER.info("Delete Statement: " + sqlStatement);
+          this.transferMethod = TransferMethod.DELETE_WITH_BIND_VARIABLE;
+          break;
+        default:
+          throw new UnsupportedOperationException("The transfer operation (" + transferOperation + ") is not yet supported on prepared statement");
+      }
+      try {
+        preparedStatement = connection.prepareStatement(sqlStatement);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
+  /**
+   * This function is called with {@link TransferProperties#withBindVariablesStatement()} is false
+   */
+  private void createStatement() {
+    try {
+      plainStatement = connection.createStatement();
+
+      /**
+       * The sql statement include the values and is then created on the fly
+       *
+       */
+      switch (transferOperation) {
+        case INSERT:
+        case COPY:
+          this.sqlStatement = dataSystem.createInsertStatementWithPrintfExpressions(transferSourceTarget);
+          this.transferMethod = TransferMethod.INSERT;
+          LOGGER.info("Insert Statement: " + sqlStatement);
+          break;
+        case UPSERT:
+          this.sqlStatement = dataSystem.createUpsertStatementWithPrintfExpressions(transferSourceTarget);
+          this.transferMethod = TransferMethod.UPSERT;
+          LOGGER.info("Upsert Statement: " + sqlStatement);
+          break;
+        case UPDATE:
+          this.sqlStatement = dataSystem.createUpdateStatementWithPrintfExpressions(transferSourceTarget);
+          this.transferMethod = TransferMethod.UPDATE;
+          LOGGER.info("Update Statement: " + sqlStatement);
+          break;
+        case DELETE:
+          sqlStatement = dataSystem.createDeleteStatementWithPrintfExpressions(transferSourceTarget);
+          this.transferMethod = TransferMethod.DELETE;
+          LOGGER.info("Delete Statement: " + sqlStatement);
+          break;
+        default:
+          throw new UnsupportedOperationException("The transfer operation (" + transferOperation + ") is not yet supported with a sql statement transfer with values");
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public TransferMethod getMethod() {
+    return this.transferMethod;
+  }
 }

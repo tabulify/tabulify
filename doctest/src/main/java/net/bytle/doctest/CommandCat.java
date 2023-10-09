@@ -2,10 +2,11 @@ package net.bytle.doctest;
 
 import net.bytle.fs.Fs;
 
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 
 /**
- * An example of a {@link DocTestExecutorUnit#addMainClass(String, Class)} MainClass}
+ * An example of a {@link DocExecutorUnit#addMainClass(String, Class)} MainClass}
  * implementing a basic cat command
  * <p>
  * This class is used for testing purpose
@@ -16,7 +17,7 @@ import java.nio.file.Paths;
  */
 public class CommandCat {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchFileException {
 
         System.out.println(Fs.getFileContent(Paths.get(args[0])));
     }
