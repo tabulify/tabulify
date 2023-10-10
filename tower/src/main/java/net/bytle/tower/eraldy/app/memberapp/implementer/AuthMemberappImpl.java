@@ -5,9 +5,8 @@ import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import io.vertx.json.schema.ValidationException;
-import io.vertx.json.schema.common.ValidationExceptionImpl;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
@@ -24,6 +23,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.MailServiceSmtpProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +90,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         routingContext.fail(HttpStatus.BAD_REQUEST, new IllegalArgumentException("Internal Error: the (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client could not be found. Was it passed or set on the login endpoint?"));
         return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST));
       }
-    } catch (ValidationException e) {
+    } catch (IllegalArgumentException e) {
       return Future.failedFuture(e);
     }
 
@@ -115,7 +115,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
     try {
       oAuthExternal = OAuthExternal.get(provider);
     } catch (NotFoundException e) {
-      return Future.failedFuture(ValidationExceptionImpl.create("The OAuth provider (" + provider + ") is unknown", "provider", provider));
+      return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The OAuth provider (" + provider + ") is unknown", "provider", provider));
     }
     return oAuthExternal
       .getAuthorizeUrl(routingContext, listGuid)
@@ -189,7 +189,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         User sender = new User();
         sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(sender);
+          .getTransactionalMailClientForUser(sender.getEmail());
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
@@ -240,7 +240,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
     }
 
     if (redirectUri == null) {
-      return Future.failedFuture(ValidationException.create("The redirect_uri cannot be null", "redirect_uri", null));
+      return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The redirect_uri cannot be null", "redirect_uri", null));
     }
 
     if (!redirectUri.equals(authorization.getRedirectUri())) {
@@ -262,11 +262,11 @@ public class AuthMemberappImpl implements AuthMemberapp {
 
     String password = passwordCredentials.getLoginPassword();
     if (password == null) {
-      throw ValidationException.create("The password cannot be null", "password", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The password cannot be null", "password", null);
     }
     String handle = passwordCredentials.getLoginHandle();
     if (handle == null) {
-      throw ValidationException.create("The handle cannot be null", "handle", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The handle cannot be null", "handle", null);
     }
     return RealmProvider.createFrom(routingContext.vertx())
       .getRealmFromHandle(passwordCredentials.getLoginRealm())
@@ -341,7 +341,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         User sender = new User();
         sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(sender);
+          .getTransactionalMailClientForUser(sender.getEmail());
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
@@ -479,7 +479,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
    * @param routingContext - the routing context
    * @return the redirect Uri
    * @throws NotFoundException   - if not found
-   * @throws ValidationException - if it's not an URL string
+   * @throws IllegalArgumentException - if it's not an URL string
    */
   public static UriEnhanced getRedirectUri(RoutingContext routingContext) throws NotFoundException {
     String redirectUri = routingContext.request().getParam(OAuthQueryProperty.REDIRECT_URI.toString());
@@ -489,7 +489,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
     try {
       return UriEnhanced.createFromString(redirectUri);
     } catch (IllegalStructure e) {
-      throw ValidationException.create("The redirect Uri is not a valid URI", OAuthQueryProperty.REDIRECT_URI.toString(), redirectUri);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirect Uri is not a valid URI", OAuthQueryProperty.REDIRECT_URI.toString(), redirectUri);
     }
   }
 
@@ -506,7 +506,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
 
     String realmHandle = emailIdentifier.getRealmHandle();
     if (realmHandle == null) {
-      throw ValidationException.create("The realm cannot be null.", "realmHandle", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm cannot be null.", "realmHandle", null);
     }
   }
 

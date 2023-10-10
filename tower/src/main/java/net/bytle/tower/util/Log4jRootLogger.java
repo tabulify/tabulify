@@ -1,6 +1,7 @@
 package net.bytle.tower.util;
 
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.vertx.MailSmtpInfo;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.appender.SmtpAppender;

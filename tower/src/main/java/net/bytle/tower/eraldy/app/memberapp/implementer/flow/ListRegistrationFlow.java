@@ -6,8 +6,8 @@ import io.vertx.core.http.Cookie;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NullValueException;
@@ -27,6 +27,7 @@ import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.MailServiceSmtpProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -140,7 +141,7 @@ public class ListRegistrationFlow {
      */
     String publicationGuid = publicationSubscriptionPost.getListGuid();
     if (publicationGuid == null) {
-      throw ValidationException.create("Publication guid should not be null", "publicationGuid", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("Publication guid should not be null", "publicationGuid", null);
     }
     Vertx vertx = routingContext.vertx();
     return ListProvider.create(vertx)
@@ -188,7 +189,7 @@ public class ListRegistrationFlow {
         String subscriberAddressWithName = UsersUtil.getEmailAddressWithName(subscriber);
 
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(listOwnerUser);
+          .getTransactionalMailClientForUser(listOwnerUser.getEmail());
 
         MailMessage registrationEmail = mailServiceSmtpProvider
           .createMailMessage()
@@ -315,7 +316,7 @@ public class ListRegistrationFlow {
         UriEnhanced redirectUri = null;
         try {
           redirectUri = AuthMemberappImpl.getRedirectUri(routingContext);
-        } catch (ValidationException e) {
+        } catch (IllegalArgumentException e) {
           return Future.failedFuture(e);
         } catch (NotFoundException e) {
           /**

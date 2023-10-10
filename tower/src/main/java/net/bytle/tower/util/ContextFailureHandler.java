@@ -6,12 +6,13 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.Exceptions;
+import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.model.openapi.ExitStatusResponse;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.MediaTypes;
+import net.bytle.vertx.MailServiceSmtpProvider;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class ContextFailureHandler implements Handler<RoutingContext> {
   public ContextFailureHandler(JsonObject config) {
     Boolean sendEmailOnErrorConfig = config.getBoolean(ERROR_EMAIL_CONF, null);
     if (sendEmailOnErrorConfig == null) {
-      throw ValidationException.create("The sys error configuration (" + ERROR_EMAIL_CONF + ") is mandatory", ERROR_EMAIL_CONF, null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The sys error configuration (" + ERROR_EMAIL_CONF + ") is mandatory", ERROR_EMAIL_CONF, null);
     }
     this.setSendMailOnError(sendEmailOnErrorConfig);
   }
@@ -177,7 +178,7 @@ public class ContextFailureHandler implements Handler<RoutingContext> {
         .setSubject("Tower: An error has occurred. " + thrown.getMessage())
         .setText(stackTraceAsString);
       mailServiceSmtpProvider
-        .getTransactionalMailClientForUser(sysUser)
+        .getTransactionalMailClientForUser(sysUser.getEmail())
         .sendMail(mailMessage)
         .onFailure(t -> CONTEXT_FAILURE_LOGGER.error("Error while sending the error email. Message:" + t.getMessage(), t));
     }

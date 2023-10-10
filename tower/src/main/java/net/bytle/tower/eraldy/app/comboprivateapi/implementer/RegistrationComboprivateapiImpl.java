@@ -9,7 +9,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
-import io.vertx.json.schema.ValidationException;
+import net.bytle.exception.CastException;
+import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.app.comboprivateapi.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.app.comboprivateapi.implementer.letter.ListRegistrationValidationLetter;
@@ -22,9 +24,13 @@ import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.FailureStatic;
+import net.bytle.tower.util.HttpRequestUtil;
+import net.bytle.tower.util.JsonToken;
+import net.bytle.tower.util.TemplateEngine;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.MailServiceSmtpProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,15 +55,15 @@ public class RegistrationComboprivateapiImpl implements RegistrationComboprivate
         .getRegistrationByGuid(guid);
     } else if (listGuid != null || subscriberEmail != null) {
       if (listGuid == null) {
-        throw ValidationException.create("The listGuid should be given with a subscriberEmail", "listGuid", null);
+        throw IllegalArgumentExceptions.createWithInputNameAndValue("The listGuid should be given with a subscriberEmail", "listGuid", null);
       }
       if (subscriberEmail == null) {
-        throw ValidationException.create("The subscriberEmail should be given with a listGuid", "subscriberEmail", null);
+        throw IllegalArgumentExceptions.createWithInputNameAndValue("The subscriberEmail should be given with a listGuid", "subscriberEmail", null);
       }
       futureRegistration = registrationProvider
         .getRegistrationByListGuidAndSubscriberEmail(listGuid, subscriberEmail);
     } else {
-      throw ValidationException.create("A registration guid or a listGuid and a subscriberEmail should be given", "guid", null);
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("A registration guid or a listGuid and a subscriberEmail should be given", "guid", null);
     }
     return futureRegistration
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
@@ -145,7 +151,7 @@ public class RegistrationComboprivateapiImpl implements RegistrationComboprivate
           .setText(title)
           .setHtml("<html><body>" + title + "</body></html>");
         mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(listOwnerUser)
+          .getTransactionalMailClientForUser(listOwnerUser.getEmail())
           .sendMail(ownerFeedbackEmail)
           .onFailure(t -> LOGGER.error("Error while sending the list owner registration feedback email", t));
 
@@ -217,11 +223,16 @@ public class RegistrationComboprivateapiImpl implements RegistrationComboprivate
 
     MultiMap params = routingContext.request().params();
     Map<String, String> singleParams = HttpRequestUtil.paramsToMap(params);
-    String html = ListRegistrationConfirmationLetter
-      .config()
-      .addMapData(Casts.castToSameMap(singleParams, String.class, Object.class))
-      .build()
-      .getHtml();
+    String html;
+    try {
+      html = ListRegistrationConfirmationLetter
+        .config()
+        .addMapData(Casts.castToSameMap(singleParams, String.class, Object.class))
+        .build()
+        .getHtml();
+    } catch (CastException e) {
+      throw new InternalException("A cast on string and object should not throw");
+    }
 
     /**
      * The open api generated code manage for now only json data

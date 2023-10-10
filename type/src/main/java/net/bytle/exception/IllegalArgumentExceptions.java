@@ -4,7 +4,6 @@ import net.bytle.type.Enums;
 import net.bytle.type.Key;
 
 /**
- *
  * A utility class that creates {@link IllegalArgumentException}
  */
 
@@ -40,6 +39,7 @@ public class IllegalArgumentExceptions {
   public static IllegalArgumentException createFromMessage(String message, Throwable e) {
     return new IllegalArgumentException(message, e);
   }
+
   public static IllegalArgumentException createFromMessage(String message) {
     return new IllegalArgumentException(message);
   }
@@ -64,5 +64,9 @@ public class IllegalArgumentExceptions {
 
   public static IllegalArgumentException createFromException(Throwable e) {
     return new IllegalArgumentException(e);
+  }
+
+  public static IllegalArgumentException createWithInputNameAndValue(String message, String name, Object value) {
+    return new IllegalArgumentException(message + " (input: " + name + ", value: " + (value != null ? value.toString() : "null") + ")");
   }
 }

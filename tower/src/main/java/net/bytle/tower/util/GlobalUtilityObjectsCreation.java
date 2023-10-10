@@ -6,6 +6,9 @@ import io.vertx.core.Vertx;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.MailSmtpInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +35,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     return new GlobalUtilityObjectsCreation(vertx,config);
   }
 
-  public void init() throws DbMigrationException, NoSecretException {
+  public void init() throws DbMigrationException, NoSecretException, ConfigIllegalException {
 
     INIT_LOGGER.info("Start creation of JDBC Pool");
     JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(configAccessor);
@@ -88,7 +91,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     try {
       this.init();
       event.complete();
-    } catch (DbMigrationException | NoSecretException e) {
+    } catch (DbMigrationException | NoSecretException | ConfigIllegalException e) {
       event.fail(e);
     }
 

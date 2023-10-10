@@ -15,7 +15,7 @@ import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.tower.util.ContextFailureHandler;
 import net.bytle.tower.util.JwtClaimsObject;
-import net.bytle.tower.util.MailServiceSmtpProvider;
+import net.bytle.vertx.MailServiceSmtpProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +81,7 @@ public class UserRegistrationFlow {
         User sender = new User();
         sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(sender);
+          .getTransactionalMailClientForUser(sender.getEmail());
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider

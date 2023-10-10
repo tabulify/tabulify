@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.mail.*;
@@ -6,8 +6,6 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoSecretException;
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.ConfigAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,38 +65,41 @@ public class MailServiceSmtpProvider {
    * <a href="https://www.rfc-editor.org/rfc/rfc1123">...</a>
    * This header is also referred to as a bounce address or reverse path
    */
-  public static final String RETURN_PATH_MAIL_HEADER = "Return-Path";
-  private static final String BOUNCE_EMAIL = SysAdmin.ADMIN_USER.getEmail();
+
+  private final BMailInternetAddress ABUSE_EMAIL;
+
+  private final BMailInternetAddress BOUNCE_EMAIL ;
   /**
    * see <a href="https://policy.hubspot.com/abuse-complaints">...</a>
    */
   public static final String X_REPORT_ABUSE_TO_MAIL_HEADER = "X-Report-Abuse-To";
-  private static final String ABUSE_EMAIL = SysAdmin.ADMIN_USER.getEmail();
+
   public static final String X_MAILER = "X-Mailer";
 
-  private final Vertx vertx;
-  private String dkimSelector;
+
+  private final MailServiceSmtpProviderConfig providerConfig;
+
 
   /**
    * All clients
    */
   private final Map<String, MailClient> transactionalMailClientsMap = new HashMap<>();
-  private String dkimPrivateKey;
-  private Integer defaultSmtpPort = null;
-  private String defaultSmtpHostname = null;
+
+
   private Boolean useWiserAsTransactionalClient = false;
   /**
    * A client used in test
    */
   private MailClient wiserMailClient;
-  private StartTLSOptions defaultSmtpStartTlsOption = null;
-  private String defaultSmtpUserName = null;
-  private String defaultSmtpUserPassword = null;
 
 
-  public MailServiceSmtpProvider(Vertx vertx) {
-    this.vertx = vertx;
 
+
+
+  public MailServiceSmtpProvider(MailServiceSmtpProviderConfig providerConfig) {
+    this.providerConfig = providerConfig;
+    this.ABUSE_EMAIL = providerConfig.adminAddress;
+    this.BOUNCE_EMAIL = providerConfig.adminAddress;
   }
 
   public static MailServiceSmtpProvider get(Vertx vertx) {
@@ -109,23 +110,23 @@ public class MailServiceSmtpProvider {
     return mailPool;
   }
 
-  public static config config(Vertx vertx, ConfigAccessor jsonConfig, MailSmtpInfo mailSmtpInfo) {
+  public static MailServiceSmtpProviderConfig config(Vertx vertx, ConfigAccessor jsonConfig, MailSmtpInfo mailSmtpInfo) {
 
-    config config = new config(vertx);
+    MailServiceSmtpProviderConfig MailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(vertx);
 
     /**
      * Data from conf file
      */
     String dkimSelector = jsonConfig.getString(MAIL_DKIM_SELECTOR);
     if (dkimSelector != null) {
-      config.setDkimSelector(dkimSelector);
+      MailServiceSmtpProviderConfig.setDkimSelector(dkimSelector);
       LOGGER.info("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was found with the value " + dkimSelector);
     } else {
       LOGGER.info("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was not found with the value.");
     }
     String dkimPrivateKey = jsonConfig.getString(MAIL_DKIM_PRIVATE);
     if (dkimPrivateKey != null) {
-      config.setDkimPrivateKey(dkimPrivateKey);
+      MailServiceSmtpProviderConfig.setDkimPrivateKey(dkimPrivateKey);
       LOGGER.info("Mail: The mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was found");
     } else {
       LOGGER.info("Mail: A mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was NOT found");
@@ -134,43 +135,48 @@ public class MailServiceSmtpProvider {
 
     Integer port = mailSmtpInfo.getPort();
     if (port != null) {
-      config.setDefaultSmtpPort(port);
+      MailServiceSmtpProviderConfig.defaultSmtpPort = port;
       LOGGER.info("Mail: The mail default port key was set with the value (" + port + ").");
     }
 
     String hostname = mailSmtpInfo.getHost();
     if (hostname != null) {
-      config.setDefaultSmtpHostname(hostname);
+      MailServiceSmtpProviderConfig.defaultSmtpHostname = hostname;
       LOGGER.info("Mail: The mail default hostname was set with the value (" + hostname + ").");
     }
 
     StartTLSOptions startTls = mailSmtpInfo.getStartTlsOption();
     if (startTls != null) {
-      config.setDefaultStartTls(startTls);
+      MailServiceSmtpProviderConfig.defaultSmtpStartTlsOption = startTls;
       LOGGER.info("Mail: The mail default startTLS was set with the value (" + startTls.toString().toLowerCase() + ").");
     }
 
     String username = mailSmtpInfo.getUserName();
     if (username != null) {
-      config.setDefaultSmtpUserName(username);
+      MailServiceSmtpProviderConfig.defaultSmtpUserName = username;
       LOGGER.info("Mail: The mail default username was set with the value (" + username + ").");
     }
 
     String password = mailSmtpInfo.getPassword();
     if (password != null) {
-      config.setDefaultSmtpPassword(password);
+      MailServiceSmtpProviderConfig.defaultSmtpUserPassword = password;
       LOGGER.info("Mail: The mail password was set (xxxxx).");
     }
 
-    return config;
+    BMailInternetAddress adminAddress = mailSmtpInfo.getAdminEmail();
+    if(adminAddress!=null){
+      MailServiceSmtpProviderConfig.adminAddress = adminAddress;
+      LOGGER.info("Mail: The admin email was set to ("+adminAddress+')');
+    }
+
+    return MailServiceSmtpProviderConfig;
 
   }
 
 
-  public MailClient getTransactionalMailClientForUser(User user) {
+  public MailClient getTransactionalMailClientForUser(String email) {
 
 
-    String email = user.getEmail();
     BMailInternetAddress bMailAddress;
     try {
       bMailAddress = BMailInternetAddress.of(email);
@@ -183,12 +189,12 @@ public class MailServiceSmtpProvider {
       if (this.wiserMailClient != null) {
         return this.wiserMailClient;
       }
-      MailConfig config = getMailConfig(senderDomain);
+      MailConfig mailConfig = getMailConfig(senderDomain);
       /**
        * Same as {@link WiserConfiguration#WISER_PORT}
        */
-      config.setPort(1081);
-      this.wiserMailClient = MailClient.create(vertx, config);
+      mailConfig.setPort(1081);
+      this.wiserMailClient = MailClient.create(this.providerConfig.vertx, mailConfig);
       return this.wiserMailClient;
     }
 
@@ -198,7 +204,7 @@ public class MailServiceSmtpProvider {
     }
 
     MailConfig config = getMailConfig(senderDomain);
-    mailClient = MailClient.create(vertx, config);
+    mailClient = MailClient.create(this.providerConfig.vertx, config);
     transactionalMailClientsMap.put(senderDomain, mailClient);
     return mailClient;
 
@@ -208,9 +214,9 @@ public class MailServiceSmtpProvider {
     // https://github.com/vert-x3/vertx-mail-client/blob/master/src/test/java/io/vertx/ext/mail/MailWithDKIMSignTest.java
     // https://github.com/gaol/vertx-mail-client/wiki/DKIM-Implementation
     DKIMSignOptions dkimSignOptions = new DKIMSignOptions()
-      .setPrivateKey(this.dkimPrivateKey)
+      .setPrivateKey(this.providerConfig.dkimPrivateKey)
       //.setAuid("@example.com") user agent identifier (default @sdid)
-      .setSelector(this.dkimSelector)
+      .setSelector(this.providerConfig.dkimSelector)
       .setSdid(senderDomain);
 
     MailConfig config = new MailConfig()
@@ -222,20 +228,20 @@ public class MailServiceSmtpProvider {
     /**
      * transactional email server are local for now
      */
-    if (this.defaultSmtpHostname != null) {
-      config.setHostname(this.defaultSmtpHostname);
+    if (this.providerConfig.defaultSmtpHostname != null) {
+      config.setHostname(this.providerConfig.defaultSmtpHostname);
     }
-    if (this.defaultSmtpPort != null) {
-      config.setPort(this.defaultSmtpPort);
+    if (this.providerConfig.defaultSmtpPort != null) {
+      config.setPort(this.providerConfig.defaultSmtpPort);
     }
-    if (this.defaultSmtpStartTlsOption != null) {
-      config.setStarttls(this.defaultSmtpStartTlsOption);
+    if (this.providerConfig.defaultSmtpStartTlsOption != null) {
+      config.setStarttls(this.providerConfig.defaultSmtpStartTlsOption);
     }
-    if (this.defaultSmtpUserName != null) {
-      config.setUsername(this.defaultSmtpUserName);
+    if (this.providerConfig.defaultSmtpUserName != null) {
+      config.setUsername(this.providerConfig.defaultSmtpUserName);
     }
-    if (this.defaultSmtpUserPassword != null) {
-      config.setPassword(this.defaultSmtpUserPassword);
+    if (this.providerConfig.defaultSmtpUserPassword != null) {
+      config.setPassword(this.providerConfig.defaultSmtpUserPassword);
     }
     // MailClient.createShared(vertx, config, "poolName");
     return config;
@@ -248,9 +254,9 @@ public class MailServiceSmtpProvider {
 
   public MailMessage createMailMessage() {
     return new MailMessage()
-      .addHeader(ERRORS_TO_MAIL_HEADER, SysAdmin.ADMIN_USER.getEmail())
-      .addHeader(RETURN_PATH_MAIL_HEADER, BOUNCE_EMAIL)
-      .addHeader(X_REPORT_ABUSE_TO_MAIL_HEADER, ABUSE_EMAIL)
+      .setBounceAddress(BOUNCE_EMAIL.getAddress())
+      .addHeader(ERRORS_TO_MAIL_HEADER, this.getAdminInternetAddress().getAddress())
+      .addHeader(X_REPORT_ABUSE_TO_MAIL_HEADER, ABUSE_EMAIL.getAddress())
       .addHeader(X_MAILER, "combostrap.com");
     /**
      * Example
@@ -260,20 +266,28 @@ public class MailServiceSmtpProvider {
 
   }
 
+  private BMailInternetAddress getAdminInternetAddress() {
+    return this.providerConfig.adminAddress;
+  }
 
 
-
-  public static class config {
+  public static class MailServiceSmtpProviderConfig {
     private final Vertx vertx;
-    private String dkimSelector = DEFAULT_DKIM_SELECTOR;
-    private String dkimPrivateKey;
-    private Integer defaultSmtpPort;
-    private String defaultSmtpHostname;
-    private StartTLSOptions defaultSmtpStartTlsOption;
-    private String defaultSmtpUserName;
-    private String defaultSmtpUserPassword;
+    public BMailInternetAddress adminAddress;
+    String dkimSelector = DEFAULT_DKIM_SELECTOR;
+    String dkimPrivateKey;
+    /**
+     * the port of the smtp service
+     * It's used primarily to set the port of the wiser smtp service
+     * during test
+     */
+    Integer defaultSmtpPort;
+    String defaultSmtpHostname;
+    StartTLSOptions defaultSmtpStartTlsOption;
+    String defaultSmtpUserName;
+    String defaultSmtpUserPassword;
 
-    public config(Vertx vertx) {
+    public MailServiceSmtpProviderConfig(Vertx vertx) {
       this.vertx = vertx;
     }
 
@@ -283,14 +297,7 @@ public class MailServiceSmtpProvider {
         throw new NoSecretException("A Dkim private key is mandatory to sign email. You can set set it in the conf with the attribute (" + MAIL_DKIM_PRIVATE + ")");
       }
 
-      MailServiceSmtpProvider mailPoolService = new MailServiceSmtpProvider(vertx);
-      mailPoolService.dkimPrivateKey = this.dkimPrivateKey;
-      mailPoolService.dkimSelector = this.dkimSelector;
-      mailPoolService.defaultSmtpPort = this.defaultSmtpPort;
-      mailPoolService.defaultSmtpHostname = this.defaultSmtpHostname;
-      mailPoolService.defaultSmtpStartTlsOption = this.defaultSmtpStartTlsOption;
-      mailPoolService.defaultSmtpUserName = this.defaultSmtpUserName;
-      mailPoolService.defaultSmtpUserPassword = this.defaultSmtpUserPassword;
+      MailServiceSmtpProvider mailPoolService = new MailServiceSmtpProvider(this);
       smtpPoolMap.put(vertx, mailPoolService);
       return mailPoolService;
 
@@ -300,7 +307,7 @@ public class MailServiceSmtpProvider {
      * @param dkimSelector - the dkim selector used to select the public key (test in test and combo in production)
      * @return the config for chaining
      */
-    public config setDkimSelector(String dkimSelector) {
+    public MailServiceSmtpProviderConfig setDkimSelector(String dkimSelector) {
       if (dkimSelector == null) {
         throw new InternalException("The dkim selector cannot be null");
       }
@@ -308,41 +315,12 @@ public class MailServiceSmtpProvider {
       return this;
     }
 
-    public config setDkimPrivateKey(String dkimPrivateKey) {
+    public MailServiceSmtpProviderConfig setDkimPrivateKey(String dkimPrivateKey) {
       this.dkimPrivateKey = dkimPrivateKey;
       return this;
     }
 
-    /**
-     * @param localSmtpPort - the port of the local smtp service
-     * @return the config for chaining
-     * It's used primarily to set the port of the wiser smtp service
-     * during test
-     */
-    public config setDefaultSmtpPort(Integer localSmtpPort) {
-      this.defaultSmtpPort = localSmtpPort;
-      return this;
-    }
 
-    public config setDefaultSmtpHostname(String hostname) {
-      this.defaultSmtpHostname = hostname;
-      return this;
-    }
-
-    public config setDefaultStartTls(StartTLSOptions startTLSOptions) {
-      this.defaultSmtpStartTlsOption = startTLSOptions;
-      return this;
-    }
-
-    public config setDefaultSmtpUserName(String username) {
-      this.defaultSmtpUserName = username;
-      return this;
-    }
-
-    public config setDefaultSmtpPassword(String password) {
-      this.defaultSmtpUserPassword = password;
-      return this;
-    }
 
   }
 
