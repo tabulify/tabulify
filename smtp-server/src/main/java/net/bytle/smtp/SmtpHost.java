@@ -1,11 +1,11 @@
 package net.bytle.smtp;
 
 import jakarta.mail.internet.AddressException;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.smtp.command.SmtpHeloCommandHandler;
 import net.bytle.smtp.command.SmtpQuitCommandHandler;
 import net.bytle.smtp.command.SmtpRcptCommandHandler;
+import net.bytle.vertx.ConfigIllegalException;
 
 /**
  * A class that represents a domain with its data (hostname, postmaster)
@@ -37,13 +37,13 @@ public class SmtpHost {
    */
   private final SmtpPostMaster postmaster;
 
-  public SmtpHost(conf conf) throws IllegalConfiguration {
+  public SmtpHost(conf conf) throws ConfigIllegalException {
     this.hostedHostName = conf.hostName.toLowerCase();
     this.domain = conf.hostedDomainName;
     try {
       postmaster = SmtpPostMaster.create(this, conf.postmaster);
     } catch (AddressException e) {
-      throw new IllegalConfiguration("The postmaster email configuration for the host (" + this.hostedHostName + ") has a email value (" + conf.postmaster + ") that is not valid", e);
+      throw new ConfigIllegalException("The postmaster email configuration for the host (" + this.hostedHostName + ") has a email value (" + conf.postmaster + ") that is not valid", e);
     }
   }
 
@@ -89,7 +89,7 @@ public class SmtpHost {
       return this;
     }
 
-    public SmtpHost build() throws IllegalConfiguration {
+    public SmtpHost build() throws ConfigIllegalException {
       return new SmtpHost(this);
     }
 

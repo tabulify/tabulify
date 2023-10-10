@@ -1,46 +1,48 @@
 package net.bytle.monitor;
 
-import net.bytle.dns.DnsResolver;
-import net.bytle.dns.DnsUtil;
-import org.xbill.DNS.*;
-import org.xbill.DNS.lookup.LookupResult;
-import org.xbill.DNS.lookup.LookupSession;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.ConfigManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.xbill.DNS.TextParseException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class MonitorMain {
+public class MonitorMain extends AbstractVerticle {
 
+  public static Logger LOGGER = LogManager.getLogger(MonitorMain.class);
 
-  public static void main(String[] args) throws TextParseException, ExecutionException, InterruptedException {
+  public static void main(String[] args) throws TextParseException, ExecutionException, InterruptedException, ConfigIllegalException {
 
-    DnsDomainData combostrap = DnsDomainData.create("combostrap.com");
-
-    LookupSession lookupSession = LookupSession.builder()
-      .resolver(DnsResolver.getLocal())
-      .cache(new Cache())
-      .build();
-    List<DnsDomainData> domains = new ArrayList<>();
-    domains.add(combostrap);
-    for (DnsDomainData domain : domains) {
-
-      LookupResult lookupResult = lookupSession.lookupAsync(domain.getName(), Type.TXT)
-        .toCompletableFuture()
-        .get();
-      for(Record record: lookupResult.getRecords()){
-        TXTRecord txtRecord = ((TXTRecord) record);
-        System.out.println(DnsUtil.getStringFromTxtRecord(txtRecord));
-      }
-//      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
-//      Name name = dnsDomain.getDmarcName();
-//      TXTRecord dmarcTextRecord = dnsDomain.getDmarcRecord();
-//      Assert.assertNotNull("The dmarc record for the name (" + name + ") was not found", dmarcTextRecord);
-//      String actualDmarcStringValue = DnsUtil.getStringFromTxtRecord(dmarcTextRecord);
-//      Assert.assertEquals("The dmarc record for the name (" + name + ") should be good", expectedDMarcValue, actualDmarcStringValue);
-
-    }
+    LOGGER.info("Monitor main started");
+    Vertx vertx = Vertx.vertx();
+    DeploymentOptions options = new DeploymentOptions().setWorker(true);
+    vertx.deployVerticle(MonitorMain.class, options);
 
   }
 
+  @Override
+  public void start(Promise<Void> startPromise) throws Exception {
+
+    LOGGER.info("Monitor promise starting");
+    ConfigManager.config("monitor", vertx, JsonObject.of())
+      .build()
+      .getConfigAccessor()
+      .onFailure(startPromise::fail)
+      .onSuccess(configAccessor -> {
+        try {
+          LOGGER.info("Monitor api token check starting");
+          MonitorApiToken.create(vertx, configAccessor)
+            .check();
+        } catch (ConfigIllegalException e) {
+          startPromise.fail(e);
+        }
+      });
+
+  }
 }

@@ -5,11 +5,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import net.bytle.exception.CastException;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.ConfigIllegalException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class SmtpServer {
   // Session Purge
   Integer DEFAULT_IDLE_TIMEOUT_SECOND = 5 * 60;
 
-  public SmtpServer(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws IllegalConfiguration {
+  public SmtpServer(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws ConfigIllegalException {
 
 
     idleTimeoutSecond = configAccessor.getInteger("idle.session.timeout.second", DEFAULT_IDLE_TIMEOUT_SECOND);
@@ -119,25 +119,25 @@ public class SmtpServer {
     String smtpHostKey = "host";
     String host = configAccessor.getString(smtpHostKey);
     if (host == null) {
-      throw new IllegalConfiguration("The host configuration (" + smtpHostKey + ") is mandatory and was not found");
+      throw new ConfigIllegalException("The host configuration (" + smtpHostKey + ") is mandatory and was not found");
     }
     String hostedDomainsConfKey = "hosts";
     JsonObject hostedDomainsConfiguration = configAccessor.getJsonObject(hostedDomainsConfKey);
     if (hostedDomainsConfiguration == null) {
-      throw new IllegalConfiguration("The hosted domains configuration (" + hostedDomainsConfKey + ") is mandatory and was not found");
+      throw new ConfigIllegalException("The hosted domains configuration (" + hostedDomainsConfKey + ") is mandatory and was not found");
     }
     for (String virtualHostnameString : hostedDomainsConfiguration.getMap().keySet()) {
       SmtpHost.conf smtpVirtualHostConf = SmtpHost.createOf(virtualHostnameString);
       JsonObject hostedDomainConfigurationData = hostedDomainsConfiguration.getJsonObject(virtualHostnameString);
       String domainName = hostedDomainConfigurationData.getString("domain");
       if (domainName == null) {
-        throw new IllegalConfiguration("The domain for the hostname (" + virtualHostnameString + ") is mandatory");
+        throw new ConfigIllegalException("The domain for the hostname (" + virtualHostnameString + ") is mandatory");
       }
       SmtpDomain smtpDomain = this.getOrCreateDomainByName(domainName);
       smtpVirtualHostConf.setHostedDomain(smtpDomain);
       String postMasterEmailConf = hostedDomainConfigurationData.getString("postmaster");
       if (postMasterEmailConf == null) {
-        throw new IllegalConfiguration("The postmaster email for the domain (" + virtualHostnameString + ") is mandatory");
+        throw new ConfigIllegalException("The postmaster email for the domain (" + virtualHostnameString + ") is mandatory");
       }
       smtpVirtualHostConf.setPostmasterEmail(postMasterEmailConf);
 
@@ -148,7 +148,7 @@ public class SmtpServer {
     }
     this.defaultHostedHost = this.hostedDomains.get(host);
     if (this.defaultHostedHost == null) {
-      throw new IllegalConfiguration("The main host (" + host + ") was not found in the hosts. It is mandatory");
+      throw new ConfigIllegalException("The main host (" + host + ") was not found in the hosts. It is mandatory");
     }
 
     /**
@@ -157,14 +157,14 @@ public class SmtpServer {
     String servicesConfKey = "services";
     JsonObject servicesConfiguration = configAccessor.getJsonObject(servicesConfKey);
     if (servicesConfiguration == null) {
-      throw new IllegalConfiguration("The service configuration (" + servicesConfKey + ") is mandatory and was not found");
+      throw new ConfigIllegalException("The service configuration (" + servicesConfKey + ") is mandatory and was not found");
     }
     for (String serviceKey : servicesConfiguration.getMap().keySet()) {
       Integer servicePort;
       try {
         servicePort = Casts.cast(serviceKey, Integer.class);
       } catch (CastException e) {
-        throw new IllegalConfiguration("The key name of a service should be a port number. " + serviceKey + " is not an integer", e);
+        throw new ConfigIllegalException("The key name of a service should be a port number. " + serviceKey + " is not an integer", e);
       }
       SmtpService smtpService = new SmtpService(this, servicePort, configAccessor.getSubConfigAccessor(servicesConfKey, serviceKey));
       this.services.add(smtpService);
@@ -186,13 +186,13 @@ public class SmtpServer {
     String usersConfKey = "users";
     JsonObject usersConfiguration = configAccessor.getJsonObject(usersConfKey);
     if (usersConfiguration == null) {
-      throw new IllegalConfiguration("The users configuration (" + usersConfKey + ") is mandatory and was not found");
+      throw new ConfigIllegalException("The users configuration (" + usersConfKey + ") is mandatory and was not found");
     }
     for (String domain : usersConfiguration.getMap().keySet()) {
 
       SmtpDomain smtpDomain = this.smtpDomains.get(domain.toLowerCase());
       if (smtpDomain == null) {
-        throw new IllegalConfiguration("The users domain  (" + domain + ") was not found in the hosts");
+        throw new ConfigIllegalException("The users domain  (" + domain + ") was not found in the hosts");
       }
       JsonObject users = usersConfiguration.getJsonObject(domain);
       for (String userName : users.getMap().keySet()) {
@@ -205,7 +205,7 @@ public class SmtpServer {
         } else {
           smtpMailbox = this.mailboxes.get(mailBoxString.toLowerCase());
           if (smtpMailbox == null) {
-            throw new IllegalConfiguration("The mailbox (" + mailBoxString + ") of the user (" + userName + ")does not exist");
+            throw new ConfigIllegalException("The mailbox (" + mailBoxString + ") of the user (" + userName + ")does not exist");
           }
         }
         String password = userConfigAccessor.getString("password");
@@ -229,7 +229,7 @@ public class SmtpServer {
     return smtpDomain;
   }
 
-  public static SmtpServer create(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws IllegalConfiguration {
+  public static SmtpServer create(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws ConfigIllegalException {
     return new SmtpServer(smtpVerticle, configAccessor);
   }
 

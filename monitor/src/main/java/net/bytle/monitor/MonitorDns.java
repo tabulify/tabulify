@@ -1,12 +1,9 @@
 package net.bytle.monitor;
 
-import net.bytle.dns.DnsAddress;
-import net.bytle.dns.DnsDomain;
-import net.bytle.dns.DnsName;
-import net.bytle.dns.DnsUtil;
-import org.xbill.DNS.Name;
-import org.xbill.DNS.PTRRecord;
-import org.xbill.DNS.TXTRecord;
+import net.bytle.dns.*;
+import org.xbill.DNS.*;
+import org.xbill.DNS.lookup.LookupResult;
+import org.xbill.DNS.lookup.LookupSession;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -20,7 +17,7 @@ import java.util.concurrent.ExecutionException;
  * To finish it, see
  * <a href="https://support.google.com/mail/answer/81126">...</a>
  */
-public class DnsOwnDomains {
+public class MonitorDns {
 
   public static final String DATACADAMIA_COM = "datacadamia.com";
   private final String COMBOSTRAP_DOT_COM = "combostrap.com";
@@ -41,6 +38,10 @@ public class DnsOwnDomains {
   public static final String BEAU_SERVER_IPV4 = "192.99.55.226";
 
   public static final String BEAU_SERVER_IPV6 = "2607:5300:201:3100::85b";
+
+  public static MonitorDns create() {
+    return new MonitorDns();
+  }
 
 
   /**
@@ -74,8 +75,6 @@ public class DnsOwnDomains {
   }
 
 
-
-
   public void checkSpfTest() throws IOException {
 
     /**
@@ -106,7 +105,6 @@ public class DnsOwnDomains {
 //    Assert.assertEquals("All spf records where found", foundSPFRecordsByDomain.size(), DOMAINS.size());
 
   }
-
 
 
   /**
@@ -145,7 +143,7 @@ public class DnsOwnDomains {
       DnsDomain dnsDomain = DnsDomain.createFrom(domain);
       TXTRecord domainDkimTextRecord = dnsDomain.getDkimRecord(dkimSelector);
       //Assert.assertNotNull("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") was not found", domainDkimTextRecord);
-      if(checkValue) {
+      if (checkValue) {
         String actualDkimStringValue = DnsUtil.getStringFromTxtRecord(domainDkimTextRecord);
         //Assert.assertEquals("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") should be good", expectedDkimValue, actualDkimStringValue);
       }
@@ -154,6 +152,30 @@ public class DnsOwnDomains {
   }
 
 
+  public void check() throws ExecutionException, InterruptedException, TextParseException {
+    DnsDomainData combostrap = DnsDomainData.create("combostrap.com");
 
+    LookupSession lookupSession = LookupSession.builder()
+      .resolver(DnsResolver.getLocal())
+      .cache(new Cache())
+      .build();
+    List<DnsDomainData> domains = new ArrayList<>();
+    domains.add(combostrap);
+    for (DnsDomainData domain : domains) {
 
+      LookupResult lookupResult = lookupSession.lookupAsync(domain.getName(), Type.TXT)
+        .toCompletableFuture()
+        .get();
+      for (Record record : lookupResult.getRecords()) {
+        TXTRecord txtRecord = ((TXTRecord) record);
+        System.out.println(DnsUtil.getStringFromTxtRecord(txtRecord));
+      }
+//      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
+//      Name name = dnsDomain.getDmarcName();
+//      TXTRecord dmarcTextRecord = dnsDomain.getDmarcRecord();
+//      Assert.assertNotNull("The dmarc record for the name (" + name + ") was not found", dmarcTextRecord);
+//      String actualDmarcStringValue = DnsUtil.getStringFromTxtRecord(dmarcTextRecord);
+//      Assert.assertEquals("The dmarc record for the name (" + name + ") should be good", expectedDMarcValue, actualDmarcStringValue);
+    }
+  }
 }

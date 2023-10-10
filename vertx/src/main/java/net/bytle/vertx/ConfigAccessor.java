@@ -1,7 +1,6 @@
 package net.bytle.vertx;
 
 import io.vertx.core.json.JsonObject;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 
 import java.util.ArrayList;
@@ -26,7 +25,7 @@ public class ConfigAccessor {
    * @param jsonObject           - the data for the root or null
    * @param parentConfigAccessor - the parent or null
    */
-  private ConfigAccessor(List<String> keys, JsonObject jsonObject, ConfigAccessor parentConfigAccessor) throws IllegalConfiguration {
+  private ConfigAccessor(List<String> keys, JsonObject jsonObject, ConfigAccessor parentConfigAccessor) throws ConfigIllegalException {
     this.parentConfigAccessor = parentConfigAccessor;
     if (keys.size() == 0) {
       throw new InternalException("Internal Error: We should have at least one key");
@@ -38,7 +37,7 @@ public class ConfigAccessor {
         actualData = actualData.getJsonObject(key);
       }
       if (actualData == null) {
-        throw new IllegalConfiguration("The sub keys (" + String.join(",", keys) + ") has no data");
+        throw new ConfigIllegalException("The sub keys (" + String.join(",", keys) + ") has no data");
       }
       this.jsonObject = actualData;
     } else {
@@ -54,12 +53,12 @@ public class ConfigAccessor {
     return configAccessor;
   }
 
-  public static ConfigAccessor init(String key, JsonObject jsonObject) throws IllegalConfiguration {
+  public static ConfigAccessor init(String key, JsonObject jsonObject) throws ConfigIllegalException {
     configAccessor = new ConfigAccessor(Collections.singletonList(key), jsonObject, null);
     return configAccessor;
   }
 
-  public static ConfigAccessor empty() throws IllegalConfiguration {
+  public static ConfigAccessor empty() throws ConfigIllegalException {
     return new ConfigAccessor(Collections.singletonList("empty"), new JsonObject(), null);
   }
 
@@ -139,7 +138,7 @@ public class ConfigAccessor {
     return this.jsonObject.getJsonObject(key);
   }
 
-  public ConfigAccessor getSubConfigAccessor(String key, String... keys) throws IllegalConfiguration {
+  public ConfigAccessor getSubConfigAccessor(String key, String... keys) throws ConfigIllegalException {
     List<String> finalKeys = new ArrayList<>();
     finalKeys.add(key);
     if (keys != null) {
@@ -154,5 +153,14 @@ public class ConfigAccessor {
       return value;
     }
     return this.jsonObject.getLong(key, defaultValue);
+  }
+
+  /**
+   *
+   * @param confName - the configuration name
+   * @return the possible value for the variable
+   */
+  public String getPossibleVariableNames(String confName) {
+    return confName+" (Env: "+getEnvName(confName)+")";
   }
 }

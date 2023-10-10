@@ -7,7 +7,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
@@ -124,7 +123,7 @@ public class ConfigManager {
         ConfigAccessor result;
         try {
           result = ConfigAccessor.init(this.configName, jsonObject);
-        } catch (IllegalConfiguration e) {
+        } catch (ConfigIllegalException e) {
           return Future.failedFuture(e);
         }
         return Future.succeededFuture(result);
