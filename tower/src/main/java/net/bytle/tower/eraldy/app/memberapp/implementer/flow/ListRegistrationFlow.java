@@ -189,7 +189,7 @@ public class ListRegistrationFlow {
         String subscriberAddressWithName = UsersUtil.getEmailAddressWithName(subscriber);
 
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(listOwnerUser.getEmail());
+          .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());
 
         MailMessage registrationEmail = mailServiceSmtpProvider
           .createVertxMailMessage()

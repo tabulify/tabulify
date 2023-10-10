@@ -14,28 +14,26 @@ import java.util.Date;
 /**
  * This class is the socket connection and authentication
  */
-public class BMailTransportConnection implements AutoCloseable {
-  public static final String SMTP_PROTOCOL = "smtp";
-  /**
-   * You go a {@link com.sun.mail.smtp.SMTPSSLTransport}
-   */
-  public static final String SMTPS_PROTOCOL = "smtps";
+public class BMailSmtpConnection implements AutoCloseable {
+
+
+
   private final SMTPTransport transport;
 
 
-  public BMailTransportConnection(BMailSmtpClient bMailSmtpClient) throws MessagingException {
+  public BMailSmtpConnection(BMailSmtpClient bMailSmtpClient) throws MessagingException {
 
     /**
-     * Session is just configuration object
+     * Session is just a configuration object
      */
     Session smtpSession = bMailSmtpClient.getSession();
     /**
      * Other transport protocol may be implemented
      */
     if (!bMailSmtpClient.isSSL()) {
-      transport = (SMTPTransport) smtpSession.getTransport(SMTP_PROTOCOL);
+      transport = (SMTPTransport) smtpSession.getTransport(BMailSmtpProtocol.SMTP.toString());
     } else {
-      transport = (SMTPTransport) smtpSession.getTransport(SMTPS_PROTOCOL);
+      transport = (SMTPTransport) smtpSession.getTransport(BMailSmtpProtocol.SMTPS.toString());
     }
     transport.addTransportListener(BMailTransportListener.create());
     /**
@@ -45,7 +43,7 @@ public class BMailTransportConnection implements AutoCloseable {
      * <p>
      * t.connect("host", 25, "user", "pass");
      * <p>
-     * EHLO and AUTH
+     * EHLO and AUTH SMTP command are performed
      */
     transport.connect();
 

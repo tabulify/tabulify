@@ -178,7 +178,7 @@ public class ContextFailureHandler implements Handler<RoutingContext> {
         .setSubject("Tower: An error has occurred. " + thrown.getMessage())
         .setText(stackTraceAsString);
       mailServiceSmtpProvider
-        .getTransactionalMailClientForUser(sysUser.getEmail())
+        .getVertxMailClientForSenderWithSigning(sysUser.getEmail())
         .sendMail(mailMessage)
         .onFailure(t -> CONTEXT_FAILURE_LOGGER.error("Error while sending the error email. Message:" + t.getMessage(), t));
     }

@@ -1,7 +1,7 @@
 package net.bytle.tower.util;
 
+import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.MailSmtpInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
@@ -39,7 +39,7 @@ public class Log4jConfigure {
    * such as smtp
    * Based on <a href="https://logging.apache.org/log4j/2.x/manual/customconfig.html#programmatically-modifying-the-current-configuration-after-initi">...</a>
    */
-  public static void configureOnVertxInit(MailSmtpInfo mailSmtpInfo) {
+  public static void configureOnVertxInit(BMailSmtpConnectionParameters mailSmtpParameterFromConfig) {
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
@@ -47,7 +47,7 @@ public class Log4jConfigure {
     /**
      * All the loggers can hook below
      */
-    Log4jRootLogger.configureOnAppInit(config, mailSmtpInfo);
+    Log4jRootLogger.configureOnAppInit(config, mailSmtpParameterFromConfig);
 
     /**
      * Update

@@ -2,10 +2,7 @@ package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.mail.*;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
-import net.bytle.email.BMailMimeMessage;
-import net.bytle.email.BMailMimeMessageHeader;
+import net.bytle.email.*;
 import net.bytle.exception.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.vertx.ext.mail.StartTLSOptions.OPTIONAL;
+import static io.vertx.ext.mail.StartTLSOptions.REQUIRED;
 import static net.bytle.email.BMailMimeMessageHeader.X_REPORT_ABUSE_TO;
 
 /**
@@ -103,7 +102,7 @@ public class MailServiceSmtpProvider {
     return mailPool;
   }
 
-  public static MailServiceSmtpProviderConfig config(Vertx vertx, ConfigAccessor jsonConfig, MailSmtpInfo mailSmtpInfo) {
+  public static MailServiceSmtpProviderConfig config(Vertx vertx, ConfigAccessor jsonConfig, BMailSmtpConnectionParameters mailSmtpConfig) {
 
     MailServiceSmtpProviderConfig MailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(vertx);
 
@@ -126,37 +125,37 @@ public class MailServiceSmtpProvider {
     }
 
 
-    Integer port = mailSmtpInfo.getPort();
+    Integer port = mailSmtpConfig.getPort();
     if (port != null) {
       MailServiceSmtpProviderConfig.defaultSmtpPort = port;
       LOGGER.info("Mail: The mail default port key was set with the value (" + port + ").");
     }
 
-    String hostname = mailSmtpInfo.getHost();
+    String hostname = mailSmtpConfig.getHost();
     if (hostname != null) {
       MailServiceSmtpProviderConfig.defaultSmtpHostname = hostname;
       LOGGER.info("Mail: The mail default hostname was set with the value (" + hostname + ").");
     }
 
-    StartTLSOptions startTls = mailSmtpInfo.getStartTlsOption();
+    BMailStartTls startTls = mailSmtpConfig.getStartTlsOption();
     if (startTls != null) {
       MailServiceSmtpProviderConfig.defaultSmtpStartTlsOption = startTls;
       LOGGER.info("Mail: The mail default startTLS was set with the value (" + startTls.toString().toLowerCase() + ").");
     }
 
-    String username = mailSmtpInfo.getUserName();
+    String username = mailSmtpConfig.getUserName();
     if (username != null) {
       MailServiceSmtpProviderConfig.defaultSmtpUserName = username;
       LOGGER.info("Mail: The mail default username was set with the value (" + username + ").");
     }
 
-    String password = mailSmtpInfo.getPassword();
+    String password = mailSmtpConfig.getPassword();
     if (password != null) {
       MailServiceSmtpProviderConfig.defaultSmtpUserPassword = password;
       LOGGER.info("Mail: The mail password was set (xxxxx).");
     }
 
-    BMailInternetAddress adminAddress = mailSmtpInfo.getAdminEmail();
+    BMailInternetAddress adminAddress = mailSmtpConfig.getAdminEmail();
     if(adminAddress!=null){
       MailServiceSmtpProviderConfig.adminAddress = adminAddress;
       LOGGER.info("Mail: The admin email was set to ("+adminAddress+')');
@@ -167,22 +166,14 @@ public class MailServiceSmtpProvider {
   }
 
 
-  public MailClient getTransactionalMailClientForUser(String email) {
+  public MailClient getVertxMailClientForSenderWithSigning(String senderDomain) {
 
-
-    BMailInternetAddress bMailAddress;
-    try {
-      bMailAddress = BMailInternetAddress.of(email);
-    } catch (AddressException e) {
-      throw new InternalException("The user address is not valid (" + email + ")." + e.getMessage(), e);
-    }
-    String senderDomain = bMailAddress.getDomain();
 
     if (useWiserAsTransactionalClient) {
       if (this.wiserMailClient != null) {
         return this.wiserMailClient;
       }
-      MailConfig mailConfig = getMailConfig(senderDomain);
+      MailConfig mailConfig = getMailConfigWithDkim(senderDomain);
       /**
        * Same as {@link WiserConfiguration#WISER_PORT}
        */
@@ -196,14 +187,14 @@ public class MailServiceSmtpProvider {
       return mailClient;
     }
 
-    MailConfig config = getMailConfig(senderDomain);
+    MailConfig config = getMailConfigWithDkim(senderDomain);
     mailClient = MailClient.create(this.providerConfig.vertx, config);
     transactionalMailClientsMap.put(senderDomain, mailClient);
     return mailClient;
 
   }
 
-  private MailConfig getMailConfig(String senderDomain) {
+  private MailConfig getMailConfigWithDkim(String senderDomain) {
     // https://github.com/vert-x3/vertx-mail-client/blob/master/src/test/java/io/vertx/ext/mail/MailWithDKIMSignTest.java
     // https://github.com/gaol/vertx-mail-client/wiki/DKIM-Implementation
     DKIMSignOptions dkimSignOptions = new DKIMSignOptions()
@@ -228,7 +219,21 @@ public class MailServiceSmtpProvider {
       config.setPort(this.providerConfig.defaultSmtpPort);
     }
     if (this.providerConfig.defaultSmtpStartTlsOption != null) {
-      config.setStarttls(this.providerConfig.defaultSmtpStartTlsOption);
+      StartTLSOptions mailClientStartTlsValue;
+      switch (this.providerConfig.defaultSmtpStartTlsOption){
+        case NONE:
+          mailClientStartTlsValue = StartTLSOptions.DISABLED;
+          break;
+        case ENABLE:
+          mailClientStartTlsValue = OPTIONAL;
+          break;
+        case REQUIRE:
+          mailClientStartTlsValue = REQUIRED;
+          break;
+        default:
+          throw new InternalException("Should not happen");
+      }
+      config.setStarttls(mailClientStartTlsValue);
     }
     if (this.providerConfig.defaultSmtpUserName != null) {
       config.setUsername(this.providerConfig.defaultSmtpUserName);
@@ -266,6 +271,13 @@ public class MailServiceSmtpProvider {
       .addHeader(X_REPORT_ABUSE_TO, ABUSE_EMAIL.getAddress());
   }
 
+  public BMailSmtpClient getBMailClient() {
+
+    //return BMailSmtpClient.create();
+    throw new RuntimeException("Not yet");
+
+  }
+
 
   public static class MailServiceSmtpProviderConfig {
     private final Vertx vertx;
@@ -279,7 +291,7 @@ public class MailServiceSmtpProvider {
      */
     Integer defaultSmtpPort;
     String defaultSmtpHostname;
-    StartTLSOptions defaultSmtpStartTlsOption;
+    BMailStartTls defaultSmtpStartTlsOption;
     String defaultSmtpUserName;
     String defaultSmtpUserPassword;
 

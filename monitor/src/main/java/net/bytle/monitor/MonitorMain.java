@@ -2,10 +2,12 @@ package net.bytle.monitor;
 
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
+import net.bytle.email.BMailMimeMessage;
+import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
 import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.MailSmtpInfo;
+import net.bytle.vertx.MailSmtpParameterFromConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +25,7 @@ public class MonitorMain extends AbstractVerticle {
   }
 
   @Override
-  public void start(Promise<Void> startPromise) throws Exception {
+  public void start(Promise<Void> startPromise) {
 
     LOGGER.info("Monitor promise starting");
     ConfigManager.config("monitor", vertx, JsonObject.of())
@@ -33,7 +35,7 @@ public class MonitorMain extends AbstractVerticle {
       .onSuccess(configAccessor -> {
         try {
           LOGGER.info("Monitor api token check starting");
-          MailSmtpInfo smtpInfo = MailSmtpInfo.createFromConfigAccessor(configAccessor);
+          BMailSmtpConnectionParameters smtpInfo = MailSmtpParameterFromConfig.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
 
           Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
@@ -44,13 +46,13 @@ public class MonitorMain extends AbstractVerticle {
             .onSuccess(monitor -> {
               String emailBody = monitor.print();
               String mail = "nico@bytle.net";
-//              MailMessage email = smtpMailProvider.createBMailMessage()
-//                .setTo(mail)
-//                .setFrom("monitor@bytle.net")
-//                .setSubject("Monitor")
-//                .setText(emailBody);
-//              smtpMailProvider.getTransactionalMailClientForUser(mail)
-//                  .sendMail(email);
+              BMailMimeMessage email = smtpMailProvider.createBMailMessage()
+                .setTo(mail)
+                .setFrom("monitor@bytle.net")
+                .setSubject("Monitor")
+                .setBodyPlainText(emailBody);
+              smtpMailProvider.getBMailClient();
+
 
 
               vertx.close();

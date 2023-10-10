@@ -3,12 +3,13 @@ package net.bytle.tower.util;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.MailSmtpInfo;
+import net.bytle.vertx.MailSmtpParameterFromConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +44,8 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     jdbcPools.init();
 
     INIT_LOGGER.info("Add the SMTP Logger");
-    MailSmtpInfo mailSmtpInfo = MailSmtpInfo.createFromConfigAccessor(configAccessor);
-    Log4jConfigure.configureOnVertxInit(mailSmtpInfo);
+    BMailSmtpConnectionParameters mailSmtpParameterFromConfig = MailSmtpParameterFromConfig.createFromConfigAccessor(configAccessor);
+    Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);
 
     INIT_LOGGER.info("Start Instantiation of URL Data Encryption");
     JsonToken
@@ -68,7 +69,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
 
     INIT_LOGGER.info("Start Instantiation of Email Engine");
     MailServiceSmtpProvider
-      .config(vertx, configAccessor, mailSmtpInfo)
+      .config(vertx, configAccessor, mailSmtpParameterFromConfig)
       .create();
 
     INIT_LOGGER.info("Start instantiation of JWT authentication");

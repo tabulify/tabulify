@@ -3,7 +3,7 @@ package net.bytle.smtp.command;
 import io.vertx.core.net.NetSocket;
 import net.bytle.smtp.*;
 
-import static net.bytle.email.LoggerEmail.LOGGER;
+import static net.bytle.email.BMailLogger.LOGGER;
 
 /**
  * This handler implements:

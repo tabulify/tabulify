@@ -151,7 +151,7 @@ public class RegistrationComboprivateapiImpl implements RegistrationComboprivate
           .setText(title)
           .setHtml("<html><body>" + title + "</body></html>");
         mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(listOwnerUser.getEmail())
+          .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail())
           .sendMail(ownerFeedbackEmail)
           .onFailure(t -> LOGGER.error("Error while sending the list owner registration feedback email", t));
 

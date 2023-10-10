@@ -9,6 +9,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
+import static net.bytle.email.BMailSmtpConnectionAttribute.PROTOCOL;
+
 /**
  * Adapted from the sample smtpsend.java
  * <p>
@@ -21,16 +23,15 @@ import java.util.Properties;
  */
 public class BMailSmtpClient {
 
-  private static final String SMTP_PROTOCOL = "smtp";
-  private static final String SMTPS_PROTOCOL = "smtps";
-  private static final String MAIL_PROPERTY_PREFIX = "mail";
-  private static final String MAIL_SMTP_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + SMTP_PROTOCOL;
 
-  private static final String MAIL_SMTPS_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + SMTPS_PROTOCOL;
+  private static final String MAIL_PROPERTY_PREFIX = "mail";
+  private static final String MAIL_SMTP_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + BMailSmtpProtocol.SMTP;
+
+  private static final String MAIL_SMTPS_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + BMailSmtpProtocol.SMTPS;
   private final Session smtpSession;
   private final BMailSmtpClient.config config;
 
-  private BMailInternetAddress bounceAddress;
+  private BMailInternetAddress senderAddress;
 
 
   public BMailSmtpClient(config config) {
@@ -103,11 +104,11 @@ public class BMailSmtpClient {
     if (this.isSSL()) {
 
       // mail.transport.protocol specifies the default message transport protocol
-      smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", SMTPS_PROTOCOL);
+      smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", BMailSmtpProtocol.SMTPS.toString());
 
       smtpProtocolConfigurationPrefix = MAIL_SMTPS_PROPERTY_PREFIX;
       /**
-       * The {@link BMailTransportConnection} use the {@link Transport#send(Message)} that
+       * The {@link BMailSmtpConnection} use the {@link Transport#send(Message)} that
        * will use the default transport protocol, which remains "smtp" ie {@link com.sun.mail.smtp.SMTPTransport}
        * To enable SMTP connections over SSL, set the "mail.smtp.ssl.enable" property to "true".
        * It will use the {@link com.sun.mail.smtp.SMTPSSLTransport}
@@ -116,7 +117,7 @@ public class BMailSmtpClient {
 
     } else {
 
-      smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", SMTP_PROTOCOL);
+      smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", BMailSmtpProtocol.SMTP.toString());
       smtpProtocolConfigurationPrefix = MAIL_SMTP_PROPERTY_PREFIX;
 
     }
@@ -126,15 +127,15 @@ public class BMailSmtpClient {
     // smtpServerProps.put(smtpProtocolConfigurationPrefix +".writetimeout", "");
     smtpServerProps.put(smtpProtocolConfigurationPrefix + ".quitwait", "false");
 
-    smtpServerProps.put(smtpProtocolConfigurationPrefix + ".host", config.smtpHost);
-    smtpServerProps.put(smtpProtocolConfigurationPrefix + ".port", config.port);
+    smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.HOST, config.smtpHost);
+    smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.PORT, config.port);
 
     if (config.auth) {
-      smtpServerProps.put(smtpProtocolConfigurationPrefix + ".auth", true);
+      smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.AUTH, true);
     }
 
     if (config.username != null) {
-      smtpServerProps.put(smtpProtocolConfigurationPrefix + ".user", config.username);
+      smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.USER, config.username);
     }
 
     switch (config.requireStartTls) {
@@ -161,7 +162,7 @@ public class BMailSmtpClient {
      * mail.smtp.from sets the envelope return address.
      * Defaults to msg.getFrom() or InternetAddress.getLocalAddress().
      */
-    BMailInternetAddress bounceAddress = this.getBounceAddress();
+    BMailInternetAddress bounceAddress = this.getSenderAddress();
     if (bounceAddress != null) {
       smtpServerProps.put(smtpProtocolConfigurationPrefix + ".from", bounceAddress.getAddress());
     }
@@ -170,8 +171,8 @@ public class BMailSmtpClient {
   }
 
 
-  public BMailTransportConnection getTransportConnection() throws MessagingException {
-    return new BMailTransportConnection(this);
+  public BMailSmtpConnection getTransportConnection() throws MessagingException {
+    return new BMailSmtpConnection(this);
   }
 
 
@@ -179,13 +180,13 @@ public class BMailSmtpClient {
     try {
       return UriEnhanced
         .create()
-        .setScheme((String) SmtpConnectionAttribute.SMTP.getDefaultValue())
+        .setScheme((String) PROTOCOL.getDefaultValue())
         .setHost(config.smtpHost)
         .setPort(config.port)
-        .addQueryProperty(SmtpConnectionAttribute.USER, config.username)
-        .addQueryProperty(SmtpConnectionAttribute.PASSWORD, config.password == null ? "null" : "xxxx")
-        .addQueryProperty(SmtpConnectionAttribute.AUTH, Booleans.createFromObject(config.auth).toString())
-        .addQueryProperty(SmtpConnectionAttribute.TLS, Booleans.createFromObject(config.requireStartTls).toString())
+        .addQueryProperty(BMailSmtpConnectionAttribute.USER, config.username)
+        .addQueryProperty(BMailSmtpConnectionAttribute.PASSWORD, config.password == null ? "null" : "xxxx")
+        .addQueryProperty(BMailSmtpConnectionAttribute.AUTH, Booleans.createFromObject(config.auth).toString())
+        .addQueryProperty(BMailSmtpConnectionAttribute.TLS, Booleans.createFromObject(config.requireStartTls).toString())
         .toUri();
     } catch (IllegalStructure e) {
       throw new IllegalArgumentException(e);
@@ -220,13 +221,13 @@ public class BMailSmtpClient {
     return this.config.isSsl;
   }
 
-  public BMailInternetAddress getBounceAddress() {
-    return this.bounceAddress;
+  public BMailInternetAddress getSenderAddress() {
+    return this.senderAddress;
   }
 
   @SuppressWarnings("unused")
-  public void setBounceAddress(BMailInternetAddress bounceAddress) {
-    this.bounceAddress = bounceAddress;
+  public void setSenderAddress(BMailInternetAddress senderAddress) {
+    this.senderAddress = senderAddress;
   }
 
   /**
@@ -237,14 +238,14 @@ public class BMailSmtpClient {
   }
 
   public void sendMessage(BMailMimeMessage message, Address[] recipients) throws MessagingException {
-    try (BMailTransportConnection transportConnection = this.getTransportConnection()) {
+    try (BMailSmtpConnection transportConnection = this.getTransportConnection()) {
       transportConnection.sendMessage(message, recipients);
     }
   }
 
   @SuppressWarnings("unused")
   public void sendMessagesInBatch(List<BMailMimeMessage> messages) throws MessagingException {
-    try (BMailTransportConnection transportConnection = this.getTransportConnection()) {
+    try (BMailSmtpConnection transportConnection = this.getTransportConnection()) {
       for (BMailMimeMessage message : messages) {
         transportConnection.sendMessage(message, message.toMimeMessage().getAllRecipients());
       }

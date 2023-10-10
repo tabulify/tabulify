@@ -1,7 +1,7 @@
 package net.bytle.tower.util;
 
+import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.vertx.MailSmtpInfo;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.appender.SmtpAppender;
@@ -41,15 +41,15 @@ public class Log4jRootLogger {
 
   }
 
-  public static void configureOnAppInit(Configuration config, MailSmtpInfo mailSmtpInfo) {
+  public static void configureOnAppInit(Configuration config, BMailSmtpConnectionParameters mailSmtpParameterFromConfig) {
 
     SmtpAppender smtpAppender = SmtpAppender.newBuilder()
       .setName("RootSmtpAppender")
-      .setSmtpHost(mailSmtpInfo.getHost())
+      .setSmtpHost(mailSmtpParameterFromConfig.getHost())
       .setConfiguration(config)
-      .setSmtpPassword(mailSmtpInfo.getPassword())
-      .setSmtpUsername(mailSmtpInfo.getUserName())
-      .setSmtpPort(mailSmtpInfo.getPort())
+      .setSmtpPassword(mailSmtpParameterFromConfig.getPassword())
+      .setSmtpUsername(mailSmtpParameterFromConfig.getUserName())
+      .setSmtpPort(mailSmtpParameterFromConfig.getPort())
       .setSubject("Log4j: General Failure in the tower app")
       .setFrom(UsersUtil.getEmailAddressWithName(SysAdmin.SYS_USER))
       .setTo(UsersUtil.getEmailAddressWithName(SysAdmin.ADMIN_USER))

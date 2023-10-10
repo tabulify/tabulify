@@ -2,9 +2,13 @@ package net.bytle.email;
 
 public enum BMailStartTls {
 
+  /**
+   * Disabled
+   */
   NONE,
   /**
    * Enabled but not required secure connection
+   * (ie OPTIONAL)
    */
   ENABLE,
   /**
@@ -27,4 +31,5 @@ public enum BMailStartTls {
   public boolean getRequireStartTls() {
     return this == REQUIRE;
   }
+
 }

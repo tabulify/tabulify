@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static net.bytle.email.LoggerEmail.LOGGER;
+import static net.bytle.email.BMailLogger.LOGGER;
 import static net.bytle.smtp.SmtpSyntax.LOG_TAB;
 
 public class SmtpServer {

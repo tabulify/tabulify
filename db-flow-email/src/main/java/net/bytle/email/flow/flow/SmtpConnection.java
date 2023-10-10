@@ -10,8 +10,8 @@ import net.bytle.db.spi.DataSystem;
 import net.bytle.db.spi.ProcessingEngine;
 import net.bytle.email.BMailAddressStatic;
 import net.bytle.email.BMailSmtpClient;
+import net.bytle.email.BMailSmtpConnectionAttribute;
 import net.bytle.email.BMailStartTls;
-import net.bytle.email.SmtpConnectionAttribute;
 import net.bytle.exception.*;
 import net.bytle.os.Oss;
 import net.bytle.type.*;
@@ -45,7 +45,7 @@ public class SmtpConnection extends Connection {
       throw new IllegalArgumentException("The smtp connection (" + name + ") has an illegal URI value (" + uriValue + "). Error: " + e.getMessage(), e);
     }
 
-    this.addVariablesFromEnumAttributeClass(SmtpConnectionAttribute.class);
+    this.addVariablesFromEnumAttributeClass(BMailSmtpConnectionAttribute.class);
 
     this.buildDefault();
 
@@ -55,19 +55,19 @@ public class SmtpConnection extends Connection {
   @Override
   public Connection addVariable(String key, Object value) {
 
-    SmtpConnectionAttribute smtpConnectionAttribute;
+    BMailSmtpConnectionAttribute BMailSmtpConnectionAttribute;
     try {
-      smtpConnectionAttribute = Casts.cast(key, SmtpConnectionAttribute.class);
+      BMailSmtpConnectionAttribute = Casts.cast(key, BMailSmtpConnectionAttribute.class);
     } catch (Exception e) {
       return super.addVariable(key, value);
     }
 
     try {
-      Variable variable = getTabular().createVariable(smtpConnectionAttribute, value);
+      Variable variable = getTabular().createVariable(BMailSmtpConnectionAttribute, value);
       this.addVariable(variable);
       return this;
     } catch (Exception e) {
-      throw new RuntimeException("Error while creating the variable (" + smtpConnectionAttribute + ") with the value (" + value + ") for the connection (" + this + ")", e);
+      throw new RuntimeException("Error while creating the variable (" + BMailSmtpConnectionAttribute + ") with the value (" + value + ") for the connection (" + this + ")", e);
     }
 
   }
@@ -85,8 +85,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultTo = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.TO.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.TO_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.TO.toString()),
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.TO_NAMES.toString())
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `to` definition of the smtp connection. Error: " + e.getMessage());
@@ -94,8 +94,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultCc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.CC.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.CC_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.CC.toString()),
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.CC_NAMES.toString())
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -103,8 +103,8 @@ public class SmtpConnection extends Connection {
 
     try {
       this.defaultBcc = BMailAddressStatic.addressAndNamesToListInternetAddress(
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.BCC.toString()),
-        this.getQueryPropertyOrConnectionPropertyOrNull(SmtpConnectionAttribute.BCC_NAMES.toString())
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.BCC.toString()),
+        this.getQueryPropertyOrConnectionPropertyOrNull(BMailSmtpConnectionAttribute.BCC_NAMES.toString())
       );
     } catch (AddressException | UnsupportedEncodingException e) {
       throw new RuntimeException("Error on the `cc` definition of the smtp connection. Error: " + e.getMessage());
@@ -113,21 +113,21 @@ public class SmtpConnection extends Connection {
 
   private Boolean getAuth() {
     try {
-      return getBooleanProperty(SmtpConnectionAttribute.AUTH.toString());
+      return getBooleanProperty(BMailSmtpConnectionAttribute.AUTH.toString());
     } catch (NoValueException | NoVariableException e) {
-      return SmtpConnectionAttribute.DEFAULTS.AUTH;
+      return BMailSmtpConnectionAttribute.DEFAULTS.AUTH;
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + SmtpConnectionAttribute.AUTH + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
+      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + BMailSmtpConnectionAttribute.AUTH + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
     }
   }
 
   private Boolean getTls() {
     try {
-      return getBooleanProperty(SmtpConnectionAttribute.TLS.toString());
+      return getBooleanProperty(BMailSmtpConnectionAttribute.TLS.toString());
     } catch (NoValueException | NoVariableException e) {
-      return SmtpConnectionAttribute.DEFAULTS.TLS;
+      return BMailSmtpConnectionAttribute.DEFAULTS.TLS;
     } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + SmtpConnectionAttribute.AUTH + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
+      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + BMailSmtpConnectionAttribute.AUTH + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
     }
   }
 
@@ -167,9 +167,9 @@ public class SmtpConnection extends Connection {
       return port;
     }
     try {
-      return (Integer) this.getVariable(SmtpConnectionAttribute.PORT).getValueOrDefault();
+      return (Integer) this.getVariable(BMailSmtpConnectionAttribute.PORT).getValueOrDefault();
     } catch (NoVariableException | NoValueException e) {
-      return SmtpConnectionAttribute.DEFAULTS.PORT;
+      return BMailSmtpConnectionAttribute.DEFAULTS.PORT;
     }
 
 
@@ -279,9 +279,9 @@ public class SmtpConnection extends Connection {
     }
     // not null for sure
     try {
-      return (String) this.getVariable(SmtpConnectionAttribute.HOST).getValueOrDefaultOrNull();
+      return (String) this.getVariable(BMailSmtpConnectionAttribute.HOST).getValueOrDefaultOrNull();
     } catch (NoVariableException e) {
-      return SmtpConnectionAttribute.DEFAULTS.HOST;
+      return BMailSmtpConnectionAttribute.DEFAULTS.HOST;
     }
 
   }
@@ -308,13 +308,13 @@ public class SmtpConnection extends Connection {
 
 
   private String getDefaultFromNameProperty() {
-    String from = this.uri.getQueryProperty(SmtpConnectionAttribute.FROM.toString().toLowerCase(Locale.ROOT));
+    String from = this.uri.getQueryProperty(BMailSmtpConnectionAttribute.FROM.toString().toLowerCase(Locale.ROOT));
     if (from != null) {
       return from;
     }
 
     try {
-      return (String) this.getVariable(SmtpConnectionAttribute.FROM).getValueOrDefaultOrNull();
+      return (String) this.getVariable(BMailSmtpConnectionAttribute.FROM).getValueOrDefaultOrNull();
     } catch (NoVariableException e) {
       return this.getDefaultFromProperty();
     }

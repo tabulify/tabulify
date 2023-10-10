@@ -189,7 +189,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         User sender = new User();
         sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(sender.getEmail());
+          .getVertxMailClientForSenderWithSigning(sender.getEmail());
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
@@ -341,7 +341,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         User sender = new User();
         sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getTransactionalMailClientForUser(sender.getEmail());
+          .getVertxMailClientForSenderWithSigning(sender.getEmail());
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
