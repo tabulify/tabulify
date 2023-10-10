@@ -60,6 +60,7 @@ public class VerticleHttpServer extends AbstractVerticle {
      */
     ContextFailureHandler errorHandlerXXX = ContextFailureHandler.createOrGet(vertx, config());
     rootRouter.errorHandler(HttpStatus.INTERNAL_ERROR, errorHandlerXXX);
+
     /**
      * Handle the failures. ie
      * ```

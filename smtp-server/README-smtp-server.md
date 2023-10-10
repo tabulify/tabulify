@@ -23,6 +23,7 @@ The following is not implemented:
     * Remote delivery: Not done (no Dkim)
     * Local delivery: We have only one mailbox that sends to stdout
     * Forwarding: Not implemented at all (SRS, alias)
+  * Server certificate: Not generated/get (only one location)
 
 ## Status
 

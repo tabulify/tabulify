@@ -80,7 +80,7 @@ public class MainVerticle extends AbstractVerticle {
     LOGGER.info(msg);
     System.out.println(msg + " (ptln)");
 
-    vertx.executeBlocking(p -> {
+    vertx.executeBlocking(() -> {
 
       System.out.println("Flushing Session Data");
       PersistentLocalSessionStore.get()
@@ -89,6 +89,7 @@ public class MainVerticle extends AbstractVerticle {
 
       stopPromise.complete();
       //stopPromise.fail(); otherwise
+      return null;
 
     });
 

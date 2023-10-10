@@ -8,8 +8,8 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import net.bytle.exception.CastException;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.type.Casts;
+import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
 import net.bytle.vertx.ServerStartLogger;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +52,7 @@ public class SmtpVerticle extends AbstractVerticle {
           SmtpServer smtpServer;
           try {
             smtpServer = SmtpServer.create(this, configAccessor);
-          } catch (IllegalConfiguration e) {
+          } catch (ConfigIllegalException e) {
             verticlePromise.fail(e);
             return;
           }

@@ -18,7 +18,10 @@ import java.time.Instant;
  */
 public class MonitorApiToken {
   private static final String API_TOKEN_CLOUDFLARE = "api.token.cloudflare";
+
+  private static final String API_TOKEN_EXPIRATION = "api.token.days.before.expiration.failure";
   private static final Logger LOGGER = LogManager.getLogger(MonitorApiToken.class);
+  private final long expirationDelayBeforeFailure;
   private final Vertx vertx;
 
   /**
@@ -37,13 +40,16 @@ public class MonitorApiToken {
       throw new ConfigIllegalException("The config variable " + configAccessor.getPossibleVariableNames(API_TOKEN_CLOUDFLARE) + " was not found");
     }
     LOGGER.info("API token cloudflare found");
+    this.expirationDelayBeforeFailure = configAccessor.getLong(API_TOKEN_EXPIRATION, 60L);
+    LOGGER.info("API token expiration warning set to " + this.expirationDelayBeforeFailure);
+
   }
 
   public static MonitorApiToken create(Vertx vertx, ConfigAccessor configAccessor) throws ConfigIllegalException {
     return new MonitorApiToken(vertx, configAccessor);
   }
 
-  public Future<Void> check() {
+  public Future<MonitorReport> check() {
 
     WebClient client = WebClient.create(vertx);
     return client
@@ -51,10 +57,10 @@ public class MonitorApiToken {
       .putHeader("Authorization", "Bearer " + this.cloudflareApiBearer)
       .putHeader("Content-Type", "application/json")
       .send()
-      .onFailure(LOGGER::error)
       .compose(response -> {
 
-        System.out.println("Received response with status code" + response.statusCode());
+        MonitorReport monitorReport = new MonitorReport();
+
         String body = response.bodyAsString();
         JsonObject jsonBody;
         try {
@@ -63,35 +69,37 @@ public class MonitorApiToken {
           return Future.failedFuture(new IllegalStateException("Content is not Json\n" + body, e));
         }
 
+
         JsonArray jsonArray = jsonBody.getJsonArray("result");
         for (int i = 0; i < jsonArray.size(); i++) {
+
           JsonObject tokenJsonData = jsonArray.getJsonObject(i);
           String id = tokenJsonData.getString("id");
           String name = tokenJsonData.getString("name");
           String status = tokenJsonData.getString("status");
+          if (!status.equals("active")) {
+            monitorReport.addFailure("The cloudflare api token (" + name + "," + id + "+) is not active");
+            continue;
+          }
           Instant expiresOn = tokenJsonData.getInstant("expires_on");
-          Duration duration = Duration.between(Instant.now(), expiresOn);
-          System.out.println("The token (" + name + ") expires in " + duration.toDays() + " days");
+          if (expiresOn == null) {
+            monitorReport.addSuccess("The cloudflare api token (" + name + ") has no expiration date");
+            continue;
+          }
+          long duration = Duration.between(Instant.now(), expiresOn).toDays();
+          String expirationMessage = "The cloudflare api token (" + name + ") expires in " + duration + " days";
+          if (duration < expirationDelayBeforeFailure) {
+            monitorReport.addFailure(expirationMessage);
+            continue;
+          }
+          monitorReport.addSuccess(expirationMessage);
 
         }
 
-        return null;
+        return Future.succeededFuture(monitorReport);
       });
-
 
   }
 
-
-  /**
-   * (Certbot: Cloudflare, ...)
-   * curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
-   *      -H "Authorization: Bearer xxxxxx" \
-   *      -H "Content-Type:application/json"
-   *  https://developers.cloudflare.com/fundamentals/api/how-to/roll-token/
-   *
-   *
-   * https://developers.cloudflare.com/api/operations/user-api-tokens-list-tokens
-   * https://developers.cloudflare.com/api/operations/zone-level-access-service-tokens-list-service-tokens
-   */
 
 }

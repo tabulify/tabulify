@@ -2,4 +2,7 @@
 # as env or in secret file
 # the token to access the token
 # api.token.cloudflare: xxx
-void: 'void' # if the file is empty, there is a null exception in vertx
+
+
+# Number of days before an expiration error is issued
+api.token.days.before.expiration.failure: 30

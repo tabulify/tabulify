@@ -1,9 +1,6 @@
 package net.bytle.monitor;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
@@ -33,16 +30,33 @@ public class MonitorMain extends AbstractVerticle {
     ConfigManager.config("monitor", vertx, JsonObject.of())
       .build()
       .getConfigAccessor()
-      .onFailure(startPromise::fail)
+      .onFailure(this::handleGeneralFailure)
       .onSuccess(configAccessor -> {
         try {
           LOGGER.info("Monitor api token check starting");
-          MonitorApiToken.create(vertx, configAccessor)
+
+          Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
             .check();
+
+          monitorReportFuture
+            .onFailure(this::handleGeneralFailure)
+            .onSuccess(monitor -> {
+              monitor.print();
+              vertx.close();
+            });
+
+
         } catch (ConfigIllegalException e) {
           startPromise.fail(e);
         }
       });
 
+  }
+
+  private void handleGeneralFailure(Throwable e) {
+    LOGGER.error(e);
+    e.printStackTrace();
+    vertx.close();
+    System.exit(1);
   }
 }
