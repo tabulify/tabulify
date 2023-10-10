@@ -43,7 +43,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     jdbcPools.init();
 
     INIT_LOGGER.info("Add the SMTP Logger");
-    MailSmtpInfo mailSmtpInfo = MailSmtpInfo.createFromJson(configAccessor);
+    MailSmtpInfo mailSmtpInfo = MailSmtpInfo.createFromConfigAccessor(configAccessor);
     Log4jConfigure.configureOnVertxInit(mailSmtpInfo);
 
     INIT_LOGGER.info("Start Instantiation of URL Data Encryption");

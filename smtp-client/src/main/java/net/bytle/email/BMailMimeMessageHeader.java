@@ -25,8 +25,23 @@ public enum BMailMimeMessageHeader {
    * field is used to identify a path back to  the  originator
    * in case of bounce
    */
-  REPLY_TO("Reply-To");
-
+  REPLY_TO("Reply-To"),
+  /**
+   * Errors-To: Address to which notifications
+   * Not internet standard, Non-standard, discouraged
+   * <a href="https://www.rfc-editor.org/rfc/rfc2076.html#section-3.4">...</a>
+   */
+  ERRORS_TO("Errors-To"),
+  /**
+   * see <a href="https://policy.hubspot.com/abuse-complaints">...</a>
+   */
+  X_REPORT_ABUSE_TO("X-Report-Abuse-To"),
+  /**
+   * Example
+   * X-Mailer: Customer.io (dgTQ1wUDAN7xBd3xBQGGMVPhnYtKqXGPZwNilOc=; +https://xxxx.com)
+   */
+  @SuppressWarnings("JavadocLinkAsPlainText")
+  X_MAILER("X-Mailer");
 
 
   private final String name;

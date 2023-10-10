@@ -172,7 +172,7 @@ public class ContextFailureHandler implements Handler<RoutingContext> {
       MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(context.vertx());
       User sysUser = SysAdmin.ADMIN_USER;
       MailMessage mailMessage = mailServiceSmtpProvider
-        .createMailMessage()
+        .createVertxMailMessage()
         .setFrom(sysUser.getEmail())
         .setTo(sysUser.getEmail())
         .setSubject("Tower: An error has occurred. " + thrown.getMessage())

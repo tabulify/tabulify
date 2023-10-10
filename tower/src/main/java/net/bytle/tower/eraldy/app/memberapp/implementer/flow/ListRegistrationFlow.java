@@ -192,7 +192,7 @@ public class ListRegistrationFlow {
           .getTransactionalMailClientForUser(listOwnerUser.getEmail());
 
         MailMessage registrationEmail = mailServiceSmtpProvider
-          .createMailMessage()
+          .createVertxMailMessage()
           .setTo(subscriberAddressWithName)
           .setFrom(ownerEmailAddressInRfcFormat)
           .setSubject(mailSubject)
@@ -208,7 +208,7 @@ public class ListRegistrationFlow {
             // Send feedback to the list owner
             String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + registrationList.getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-              .createMailMessage()
+              .createVertxMailMessage()
               .setTo(ownerEmailAddressInRfcFormat)
               .setFrom(ownerEmailAddressInRfcFormat)
               .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)

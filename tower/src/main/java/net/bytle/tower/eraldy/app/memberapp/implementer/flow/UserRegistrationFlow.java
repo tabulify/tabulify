@@ -85,7 +85,7 @@ public class UserRegistrationFlow {
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
-          .createMailMessage()
+          .createVertxMailMessage()
           .setTo(senderEmailAddressInRfcFormat)
           .setFrom(senderEmail)
           .setSubject(mailSubject)
@@ -100,7 +100,7 @@ public class UserRegistrationFlow {
             // Send feedback to the list owner
             String title = "The user (" + userRegister.getEmail() + ") received a registration email for the realm (" + realm.getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-              .createMailMessage()
+              .createVertxMailMessage()
               .setTo(senderEmail)
               .setFrom(senderEmail)
               .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)

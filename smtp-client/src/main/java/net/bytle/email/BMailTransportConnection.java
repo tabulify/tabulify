@@ -11,6 +11,9 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.util.Date;
 
+/**
+ * This class is the socket connection and authentication
+ */
 public class BMailTransportConnection implements AutoCloseable {
   public static final String SMTP_PROTOCOL = "smtp";
   /**
@@ -29,7 +32,7 @@ public class BMailTransportConnection implements AutoCloseable {
     /**
      * Other transport protocol may be implemented
      */
-    if(!bMailSmtpClient.isSSL()) {
+    if (!bMailSmtpClient.isSSL()) {
       transport = (SMTPTransport) smtpSession.getTransport(SMTP_PROTOCOL);
     } else {
       transport = (SMTPTransport) smtpSession.getTransport(SMTPS_PROTOCOL);
@@ -38,9 +41,11 @@ public class BMailTransportConnection implements AutoCloseable {
     /**
      * Ter info: The connect methods permits to change the session parameters
      * {@link Transport#connect(String, int, String, String)}}
+     * they should be in the properties
      * <p>
      * t.connect("host", 25, "user", "pass");
-     *
+     * <p>
+     * EHLO and AUTH
      */
     transport.connect();
 
@@ -52,8 +57,7 @@ public class BMailTransportConnection implements AutoCloseable {
 
   public void sendMessage(BMailMimeMessage bMailMessage, Address[] recipients) throws MessagingException {
 
-    if (recipients == null) {
-      // Don't pass null to sendMessage.
+    if (recipients == null || recipients.length == 0) {
       throw new MessagingException("A recipient is mandatory");
     }
 
@@ -73,7 +77,7 @@ public class BMailTransportConnection implements AutoCloseable {
 
   @SuppressWarnings("unused")
   public void sayEhlo(String hostname) throws MessagingException {
-    transport.issueCommand("EHLO "+hostname, -1);
+    transport.issueCommand("EHLO " + hostname, -1);
     String ehloResponse = transport.getLastServerResponse();
     System.out.println("EHLO Response:");
     System.out.println(ehloResponse);

@@ -4,13 +4,16 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.mail.*;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.email.BMailMimeMessage;
+import net.bytle.email.BMailMimeMessageHeader;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NoSecretException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static net.bytle.email.BMailMimeMessageHeader.X_REPORT_ABUSE_TO;
 
 /**
  * Wrapper around <a href="https://vertx.io/docs/vertx-mail-client/java/">...</a>
@@ -53,12 +56,7 @@ public class MailServiceSmtpProvider {
   public static final String MAIL_DKIM_PRIVATE = "mail.dkim.private_key";
 
   public static final String DEFAULT_DKIM_SELECTOR = "combo";
-  /**
-   * Errors-To: Address to which notifications
-   * Not internet standard, Non-standard, discouraged
-   * <a href="https://www.rfc-editor.org/rfc/rfc2076.html#section-3.4">...</a>
-   */
-  public static final String ERRORS_TO_MAIL_HEADER = "Errors-To";
+
   /**
    * Return-Path: Trace information ???
    * Email header that indicates where and how bounced emails will be processed.
@@ -69,12 +67,7 @@ public class MailServiceSmtpProvider {
   private final BMailInternetAddress ABUSE_EMAIL;
 
   private final BMailInternetAddress BOUNCE_EMAIL ;
-  /**
-   * see <a href="https://policy.hubspot.com/abuse-complaints">...</a>
-   */
-  public static final String X_REPORT_ABUSE_TO_MAIL_HEADER = "X-Report-Abuse-To";
 
-  public static final String X_MAILER = "X-Mailer";
 
 
   private final MailServiceSmtpProviderConfig providerConfig;
@@ -122,14 +115,14 @@ public class MailServiceSmtpProvider {
       MailServiceSmtpProviderConfig.setDkimSelector(dkimSelector);
       LOGGER.info("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was found with the value " + dkimSelector);
     } else {
-      LOGGER.info("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was not found with the value.");
+      LOGGER.warn("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was not found with the value.");
     }
     String dkimPrivateKey = jsonConfig.getString(MAIL_DKIM_PRIVATE);
     if (dkimPrivateKey != null) {
       MailServiceSmtpProviderConfig.setDkimPrivateKey(dkimPrivateKey);
       LOGGER.info("Mail: The mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was found");
     } else {
-      LOGGER.info("Mail: A mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was NOT found");
+      LOGGER.warn("Mail: A mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was NOT found");
     }
 
 
@@ -252,22 +245,25 @@ public class MailServiceSmtpProvider {
     return this;
   }
 
-  public MailMessage createMailMessage() {
+  public MailMessage createVertxMailMessage() {
+
     return new MailMessage()
       .setBounceAddress(BOUNCE_EMAIL.getAddress())
-      .addHeader(ERRORS_TO_MAIL_HEADER, this.getAdminInternetAddress().getAddress())
-      .addHeader(X_REPORT_ABUSE_TO_MAIL_HEADER, ABUSE_EMAIL.getAddress())
-      .addHeader(X_MAILER, "combostrap.com");
-    /**
-     * Example
-     * X-Mailer: Customer.io (dgTQ1wUDAN7xBd3xBQGGMVPhnYtKqXGPZwNilOc=; +https://whatis.customeriomail.com)
-     */
+      .addHeader(BMailMimeMessageHeader.ERRORS_TO.toString(), this.getAdminInternetAddress().getAddress())
+      .addHeader(X_REPORT_ABUSE_TO.toString(), ABUSE_EMAIL.getAddress());
+
 
 
   }
 
   private BMailInternetAddress getAdminInternetAddress() {
     return this.providerConfig.adminAddress;
+  }
+
+  public BMailMimeMessage createBMailMessage() {
+    return BMailMimeMessage.createEmpty()
+      .addHeader(BMailMimeMessageHeader.ERRORS_TO, this.getAdminInternetAddress().getAddress())
+      .addHeader(X_REPORT_ABUSE_TO, ABUSE_EMAIL.getAddress());
   }
 
 
@@ -291,11 +287,7 @@ public class MailServiceSmtpProvider {
       this.vertx = vertx;
     }
 
-    public MailServiceSmtpProvider create() throws NoSecretException {
-
-      if (this.dkimPrivateKey == null) {
-        throw new NoSecretException("A Dkim private key is mandatory to sign email. You can set set it in the conf with the attribute (" + MAIL_DKIM_PRIVATE + ")");
-      }
+    public MailServiceSmtpProvider create() {
 
       MailServiceSmtpProvider mailPoolService = new MailServiceSmtpProvider(this);
       smtpPoolMap.put(vertx, mailPoolService);

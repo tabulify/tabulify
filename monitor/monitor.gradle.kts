@@ -6,7 +6,8 @@ dependencies {
 
   implementation(project(":bytle-dns"))
   implementation(project(":bytle-vertx"))
+  implementation(project(":bytle-smtp-client"))
   implementation("io.vertx:vertx-web-client:$vertxVersion")
-  implementation("io.vertx:vertx-mail-client:$vertxVersion")
+
 
 }

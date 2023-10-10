@@ -144,7 +144,7 @@ public class RegistrationComboprivateapiImpl implements RegistrationComboprivate
         String listOwnerEmailRfc = UsersUtil.getEmailAddressWithName(listOwnerUser);
         MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(vertx);
         MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-          .createMailMessage()
+          .createVertxMailMessage()
           .setTo(listOwnerEmailRfc)
           .setFrom(listOwnerEmailRfc)
           .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)

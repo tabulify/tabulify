@@ -18,8 +18,6 @@ import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.BodyDescriptorBuilder;
 import org.apache.james.mime4j.stream.MimeConfig;
-import org.simplejavamail.api.email.Email;
-import org.simplejavamail.converter.EmailConverter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -63,7 +61,7 @@ public class BMailMimeMessage {
   private String bodyHtml;
   private final Map<BMailMimeMessageHeader, String> headers = new HashMap<>();
 
-  public BMailMimeMessage(MimeMessage mimeMessage) throws MessagingException, IOException {
+  private BMailMimeMessage(MimeMessage mimeMessage) throws MessagingException, IOException {
 
     this.mimeMessage = mimeMessage;
 
@@ -611,10 +609,6 @@ public class BMailMimeMessage {
     } catch (MessagingException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public Email toSimpleEmail() {
-    return EmailConverter.mimeMessageToEmail(toMimeMessage());
   }
 
 

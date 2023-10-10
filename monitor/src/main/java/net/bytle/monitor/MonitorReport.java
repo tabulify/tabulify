@@ -19,9 +19,14 @@ public class MonitorReport {
     return success;
   }
 
-  public void print() {
+  public String print() {
+    StringBuilder stringBuilder = new StringBuilder();
     for(MonitorReportResult result: this.monitorResults){
-      System.out.println(result.getStatus()+": "+ result.getMessage());
+      stringBuilder
+        .append(result.getStatus())
+        .append(": ")
+        .append(result.getMessage());
     }
+    return stringBuilder.toString();
   }
 }

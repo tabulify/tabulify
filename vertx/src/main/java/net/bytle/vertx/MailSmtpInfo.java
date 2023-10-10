@@ -32,13 +32,13 @@ public class MailSmtpInfo {
     this.config = MailSmtpInfoConfig;
   }
 
-  public static MailSmtpInfo createFromJson(ConfigAccessor jsonConfig) throws ConfigIllegalException {
+  public static MailSmtpInfo createFromConfigAccessor(ConfigAccessor configAccessor) throws ConfigIllegalException {
 
 
     MailSmtpInfoConfig MailSmtpInfoConfig = new MailSmtpInfoConfig();
     Integer port;
     try {
-      port = jsonConfig.getInteger(MAIL_SMTP_DEFAULT_PORT);
+      port = configAccessor.getInteger(MAIL_SMTP_DEFAULT_PORT);
     } catch (Exception e) {
       throw new InternalException("The config (" + MAIL_SMTP_DEFAULT_PORT + ") could not be cast to an integer. Error:" + e.getMessage(), e);
     }
@@ -49,7 +49,7 @@ public class MailSmtpInfo {
       LOGGER.info("Mail: The mail default port key (" + MAIL_SMTP_DEFAULT_PORT + ") was NOT found.");
     }
 
-    String hostname = jsonConfig.getString(MAIL_SMTP_DEFAULT_HOSTNAME);
+    String hostname = configAccessor.getString(MAIL_SMTP_DEFAULT_HOSTNAME);
     if (hostname != null) {
       MailSmtpInfoConfig.setHostname(hostname);
       LOGGER.info("Mail: The mail default hostname key (" + MAIL_SMTP_DEFAULT_HOSTNAME + ") was found with the value (" + hostname + ").");
@@ -57,7 +57,7 @@ public class MailSmtpInfo {
       LOGGER.info("Mail: The mail default hostname key (" + MAIL_SMTP_DEFAULT_HOSTNAME + ") was NOT found.");
     }
 
-    String startTls = jsonConfig.getString(MAIL_SMTP_DEFAULT_STARTTLS);
+    String startTls = configAccessor.getString(MAIL_SMTP_DEFAULT_STARTTLS);
     if (startTls != null) {
       StartTLSOptions startTlsObject;
       try {
@@ -71,7 +71,7 @@ public class MailSmtpInfo {
       LOGGER.info("Mail: The mail default startTLS key (" + MAIL_SMTP_DEFAULT_STARTTLS + ") was NOT found.");
     }
 
-    String username = jsonConfig.getString(MAIL_SMTP_DEFAULT_USERNAME);
+    String username = configAccessor.getString(MAIL_SMTP_DEFAULT_USERNAME);
     if (username != null) {
       MailSmtpInfoConfig.setUserName(username);
       LOGGER.info("Mail: The mail default username key (" + MAIL_SMTP_DEFAULT_USERNAME + ") was found with the value (" + username + ").");
@@ -79,7 +79,7 @@ public class MailSmtpInfo {
       LOGGER.info("Mail: The mail default username key (" + MAIL_SMTP_DEFAULT_USERNAME + ") was NOT found.");
     }
 
-    String password = jsonConfig.getString(MAIL_SMTP_DEFAULT_PASSWORD);
+    String password = configAccessor.getString(MAIL_SMTP_DEFAULT_PASSWORD);
     if (password != null) {
       MailSmtpInfoConfig.setDefaultSmtpPassword(password);
       LOGGER.info("Mail: The mail default password key (" + MAIL_SMTP_DEFAULT_PASSWORD + ") was found.");
@@ -87,7 +87,7 @@ public class MailSmtpInfo {
       LOGGER.info("Mail: The mail default password key (" + MAIL_SMTP_DEFAULT_PASSWORD + ") was NOT found.");
     }
 
-    String adminMEmail = jsonConfig.getString(MAIL_SMTP_ADMIN_EMAIL);
+    String adminMEmail = configAccessor.getString(MAIL_SMTP_ADMIN_EMAIL);
     if (adminMEmail != null) {
       try {
         MailSmtpInfoConfig.setAdminEmail(BMailInternetAddress.of(adminMEmail));

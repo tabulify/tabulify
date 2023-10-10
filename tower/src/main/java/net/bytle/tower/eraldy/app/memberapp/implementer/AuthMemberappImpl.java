@@ -193,7 +193,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
-          .createMailMessage()
+          .createVertxMailMessage()
           .setTo(senderEmailAddressInRfcFormat)
           .setFrom(senderEmail)
           .setSubject(mailSubject)
@@ -208,7 +208,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
             // Send feedback to the list owner
             String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-              .createMailMessage()
+              .createVertxMailMessage()
               .setTo(senderEmail)
               .setFrom(senderEmail)
               .setSubject("User Login: " + title)
@@ -345,7 +345,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
         String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
-          .createMailMessage()
+          .createVertxMailMessage()
           .setTo(senderEmailAddressInRfcFormat)
           .setFrom(senderEmail)
           .setSubject(mailSubject)
@@ -360,7 +360,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
             // Send feedback to the list owner
             String title = "The user (" + userToResetPassword.getEmail() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-              .createMailMessage()
+              .createVertxMailMessage()
               .setTo(senderEmail)
               .setFrom(senderEmail)
               .setSubject("Password reset: " + title)
