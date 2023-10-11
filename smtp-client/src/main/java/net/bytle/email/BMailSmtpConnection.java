@@ -30,7 +30,7 @@ public class BMailSmtpConnection implements AutoCloseable {
     /**
      * Other transport protocol may be implemented
      */
-    if (!bMailSmtpClient.isSSL()) {
+    if (!bMailSmtpClient.isDirectTlsConnection()) {
       transport = (SMTPTransport) smtpSession.getTransport(BMailSmtpProtocol.SMTP.toString());
     } else {
       transport = (SMTPTransport) smtpSession.getTransport(BMailSmtpProtocol.SMTPS.toString());

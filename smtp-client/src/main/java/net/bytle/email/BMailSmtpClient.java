@@ -28,16 +28,16 @@ public class BMailSmtpClient {
   private static final String MAIL_SMTP_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + BMailSmtpProtocol.SMTP;
 
   private static final String MAIL_SMTPS_PROPERTY_PREFIX = MAIL_PROPERTY_PREFIX + "." + BMailSmtpProtocol.SMTPS;
+  private static final int PORT_465 = 465;
   private final Session smtpSession;
   private final BMailSmtpClient.config config;
-
 
 
   public BMailSmtpClient(config config) {
     this.config = config;
     Properties mailProps = this.getSmtpTransportProperties();
     Authenticator authenticator = null;
-    if (config.username!=null) {
+    if (config.username != null) {
 
       /**
        * Transmit the username, password
@@ -108,7 +108,7 @@ public class BMailSmtpClient {
      * Config by Protocol
      */
     String smtpProtocolConfigurationPrefix;
-    if (this.isSSL()) {
+    if (this.config.isDirectTlsConnection) {
 
       // mail.transport.protocol specifies the default message transport protocol
       smtpServerProps.put(MAIL_PROPERTY_PREFIX + ".transport.protocol", BMailSmtpProtocol.SMTPS.toString());
@@ -144,18 +144,24 @@ public class BMailSmtpClient {
       smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.USER, config.username);
     }
 
-    switch (config.requireStartTls) {
-      case NONE:
-        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "false");
-        break;
-      case ENABLE:
-        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
-        break;
-      case REQUIRE:
-        // STARTTLS plaintext fallback is disabled by setting mail.smtp.starttls.required
-        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
-        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.required", "true");
+    /**
+     * May be null for direct SSL/TLS connection
+     */
+    if(config.startTls!=null) {
+      switch (config.startTls) {
+        case NONE:
+          smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "false");
+          break;
+        case ENABLE:
+          smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
+          break;
+        case REQUIRE:
+          // STARTTLS plaintext fallback is disabled by setting mail.smtp.starttls.required
+          smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
+          smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.required", "true");
+      }
     }
+
     if (config.trustAll) {
 
       smtpServerProps.put(smtpProtocolConfigurationPrefix + ".ssl.trust", "*");
@@ -195,7 +201,7 @@ public class BMailSmtpClient {
         .setPort(config.port)
         .addQueryProperty(BMailSmtpConnectionAttribute.USER, config.username)
         .addQueryProperty(BMailSmtpConnectionAttribute.PASSWORD, config.password == null ? "null" : "xxxx")
-        .addQueryProperty(BMailSmtpConnectionAttribute.TLS, Booleans.createFromObject(config.requireStartTls).toString())
+        .addQueryProperty(BMailSmtpConnectionAttribute.TLS, Booleans.createFromObject(config.startTls).toString())
         .toUri();
     } catch (IllegalStructure e) {
       throw new IllegalArgumentException(e);
@@ -226,14 +232,10 @@ public class BMailSmtpClient {
     return this.smtpSession;
   }
 
-  public boolean isSSL() {
-    return this.config.isSsl;
-  }
 
   public BMailInternetAddress getSenderAddress() {
     return this.config.sender;
   }
-
 
 
   /**
@@ -258,15 +260,19 @@ public class BMailSmtpClient {
     }
   }
 
+  public boolean isDirectTlsConnection() {
+    return this.config.isDirectTlsConnection;
+  }
+
 
   public static class config {
 
-    public boolean isSsl = false;
-    Integer port = 25;
+    public Boolean isDirectTlsConnection = null;
+    int port = 25;
     String smtpHost = "localhost";
     String username;
     String password;
-    BMailStartTls requireStartTls = BMailStartTls.NONE;
+    BMailStartTls startTls = null;
     boolean debugLogging;
     Integer sessionTimeout;
     Integer chunkSize;
@@ -296,8 +302,8 @@ public class BMailSmtpClient {
       return this;
     }
 
-    public config isSsl(boolean isSsl) {
-      this.isSsl = isSsl;
+    public config isSslConnection(boolean isSsl) {
+      this.isDirectTlsConnection = isSsl;
       return this;
     }
 
@@ -316,7 +322,7 @@ public class BMailSmtpClient {
         // don't overwrite the default
         return this;
       }
-      this.requireStartTls = startTls;
+      this.startTls = startTls;
       return this;
     }
 
@@ -338,6 +344,20 @@ public class BMailSmtpClient {
 
     public BMailSmtpClient build() {
 
+      /**
+       * Default SSL by port
+       */
+      if (this.isDirectTlsConnection == null) {
+        this.isDirectTlsConnection = (this.port == PORT_465);
+      }
+      /**
+       * Default StartTls by port
+       */
+      if (this.startTls == null) {
+        if (!isDirectTlsConnection) {
+          this.startTls = BMailStartTls.REQUIRE;
+        }
+      }
 
       return new BMailSmtpClient(this);
 

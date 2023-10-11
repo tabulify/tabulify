@@ -25,7 +25,8 @@ public class MonitorReport {
       stringBuilder
         .append(result.getStatus())
         .append(": ")
-        .append(result.getMessage());
+        .append(result.getMessage())
+        .append("\r\n");
     }
     return stringBuilder.toString();
   }

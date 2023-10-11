@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Token expiration and ip filtering
@@ -22,7 +23,6 @@ public class MonitorApiToken {
   private static final String API_TOKEN_EXPIRATION = "api.token.days.before.expiration.failure";
   private static final Logger LOGGER = LogManager.getLogger(MonitorApiToken.class);
   private final long expirationDelayBeforeFailure;
-
 
 
   private final String cloudflareApiBearer;
@@ -67,9 +67,9 @@ public class MonitorApiToken {
    * You can generate it with the following curl request to see the json file:
    * <code>
    * curl --request GET \
-   *   --url https://api.cloudflare.com/client/v4/user/tokens \
-   *   --header 'Authorization: Bearer xxxxxxxxxx' \
-   *   --header 'Content-Type: application/json' | jq
+   * --url https://api.cloudflare.com/client/v4/user/tokens \
+   * --header 'Authorization: Bearer xxxxxxxxxx' \
+   * --header 'Content-Type: application/json' | jq
    * </code>
    **/
   private Future<MonitorReport> checkCloudflare(MonitorReport monitorReport) {
@@ -97,18 +97,19 @@ public class MonitorApiToken {
           MonitorApiTokenCloudflare monitorApiToken = MonitorApiTokenCloudflare.createFromJson(tokenJsonData);
 
           if (!monitorApiToken.isActive()) {
-            monitorReport.addFailure("The cloudflare api token (" +monitorApiToken+ ") is not active");
+            monitorReport.addFailure("The cloudflare api token (" + monitorApiToken + ") is not active");
             continue;
           }
 
           /**
            * Restriction
            */
-          if (monitorApiToken.shouldBeIpRestricted()){
+          if (monitorApiToken.shouldBeIpRestricted()) {
             try {
-              monitorApiToken.checkIpRestrictionOn(MonitorServer.IP_ADDRESS);
+              List<String> ipRestrictions = monitorApiToken.checkAndGetIpRestrictionOn(MonitorNetworkTopology.PRIVATE_IPS);
+              monitorReport.addSuccess("The cloudflare api token (" + monitorApiToken + ") is restricted on this Ips: " + String.join(", ", ipRestrictions));
             } catch (MonitorException e) {
-              monitorReport.addFailure(e.getMessage());
+              monitorReport.addFailure("The cloudflare api token (" + monitorApiToken + ") failed Ip restriction: " + e.getMessage());
             }
           } else {
             monitorReport.addSuccess("The cloudflare api token (" + monitorApiToken + ") does not need any IP restriction");

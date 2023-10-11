@@ -5,6 +5,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MonitorApiTokenCloudflare {
 
@@ -71,7 +73,7 @@ public class MonitorApiTokenCloudflare {
     return false;
   }
 
-  public void checkIpRestrictionOn(String expectedIpAddress) throws MonitorException {
+  public List<String> checkAndGetIpRestrictionOn(List<String> expectedIpAddress) throws MonitorException {
     JsonObject condition = tokenJsonData.getJsonObject("condition");
     if (condition == null) {
       throw new MonitorException("There is no condition on the token");
@@ -80,15 +82,15 @@ public class MonitorApiTokenCloudflare {
     if (requestIp == null) {
       throw new MonitorException("There is no request ip on the token");
     }
-    JsonArray inIps = requestIp.getJsonArray("in");
-    for (int i = 0; i < inIps.size(); i++) {
-      String ip = inIps.getString(i);
-      if (ip == null) {
-        throw new MonitorException("The ip value is null on the token");
-      }
-      if (!ip.equals(expectedIpAddress)) {
-        throw new MonitorException("The ip restricted value (" + ip + ") is not the expected one " + expectedIpAddress);
+    List<String> inIps = requestIp.getJsonArray("in")
+      .stream()
+      .map(Object::toString)
+      .collect(Collectors.toList());
+    for (String inIp: inIps) {
+      if (!expectedIpAddress.contains(inIp)) {
+        throw new MonitorException("The ip restricted value (" + inIp + ") is not the expected one " + String.join(", ",expectedIpAddress));
       }
     }
+    return inIps;
   }
 }

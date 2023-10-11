@@ -5,12 +5,13 @@ import io.vertx.core.json.JsonObject;
 import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpConnectionParameters;
-import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.ConfigMailSmtpParameters;
 import net.bytle.vertx.ConfigManager;
 import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.MailSmtpParameterFromConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.time.LocalDate;
 
 public class MonitorMain extends AbstractVerticle {
 
@@ -36,7 +37,7 @@ public class MonitorMain extends AbstractVerticle {
       .onSuccess(configAccessor -> {
         try {
           LOGGER.info("Monitor api token check starting");
-          BMailSmtpConnectionParameters smtpInfo = MailSmtpParameterFromConfig.createFromConfigAccessor(configAccessor);
+          BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
 
           Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
@@ -49,8 +50,8 @@ public class MonitorMain extends AbstractVerticle {
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)
-                .setFrom("monitor@bytle.net")
-                .setSubject("Monitor")
+                .setFrom("no-reply@bytle.net")
+                .setSubject("Monitor "+ LocalDate.now())
                 .setBodyPlainText(emailBody);
               try {
                 smtpMailProvider.getBMailClient()
@@ -63,7 +64,7 @@ public class MonitorMain extends AbstractVerticle {
 
             });
 
-        } catch (ConfigIllegalException e) {
+        } catch (Exception e) {
           startPromise.fail(e);
           this.handleGeneralFailure(e);
         }

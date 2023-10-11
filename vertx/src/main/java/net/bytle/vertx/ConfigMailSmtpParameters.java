@@ -16,16 +16,16 @@ import org.apache.logging.log4j.Logger;
 /**
  * An object to move the SMTP data around
  */
-public class MailSmtpParameterFromConfig {
+public class ConfigMailSmtpParameters {
 
 
-  static Logger LOGGER = LogManager.getLogger(MailSmtpParameterFromConfig.class);
+  static Logger LOGGER = LogManager.getLogger(ConfigMailSmtpParameters.class);
   private static final String MAIL_SMTP_DEFAULT_PORT = "mail.smtp.default.port";
   private static final String MAIL_SMTP_DEFAULT_HOSTNAME = "mail.smtp.default.hostname";
   private static final String MAIL_SMTP_DEFAULT_STARTTLS = "mail.smtp.default.starttls";
   private static final String MAIL_SMTP_DEFAULT_USERNAME = "mail.smtp.default.username";
   private static final String MAIL_SMTP_DEFAULT_PASSWORD = "mail.smtp.default.password";
-  private static final String MAIL_SMTP_ADMIN_EMAIL = "mail.smtp.admin.email";
+  private static final String MAIL_SMTP_DEFAULT_SENDER_EMAIL = "mail.smtp.default.sender";
 
 
 
@@ -104,12 +104,12 @@ public class MailSmtpParameterFromConfig {
       LOGGER.info("Mail: The mail default password key (" + MAIL_SMTP_DEFAULT_PASSWORD + ") was NOT found.");
     }
 
-    String adminEmail = configAccessor.getString(MAIL_SMTP_ADMIN_EMAIL);
+    String adminEmail = configAccessor.getString(MAIL_SMTP_DEFAULT_SENDER_EMAIL);
     if (adminEmail != null) {
       try {
         mailSmtpInfoConfig.setSender(BMailInternetAddress.of(adminEmail));
       } catch (AddressException e) {
-        throw new ConfigIllegalException("The admin email configuration (" + MAIL_SMTP_ADMIN_EMAIL + ") value (" + adminEmail + ") is not a valid email");
+        throw new ConfigIllegalException("The admin email configuration (" + MAIL_SMTP_DEFAULT_SENDER_EMAIL + ") value (" + adminEmail + ") is not a valid email");
       }
     }
     return mailSmtpInfoConfig;

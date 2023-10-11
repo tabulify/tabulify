@@ -8,8 +8,8 @@ import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
+import net.bytle.vertx.ConfigMailSmtpParameters;
 import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.MailSmtpParameterFromConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     jdbcPools.init();
 
     INIT_LOGGER.info("Add the SMTP Logger");
-    BMailSmtpConnectionParameters mailSmtpParameterFromConfig = MailSmtpParameterFromConfig.createFromConfigAccessor(configAccessor);
+    BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
     Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);
 
     INIT_LOGGER.info("Start Instantiation of URL Data Encryption");

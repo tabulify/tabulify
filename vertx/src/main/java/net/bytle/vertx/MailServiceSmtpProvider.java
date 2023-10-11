@@ -249,7 +249,8 @@ public class MailServiceSmtpProvider {
     BMailInternetAddress sender = this.providerConfig.smtpConnectionParameters.getSender();
     BMailMimeMessage mimeMessage = BMailMimeMessage.createEmpty();
     if (sender != null) {
-      mimeMessage.addHeader(BMailMimeMessageHeader.ERRORS_TO, sender.getAddress())
+      mimeMessage
+        .addHeader(BMailMimeMessageHeader.ERRORS_TO, sender.getAddress())
         .addHeader(X_REPORT_ABUSE_TO, sender.getAddress());
     }
     return mimeMessage;

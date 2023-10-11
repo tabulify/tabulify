@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
  * See also the new {@link com.sun.mail.smtp.SMTPMessage}
  * that wraps the Mime Message for other options
  * <p>
+ *
  * @link <a href="https://www.rfc-editor.org/rfc/rfc5322">Last rfc on message format</a>
  * @link <a href="https://www.rfc-editor.org/rfc/rfc822.html">...</a>
  * @link <a href="https://docs.oracle.com/javaee/6/api/javax/mail/internet/MimeMessage.html">...</a>
@@ -304,8 +305,8 @@ public class BMailMimeMessage {
       /**
        * Headers
        */
-      for(Map.Entry<BMailMimeMessageHeader, String> header:headers.entrySet()){
-        this.mimeMessage.addHeader(header.getKey().name(), header.getValue());
+      for (Map.Entry<BMailMimeMessageHeader, String> header : headers.entrySet()) {
+        this.mimeMessage.addHeader(header.getKey().toString(), header.getValue());
       }
 
       // Computes additional headers
@@ -613,7 +614,7 @@ public class BMailMimeMessage {
 
 
   public BMailMimeMessage addHeader(BMailMimeMessageHeader received, String value) {
-    this.headers.put(received,value);
+    this.headers.put(received, value);
     return this;
   }
 }
