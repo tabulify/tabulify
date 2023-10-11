@@ -8,8 +8,8 @@
 api.token.days.before.expiration.failure: 30
 
 # smtp
-mail.smtp.default.hostname: smtp.gmail.com
-mail.smtp.default.port: 465
+mail.smtp.default.hostname: localhost
+mail.smtp.default.port: 25
 mail.smtp.default.username: 'nico@bytle.net'
 mail.smtp.default.sender: nico@bytle.net
 # see also in secret

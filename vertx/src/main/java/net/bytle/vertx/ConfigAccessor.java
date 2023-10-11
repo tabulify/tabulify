@@ -15,6 +15,8 @@ import java.util.List;
  * * the environment that does have a prefix and underscore separator
  */
 public class ConfigAccessor {
+  private static final String ENV_NAME_SEPARATOR = "_";
+  private static final String FILE_NAME_SEPARATOR = ".";
   private static ConfigAccessor configAccessor;
   private final JsonObject jsonObject;
   private final List<String> keys;
@@ -89,8 +91,10 @@ public class ConfigAccessor {
       parent = parent.parentConfigAccessor;
     }
     Collections.reverse(keyParts);
-    keyParts.add(key);
-    return String.join("_", keyParts);
+    // env separator is the underscore
+    String keyWithEnvSep = key.replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR);
+    keyParts.add(keyWithEnvSep);
+    return String.join(ENV_NAME_SEPARATOR, keyParts);
 
   }
 
@@ -156,11 +160,10 @@ public class ConfigAccessor {
   }
 
   /**
-   *
    * @param confName - the configuration name
    * @return the possible value for the variable
    */
   public String getPossibleVariableNames(String confName) {
-    return confName+" (Env: "+getEnvName(confName)+")";
+    return confName + " (Env: " + getEnvName(confName) + ")";
   }
 }

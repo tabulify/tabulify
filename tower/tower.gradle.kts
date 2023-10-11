@@ -1,6 +1,7 @@
 // https://stackoverflow.com/questions/57534469/how-to-change-this-gradle-config-to-gradle-kotlin-dsl
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
+import java.text.SimpleDateFormat
+import java.util.*
 
 // this version should also be changed manually in the plugin
 // // https://github.com/gradle/gradle/issues/9830
@@ -573,5 +574,122 @@ sourceSets {
     java {
       setSrcDirs(srcDirs.plus("src/main/generated"))
     }
+  }
+}
+
+/**
+ * Just run the application
+ *
+ * Note: Continuous build will not work because the Vertx
+ * command will never give the process back to gradle
+ * in order to watch the file system,
+ *
+ */
+val runTowerTaskGroup = "runTower"
+val currentDirectory: String by project
+val runTower = "runTower"
+tasks.register<JavaExec>(runTower) {
+  group = runTowerTaskGroup
+  mainClass.set("$mainClass")
+  args = mutableListOf(
+    "run",
+    "--launcher-class=$towerLauncher",
+    towerMainVerticle
+  )
+  classpath = sourceSets["main"].runtimeClasspath
+  if (project.hasProperty("currentDirectory")) {
+    workingDir = File(currentDirectory)
+  }
+  //dependsOn(processResources)
+}
+
+/**
+ * Just a copy of the web file
+ */
+val javascriptProjectDir = "${project.projectDir}/src/main/javascript"
+val javascriptCopyToWebRoot = "copyJavascript"
+tasks.register<Copy>(javascriptCopyToWebRoot) {
+  from("${javascriptProjectDir}/build")
+  destinationDir = File("${buildDir}/classes/java/main/webroot")
+  //dependsOn(javascriptBuildFrontendTask)
+}
+
+val releaseTaskName = "release"
+tasks.register(releaseTaskName) {
+  dependsOn(shadowJarTaskName)
+  doLast {
+
+    // Variable
+    val backendServerHost: String by project
+    val backendServerPort: String by project
+    val backendUserName: String by project
+    val backendUserPwd: String by project
+    val backendAppName = "tower"
+    val backendAppHome = "/opt/apps/${backendAppName}"
+    val backendAppArchive = "$shadowArchiveBaseName-all"
+
+    /**
+     * Upload the file
+     */
+    ant.withGroovyBuilder {
+      "taskdef"(
+        "name" to "scp",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.Scp",
+        "classpath" to sshAntTask.asPath
+      )
+    }
+
+    val timeStamp = SimpleDateFormat("yyyy.MM.dd-HH.mm.ss").format(Calendar.getInstance().time)
+    val appFile = "${backendAppArchive}.jar"
+    val deploymentFile = "build/libs/$appFile"
+    val remoteDeploymentFile = "${backendAppArchive}-to-deploy-${timeStamp}.jar"
+
+    println("Uploading the deployment file to ${backendAppHome}/$deploymentFile")
+    // https://ant.apache.org/manual/Tasks/scp.html
+    ant.withGroovyBuilder {
+      "scp"(
+        "file" to deploymentFile,
+        "remoteTofile" to "${backendUserName}@${backendServerHost}:${backendAppHome}/$remoteDeploymentFile",
+        "sftp" to "true",
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true,
+        "failonerror" to true
+      )
+    }
+    println("Upload completed")
+
+    /**
+     * Stop the service and rename the jar file
+     */
+    println("Restarting the service")
+    // Add the class path for sshexec
+
+    ant.withGroovyBuilder {
+      "taskdef"(
+        "name" to "sshexec",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.SSHExec",
+        "classpath" to sshAntTask.asPath
+      )
+    }
+    // https://ant.apache.org/manual/Tasks/sshexec.html
+    // The echo done at the end is to make the command always successful
+    val backupFile = "${backendAppArchive}-backup-${timeStamp}.jar"
+    val command =
+      "sudo systemctl stop $backendAppName ; mv ${backendAppHome}/$appFile ${backendAppHome}/${backupFile} ; mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} ;  sudo systemctl start $backendAppName; echo Stop, Move and Start Done"
+    ant.withGroovyBuilder {
+      "sshexec"(
+        "command" to command,
+        "host" to backendServerHost,
+        "username" to backendUserName,
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true,
+        "failonerror" to true
+      )
+    }
+    println("Restart completed")
   }
 }

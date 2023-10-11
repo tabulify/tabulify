@@ -36,16 +36,18 @@ public class MonitorMain extends AbstractVerticle {
       .onFailure(this::handleGeneralFailure)
       .onSuccess(configAccessor -> {
         try {
-          LOGGER.info("Monitor api token check starting");
+          LOGGER.info("Monitor Config");
           BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
 
+          LOGGER.info("Monitor Starting the API Tolen check");
           Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
             .check();
 
           monitorReportFuture
             .onFailure(this::handleGeneralFailure)
             .onSuccess(monitor -> {
+              LOGGER.info("Monitor Mailing");
               String emailBody = monitor.print();
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
@@ -60,6 +62,7 @@ public class MonitorMain extends AbstractVerticle {
                 this.handleGeneralFailure(e);
               }
 
+              LOGGER.info("Monitor Successful - closing");
               vertx.close();
 
             });
