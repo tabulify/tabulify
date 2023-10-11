@@ -31,25 +31,21 @@ public class BMailSmtpClient {
   private final Session smtpSession;
   private final BMailSmtpClient.config config;
 
-  private BMailInternetAddress senderAddress;
 
 
   public BMailSmtpClient(config config) {
     this.config = config;
     Properties mailProps = this.getSmtpTransportProperties();
     Authenticator authenticator = null;
-    if (config.auth) {
+    if (config.username!=null) {
 
       /**
        * Transmit the username, password
        * It must be given explicitly in order
-       * to use the static function {@link javax.mail.Transport#send(Message)}
-       *
+       * to use the static function {@link Transport#send(Message)}
+       * Note that it's also possible to pass them directly (not tested) {@link Transport#connect(String, String, String)}  }
        * See  https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html
        */
-      if (config.username == null) {
-        throw new RuntimeException("Smtp Authentication is required but the username is null");
-      }
       if (config.password == null) {
         throw new RuntimeException("Smtp Authentication is required but the password is null");
       }
@@ -70,6 +66,17 @@ public class BMailSmtpClient {
 
   public static BMailSmtpClient.config create() {
     return new config();
+  }
+
+  public static BMailSmtpClient.config createFrom(BMailSmtpConnectionParameters smtpConnectionParameters) {
+    return new config()
+      .setHost(smtpConnectionParameters.getHost())
+      .setPort(smtpConnectionParameters.getPort())
+      .setStartTls(smtpConnectionParameters.getStartTlsOption())
+      .setUsername(smtpConnectionParameters.getUserName())
+      .setPassword(smtpConnectionParameters.getPassword())
+      .setSenderEmail(smtpConnectionParameters.getSender())
+      ;
   }
 
 
@@ -127,23 +134,26 @@ public class BMailSmtpClient {
     // smtpServerProps.put(smtpProtocolConfigurationPrefix +".writetimeout", "");
     smtpServerProps.put(smtpProtocolConfigurationPrefix + ".quitwait", "false");
 
-    smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.HOST, config.smtpHost);
-    smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.PORT, config.port);
 
-    if (config.auth) {
-      smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.AUTH, true);
-    }
+    smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.HOST, config.smtpHost);
+    smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.PORT, config.port);
+
 
     if (config.username != null) {
-      smtpServerProps.put(smtpProtocolConfigurationPrefix + "."+ BMailSmtpConnectionAttribute.USER, config.username);
+      smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.AUTH, true);
+      smtpServerProps.put(smtpProtocolConfigurationPrefix + "." + BMailSmtpConnectionAttribute.USER, config.username);
     }
 
     switch (config.requireStartTls) {
+      case NONE:
+        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "false");
+        break;
       case ENABLE:
         smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
         break;
       case REQUIRE:
         // STARTTLS plaintext fallback is disabled by setting mail.smtp.starttls.required
+        smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "true");
         smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.required", "true");
     }
     if (config.trustAll) {
@@ -185,7 +195,6 @@ public class BMailSmtpClient {
         .setPort(config.port)
         .addQueryProperty(BMailSmtpConnectionAttribute.USER, config.username)
         .addQueryProperty(BMailSmtpConnectionAttribute.PASSWORD, config.password == null ? "null" : "xxxx")
-        .addQueryProperty(BMailSmtpConnectionAttribute.AUTH, Booleans.createFromObject(config.auth).toString())
         .addQueryProperty(BMailSmtpConnectionAttribute.TLS, Booleans.createFromObject(config.requireStartTls).toString())
         .toUri();
     } catch (IllegalStructure e) {
@@ -222,13 +231,10 @@ public class BMailSmtpClient {
   }
 
   public BMailInternetAddress getSenderAddress() {
-    return this.senderAddress;
+    return this.config.sender;
   }
 
-  @SuppressWarnings("unused")
-  public void setSenderAddress(BMailInternetAddress senderAddress) {
-    this.senderAddress = senderAddress;
-  }
+
 
   /**
    * Send a message with the recipients address of the message
@@ -260,18 +266,22 @@ public class BMailSmtpClient {
     String smtpHost = "localhost";
     String username;
     String password;
-    Boolean auth = false;
     BMailStartTls requireStartTls = BMailStartTls.NONE;
     boolean debugLogging;
     Integer sessionTimeout;
     Integer chunkSize;
     Boolean trustAll = false;
+    private BMailInternetAddress sender;
 
     public config() {
 
     }
 
     public config setHost(String hostname) {
+      if (hostname == null) {
+        // don't overwrite the localhost default
+        return this;
+      }
       this.smtpHost = hostname;
       return this;
     }
@@ -283,7 +293,6 @@ public class BMailSmtpClient {
 
     public config setUsername(String username) {
       this.username = username;
-      this.auth = true;
       return this;
     }
 
@@ -302,12 +311,11 @@ public class BMailSmtpClient {
       return this;
     }
 
-    public config setAuth(Boolean auth) {
-      this.auth = auth;
-      return this;
-    }
-
     public config setStartTls(BMailStartTls startTls) {
+      if (startTls == null) {
+        // don't overwrite the default
+        return this;
+      }
       this.requireStartTls = startTls;
       return this;
     }
@@ -336,6 +344,9 @@ public class BMailSmtpClient {
 
     }
 
-
+    public BMailSmtpClient.config setSenderEmail(BMailInternetAddress sender) {
+      this.sender = sender;
+      return this;
+    }
   }
 }

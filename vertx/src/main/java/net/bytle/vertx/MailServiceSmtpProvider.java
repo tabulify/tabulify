@@ -56,18 +56,6 @@ public class MailServiceSmtpProvider {
 
   public static final String DEFAULT_DKIM_SELECTOR = "combo";
 
-  /**
-   * Return-Path: Trace information ???
-   * Email header that indicates where and how bounced emails will be processed.
-   * <a href="https://www.rfc-editor.org/rfc/rfc1123">...</a>
-   * This header is also referred to as a bounce address or reverse path
-   */
-
-  private final BMailInternetAddress ABUSE_EMAIL;
-
-  private final BMailInternetAddress BOUNCE_EMAIL ;
-
-
 
   private final MailServiceSmtpProviderConfig providerConfig;
 
@@ -85,13 +73,8 @@ public class MailServiceSmtpProvider {
   private MailClient wiserMailClient;
 
 
-
-
-
   public MailServiceSmtpProvider(MailServiceSmtpProviderConfig providerConfig) {
     this.providerConfig = providerConfig;
-    this.ABUSE_EMAIL = providerConfig.adminAddress;
-    this.BOUNCE_EMAIL = providerConfig.adminAddress;
   }
 
   public static MailServiceSmtpProvider get(Vertx vertx) {
@@ -104,64 +87,59 @@ public class MailServiceSmtpProvider {
 
   public static MailServiceSmtpProviderConfig config(Vertx vertx, ConfigAccessor jsonConfig, BMailSmtpConnectionParameters mailSmtpConfig) {
 
-    MailServiceSmtpProviderConfig MailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(vertx);
+    MailServiceSmtpProviderConfig mailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(vertx);
 
     /**
      * Data from conf file
      */
     String dkimSelector = jsonConfig.getString(MAIL_DKIM_SELECTOR);
     if (dkimSelector != null) {
-      MailServiceSmtpProviderConfig.setDkimSelector(dkimSelector);
+      mailServiceSmtpProviderConfig.setDkimSelector(dkimSelector);
       LOGGER.info("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was found with the value " + dkimSelector);
     } else {
       LOGGER.warn("Mail: The mail dkim selector (" + MAIL_DKIM_SELECTOR + ") was not found with the value.");
     }
     String dkimPrivateKey = jsonConfig.getString(MAIL_DKIM_PRIVATE);
     if (dkimPrivateKey != null) {
-      MailServiceSmtpProviderConfig.setDkimPrivateKey(dkimPrivateKey);
+      mailServiceSmtpProviderConfig.setDkimPrivateKey(dkimPrivateKey);
       LOGGER.info("Mail: The mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was found");
     } else {
       LOGGER.warn("Mail: A mail dkim private key (" + MAIL_DKIM_PRIVATE + ") was NOT found");
     }
 
+    mailServiceSmtpProviderConfig.smtpConnectionParameters = mailSmtpConfig;
 
     Integer port = mailSmtpConfig.getPort();
     if (port != null) {
-      MailServiceSmtpProviderConfig.defaultSmtpPort = port;
       LOGGER.info("Mail: The mail default port key was set with the value (" + port + ").");
     }
 
     String hostname = mailSmtpConfig.getHost();
     if (hostname != null) {
-      MailServiceSmtpProviderConfig.defaultSmtpHostname = hostname;
       LOGGER.info("Mail: The mail default hostname was set with the value (" + hostname + ").");
     }
 
     BMailStartTls startTls = mailSmtpConfig.getStartTlsOption();
     if (startTls != null) {
-      MailServiceSmtpProviderConfig.defaultSmtpStartTlsOption = startTls;
       LOGGER.info("Mail: The mail default startTLS was set with the value (" + startTls.toString().toLowerCase() + ").");
     }
 
     String username = mailSmtpConfig.getUserName();
     if (username != null) {
-      MailServiceSmtpProviderConfig.defaultSmtpUserName = username;
       LOGGER.info("Mail: The mail default username was set with the value (" + username + ").");
     }
 
     String password = mailSmtpConfig.getPassword();
     if (password != null) {
-      MailServiceSmtpProviderConfig.defaultSmtpUserPassword = password;
       LOGGER.info("Mail: The mail password was set (xxxxx).");
     }
 
-    BMailInternetAddress adminAddress = mailSmtpConfig.getAdminEmail();
-    if(adminAddress!=null){
-      MailServiceSmtpProviderConfig.adminAddress = adminAddress;
-      LOGGER.info("Mail: The admin email was set to ("+adminAddress+')');
+    BMailInternetAddress adminAddress = mailSmtpConfig.getSender();
+    if (adminAddress != null) {
+      LOGGER.info("Mail: The sender email was set to (" + adminAddress + ')');
     }
 
-    return MailServiceSmtpProviderConfig;
+    return mailServiceSmtpProviderConfig;
 
   }
 
@@ -203,7 +181,7 @@ public class MailServiceSmtpProvider {
       .setSelector(this.providerConfig.dkimSelector)
       .setSdid(senderDomain);
 
-    MailConfig config = new MailConfig()
+    MailConfig vertxMailConfig = new MailConfig()
       .setUserAgent(MAIL_AGENT_NAME)
       .setMaxPoolSize(1)
       .setEnableDKIM(true)
@@ -212,15 +190,18 @@ public class MailServiceSmtpProvider {
     /**
      * transactional email server are local for now
      */
-    if (this.providerConfig.defaultSmtpHostname != null) {
-      config.setHostname(this.providerConfig.defaultSmtpHostname);
+    String host = this.providerConfig.smtpConnectionParameters.getHost();
+    if (host != null) {
+      vertxMailConfig.setHostname(host);
     }
-    if (this.providerConfig.defaultSmtpPort != null) {
-      config.setPort(this.providerConfig.defaultSmtpPort);
+    Integer port = this.providerConfig.smtpConnectionParameters.getPort();
+    if (port != null) {
+      vertxMailConfig.setPort(port);
     }
-    if (this.providerConfig.defaultSmtpStartTlsOption != null) {
+    BMailStartTls startTlsOption = this.providerConfig.smtpConnectionParameters.getStartTlsOption();
+    if (startTlsOption != null) {
       StartTLSOptions mailClientStartTlsValue;
-      switch (this.providerConfig.defaultSmtpStartTlsOption){
+      switch (startTlsOption) {
         case NONE:
           mailClientStartTlsValue = StartTLSOptions.DISABLED;
           break;
@@ -233,16 +214,18 @@ public class MailServiceSmtpProvider {
         default:
           throw new InternalException("Should not happen");
       }
-      config.setStarttls(mailClientStartTlsValue);
+      vertxMailConfig.setStarttls(mailClientStartTlsValue);
     }
-    if (this.providerConfig.defaultSmtpUserName != null) {
-      config.setUsername(this.providerConfig.defaultSmtpUserName);
+    String userName = this.providerConfig.smtpConnectionParameters.getUserName();
+    if (userName != null) {
+      vertxMailConfig.setUsername(userName);
     }
-    if (this.providerConfig.defaultSmtpUserPassword != null) {
-      config.setPassword(this.providerConfig.defaultSmtpUserPassword);
+    String password = this.providerConfig.smtpConnectionParameters.getPassword();
+    if (password != null) {
+      vertxMailConfig.setPassword(password);
     }
     // MailClient.createShared(vertx, config, "poolName");
-    return config;
+    return vertxMailConfig;
   }
 
   public MailServiceSmtpProvider useWiserSmtpServerAsSmtpDestination(Boolean b) {
@@ -252,48 +235,40 @@ public class MailServiceSmtpProvider {
 
   public MailMessage createVertxMailMessage() {
 
-    return new MailMessage()
-      .setBounceAddress(BOUNCE_EMAIL.getAddress())
-      .addHeader(BMailMimeMessageHeader.ERRORS_TO.toString(), this.getAdminInternetAddress().getAddress())
-      .addHeader(X_REPORT_ABUSE_TO.toString(), ABUSE_EMAIL.getAddress());
-
-
+    MailMessage mailMessage = new MailMessage();
+    BMailInternetAddress sender = this.providerConfig.smtpConnectionParameters.getSender();
+    if (sender != null) {
+      mailMessage.setBounceAddress(sender.getAddress());
+    }
+    return mailMessage;
 
   }
 
-  private BMailInternetAddress getAdminInternetAddress() {
-    return this.providerConfig.adminAddress;
-  }
 
   public BMailMimeMessage createBMailMessage() {
-    return BMailMimeMessage.createEmpty()
-      .addHeader(BMailMimeMessageHeader.ERRORS_TO, this.getAdminInternetAddress().getAddress())
-      .addHeader(X_REPORT_ABUSE_TO, ABUSE_EMAIL.getAddress());
+    BMailInternetAddress sender = this.providerConfig.smtpConnectionParameters.getSender();
+    BMailMimeMessage mimeMessage = BMailMimeMessage.createEmpty();
+    if (sender != null) {
+      mimeMessage.addHeader(BMailMimeMessageHeader.ERRORS_TO, sender.getAddress())
+        .addHeader(X_REPORT_ABUSE_TO, sender.getAddress());
+    }
+    return mimeMessage;
   }
 
   public BMailSmtpClient getBMailClient() {
 
-    //return BMailSmtpClient.create();
-    throw new RuntimeException("Not yet");
+    return BMailSmtpClient
+      .createFrom(this.providerConfig.smtpConnectionParameters)
+      .build();
 
   }
 
 
   public static class MailServiceSmtpProviderConfig {
     private final Vertx vertx;
-    public BMailInternetAddress adminAddress;
+    public BMailSmtpConnectionParameters smtpConnectionParameters;
     String dkimSelector = DEFAULT_DKIM_SELECTOR;
     String dkimPrivateKey;
-    /**
-     * the port of the smtp service
-     * It's used primarily to set the port of the wiser smtp service
-     * during test
-     */
-    Integer defaultSmtpPort;
-    String defaultSmtpHostname;
-    BMailStartTls defaultSmtpStartTlsOption;
-    String defaultSmtpUserName;
-    String defaultSmtpUserPassword;
 
     public MailServiceSmtpProviderConfig(Vertx vertx) {
       this.vertx = vertx;
@@ -323,7 +298,6 @@ public class MailServiceSmtpProvider {
       this.dkimPrivateKey = dkimPrivateKey;
       return this;
     }
-
 
 
   }

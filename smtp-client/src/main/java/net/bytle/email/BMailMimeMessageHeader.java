@@ -10,6 +10,9 @@ public enum BMailMimeMessageHeader {
   RECEIVED("Received"),
   /**
    * Trace info: Where to send back the email in case of problem.
+   * Email header that indicates where and how bounced emails will be processed.
+   * <a href="https://www.rfc-editor.org/rfc/rfc1123">...</a>
+   * This header is also referred to as a bounce address or reverse path
    * <p>
    * Diff with Reply-To:
    * The "Reply-To" field is added  by  the  originator  and

@@ -2,7 +2,7 @@ package net.bytle.email;
 
 /**
  * An object to hold and pass smtp connection
- * configuration around from vertx to log, the BMail
+ * configuration parameters around from vertx to log, the BMail
  */
 public class BMailSmtpConnectionParameters {
 
@@ -12,7 +12,7 @@ public class BMailSmtpConnectionParameters {
     private BMailStartTls defaultSmtpStartTlsOption;
     private String userName;
     private String password;
-    private BMailInternetAddress adminEmail;
+    private BMailInternetAddress sender;
 
 
 
@@ -53,8 +53,8 @@ public class BMailSmtpConnectionParameters {
     return this;
   }
 
-    public BMailSmtpConnectionParameters setAdminEmail(BMailInternetAddress adminEmail) {
-    this.adminEmail = adminEmail;
+    public BMailSmtpConnectionParameters setSender(BMailInternetAddress sender) {
+    this.sender = sender;
     return this;
   }
 
@@ -78,8 +78,8 @@ public class BMailSmtpConnectionParameters {
     return this.defaultSmtpStartTlsOption;
   }
 
-  public BMailInternetAddress getAdminEmail() {
-    return this.adminEmail;
+  public BMailInternetAddress getSender() {
+    return this.sender;
   }
 
 }

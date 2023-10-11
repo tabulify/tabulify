@@ -2,6 +2,7 @@ package net.bytle.monitor;
 
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
+import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.vertx.ConfigIllegalException;
@@ -51,16 +52,20 @@ public class MonitorMain extends AbstractVerticle {
                 .setFrom("monitor@bytle.net")
                 .setSubject("Monitor")
                 .setBodyPlainText(emailBody);
-              smtpMailProvider.getBMailClient();
-
-
+              try {
+                smtpMailProvider.getBMailClient()
+                    .sendMessage(email);
+              } catch (MessagingException e) {
+                this.handleGeneralFailure(e);
+              }
 
               vertx.close();
-            });
 
+            });
 
         } catch (ConfigIllegalException e) {
           startPromise.fail(e);
+          this.handleGeneralFailure(e);
         }
       });
 

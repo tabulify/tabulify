@@ -107,7 +107,7 @@ public class MailSmtpParameterFromConfig {
     String adminEmail = configAccessor.getString(MAIL_SMTP_ADMIN_EMAIL);
     if (adminEmail != null) {
       try {
-        mailSmtpInfoConfig.setAdminEmail(BMailInternetAddress.of(adminEmail));
+        mailSmtpInfoConfig.setSender(BMailInternetAddress.of(adminEmail));
       } catch (AddressException e) {
         throw new ConfigIllegalException("The admin email configuration (" + MAIL_SMTP_ADMIN_EMAIL + ") value (" + adminEmail + ") is not a valid email");
       }
