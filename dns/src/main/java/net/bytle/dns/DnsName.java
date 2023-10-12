@@ -1,6 +1,5 @@
 package net.bytle.dns;
 
-import net.bytle.exception.NotFoundException;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 
@@ -39,7 +38,7 @@ public class DnsName {
    * (for instance when the address is proxied by cloudflare)
    * We return the first one
    */
-  public ARecord getFirstARecord() throws NotFoundException, DnsException {
+  public ARecord getFirstARecord() throws DnsNotFoundException, DnsException {
 
     List<ARecord> aRecords;
     try {
@@ -55,7 +54,7 @@ public class DnsName {
     int size = aRecords.size();
     switch (size) {
       case 0:
-        throw new NotFoundException("There is no A record for the name (" + this + ")");
+        throw new DnsNotFoundException("There is no A record for the name (" + this + ")");
       default:
         /**
          * We may get 2 records with the same name but with 2 differents addresses
@@ -66,7 +65,7 @@ public class DnsName {
 
   }
 
-  public AAAARecord getAAAARecord() throws NotFoundException, DnsException {
+  public AAAARecord getFirstAAAARecord() throws DnsNotFoundException, DnsException {
 
     List<AAAARecord> aaaaRecords;
     try {
@@ -81,11 +80,12 @@ public class DnsName {
     }
     switch (aaaaRecords.size()) {
       case 0:
-        throw new NotFoundException("There is more than one AAAA record for the name (" + this + ")");
-      case 1:
-        return aaaaRecords.get(0);
+        throw new DnsNotFoundException("There is more than one AAAA record for the name (" + this + ")");
       default:
-        throw new DnsException("There is more than one AAAA record for the name (" + this + ")");
+        /**
+         * Due to load balancer, we may get more than one
+         */
+        return aaaaRecords.get(0);
     }
 
   }
@@ -128,7 +128,7 @@ public class DnsName {
    * Just an alias
    */
   @SuppressWarnings("unused")
-  public ARecord forwardLookup() throws DnsException, NotFoundException {
+  public ARecord forwardLookup() throws DnsException, DnsNotFoundException {
 
     return getFirstARecord();
 
@@ -237,13 +237,18 @@ public class DnsName {
    * * load balancing
    * ...
    */
-  public DnsIp getFirstDnsIpAddress() throws DnsException, NotFoundException {
+  public DnsIp getFirstDnsIpAddress() throws DnsException, DnsNotFoundException {
     InetAddress inetAddress;
     try {
        inetAddress = getFirstARecord().getAddress();
-    } catch (NotFoundException e) {
-      inetAddress = getAAAARecord().getAddress();
+    } catch (DnsNotFoundException e) {
+      inetAddress = getFirstAAAARecord().getAddress();
     }
+    return  this.session.createIpFromAddress(inetAddress);
+  }
+
+  public DnsIp getFirstDnsIpv4Address() throws DnsException, DnsNotFoundException {
+    InetAddress inetAddress = getFirstARecord().getAddress();
     return  this.session.createIpFromAddress(inetAddress);
   }
 

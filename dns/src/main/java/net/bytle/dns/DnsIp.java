@@ -1,6 +1,5 @@
 package net.bytle.dns;
 
-import net.bytle.exception.NotFoundException;
 import org.xbill.DNS.*;
 
 import java.net.InetAddress;
@@ -35,7 +34,7 @@ public class DnsIp {
   }
 
 
-  public PTRRecord getPtrRecord() throws NotFoundException {
+  public PTRRecord getPtrRecord() throws DnsNotFoundException, DnsException {
 
 
     Name name = ReverseMap.fromAddress(this.address);
@@ -49,9 +48,9 @@ public class DnsIp {
         .stream()
         .map(PTRRecord.class::cast)
         .findFirst()
-        .orElseThrow(NotFoundException::new);
+        .orElseThrow(DnsNotFoundException::new);
     } catch (InterruptedException | ExecutionException e) {
-      throw new NotFoundException("Network error", e);
+      throw new DnsException("Network error", e);
     }
 
   }

@@ -49,21 +49,24 @@ public class MonitorMain extends AbstractVerticle {
             .setIpv4(MonitorNetworkTopology.BEAU_SERVER_IPV4)
             .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
             .build();
-          MonitorReport monitorReport = MonitorDns.create()
+          MonitorReport hostMonitorReport = MonitorDns.create()
             .checkPtr(monitorHost)
             .getMonitorReport();
 
           monitorReportFuture
             .onFailure(this::handleGeneralFailure)
-            .onSuccess(monitor -> {
+            .onSuccess(tokenMonitorReport -> {
               LOGGER.info("Monitor Mailing");
-              String emailBody = monitor.print();
+              String emailText = "Api Token\n" +
+                tokenMonitorReport.print() +
+                "Host check\n" +
+                hostMonitorReport.print();
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)
                 .setFrom("no-reply@bytle.net")
                 .setSubject("Monitor " + LocalDate.now())
-                .setBodyPlainText(emailBody);
+                .setBodyPlainText(emailText);
               try {
                 smtpMailProvider.getBMailClient()
                   .sendMessage(email);

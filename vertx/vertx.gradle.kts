@@ -53,6 +53,7 @@ dependencies {
   implementation("io.vertx:vertx-dropwizard-metrics:$vertxVersion")
   implementation("io.vertx:vertx-circuit-breaker:$vertxVersion")
 
+
   // For test api to pass it on
   testImplementation("io.vertx:vertx-unit:$vertxVersion")
   testImplementation("io.vertx:vertx-junit5:$vertxVersion")

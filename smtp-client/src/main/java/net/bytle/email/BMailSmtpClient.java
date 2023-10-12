@@ -355,7 +355,7 @@ public class BMailSmtpClient {
        */
       if (this.startTls == null) {
         if (!isDirectTlsConnection) {
-          this.startTls = BMailStartTls.REQUIRE;
+          this.startTls = BMailStartTls.ENABLE;
         }
       }
 

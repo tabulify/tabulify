@@ -1,8 +1,15 @@
 # Vertx
 
 
+## About
 Collection of Utility around Vertx.
 
+## Cron
+
+Cron is not in it as a wrapper of
+https://github.com/jmrozanec/cron-utils
+is already available for vertx.
+https://github.com/NoEnv/vertx-cronutils/
 
 
 ## Shared data API: Lock, Counter, Map

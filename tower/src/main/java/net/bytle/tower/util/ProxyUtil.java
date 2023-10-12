@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
  * <p>
  * There is also a low-level HTTP proxy here:
  * <a href="https://github.com/eclipse-vertx/vert.x/blob/master/src/test/java/io/vertx/test/proxy/HttpProxy.java">...</a>
+ * Here also an example with an API gateway:
+ * <a href="https://github.com/sczyh30/vertx-blueprint-microservice/blob/master/api-gateway/src/main/java/io/vertx/blueprint/microservice/gateway/APIGatewayVerticle.java#L155">...</a>
  */
 public class ProxyUtil {
 
