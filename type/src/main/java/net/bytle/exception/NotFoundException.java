@@ -4,7 +4,7 @@ package net.bytle.exception;
  * Fighting against NULL.
  * Uses this instead of returning null
  */
-public class NotFoundException extends Throwable {
+public class NotFoundException extends Exception {
 
   public NotFoundException() {
   }
@@ -13,4 +13,7 @@ public class NotFoundException extends Throwable {
     super(s);
   }
 
+  public NotFoundException(String message, Exception e) {
+    super(message,e);
+  }
 }

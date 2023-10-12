@@ -44,6 +44,15 @@ public class MonitorMain extends AbstractVerticle {
           Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
             .check();
 
+          LOGGER.info("Monitor Check Host");
+          MonitorNetworkHost monitorHost = MonitorNetworkHost.createForName(MonitorNetworkTopology.BEAU_SERVER_NAME)
+            .setIpv4(MonitorNetworkTopology.BEAU_SERVER_IPV4)
+            .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
+            .build();
+          MonitorReport monitorReport = MonitorDns.create()
+            .checkPtr(monitorHost)
+            .getMonitorReport();
+
           monitorReportFuture
             .onFailure(this::handleGeneralFailure)
             .onSuccess(monitor -> {
@@ -53,11 +62,11 @@ public class MonitorMain extends AbstractVerticle {
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)
                 .setFrom("no-reply@bytle.net")
-                .setSubject("Monitor "+ LocalDate.now())
+                .setSubject("Monitor " + LocalDate.now())
                 .setBodyPlainText(emailBody);
               try {
                 smtpMailProvider.getBMailClient()
-                    .sendMessage(email);
+                  .sendMessage(email);
               } catch (MessagingException e) {
                 this.handleGeneralFailure(e);
               }

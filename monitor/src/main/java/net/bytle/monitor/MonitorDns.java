@@ -19,6 +19,14 @@ import java.util.concurrent.ExecutionException;
  */
 public class MonitorDns {
 
+  private final MonitorReport monitorReport;
+  private final DnsSession dnsSession;
+
+  public MonitorDns() {
+    this.monitorReport = new MonitorReport();
+    this.dnsSession = new DnsSession();
+  }
+
   public static final String DATACADAMIA_COM = "datacadamia.com";
   private final String COMBOSTRAP_DOT_COM = "combostrap.com";
 
@@ -32,12 +40,6 @@ public class MonitorDns {
     "tabulify.com"
   );
 
-
-  public static final String BEAU_SERVER_NAME = "beau.bytle.net";
-
-  public static final String BEAU_SERVER_IPV4 = "192.99.55.226";
-
-  public static final String BEAU_SERVER_IPV6 = "2607:5300:201:3100::85b";
 
   public static MonitorDns create() {
     return new MonitorDns();
@@ -55,23 +57,29 @@ public class MonitorDns {
    * Gmail does not accept 550-5.7.25 messages from IPs with missing PTR
    * records. Please visit 550-5.7.25
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
+   *
+   * @return
    */
 
-  public void checkPtrTest() throws UnknownHostException, ExecutionException, InterruptedException {
+  public MonitorDns checkPtr(MonitorNetworkHost monitorNetworkHost) throws UnknownHostException, ExecutionException, InterruptedException {
+
 
     // Get the IP address associated with a name
-    InetAddress ipAddress = DnsName.createFrom(BEAU_SERVER_NAME).getIpAddress();
+    DnsSession.createDnsName(monitorNetworkHost.getName());
+    InetAddress ipAddress = DnsName.createFrom().getIpAddress();
+    if(ipAddress.equals(monitorNetworkHost.getIpv4()))
 //    Assert.assertEquals(BEAU_SERVER_IPV4, ipAddress.getHostAddress());
 
     // Get the name associated with the IP
-    PTRRecord ptrNameV6 = DnsAddress.createFromIpv6String(BEAU_SERVER_IPV6).getPtrRecordAsync();
+    PTRRecord ptrNameV6 = DnsAddress.createFromIpv6String(MonitorNetworkTopology.BEAU_SERVER_IPV6).getPtrRecordAsync();
     Name target = ptrNameV6.getTarget();
 //    Assert.assertEquals(target.toString(), BEAU_SERVER_NAME + DnsUtil.ABSOLUTE_TRAILING_DOT);
 
-    PTRRecord ptrNameV4 = DnsAddress.createFromIpv4String(BEAU_SERVER_IPV4).getPtrRecordAsync();
+    PTRRecord ptrNameV4 = DnsAddress.createFromIpv4String(MonitorNetworkTopology.BEAU_SERVER_IPV4).getPtrRecordAsync();
     Name targetV4 = ptrNameV4.getTarget();
 //    Assert.assertEquals(targetV4.toString(), BEAU_SERVER_NAME + DnsUtil.ABSOLUTE_TRAILING_DOT);
 
+    return this;
   }
 
 
@@ -80,13 +88,14 @@ public class MonitorDns {
     /**
      * The spf record that should be included in all domains
      */
-    String expectedComboSpfTxtRecord = "v=spf1 mx ip4:" + BEAU_SERVER_IPV4 + "/32 ip6:" + BEAU_SERVER_IPV6 + " include:spf.mailjet.com include:_spf.google.com include:spf.mandrillapp.com ~all";
+    String expectedComboSpfTxtRecord = "v=spf1 mx ip4:" + MonitorNetworkTopology.BEAU_SERVER_IPV4 + "/32 ip6:" + MonitorNetworkTopology.BEAU_SERVER_IPV6 + " include:spf.mailjet.com include:_spf.google.com include:spf.mandrillapp.com ~all";
     DnsDomain combostrapDomain = DnsDomain.createFrom(COMBOSTRAP_DOT_COM);
     TXTRecord spfRecord = combostrapDomain
       .getSpfRecord();
 
 //    Assert.assertEquals("spf is good", expectedComboSpfTxtRecord, DnsUtil.getStringFromTxtRecord(spfRecord));
     String comboSpfTextRecordName = combostrapDomain.getSpfARecordName();
+
     /**
      * The spf record for all domains
      */
@@ -177,5 +186,9 @@ public class MonitorDns {
 //      String actualDmarcStringValue = DnsUtil.getStringFromTxtRecord(dmarcTextRecord);
 //      Assert.assertEquals("The dmarc record for the name (" + name + ") should be good", expectedDMarcValue, actualDmarcStringValue);
     }
+  }
+
+  public MonitorReport getMonitorReport() {
+    return this.monitorReport;
   }
 }
