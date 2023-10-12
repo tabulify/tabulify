@@ -1,15 +1,18 @@
 package net.bytle.dns;
 
+import net.bytle.exception.NotFoundException;
 import org.xbill.DNS.*;
+import org.xbill.DNS.lookup.LookupResult;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DnsName {
 
@@ -30,40 +33,114 @@ public class DnsName {
   }
 
 
-  public InetAddress getIpAddress() throws UnknownHostException {
-    return Address.getByName(name);
+  /**
+   * For a name, you may get multiple record with the same name
+   * but two differents address
+   * (for instance when the address is proxied by cloudflare)
+   * We return the first one
+   */
+  public ARecord getFirstARecord() throws NotFoundException, DnsException {
+
+    List<ARecord> aRecords;
+    try {
+      aRecords = session.getLookupSession().lookupAsync(this.dnsName, Type.A)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream().map(ARecord.class::cast)
+        .collect(Collectors.toList());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new DnsException(e);
+    }
+    int size = aRecords.size();
+    switch (size) {
+      case 0:
+        throw new NotFoundException("There is no A record for the name (" + this + ")");
+      default:
+        /**
+         * We may get 2 records with the same name but with 2 differents addresses
+         * (for instance when the address is proxied by cloudflare)
+         */
+        return aRecords.get(0);
+    }
+
   }
 
+  public AAAARecord getAAAARecord() throws NotFoundException, DnsException {
 
-  public ARecord getARecord() throws ExecutionException, InterruptedException {
-
-
-    return session.getLookupSession().lookupAsync(this.dnsName,Type.A)
-      .toCompletableFuture()
-      .get()
-      .getRecords()
-      .stream().map(ARecord.class::cast)
-      .findFirst()
-      .orElseThrow();
+    List<AAAARecord> aaaaRecords;
+    try {
+      aaaaRecords = session.getLookupSession().lookupAsync(this.dnsName, Type.AAAA)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream().map(AAAARecord.class::cast)
+        .collect(Collectors.toList());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new DnsException(e);
+    }
+    switch (aaaaRecords.size()) {
+      case 0:
+        throw new NotFoundException("There is more than one AAAA record for the name (" + this + ")");
+      case 1:
+        return aaaaRecords.get(0);
+      default:
+        throw new DnsException("There is more than one AAAA record for the name (" + this + ")");
+    }
 
   }
 
 
   @SuppressWarnings("unused")
-  public ARecord forwardLookup() throws ExecutionException, InterruptedException {
+  boolean isSubdomain(DnsName dnsName) {
+    return this.dnsName.subdomain(dnsName.dnsName);
+  }
 
-    return getARecord();
+
+  /**
+   * @return subdomains (A and AAAA record)
+   */
+  @SuppressWarnings("unused")
+  public List<Record> getSubdomains() {
+
+
+    CompletableFuture<LookupResult> AFutureRecords = session
+      .getLookupSession()
+      .lookupAsync(this.dnsName, Type.A)
+      .toCompletableFuture();
+    CompletableFuture<LookupResult> AAAAFutureRecords = session
+      .getLookupSession()
+      .lookupAsync(this.dnsName, Type.AAAA)
+      .toCompletableFuture();
+
+
+    return Stream.of(AFutureRecords, AAAAFutureRecords)
+      .map(CompletableFuture::join)
+      .flatMap(res -> res.getRecords().stream())
+      .collect(Collectors.toList());
+
+
+  }
+
+
+  /**
+   *
+   * Just an alias
+   */
+  @SuppressWarnings("unused")
+  public ARecord forwardLookup() throws DnsException, NotFoundException {
+
+    return getFirstARecord();
 
   }
 
   public TXTRecord getDkimRecord(String dkimSelector) throws ExecutionException, InterruptedException, TextParseException {
-    return this.getDkimName(dkimSelector).getTextRecordThatStartsWith( getDkimPrefix());
+    return this.getDkimName(dkimSelector).getTextRecordThatStartsWith(getDkimPrefix());
   }
 
   private String getDkimPrefix() {
     return "v=DKIM1";
   }
-
 
 
   public List<MXRecord> getMxRecords() throws ExecutionException, InterruptedException {
@@ -153,4 +230,27 @@ public class DnsName {
   public int hashCode() {
     return Objects.hash(name);
   }
+
+  /**
+   * A name may have several ip due to:
+   * * proxy (Cloudflare , ...)
+   * * load balancing
+   * ...
+   */
+  public DnsIp getFirstDnsIpAddress() throws DnsException, NotFoundException {
+    InetAddress inetAddress;
+    try {
+       inetAddress = getFirstARecord().getAddress();
+    } catch (NotFoundException e) {
+      inetAddress = getAAAARecord().getAddress();
+    }
+    return  this.session.createIpFromAddress(inetAddress);
+  }
+
+
+  @Override
+  public String toString() {
+    return dnsName.toString();
+  }
+
 }

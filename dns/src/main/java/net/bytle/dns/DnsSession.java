@@ -1,9 +1,11 @@
 package net.bytle.dns;
 
+import org.xbill.DNS.Address;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.lookup.LookupSession;
 
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class DnsSession {
@@ -26,8 +28,10 @@ public class DnsSession {
   public DnsName createDnsName(String name) throws TextParseException {
     return new DnsName(this, name);
   }
-  public DnsIp createIp(String ipv4) throws UnknownHostException {
-    return new DnsIp(this,ipv4);
+  @SuppressWarnings("unused")
+  public DnsIp createFromIpString(String ipAddress) throws UnknownHostException {
+    InetAddress inetAddress = Address.getByAddress(ipAddress);
+    return new DnsIp(this,inetAddress);
   }
 
   /**
@@ -42,4 +46,7 @@ public class DnsSession {
     return this.lookupSession;
   }
 
+  public DnsIp createIpFromAddress(InetAddress inetAddress) {
+    return DnsIp.createFromInetAddress(this, inetAddress);
+  }
 }

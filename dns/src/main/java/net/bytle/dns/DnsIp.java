@@ -4,22 +4,24 @@ import net.bytle.exception.NotFoundException;
 import org.xbill.DNS.*;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
 public class DnsIp {
 
 
-  private final String ip;
   private final InetAddress address;
   private final DnsSession dnsSession;
 
-  public DnsIp(DnsSession session, String ipv) throws UnknownHostException {
-    this.ip = ipv;
+  public DnsIp(DnsSession session, InetAddress inetAddress) {
+
     this.dnsSession = session;
 
-    this.address = Address.getByAddress(ipv);
+    this.address = inetAddress;
 
+  }
+
+  public static DnsIp createFromInetAddress(DnsSession dnsSession, InetAddress inetAddress) {
+    return new DnsIp(dnsSession, inetAddress);
   }
 
 
@@ -29,7 +31,7 @@ public class DnsIp {
 
   @Override
   public String toString() {
-    return ip;
+    return address.toString();
   }
 
 
