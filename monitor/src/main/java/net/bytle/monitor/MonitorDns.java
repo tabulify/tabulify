@@ -21,6 +21,7 @@ public class MonitorDns {
   public static Logger LOGGER = LogManager.getLogger(MonitorMain.class);
 
   private final DnsSession dnsSession;
+  private final Map<DnsName, List<MonitorReportResult>> reports;
 
   public MonitorDns() {
 
@@ -28,6 +29,8 @@ public class MonitorDns {
       // we are at cloudflare, no need to wait
       .setResolverToCloudflare()
       .build();
+    this.reports = new HashMap<>();
+
   }
 
 
@@ -49,13 +52,11 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorReport checkMailersPtr(List<DnsHost> mailers) throws DnsException, DnsIllegalArgumentException {
+  public MonitorDns checkMailersPtr(List<DnsHost> mailers) throws DnsException {
 
-    MonitorReport monitorReport = new MonitorReport("Check Host (Ptr)");
+    String checkName = "Check Mailer Host (Ptr)";
     for (DnsHost dnsHost : mailers) {
-      String hostname = dnsHost.getName();
-      DnsName hostDnsName = this.dnsSession.createDnsName(hostname);
-
+      DnsName hostDnsName = dnsHost.getDnsName();
       /**
        * Ipv4 PTR check
        */
@@ -63,25 +64,25 @@ public class MonitorDns {
       try {
         dnsIpv4Address = hostDnsName.getFirstDnsIpv4Address();
       } catch (DnsNotFoundException e) {
-        monitorReport.addFailure(e.getMessage());
+        this.addFailure(checkName, hostDnsName, e.getMessage());
         continue;
       }
 
       if (dnsIpv4Address.equals(dnsHost.getIpv4())) {
-        monitorReport.addSuccess("The host (" + dnsHost + ") has the ipv4 (" + dnsHost.getIpv4() + ")");
+        this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv4 (" + dnsHost.getIpv4() + ")");
       } else {
-        monitorReport.addFailure("The host (" + dnsHost + ") has NOT the ipv4 (" + dnsHost.getIpv4() + ")");
+        this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv4 (" + dnsHost.getIpv4() + ")");
       }
 
       try {
         DnsName ptrName = dnsIpv4Address.getReverseDnsName();
         if (ptrName.equals(hostDnsName)) {
-          monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
+          this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
         } else {
-          monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+          this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
         }
       } catch (DnsNotFoundException e) {
-        monitorReport.addFailure("The ipv4 PTR for the host (" + dnsHost + ") was not found");
+        this.addFailure(checkName, hostDnsName, "The ipv4 PTR for the host (" + dnsHost + ") was not found");
       }
 
       /**
@@ -95,31 +96,42 @@ public class MonitorDns {
         try {
           dnsIpv6Address = hostDnsName.getFirstDnsIpv6Address();
         } catch (DnsNotFoundException e) {
-          monitorReport.addFailure(e.getMessage());
+          this.addFailure(checkName, hostDnsName, e.getMessage());
           continue;
         }
         if (dnsIpv6Address.equals(ipv6)) {
-          monitorReport.addSuccess("The host (" + dnsHost + ") has the ipv6 (" + hostIpv6Address + ")");
+          this.addSuccess(checkName, hostDnsName, "The host (" + dnsHost + ") has the ipv6 (" + hostIpv6Address + ")");
         } else {
-          monitorReport.addFailure("The host (" + dnsHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
+          this.addFailure(checkName, hostDnsName, "The host (" + dnsHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
         }
 
         try {
           DnsName ptrName = dnsIpv6Address.getReverseDnsName();
           if (ptrName.equals(hostDnsName)) {
-            monitorReport.addSuccess("The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
+            this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
           } else {
-            monitorReport.addSuccess("The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+            this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
           }
         } catch (DnsNotFoundException e) {
-          monitorReport.addFailure("The ipv6 PTR for the host (" + dnsHost + ") was not found");
+          this.addFailure(checkName, hostDnsName, "The ipv6 PTR for the host (" + dnsHost + ") was not found");
         }
 
       }
     }
 
 
-    return monitorReport;
+    return this;
+  }
+
+  private void addSuccess(String checkName, DnsName dnsName, String message) {
+    this.addMessage(checkName, dnsName, message, MonitorReportResultStatus.SUCCESS);
+  }
+
+  private void addMessage(String checkName, DnsName dnsName, String message, MonitorReportResultStatus success) {
+    MonitorReportResult monitorReportResult = MonitorReportResult.create(success, message).setCheckName(checkName);
+    DnsName apexName = dnsName.getApexName();
+    List<MonitorReportResult> values = this.reports.computeIfAbsent(apexName, k -> new ArrayList<>());
+    values.add(monitorReportResult);
   }
 
 
@@ -128,9 +140,7 @@ public class MonitorDns {
    * @param thirdDomains - the name of domains that should include the original spf records
    * @param mailersName  - the name where the A record name of the mailers are stored
    */
-  public List<MonitorReport> checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
-
-    List<MonitorReport> monitorReports = new ArrayList<>();
+  public MonitorDns checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
 
 
     DnsName spfSubDomainName = mainDomain.getSubdomain("spf");
@@ -140,8 +150,7 @@ public class MonitorDns {
      * The spf record is stored in a subdomain and included
      * everywhere after that.
      */
-    MonitorReport monitorReport = new MonitorReport("Main Spf Check");
-    monitorReports.add(monitorReport);
+    String checkName = "Main Spf Check";
     List<String> includes = Arrays.asList(
       //"spf.mailjet.com",
       "_spf.google.com",
@@ -153,44 +162,46 @@ public class MonitorDns {
       mailersName.getNameWithoutRoot() +
       includeMechanism + String.join(includeMechanism, includes) +
       " -all";
-    checkSpfRecordForDomain(expectedFullSpfRecord, spfSubDomainName, monitorReport);
+    checkSpfRecordForDomain(expectedFullSpfRecord, spfSubDomainName, checkName);
 
     /**
      * Check the spf include record in all domains
      */
-    MonitorReport monitorReportDomainChecks = new MonitorReport("Domains Spf Check");
-    monitorReports.add(monitorReportDomainChecks);
+    checkName = "Domains Spf Check";
     String expectedIncludeSpfRecord = "v=spf1 include:" + spfSubDomainName.getNameWithoutRoot() + " -all";
-
-    checkSpfRecordForDomain(expectedIncludeSpfRecord, mainDomain, monitorReportDomainChecks);
+    checkSpfRecordForDomain(expectedIncludeSpfRecord, mainDomain, checkName);
     for (DnsName dnsName : thirdDomains) {
-      checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName, monitorReportDomainChecks);
+      checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName, checkName);
     }
 
-    return monitorReports;
+    return this;
 
   }
 
-  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, MonitorReport monitorReport) {
+  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, String checkName) {
     String spfRecordValue;
     try {
       spfRecordValue = dnsName.getSpfRecord();
     } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ")");
+      this.addFailure(checkName, dnsName, "The spf record was not found for the domain (" + dnsName + ")");
       return;
     } catch (DnsException e) {
-      monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ") due to a network problem: " + e.getMessage());
+      this.addFailure(checkName, dnsName, "The spf record was not found for the domain (" + dnsName + ") due to a network problem: " + e.getMessage());
       return;
     }
     if (spfRecordValue.equals(expectedIncludeSpfRecord)) {
-      monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
+      this.addSuccess(checkName, dnsName, "The spf record has the good value in the domain (" + dnsName + ")");
     } else {
-      monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
+      this.addFailure(checkName, dnsName, "The spf record has not the good value in the domain (" + dnsName + ")\n. " +
         "  - The value is: " + spfRecordValue + "\n" +
         "  - The value should be: " + expectedIncludeSpfRecord
       );
     }
 
+  }
+
+  private void addFailure(String checkName, DnsName dnsName, String message) {
+    this.addMessage(checkName, dnsName, message, MonitorReportResultStatus.FAILURE);
   }
 
 
@@ -299,8 +310,8 @@ public class MonitorDns {
     return monitorReport;
   }
 
-  public MonitorReport checkARecord(DnsHost host, Set<DnsName> domains) {
-    MonitorReport monitorReport = new MonitorReport("HTTP A record Check");
+  public MonitorReport checkARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+    MonitorReport monitorReport = new MonitorReport(checkTitle);
     for (DnsName dnsName : domains) {
 
       try {
@@ -320,7 +331,7 @@ public class MonitorDns {
 
   public List<MonitorReport> checkAll() throws UnknownHostException, DnsException, DnsIllegalArgumentException {
 
-    List<MonitorReport> monitorReports = new ArrayList<>();
+
     LOGGER.info("Monitor Check Host");
     DnsHost monitorBeauHost = this.dnsSession.configHost("beau.bytle.net")
       .setIpv4("192.99.55.226")
@@ -340,8 +351,8 @@ public class MonitorDns {
     DnsName eraldyDomain = this.dnsSession.createDnsName("eraldy.com");
     DnsName mailersName = eraldyDomain.getSubdomain("mailers");
     LOGGER.info("Monitor Check Mailers");
-    monitorReports.add(this.checkMailersARecord(mailers, mailersName));
-    monitorReports.add(this.checkMailersPtr(mailers));
+    this.checkMailersARecord(mailers, mailersName);
+    this.checkMailersPtr(mailers);
 
 
     LOGGER.info("Monitor Check Domain Spf");
@@ -355,13 +366,15 @@ public class MonitorDns {
       this.dnsSession.createDnsName("persso.com"),
       this.dnsSession.createDnsName("tabulify.com")
     );
-    monitorReports.addAll(this.checkSpf(eraldyDomain, mailersName, domains));
+    this.checkSpf(eraldyDomain, mailersName, domains);
 
     LOGGER.info("Monitor A record for HTTP website");
-    monitorReports.add(this.checkARecord(monitorBeauHost, domains));
+    this.checkARecord(monitorBeauHost, domains, "Monitor A record for HTTP website");
 
     LOGGER.info("Monitor A record for Home");
-    monitorReports.add(this.checkARecord(monitorOegHost, gerardNicoDomain.getSubdomain("oeg")));
+    DnsName oeg = gerardNicoDomain.getSubdomain("oeg");
+    DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
+    this.checkARecord(monitorOegHost, Set.of(oeg, rixt), "Monitor Subdomain A record ");
 
     LOGGER.info("Monitor Check Mx");
     Map<String, Integer> mxs = new HashMap<>();
@@ -370,15 +383,18 @@ public class MonitorDns {
     mxs.put("alt2.aspmx.l.google.com", 5);
     mxs.put("alt3.aspmx.l.google.com", 10);
     mxs.put("alt4.aspmx.l.google.com", 10);
-    monitorReports.add(this.checkMx(mxs, domains));
+    this.checkMx(mxs, domains);
 
+    List<MonitorReport> monitorReports = new ArrayList<>();
+    for (DnsName dnsName : reports.keySet()) {
+      MonitorReport monitorReport = new MonitorReport("Dns check for " + dnsName);
+      monitorReports.add(monitorReport);
+      for (MonitorReportResult monitorReportResult : reports.get(dnsName)) {
+        monitorReport.addResult(monitorReportResult);
+      }
+    }
     return monitorReports;
 
-  }
-
-  private MonitorReport checkARecord(DnsHost monitorOegHost, DnsName oeg) {
-
-    return null;
   }
 
 

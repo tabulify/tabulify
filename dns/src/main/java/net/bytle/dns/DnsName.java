@@ -281,4 +281,19 @@ public class DnsName {
       throw this.session.handleLookupException(this, e);
     }
   }
+
+  public DnsName getApexName() {
+    int labels = this.dnsName.labels();
+    if (labels <= 3) {
+      return this;
+    }
+    try {
+      String rootLabel = this.dnsName.getLabelString(labels - 1);
+      String tldLabel = this.dnsName.getLabelString(labels - 2);
+      String apexLabel = this.dnsName.getLabelString(labels - 3);
+      return new DnsName(this.session, apexLabel + "." + tldLabel + "." + rootLabel);
+    } catch (DnsIllegalArgumentException e) {
+      throw new DnsInternalException("It should not throw");
+    }
+  }
 }

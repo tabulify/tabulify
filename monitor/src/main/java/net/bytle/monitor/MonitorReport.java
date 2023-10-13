@@ -44,4 +44,8 @@ public class MonitorReport {
     return print();
   }
 
+  public void addResult(MonitorReportResult monitorReportResult) {
+    this.monitorResults.add(monitorReportResult);
+  }
+
 }

@@ -63,8 +63,8 @@ public class DnsSession {
     return new DnsException(e);
   }
 
-  public DnsHost.DnsHostConfig configHost(String s) {
-    return new DnsHost.DnsHostConfig(this, s);
+  public DnsHost.DnsHostConfig configHost(String name) throws DnsIllegalArgumentException {
+    return new DnsHost.DnsHostConfig(this, name);
   }
 
 

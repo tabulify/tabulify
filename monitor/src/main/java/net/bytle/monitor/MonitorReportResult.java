@@ -3,6 +3,7 @@ package net.bytle.monitor;
 public class MonitorReportResult {
   private MonitorReportResultStatus monitorReportResultStatus;
   private String message;
+  private String checkName = "";
 
   public static MonitorReportResult failed(String message) {
     MonitorReportResult monitor = new MonitorReportResult();
@@ -18,9 +19,10 @@ public class MonitorReportResult {
     return monitor;
   }
 
-  public static MonitorReportResult warning(String message) {
+
+  public static MonitorReportResult create(MonitorReportResultStatus status, String message) {
     MonitorReportResult monitor = new MonitorReportResult();
-    monitor.monitorReportResultStatus = MonitorReportResultStatus.WARNING;
+    monitor.monitorReportResultStatus = status;
     monitor.message = message;
     return monitor;
   }
@@ -30,7 +32,15 @@ public class MonitorReportResult {
   }
 
   public String getMessage() {
+    if (!checkName.equals("")) {
+      return this.checkName + ": " + this.message;
+    }
     return this.message;
+  }
+
+  public MonitorReportResult setCheckName(String checkName) {
+    this.checkName = checkName;
+    return this;
   }
 
 }

@@ -26,17 +26,23 @@ public class DnsHost {
     return this.config.ipv6;
   }
 
+  public DnsName getDnsName() {
+    return this.config.dnsName;
+  }
+
 
   public static class DnsHostConfig {
     private final String name;
     private final DnsSession dnsSession;
+    private final DnsName dnsName;
     private DnsIp ipv4;
     private DnsIp ipv6;
 
-    public DnsHostConfig(DnsSession dnsSession, String name) {
+    public DnsHostConfig(DnsSession dnsSession, String name) throws DnsIllegalArgumentException {
 
       this.dnsSession = dnsSession;
       this.name = name;
+      this.dnsName = dnsSession.createDnsName(name);
 
     }
 
