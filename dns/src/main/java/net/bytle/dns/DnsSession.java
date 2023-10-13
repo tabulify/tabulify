@@ -3,6 +3,7 @@ package net.bytle.dns;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.Resolver;
 import org.xbill.DNS.lookup.LookupSession;
+import org.xbill.DNS.lookup.NoSuchDomainException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -55,6 +56,12 @@ public class DnsSession {
     return DnsIp.createFromInetAddress(this, inetAddress);
   }
 
+  public DnsException handleLookupException(DnsName dnsName, Exception e) throws DnsNotFoundException {
+    if (e.getCause() instanceof NoSuchDomainException) {
+      throw new DnsNotFoundException("The domain name does not exist (" + dnsName + ")",e);
+    }
+    return new DnsException(e);
+  }
 
 
   public static class DnsSessionBuilder  {

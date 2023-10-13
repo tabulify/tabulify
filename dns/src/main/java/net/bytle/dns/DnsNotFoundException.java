@@ -8,4 +8,9 @@ public class DnsNotFoundException extends Exception {
   public DnsNotFoundException(String s) {
     super(s);
   }
+
+  public DnsNotFoundException(String s, Exception e) {
+    super(s,e);
+  }
+
 }

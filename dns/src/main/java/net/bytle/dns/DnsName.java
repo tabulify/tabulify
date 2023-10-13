@@ -120,7 +120,6 @@ public class DnsName {
 
 
   /**
-   *
    * Just an alias
    */
   @SuppressWarnings("unused")
@@ -134,16 +133,14 @@ public class DnsName {
 
     String dkimSelectorName = dkimSelector + "._domainkey." + this.absoluteDnsName;
     DnsName dkimDnsName;
-      try {
-        dkimDnsName = this.session.createDnsName(dkimSelectorName);
-      } catch (DnsIllegalArgumentException e) {
-        throw new DnsInternalException(e);
-      }
+    try {
+      dkimDnsName = this.session.createDnsName(dkimSelectorName);
+    } catch (DnsIllegalArgumentException e) {
+      throw new DnsInternalException(e);
+    }
     return dkimDnsName.getTextRecordThatStartsWith("v=DKIM1");
 
   }
-
-
 
 
   public List<MXRecord> getMxRecords() throws DnsException {
@@ -185,9 +182,8 @@ public class DnsName {
         .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
         .findFirst()
         .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
-
-    } catch (ExecutionException| InterruptedException e) {
-      throw new DnsException(e);
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this, e);
     }
 
   }
@@ -200,10 +196,7 @@ public class DnsName {
   }
 
 
-
-
-
-  public DnsName getDmarcName()  {
+  public DnsName getDmarcName() {
     String dmarcSelector = "_dmarc";
     try {
       return this.session.createDnsName(dmarcSelector + "." + this.absoluteDnsName);
@@ -239,16 +232,16 @@ public class DnsName {
   public DnsIp getFirstDnsIpAddress() throws DnsException, DnsNotFoundException {
     InetAddress inetAddress;
     try {
-       inetAddress = getFirstARecord();
+      inetAddress = getFirstARecord();
     } catch (DnsNotFoundException e) {
       inetAddress = getFirstAAAARecord().getAddress();
     }
-    return  this.session.createIpFromAddress(inetAddress);
+    return this.session.createIpFromAddress(inetAddress);
   }
 
   public DnsIp getFirstDnsIpv4Address() throws DnsException, DnsNotFoundException {
     InetAddress inetAddress = getFirstARecord();
-    return  this.session.createIpFromAddress(inetAddress);
+    return this.session.createIpFromAddress(inetAddress);
   }
 
 
@@ -263,22 +256,21 @@ public class DnsName {
 
   public DnsIp getFirstDnsIpv6Address() throws DnsException, DnsNotFoundException {
     InetAddress inetAddress = getFirstAAAARecord().getAddress();
-    return  this.session.createIpFromAddress(inetAddress);
+    return this.session.createIpFromAddress(inetAddress);
   }
 
   public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
-    return new DnsName(this.session, label+ DNS_SEPARATOR + this.absoluteDnsName);
+    return new DnsName(this.session, label + DNS_SEPARATOR + this.absoluteDnsName);
   }
 
   /**
-   *
    * In Spf record, the name does not have any root separator
    */
   public String getNameWithoutRoot() {
-    return this.absoluteDnsName.substring(0,this.absoluteDnsName.length()-1);
+    return this.absoluteDnsName.substring(0, this.absoluteDnsName.length() - 1);
   }
 
-  public Set<InetAddress> getARecords() throws DnsException {
+  public Set<InetAddress> getARecords() throws DnsException, DnsNotFoundException {
     try {
       return session.getLookupSession().lookupAsync(this.dnsName, Type.A)
         .toCompletableFuture()
@@ -287,8 +279,8 @@ public class DnsName {
         .stream().map(ARecord.class::cast)
         .map(ARecord::getAddress)
         .collect(Collectors.toSet());
-    } catch (InterruptedException | ExecutionException e) {
-      throw new DnsException(e);
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this, e);
     }
   }
 }

@@ -280,12 +280,17 @@ public class MonitorDns {
     }
 
     try {
-      Set<InetAddress> aRecords = mailersName.getARecords();
+      Set<InetAddress> aRecords;
+      try {
+        aRecords = mailersName.getARecords();
+      } catch (DnsNotFoundException e) {
+        aRecords = new HashSet<>();
+      }
       for (MonitorNetworkHost monitorNetworkHost : mailers) {
         if (aRecords.contains(monitorNetworkHost.getIpv4())) {
-          monitorReport.addSuccess("The mailer host (" + monitorNetworkHost + ") was found in the name (" + mailersName + ")");
+          monitorReport.addSuccess("The mailer host (" + monitorNetworkHost + ") ip address ("+monitorNetworkHost.getIpv4()+") was found in the name (" + mailersName + ")");
         } else {
-          monitorReport.addFailure("The mailer host (" + monitorNetworkHost + ") was NOT found in the name (" + mailersName + ")");
+          monitorReport.addFailure("The mailer host (" + monitorNetworkHost + ") ip address ("+monitorNetworkHost.getIpv4()+") was NOT found in the name (" + mailersName + ")");
         }
       }
     } catch (DnsException e) {

@@ -67,7 +67,7 @@ public class MonitorMain extends AbstractVerticle {
             .setIpv4("143.176.206.82")
             .build();
           String mailerLabels = "mailers";
-          String mailerDomain = "combostrap.com";
+          String mailerDomain = "eraldy.com";
           LOGGER.info("Monitor Check Mailers");
           monitorReports.add(monitorDns.checkMailersARecord(mailers, mailerLabels + "." + mailerDomain));
           monitorReports.add(monitorDns.checkMailersPtr(mailers));
