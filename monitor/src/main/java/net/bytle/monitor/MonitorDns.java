@@ -22,7 +22,10 @@ public class MonitorDns {
 
   public MonitorDns() {
     this.monitorReport = new MonitorReport();
-    this.dnsSession = new DnsSession();
+    this.dnsSession = DnsSession.builder()
+      // we are at cloudflare, no need to wait
+      .setResolverToCloudflare()
+      .build();
   }
 
   public static final String DATACADAMIA_COM = "datacadamia.com";
@@ -57,17 +60,16 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorDns checkPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
+  public MonitorDns checkHostPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
 
 
-    // Get the IP v4 address associated with a name
     String hostname = monitorNetworkHost.getName();
-    DnsName dnsName = this.dnsSession.createDnsName(hostname);
+    DnsName hostDnsName = this.dnsSession.createDnsName(hostname);
 
     /**
-     * Ipv4 PTR
+     * Ipv4 PTR check
      */
-    DnsIp dnsIpv4Address = dnsName
+    DnsIp dnsIpv4Address = hostDnsName
       .getFirstDnsIpv4Address();
 
     if(dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())){
@@ -78,15 +80,38 @@ public class MonitorDns {
 
     try {
       DnsName ptrName = dnsIpv4Address.getReverseDnsName();
-      if(ptrName.equals(dnsName)){
-        monitorReport.addSuccess("The ip ("+dnsIpv4Address+") has the reverse PTR name ("+monitorNetworkHost.getIpv4()+")");
+      if(ptrName.equals(hostDnsName)){
+        monitorReport.addSuccess("The ipv4 ("+dnsIpv4Address+") has the reverse PTR name ("+hostDnsName+")");
       } else {
-        monitorReport.addSuccess("The ip ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostname+") but ("+ptrName+")");
+        monitorReport.addSuccess("The ipv4 ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostDnsName+") but ("+ptrName+")");
       }
     } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The PTR for the host ("+monitorNetworkHost+") was not found");
+      monitorReport.addFailure("The ipv4 PTR for the host ("+monitorNetworkHost+") was not found");
     }
 
+    /**
+     * Ipv6 PTR check
+     */
+    DnsIp dnsIpv6Address = hostDnsName
+      .getFirstDnsIpv6Address();
+
+    String hostIpv6Address = monitorNetworkHost.getIpv6().getHostAddress();
+    if(dnsIpv6Address.getInetAddress().equals(monitorNetworkHost.getIpv6())){
+      monitorReport.addSuccess("The host ("+monitorNetworkHost+") has the ipv6 ("+ hostIpv6Address +")");
+    } else {
+      monitorReport.addFailure("The host ("+monitorNetworkHost+") has NOT the ipv6 ("+ hostIpv6Address +")");
+    }
+
+    try {
+      DnsName ptrName = dnsIpv6Address.getReverseDnsName();
+      if(ptrName.equals(hostDnsName)){
+        monitorReport.addSuccess("The ipv6 ("+dnsIpv6Address+") has the reverse PTR name ("+hostDnsName+")");
+      } else {
+        monitorReport.addSuccess("The ipv6 ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostDnsName+") but ("+ptrName+")");
+      }
+    } catch (DnsNotFoundException e) {
+      monitorReport.addFailure("The ipv6 PTR for the host ("+monitorNetworkHost+") was not found");
+    }
 
     return this;
   }

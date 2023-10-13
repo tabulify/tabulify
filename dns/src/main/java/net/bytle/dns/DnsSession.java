@@ -12,16 +12,21 @@ public class DnsSession {
   private final LookupSession lookupSession;
   private final Resolver dnsResolver;
 
-  public DnsSession() {
-    dnsResolver = DnsResolver.getLocal();
+  public DnsSession(DnsSessionBuilder dnsSessionBuilder) {
+    dnsResolver = dnsSessionBuilder.resolver;
     lookupSession = LookupSession
       .builder()
       .resolver(dnsResolver)
       .build();
   }
 
-  public static DnsSession build() {
-    return new DnsSession();
+
+  public static DnsSessionBuilder builder() {
+    return new DnsSessionBuilder();
+  }
+
+  public static DnsSession createDefault() {
+    return DnsSession.builder().build();
   }
 
   public DnsName createDnsName(String name) throws DnsIllegalArgumentException {
@@ -48,5 +53,21 @@ public class DnsSession {
 
   public DnsIp createIpFromAddress(InetAddress inetAddress) {
     return DnsIp.createFromInetAddress(this, inetAddress);
+  }
+
+
+
+  public static class DnsSessionBuilder  {
+
+    private Resolver resolver = DnsResolver.getLocal();
+
+    public DnsSessionBuilder setResolverToCloudflare() {
+      this.resolver = DnsResolver.getCloudflare();
+      return this;
+    }
+
+    public DnsSession build() {
+      return new DnsSession(this);
+    }
   }
 }

@@ -50,7 +50,7 @@ public class MonitorMain extends AbstractVerticle {
             .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
             .build();
           MonitorReport hostMonitorReport = MonitorDns.create()
-            .checkPtr(monitorHost)
+            .checkHostPtr(monitorHost)
             .getMonitorReport();
 
           monitorReportFuture

@@ -24,6 +24,10 @@ public class MonitorNetworkHost {
     return this.config.ipv4;
   }
 
+  public InetAddress getIpv6() {
+    return this.config.ipv6;
+  }
+
 
   public static class MonitorNetworkHostConfig  {
     private final String name;

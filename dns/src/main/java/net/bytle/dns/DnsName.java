@@ -82,7 +82,7 @@ public class DnsName {
     }
     switch (aaaaRecords.size()) {
       case 0:
-        throw new DnsNotFoundException("There is more than one AAAA record for the name (" + this + ")");
+        throw new DnsNotFoundException("There is no AAAA record for the name (" + this + ")");
       default:
         /**
          * Due to load balancer, we may get more than one
@@ -273,4 +273,10 @@ public class DnsName {
   public String getName() {
     return this.absoluteDnsName;
   }
+
+  public DnsIp getFirstDnsIpv6Address() throws DnsException, DnsNotFoundException {
+    InetAddress inetAddress = getFirstAAAARecord().getAddress();
+    return  this.session.createIpFromAddress(inetAddress);
+  }
+
 }
