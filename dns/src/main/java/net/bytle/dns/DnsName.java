@@ -13,8 +13,9 @@ import java.util.stream.Stream;
 
 public class DnsName {
 
+  private static final String DNS_SEPARATOR = ".";
+  public static final String ROOT_DOT = DNS_SEPARATOR;
 
-  public static final String ROOT_DOT = ".";
   private final String absoluteDnsName;
   private final DnsSession session;
   private final Name dnsName;
@@ -199,20 +200,13 @@ public class DnsName {
   }
 
 
-  public TXTRecord getSpfRecord() throws DnsException, DnsNotFoundException {
+  public String getSpfRecord() throws DnsException, DnsNotFoundException {
 
-    return getTextRecordThatStartsWith(getSpfPrefix());
+    return DnsUtil.getStringFromTxtRecord(getTextRecordThatStartsWith("v=spf1"));
 
   }
 
-  public String getSpfARecordName() {
-    return "spf." + this.absoluteDnsName;
-  }
 
-
-  public static String getSpfPrefix() {
-    return "v=spf1";
-  }
 
 
 
@@ -279,4 +273,15 @@ public class DnsName {
     return  this.session.createIpFromAddress(inetAddress);
   }
 
+  public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
+    return new DnsName(this.session, label+ DNS_SEPARATOR + this.absoluteDnsName);
+  }
+
+  /**
+   *
+   * In Spf record, the name does not have any root separator
+   */
+  public String getNameWithoutRoot() {
+    return this.absoluteDnsName.substring(0,this.absoluteDnsName.length()-1);
+  }
 }

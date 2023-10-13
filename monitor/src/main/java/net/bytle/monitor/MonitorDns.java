@@ -7,8 +7,9 @@ import org.xbill.DNS.lookup.LookupSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -28,18 +29,6 @@ public class MonitorDns {
       .build();
   }
 
-  public static final String DATACADAMIA_COM = "datacadamia.com";
-  private final String COMBOSTRAP_DOT_COM = "combostrap.com";
-
-  private final List<String> DOMAINS = Arrays.asList(
-    "bytle.net",
-    COMBOSTRAP_DOT_COM,
-    DATACADAMIA_COM,
-    "eraldy.com",
-    "gerardnico.com",
-    "persso.com",
-    "tabulify.com"
-  );
 
 
   public static MonitorDns create() {
@@ -72,21 +61,21 @@ public class MonitorDns {
     DnsIp dnsIpv4Address = hostDnsName
       .getFirstDnsIpv4Address();
 
-    if(dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())){
-      monitorReport.addSuccess("The host ("+monitorNetworkHost+") has the ipv4 ("+monitorNetworkHost.getIpv4().getHostAddress()+")");
+    if (dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())) {
+      monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
     } else {
-      monitorReport.addFailure("The host ("+monitorNetworkHost+") has NOT the ipv4 ("+monitorNetworkHost.getIpv4().getHostAddress()+")");
+      monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
     }
 
     try {
       DnsName ptrName = dnsIpv4Address.getReverseDnsName();
-      if(ptrName.equals(hostDnsName)){
-        monitorReport.addSuccess("The ipv4 ("+dnsIpv4Address+") has the reverse PTR name ("+hostDnsName+")");
+      if (ptrName.equals(hostDnsName)) {
+        monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
       } else {
-        monitorReport.addSuccess("The ipv4 ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostDnsName+") but ("+ptrName+")");
+        monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
       }
     } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The ipv4 PTR for the host ("+monitorNetworkHost+") was not found");
+      monitorReport.addFailure("The ipv4 PTR for the host (" + monitorNetworkHost + ") was not found");
     }
 
     /**
@@ -96,57 +85,81 @@ public class MonitorDns {
       .getFirstDnsIpv6Address();
 
     String hostIpv6Address = monitorNetworkHost.getIpv6().getHostAddress();
-    if(dnsIpv6Address.getInetAddress().equals(monitorNetworkHost.getIpv6())){
-      monitorReport.addSuccess("The host ("+monitorNetworkHost+") has the ipv6 ("+ hostIpv6Address +")");
+    if (dnsIpv6Address.getInetAddress().equals(monitorNetworkHost.getIpv6())) {
+      monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv6 (" + hostIpv6Address + ")");
     } else {
-      monitorReport.addFailure("The host ("+monitorNetworkHost+") has NOT the ipv6 ("+ hostIpv6Address +")");
+      monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
     }
 
     try {
       DnsName ptrName = dnsIpv6Address.getReverseDnsName();
-      if(ptrName.equals(hostDnsName)){
-        monitorReport.addSuccess("The ipv6 ("+dnsIpv6Address+") has the reverse PTR name ("+hostDnsName+")");
+      if (ptrName.equals(hostDnsName)) {
+        monitorReport.addSuccess("The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
       } else {
-        monitorReport.addSuccess("The ipv6 ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostDnsName+") but ("+ptrName+")");
+        monitorReport.addSuccess("The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
       }
     } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The ipv6 PTR for the host ("+monitorNetworkHost+") was not found");
+      monitorReport.addFailure("The ipv6 PTR for the host (" + monitorNetworkHost + ") was not found");
     }
 
     return this;
   }
 
 
-  public void checkSpfTest() throws IOException, ExecutionException, InterruptedException, DnsIllegalArgumentException, DnsException, DnsNotFoundException {
+  /**
+   *
+   * @param mainSpfDomain - the name of the domain where the original spf value is stored
+   * @param thirdDomains - the name of domains that should include the original spf records
+   * @param mailerHost - the mailer host
+   *
+   */
+  public MonitorDns checkSpf(String mainSpfDomain, List<String> thirdDomains, MonitorNetworkHost mailerHost) throws DnsIllegalArgumentException, DnsException {
 
     /**
-     * The spf record that should be included in all domains
+     * Check the spf value.
+     * The spf record is stored in a subdomain and included
+     * everywhere after that.
      */
-    String expectedComboSpfTxtRecord = "v=spf1 mx ip4:" + MonitorNetworkTopology.BEAU_SERVER_IPV4 + "/32 ip6:" + MonitorNetworkTopology.BEAU_SERVER_IPV6 + " include:spf.mailjet.com include:_spf.google.com include:spf.mandrillapp.com ~all";
-    DnsName combostrapDomain = dnsSession.createDnsName(COMBOSTRAP_DOT_COM);
-    TXTRecord spfRecord = combostrapDomain
-      .getSpfRecord();
-
-//    Assert.assertEquals("spf is good", expectedComboSpfTxtRecord, DnsUtil.getStringFromTxtRecord(spfRecord));
-    String comboSpfTextRecordName = combostrapDomain.getSpfARecordName();
+    String mailjetSpf = "spf.mailjet.com";
+    String googleSpf = "_spf.google.com";
+    String mailChimpSpf = "spf.mandrillapp.com";
+    String forwardMailSpf = "spf.forwardemail.net";
+    String expectedFullSpfRecord = "v=spf1 mx ip4:" + mailerHost.getIpv4().getHostAddress() + "/32 ip6:" + mailerHost.getIpv6().getHostAddress() + " include:" + mailjetSpf + " include:" + googleSpf + " include:" + mailChimpSpf + " include:" + forwardMailSpf + " -all";
+    DnsName mainSpfDnsName = dnsSession.createDnsName(mainSpfDomain);
+    DnsName spfDomainName = mainSpfDnsName.getSubdomain("spf");
+    checkSpfRecordForDomain(expectedFullSpfRecord, spfDomainName);
 
     /**
-     * The spf record for all domains
+     * Check the spf include record in all domains
      */
-//    String expectedSpfRecord = "v=spf1 include:" + comboSpfTextRecordName + " -all";
-//    List<TXTRecord> foundSPFRecordsByDomain = new ArrayList<>();
-//    for (String domain : DOMAINS) {
-//      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
-//      TXTRecord domainSpfTextRecord = dnsDomain.getSpfRecord();
-////      Assert.assertNotNull("The spf record for the name (" + dnsDomain.getSpfARecordName() + ") is not null", domainSpfTextRecord);
-//      String actualSpfStringValue = DnsUtil.getStringFromTxtRecord(domainSpfTextRecord);
-//      if (actualSpfStringValue.startsWith(DnsDomain.getSpfPrefix())) {
-////        Assert.assertEquals("The spf record for the name (" + dnsDomain.getSpfARecordName() + ") should be good", expectedSpfRecord, actualSpfStringValue);
-//        foundSPFRecordsByDomain.add(domainSpfTextRecord);
-//      }
-//    }
-//    Assert.assertEquals("All spf records where found", foundSPFRecordsByDomain.size(), DOMAINS.size());
+    String expectedIncludeSpfRecord = "v=spf1 include:" + spfDomainName.getNameWithoutRoot() + " -all";
+    Set<DnsName> domainToChecks = new HashSet<>();
+    domainToChecks.add(spfDomainName);
+    for (String domainName : thirdDomains) {
+      domainToChecks.add(this.dnsSession.createDnsName(domainName));
+    }
+    for (DnsName dnsName : domainToChecks) {
+      checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName);
+    }
 
+    return this;
+
+  }
+
+  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName) throws DnsException {
+    try {
+      String spfRecordValue = dnsName.getSpfRecord();
+      if (spfRecordValue.equals(expectedIncludeSpfRecord)) {
+        this.monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
+      } else {
+        this.monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
+          "  - The value is: " + spfRecordValue + "\n" +
+          "  - The value should be: " + expectedIncludeSpfRecord
+        );
+      }
+    } catch (DnsNotFoundException e) {
+      this.monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ")");
+    }
   }
 
 
@@ -182,7 +195,7 @@ public class MonitorDns {
 
   private void testDkimUtil(String dkimSelector, String expectedDkimValue, boolean checkValue) throws IOException {
 
-    for (String domain : DOMAINS) {
+    //for (String domain : DOMAINS) {
 //      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
 //      TXTRecord domainDkimTextRecord = dnsDomain.getDkimRecord(dkimSelector);
 //      //Assert.assertNotNull("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") was not found", domainDkimTextRecord);
@@ -190,7 +203,7 @@ public class MonitorDns {
 //        String actualDkimStringValue = DnsUtil.getStringFromTxtRecord(domainDkimTextRecord);
 //        //Assert.assertEquals("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") should be good", expectedDkimValue, actualDkimStringValue);
 //      }
-    }
+    //}
 
   }
 
@@ -225,4 +238,6 @@ public class MonitorDns {
   public MonitorReport getMonitorReport() {
     return this.monitorReport;
   }
+
+
 }

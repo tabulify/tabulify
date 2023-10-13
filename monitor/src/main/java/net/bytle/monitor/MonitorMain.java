@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 public class MonitorMain extends AbstractVerticle {
 
@@ -44,14 +46,29 @@ public class MonitorMain extends AbstractVerticle {
           Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
             .check();
 
+          MonitorDns monitorDns = MonitorDns.create();
           LOGGER.info("Monitor Check Host");
           MonitorNetworkHost monitorHost = MonitorNetworkHost.createForName(MonitorNetworkTopology.BEAU_SERVER_NAME)
             .setIpv4(MonitorNetworkTopology.BEAU_SERVER_IPV4)
             .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
             .build();
-          MonitorReport hostMonitorReport = MonitorDns.create()
-            .checkHostPtr(monitorHost)
-            .getMonitorReport();
+          monitorDns.checkHostPtr(monitorHost);
+
+
+          LOGGER.info("Monitor Check Dns");
+          String DATACADAMIA_COM = "datacadamia.com";
+          String comboStrapDomain = "combostrap.com";
+          List<String> domains = Arrays.asList(
+            "bytle.net",
+            comboStrapDomain,
+            DATACADAMIA_COM,
+            "eraldy.com",
+            "gerardnico.com",
+            "persso.com",
+            "tabulify.com"
+          );
+          monitorDns.checkSpf(comboStrapDomain, domains, monitorHost);
+
 
           monitorReportFuture
             .onFailure(this::handleGeneralFailure)
@@ -59,8 +76,8 @@ public class MonitorMain extends AbstractVerticle {
               LOGGER.info("Monitor Mailing");
               String emailText = "Api Token\n" +
                 tokenMonitorReport.print() +
-                "Host check\n" +
-                hostMonitorReport.print();
+                "\nDNS check\n" +
+                monitorDns.getMonitorReport().print();
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)

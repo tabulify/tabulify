@@ -30,4 +30,11 @@ public class MonitorReport {
     }
     return stringBuilder.toString();
   }
+
+
+  @Override
+  public String toString() {
+    return print();
+  }
+
 }
