@@ -3,10 +3,8 @@ package net.bytle.dns;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -17,17 +15,21 @@ public class DnsName {
 
 
   public static final String ROOT_DOT = ".";
-  private final String name;
+  private final String absoluteDnsName;
   private final DnsSession session;
   private final Name dnsName;
 
-  protected DnsName(DnsSession session, String absoluteName) throws TextParseException {
+  protected DnsName(DnsSession session, String absoluteName) throws DnsIllegalArgumentException {
     if (!absoluteName.endsWith(ROOT_DOT)) {
-      this.name = absoluteName + ROOT_DOT;
+      this.absoluteDnsName = absoluteName + ROOT_DOT;
     } else {
-      this.name = absoluteName;
+      this.absoluteDnsName = absoluteName;
     }
-    this.dnsName = Name.fromString(this.name);
+    try {
+      this.dnsName = Name.fromString(this.absoluteDnsName);
+    } catch (TextParseException e) {
+      throw new DnsIllegalArgumentException(e);
+    }
     this.session = session;
   }
 
@@ -134,28 +136,39 @@ public class DnsName {
 
   }
 
-  public TXTRecord getDkimRecord(String dkimSelector) throws ExecutionException, InterruptedException, TextParseException {
-    return this.getDkimName(dkimSelector).getTextRecordThatStartsWith(getDkimPrefix());
+  public TXTRecord getDkimRecord(String dkimSelector) throws DnsException, DnsNotFoundException {
+
+    String dkimSelectorName = dkimSelector + "._domainkey." + this.absoluteDnsName;
+    DnsName dkimDnsName;
+      try {
+        dkimDnsName = this.session.createDnsName(dkimSelectorName);
+      } catch (DnsIllegalArgumentException e) {
+        throw new DnsInternalException(e);
+      }
+    return dkimDnsName.getTextRecordThatStartsWith("v=DKIM1");
+
   }
 
-  private String getDkimPrefix() {
-    return "v=DKIM1";
-  }
 
 
-  public List<MXRecord> getMxRecords() throws ExecutionException, InterruptedException {
+
+  public List<MXRecord> getMxRecords() throws DnsException {
 
 
-    return this.session
-      .getLookupSession()
-      .lookupAsync(dnsName, Type.MX)
-      .toCompletableFuture()
-      .get()
-      .getRecords()
-      .stream()
-      .map(MXRecord.class::cast)
-      .collect(Collectors.toList()
-      );
+    try {
+      return this.session
+        .getLookupSession()
+        .lookupAsync(dnsName, Type.MX)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream()
+        .map(MXRecord.class::cast)
+        .collect(Collectors.toList()
+        );
+    } catch (InterruptedException | ExecutionException e) {
+      throw new DnsException(e);
+    }
 
   }
 
@@ -163,32 +176,37 @@ public class DnsName {
   /**
    * @param startsWith - the prefix
    */
-  TXTRecord getTextRecordThatStartsWith(String startsWith) throws NoSuchElementException, ExecutionException, InterruptedException {
+  TXTRecord getTextRecordThatStartsWith(String startsWith) throws DnsNotFoundException, DnsException {
 
 
-    return this.session
-      .getLookupSession()
-      .lookupAsync(this.dnsName, Type.TXT)
-      .toCompletableFuture()
-      .get()
-      .getRecords()
-      .stream()
-      .map(TXTRecord.class::cast)
-      .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
-      .findFirst()
-      .orElseThrow(() -> new NoSuchElementException("The (" + startsWith + ") text record for the name (" + name + ") was not found"));
+    try {
+      return this.session
+        .getLookupSession()
+        .lookupAsync(this.dnsName, Type.TXT)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream()
+        .map(TXTRecord.class::cast)
+        .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
+        .findFirst()
+        .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
+
+    } catch (ExecutionException| InterruptedException e) {
+      throw new DnsException(e);
+    }
 
   }
 
 
-  public TXTRecord getSpfRecord() throws ExecutionException, InterruptedException {
+  public TXTRecord getSpfRecord() throws DnsException, DnsNotFoundException {
 
     return getTextRecordThatStartsWith(getSpfPrefix());
 
   }
 
   public String getSpfARecordName() {
-    return "spf." + this.name;
+    return "spf." + this.absoluteDnsName;
   }
 
 
@@ -196,25 +214,19 @@ public class DnsName {
     return "v=spf1";
   }
 
-  private String getDkimSelectorName(String dkimSelector) {
-    return dkimSelector + "._domainkey." + this.name;
-  }
 
-  public DnsName getDkimName(String dkimSelector) throws TextParseException {
-    return this.session.createDnsName(getDkimSelectorName(dkimSelector));
-  }
 
-  public DnsName getDmarcName() throws TextParseException {
+  public DnsName getDmarcName()  {
     String dmarcSelector = "_dmarc";
-    return this.session.createDnsName(dmarcSelector + "." + this.name);
+    try {
+      return this.session.createDnsName(dmarcSelector + "." + this.absoluteDnsName);
+    } catch (DnsIllegalArgumentException e) {
+      throw new DnsInternalException(e);
+    }
   }
 
-  public TXTRecord getDmarcRecord() throws IOException, ExecutionException, InterruptedException {
-    return getDmarcName().getTextRecordThatStartsWith(getDmarcPrefix());
-  }
-
-  public static String getDmarcPrefix() {
-    return "v=DMARC1";
+  public TXTRecord getDmarcRecord() throws DnsException, DnsNotFoundException {
+    return getDmarcName().getTextRecordThatStartsWith("v=DMARC1");
   }
 
 
@@ -223,12 +235,12 @@ public class DnsName {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DnsName dnsDomain = (DnsName) o;
-    return Objects.equals(name, dnsDomain.name);
+    return Objects.equals(absoluteDnsName, dnsDomain.absoluteDnsName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name);
+    return Objects.hash(absoluteDnsName);
   }
 
   /**
@@ -258,4 +270,7 @@ public class DnsName {
     return dnsName.toString();
   }
 
+  public String getName() {
+    return this.absoluteDnsName;
+  }
 }

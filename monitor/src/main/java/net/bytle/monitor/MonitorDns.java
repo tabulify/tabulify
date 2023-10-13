@@ -57,7 +57,7 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorDns checkPtr(MonitorNetworkHost monitorNetworkHost) throws TextParseException, DnsException, DnsNotFoundException {
+  public MonitorDns checkPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
 
 
     // Get the IP v4 address associated with a name
@@ -71,14 +71,14 @@ public class MonitorDns {
       .getFirstDnsIpv4Address();
 
     if(dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())){
-      monitorReport.addSuccess("The host ("+monitorNetworkHost+") has the ipv4 ("+monitorNetworkHost.getIpv4()+")");
+      monitorReport.addSuccess("The host ("+monitorNetworkHost+") has the ipv4 ("+monitorNetworkHost.getIpv4().getHostAddress()+")");
     } else {
-      monitorReport.addFailure("The host ("+monitorNetworkHost+") has NOT the ipv4 ("+monitorNetworkHost.getIpv4()+")");
+      monitorReport.addFailure("The host ("+monitorNetworkHost+") has NOT the ipv4 ("+monitorNetworkHost.getIpv4().getHostAddress()+")");
     }
 
     try {
-      String ptrName = dnsIpv4Address.getPtrRecord().getTarget().toString();
-      if(ptrName.equals(hostname)){
+      DnsName ptrName = dnsIpv4Address.getReverseDnsName();
+      if(ptrName.equals(dnsName)){
         monitorReport.addSuccess("The ip ("+dnsIpv4Address+") has the reverse PTR name ("+monitorNetworkHost.getIpv4()+")");
       } else {
         monitorReport.addSuccess("The ip ("+dnsIpv4Address+") does not have as reverse PTR name ("+hostname+") but ("+ptrName+")");
@@ -87,20 +87,12 @@ public class MonitorDns {
       monitorReport.addFailure("The PTR for the host ("+monitorNetworkHost+") was not found");
     }
 
-    // Get the name associated with the IP
-//    PTRRecord ptrNameV6 = DnsAddress.createFromIpv6String(MonitorNetworkTopology.BEAU_SERVER_IPV6).getPtrRecordAsync();
-//    Name target = ptrNameV6.getTarget();
-////    Assert.assertEquals(target.toString(), BEAU_SERVER_NAME + DnsUtil.ABSOLUTE_TRAILING_DOT);
-//
-//    PTRRecord ptrNameV4 = DnsAddress.createFromIpv4String(MonitorNetworkTopology.BEAU_SERVER_IPV4).getPtrRecordAsync();
-//    Name targetV4 = ptrNameV4.getTarget();
-////    Assert.assertEquals(targetV4.toString(), BEAU_SERVER_NAME + DnsUtil.ABSOLUTE_TRAILING_DOT);
 
     return this;
   }
 
 
-  public void checkSpfTest() throws IOException, ExecutionException, InterruptedException {
+  public void checkSpfTest() throws IOException, ExecutionException, InterruptedException, DnsIllegalArgumentException, DnsException, DnsNotFoundException {
 
     /**
      * The spf record that should be included in all domains

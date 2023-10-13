@@ -30,7 +30,7 @@ public class DnsIp {
 
   @Override
   public String toString() {
-    return address.toString();
+    return address.getHostAddress();
   }
 
 
@@ -58,6 +58,19 @@ public class DnsIp {
   @SuppressWarnings("unused")
   public int familyOf() {
     return Address.familyOf(this.address);
+  }
+
+  public DnsName getReverseDnsName() throws DnsException, DnsNotFoundException {
+    try {
+      return this.dnsSession.createDnsName(getPtrRecord().getTarget().toString());
+    } catch (DnsIllegalArgumentException e) {
+      // should not be illegal
+      throw new RuntimeException(e);
+    }
+  }
+
+  public String getAddress() {
+    return this.address.getHostAddress();
   }
 
 }

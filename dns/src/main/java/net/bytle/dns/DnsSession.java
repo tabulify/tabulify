@@ -2,7 +2,6 @@ package net.bytle.dns;
 
 import org.xbill.DNS.Address;
 import org.xbill.DNS.Resolver;
-import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.lookup.LookupSession;
 
 import java.net.InetAddress;
@@ -25,7 +24,7 @@ public class DnsSession {
     return new DnsSession();
   }
 
-  public DnsName createDnsName(String name) throws TextParseException {
+  public DnsName createDnsName(String name) throws DnsIllegalArgumentException {
     return new DnsName(this, name);
   }
   @SuppressWarnings("unused")
@@ -38,6 +37,7 @@ public class DnsSession {
    *
    * @deprecated use {@link #getLookupSession()} instead
    */
+  @Deprecated
   public Resolver getDnsResolver() {
     return dnsResolver;
   }

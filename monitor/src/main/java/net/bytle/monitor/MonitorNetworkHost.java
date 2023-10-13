@@ -35,12 +35,13 @@ public class MonitorNetworkHost {
     }
     public MonitorNetworkHostConfig setIpv4(String ipv4) throws UnknownHostException {
 
-      this.ipv4 = Address.getByAddress(ipv4, Address.IPv4);
+
+      this.ipv4 = InetAddress.getByAddress(this.name, Address.toByteArray(ipv4,Address.IPv4));
       return this;
     }
 
     public MonitorNetworkHostConfig setIpv6(String ipv6) throws UnknownHostException {
-      this.ipv6 = Address.getByAddress(ipv6, Address.IPv6);
+      this.ipv6 = InetAddress.getByAddress(this.name, Address.toByteArray(ipv6,Address.IPv6));
       return this;
     }
 
@@ -48,4 +49,10 @@ public class MonitorNetworkHost {
       return new MonitorNetworkHost(this);
     }
   }
+
+  @Override
+  public String toString() {
+    return config.name;
+  }
+
 }
