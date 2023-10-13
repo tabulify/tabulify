@@ -48,7 +48,7 @@ public class MonitorApiToken {
   public Future<MonitorReport> check() {
 
 
-    MonitorReport monitorReport = new MonitorReport();
+    MonitorReport monitorReport = new MonitorReport("Api Token Check");
     return this.checkCloudflare(monitorReport);
 
 

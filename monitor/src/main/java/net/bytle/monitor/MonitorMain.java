@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,9 +43,12 @@ public class MonitorMain extends AbstractVerticle {
           BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
 
+          List<MonitorReport> monitorReports = new ArrayList<>();
+
           LOGGER.info("Monitor Starting the API Tolen check");
-          Future<MonitorReport> monitorReportFuture = MonitorApiToken.create(vertx, configAccessor)
+          Future<MonitorReport> apiTokenFuture = MonitorApiToken.create(vertx, configAccessor)
             .check();
+
 
           MonitorDns monitorDns = MonitorDns.create();
           LOGGER.info("Monitor Check Host");
@@ -52,7 +56,7 @@ public class MonitorMain extends AbstractVerticle {
             .setIpv4(MonitorNetworkTopology.BEAU_SERVER_IPV4)
             .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
             .build();
-          monitorDns.checkHostPtr(monitorHost);
+          monitorReports.add(monitorDns.checkHostPtr(monitorHost));
 
 
           LOGGER.info("Monitor Check Dns");
@@ -67,23 +71,26 @@ public class MonitorMain extends AbstractVerticle {
             "persso.com",
             "tabulify.com"
           );
-          monitorDns.checkSpf(comboStrapDomain, domains, monitorHost);
+          monitorReports.addAll(monitorDns.checkSpf(comboStrapDomain, domains, monitorHost));
 
 
-          monitorReportFuture
+          apiTokenFuture
             .onFailure(this::handleGeneralFailure)
             .onSuccess(tokenMonitorReport -> {
               LOGGER.info("Monitor Mailing");
-              String emailText = "Api Token\n" +
-                tokenMonitorReport.print() +
-                "\nDNS check\n" +
-                monitorDns.getMonitorReport().print();
+              monitorReports.add(tokenMonitorReport);
+              StringBuilder emailText = new StringBuilder();
+              for (MonitorReport monitorReport : monitorReports) {
+                emailText
+                  .append(monitorReport.print())
+                  .append("\r\n");
+              }
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)
                 .setFrom("no-reply@bytle.net")
                 .setSubject("Monitor " + LocalDate.now())
-                .setBodyPlainText(emailText);
+                .setBodyPlainText(emailText.toString());
               try {
                 smtpMailProvider.getBMailClient()
                   .sendMessage(email);

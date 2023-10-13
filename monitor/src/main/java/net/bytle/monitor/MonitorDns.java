@@ -18,17 +18,16 @@ import java.util.concurrent.ExecutionException;
  */
 public class MonitorDns {
 
-  private final MonitorReport monitorReport;
+
   private final DnsSession dnsSession;
 
   public MonitorDns() {
-    this.monitorReport = new MonitorReport();
+
     this.dnsSession = DnsSession.builder()
       // we are at cloudflare, no need to wait
       .setResolverToCloudflare()
       .build();
   }
-
 
 
   public static MonitorDns create() {
@@ -49,9 +48,9 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorDns checkHostPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
+  public MonitorReport checkHostPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
 
-
+    MonitorReport monitorReport = new MonitorReport("Check Host (Ptr)");
     String hostname = monitorNetworkHost.getName();
     DnsName hostDnsName = this.dnsSession.createDnsName(hostname);
 
@@ -102,63 +101,66 @@ public class MonitorDns {
       monitorReport.addFailure("The ipv6 PTR for the host (" + monitorNetworkHost + ") was not found");
     }
 
-    return this;
+    return monitorReport;
   }
 
 
   /**
-   *
    * @param mainSpfDomain - the name of the domain where the original spf value is stored
-   * @param thirdDomains - the name of domains that should include the original spf records
-   * @param mailerHost - the mailer host
-   *
+   * @param thirdDomains  - the name of domains that should include the original spf records
+   * @param mailerHost    - the mailer host
    */
-  public MonitorDns checkSpf(String mainSpfDomain, List<String> thirdDomains, MonitorNetworkHost mailerHost) throws DnsIllegalArgumentException, DnsException {
+  public List<MonitorReport> checkSpf(String mainSpfDomain, List<String> thirdDomains, MonitorNetworkHost mailerHost) throws DnsIllegalArgumentException, DnsException {
 
+    List<MonitorReport> monitorReports = new ArrayList<>();
     /**
      * Check the spf value.
      * The spf record is stored in a subdomain and included
      * everywhere after that.
      */
+    MonitorReport monitorReport = new MonitorReport("Main Spf Check");
+    monitorReports.add(monitorReport);
     String mailjetSpf = "spf.mailjet.com";
     String googleSpf = "_spf.google.com";
     String mailChimpSpf = "spf.mandrillapp.com";
     String forwardMailSpf = "spf.forwardemail.net";
     String expectedFullSpfRecord = "v=spf1 mx ip4:" + mailerHost.getIpv4().getHostAddress() + "/32 ip6:" + mailerHost.getIpv6().getHostAddress() + " include:" + mailjetSpf + " include:" + googleSpf + " include:" + mailChimpSpf + " include:" + forwardMailSpf + " -all";
-    DnsName mainSpfDnsName = dnsSession.createDnsName(mainSpfDomain);
-    DnsName spfDomainName = mainSpfDnsName.getSubdomain("spf");
-    checkSpfRecordForDomain(expectedFullSpfRecord, spfDomainName);
+    DnsName spfMainDomainName = dnsSession.createDnsName(mainSpfDomain);
+    DnsName spfSubDomainName = spfMainDomainName.getSubdomain("spf");
+    checkSpfRecordForDomain(expectedFullSpfRecord, spfSubDomainName, monitorReport);
 
     /**
      * Check the spf include record in all domains
      */
-    String expectedIncludeSpfRecord = "v=spf1 include:" + spfDomainName.getNameWithoutRoot() + " -all";
+    MonitorReport monitorReportDomainChecks = new MonitorReport("Domains Spf Check");
+    monitorReports.add(monitorReportDomainChecks);
+    String expectedIncludeSpfRecord = "v=spf1 include:" + spfSubDomainName.getNameWithoutRoot() + " -all";
     Set<DnsName> domainToChecks = new HashSet<>();
-    domainToChecks.add(spfDomainName);
+    domainToChecks.add(spfMainDomainName);
     for (String domainName : thirdDomains) {
       domainToChecks.add(this.dnsSession.createDnsName(domainName));
     }
     for (DnsName dnsName : domainToChecks) {
-      checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName);
+      checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName, monitorReportDomainChecks);
     }
 
-    return this;
+    return monitorReports;
 
   }
 
-  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName) throws DnsException {
+  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, MonitorReport monitorReport) throws DnsException {
     try {
       String spfRecordValue = dnsName.getSpfRecord();
       if (spfRecordValue.equals(expectedIncludeSpfRecord)) {
-        this.monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
+        monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
       } else {
-        this.monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
+        monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
           "  - The value is: " + spfRecordValue + "\n" +
           "  - The value should be: " + expectedIncludeSpfRecord
         );
       }
     } catch (DnsNotFoundException e) {
-      this.monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ")");
+      monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ")");
     }
   }
 
@@ -233,10 +235,6 @@ public class MonitorDns {
 //      String actualDmarcStringValue = DnsUtil.getStringFromTxtRecord(dmarcTextRecord);
 //      Assert.assertEquals("The dmarc record for the name (" + name + ") should be good", expectedDMarcValue, actualDmarcStringValue);
     }
-  }
-
-  public MonitorReport getMonitorReport() {
-    return this.monitorReport;
   }
 
 

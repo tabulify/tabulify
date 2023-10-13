@@ -5,7 +5,12 @@ import java.util.List;
 
 public class MonitorReport {
 
+  private final String title;
   List<MonitorReportResult> monitorResults = new ArrayList<>();
+
+  public MonitorReport(String title) {
+    this.title = title;
+  }
 
   public MonitorReportResult addFailure(String s) {
     MonitorReportResult failed = MonitorReportResult.failed(s);
@@ -21,6 +26,8 @@ public class MonitorReport {
 
   public String print() {
     StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.append(this.title)
+      .append(":\r\n");
     for(MonitorReportResult result: this.monitorResults){
       stringBuilder
         .append(result.getStatus())
