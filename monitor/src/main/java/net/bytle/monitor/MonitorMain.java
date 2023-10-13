@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MonitorMain extends AbstractVerticle {
@@ -51,43 +50,7 @@ public class MonitorMain extends AbstractVerticle {
 
 
           MonitorDns monitorDns = MonitorDns.create();
-          LOGGER.info("Monitor Check Host");
-          MonitorNetworkHost monitorBeauHost = MonitorNetworkHost.createForName("beau.bytle.net")
-            .setIpv4("192.99.55.226")
-            .setIpv6("2607:5300:201:3100::85b")
-            .build();
-          MonitorNetworkHost monitorCanaHost = MonitorNetworkHost.createForName("cana.bytle.net")
-            .setIpv4("51.79.86.27")
-            .build();
-          List<MonitorNetworkHost> mailers = new ArrayList<>();
-          mailers.add(monitorBeauHost);
-          mailers.add(monitorCanaHost);
-
-          @SuppressWarnings("unused") MonitorNetworkHost monitorOegHost = MonitorNetworkHost.createForName("oeg.bytle.net")
-            .setIpv4("143.176.206.82")
-            .build();
-          String mailerLabels = "mailers";
-          String mailerDomain = "eraldy.com";
-          LOGGER.info("Monitor Check Mailers");
-          monitorReports.add(monitorDns.checkMailersARecord(mailers, mailerLabels + "." + mailerDomain));
-          monitorReports.add(monitorDns.checkMailersPtr(mailers));
-
-
-          LOGGER.info("Monitor Check Dns");
-          String datacadamiaCom = "datacadamia.com";
-
-          List<String> domains = Arrays.asList(
-            "bytle.net",
-            mailerDomain,
-            datacadamiaCom,
-            "eraldy.com",
-            "gerardnico.com",
-            "persso.com",
-            "tabulify.com"
-          );
-
-          monitorReports.addAll(monitorDns.checkSpf(mailerDomain, mailerLabels, domains));
-
+          monitorReports.addAll(monitorDns.checkAll());
 
           apiTokenFuture
             .onFailure(this::handleGeneralFailure)

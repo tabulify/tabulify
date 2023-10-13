@@ -3,10 +3,10 @@ package net.bytle.dns;
 import org.xbill.DNS.*;
 
 import java.net.InetAddress;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class DnsIp {
-
 
   private final InetAddress address;
   private final DnsSession dnsSession;
@@ -72,5 +72,19 @@ public class DnsIp {
   public String getAddress() {
     return this.address.getHostAddress();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DnsIp dnsIp = (DnsIp) o;
+    return Objects.equals(address.getHostAddress(), dnsIp.address.getHostAddress());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(address.getHostAddress());
+  }
+
 
 }

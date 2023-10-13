@@ -63,6 +63,10 @@ public class DnsSession {
     return new DnsException(e);
   }
 
+  public DnsHost.DnsHostConfig configHost(String s) {
+    return new DnsHost.DnsHostConfig(this, s);
+  }
+
 
   public static class DnsSessionBuilder  {
 

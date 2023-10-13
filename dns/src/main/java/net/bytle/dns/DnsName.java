@@ -3,7 +3,6 @@ package net.bytle.dns;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -44,9 +43,9 @@ public class DnsName {
    * * for a list of host (mailers)
    * We return the first one
    */
-  public InetAddress getFirstARecord() throws DnsNotFoundException, DnsException {
+  public DnsIp getFirstARecord() throws DnsNotFoundException, DnsException {
 
-    Set<InetAddress> aRecords = this.getARecords();
+    Set<DnsIp> aRecords = this.getARecords();
     int size = aRecords.size();
     switch (size) {
       case 0:
@@ -61,7 +60,7 @@ public class DnsName {
 
   }
 
-  public AAAARecord getFirstAAAARecord() throws DnsNotFoundException, DnsException {
+  public DnsIp getFirstAAAARecord() throws DnsNotFoundException, DnsException {
 
     List<AAAARecord> aaaaRecords;
     try {
@@ -81,7 +80,7 @@ public class DnsName {
         /**
          * Due to load balancer, we may get more than one
          */
-        return aaaaRecords.get(0);
+        return this.session.createIpFromAddress(aaaaRecords.get(0).getAddress());
     }
 
   }
@@ -123,7 +122,7 @@ public class DnsName {
    * Just an alias
    */
   @SuppressWarnings("unused")
-  public InetAddress forwardLookup() throws DnsException, DnsNotFoundException {
+  public DnsIp forwardLookup() throws DnsException, DnsNotFoundException {
 
     return getFirstARecord();
 
@@ -230,18 +229,17 @@ public class DnsName {
    * ...
    */
   public DnsIp getFirstDnsIpAddress() throws DnsException, DnsNotFoundException {
-    InetAddress inetAddress;
+    DnsIp dnsIp;
     try {
-      inetAddress = getFirstARecord();
+      dnsIp = getFirstARecord();
     } catch (DnsNotFoundException e) {
-      inetAddress = getFirstAAAARecord().getAddress();
+      dnsIp = getFirstAAAARecord();
     }
-    return this.session.createIpFromAddress(inetAddress);
+    return dnsIp;
   }
 
   public DnsIp getFirstDnsIpv4Address() throws DnsException, DnsNotFoundException {
-    InetAddress inetAddress = getFirstARecord();
-    return this.session.createIpFromAddress(inetAddress);
+    return getFirstARecord();
   }
 
 
@@ -255,8 +253,7 @@ public class DnsName {
   }
 
   public DnsIp getFirstDnsIpv6Address() throws DnsException, DnsNotFoundException {
-    InetAddress inetAddress = getFirstAAAARecord().getAddress();
-    return this.session.createIpFromAddress(inetAddress);
+    return getFirstAAAARecord();
   }
 
   public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
@@ -270,7 +267,7 @@ public class DnsName {
     return this.absoluteDnsName.substring(0, this.absoluteDnsName.length() - 1);
   }
 
-  public Set<InetAddress> getARecords() throws DnsException, DnsNotFoundException {
+  public Set<DnsIp> getARecords() throws DnsException, DnsNotFoundException {
     try {
       return session.getLookupSession().lookupAsync(this.dnsName, Type.A)
         .toCompletableFuture()
@@ -278,6 +275,7 @@ public class DnsName {
         .getRecords()
         .stream().map(ARecord.class::cast)
         .map(ARecord::getAddress)
+        .map(this.session::createIpFromAddress)
         .collect(Collectors.toSet());
     } catch (Exception e) {
       throw this.session.handleLookupException(this, e);
