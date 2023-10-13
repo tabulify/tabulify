@@ -6,6 +6,7 @@ import org.xbill.DNS.lookup.LookupResult;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -38,22 +39,14 @@ public class DnsName {
   /**
    * For a name, you may get multiple record with the same name
    * but two differents address
-   * (for instance when the address is proxied by cloudflare)
+   * For instance:
+   * * when the address is proxied by cloudflare)
+   * * for a list of host (mailers)
    * We return the first one
    */
-  public ARecord getFirstARecord() throws DnsNotFoundException, DnsException {
+  public InetAddress getFirstARecord() throws DnsNotFoundException, DnsException {
 
-    List<ARecord> aRecords;
-    try {
-      aRecords = session.getLookupSession().lookupAsync(this.dnsName, Type.A)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream().map(ARecord.class::cast)
-        .collect(Collectors.toList());
-    } catch (InterruptedException | ExecutionException e) {
-      throw new DnsException(e);
-    }
+    Set<InetAddress> aRecords = this.getARecords();
     int size = aRecords.size();
     switch (size) {
       case 0:
@@ -63,7 +56,7 @@ public class DnsName {
          * We may get 2 records with the same name but with 2 differents addresses
          * (for instance when the address is proxied by cloudflare)
          */
-        return aRecords.get(0);
+        return aRecords.iterator().next();
     }
 
   }
@@ -131,7 +124,7 @@ public class DnsName {
    * Just an alias
    */
   @SuppressWarnings("unused")
-  public ARecord forwardLookup() throws DnsException, DnsNotFoundException {
+  public InetAddress forwardLookup() throws DnsException, DnsNotFoundException {
 
     return getFirstARecord();
 
@@ -246,7 +239,7 @@ public class DnsName {
   public DnsIp getFirstDnsIpAddress() throws DnsException, DnsNotFoundException {
     InetAddress inetAddress;
     try {
-       inetAddress = getFirstARecord().getAddress();
+       inetAddress = getFirstARecord();
     } catch (DnsNotFoundException e) {
       inetAddress = getFirstAAAARecord().getAddress();
     }
@@ -254,7 +247,7 @@ public class DnsName {
   }
 
   public DnsIp getFirstDnsIpv4Address() throws DnsException, DnsNotFoundException {
-    InetAddress inetAddress = getFirstARecord().getAddress();
+    InetAddress inetAddress = getFirstARecord();
     return  this.session.createIpFromAddress(inetAddress);
   }
 
@@ -283,5 +276,19 @@ public class DnsName {
    */
   public String getNameWithoutRoot() {
     return this.absoluteDnsName.substring(0,this.absoluteDnsName.length()-1);
+  }
+
+  public Set<InetAddress> getARecords() throws DnsException {
+    try {
+      return session.getLookupSession().lookupAsync(this.dnsName, Type.A)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream().map(ARecord.class::cast)
+        .map(ARecord::getAddress)
+        .collect(Collectors.toSet());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new DnsException(e);
+    }
   }
 }

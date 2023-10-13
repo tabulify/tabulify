@@ -52,26 +52,41 @@ public class MonitorMain extends AbstractVerticle {
 
           MonitorDns monitorDns = MonitorDns.create();
           LOGGER.info("Monitor Check Host");
-          MonitorNetworkHost monitorHost = MonitorNetworkHost.createForName(MonitorNetworkTopology.BEAU_SERVER_NAME)
-            .setIpv4(MonitorNetworkTopology.BEAU_SERVER_IPV4)
-            .setIpv6(MonitorNetworkTopology.BEAU_SERVER_IPV6)
+          MonitorNetworkHost monitorBeauHost = MonitorNetworkHost.createForName("beau.bytle.net")
+            .setIpv4("192.99.55.226")
+            .setIpv6("2607:5300:201:3100::85b")
             .build();
-          monitorReports.add(monitorDns.checkHostPtr(monitorHost));
+          MonitorNetworkHost monitorCanaHost = MonitorNetworkHost.createForName("cana.bytle.net")
+            .setIpv4("51.79.86.27")
+            .build();
+          List<MonitorNetworkHost> mailers = new ArrayList<>();
+          mailers.add(monitorBeauHost);
+          mailers.add(monitorCanaHost);
+
+          @SuppressWarnings("unused") MonitorNetworkHost monitorOegHost = MonitorNetworkHost.createForName("oeg.bytle.net")
+            .setIpv4("143.176.206.82")
+            .build();
+          String mailerLabels = "mailers";
+          String mailerDomain = "combostrap.com";
+          LOGGER.info("Monitor Check Mailers");
+          monitorReports.add(monitorDns.checkMailersARecord(mailers, mailerLabels + "." + mailerDomain));
+          monitorReports.add(monitorDns.checkMailersPtr(mailers));
 
 
           LOGGER.info("Monitor Check Dns");
-          String DATACADAMIA_COM = "datacadamia.com";
-          String comboStrapDomain = "combostrap.com";
+          String datacadamiaCom = "datacadamia.com";
+
           List<String> domains = Arrays.asList(
             "bytle.net",
-            comboStrapDomain,
-            DATACADAMIA_COM,
+            mailerDomain,
+            datacadamiaCom,
             "eraldy.com",
             "gerardnico.com",
             "persso.com",
             "tabulify.com"
           );
-          monitorReports.addAll(monitorDns.checkSpf(comboStrapDomain, domains, monitorHost));
+
+          monitorReports.addAll(monitorDns.checkSpf(mailerDomain, mailerLabels, domains));
 
 
           apiTokenFuture

@@ -6,6 +6,7 @@ import org.xbill.DNS.lookup.LookupResult;
 import org.xbill.DNS.lookup.LookupSession;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,71 +49,93 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorReport checkHostPtr(MonitorNetworkHost monitorNetworkHost) throws DnsException, DnsNotFoundException, DnsIllegalArgumentException {
+  public MonitorReport checkMailersPtr(List<MonitorNetworkHost> mailers) throws DnsException, DnsIllegalArgumentException {
 
     MonitorReport monitorReport = new MonitorReport("Check Host (Ptr)");
-    String hostname = monitorNetworkHost.getName();
-    DnsName hostDnsName = this.dnsSession.createDnsName(hostname);
+    for (MonitorNetworkHost monitorNetworkHost : mailers) {
+      String hostname = monitorNetworkHost.getName();
+      DnsName hostDnsName = this.dnsSession.createDnsName(hostname);
 
-    /**
-     * Ipv4 PTR check
-     */
-    DnsIp dnsIpv4Address = hostDnsName
-      .getFirstDnsIpv4Address();
-
-    if (dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())) {
-      monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
-    } else {
-      monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
-    }
-
-    try {
-      DnsName ptrName = dnsIpv4Address.getReverseDnsName();
-      if (ptrName.equals(hostDnsName)) {
-        monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
-      } else {
-        monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+      /**
+       * Ipv4 PTR check
+       */
+      DnsIp dnsIpv4Address;
+      try {
+        dnsIpv4Address = hostDnsName.getFirstDnsIpv4Address();
+      } catch (DnsNotFoundException e) {
+        monitorReport.addFailure(e.getMessage());
+        continue;
       }
-    } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The ipv4 PTR for the host (" + monitorNetworkHost + ") was not found");
-    }
 
-    /**
-     * Ipv6 PTR check
-     */
-    DnsIp dnsIpv6Address = hostDnsName
-      .getFirstDnsIpv6Address();
-
-    String hostIpv6Address = monitorNetworkHost.getIpv6().getHostAddress();
-    if (dnsIpv6Address.getInetAddress().equals(monitorNetworkHost.getIpv6())) {
-      monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv6 (" + hostIpv6Address + ")");
-    } else {
-      monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
-    }
-
-    try {
-      DnsName ptrName = dnsIpv6Address.getReverseDnsName();
-      if (ptrName.equals(hostDnsName)) {
-        monitorReport.addSuccess("The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
+      if (dnsIpv4Address.getInetAddress().equals(monitorNetworkHost.getIpv4())) {
+        monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
       } else {
-        monitorReport.addSuccess("The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+        monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv4 (" + monitorNetworkHost.getIpv4().getHostAddress() + ")");
       }
-    } catch (DnsNotFoundException e) {
-      monitorReport.addFailure("The ipv6 PTR for the host (" + monitorNetworkHost + ") was not found");
+
+      try {
+        DnsName ptrName = dnsIpv4Address.getReverseDnsName();
+        if (ptrName.equals(hostDnsName)) {
+          monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
+        } else {
+          monitorReport.addSuccess("The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+        }
+      } catch (DnsNotFoundException e) {
+        monitorReport.addFailure("The ipv4 PTR for the host (" + monitorNetworkHost + ") was not found");
+      }
+
+      /**
+       * Ipv6 PTR check
+       */
+      InetAddress ipv6 = monitorNetworkHost.getIpv6();
+      if (ipv6 != null) {
+
+        String hostIpv6Address = ipv6.getHostAddress();
+        DnsIp dnsIpv6Address;
+        try {
+          dnsIpv6Address = hostDnsName.getFirstDnsIpv6Address();
+        } catch (DnsNotFoundException e) {
+          monitorReport.addFailure(e.getMessage());
+          continue;
+        }
+        if (dnsIpv6Address.getInetAddress().equals(ipv6)) {
+          monitorReport.addSuccess("The host (" + monitorNetworkHost + ") has the ipv6 (" + hostIpv6Address + ")");
+        } else {
+          monitorReport.addFailure("The host (" + monitorNetworkHost + ") has NOT the ipv6 (" + hostIpv6Address + ")");
+        }
+
+        try {
+          DnsName ptrName = dnsIpv6Address.getReverseDnsName();
+          if (ptrName.equals(hostDnsName)) {
+            monitorReport.addSuccess("The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
+          } else {
+            monitorReport.addSuccess("The ipv6 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+          }
+        } catch (DnsNotFoundException e) {
+          monitorReport.addFailure("The ipv6 PTR for the host (" + monitorNetworkHost + ") was not found");
+        }
+
+      }
     }
+
 
     return monitorReport;
   }
 
 
   /**
-   * @param mainSpfDomain - the name of the domain where the original spf value is stored
-   * @param thirdDomains  - the name of domains that should include the original spf records
-   * @param mailerHost    - the mailer host
+   * @param mainDomain               - the name of the domain where the original spf value is stored
+   * @param thirdDomains             - the name of domains that should include the original spf records
+   * @param mailersLabelInMainDomain - the label A record name
    */
-  public List<MonitorReport> checkSpf(String mainSpfDomain, List<String> thirdDomains, MonitorNetworkHost mailerHost) throws DnsIllegalArgumentException, DnsException {
+  public List<MonitorReport> checkSpf(String mainDomain, String mailersLabelInMainDomain, List<String> thirdDomains) throws DnsIllegalArgumentException {
 
     List<MonitorReport> monitorReports = new ArrayList<>();
+
+    DnsName spfMainDomainName  = dnsSession.createDnsName(mainDomain);
+    DnsName mailersName = spfMainDomainName.getSubdomain(mailersLabelInMainDomain);
+    DnsName spfSubDomainName = spfMainDomainName.getSubdomain("spf");
+
     /**
      * Check the spf value.
      * The spf record is stored in a subdomain and included
@@ -124,9 +147,9 @@ public class MonitorDns {
     String googleSpf = "_spf.google.com";
     String mailChimpSpf = "spf.mandrillapp.com";
     String forwardMailSpf = "spf.forwardemail.net";
-    String expectedFullSpfRecord = "v=spf1 mx ip4:" + mailerHost.getIpv4().getHostAddress() + "/32 ip6:" + mailerHost.getIpv6().getHostAddress() + " include:" + mailjetSpf + " include:" + googleSpf + " include:" + mailChimpSpf + " include:" + forwardMailSpf + " -all";
-    DnsName spfMainDomainName = dnsSession.createDnsName(mainSpfDomain);
-    DnsName spfSubDomainName = spfMainDomainName.getSubdomain("spf");
+    String expectedFullSpfRecord = "v=spf1 mx a:" + mailersName.getNameWithoutRoot() + " include:" + mailjetSpf + " include:" + googleSpf + " include:" + mailChimpSpf + " include:" + forwardMailSpf + " -all";
+
+
     checkSpfRecordForDomain(expectedFullSpfRecord, spfSubDomainName, monitorReport);
 
     /**
@@ -148,20 +171,26 @@ public class MonitorDns {
 
   }
 
-  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, MonitorReport monitorReport) throws DnsException {
+  private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, MonitorReport monitorReport) {
+    String spfRecordValue;
     try {
-      String spfRecordValue = dnsName.getSpfRecord();
-      if (spfRecordValue.equals(expectedIncludeSpfRecord)) {
-        monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
-      } else {
-        monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
-          "  - The value is: " + spfRecordValue + "\n" +
-          "  - The value should be: " + expectedIncludeSpfRecord
-        );
-      }
+      spfRecordValue = dnsName.getSpfRecord();
     } catch (DnsNotFoundException e) {
       monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ")");
+      return;
+    } catch (DnsException e) {
+      monitorReport.addFailure("The spf record was not found for the domain (" + dnsName + ") due to a network problem: " + e.getMessage());
+      return;
     }
+    if (spfRecordValue.equals(expectedIncludeSpfRecord)) {
+      monitorReport.addSuccess("The spf record has the good value in the domain (" + dnsName + ")");
+    } else {
+      monitorReport.addFailure("The spf record has not the good value in the domain (" + dnsName + ")\n. " +
+        "  - The value is: " + spfRecordValue + "\n" +
+        "  - The value should be: " + expectedIncludeSpfRecord
+      );
+    }
+
   }
 
 
@@ -238,4 +267,31 @@ public class MonitorDns {
   }
 
 
+  public MonitorReport checkMailersARecord(List<MonitorNetworkHost> mailers, String mailersDomainName) {
+
+
+    MonitorReport monitorReport = new MonitorReport("Check Mailers A record");
+
+    DnsName mailersName;
+    try {
+      mailersName = this.dnsSession.createDnsName(mailersDomainName);
+    } catch (DnsIllegalArgumentException e) {
+      throw new DnsInternalException(e);
+    }
+
+    try {
+      Set<InetAddress> aRecords = mailersName.getARecords();
+      for (MonitorNetworkHost monitorNetworkHost : mailers) {
+        if (aRecords.contains(monitorNetworkHost.getIpv4())) {
+          monitorReport.addSuccess("The mailer host (" + monitorNetworkHost + ") was found in the name (" + mailersName + ")");
+        } else {
+          monitorReport.addFailure("The mailer host (" + monitorNetworkHost + ") was NOT found in the name (" + mailersName + ")");
+        }
+      }
+    } catch (DnsException e) {
+      throw new RuntimeException(e);
+    }
+    return monitorReport;
+
+  }
 }

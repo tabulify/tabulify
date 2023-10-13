@@ -1,6 +1,8 @@
 package net.bytle.smtp.command;
 
+import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.dns.DnsName;
+import net.bytle.dns.DnsSession;
 import net.bytle.smtp.*;
 import net.bytle.smtp.sasl.SimpleAuthMechanism;
 
@@ -63,7 +65,13 @@ public final class SmtpEhloCommandHandler extends SmtpInputCommandDirectReplyHan
       throw SmtpException.create(SmtpReplyCode.SYNTAX_ERROR_501, "Expected Syntax is `" + SmtpCommand.EHLO.getCommandSyntax() + "`");
     }
 
-    DnsName clientHostname = DnsName.createFrom(arguments.get(0));
+    String hostName = arguments.get(0);
+    DnsName clientHostname;
+    try {
+      clientHostname = DnsSession.createDefault().createDnsName(hostName);
+    } catch (DnsIllegalArgumentException e) {
+      throw SmtpException.create(SmtpReplyCode.SYNTAX_ERROR_501, "The hostname value (" + hostName + ") is not valid");
+    }
 
     /**
      * Domain Check
