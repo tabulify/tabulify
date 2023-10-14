@@ -3,14 +3,11 @@ package net.bytle.monitor;
 import net.bytle.dns.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.xbill.DNS.*;
-import org.xbill.DNS.lookup.LookupResult;
-import org.xbill.DNS.lookup.LookupSession;
+import org.xbill.DNS.MXRecord;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * To finish it, see
@@ -250,34 +247,6 @@ public class MonitorDns {
   }
 
 
-  public void check() throws ExecutionException, InterruptedException, TextParseException {
-    DnsDomainData combostrap = DnsDomainData.create("combostrap.com");
-
-    LookupSession lookupSession = LookupSession.builder()
-      .resolver(DnsResolver.getLocal())
-      .cache(new Cache())
-      .build();
-    List<DnsDomainData> domains = new ArrayList<>();
-    domains.add(combostrap);
-    for (DnsDomainData domain : domains) {
-
-      LookupResult lookupResult = lookupSession.lookupAsync(domain.getName(), Type.TXT)
-        .toCompletableFuture()
-        .get();
-      for (Record record : lookupResult.getRecords()) {
-        TXTRecord txtRecord = ((TXTRecord) record);
-        System.out.println(DnsUtil.getStringFromTxtRecord(txtRecord));
-      }
-//      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
-//      Name name = dnsDomain.getDmarcName();
-//      TXTRecord dmarcTextRecord = dnsDomain.getDmarcRecord();
-//      Assert.assertNotNull("The dmarc record for the name (" + name + ") was not found", dmarcTextRecord);
-//      String actualDmarcStringValue = DnsUtil.getStringFromTxtRecord(dmarcTextRecord);
-//      Assert.assertEquals("The dmarc record for the name (" + name + ") should be good", expectedDMarcValue, actualDmarcStringValue);
-    }
-  }
-
-
   public MonitorReport checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
 
@@ -304,16 +273,54 @@ public class MonitorDns {
 
   }
 
-  public MonitorReport checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
-    MonitorReport monitorReport = new MonitorReport("Mx Check");
-    monitorReport.addFailure("Not done");
-    return monitorReport;
+  public MonitorDns checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
+    String mxCheck = "Mx Check";
+
+    for (DnsName domain : domains) {
+      List<MXRecord> mxRecords;
+      try {
+        mxRecords = domain.getMxRecords();
+      } catch (DnsException e) {
+        this.addFailure(mxCheck, domain, "A DNS exception has occurred: " + e.getMessage());
+        continue;
+      } catch (DnsNotFoundException e) {
+        this.addFailure(mxCheck, domain, "The mx records were not found");
+        continue;
+      }
+
+      if (mxs.size() != mxRecords.size()) {
+        this.addFailure(mxCheck, domain, "The expected number of mx is (" + mxs.size() + ") but there are (" + mxRecords.size() + ")");
+      }
+      Map<String, Integer> actualMxs = new HashMap<>();
+      for (MXRecord mxRecord : mxRecords) {
+        String target = mxRecord.getTarget().toString(true);
+        actualMxs.put(target, mxRecord.getPriority());
+      }
+      for (Map.Entry<String, Integer> expectedMx : mxs.entrySet()) {
+        String expectedMxHost = expectedMx.getKey();
+        Integer actualMxPriority = actualMxs.get(expectedMxHost);
+        actualMxs.remove(expectedMxHost);
+        if (actualMxPriority == null) {
+          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") was not found");
+          continue;
+        }
+        Integer expectedPriority = expectedMx.getValue();
+        if (!actualMxPriority.equals(expectedPriority)) {
+          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") has the priority (" + actualMxPriority + ") but should have (" + expectedPriority + ")");
+          continue;
+        }
+        this.addSuccess(mxCheck, domain, "The mx (" + expectedMx + ") was found with the good priority (" + expectedPriority + ")");
+      }
+      for (String actualMx : actualMxs.keySet()) {
+        this.addFailure(mxCheck, domain, "The mx (" + actualMx + ") was not expected and should be deleted.");
+      }
+    }
+    return this;
   }
 
   public MonitorReport checkARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
     MonitorReport monitorReport = new MonitorReport(checkTitle);
     for (DnsName dnsName : domains) {
-
       try {
         DnsIp dnsIp = dnsName.getFirstARecord();
         if (dnsIp.equals(host.getIpv4())) {

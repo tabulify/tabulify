@@ -142,7 +142,7 @@ public class DnsName {
   }
 
 
-  public List<MXRecord> getMxRecords() throws DnsException {
+  public List<MXRecord> getMxRecords() throws DnsException, DnsNotFoundException {
 
 
     try {
@@ -156,8 +156,8 @@ public class DnsName {
         .map(MXRecord.class::cast)
         .collect(Collectors.toList()
         );
-    } catch (InterruptedException | ExecutionException e) {
-      throw new DnsException(e);
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this,e);
     }
 
   }
