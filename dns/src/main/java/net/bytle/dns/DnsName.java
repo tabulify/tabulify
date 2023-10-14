@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,17 +61,7 @@ public class DnsName {
 
   public DnsIp getFirstAAAARecord() throws DnsNotFoundException, DnsException {
 
-    List<AAAARecord> aaaaRecords;
-    try {
-      aaaaRecords = session.getLookupSession().lookupAsync(this.dnsName, Type.AAAA)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream().map(AAAARecord.class::cast)
-        .collect(Collectors.toList());
-    } catch (InterruptedException | ExecutionException e) {
-      throw new DnsException(e);
-    }
+    Set<DnsIp> aaaaRecords = getAAAARecords();
     switch (aaaaRecords.size()) {
       case 0:
         throw new DnsNotFoundException("There is no AAAA record for the name (" + this + ")");
@@ -80,7 +69,7 @@ public class DnsName {
         /**
          * Due to load balancer, we may get more than one
          */
-        return this.session.createIpFromAddress(aaaaRecords.get(0).getAddress());
+        return aaaaRecords.iterator().next();
     }
 
   }
@@ -128,7 +117,7 @@ public class DnsName {
 
   }
 
-  public TXTRecord getDkimRecord(String dkimSelector) throws DnsException, DnsNotFoundException {
+  public String getDkimRecord(String dkimSelector) throws DnsException, DnsNotFoundException {
 
     String dkimSelectorName = dkimSelector + "._domainkey." + this.absoluteDnsName;
     DnsName dkimDnsName;
@@ -137,7 +126,7 @@ public class DnsName {
     } catch (DnsIllegalArgumentException e) {
       throw new DnsInternalException(e);
     }
-    return dkimDnsName.getTextRecordThatStartsWith("v=DKIM1");
+    return DnsUtil.getStringFromTxtRecord(dkimDnsName.getTextRecordThatStartsWith("v=DKIM1"));
 
   }
 
@@ -157,7 +146,7 @@ public class DnsName {
         .collect(Collectors.toList()
         );
     } catch (Exception e) {
-      throw this.session.handleLookupException(this,e);
+      throw this.session.handleLookupException(this, e);
     }
 
   }
@@ -195,12 +184,11 @@ public class DnsName {
   }
 
 
-
   public String getDmarcRecord() throws DnsException, DnsNotFoundException {
     try {
       return DnsUtil.getStringFromTxtRecord(getSubdomain("_dmarc").getTextRecordThatStartsWith("v=DMARC1"));
     } catch (DnsIllegalArgumentException e) {
-      throw new DnsInternalException("_dmarc is a valid name",e);
+      throw new DnsInternalException("_dmarc is a valid name", e);
     }
   }
 
@@ -263,7 +251,8 @@ public class DnsName {
     return this.absoluteDnsName.substring(0, this.absoluteDnsName.length() - 1);
   }
 
-  public Set<DnsIp> getARecords() throws DnsException, DnsNotFoundException {
+  public Set<DnsIp>
+  getARecords() throws DnsException, DnsNotFoundException {
     try {
       return session.getLookupSession().lookupAsync(this.dnsName, Type.A)
         .toCompletableFuture()
@@ -290,6 +279,84 @@ public class DnsName {
       return new DnsName(this.session, apexLabel + "." + tldLabel + "." + rootLabel);
     } catch (DnsIllegalArgumentException e) {
       throw new DnsInternalException("It should not throw");
+    }
+  }
+
+  public Set<CNAMERecord> getCNameRecords() throws DnsNotFoundException, DnsException {
+    try {
+      return session.getLookupSession()
+        .lookupAsync(this.dnsName, Type.CNAME)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream().map(CNAMERecord.class::cast)
+        .collect(Collectors.toSet());
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this, e);
+    }
+  }
+
+  public Set<DnsIp> getAAAARecords() throws DnsNotFoundException, DnsException {
+    try {
+      return session.getLookupSession().lookupAsync(this.dnsName, Type.AAAA)
+        .toCompletableFuture()
+        .get()
+        .getRecords()
+        .stream()
+        .map(AAAARecord.class::cast)
+        .map(r -> this.session.createIpFromAddress(r.getAddress()))
+        .collect(Collectors.toSet());
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this, e);
+    }
+  }
+
+  public void printRecord() {
+
+    System.out.println("DNS Records for " + this);
+    String tabLevel1 = "  - ";
+    String tabLevel2 = "     - ";
+    try {
+      System.out.println(tabLevel1 + "Ipv4 (A records)");
+      Set<DnsIp> aRecords = this.getARecords();
+      for (DnsIp dnsIp : aRecords) {
+        System.out.println(tabLevel2 + dnsIp);
+      }
+    } catch (DnsException e) {
+      throw new RuntimeException(e);
+    } catch (DnsNotFoundException e) {
+      System.out.println(tabLevel2 + "No A record");
+    }
+
+
+    try {
+      System.out.println(tabLevel1 + "Ipv6 (AAAA records)");
+      Set<DnsIp> dnsIpv6s = this.getAAAARecords();
+      if (dnsIpv6s.size() == 0) {
+        System.out.println(tabLevel2 + "none");
+      }
+      for (DnsIp dnsIp : dnsIpv6s) {
+        System.out.println(tabLevel2 + dnsIp);
+      }
+    } catch (DnsException e) {
+      throw new RuntimeException(e);
+    } catch (DnsNotFoundException e) {
+      System.out.println(tabLevel2 + "No AAAA record");
+    }
+
+    try {
+      System.out.println(tabLevel1 + "Cname for " + this);
+      Set<CNAMERecord> cnameRecords = this.getCNameRecords();
+      if (cnameRecords.size() == 0) {
+        System.out.println(tabLevel2 + "none");
+      }
+      for (CNAMERecord cnameRecord : cnameRecords) {
+        System.out.println(tabLevel2 + cnameRecord.getTarget().toString(true));
+      }
+    } catch (DnsException e) {
+      throw new RuntimeException(e);
+    } catch (DnsNotFoundException e) {
+      System.out.println(tabLevel2 + "No domain record");
     }
   }
 }

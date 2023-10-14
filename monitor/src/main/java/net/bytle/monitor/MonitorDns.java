@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.MXRecord;
 
-import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.*;
 
@@ -202,56 +201,10 @@ public class MonitorDns {
   }
 
 
-  /**
-   * Verification of DKIM value
-   * <p>
-   * Note that the ansible postfix role
-   * has a real verification
-   * with the task `Verification of the DNS Zone against the private key`
-   * that starts
-   * ```
-   * ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags dkim-test-key -v
-   * ```
-   */
-  public void dkimCombostrapTest() throws IOException {
-
-    String combostrapDkimSelector = "combostrap";
-    String combostrapExpectedDkimValue = "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQUtHxTD63yxwq5fmjJ3RtXw2NP5/QEiSq3Xx85faTHnnj3/PA/igwWaueDsoeUuZOpkL74gDNGWBoQPecRaFrAXdPoEKGDYNBeMXzIkWQOth9Oaq4N+38LV08Ui86so8B2BhcvgXiqpACsrPur0hbDQWI183tZve7MKMPs3KPIQIDAQAB";
-    this.testDkimUtil(combostrapDkimSelector, combostrapExpectedDkimValue, true);
-
-  }
-
-  /**
-   * Google Dkim should be present on all domain
-   */
-  public void dkimGoogleTest() throws IOException {
-
-    String googleDkimSelector = "google";
-    String googleDkimValue = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm+CwENjyJ8AuCzA0HSW3E81VGZEr0wtdUkkZeOFuT7jUNFW+GMHZ8aHzFAHSn3R3aPyt7zDdsHJjXpBmqd9Eh0Lsf620h820myxvARO7Zgpwn7R+l/WHURzBKGIERvlvSRF/32YJ8oEkVPe/SYwDuobleusSCariqwbD8FHnIi4UJSnAasAiFIGIGzxzMm oObeRq5cCV2FMtstyJvtfF6LWJjL2k5020HbYaC0waT3lvSSbgW2PhSk0fX099U5Ij4Lmwb0oGdlYtVWXl6VaSWZHZXBBvdX2g+tKeHwYrVUck04hvTP7nsKOq+NTM+r+TQht3q425dGZYKOdUwZxJhQIDAQAB;t=s;";
-    this.testDkimUtil(googleDkimSelector, googleDkimValue, false);
-
-  }
-
-  private void testDkimUtil(String dkimSelector, String expectedDkimValue, boolean checkValue) throws IOException {
-
-    //for (String domain : DOMAINS) {
-//      DnsDomain dnsDomain = DnsDomain.createFrom(domain);
-//      TXTRecord domainDkimTextRecord = dnsDomain.getDkimRecord(dkimSelector);
-//      //Assert.assertNotNull("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") was not found", domainDkimTextRecord);
-//      if (checkValue) {
-//        String actualDkimStringValue = DnsUtil.getStringFromTxtRecord(domainDkimTextRecord);
-//        //Assert.assertEquals("The dkim record for the name (" + dnsDomain.getDkimName(dkimSelector) + ") should be good", expectedDkimValue, actualDkimStringValue);
-//      }
-    //}
-
-  }
-
 
   public MonitorReport checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
-
     MonitorReport monitorReport = new MonitorReport("Check Mailers A record");
-
     try {
       Set<DnsIp> aIps;
       try {
@@ -363,7 +316,7 @@ public class MonitorDns {
 
     LOGGER.info("Monitor Check Domain Spf");
     DnsName gerardNicoDomain = this.dnsSession.createDnsName("gerardnico.com");
-    Set<DnsName> domains = Set.of(
+    Set<DnsName> apexDomains = Set.of(
       this.dnsSession.createDnsName("bytle.net"),
       this.dnsSession.createDnsName("combostrap.com"),
       this.dnsSession.createDnsName("datacadamia.com"),
@@ -372,16 +325,18 @@ public class MonitorDns {
       this.dnsSession.createDnsName("persso.com"),
       this.dnsSession.createDnsName("tabulify.com")
     );
-    this.checkSpf(eraldyDomain, mailersName, domains);
+    this.checkSpf(eraldyDomain, mailersName, apexDomains);
 
     LOGGER.info("Monitor A record for HTTP website");
-    this.checkARecord(monitorBeauHost, domains, "Monitor A record for HTTP website");
+    // gerardnico.github.io hosted domain does not have cname but A and AAAAA records
+    Set<DnsName> hostedDomains = new HashSet<>(apexDomains);
+    DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
+    hostedDomains.add(rixt);
+    this.checkARecord(monitorBeauHost, hostedDomains, "HTTP website hosting");
 
-    LOGGER.info("Monitor A record for subdomain");
+    LOGGER.info("Monitor A record for home");
     DnsName oeg = gerardNicoDomain.getSubdomain("oeg");
     this.checkARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
-    DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
-    this.checkARecord(monitorBeauHost, Set.of(rixt), "Monitor Subdomain A record");
 
     LOGGER.info("Monitor Check Mx");
     Map<String, Integer> mxs = new HashMap<>();
@@ -390,11 +345,29 @@ public class MonitorDns {
     mxs.put("alt2.aspmx.l.google.com", 5);
     mxs.put("alt3.aspmx.l.google.com", 10);
     mxs.put("alt4.aspmx.l.google.com", 10);
-    this.checkMx(mxs, domains);
+    this.checkMx(mxs, apexDomains);
 
     LOGGER.info("Monitor Check Dmarc");
-    this.checkDmarc(domains);
+    this.checkDmarc(apexDomains);
 
+    LOGGER.info("Monitor Check Dkim");
+    /**
+     * Verification of DKIM value
+     * <p>
+     * Note that the ansible postfix role
+     * has a real verification
+     * with the task `Verification of the DNS Zone against the private key`
+     * that starts
+     * ```
+     * ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags dkim-test-key -v
+     * ```
+     */
+    String combostrapDkimSelector = "combostrap";
+    String combostrapExpectedDkimValue = "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQUtHxTD63yxwq5fmjJ3RtXw2NP5/QEiSq3Xx85faTHnnj3/PA/igwWaueDsoeUuZOpkL74gDNGWBoQPecRaFrAXdPoEKGDYNBeMXzIkWQOth9Oaq4N+38LV08Ui86so8B2BhcvgXiqpACsrPur0hbDQWI183tZve7MKMPs3KPIQIDAQAB";
+    this.checkDkim(apexDomains, combostrapDkimSelector, combostrapExpectedDkimValue);
+    String googleDkimSelector = "google";
+    String googleDkimValue = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm+CwENjyJ8AuCzA0HSW3E81VGZEr0wtdUkkZeOFuT7jUNFW+GMHZ8aHzFAHSn3R3aPyt7zDdsHJjXpBmqd9Eh0Lsf620h820myxvARO7Zgpwn7R+l/WHURzBKGIERvlvSRF/32YJ8oEkVPe/SYwDuobleusSCariqwbD8FHnIi4UJSnAasAiFIGIGzxzMm oObeRq5cCV2FMtstyJvtfF6LWJjL2k5020HbYaC0waT3lvSSbgW2PhSk0fX099U5Ij4Lmwb0oGdlYtVWXl6VaSWZHZXBBvdX2g+tKeHwYrVUck04hvTP7nsKOq+NTM+r+TQht3q425dGZYKOdUwZxJhQIDAQAB;t=s;";
+    this.checkDkim(apexDomains, googleDkimSelector, googleDkimValue);
 
     LOGGER.info("Monitor Creating report");
     List<MonitorReport> monitorReports = new ArrayList<>();
@@ -407,6 +380,29 @@ public class MonitorDns {
     }
     return monitorReports;
 
+  }
+
+  private void checkDkim(Set<DnsName> domains, String selector, String expectedValue) {
+
+    String checkName = "Dkim check";
+    for (DnsName domain : domains) {
+
+      String domainDkimTextRecord;
+      try {
+        domainDkimTextRecord = domain.getDkimRecord(selector);
+      } catch (DnsException e) {
+        this.addFailure(checkName, domain, "An exception has occurred: " + e.getMessage());
+        continue;
+      } catch (DnsNotFoundException e) {
+        this.addFailure(checkName, domain, "The dkim (" + selector + ") was not found.");
+        continue;
+      }
+      if (domainDkimTextRecord.equals(expectedValue)) {
+        this.addSuccess(checkName, domain, "The dkim (" + selector + ") was found with the good value.");
+      } else {
+        this.addFailure(checkName, domain, "The dkim (" + selector + ") was found with a BAD value. Expected DKim is: " + expectedValue);
+      }
+    }
   }
 
   private MonitorDns checkDmarc(Set<DnsName> domains) {
