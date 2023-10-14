@@ -4,7 +4,6 @@ import org.xbill.DNS.*;
 
 import java.net.InetAddress;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 public class DnsIp {
 
@@ -49,8 +48,15 @@ public class DnsIp {
         .map(PTRRecord.class::cast)
         .findFirst()
         .orElseThrow(DnsNotFoundException::new);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new DnsException("Network error", e);
+    } catch (Exception e) {
+      DnsName dnsName;
+      String reverseName = name.toString();
+      try {
+        dnsName = this.dnsSession.createDnsName(reverseName);
+      } catch (DnsIllegalArgumentException ex) {
+        throw new DnsInternalException("The reverse name should be good ("+reverseName+")");
+      }
+      throw this.dnsSession.handleLookupException(dnsName, e);
     }
 
   }

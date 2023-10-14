@@ -14,4 +14,8 @@ public class DnsInternalException extends RuntimeException {
   public DnsInternalException(String message) {
     super(message);
   }
+
+  public DnsInternalException(String message, Exception e) {
+    super(message,e);
+  }
 }

@@ -195,17 +195,13 @@ public class DnsName {
   }
 
 
-  public DnsName getDmarcName() {
-    String dmarcSelector = "_dmarc";
-    try {
-      return this.session.createDnsName(dmarcSelector + "." + this.absoluteDnsName);
-    } catch (DnsIllegalArgumentException e) {
-      throw new DnsInternalException(e);
-    }
-  }
 
-  public TXTRecord getDmarcRecord() throws DnsException, DnsNotFoundException {
-    return getDmarcName().getTextRecordThatStartsWith("v=DMARC1");
+  public String getDmarcRecord() throws DnsException, DnsNotFoundException {
+    try {
+      return DnsUtil.getStringFromTxtRecord(getSubdomain("_dmarc").getTextRecordThatStartsWith("v=DMARC1"));
+    } catch (DnsIllegalArgumentException e) {
+      throw new DnsInternalException("_dmarc is a valid name",e);
+    }
   }
 
 

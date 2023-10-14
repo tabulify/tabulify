@@ -318,22 +318,21 @@ public class MonitorDns {
     return this;
   }
 
-  public MonitorReport checkARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
-    MonitorReport monitorReport = new MonitorReport(checkTitle);
+  public MonitorDns checkARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+
     for (DnsName dnsName : domains) {
       try {
         DnsIp dnsIp = dnsName.getFirstARecord();
         if (dnsIp.equals(host.getIpv4())) {
-          monitorReport.addSuccess("The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is not the expected one for the host (" + host + ")");
+          this.addSuccess(checkTitle, dnsName, "The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is the expected one for the host (" + host + ")");
         } else {
-          monitorReport.addFailure("The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")");
+          this.addFailure(checkTitle, dnsName, "The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")");
         }
       } catch (DnsNotFoundException | DnsException e) {
-        monitorReport.addFailure(e.getMessage());
+        this.addFailure(checkTitle, dnsName, e.getMessage());
       }
-
     }
-    return monitorReport;
+    return this;
   }
 
   public List<MonitorReport> checkAll() throws UnknownHostException, DnsException, DnsIllegalArgumentException {
@@ -351,7 +350,7 @@ public class MonitorDns {
     mailers.add(monitorBeauHost);
     mailers.add(monitorCanaHost);
 
-    @SuppressWarnings("unused") DnsHost monitorOegHost = this.dnsSession.configHost("oeg.bytle.net")
+    DnsHost monitorOegHost = this.dnsSession.configHost("oeg.bytle.net")
       .setIpv4("143.176.206.82")
       .build();
 
@@ -378,10 +377,11 @@ public class MonitorDns {
     LOGGER.info("Monitor A record for HTTP website");
     this.checkARecord(monitorBeauHost, domains, "Monitor A record for HTTP website");
 
-    LOGGER.info("Monitor A record for Home");
+    LOGGER.info("Monitor A record for subdomain");
     DnsName oeg = gerardNicoDomain.getSubdomain("oeg");
+    this.checkARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
     DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
-    this.checkARecord(monitorOegHost, Set.of(oeg, rixt), "Monitor Subdomain A record ");
+    this.checkARecord(monitorBeauHost, Set.of(rixt), "Monitor Subdomain A record");
 
     LOGGER.info("Monitor Check Mx");
     Map<String, Integer> mxs = new HashMap<>();
@@ -392,6 +392,11 @@ public class MonitorDns {
     mxs.put("alt4.aspmx.l.google.com", 10);
     this.checkMx(mxs, domains);
 
+    LOGGER.info("Monitor Check Dmarc");
+    this.checkDmarc(domains);
+
+
+    LOGGER.info("Monitor Creating report");
     List<MonitorReport> monitorReports = new ArrayList<>();
     for (DnsName dnsName : reports.keySet()) {
       MonitorReport monitorReport = new MonitorReport("Dns check for " + dnsName);
@@ -402,6 +407,26 @@ public class MonitorDns {
     }
     return monitorReports;
 
+  }
+
+  private MonitorDns checkDmarc(Set<DnsName> domains) {
+    String checkName = "Dmarc check";
+    String expectedDmarc = "v=DMARC1; p=none; rua=mailto:dmarc@combostrap.com";
+    for (DnsName domain : domains) {
+      try {
+        String dmarc = domain.getDmarcRecord();
+        if (dmarc.equals(expectedDmarc)) {
+          this.addSuccess(checkName, domain, "The dmarc is correct");
+        } else {
+          this.addSuccess(checkName, domain, "The dmarc is incorrect. It should be (" + expectedDmarc + ")");
+        }
+      } catch (DnsException e) {
+        this.addFailure(checkName, domain, "The dmarc record query fires an exception: " + e.getMessage());
+      } catch (DnsNotFoundException e) {
+        this.addFailure(checkName, domain, "The dmarc record was not found");
+      }
+    }
+    return this;
   }
 
 
