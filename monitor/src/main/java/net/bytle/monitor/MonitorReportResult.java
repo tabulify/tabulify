@@ -43,4 +43,9 @@ public class MonitorReportResult {
     return this;
   }
 
+
+  public String print() {
+    return getStatus()+": "+getMessage();
+  }
+
 }

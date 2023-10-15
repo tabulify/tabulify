@@ -1,5 +1,6 @@
 package net.bytle.monitor;
 
+import io.vertx.core.Future;
 import net.bytle.dns.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,21 +19,53 @@ public class MonitorDns {
 
   private final DnsSession dnsSession;
   private final Map<DnsName, List<MonitorReportResult>> reports;
+  private final CloudflareDns cloudflareDns;
 
-  public MonitorDns() {
+  private final DnsHost monitorBeauHost;
+  private final DnsHost monitorOegHost;
+  private final ArrayList<DnsHost> mailers;
+  private final Map<DnsName, List<Future<MonitorReportResult>>> asyncResults = new HashMap<>();
+
+  public MonitorDns(CloudflareDns cloudflareDns) {
 
     this.dnsSession = DnsSession.builder()
       // we are at cloudflare, no need to wait
       .setResolverToCloudflare()
       .build();
     this.reports = new HashMap<>();
+    this.cloudflareDns = cloudflareDns;
+
+    /**
+     * Topology and Host
+     */
+    try {
+      monitorBeauHost = this.dnsSession.configHost("beau.bytle.net")
+        .setIpv4("192.99.55.226")
+        .setIpv6("2607:5300:201:3100::85b")
+        .build();
+
+      DnsHost monitorCanaHost = this.dnsSession.configHost("cana.bytle.net")
+        .setIpv4("51.79.86.27")
+        .build();
+      mailers = new ArrayList<>();
+      mailers.add(monitorBeauHost);
+      mailers.add(monitorCanaHost);
+
+      monitorOegHost = this.dnsSession.configHost("oeg.bytle.net")
+        .setIpv4("143.176.206.82")
+        .build();
+
+    } catch (UnknownHostException | DnsIllegalArgumentException e) {
+      throw new RuntimeException(e);
+    }
 
   }
 
 
-  public static MonitorDns create() {
-    return new MonitorDns();
+  public static MonitorDns create(CloudflareDns cloudflareDns) {
+    return new MonitorDns(cloudflareDns);
   }
+
 
 
   /**
@@ -123,11 +156,22 @@ public class MonitorDns {
     this.addMessage(checkName, dnsName, message, MonitorReportResultStatus.SUCCESS);
   }
 
-  private void addMessage(String checkName, DnsName dnsName, String message, MonitorReportResultStatus success) {
-    MonitorReportResult monitorReportResult = MonitorReportResult.create(success, message).setCheckName(checkName);
+  private void addMessage(String checkName, DnsName dnsName, String message, MonitorReportResultStatus status) {
+    MonitorReportResult monitorReportResult = createResult(checkName, message, status);
     DnsName apexName = dnsName.getApexName();
     List<MonitorReportResult> values = this.reports.computeIfAbsent(apexName, k -> new ArrayList<>());
     values.add(monitorReportResult);
+  }
+
+  private void addAsyncResult(DnsName dnsName, Future<MonitorReportResult> monitorReportResultFuture) {
+    DnsName apexName = dnsName.getApexName();
+    List<Future<MonitorReportResult>> values = this.asyncResults.computeIfAbsent(apexName, k -> new ArrayList<>());
+    values.add(monitorReportResultFuture);
+  }
+
+  private MonitorReportResult createResult(String checkName, String message, MonitorReportResultStatus status) {
+    return MonitorReportResult.create(status, message)
+      .setCheckName(checkName);
   }
 
 
@@ -201,10 +245,9 @@ public class MonitorDns {
   }
 
 
+  public MonitorDns checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
-  public MonitorReport checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
-    MonitorReport monitorReport = new MonitorReport("Check Mailers A record");
     try {
       Set<DnsIp> aIps;
       try {
@@ -212,17 +255,18 @@ public class MonitorDns {
       } catch (DnsNotFoundException e) {
         aIps = new HashSet<>();
       }
+      String checkTitle = "check Mailer A record";
       for (DnsHost dnsHost : mailers) {
         if (aIps.contains(dnsHost.getIpv4())) {
-          monitorReport.addSuccess("The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was found in the name (" + mailersName + ")");
+          this.addSuccess(checkTitle, mailersName,"The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was found in the name (" + mailersName + ")");
         } else {
-          monitorReport.addFailure("The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was NOT found in the name (" + mailersName + ")");
+          this.addFailure(checkTitle,mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was NOT found in the name (" + mailersName + ")");
         }
       }
     } catch (DnsException e) {
       throw new RuntimeException(e);
     }
-    return monitorReport;
+    return this;
 
   }
 
@@ -271,41 +315,41 @@ public class MonitorDns {
     return this;
   }
 
-  public MonitorDns checkARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+  /**
+   * A record for web hosting are proxied
+   * We need then to go throught the cloudflare api
+   * to get the real value
+   */
+  public MonitorDns checkCloudflareARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+
 
     for (DnsName dnsName : domains) {
-      try {
-        DnsIp dnsIp = dnsName.getFirstARecord();
-        if (dnsIp.equals(host.getIpv4())) {
-          this.addSuccess(checkTitle, dnsName, "The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is the expected one for the host (" + host + ")");
-        } else {
-          this.addFailure(checkTitle, dnsName, "The ipv4 address (" + dnsIp + ") of the domain (" + dnsName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")");
-        }
-      } catch (DnsNotFoundException | DnsException e) {
-        this.addFailure(checkTitle, dnsName, e.getMessage());
-      }
+      Future<MonitorReportResult> result =
+        this.cloudflareDns.getZone(dnsName.getApexName().getNameWithoutRoot())
+          .compose(zone ->
+              zone.getName(dnsName.getNameWithoutRoot())
+                .getFirstARecord()
+                .compose(inetAddress -> {
+                  MonitorReportResult futureResult;
+                  if (inetAddress.equals(host.getIpv4().getInetAddress())) {
+                    futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + dnsName + ") is the expected one for the host (" + host + ")", MonitorReportResultStatus.SUCCESS);
+                  } else {
+                    futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + dnsName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")", MonitorReportResultStatus.FAILURE);
+                  }
+                  return Future.succeededFuture(futureResult);
+                }),
+            err -> Future.succeededFuture(this.createResult(checkTitle, err.getMessage(), MonitorReportResultStatus.FAILURE))
+          );
+      this.addAsyncResult(dnsName, result);
     }
     return this;
   }
 
-  public List<MonitorReport> checkAll() throws UnknownHostException, DnsException, DnsIllegalArgumentException {
+  public List<MonitorReport> checkAll() throws DnsException, DnsIllegalArgumentException {
 
 
     LOGGER.info("Monitor Check Host");
-    DnsHost monitorBeauHost = this.dnsSession.configHost("beau.bytle.net")
-      .setIpv4("192.99.55.226")
-      .setIpv6("2607:5300:201:3100::85b")
-      .build();
-    DnsHost monitorCanaHost = this.dnsSession.configHost("cana.bytle.net")
-      .setIpv4("51.79.86.27")
-      .build();
-    List<DnsHost> mailers = new ArrayList<>();
-    mailers.add(monitorBeauHost);
-    mailers.add(monitorCanaHost);
 
-    DnsHost monitorOegHost = this.dnsSession.configHost("oeg.bytle.net")
-      .setIpv4("143.176.206.82")
-      .build();
 
     DnsName eraldyDomain = this.dnsSession.createDnsName("eraldy.com");
     DnsName mailersName = eraldyDomain.getSubdomain("mailers");
@@ -332,11 +376,11 @@ public class MonitorDns {
     Set<DnsName> hostedDomains = new HashSet<>(apexDomains);
     DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
     hostedDomains.add(rixt);
-    this.checkARecord(monitorBeauHost, hostedDomains, "HTTP website hosting");
+    this.checkCloudflareARecord(monitorBeauHost, hostedDomains, "HTTP website hosting");
 
     LOGGER.info("Monitor A record for home");
     DnsName oeg = gerardNicoDomain.getSubdomain("oeg");
-    this.checkARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
+    this.checkCloudflareARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
 
     LOGGER.info("Monitor Check Mx");
     Map<String, Integer> mxs = new HashMap<>();
@@ -369,17 +413,37 @@ public class MonitorDns {
     String googleDkimValue = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm+CwENjyJ8AuCzA0HSW3E81VGZEr0wtdUkkZeOFuT7jUNFW+GMHZ8aHzFAHSn3R3aPyt7zDdsHJjXpBmqd9Eh0Lsf620h820myxvARO7Zgpwn7R+l/WHURzBKGIERvlvSRF/32YJ8oEkVPe/SYwDuobleusSCariqwbD8FHnIi4UJSnAasAiFIGIGzxzMm oObeRq5cCV2FMtstyJvtfF6LWJjL2k5020HbYaC0waT3lvSSbgW2PhSk0fX099U5Ij4Lmwb0oGdlYtVWXl6VaSWZHZXBBvdX2g+tKeHwYrVUck04hvTP7nsKOq+NTM+r+TQht3q425dGZYKOdUwZxJhQIDAQAB;t=s;";
     this.checkDkim(apexDomains, googleDkimSelector, googleDkimValue);
 
+
+    return this.getMonitorReports();
+
+  }
+
+  public List<MonitorReport> getMonitorReports() {
+
     LOGGER.info("Monitor Creating report");
+    HashSet<DnsName> allNames = new HashSet<>(reports.keySet());
+    allNames.addAll(asyncResults.keySet());
     List<MonitorReport> monitorReports = new ArrayList<>();
-    for (DnsName dnsName : reports.keySet()) {
+    for (DnsName dnsName : allNames) {
+
       MonitorReport monitorReport = new MonitorReport("Dns check for " + dnsName);
       monitorReports.add(monitorReport);
-      for (MonitorReportResult monitorReportResult : reports.get(dnsName)) {
-        monitorReport.addResult(monitorReportResult);
+      // Sync
+      List<MonitorReportResult> monitorReportResults = reports.get(dnsName);
+      if (monitorReportResults != null) {
+        for (MonitorReportResult monitorReportResult : monitorReportResults) {
+          monitorReport.addResult(monitorReportResult);
+        }
+      }
+      // Async
+      List<Future<MonitorReportResult>> asyncMonitorReportResults = asyncResults.get(dnsName);
+      if (asyncMonitorReportResults != null) {
+        for (Future<MonitorReportResult> monitorReportResult : asyncMonitorReportResults) {
+          monitorReport.addFutureResult(monitorReportResult);
+        }
       }
     }
     return monitorReports;
-
   }
 
   private void checkDkim(Set<DnsName> domains, String selector, String expectedValue) {
@@ -424,6 +488,5 @@ public class MonitorDns {
     }
     return this;
   }
-
 
 }

@@ -1,10 +1,8 @@
 package net.bytle.monitor;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 import org.apache.logging.log4j.LogManager;
@@ -12,44 +10,35 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Token expiration and ip filtering
  */
 public class MonitorApiToken {
-  private static final String API_TOKEN_CLOUDFLARE = "api.token.cloudflare";
 
   private static final String API_TOKEN_EXPIRATION = "api.token.days.before.expiration.failure";
   private static final Logger LOGGER = LogManager.getLogger(MonitorApiToken.class);
   private final long expirationDelayBeforeFailure;
 
+  private final CloudflareApi cloudflareApi;
 
-  private final String cloudflareApiBearer;
-  private final WebClient webClient;
+  public MonitorApiToken(CloudflareApi cloudflareApi, ConfigAccessor configAccessor) {
 
-  public MonitorApiToken(Vertx vertx, ConfigAccessor configAccessor) throws ConfigIllegalException {
-
-    this.webClient = WebClient.create(vertx);
-    this.cloudflareApiBearer = configAccessor.getString(API_TOKEN_CLOUDFLARE);
-    if (this.cloudflareApiBearer == null) {
-      throw new ConfigIllegalException("The config variable " + configAccessor.getPossibleVariableNames(API_TOKEN_CLOUDFLARE) + " was not found");
-    }
-    LOGGER.info("API token cloudflare found");
+    this.cloudflareApi = cloudflareApi;
     this.expirationDelayBeforeFailure = configAccessor.getLong(API_TOKEN_EXPIRATION, 60L);
     LOGGER.info("API token expiration warning set to " + this.expirationDelayBeforeFailure);
 
   }
 
-  public static MonitorApiToken create(Vertx vertx, ConfigAccessor configAccessor) throws ConfigIllegalException {
-    return new MonitorApiToken(vertx, configAccessor);
+  public static MonitorApiToken create(CloudflareApi cloudflareApi, ConfigAccessor configAccessor) throws ConfigIllegalException {
+    return new MonitorApiToken(cloudflareApi, configAccessor);
   }
 
-  public Future<MonitorReport> check() {
+  public MonitorReport check() {
 
-
-    MonitorReport monitorReport = new MonitorReport("Api Token Check");
-    return this.checkCloudflare(monitorReport);
+    return this.checkCloudflare();
 
 
   }
@@ -72,11 +61,12 @@ public class MonitorApiToken {
    * --header 'Content-Type: application/json' | jq
    * </code>
    **/
-  private Future<MonitorReport> checkCloudflare(MonitorReport monitorReport) {
-    return this.webClient
-      .getAbs("https://api.cloudflare.com/client/v4/user/tokens")
-      .putHeader("Authorization", "Bearer " + this.cloudflareApiBearer)
-      .putHeader("Content-Type", "application/json")
+  private MonitorReport checkCloudflare() {
+
+    MonitorReport monitorReport = new MonitorReport("Cloudflare Api token check");
+
+    Future<List<MonitorReportResult>> reports = this.cloudflareApi
+      .getRequest("https://api.cloudflare.com/client/v4/user/tokens")
       .send()
       .compose(response -> {
 
@@ -88,7 +78,7 @@ public class MonitorApiToken {
           return Future.failedFuture(new IllegalStateException("Content is not Json\n" + body, e));
         }
 
-
+        List<MonitorReportResult> monitorReportResults = new ArrayList<>();
         JsonArray jsonArray = jsonBody.getJsonArray("result");
         for (int i = 0; i < jsonArray.size(); i++) {
 
@@ -97,7 +87,7 @@ public class MonitorApiToken {
           MonitorApiTokenCloudflare monitorApiToken = MonitorApiTokenCloudflare.createFromJson(tokenJsonData);
 
           if (!monitorApiToken.isActive()) {
-            monitorReport.addFailure("The cloudflare api token (" + monitorApiToken + ") is not active");
+            monitorReportResults.add(MonitorReportResult.failed("The cloudflare api token (" + monitorApiToken + ") is not active"));
             continue;
           }
 
@@ -107,12 +97,12 @@ public class MonitorApiToken {
           if (monitorApiToken.shouldBeIpRestricted()) {
             try {
               List<String> ipRestrictions = monitorApiToken.checkAndGetIpRestrictionOn(MonitorNetworkTopology.PRIVATE_IPS);
-              monitorReport.addSuccess("The cloudflare api token (" + monitorApiToken + ") is restricted on this Ips: " + String.join(", ", ipRestrictions));
+              monitorReportResults.add(MonitorReportResult.success("The cloudflare api token (" + monitorApiToken + ") is restricted on this Ips: " + String.join(", ", ipRestrictions)));
             } catch (MonitorException e) {
-              monitorReport.addFailure("The cloudflare api token (" + monitorApiToken + ") failed Ip restriction: " + e.getMessage());
+              monitorReportResults.add(MonitorReportResult.failed("The cloudflare api token (" + monitorApiToken + ") failed Ip restriction: " + e.getMessage()));
             }
           } else {
-            monitorReport.addSuccess("The cloudflare api token (" + monitorApiToken + ") does not need any IP restriction");
+            monitorReportResults.add(MonitorReportResult.success("The cloudflare api token (" + monitorApiToken + ") does not need any IP restriction"));
           }
 
           /**
@@ -120,21 +110,22 @@ public class MonitorApiToken {
            */
           Instant expiresOn = monitorApiToken.getExpirationDate();
           if (expiresOn == null) {
-            monitorReport.addSuccess("The cloudflare api token (" + monitorApiToken + ") has no expiration date");
+            monitorReportResults.add(MonitorReportResult.success("The cloudflare api token (" + monitorApiToken + ") has no expiration date"));
             continue;
           }
           long duration = Duration.between(Instant.now(), expiresOn).toDays();
           String expirationMessage = "The cloudflare api token (" + monitorApiToken + ") expires in " + duration + " days";
           if (duration < expirationDelayBeforeFailure) {
-            monitorReport.addFailure(expirationMessage);
+            monitorReportResults.add(MonitorReportResult.failed(expirationMessage));
             continue;
           }
-          monitorReport.addSuccess(expirationMessage);
+          monitorReportResults.add(MonitorReportResult.success(expirationMessage));
 
         }
 
-        return Future.succeededFuture(monitorReport);
+        return Future.succeededFuture(monitorReportResults);
       });
+    return monitorReport.addFutureResults(reports);
   }
 
 

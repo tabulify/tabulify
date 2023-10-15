@@ -608,6 +608,10 @@ tasks.register<JavaExec>(runTower) {
  */
 val javascriptProjectDir = "${project.projectDir}/src/main/javascript"
 val javascriptCopyToWebRoot = "copyJavascript"
+// process resources is called before test and for each test
+//val processResources by tasks.getting(ProcessResources::class) {
+//  dependsOn(javascriptCopyToWebRoot)
+//}
 tasks.register<Copy>(javascriptCopyToWebRoot) {
   from("${javascriptProjectDir}/build")
   destinationDir = File("${buildDir}/classes/java/main/webroot")

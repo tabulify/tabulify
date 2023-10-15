@@ -11,6 +11,7 @@ dependencies {
   implementation(project(":bytle-vertx"))
   implementation(project(":bytle-smtp-client"))
   implementation("io.vertx:vertx-web-client:$vertxVersion")
+  testImplementation("io.vertx:vertx-junit5:$vertxVersion")
 
 
 }

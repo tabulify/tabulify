@@ -38,30 +38,33 @@ public class MonitorMain extends AbstractVerticle {
       .onFailure(this::handleGeneralFailure)
       .onSuccess(configAccessor -> {
         try {
+
           LOGGER.info("Monitor Config");
           BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
+          CloudflareApi cloudflareApi = CloudflareApi.create(vertx, configAccessor);
 
           List<MonitorReport> monitorReports = new ArrayList<>();
 
-          LOGGER.info("Monitor Starting the API Tolen check");
-          Future<MonitorReport> apiTokenFuture = MonitorApiToken.create(vertx, configAccessor)
-            .check();
+          LOGGER.info("Monitor Starting the API Token check");
+          MonitorReport apiTokenReport = MonitorApiToken.create(cloudflareApi, configAccessor).check();
+          monitorReports.add(apiTokenReport);
 
-
-          MonitorDns monitorDns = MonitorDns.create();
+          LOGGER.info("Monitor Dns Checks");
+          CloudflareDns cloudflareDns = CloudflareDns.create(cloudflareApi);
+          MonitorDns monitorDns = MonitorDns.create(cloudflareDns);
           monitorReports.addAll(monitorDns.checkAll());
 
-          apiTokenFuture
-            .onFailure(this::handleGeneralFailure)
-            .onSuccess(tokenMonitorReport -> {
-              LOGGER.info("Monitor Mailing");
-              monitorReports.add(tokenMonitorReport);
+          LOGGER.info("Monitor Mailing");
+          List<Future<String>> futureMonitorPrints = new ArrayList<>();
+          for (MonitorReport monitorReport : monitorReports) {
+            futureMonitorPrints.add(monitorReport.print());
+          }
+          Future.join(futureMonitorPrints)
+            .onSuccess(res -> {
               StringBuilder emailText = new StringBuilder();
-              for (MonitorReport monitorReport : monitorReports) {
-                emailText
-                  .append(monitorReport.print())
-                  .append("\r\n");
+              for (Object s : res.list()) {
+                emailText.append(s.toString()).append(MonitorReport.CRLF);
               }
               String mail = "nico@bytle.net";
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
@@ -78,7 +81,6 @@ public class MonitorMain extends AbstractVerticle {
 
               LOGGER.info("Monitor Successful - closing");
               vertx.close();
-
             });
 
         } catch (Exception e) {
