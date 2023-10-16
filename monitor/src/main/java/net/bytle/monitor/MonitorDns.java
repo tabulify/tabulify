@@ -17,7 +17,6 @@ public class MonitorDns {
 
   public static Logger LOGGER = LogManager.getLogger(MonitorMain.class);
 
-  private final DnsSession dnsSession;
   private final Map<DnsName, List<MonitorReportResult>> reports;
   private final CloudflareDns cloudflareDns;
 
@@ -25,35 +24,76 @@ public class MonitorDns {
   private final DnsHost monitorOegHost;
   private final ArrayList<DnsHost> mailers;
   private final Map<DnsName, List<Future<MonitorReportResult>>> asyncResults = new HashMap<>();
+  private final DnsName eraldyDomain;
+  private final DnsName gerardNicoDomain;
+  private final Set<DnsName> apexDomains;
 
   public MonitorDns(CloudflareDns cloudflareDns) {
 
-    this.dnsSession = DnsSession.builder()
-      // we are at cloudflare, no need to wait
+    // we are at cloudflare, no need to wait the sync
+    // we resolve to cloudflare immediately
+    DnsSession dnsSession = DnsSession.builder()
+      // we are at cloudflare, no need to wait the sync
+      // we resolve to cloudflare immediately
       .setResolverToCloudflare()
       .build();
     this.reports = new HashMap<>();
     this.cloudflareDns = cloudflareDns;
 
     /**
-     * Topology and Host
+     * Host
      */
+    LOGGER.info("Monitor Dns - Creating Hosts");
     try {
-      monitorBeauHost = this.dnsSession.configHost("beau.bytle.net")
+      monitorBeauHost = dnsSession.configHost("beau.bytle.net")
         .setIpv4("192.99.55.226")
         .setIpv6("2607:5300:201:3100::85b")
         .build();
 
-      DnsHost monitorCanaHost = this.dnsSession.configHost("cana.bytle.net")
+      DnsHost monitorCanaHost = dnsSession.configHost("cana.bytle.net")
         .setIpv4("51.79.86.27")
         .build();
       mailers = new ArrayList<>();
       mailers.add(monitorBeauHost);
       mailers.add(monitorCanaHost);
 
-      monitorOegHost = this.dnsSession.configHost("oeg.bytle.net")
+      monitorOegHost = dnsSession.configHost("oeg.bytle.net")
         .setIpv4("143.176.206.82")
         .build();
+
+      /**
+       * Domains
+       */
+      LOGGER.info("Monitor Dns - Creating domains");
+      eraldyDomain = dnsSession.createDnsName("eraldy.com");
+      gerardNicoDomain = dnsSession.createDnsName("gerardnico.com");
+      DnsName bytleDomain = dnsSession.createDnsName("bytle.net");
+      DnsName combostrapDomain = dnsSession.createDnsName("combostrap.com");
+      DnsName datacadamiaDomain = dnsSession.createDnsName("datacadamia.com");
+      DnsName tabulifyDomain = dnsSession.createDnsName("tabulify.com");
+      apexDomains = Set.of(
+        bytleDomain,
+        combostrapDomain,
+        datacadamiaDomain,
+        eraldyDomain,
+        gerardNicoDomain,
+        tabulifyDomain
+      );
+      LOGGER.info("Monitor DNS - Add Combostrap Dkim to domains");
+      String combostrapDkimSelector = "combostrap";
+      String combostrapExpectedDkimValue = "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQUtHxTD63yxwq5fmjJ3RtXw2NP5/QEiSq3Xx85faTHnnj3/PA/igwWaueDsoeUuZOpkL74gDNGWBoQPecRaFrAXdPoEKGDYNBeMXzIkWQOth9Oaq4N+38LV08Ui86so8B2BhcvgXiqpACsrPur0hbDQWI183tZve7MKMPs3KPIQIDAQAB";
+      for (DnsName dnsName : apexDomains) {
+        dnsName.addExpectedDkim(combostrapDkimSelector, combostrapExpectedDkimValue);
+      }
+      LOGGER.info("Monitor DNS - Add Google Dkim to domains");
+      // They are configuration of the Gmail app: https://admin.google.com/ac/apps/gmail/authenticateemail
+      bytleDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgfxRVmzWeaZZYiF0jlvHV9fYn7piegwkvzj/N3HdTzeKwucVenLP6q5IfwqsO1C6aZGNhproVUQoyN+gDa5kfnLkiF22shXLeyG2lGtSje+xvQ4IppsA1mdXltDjclA3ipOjT45PZ83Rt421qEecHXmNFIk0gv4xPqQeCX6E3AJos3TC5zc/wJO7q3uyv9udtZuuEcZg2+2N3tTU4rNobWmIfzpvCO2LkQvFF8K+Szp9l4yU1Ji+6iTrJpJqbojj9HxsTt/SfsnUAqUROAbVVxpFtM/UAA/WLWIzOdIvDDL7mB7gTPzY17wtwvuDm+mtQGn4+LO5cSejnjRgO/hczwIDAQAB");
+      combostrapDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm+CwENjyJ8AuCzA0HSW3E81VGZEr0wtdUkkZeOFuT7jUNFW+GMHZ8aHzFAHSn3R3aPyt7zDdsHJjXpBmqd9Eh0Lsf620h820myxvARO7Zgpwn7R+l/WHURzBKGIERvlvSRF/32YJ8oEkVPe/SYwDuobleusSCariqwbD8FHnIi4UJSnAasAiFIGIGzxzMmoObeRq5cCV2FMtstyJvtfF6LWJjL2k5020HbYaC0waT3lvSSbgW2PhSk0fX099U5Ij4Lmwb0oGdlYtVWXl6VaSWZHZXBBvdX2g+tKeHwYrVUck04hvTP7nsKOq+NTM+r+TQht3q425dGZYKOdUwZxJhQIDAQAB");
+      datacadamiaDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkGtLDG3wTcwJIuWDiKLXIAB1VmIRKbt0G6RamA6I+vbJf9HmTcKnVtcGsTl5fNnOdBCpyZXn6Kq+swwmQXH91D0yjStlExS2hr56qIEcCm2lecKq98PdQtQA0BKE0bEna1xryiwlNCKtH2ZqipIwFHmZgTV3WPOkjqwNQxoj4m93EXZktfslUnP88v9ArHOZMpZgSbEDST7+h3XgoweBun0kId4YU6IFT/w/Cwnw4yt/xGPrL2KlRNrPI5VrrhkNkcAZg0RV1ESx/rT+ZWFQ5LHigwmy/VWmSZoKyQPHt3iFMjqB2wiTdgR0MGtNxSSV6mgHST3WORjMAN8UnQj0uwIDAQAB");
+      eraldyDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnh121MFMGHy9ApWnneweFYrkGoNyJY2QL/QsH68qS0t4dYH9AEJZcnnLF4Bp1EPTvX7W6O9u9lrTEL3w+oAYHa74n9euN4dyPzyqN4WJYLiduXiX+JomHE1Y8QoR51EdP94hT9uNAGzQbX20JRlhkTCx4CdcTpPi3Uy7x77Ej+Rhkxxmd4HWpSOIizQorhN44SOODhNw75aM+Sw9TPcgmKxnrNZY73ZHUjJLxIBGgVwB2Cjt7i//UpX+k2f8cOkLEngSuUo8tQ9jTETpKhaor4Amo2SrsPz4kk+aZR3S/W0XV9P7MPy/6hNYYhQfZ+ifAGZnNlBzuOa59BeiRIL8OQIDAQAB");
+      gerardNicoDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAndKU0WYuA04TnVdkiSS+XCaCNRhqEEkGcsFpiCmv1YS5juUfvN3J/hUKD03usyxrM6cy1xMLgVd5SOsZKlyQ2vUHWULQMcJWqNtwpmy/kniguen5P+xtfMT43Xk3749rcBLI7WeDoUt7uDNUqOM7JCFfX/K8bKqDlxlOOEPOlpoBw9VXCE7wvpXkl1PduuJy1L0AbwqIbq2CRpyU5IuPLvcuHvBrPKU18o82B486Lb/bdRzscMH3hUia8aPmdgIBa7sqbX+xU3qfOsIUUceRGYipzQ/xJQKvACVgA/wwwMFVzwaCtA8lQIL3B5rs/Pp5rtHZW5kB5/LJhrSqOpxwrQIDAQAB");
+      tabulifyDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzMY3bJmB9x2F7kv9+uQlDcv6CUz1iqiSKTPsJUdaG6mQgirIUNF3Bz9r7GJWkUxZA780dNMDcpqdH58VKdZznBZW1DceTqaM2B3/pMJmwA3JhQZl3la96vQFqIf5FrLfS5nofrZxVCGaTTMeesoJf7X/f9GUWcCr3HEUPbkT8eQ7bsh8EGhtc/aJYS9aCF7kzfKNB7ArXQnNowPMN/qIH6lv/zQWmF85C9doKK00I+SeLOHJR04yRSbEmQ1kKx8KaxxVgfTShbt/Thqzwd0o7tp50vXmBW8or1MZfFQ4/geXCcC5U8LVm3RT4pI84M/ekWhzlDD+PfN/Yif3OqSfQIDAQAB");
+
 
     } catch (UnknownHostException | DnsIllegalArgumentException e) {
       throw new RuntimeException(e);
@@ -65,7 +105,6 @@ public class MonitorDns {
   public static MonitorDns create(CloudflareDns cloudflareDns) {
     return new MonitorDns(cloudflareDns);
   }
-
 
 
   /**
@@ -258,9 +297,9 @@ public class MonitorDns {
       String checkTitle = "check Mailer A record";
       for (DnsHost dnsHost : mailers) {
         if (aIps.contains(dnsHost.getIpv4())) {
-          this.addSuccess(checkTitle, mailersName,"The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was found in the name (" + mailersName + ")");
+          this.addSuccess(checkTitle, mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was found in the name (" + mailersName + ")");
         } else {
-          this.addFailure(checkTitle,mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was NOT found in the name (" + mailersName + ")");
+          this.addFailure(checkTitle, mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv4() + ") was NOT found in the name (" + mailersName + ")");
         }
       }
     } catch (DnsException e) {
@@ -351,7 +390,6 @@ public class MonitorDns {
     LOGGER.info("Monitor Check Host");
 
 
-    DnsName eraldyDomain = this.dnsSession.createDnsName("eraldy.com");
     DnsName mailersName = eraldyDomain.getSubdomain("mailers");
     LOGGER.info("Monitor Check Mailers");
     this.checkMailersARecord(mailers, mailersName);
@@ -359,16 +397,6 @@ public class MonitorDns {
 
 
     LOGGER.info("Monitor Check Domain Spf");
-    DnsName gerardNicoDomain = this.dnsSession.createDnsName("gerardnico.com");
-    Set<DnsName> apexDomains = Set.of(
-      this.dnsSession.createDnsName("bytle.net"),
-      this.dnsSession.createDnsName("combostrap.com"),
-      this.dnsSession.createDnsName("datacadamia.com"),
-      eraldyDomain,
-      gerardNicoDomain,
-      this.dnsSession.createDnsName("persso.com"),
-      this.dnsSession.createDnsName("tabulify.com")
-    );
     this.checkSpf(eraldyDomain, mailersName, apexDomains);
 
     LOGGER.info("Monitor A record for HTTP website");
@@ -406,12 +434,7 @@ public class MonitorDns {
      * ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags dkim-test-key -v
      * ```
      */
-    String combostrapDkimSelector = "combostrap";
-    String combostrapExpectedDkimValue = "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQUtHxTD63yxwq5fmjJ3RtXw2NP5/QEiSq3Xx85faTHnnj3/PA/igwWaueDsoeUuZOpkL74gDNGWBoQPecRaFrAXdPoEKGDYNBeMXzIkWQOth9Oaq4N+38LV08Ui86so8B2BhcvgXiqpACsrPur0hbDQWI183tZve7MKMPs3KPIQIDAQAB";
-    this.checkDkim(apexDomains, combostrapDkimSelector, combostrapExpectedDkimValue);
-    String googleDkimSelector = "google";
-    String googleDkimValue = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm+CwENjyJ8AuCzA0HSW3E81VGZEr0wtdUkkZeOFuT7jUNFW+GMHZ8aHzFAHSn3R3aPyt7zDdsHJjXpBmqd9Eh0Lsf620h820myxvARO7Zgpwn7R+l/WHURzBKGIERvlvSRF/32YJ8oEkVPe/SYwDuobleusSCariqwbD8FHnIi4UJSnAasAiFIGIGzxzMm oObeRq5cCV2FMtstyJvtfF6LWJjL2k5020HbYaC0waT3lvSSbgW2PhSk0fX099U5Ij4Lmwb0oGdlYtVWXl6VaSWZHZXBBvdX2g+tKeHwYrVUck04hvTP7nsKOq+NTM+r+TQht3q425dGZYKOdUwZxJhQIDAQAB;t=s;";
-    this.checkDkim(apexDomains, googleDkimSelector, googleDkimValue);
+    this.checkDkim(apexDomains);
 
 
     return this.getMonitorReports();
@@ -446,25 +469,31 @@ public class MonitorDns {
     return monitorReports;
   }
 
-  private void checkDkim(Set<DnsName> domains, String selector, String expectedValue) {
+  private void checkDkim(Set<DnsName> domains) {
 
     String checkName = "Dkim check";
     for (DnsName domain : domains) {
 
-      String domainDkimTextRecord;
-      try {
-        domainDkimTextRecord = domain.getDkimRecord(selector);
-      } catch (DnsException e) {
-        this.addFailure(checkName, domain, "An exception has occurred: " + e.getMessage());
-        continue;
-      } catch (DnsNotFoundException e) {
-        this.addFailure(checkName, domain, "The dkim (" + selector + ") was not found.");
-        continue;
-      }
-      if (domainDkimTextRecord.equals(expectedValue)) {
-        this.addSuccess(checkName, domain, "The dkim (" + selector + ") was found with the good value.");
-      } else {
-        this.addFailure(checkName, domain, "The dkim (" + selector + ") was found with a BAD value. Expected DKim is: " + expectedValue);
+      for (String selector : domain.getExpectedDkimSelector()) {
+        String domainDkimTextRecord;
+        try {
+          domainDkimTextRecord = domain.getDkimRecord(selector);
+        } catch (DnsException e) {
+          this.addFailure(checkName, domain, "An exception has occurred: " + e.getMessage());
+          continue;
+        } catch (DnsNotFoundException e) {
+          this.addFailure(checkName, domain, "The dkim (" + selector + ") was not found.");
+          continue;
+        }
+        String expectedValue = domain.getExpectedDkimValue(selector);
+        if (domainDkimTextRecord.equals(expectedValue)) {
+          this.addSuccess(checkName, domain, "The dkim (" + selector + ") was found with the good value.");
+        } else {
+          this.addFailure(checkName, domain, "The dkim (" + selector + ") was found with a BAD value. " + MonitorReport.CRLF +
+            MonitorReport.TAB2 + "Expected DKim is: " + expectedValue + MonitorReport.CRLF +
+            MonitorReport.TAB2 + "Actual DKim is: " + domainDkimTextRecord
+          );
+        }
       }
     }
   }

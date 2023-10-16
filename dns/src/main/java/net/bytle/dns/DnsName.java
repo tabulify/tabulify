@@ -3,9 +3,7 @@ package net.bytle.dns;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +16,10 @@ public class DnsName {
   private final String absoluteDnsName;
   private final DnsSession session;
   private final Name dnsName;
+  /**
+   * Selector / Value
+   */
+  private final Map<String, String> expectedDkims = new HashMap<>();
 
   protected DnsName(DnsSession session, String absoluteName) throws DnsIllegalArgumentException {
     if (!absoluteName.endsWith(ROOT_DOT)) {
@@ -359,4 +361,17 @@ public class DnsName {
       System.out.println(tabLevel2 + "No domain record");
     }
   }
+
+  public void addExpectedDkim(String selector, String value) {
+    this.expectedDkims.put(selector, value);
+  }
+
+  public Set<String> getExpectedDkimSelector() {
+    return this.expectedDkims.keySet();
+  }
+
+  public String getExpectedDkimValue(String selector) {
+    return this.expectedDkims.get(selector);
+  }
+
 }
