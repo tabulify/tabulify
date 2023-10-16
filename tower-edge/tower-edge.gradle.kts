@@ -5,8 +5,6 @@ description = "Tower Edge"
 val projectVertxVersion = rootProject.ext.get("vertxVersion").toString()
 //https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
 val zip4jVersion = "2.11.5"
-//https://mvnrepository.com/artifact/software.amazon.awssdk/s3
-val awsSdkVersion = "2.20.150"
 //https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
 //https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml
 val jacksonVersion = "2.15.2"
@@ -26,8 +24,8 @@ dependencies {
   implementation(project(":bytle-vertx"))
   implementation("io.vertx:vertx-web:$projectVertxVersion")
 
+  // https://commons.apache.org/proper/commons-compress/
   implementation("net.lingala.zip4j:zip4j:$zip4jVersion")
-  implementation("software.amazon.awssdk:s3:$awsSdkVersion")
   implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jacksonVersion")
   testImplementation(testFixtures(project(":bytle-vertx")))

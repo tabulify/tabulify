@@ -1,9 +1,7 @@
-package net.bytle.edge.routehandler;
+package net.bytle.smtp.filter;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
 import net.bytle.dmarc.DmarcFeedback;
 import net.bytle.dmarc.DmarcFeedbackMetadata;
 import net.bytle.dmarc.DmarcManager;
@@ -17,11 +15,8 @@ import net.bytle.type.time.Timestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Dmarc Post Handler
- * from a <a href="https://forwardemail.net/en/faq#do-you-support-webhooks">forwardEmail json data</a>
- */
-public class DmarcHandler implements Handler<RoutingContext> {
+
+public class DmarcFilter  {
 
 
   /**
@@ -31,12 +26,12 @@ public class DmarcHandler implements Handler<RoutingContext> {
    */
   private static final String ISO_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
   private static final String ERROR_DIRECTORY = "error/";
-  public static final String DMARC_PATH = "/dmarc";
 
-  public static Handler<RoutingContext> create() {
-    return new DmarcHandler();
-  }
 
+  /**
+   * Dmarc Post Handler
+   * from a <a href="https://forwardemail.net/en/faq#do-you-support-webhooks">forwardEmail json data</a>
+   */
   public static Future<Void> parseAndUpload(JsonObject json) {
 
     AwsObject awsObject;
@@ -90,17 +85,6 @@ public class DmarcHandler implements Handler<RoutingContext> {
 
   }
 
-  @Override
-  public void handle(RoutingContext routingContext) {
-
-    JsonObject json = routingContext.body().asJsonObject();
-    parseAndUpload(json)
-      .onFailure(routingContext::fail)
-      .onSuccess(Void-> routingContext
-        .response()
-        .end());
-
-  }
 
 
 }

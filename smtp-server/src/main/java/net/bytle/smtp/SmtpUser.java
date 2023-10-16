@@ -1,5 +1,7 @@
 package net.bytle.smtp;
 
+import net.bytle.smtp.mailbox.SmtpMailbox;
+
 /**
  * A user
  */

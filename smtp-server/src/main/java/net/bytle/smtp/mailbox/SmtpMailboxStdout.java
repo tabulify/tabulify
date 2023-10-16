@@ -1,4 +1,6 @@
-package net.bytle.smtp;
+package net.bytle.smtp.mailbox;
+
+import net.bytle.smtp.SmtpEnvelope;
 
 public class SmtpMailboxStdout extends SmtpMailbox {
 

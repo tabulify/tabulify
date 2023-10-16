@@ -44,6 +44,16 @@ users:
     alice:
       mailbox: stdout
       password: secret
-#  combostrap.dev:
-#    dmarc:
-#      mailbox: handler://dmarc
+  combostrap.dev:
+    dmarc:
+      mailbox: dmarc
+
+# Mailboxes
+mailboxes:
+  stdout:
+    type: stdout
+  dmarc:
+    type: s3
+    region: 'ca-mtl'
+    url_endpoint: 'https://h0k0.ca.idrivee2-22.com'
+    bucket_name: 'dmarc-dev'

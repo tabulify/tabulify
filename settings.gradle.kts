@@ -56,6 +56,7 @@ include(":bytle-tower")
 include(":bytle-dns")
 include(":bytle-web-document")
 include(":bytle-monitor")
+include(":bytle-s3")
 
 // we do that so that we can choose the gradle file by name
 // may be there is a better way

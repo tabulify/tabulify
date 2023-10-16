@@ -4,9 +4,13 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
+import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.exception.CastException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
+import net.bytle.smtp.mailbox.SmtpMailbox;
+import net.bytle.smtp.mailbox.SmtpMailboxForward;
+import net.bytle.smtp.mailbox.SmtpMailboxStdout;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
@@ -133,7 +137,12 @@ public class SmtpServer {
       if (domainName == null) {
         throw new ConfigIllegalException("The domain for the hostname (" + virtualHostnameString + ") is mandatory");
       }
-      SmtpDomain smtpDomain = this.getOrCreateDomainByName(domainName);
+      SmtpDomain smtpDomain;
+      try {
+        smtpDomain = this.getOrCreateDomainByName(domainName);
+      } catch (DnsIllegalArgumentException e) {
+        throw new ConfigIllegalException("The domain name (" + domainName + ") for the hostname (" + virtualHostnameString + ") is not valid");
+      }
       smtpVirtualHostConf.setHostedDomain(smtpDomain);
       String postMasterEmailConf = hostedDomainConfigurationData.getString("postmaster");
       if (postMasterEmailConf == null) {
@@ -219,7 +228,7 @@ public class SmtpServer {
 
   }
 
-  private SmtpDomain getOrCreateDomainByName(String domainName) {
+  private SmtpDomain getOrCreateDomainByName(String domainName) throws DnsIllegalArgumentException {
     String domainNameNormalization = domainName.toLowerCase();
     SmtpDomain smtpDomain = this.smtpDomains.get(domainNameNormalization);
     if (smtpDomain == null) {

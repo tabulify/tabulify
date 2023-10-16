@@ -1,4 +1,4 @@
-package net.bytle.smtp;
+package net.bytle.smtp.mailbox;
 
 public abstract class SmtpMailbox implements SmtpMailboxInterface {
 }

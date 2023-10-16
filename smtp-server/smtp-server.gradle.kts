@@ -5,6 +5,7 @@ val simpleEmailVersion = rootProject.ext.get("simpleEmailVersion").toString()
 dependencies {
 
   implementation(project(":bytle-vertx"))
+  implementation(project(":bytle-s3"))
   implementation(project(":bytle-type"))
   // Needed for the DNS checks (Spf, block list)
   implementation(project(":bytle-dns"))

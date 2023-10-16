@@ -1,4 +1,7 @@
-package net.bytle.smtp;
+package net.bytle.smtp.mailbox;
+
+import net.bytle.smtp.SmtpEnvelope;
+import net.bytle.smtp.SmtpException;
 
 public class SmtpMailboxForward extends SmtpMailbox{
 
