@@ -14,40 +14,44 @@ public class MonitorReport {
   List<MonitorReportResult> monitorResults = new ArrayList<>();
   private final List<Future<MonitorReportResult>> futureResults = new ArrayList<>();
   private final List<Future<List<MonitorReportResult>>> futureListResults = new ArrayList<>();
+  private boolean joined = false;
 
 
   public MonitorReport(String title) {
     this.title = title;
   }
 
-
-  public Future<String> print() {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append(this.title).append(":" + CRLF);
-    for (MonitorReportResult result : this.monitorResults) {
-      this.appendResultPrint(stringBuilder, result);
+  public Future<MonitorReport> resolve() {
+    if (this.joined) {
+      return Future.succeededFuture(null);
     }
+    this.joined = true;
     return Future.join(futureResults)
       .compose(r -> {
-        for (int i = 0; i < futureResults.size(); i++) {
-          this.appendResultPrint(stringBuilder, r.resultAt(i));
-        }
+
+        this.monitorResults.addAll(r.list());
         return Future.join(futureListResults)
           .compose(rs -> {
             for (int i = 0; i < futureListResults.size(); i++) {
-              List<MonitorReportResult> monitorReportResults = rs.resultAt(i);
-              for (MonitorReportResult monitorReportResult : monitorReportResults) {
-                this.appendResultPrint(stringBuilder, monitorReportResult);
-              }
+              List<MonitorReportResult> futureMonitorReportResults = rs.resultAt(i);
+              this.monitorResults.addAll(futureMonitorReportResults);
             }
-            return Future.succeededFuture(stringBuilder.toString());
+            return Future.succeededFuture(this);
           });
       });
   }
 
-  private void appendResultPrint(StringBuilder stringBuilder, MonitorReportResult result) {
+  public String print() {
+    if (!this.joined) {
+      throw new RuntimeException("The report should be first resolved");
+    }
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.append(this.title).append(":" + CRLF);
     String TAB1 = "  ";
-    stringBuilder.append(TAB1).append(LIST_CHAR).append(" ").append(result.print()).append(CRLF);
+    for (MonitorReportResult result : this.monitorResults) {
+      stringBuilder.append(TAB1).append(LIST_CHAR).append(" ").append(result.print()).append(CRLF);
+    }
+    return stringBuilder.toString();
   }
 
 
@@ -69,5 +73,15 @@ public class MonitorReport {
   public MonitorReport addFutureResults(Future<List<MonitorReportResult>> listFuture) {
     this.futureListResults.add(listFuture);
     return this;
+  }
+
+  public int getFailures() {
+    if (!this.joined) {
+      throw new RuntimeException("The report should be first resolved");
+    }
+    return Math.toIntExact(
+      this.monitorResults.stream().filter(r -> r.getStatus() == MonitorReportResultStatus.FAILURE)
+        .count()
+    );
   }
 }

@@ -1,7 +1,9 @@
 package net.bytle.monitor;
 
 import io.vertx.core.Future;
+import jakarta.mail.internet.AddressException;
 import net.bytle.dns.*;
+import net.bytle.email.BMailInternetAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.MXRecord;
@@ -94,6 +96,18 @@ public class MonitorDns {
       eraldyDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnh121MFMGHy9ApWnneweFYrkGoNyJY2QL/QsH68qS0t4dYH9AEJZcnnLF4Bp1EPTvX7W6O9u9lrTEL3w+oAYHa74n9euN4dyPzyqN4WJYLiduXiX+JomHE1Y8QoR51EdP94hT9uNAGzQbX20JRlhkTCx4CdcTpPi3Uy7x77Ej+Rhkxxmd4HWpSOIizQorhN44SOODhNw75aM+Sw9TPcgmKxnrNZY73ZHUjJLxIBGgVwB2Cjt7i//UpX+k2f8cOkLEngSuUo8tQ9jTETpKhaor4Amo2SrsPz4kk+aZR3S/W0XV9P7MPy/6hNYYhQfZ+ifAGZnNlBzuOa59BeiRIL8OQIDAQAB");
       gerardNicoDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAndKU0WYuA04TnVdkiSS+XCaCNRhqEEkGcsFpiCmv1YS5juUfvN3J/hUKD03usyxrM6cy1xMLgVd5SOsZKlyQ2vUHWULQMcJWqNtwpmy/kniguen5P+xtfMT43Xk3749rcBLI7WeDoUt7uDNUqOM7JCFfX/K8bKqDlxlOOEPOlpoBw9VXCE7wvpXkl1PduuJy1L0AbwqIbq2CRpyU5IuPLvcuHvBrPKU18o82B486Lb/bdRzscMH3hUia8aPmdgIBa7sqbX+xU3qfOsIUUceRGYipzQ/xJQKvACVgA/wwwMFVzwaCtA8lQIL3B5rs/Pp5rtHZW5kB5/LJhrSqOpxwrQIDAQAB");
       tabulifyDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzMY3bJmB9x2F7kv9+uQlDcv6CUz1iqiSKTPsJUdaG6mQgirIUNF3Bz9r7GJWkUxZA780dNMDcpqdH58VKdZznBZW1DceTqaM2B3/pMJmwA3JhQZl3la96vQFqIf5FrLfS5nofrZxVCGaTTMeesoJf7X/f9GUWcCr3HEUPbkT8eQ7bsh8EGhtc/aJYS9aCF7kzfKNB7ArXQnNowPMN/qIH6lv/zQWmF85C9doKK00I+SeLOHJR04yRSbEmQ1kKx8KaxxVgfTShbt/Thqzwd0o7tp50vXmBW8or1MZfFQ4/geXCcC5U8LVm3RT4pI84M/ekWhzlDD+PfN/Yif3OqSfQIDAQAB");
+
+      LOGGER.info("Monitor DNS - Add Dmarc to domains");
+      try {
+        bytleDomain.addExpectedDmarcEmail(BMailInternetAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
+        combostrapDomain.addExpectedDmarcEmail(BMailInternetAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
+        BMailInternetAddress dmarcInternal = BMailInternetAddress.of("dmarc@combostrap.com");
+        for (DnsName apexDomain : apexDomains) {
+          apexDomain.addExpectedDmarcEmail(dmarcInternal);
+        }
+      } catch (AddressException e) {
+        throw new RuntimeException("The email are literal, it should not happen",e);
+      }
 
       LOGGER.info("Monitor Main Mx");
       mxs = new HashMap<>();
@@ -379,7 +393,7 @@ public class MonitorDns {
           .compose(inetAddress -> {
               MonitorReportResult futureResult;
               if (inetAddress == null) {
-                futureResult = this.createResult(checkTitle, "The A record (ipv4 address) of the domain (" + cloudflareName + ") was not found with the value "+host.getIpv4().getAddress(), MonitorReportResultStatus.FAILURE);
+                futureResult = this.createResult(checkTitle, "The A record (ipv4 address) of the domain (" + cloudflareName + ") was not found with the value " + host.getIpv4().getAddress(), MonitorReportResultStatus.FAILURE);
               } else {
                 if (inetAddress.equals(host.getIpv4().getInetAddress())) {
                   futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + cloudflareName + ") is the expected one for the host (" + host + ")", MonitorReportResultStatus.SUCCESS);
@@ -512,14 +526,14 @@ public class MonitorDns {
 
   private MonitorDns checkDmarc(Set<DnsName> domains) {
     String checkName = "Dmarc check";
-    String expectedDmarc = "v=DMARC1; p=none; rua=mailto:dmarc@combostrap.com";
     for (DnsName domain : domains) {
       try {
         String dmarc = domain.getDmarcRecord();
+        String expectedDmarc = domain.getExpectedDmarcRecord();
         if (dmarc.equals(expectedDmarc)) {
           this.addSuccess(checkName, domain, "The dmarc is correct");
         } else {
-          this.addSuccess(checkName, domain, "The dmarc is incorrect. It should be (" + expectedDmarc + ")");
+          this.addFailure(checkName, domain, "The dmarc is incorrect. It should be (" + expectedDmarc + ") and not ("+dmarc+")");
         }
       } catch (DnsException e) {
         this.addFailure(checkName, domain, "The dmarc record query fires an exception: " + e.getMessage());

@@ -1,5 +1,6 @@
 package net.bytle.dns;
 
+import net.bytle.email.BMailInternetAddress;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 
@@ -20,6 +21,7 @@ public class DnsName {
    * Selector / Value
    */
   private final Map<String, String> expectedDkims = new HashMap<>();
+  private final List<BMailInternetAddress> expectedDmarcEmails = new ArrayList<>();
 
   protected DnsName(DnsSession session, String absoluteName) throws DnsIllegalArgumentException {
     if (!absoluteName.endsWith(ROOT_DOT)) {
@@ -374,4 +376,17 @@ public class DnsName {
     return this.expectedDkims.get(selector);
   }
 
+  public String getExpectedDmarcRecord() {
+    String dmarc = "v=DMARC1; p=none";
+    if (this.expectedDmarcEmails.size() == 0) {
+      return dmarc;
+    }
+    String mailToSchema = "mailto:";
+    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(BMailInternetAddress::getAddress).collect(Collectors.joining("," + mailToSchema));
+  }
+
+  public DnsName addExpectedDmarcEmail(BMailInternetAddress mail) {
+    this.expectedDmarcEmails.add(mail);
+    return this;
+  }
 }

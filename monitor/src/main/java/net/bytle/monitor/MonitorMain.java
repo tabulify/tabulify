@@ -56,21 +56,30 @@ public class MonitorMain extends AbstractVerticle {
           monitorReports.addAll(monitorDns.checkAll());
 
           LOGGER.info("Monitor Mailing");
-          List<Future<String>> futureMonitorPrints = new ArrayList<>();
+          List<Future<MonitorReport>> futureMonitorReportResolved = new ArrayList<>();
           for (MonitorReport monitorReport : monitorReports) {
-            futureMonitorPrints.add(monitorReport.print());
+            futureMonitorReportResolved.add(monitorReport.resolve());
           }
-          Future.join(futureMonitorPrints)
+          Future.join(futureMonitorReportResolved)
             .onSuccess(res -> {
               StringBuilder emailText = new StringBuilder();
-              for (Object s : res.list()) {
-                emailText.append(s.toString()).append(MonitorReport.CRLF);
+              int failures = 0;
+              for (int i = 0; i < res.size(); i++) {
+                MonitorReport monitorReport = res.resultAt(i);
+                failures += monitorReport.getFailures();
+                emailText.append(monitorReport.print()).append(MonitorReport.CRLF);
               }
               String mail = "nico@bytle.net";
+              String subject = "Monitor " + LocalDate.now();
+              if (failures == 0) {
+                subject += " - Success";
+              } else {
+                subject += " - " + failures + " failures";
+              }
               BMailMimeMessage email = smtpMailProvider.createBMailMessage()
                 .setTo(mail)
                 .setFrom("no-reply@bytle.net")
-                .setSubject("Monitor " + LocalDate.now())
+                .setSubject(subject)
                 .setBodyPlainText(emailText.toString());
               try {
                 smtpMailProvider.getBMailClient()
