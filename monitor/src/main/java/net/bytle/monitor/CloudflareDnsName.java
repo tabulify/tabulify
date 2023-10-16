@@ -4,7 +4,6 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.bytle.dns.DnsException;
-import net.bytle.dns.DnsNotFoundException;
 import org.xbill.DNS.Address;
 
 import java.net.InetAddress;
@@ -25,7 +24,7 @@ public class CloudflareDnsName {
     return new CloudflareDnsName(zone, dnsName);
   }
 
-  public Future<InetAddress> getFirstARecord() {
+  public Future<InetAddress> getFirstARecordOrNull() {
     return this.zone
       .getCloudflareDns()
       .getCloudflareClient()
@@ -45,7 +44,7 @@ public class CloudflareDnsName {
 
         JsonArray jsonArray = jsonBody.getJsonArray("result");
         if (jsonArray.size() == 0) {
-          return Future.failedFuture(new DnsNotFoundException());
+          return Future.succeededFuture(null);
         }
         /**
          * See doc:

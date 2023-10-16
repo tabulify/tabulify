@@ -363,26 +363,32 @@ public class MonitorDns {
 
 
     for (DnsName dnsName : domains) {
-      Future<MonitorReportResult> result =
-        this.cloudflareDns.getZone(dnsName.getApexName().getNameWithoutRoot())
-          .compose(zone ->
-              zone.getName(dnsName.getNameWithoutRoot())
-                .getFirstARecord()
-                .compose(inetAddress -> {
-                  MonitorReportResult futureResult;
-                  if (inetAddress.equals(host.getIpv4().getInetAddress())) {
-                    futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + dnsName + ") is the expected one for the host (" + host + ")", MonitorReportResultStatus.SUCCESS);
-                  } else {
-                    futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + dnsName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")", MonitorReportResultStatus.FAILURE);
-                  }
-                  return Future.succeededFuture(futureResult);
-                }),
+
+      String cloudflareName = dnsName.getNameWithoutRoot();
+      Future<MonitorReportResult> result = this.cloudflareDns.getZone(dnsName.getApexName().getNameWithoutRoot())
+        .compose(zone -> zone.getName(cloudflareName)
+          .getFirstARecordOrNull()
+          .compose(inetAddress -> {
+              MonitorReportResult futureResult;
+              if (inetAddress == null) {
+                futureResult = this.createResult(checkTitle, "The A record (ipv4 address) of the domain (" + cloudflareName + ") was not found with the value "+host.getIpv4().getAddress(), MonitorReportResultStatus.FAILURE);
+              } else {
+                if (inetAddress.equals(host.getIpv4().getInetAddress())) {
+                  futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + cloudflareName + ") is the expected one for the host (" + host + ")", MonitorReportResultStatus.SUCCESS);
+                } else {
+                  futureResult = this.createResult(checkTitle, "The ipv4 address (" + inetAddress + ") of the domain (" + cloudflareName + ") is not the expected ipv4 (" + host.getIpv4() + ") of the host (" + host + ")", MonitorReportResultStatus.FAILURE);
+                }
+              }
+              return Future.succeededFuture(futureResult);
+            },
             err -> Future.succeededFuture(this.createResult(checkTitle, err.getMessage(), MonitorReportResultStatus.FAILURE))
-          );
+          ));
       this.addAsyncResult(dnsName, result);
+
     }
     return this;
   }
+
 
   public List<MonitorReport> checkAll() throws DnsException, DnsIllegalArgumentException {
 
@@ -404,6 +410,10 @@ public class MonitorDns {
     Set<DnsName> hostedDomains = new HashSet<>(apexDomains);
     DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
     hostedDomains.add(rixt);
+    for (DnsName dnsName : apexDomains) {
+      // the www format
+      hostedDomains.add(dnsName.getSubdomain("www"));
+    }
     this.checkCloudflareARecord(monitorBeauHost, hostedDomains, "HTTP website hosting");
 
     LOGGER.info("Monitor A record for home");
