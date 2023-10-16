@@ -27,6 +27,7 @@ public class MonitorDns {
   private final DnsName eraldyDomain;
   private final DnsName gerardNicoDomain;
   private final Set<DnsName> apexDomains;
+  private final Map<String, Integer> mxs;
 
   public MonitorDns(CloudflareDns cloudflareDns) {
 
@@ -94,6 +95,13 @@ public class MonitorDns {
       gerardNicoDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAndKU0WYuA04TnVdkiSS+XCaCNRhqEEkGcsFpiCmv1YS5juUfvN3J/hUKD03usyxrM6cy1xMLgVd5SOsZKlyQ2vUHWULQMcJWqNtwpmy/kniguen5P+xtfMT43Xk3749rcBLI7WeDoUt7uDNUqOM7JCFfX/K8bKqDlxlOOEPOlpoBw9VXCE7wvpXkl1PduuJy1L0AbwqIbq2CRpyU5IuPLvcuHvBrPKU18o82B486Lb/bdRzscMH3hUia8aPmdgIBa7sqbX+xU3qfOsIUUceRGYipzQ/xJQKvACVgA/wwwMFVzwaCtA8lQIL3B5rs/Pp5rtHZW5kB5/LJhrSqOpxwrQIDAQAB");
       tabulifyDomain.addExpectedDkim("google", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzMY3bJmB9x2F7kv9+uQlDcv6CUz1iqiSKTPsJUdaG6mQgirIUNF3Bz9r7GJWkUxZA780dNMDcpqdH58VKdZznBZW1DceTqaM2B3/pMJmwA3JhQZl3la96vQFqIf5FrLfS5nofrZxVCGaTTMeesoJf7X/f9GUWcCr3HEUPbkT8eQ7bsh8EGhtc/aJYS9aCF7kzfKNB7ArXQnNowPMN/qIH6lv/zQWmF85C9doKK00I+SeLOHJR04yRSbEmQ1kKx8KaxxVgfTShbt/Thqzwd0o7tp50vXmBW8or1MZfFQ4/geXCcC5U8LVm3RT4pI84M/ekWhzlDD+PfN/Yif3OqSfQIDAQAB");
 
+      LOGGER.info("Monitor Main Mx");
+      mxs = new HashMap<>();
+      mxs.put("aspmx.l.google.com", 1);
+      mxs.put("alt1.aspmx.l.google.com", 5);
+      mxs.put("alt2.aspmx.l.google.com", 5);
+      mxs.put("alt3.aspmx.l.google.com", 10);
+      mxs.put("alt4.aspmx.l.google.com", 10);
 
     } catch (UnknownHostException | DnsIllegalArgumentException e) {
       throw new RuntimeException(e);
@@ -147,7 +155,7 @@ public class MonitorDns {
         if (ptrName.equals(hostDnsName)) {
           this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
         } else {
-          this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
+          this.addFailure(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") does not have as reverse PTR name (" + hostDnsName + ") but (" + ptrName + ")");
         }
       } catch (DnsNotFoundException e) {
         this.addFailure(checkName, hostDnsName, "The ipv4 PTR for the host (" + dnsHost + ") was not found");
@@ -421,12 +429,6 @@ public class MonitorDns {
     this.checkCloudflareARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
 
     LOGGER.info("Monitor Check Mx");
-    Map<String, Integer> mxs = new HashMap<>();
-    mxs.put("aspmx.l.google.com", 1);
-    mxs.put("alt1.aspmx.l.google.com", 5);
-    mxs.put("alt2.aspmx.l.google.com", 5);
-    mxs.put("alt3.aspmx.l.google.com", 10);
-    mxs.put("alt4.aspmx.l.google.com", 10);
     this.checkMx(mxs, apexDomains);
 
     LOGGER.info("Monitor Check Dmarc");
