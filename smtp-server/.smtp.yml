@@ -42,18 +42,22 @@ quota.remote.delivery.rate: 1 # by second
 users:
   eraldy.dev:
     alice:
-      mailbox: stdout
+      mailbox:
+        type: stdout
       password: secret
   combostrap.dev:
     dmarc:
-      mailbox: dmarc
+      milters:
+        - dmarc
+      mailbox:
+        type: s3
+        connection: s3
+        bucket.name: 'dmarc-dev'
 
-# Mailboxes
-mailboxes:
-  stdout:
-    type: stdout
-  dmarc:
+connections:
+  s3:
     type: s3
     region: 'ca-mtl'
-    url_endpoint: 'https://h0k0.ca.idrivee2-22.com'
-    bucket_name: 'dmarc-dev'
+    url.endpoint: 'https://h0k0.ca.idrivee2-22.com'
+    access.key.id: YOUR_ACCESS_KEY_ID
+    secret.access.key: YOUR_SECRET_ACCESS_KEY
