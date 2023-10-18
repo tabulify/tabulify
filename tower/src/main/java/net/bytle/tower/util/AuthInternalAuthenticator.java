@@ -17,6 +17,8 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.VertxRoutingFailureData;
 
 /**
  * A central entry point to authenticate
@@ -128,7 +130,7 @@ public class AuthInternalAuthenticator {
         if (Env.IS_DEV) {
           message += e.getMessage();
         }
-        ContextFailureData.create()
+        VertxRoutingFailureData.create()
           .setDescription(message)
           .setStatusCode(HttpStatus.INTERNAL_ERROR)
           .setName("Bad URL redirect")
@@ -137,7 +139,7 @@ public class AuthInternalAuthenticator {
 
       } catch (NotFoundException e) {
         if (this.redirectUriIsMandatory) {
-          ContextFailureData.create()
+          VertxRoutingFailureData.create()
             .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
             .setStatusCode(HttpStatus.INTERNAL_ERROR)
             .setName("URL redirect was not found")
@@ -212,7 +214,7 @@ public class AuthInternalAuthenticator {
           switch (this.redirectVia) {
             case HTTP:
               if (finalRedirectUri == null) {
-                ContextFailureData.create()
+                VertxRoutingFailureData.create()
                   .setStatusCode(HttpStatus.INTERNAL_ERROR)
                   .setName("URL redirect is mandatory for HTTP redirect")
                   .setDescription("For an http redirect, the redirect uri is mandatory and was not found")

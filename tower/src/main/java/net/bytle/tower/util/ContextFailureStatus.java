@@ -1,5 +1,7 @@
 package net.bytle.tower.util;
 
+import net.bytle.vertx.HttpStatus;
+
 public enum ContextFailureStatus {
 
   /**

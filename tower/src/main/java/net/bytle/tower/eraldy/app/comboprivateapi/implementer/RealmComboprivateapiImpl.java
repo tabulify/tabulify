@@ -7,15 +7,16 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.app.comboprivateapi.openapi.interfaces.RealmComboprivateapi;
 import net.bytle.tower.eraldy.app.comboprivateapi.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.Authorization;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
 import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.FailureStatic;
-import net.bytle.tower.util.HttpStatus;
-import net.bytle.tower.util.RoutingContextWrapper;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.RoutingContextWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,14 +102,15 @@ public class RealmComboprivateapiImpl implements RealmComboprivateapi {
 
 
     Vertx vertx = routingContext.vertx();
-    User user;
+    io.vertx.ext.auth.User vertxUser;
     try {
-      user = RoutingContextWrapper.createFrom(routingContext).getSignedInUser();
+      vertxUser = RoutingContextWrapper.createFrom(routingContext).getSignedInUser();
     } catch (NotFoundException e) {
       IllegalArgumentException youShouldBeLoggedIn = new IllegalArgumentException("You should be logged in");
       routingContext.fail(HttpStatus.NOT_AUTHORIZED, youShouldBeLoggedIn);
       return Future.failedFuture(youShouldBeLoggedIn);
     }
+    User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
     RealmProvider realmProvider = RealmProvider.createFrom(vertx);
     return realmProvider
       .getRealmsForOwner(user, RealmAnalytics.class)

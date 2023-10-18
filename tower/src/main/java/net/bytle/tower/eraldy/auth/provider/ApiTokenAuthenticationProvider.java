@@ -8,7 +8,8 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.util.OpenApiUtil;
+import net.bytle.vertx.OpenApiUtil;
+import net.bytle.vertx.TowerApp;
 
 /**
  * An authentication provider for the Combo Api
@@ -22,18 +23,17 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
   /**
    * The security auth name used in the spec file
    */
+  @SuppressWarnings("unused")
   public static final String BASIC_AUTH_SECURITY_SCHEME = "basicAuth";
   public static final String APIKEY_AUTH_SECURITY_SCHEME = "apiKeyAuth";
   public static final String BEARER_AUTH_SECURITY_SCHEME = "bearerAuth";
 
-  public static final String SUPERUSER_TOKEN_CONF = "superuser.token";
-
   private final String superToken;
 
   public ApiTokenAuthenticationProvider(JsonObject jsonConfig) {
-    String superToken = (String) jsonConfig.getValue(SUPERUSER_TOKEN_CONF);
+    String superToken = (String) jsonConfig.getValue(TowerApp.SUPERUSER_TOKEN_CONF);
     if (superToken == null) {
-      throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + SUPERUSER_TOKEN_CONF + ")");
+      throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + TowerApp.SUPERUSER_TOKEN_CONF + ")");
     }
     this.superToken = superToken;
   }

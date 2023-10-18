@@ -8,7 +8,6 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.SessionHandler;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.TowerApexDomain;
 import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
 import net.bytle.tower.eraldy.app.comboprivateapi.ComboPrivateApiApp;
 import net.bytle.tower.eraldy.app.combopublicapi.ComboPublicApiApp;
@@ -24,6 +23,7 @@ import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.BrowserCorsUtil;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.PersistentLocalSessionStore;
+import net.bytle.vertx.TowerApexDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

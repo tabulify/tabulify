@@ -7,17 +7,22 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
+import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.*;
-import net.bytle.tower.TowerApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OAuthAccessTokenResponse;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.JsonToken;
+import net.bytle.tower.util.JwtClaimsObject;
+import net.bytle.tower.util.SysAdmin;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.TemplateEngine;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.VertxRoutingFailureData;
 
-import javax.mail.internet.AddressException;
 import java.net.MalformedURLException;
 import java.net.URI;
 
@@ -167,7 +172,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
-      ContextFailureData.create()
+      VertxRoutingFailureData.create()
         .setDescription(message)
         .setName("Link expired")
         .failContextAsHtml(ctx);

@@ -6,8 +6,10 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.Log;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.interfaces.AnalyticsPublicapi;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.AnalyticsEvent;
-import net.bytle.tower.util.AnalyticsLogger;
+import net.bytle.tower.eraldy.auth.AuthRealmHandler;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.vertx.AnalyticsEvent;
+import net.bytle.vertx.AnalyticsLogger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +28,6 @@ public class AnalyticsPublicapiImpl implements AnalyticsPublicapi {
 
 
 
-
   // Static field
   public static final String ANALYTICS_NAME = "analytics";
   public static final String ANALYTICS_ENDPOINT = "/" + ANALYTICS_NAME + "/event";
@@ -37,7 +38,8 @@ public class AnalyticsPublicapiImpl implements AnalyticsPublicapi {
   public Future<ApiResponse<Void>> analyticsEventPost(RoutingContext routingContext, Map<String, Object> requestBody) {
 
     AnalyticsEvent analyticsEvent = JsonObject.mapFrom(requestBody).mapTo(AnalyticsEvent.class);
-    AnalyticsLogger.log(analyticsEvent, routingContext);
+    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
+    AnalyticsLogger.log(analyticsEvent, routingContext, authRealm.getGuid());
     return Future.succeededFuture(new ApiResponse<>());
 
   }

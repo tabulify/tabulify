@@ -32,10 +32,10 @@ plugins {
 val towerLauncher = "net.bytle.tower.MainLauncher"
 val towerMainVerticle = "net.bytle.tower.MainVerticle"
 // duplicate with the version in the vertx module
-val projectVertxVersion = rootProject.ext.get("vertxVersion").toString()
+val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 vertx {
   mainVerticle = towerMainVerticle
-  vertxVersion = projectVertxVersion
+  vertxVersion = this@Tower_gradle.vertxVersion
   launcher = towerLauncher
 }
 
@@ -89,7 +89,7 @@ tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayRealms") {
 // compileOnly = only for the compilation not for the test
 dependencies {
 
-  implementation("com.ongres.scram:client:2.1") // Postgres Optional dependency that is not so optional
+
   // implementation "org.xerial:sqlite-jdbc:3.28.0"
   implementation("org.flywaydb:flyway-core:$flywayVersion")
 
@@ -102,12 +102,27 @@ dependencies {
   implementation(project(":bytle-zip"))
   // Shares
   implementation(project(":bytle-vertx"))
-  implementation("io.vertx:vertx-web:$projectVertxVersion")
-  implementation("io.vertx:vertx-web-client:$projectVertxVersion")
-  implementation("io.vertx:vertx-health-check:$projectVertxVersion")
+  // Web
+  implementation("io.vertx:vertx-web:$vertxVersion")
+  implementation("io.vertx:vertx-web-client:$vertxVersion")
+  implementation("io.vertx:vertx-web-openapi:$vertxVersion")
+  // Health
+  implementation("io.vertx:vertx-health-check:$vertxVersion")
   // Mail
-  implementation("io.vertx:vertx-mail-client:$projectVertxVersion")
+  implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
+  // Sql
+  implementation("io.vertx:vertx-pg-client:$vertxVersion")
+  implementation("com.ongres.scram:client:2.1") // Postgres Optional dependency that is not so optional
+
+  // Auth
+  // Authentication
+  // not yet shared in the vertx module
+  // because it needs refactoring to inject the auth function
+  implementation("io.vertx:vertx-auth-common:$vertxVersion")
+  implementation("io.vertx:vertx-auth-sql-client:$vertxVersion") // https://vertx.io/docs/vertx-auth-sql-client/java/
+  implementation("io.vertx:vertx-auth-jwt:$vertxVersion") // Jwt
+  implementation("io.vertx:vertx-auth-oauth2:$vertxVersion") // Oauth
 
   // id
   // https://mvnrepository.com/artifact/org.hashids/hashids
@@ -120,9 +135,6 @@ dependencies {
   // to enable handling
   // https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-
-  // mixpanel test
-  implementation("com.mixpanel:mixpanel-java:1.5.2")
 
   // In-memory Cache (2.9.3 because version 3 is only Java 11 compatible and not 8)
   implementation("com.github.ben-manes.caffeine:caffeine:2.9.3")

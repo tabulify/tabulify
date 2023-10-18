@@ -6,10 +6,7 @@ import io.vertx.core.Vertx;
 import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
-import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.ConfigMailSmtpParameters;
-import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

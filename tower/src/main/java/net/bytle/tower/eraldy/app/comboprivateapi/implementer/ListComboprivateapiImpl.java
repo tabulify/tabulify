@@ -11,7 +11,7 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.FailureStatic;
+import net.bytle.vertx.FailureStatic;
 
 import java.net.URI;
 import java.util.List;

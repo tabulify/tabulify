@@ -8,7 +8,7 @@ import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.HttpStatus;
+import net.bytle.vertx.HttpStatus;
 
 public class UserPublicapiImpl implements UserPublicapi {
 

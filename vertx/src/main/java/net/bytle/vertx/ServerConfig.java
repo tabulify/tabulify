@@ -10,9 +10,9 @@ public class ServerConfig {
    * The wildcard implementation depends on the language
    * and in Java it works for the 2 Ip formats.
    */
-  public static final String LISTENING_TO_ALL_HOST_IPV4_IPV6_WILDCARD = "0.0.0.0";
+  public static final String WILDCARD_IPV4_ADDRESS = "0.0.0.0";
   @SuppressWarnings("unused")
-  public static final String LISTENING_TO_ALL_HOST_IPV6_WILDCARD = "[::]";
+  public static final String WILDCARD_IPV6_ADDRESS = "[::]";
   private final ConfigAccessor configAccessor;
 
   public ServerConfig(ConfigAccessor configAccessor) {
@@ -28,7 +28,7 @@ public class ServerConfig {
 
 
   public  String getListeningHost() {
-    return configAccessor.getString(ServerProperties.HOST.toString(), LISTENING_TO_ALL_HOST_IPV4_IPV6_WILDCARD);
+    return configAccessor.getString(ServerProperties.HOST.toString(), WILDCARD_IPV4_ADDRESS);
   }
 
 

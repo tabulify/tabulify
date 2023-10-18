@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.app.comboprivateapi.implementer.letter;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.template.api.Template;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
-import net.bytle.tower.util.TemplateEngine;
+import net.bytle.vertx.TemplateEngine;
 
 import java.net.URI;
 import java.util.HashMap;

@@ -8,15 +8,21 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.TowerApexDomain;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.AuthMemberappImpl;
 import net.bytle.tower.eraldy.app.memberapp.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.app.memberapp.openapi.invoker.ApiResponse;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.Env;
+import net.bytle.tower.util.OAuthInternalSession;
+import net.bytle.tower.util.OAuthQueryProperty;
+import net.bytle.tower.util.OAuthResponseType;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.VertxCsrf;
+import net.bytle.vertx.VertxRoutingFailureData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,7 +90,7 @@ public class FrontEndRouter {
       if (redirectUri != null) {
         message += " Click <a href=\"" + redirectUri + "\">here</a> to log in.";
       }
-      ContextFailureData.create()
+      VertxRoutingFailureData.create()
         .setDescription(message)
         .setName(message)
         .failContextAsHtml(routingContext);
@@ -99,7 +105,7 @@ public class FrontEndRouter {
       try {
         AuthMemberappImpl.getRedirectUri(routingContext);
       } catch (NotFoundException e) {
-        ContextFailureData.create()
+        VertxRoutingFailureData.create()
           .setName("Redirect Uri is mandatory")
           .setDescription("The redirect URI is mandatory and was not found")
           .failContextAsHtml(routingContext);
@@ -235,7 +241,7 @@ public class FrontEndRouter {
 
 
     try {
-      String csrf = CsrfUtil.getCsrfToken(routingContext);
+      String csrf = VertxCsrf.getCsrfToken(routingContext);
       variables.put("csrf", csrf);
     } catch (NotFoundException e) {
       throw new RuntimeException(e);

@@ -9,9 +9,9 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
 import net.bytle.tower.util.Env;
-import net.bytle.tower.util.HttpRequestUtil;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.HttpRequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

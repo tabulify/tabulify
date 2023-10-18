@@ -5,8 +5,8 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.interfaces.RegistrationPublicapi;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.app.memberapp.implementer.flow.ListRegistrationFlow;
-import net.bytle.tower.eraldy.model.openapi.ExitStatusResponse;
 import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
+import net.bytle.vertx.ExitStatusResponse;
 
 public class RegistrationPublicapiImpl implements RegistrationPublicapi {
 

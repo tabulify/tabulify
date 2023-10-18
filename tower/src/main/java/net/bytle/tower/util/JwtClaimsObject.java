@@ -8,6 +8,7 @@ import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Date;
+import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
 import java.net.URISyntaxException;

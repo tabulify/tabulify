@@ -9,15 +9,31 @@ dependencies {
   implementation(project(":bytle-fs"))
   implementation(project(":bytle-base"))
   implementation(project(":bytle-type"))
+  implementation(project(":bytle-template"))
 
   // It seems that you don't need to add the version after declaring the platform
   // As Seen here https://how-to.vertx.io/web-session-infinispan-howto/
   // Commented due to IDE saying that there is
   // implementation(platform("io.vertx:vertx-stack-depchain:$projectVertxVersion"))
 
-
+  // Platform (BOM imports)
+  implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
   // Vert.x
   api("io.vertx:vertx-core:$vertxVersion")
+
+  // Monitoring Prometheus
+  // for the service health, api because we need the MetricRegistry of Dropwizard
+  implementation("io.vertx:vertx-micrometer-metrics:$vertxVersion")
+  // https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
+  api("io.micrometer:micrometer-registry-prometheus:1.11.5")
+
+  // other health check
+  implementation("io.vertx:vertx-health-check:$vertxVersion")
+
+  // Resilience (Rate limiting, ...)
+  // https://how-to.vertx.io/resilience4j-howto/ (9k)
+  // based on https://github.com/Netflix/Hystrix no more maintained
+  implementation("io.vertx:vertx-circuit-breaker:$vertxVersion")
 
   // The below artifact should be added individually
   implementation("io.vertx:vertx-config:$vertxVersion") // Config management: https://vertx.io/docs/vertx-config/java/
@@ -31,15 +47,6 @@ dependencies {
   // Mail
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
-  // Auth
-  // Authentication
-  implementation("io.vertx:vertx-auth-common:$vertxVersion")
-  // https://vertx.io/docs/vertx-auth-sql-client/java/
-  implementation("io.vertx:vertx-auth-sql-client:$vertxVersion")
-  // Jwt
-  implementation("io.vertx:vertx-auth-jwt:$vertxVersion")
-  // Oauth
-  implementation("io.vertx:vertx-auth-oauth2:$vertxVersion")
   // Sql Client : Native Postgres
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
 
@@ -48,11 +55,10 @@ dependencies {
   //  compileOnly("io.vertx:vertx-codegen:$projectVertxVersion")
   //  annotationProcessor("io.vertx:vertx-codegen:$projectVertxVersion")
   //  annotationProcessor("io.vertx:vertx-service-proxy:$projectVertxVersion")
-  // for the service health
-  implementation("io.vertx:vertx-health-check:$vertxVersion")
-  implementation("io.vertx:vertx-dropwizard-metrics:$vertxVersion")
-  implementation("io.vertx:vertx-circuit-breaker:$vertxVersion")
 
+  // Analytics
+  // mixpanel test
+  implementation("com.mixpanel:mixpanel-java:1.5.2")
 
   // For test api to pass it on
   testImplementation("io.vertx:vertx-unit:$vertxVersion")

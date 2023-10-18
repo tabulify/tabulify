@@ -5,6 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
+import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -16,14 +17,12 @@ import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
 import net.bytle.tower.eraldy.model.openapi.RegistrationList;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.HttpRequestUtil;
 import net.bytle.tower.util.JsonToken;
 import net.bytle.tower.util.JsonTokenCipher;
-import net.bytle.tower.util.TemplateEngine;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
-
-import javax.mail.internet.AddressException;
+import net.bytle.vertx.HttpRequestUtil;
+import net.bytle.vertx.TemplateEngine;
 
 /**
  * The letter (in HTML format)

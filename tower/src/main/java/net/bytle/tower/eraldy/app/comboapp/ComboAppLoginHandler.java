@@ -1,13 +1,15 @@
 package net.bytle.tower.eraldy.app.comboapp;
 
 import io.vertx.core.Handler;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.util.ContextFailureData;
-import net.bytle.tower.util.HttpStatus;
-import net.bytle.tower.util.RoutingContextWrapper;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.RoutingContextWrapper;
+import net.bytle.vertx.VertxRoutingFailureData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +32,11 @@ public class ComboAppLoginHandler implements Handler<RoutingContext> {
     /**
      * Same as {@link io.vertx.ext.web.handler.RedirectAuthHandler}
      */
-    OrganizationUser user;
+
+    User vertxUser;
     try {
-      user = RoutingContextWrapper.createFrom(ctx)
-        .getSignedInUserAsOrganizationUser();
+      vertxUser = RoutingContextWrapper.createFrom(ctx)
+        .getSignedInUser();
     } catch (NotFoundException e) {
       String publicRequestUri = app.getPublicRequestUriFromRoutingContext(ctx).toUri().toString();
       String loginUrl = EraldyMemberApp
@@ -45,6 +48,8 @@ public class ComboAppLoginHandler implements Handler<RoutingContext> {
       return;
     }
 
+    OrganizationUser user = UsersUtil.vertxUserToEraldyOrganizationUser(vertxUser);
+
     /**
      * Is Organizational user
      */
@@ -55,7 +60,7 @@ public class ComboAppLoginHandler implements Handler<RoutingContext> {
         .getLogoutUriForEraldyRealm(publicRequestUri)
         .toUrl()
         .toString();
-      ContextFailureData.create()
+      VertxRoutingFailureData.create()
         .setStatusCode(HttpStatus.NOT_AUTHORIZED)
         .setName("Not authorized")
         .setDescription("The user (" + user.getEmail() + ") is not authorized to login to the combo app. You can login with another user by clicking on this <a href=\"" + logoutUrl + "\">link</a>.")

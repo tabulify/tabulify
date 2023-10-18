@@ -5,8 +5,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.tower.util.TemplateEngine;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.TemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

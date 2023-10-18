@@ -13,9 +13,9 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.ContextFailureHandler;
 import net.bytle.tower.util.JwtClaimsObject;
 import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.VertxRoutingFailureHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class UserRegistrationFlow {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> ContextFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner

@@ -10,6 +10,7 @@ import io.vertx.ext.web.handler.LoggerFormatter;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.impl.Utils;
 import net.bytle.exception.NotFoundException;
+import net.bytle.vertx.HttpRequestUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -5,19 +5,19 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.HttpStatus;
-import net.bytle.tower.util.RoutingContextWrapper;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.RoutingContextWrapper;
 
 public class Authorization {
   public static Future<Boolean> checkForRealm(RoutingContextWrapper routingContext, Realm requestedRealm) {
 
-    User signedInUser;
+    io.vertx.ext.auth.User vertxUser;
     try {
-      signedInUser = routingContext.getSignedInUser();
+      vertxUser = routingContext.getSignedInUser();
     } catch (NotFoundException e) {
       return notAuthorized(routingContext);
     }
-
+    User signedInUser = UsersUtil.vertxUserToEraldyUser(vertxUser);
     return RealmProvider.createFrom(routingContext.getVertx())
       .getRealmsForOwner(signedInUser, Realm.class)
       .compose(userRealms -> {

@@ -9,9 +9,11 @@ import io.vertx.ext.web.Router;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.app.ErrorFakeHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.util.*;
-import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.ServerConfig;
+import net.bytle.tower.util.DatacadamiaDomain;
+import net.bytle.tower.util.Env;
+import net.bytle.tower.util.HealthChecksEventBus;
+import net.bytle.tower.util.HealthChecksRouter;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +60,7 @@ public class VerticleHttpServer extends AbstractVerticle {
      * Failure Handler / Route match failures
      * https://vertx.io/docs/vertx-web/java/#_route_match_failures
      */
-    ContextFailureHandler errorHandlerXXX = ContextFailureHandler.createOrGet(vertx, config());
+    VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, config());
     rootRouter.errorHandler(HttpStatus.INTERNAL_ERROR, errorHandlerXXX);
 
     /**

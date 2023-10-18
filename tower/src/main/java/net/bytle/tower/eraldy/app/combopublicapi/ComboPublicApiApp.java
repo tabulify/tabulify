@@ -5,13 +5,13 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.tower.TowerApexDomain;
-import net.bytle.tower.TowerApp;
-import net.bytle.tower.eraldy.app.OpenApiDoc;
 import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.auth.provider.ApiTokenAuthenticationProvider;
 import net.bytle.tower.util.JwtAuthManager;
+import net.bytle.vertx.OpenApiDoc;
+import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerApp;
 
 /**
  * The public api

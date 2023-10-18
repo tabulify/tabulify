@@ -1,0 +1,61 @@
+package net.bytle.vertx;
+
+import net.bytle.email.BMailSmtpConnectionParameters;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.appender.SmtpAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+
+/**
+ * The root logger
+ */
+public class Log4jRootLogger {
+
+  public static void configure(Log4JXmlConfiguration log4JXmlConfiguration) {
+
+    LoggerConfig rootLogger = log4JXmlConfiguration.getRootLogger();
+
+    /**
+     * The console is the log for the services on Linux
+     * If we want to see what's going we look on at the log of the services
+     */
+    rootLogger.addAppender(log4JXmlConfiguration.getConsoleAppender(), Level.WARN, null);
+
+    /**
+     * We catch the error that are not catche by
+     * {@link VertxRoutingFailureHandler}
+     */
+    PatternLayout defaultLayout = PatternLayout.createDefaultLayout();
+    FileAppender fileAppender = FileAppender.newBuilder()
+      .setName("RootLogAppender")
+      .setConfiguration(log4JXmlConfiguration)
+      .withFileName("logs/failure-general.log")
+      .setLayout(defaultLayout)
+      .setImmediateFlush(true)
+      .build();
+    rootLogger.addAppender(fileAppender, Level.ERROR, null);
+
+
+  }
+
+  public static void configureOnAppInit(Configuration config, BMailSmtpConnectionParameters mailSmtpParameterFromConfig) {
+
+    SmtpAppender smtpAppender = SmtpAppender.newBuilder()
+      .setName("RootSmtpAppender")
+      .setSmtpHost(mailSmtpParameterFromConfig.getHost())
+      .setConfiguration(config)
+      .setSmtpPassword(mailSmtpParameterFromConfig.getPassword())
+      .setSmtpUsername(mailSmtpParameterFromConfig.getUserName())
+      .setSmtpPort(mailSmtpParameterFromConfig.getPort())
+      .setSubject("Log4j: General Failure in the tower app")
+      .setFrom(SysAdmin.getEmail())
+      .setTo(SysAdmin.getEmail())
+      .build();
+    config.addAppender(smtpAppender);
+
+    config.getRootLogger()
+      .addAppender(smtpAppender, Level.ERROR, null);
+  }
+}

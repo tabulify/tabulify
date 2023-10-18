@@ -11,15 +11,19 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.TowerApexDomain;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.RoutingContextWrapper;
+import net.bytle.vertx.TowerApexDomain;
 
 import java.net.URI;
 
@@ -155,7 +159,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   private Future<Realm> getAuthRealmFromHttpHost(RoutingContext routingContext) {
     HttpServerRequest request = routingContext.request();
 
-    String authenticationScope = request.host();
+    String authenticationScope = request.authority().host();
     /**
      * The scheme is mandatory
      * Otherwise the host is seen as path

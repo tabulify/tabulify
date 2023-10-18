@@ -8,7 +8,7 @@ import net.bytle.tower.eraldy.app.comboprivateapi.openapi.interfaces.EnvCombopri
 import net.bytle.tower.eraldy.app.comboprivateapi.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.util.HttpRequestUtil;
+import net.bytle.vertx.HttpRequestUtil;
 
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ public class EnvComboprivateapiImpl implements EnvComboprivateapi {
     HashMap<String, Object> requestObject = new HashMap<>();
     jsonObject.put("request", requestObject);
     HttpServerRequest request = routingContext.request();
-    requestObject.put("host", request.host());
+    requestObject.put("host", request.authority().host());
     requestObject.put("scheme", request.scheme());
     requestObject.put("path", request.path());
     requestObject.put("absoluteUri", routingContext.request().absoluteURI());

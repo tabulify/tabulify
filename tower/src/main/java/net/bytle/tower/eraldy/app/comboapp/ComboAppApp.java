@@ -3,8 +3,8 @@ package net.bytle.tower.eraldy.app.comboapp;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.tower.TowerApexDomain;
-import net.bytle.tower.TowerApp;
+import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerApp;
 
 /**
  * The combo front end

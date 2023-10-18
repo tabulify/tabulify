@@ -14,8 +14,8 @@ import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.FailureStatic;
-import net.bytle.tower.util.HttpStatus;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.HttpStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;

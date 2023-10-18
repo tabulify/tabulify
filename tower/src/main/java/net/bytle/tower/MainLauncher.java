@@ -1,10 +1,9 @@
 package net.bytle.tower;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import net.bytle.tower.util.DropWizard;
-import net.bytle.tower.util.Log4JManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.bytle.vertx.Log4JManager;
+import net.bytle.vertx.VertxPrometheusMetrics;
 
 /**
  * A custom <a href="https://vertx.io/docs/vertx-core/java/#_the_vert_x_launcher">Vertx Launcher</a>
@@ -21,14 +20,17 @@ public class MainLauncher extends io.vertx.core.Launcher {
     Log4JManager.setConfigurationProperties();
   }
 
-  private static final Logger LOGGER = LogManager.getLogger();
-
   @Override
   public void beforeStartingVertx(VertxOptions options) {
-    LOGGER.info("Setting DropWizard Metrics");
-    options.setMetricsOptions(DropWizard.getMetricsOptions());
+    super.beforeStartingVertx(options);
+    options.setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
   }
 
+  @Override
+  public void afterStartingVertx(Vertx vertx) {
+    super.afterStartingVertx(vertx);
+    VertxPrometheusMetrics.configEnableHistogramBuckets();
+  }
 
   /**
    * The arguments are taken from the fat jar

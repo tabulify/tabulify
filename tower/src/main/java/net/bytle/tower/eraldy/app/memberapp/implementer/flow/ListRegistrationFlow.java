@@ -23,11 +23,13 @@ import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.AuthInternalAuthenticator;
+import net.bytle.tower.util.EmailUtil;
+import net.bytle.tower.util.JwtClaimsObject;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -202,7 +204,7 @@ public class ListRegistrationFlow {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> ContextFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner
@@ -294,7 +296,7 @@ public class ListRegistrationFlow {
       .compose(list -> {
 
         if (list == null) {
-          ContextFailureData
+          VertxRoutingFailureData
             .create()
             .setName("The list was not found")
             .setDescription("The list <mark>" + listGuid + "</mark> was not found.")

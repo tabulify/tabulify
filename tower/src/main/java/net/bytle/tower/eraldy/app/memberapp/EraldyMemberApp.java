@@ -3,8 +3,6 @@ package net.bytle.tower.eraldy.app.memberapp;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.tower.TowerApexDomain;
-import net.bytle.tower.TowerApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.app.memberapp.implementer.callback.PasswordResetEmailCallback;
 import net.bytle.tower.eraldy.app.memberapp.implementer.callback.UserLoginEmailCallback;
@@ -13,6 +11,8 @@ import net.bytle.tower.eraldy.app.memberapp.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.util.OAuthExternal;
 import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerApp;
 
 
 public class EraldyMemberApp extends TowerApp {

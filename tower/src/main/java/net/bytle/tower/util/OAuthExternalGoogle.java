@@ -6,8 +6,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.providers.GoogleAuth;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.TowerApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
 import java.net.URISyntaxException;

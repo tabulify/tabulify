@@ -12,7 +12,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.TowerApp;
+import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
 import java.net.URISyntaxException;

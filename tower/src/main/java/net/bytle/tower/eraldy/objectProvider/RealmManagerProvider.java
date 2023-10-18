@@ -12,9 +12,9 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.DateTimeUtil;
 import net.bytle.tower.util.JdbcPoolCs;
 import net.bytle.tower.util.JdbcSchemaManager;
+import net.bytle.vertx.DateTimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

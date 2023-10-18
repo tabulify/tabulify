@@ -10,10 +10,10 @@ import net.bytle.network.Ip;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.interfaces.IpPublicapi;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.IpInfo;
-import net.bytle.tower.util.HttpHeaders;
-import net.bytle.tower.util.HttpRequestUtil;
 import net.bytle.tower.util.JdbcPoolCs;
 import net.bytle.tower.util.JdbcSchemaManager;
+import net.bytle.vertx.HttpHeaders;
+import net.bytle.vertx.HttpRequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

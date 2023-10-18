@@ -1,14 +1,13 @@
 package net.bytle.tower.eraldy.auth;
 
-import net.bytle.email.BMailAddress;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
-
-import javax.mail.internet.AddressException;
 
 public class UsersUtil {
 
@@ -49,7 +48,7 @@ public class UsersUtil {
     if (email == null) {
       throw new NotFoundException("No name could be found for this user");
     }
-    return BMailAddress.of(email)
+    return BMailInternetAddress.of(email)
       .getLocalPart();
 
   }

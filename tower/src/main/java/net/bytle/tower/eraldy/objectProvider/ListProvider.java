@@ -11,17 +11,20 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.email.BMailAddress;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.*;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.HttpsCertificateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.mail.internet.AddressException;
 import java.net.URI;
 import java.util.*;
 
@@ -473,7 +476,7 @@ public class ListProvider {
         try {
           String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
           publisherAppUri = URI.create(
-            scheme + "://" + BMailAddress.of(publisherEmail)
+            scheme + "://" + BMailInternetAddress.of(publisherEmail)
               .getDomain()
           );
         } catch (AddressException e) {

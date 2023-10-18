@@ -14,8 +14,8 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.ServiceProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.CryptoSymmetricUtil;
-import net.bytle.tower.util.FailureStatic;
 import net.bytle.type.Casts;
+import net.bytle.vertx.FailureStatic;
 
 import java.util.List;
 import java.util.stream.Collectors;

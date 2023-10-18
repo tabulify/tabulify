@@ -2,8 +2,8 @@ package net.bytle.tower;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import net.bytle.tower.util.DropWizard;
-import net.bytle.tower.util.Log4JManager;
+import net.bytle.vertx.Log4JManager;
+import net.bytle.vertx.VertxPrometheusMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +27,7 @@ public class Main {
   public static void main(String[] args) {
 
     VertxOptions vertxOptions = new VertxOptions()
-      .setMetricsOptions(DropWizard.getMetricsOptions());
+      .setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
     Vertx vertx = Vertx.vertx(vertxOptions);
     vertx.deployVerticle(new MainVerticle())
       .onFailure(e -> {

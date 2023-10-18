@@ -15,9 +15,9 @@ import io.vertx.ext.web.impl.RoutingContextInternal;
 import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.TowerApexDomain;
 import net.bytle.tower.eraldy.EraldyDomain;
-import net.bytle.tower.util.HttpsCertificateUtil;
+import net.bytle.vertx.HttpsCertificateUtil;
+import net.bytle.vertx.TowerApexDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
