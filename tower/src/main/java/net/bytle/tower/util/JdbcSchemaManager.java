@@ -1,10 +1,5 @@
 package net.bytle.tower.util;
 
-import io.vertx.core.Vertx;
-import net.bytle.db.Tabular;
-import net.bytle.db.csv.CsvDataPath;
-import net.bytle.db.spi.DataPath;
-import net.bytle.db.spi.Tabulars;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
@@ -15,18 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.*;
-import java.sql.Types;
-import java.util.HashMap;
-import java.util.Map;
-
-import static net.bytle.tower.eraldy.app.combopublicapi.implementer.IpPublicapiImpl.CS_IP_SCHEMA;
 
 /**
- * Manage, create and migrate schema for combo
+ * Manage, create and migrate schema
  */
 public class JdbcSchemaManager {
 
@@ -58,32 +44,31 @@ public class JdbcSchemaManager {
    * The prefix is here to be able to make the difference between
    * system schema (such as pg_catalog, public, ...) and combo schema
    */
-  public static final String SCHEMA_PREFIX = "cs_";
+  private static final String SCHEMA_PREFIX = "cs_";
+  private static JdbcSchemaManager jdbcSchemaManager;
 
 
-  private final DataSource dataSource;
+  private DataSource dataSource;
 
   /**
    * Tabular does not support actually directly to wrap a SQL connection
    */
-  private JdbcConnectionInfo jdbcConnectionInfo;
+  private final JdbcConnectionInfo jdbcConnectionInfo;
 
-  public JdbcSchemaManager(DataSource dataSource) {
-    this.dataSource = dataSource;
+  public JdbcSchemaManager(JdbcConnectionInfo jdbcConnectionInfo) {
+    this.jdbcConnectionInfo = jdbcConnectionInfo;
   }
 
-  static private final Map<Vertx, JdbcSchemaManager> jdbcSchemaManagerMap = new HashMap<>();
+  public static JdbcSchemaManager create(JdbcConnectionInfo jdbcConnectionInfo) {
 
-  public static JdbcSchemaManager create(Vertx vertx, DataSource dataSource) {
-
-    JdbcSchemaManager jdbcMigration = new JdbcSchemaManager(dataSource);
-    jdbcSchemaManagerMap.put(vertx, jdbcMigration);
-    return jdbcMigration;
+    jdbcSchemaManager = new JdbcSchemaManager(jdbcConnectionInfo);
+    LOGGER.info("Schema Manager created");
+    return jdbcSchemaManager;
 
   }
 
-  public static JdbcSchemaManager get(Vertx vertx) {
-    JdbcSchemaManager jdbcSchemaManager = jdbcSchemaManagerMap.get(vertx);
+  public static JdbcSchemaManager get() {
+
     if (jdbcSchemaManager == null) {
       throw new InternalException("No Jdbc Schema manager found for this vertx");
     }
@@ -92,101 +77,38 @@ public class JdbcSchemaManager {
 
 
   private FluentConfiguration getFlyWayCommonConf() {
-    return Flyway
+    FluentConfiguration fluentConfiguration = Flyway
       .configure()
       .sqlMigrationPrefix(SCRIPT_MIGRATION_PREFIX)
       .cleanDisabled(true)
       .table(VERSION_LOG_TABLE)
-      .createSchemas(true)
-      .dataSource(dataSource);
+      .createSchemas(true);
+    if (this.dataSource != null) {
+      fluentConfiguration.dataSource(this.dataSource);
+    } else {
+      fluentConfiguration.dataSource(
+        this.jdbcConnectionInfo.getUrl(),
+        this.jdbcConnectionInfo.getUser(),
+        this.jdbcConnectionInfo.getPassword()
+      );
+    }
+    return fluentConfiguration;
   }
 
   /**
    * Migrate the ip schema
    */
-  public JdbcSchemaManager migrateComboIp() throws DbMigrationException {
+  public JdbcSchemaManager migrate(JdbcSchema jdbcSchema) throws DbMigrationException {
 
     Flyway flywayIp = this.getFlyWayCommonConf()
-      .locations("classpath:db/cs-ip")
-      .schemas(CS_IP_SCHEMA)
+      .locations(jdbcSchema.getLocation())
+      .schemas(jdbcSchema.getSchema())
       .load();
     this.migrateAndClose(flywayIp);
-
-    if (!Env.IS_DEV) {
-      /**
-       * Take 10 seconds to load the tabular env ...
-       */
-      loadIpDataIfNeeded();
-    }
 
     return this;
   }
 
-  public void loadIpDataIfNeeded() throws DbMigrationException {
-    // Load meta
-    LOGGER.info("Loading Ip data");
-    String dataStoreName = "ip";
-    // tabular needs a secret when a password is given because it may store them
-    // we don't store any password
-    try (Tabular tabular = Tabular.tabular("secret")) {
-      LOGGER.info("Ip Table count");
-      DataPath ipTable = tabular
-        .createRuntimeConnection(dataStoreName, jdbcConnectionInfo.getUrl())
-        .setUser(jdbcConnectionInfo.getUser())
-        .setPassword(jdbcConnectionInfo.getPassword())
-        .getDataPath(CS_IP_SCHEMA + ".ip");
-      Long count = ipTable.getCount();
-      LOGGER.info("Total Ip Table count " + count);
-      if (count == 0) {
-        LOGGER.info("Loading Ip Table");
-        Path csvPath = Paths.get("./IpToCountry.csv");
-        if (!Files.exists(csvPath)) {
-          try {
-            // Download the zip locally
-            URL zipFile = new URL("https://datacadamia.com/datafile/IpToCountry.zip");
-            Path source = Paths.get(zipFile.toURI());
-            Path zipTemp = Files.createTempFile("IpToCountry", ".zip");
-            Files.copy(source, zipTemp, StandardCopyOption.REPLACE_EXISTING);
-
-            // Extract the csv with a zipfs file system
-            try (FileSystem zipFs = FileSystems.newFileSystem(zipTemp, null)) {
-              Path zipPath = zipFs.getPath("IpToCountry.csv");
-              Files.copy(zipPath, csvPath);
-            }
-
-          } catch (URISyntaxException | IOException e) {
-            throw new DbMigrationException("Error with zip ip download", e);
-          }
-        }
-        try {
-          CsvDataPath csvDataPath = (CsvDataPath) CsvDataPath.createFrom(tabular.getCurrentLocalDirectoryConnection(), csvPath)
-            .setQuoteCharacter('"')
-            .setHeaderRowId(0)
-            .createRelationDef()
-            .addColumn("ip_from", Types.BIGINT)
-            .addColumn("ip_to", Types.BIGINT)
-            .addColumn("registry", Types.VARCHAR, 255)
-            .addColumn("assigned", Types.BIGINT)
-            .addColumn("ctry", Types.VARCHAR, 2)
-            .addColumn("cntry", Types.VARCHAR, 3)
-            .addColumn("country", Types.VARCHAR, 255)
-            .getDataPath();
-          Tabulars.copy(csvDataPath, ipTable);
-        } catch (Exception e) {
-
-          String errorMessage = e.getMessage();
-          Throwable cause = e.getCause();
-          String causeMessage = "Null";
-          if (cause != null) {
-            causeMessage = cause.getMessage();
-          }
-          LOGGER.error(" Error : {}, Cause: {}", errorMessage, causeMessage);
-          throw new DbMigrationException("CsvLoading Error", cause);
-
-        }
-      }
-    }
-  }
 
   /**
    * With flyway, you can create a flyway object,
@@ -213,29 +135,17 @@ public class JdbcSchemaManager {
   }
 
 
-  /**
-   * Migrate the app by schema
-   */
-  public JdbcSchemaManager migrateComboRealms() throws DbMigrationException {
-    String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
-    Flyway flywayTenant = this.getFlyWayCommonConf()
-      .locations("classpath:db/cs-realms")
-      .schemas(schema)
-      .load();
-    this.migrateAndClose(flywayTenant);
-    return this;
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static String getSchemaFromHandle(String handle) {
+  public static String getSchemaFromHandle(String handle) {
     return SCHEMA_PREFIX + handle;
   }
 
 
-  public JdbcSchemaManager setConnectionInfo(JdbcConnectionInfo jdbcConnectionInfo) {
-    this.jdbcConnectionInfo = jdbcConnectionInfo;
-    return this;
+  public JdbcConnectionInfo getConnectionInfo() {
+    return this.jdbcConnectionInfo;
   }
 
-
+  public JdbcSchemaManager setDataSource(DataSource dataSource) {
+    this.dataSource = dataSource;
+    return this;
+  }
 }

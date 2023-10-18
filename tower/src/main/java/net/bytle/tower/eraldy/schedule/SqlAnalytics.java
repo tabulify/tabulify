@@ -4,7 +4,7 @@ import io.vertx.core.Handler;
 import io.vertx.pgclient.PgPool;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.EraldyDomain;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -26,7 +26,7 @@ public class SqlAnalytics implements Handler<Long> {
 
   @Override
   public void handle(Long event) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.eraldyDomain.getVertx());
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     InputStream inputStream = SqlAnalytics.class.getResourceAsStream(SQL_RESOURCES_PATH);
     if (inputStream == null) {
       throw new InternalException("The Realm Analytics file was not found");

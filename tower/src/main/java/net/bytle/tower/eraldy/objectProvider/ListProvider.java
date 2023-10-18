@@ -169,7 +169,7 @@ public class ListProvider {
       " values ($1, $2, $3, $4, $5, $6, $7)";
 
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .withTransaction(sqlConnection ->
         SequenceProvider
           .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, registrationList.getRealm().getLocalId())
@@ -230,7 +230,7 @@ public class ListProvider {
         "  " + ID_COLUMN + "= $6\n" +
         "AND  " + REALM_COLUMN + "= $7 ";
 
-      return JdbcPoolCs.getJdbcPool(this.vertx)
+      return JdbcPostgresPool.getJdbcPool()
         .preparedQuery(updateByIdSql)
         .execute(Tuple.of(
           registrationList.getHandle(),
@@ -276,7 +276,7 @@ public class ListProvider {
       "AND  " + REALM_COLUMN + "= $6\n" +
       "RETURNING " + ID_COLUMN;
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(updateByHandleSql)
       .execute(Tuple.of(
         this.getDatabaseJsonObject(registrationList),
@@ -314,7 +314,7 @@ public class ListProvider {
       " where \n" +
       REALM_COLUMN + " = $1";
     Tuple parameters = Tuple.of(realm.getLocalId());
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(selectListsForRealmSql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get lists by realms error with the sql \n " + selectListsForRealmSql, e))
@@ -422,7 +422,7 @@ public class ListProvider {
       " " + ID_COLUMN + " = $1 " +
       " AND " + REALM_COLUMN + " = $2";
     Tuple parameters = Tuple.of(listId, realm.getLocalId());
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get list by Id error with the sql.\n" + sql, e))
@@ -556,7 +556,7 @@ public class ListProvider {
   }
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     return jdbcPool.preparedQuery(
         "SELECT list.list_id, list.list_handle, app.app_uri, count(registration.registration_user_id) subscriber_count\n" +
@@ -607,7 +607,7 @@ public class ListProvider {
   }
 
   public Future<java.util.List<RegistrationList>> getListsForApp(App app) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " where \n" +
@@ -651,7 +651,7 @@ public class ListProvider {
       " " + HANDLE_COLUMN + " = $1 " +
       " AND " + REALM_COLUMN + " = $2";
     Tuple parameters = Tuple.of(listHandle, realm.getLocalId());
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get list by handle error with the sql.\n" + sql, e))

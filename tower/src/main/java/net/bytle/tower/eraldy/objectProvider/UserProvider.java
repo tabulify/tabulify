@@ -164,7 +164,7 @@ public class UserProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5)\n";
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm().getLocalId())
         .onFailure(error -> LOGGER.error("UserProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(userId -> {
@@ -196,7 +196,7 @@ public class UserProvider {
         " where " +
         ID_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(
           user.getLocalId(),
@@ -214,7 +214,7 @@ public class UserProvider {
         " where " +
         EMAIL_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(
           email,
@@ -253,7 +253,7 @@ public class UserProvider {
         "AND " + REALM_COLUMN + " = $5 ";
 
       JsonObject pgJsonObject = this.toDatabaseJsonObject(user);
-      return JdbcPoolCs.getJdbcPool(this.vertx)
+      return JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(
           user.getEmail().toLowerCase(),
@@ -298,7 +298,7 @@ public class UserProvider {
       "AND " + REALM_COLUMN + " = $4\n" +
       "RETURNING " + ID_COLUMN;
     JsonObject dataJsonObject = this.toDatabaseJsonObject(user);
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(updateSql)
       .execute(Tuple.of(
         dataJsonObject,
@@ -327,7 +327,7 @@ public class UserProvider {
    */
   public Future<List<User>> getUsers(Realm realm) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
           " where " + REALM_COLUMN + " = $1"
@@ -399,7 +399,7 @@ public class UserProvider {
   }
 
   public Future<User> getUserById(Long userId, Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE \n" +
       " " + ID_COLUMN + " = $1\n" +
@@ -434,7 +434,7 @@ public class UserProvider {
    * @return the user or null
    */
   public Future<User> getUserByEmail(String userEmail, Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
@@ -639,7 +639,7 @@ public class UserProvider {
       "  " + ID_COLUMN + "= $3\n" +
       "AND " + REALM_COLUMN + " = $4 ";
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(
         passwordHashed,
@@ -660,7 +660,7 @@ public class UserProvider {
    */
   public Future<User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
@@ -700,7 +700,7 @@ public class UserProvider {
   }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     String sql = "SELECT *\n" +
       "FROM  " + QUALIFIED_TABLE_NAME + "\n" +

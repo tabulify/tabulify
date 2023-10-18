@@ -12,7 +12,7 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.vertx.DateTimeUtil;
 import org.slf4j.Logger;
@@ -73,6 +73,7 @@ public class RealmManagerProvider {
    * @param realmManager the realm to upsert
    * @return the realm with the id
    */
+  @SuppressWarnings("unused")
   public Future<RealmManager> upsertRealmOwner(RealmManager realmManager) {
 
     if (!realmManager.getOwner().getRealm().getLocalId().equals(EraldyDomain.get().getEraldyRealm().getLocalId())) {
@@ -88,7 +89,7 @@ public class RealmManagerProvider {
       " values ($1, $2, $3)\n" +
       " ON CONFLICT (" + REALM_MANAGER_REALM_ID_COLUMN + "," + REALM_MANAGER_EMAIL_COLUMN + ") DO UPDATE set " + MODIFICATION_TIME_COLUMN + " = EXCLUDED." + CREATION_TIME_COLUMN;
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(realmManager.getRealm().getLocalId(), realmManager.getOwner().getEmail(), DateTimeUtil.getNowUtc()))
       .onFailure(t -> LOGGER.error("Error while inserting the realm owner with the following sql:\n" + sql, t))
@@ -96,9 +97,10 @@ public class RealmManagerProvider {
   }
 
 
+  @SuppressWarnings("unused")
   public Future<List<Realm>> getRealmsForOwner(User user) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
       "WHERE\n" +
@@ -123,6 +125,7 @@ public class RealmManagerProvider {
   }
 
 
+  @SuppressWarnings("unused")
   public Future<RealmManager> getRealmFromDatabaseRow(Row row) {
 
     Long realmId = row.getLong(REALM_MANAGER_REALM_ID_COLUMN);

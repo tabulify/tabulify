@@ -10,7 +10,7 @@ import java.util.Arrays;
  * A wrapper around connection information
  * <p>
  * It's passed to synchronize all JDBC library
- * with the same data (ie {@link JdbcPoolCs}, {@link JdbcSchemaManager}, {@link net.bytle.db.Tabular}, ..)
+ * with the same data (ie {@link JdbcPostgresPool}, {@link JdbcSchemaManager}, {@link net.bytle.db.Tabular}, ..)
  */
 public class JdbcConnectionInfo {
   private String url;

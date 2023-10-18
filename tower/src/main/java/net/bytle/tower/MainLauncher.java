@@ -12,7 +12,8 @@ import net.bytle.vertx.VertxPrometheusMetrics;
  * The vert.x  Launcher is used in:
  * * fat jar as main class,
  * * and by the vertx command line utility.
- *
+ * There is also a cli API
+ * <a href="https://vertx.io/docs/vertx-core/java/#_vert_x_command_line_interface_api">CLI</a>
  */
 public class MainLauncher extends io.vertx.core.Launcher {
 

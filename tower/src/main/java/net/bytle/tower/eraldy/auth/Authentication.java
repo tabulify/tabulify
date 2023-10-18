@@ -13,7 +13,7 @@ import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.pgclient.PgPool;
 import net.bytle.tower.eraldy.auth.provider.ApiTokenAuthenticationProvider;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.vertx.TowerApp;
 
 /**
@@ -46,7 +46,7 @@ public class Authentication {
      */
     SqlAuthenticationOptions options = new SqlAuthenticationOptions()
       .setAuthenticationQuery("");
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     AuthenticationProvider authenticationProvider = SqlAuthentication.create(jdbcPool, options);
     FormAuthenticationHandler formAuthHandler = FormAuthenticationHandler.create(authenticationProvider);
     router.route("/login").handler(formAuthHandler);

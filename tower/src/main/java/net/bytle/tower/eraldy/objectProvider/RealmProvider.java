@@ -17,7 +17,7 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
@@ -167,7 +167,7 @@ public class RealmProvider {
       sql = "select " + ID_COLUMN +
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
         " where " + ID_COLUMN + " = ?";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(realm.getLocalId()));
     } else {
@@ -180,7 +180,7 @@ public class RealmProvider {
       sql = "select " + ID_COLUMN +
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
         " where " + REALM_HANDLE_COLUMN + " = $1";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(handle));
     }
@@ -209,7 +209,7 @@ public class RealmProvider {
       " values ($1, $2, $3, $4, $5)\n" +
       " returning " + REALM_ID_COLUMN;
     JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(
         realm.getHandle(),
@@ -253,7 +253,7 @@ public class RealmProvider {
        */
       JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
 
-      return JdbcPoolCs.getJdbcPool(this.vertx)
+      return JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(
           Tuple.of(
@@ -313,7 +313,7 @@ public class RealmProvider {
      */
     JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(
         organization.getLocalId(),
@@ -355,7 +355,7 @@ public class RealmProvider {
    */
   private <T extends Realm> Future<T> getRealmFromId(Long realmId, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + REALM_ID_COLUMN + " = $1";
@@ -382,7 +382,7 @@ public class RealmProvider {
 
   private <T extends Realm> Future<T> getRealmFromHandle(String realmHandle, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm WHERE realm_handle = $1")
       .execute(Tuple.of(realmHandle))
       .onFailure(e -> {
@@ -406,7 +406,7 @@ public class RealmProvider {
 
   public <T extends Realm> Future<List<T>> getRealmsForOwner(User user, Class<T> clazz) {
     UsersUtil.assertEraldyUser(user);
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
         "where\n" +
         " " + REALM_ORGA_ID + " = $1")
@@ -498,8 +498,9 @@ public class RealmProvider {
     return getRealmFromId(realmId, clazz);
   }
 
+  @SuppressWarnings("unused")
   public Future<List<RealmWithAppUris>> getRealmsWithAppUris() {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String aliasAppUris = "app_uris";
     String selectRealmSql = "select " +
       REALM_ID_COLUMN + ",\n" +

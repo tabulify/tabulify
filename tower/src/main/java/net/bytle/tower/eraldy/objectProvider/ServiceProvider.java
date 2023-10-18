@@ -16,7 +16,7 @@ import net.bytle.tower.eraldy.model.openapi.Service;
 import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
@@ -173,7 +173,7 @@ public class ServiceProvider {
         service.getRealm().getLocalId(),
         service.getId()
       );
-      return JdbcPoolCs.getJdbcPool(this.vertx)
+      return JdbcPostgresPool.getJdbcPool()
         .preparedQuery(insertSql)
         .execute(parameters)
         .onFailure(e -> LOGGER.error("Service Insertion Error:" + e.getMessage() + ". Sql: " + insertSql, e))
@@ -228,7 +228,7 @@ public class ServiceProvider {
       service.getRealm().getLocalId(),
       service.getUri()
     );
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(updateSql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Service Update Error:" + e.getMessage() + ". Sql: " + updateSql, e));
@@ -252,7 +252,7 @@ public class ServiceProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6, $7)\n";
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, service.getRealm().getLocalId())
         .onFailure(error -> LOGGER.error("ServiceProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(serviceId -> {
@@ -280,8 +280,8 @@ public class ServiceProvider {
   public Future<List<Service>> getServices(Realm realm) {
 
 
-    return JdbcPoolCs
-      .getJdbcPool(this.vertx)
+    return JdbcPostgresPool
+      .getJdbcPool()
       .preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
           " WHERE \n" +
@@ -392,7 +392,7 @@ public class ServiceProvider {
       " WHERE\n" +
       " " + URI_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2\n";
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(selectSql)
       .execute(Tuple.of(
         serviceUri,
@@ -425,7 +425,7 @@ public class ServiceProvider {
       realm.getLocalId(),
       serviceId
     );
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(FailureStatic::failFutureWithTrace)

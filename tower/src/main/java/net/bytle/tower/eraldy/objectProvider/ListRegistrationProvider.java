@@ -14,7 +14,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
@@ -179,7 +179,7 @@ public class ListRegistrationProvider {
       "AND  " + ID_COLUMN + " = $5\n" +
       "AND  " + USER_COLUMN + " = $6\n";
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(
         REGISTERED_STATUS,
@@ -206,7 +206,7 @@ public class ListRegistrationProvider {
       " values ($1, $2, $3, $4, $5, $6)";
 
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
       .execute(Tuple.of(
         registration.getList().getRealm().getLocalId(),
@@ -284,7 +284,7 @@ public class ListRegistrationProvider {
       throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
     }
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * " +
       "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
@@ -326,7 +326,7 @@ public class ListRegistrationProvider {
     } catch (CastException e) {
       return Future.failedFuture(e);
     }
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT registration_list_id as list_id, registration_user_id as user_id, user_email as subscriber_email " +
           " FROM cs_realms.realm_list_registration  registration " +
@@ -390,7 +390,7 @@ public class ListRegistrationProvider {
       listGuidObject.getFirstObjectId(),
       subscriberEmail
     );
-    return JdbcPoolCs.getJdbcPool(this.vertx).preparedQuery(sql)
+    return JdbcPostgresPool.getJdbcPool().preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get registration by list guid and subscriber email error: " + e.getMessage(), e))
       .compose(userRows -> {

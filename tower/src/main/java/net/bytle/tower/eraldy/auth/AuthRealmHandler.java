@@ -17,7 +17,7 @@ import net.bytle.tower.eraldy.app.memberapp.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.FailureStatic;
@@ -171,7 +171,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
       throw new InternalException("The URI (" + uri + ") is not valid." + e.getMessage(), e);
     }
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(routingContext.vertx());
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT realm.*, app_uri FROM cs_realms.realm INNER JOIN cs_realms.realm_app ON cs_realms.realm.realm_id = cs_realms.realm_app.app_realm_id and app_uri = $1 order by app_uri limit 1";
     String likeScopeValue = uri.toString();
     return jdbcPool.preparedQuery(sql)

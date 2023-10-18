@@ -11,7 +11,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +26,7 @@ public class OrganizationUserProvider {
 
     private static OrganizationUserProvider provider;
     private final Vertx vertx;
-    private static String TABLE_NAME = "organization_user";
+    private static final String TABLE_NAME = "organization_user";
 
     private static final String TABLE_PREFIX = "orga_user";
     public static final String ORGA_USER_USER_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
@@ -76,7 +76,7 @@ public class OrganizationUserProvider {
 
     public Future<OrganizationUser> getOrganizationUserById(Long localId, User user) {
 
-        PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+        PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
         String sql = "SELECT * FROM " +
                 JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
                 " WHERE " + ORGA_USER_USER_ID_COLUMN + " = $1";

@@ -19,7 +19,7 @@ import net.bytle.tower.eraldy.model.openapi.AppPostBody;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
@@ -196,7 +196,7 @@ public class AppProvider {
       " values ($1, $2, $3, $4, $5, $6)\n";
 
     // https://github.com/vert-x3/vertx-examples/blob/4.x/sql-client-examples/src/main/java/io/vertx/example/sqlclient/transaction_rollback/SqlClientExample.java
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .withTransaction(sqlConnection ->
         SequenceProvider
           .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, app.getRealm().getLocalId())
@@ -234,7 +234,7 @@ public class AppProvider {
         " AND" + APP_ID_COLUMN + "= $5";
 
       JsonObject databaseJsonObject = this.getDatabaseJsonObject(app);
-      return JdbcPoolCs.getJdbcPool(this.vertx)
+      return JdbcPostgresPool.getJdbcPool()
         .preparedQuery(updateSqlById)
         .execute(Tuple.of(
           app.getUri(),
@@ -277,7 +277,7 @@ public class AppProvider {
       " AND " + URI_COLUMN + " = $4\n" +
       " RETURNING " + APP_ID_COLUMN;
 
-    return JdbcPoolCs.getJdbcPool(this.vertx)
+    return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(updateSqlByUri)
       .execute(Tuple.of(
           app.getUser().getLocalId(),
@@ -303,7 +303,7 @@ public class AppProvider {
         " where " +
         " " + REALM_ID_COLUMN + " = ?" +
         " AND " + APP_ID_COLUMN + " = ?";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(
           app.getRealm().getLocalId(),
@@ -321,7 +321,7 @@ public class AppProvider {
         " where " +
         " " + REALM_ID_COLUMN + " = ?" +
         " AND " + URI_COLUMN + " = ?";
-      futureResponse = JdbcPoolCs.getJdbcPool(this.vertx)
+      futureResponse = JdbcPostgresPool.getJdbcPool()
         .preparedQuery(sql)
         .execute(Tuple.of(
           app.getRealm().getLocalId(),
@@ -362,7 +362,7 @@ public class AppProvider {
    */
   public Future<List<App>> getApps(Realm realm) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " where " + REALM_ID_COLUMN + " = $1")
@@ -434,7 +434,7 @@ public class AppProvider {
 
 
   public Future<App> getAppByUri(URI uri, Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " WHERE " + URI_COLUMN + " = $1 "
@@ -580,7 +580,7 @@ public class AppProvider {
   }
 
   Future<App> getAppById(long appId, Realm realm) {
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "

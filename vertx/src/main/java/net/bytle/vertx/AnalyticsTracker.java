@@ -21,6 +21,7 @@ public class AnalyticsTracker {
 
 
   private static final String PROJECT_TOKEN = "eraldy.mixpanel.project.token";
+  private static AnalyticsTracker analyticsTracker;
   private final MessageBuilder messageBuilder;
   private final Map<String, AnalyticsEvent> events = new HashMap<>();
 
@@ -36,7 +37,7 @@ public class AnalyticsTracker {
       throw new NoSecretException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + PROJECT_TOKEN + ")");
     }
 
-    AnalyticsTracker analyticsTracker = new AnalyticsTracker(projectToken);
+    analyticsTracker = new AnalyticsTracker(projectToken);
     return analyticsTracker;
 
   }
@@ -51,7 +52,7 @@ public class AnalyticsTracker {
    * @param ip   - the ip when the user was created for geo-localization
    * @return the analytics tracker
    * Segment recommends that you make an Identify call:
-   *
+   * <p>
    * * After a user first registers
    * * After a user logs in
    * * When a user updates their info (for example, they change or add a new address)

@@ -9,7 +9,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPoolCs;
+import net.bytle.tower.util.JdbcPostgresPool;
 import net.bytle.tower.util.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,7 @@ public class OrganizationProvider {
   }
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
+    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM\n" +
       QUALIFIED_TABLE_NAME + "\n" +
       "WHERE " + ORGA_ID_COLUMN + " = $1";
