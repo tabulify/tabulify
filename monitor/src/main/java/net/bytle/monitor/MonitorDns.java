@@ -30,12 +30,13 @@ public class MonitorDns {
   private final DnsName gerardNicoDomain;
   private final Set<DnsName> apexDomains;
   private final Map<String, Integer> mxs;
+  private final DnsSession dnsSession;
 
   public MonitorDns(CloudflareDns cloudflareDns) {
 
     // we are at cloudflare, no need to wait the sync
     // we resolve to cloudflare immediately
-    DnsSession dnsSession = DnsSession.builder()
+    dnsSession = DnsSession.builder()
       // we are at cloudflare, no need to wait the sync
       // we resolve to cloudflare immediately
       .setResolverToCloudflare()
@@ -106,7 +107,7 @@ public class MonitorDns {
           apexDomain.addExpectedDmarcEmail(dmarcInternal);
         }
       } catch (AddressException e) {
-        throw new RuntimeException("The email are literal, it should not happen",e);
+        throw new RuntimeException("The email are literal, it should not happen", e);
       }
 
       LOGGER.info("Monitor Main Mx");
@@ -525,22 +526,84 @@ public class MonitorDns {
   }
 
   private MonitorDns checkDmarc(Set<DnsName> domains) {
+
     String checkName = "Dmarc check";
+    /**
+     * For external domain, the EDV records should contain
+     * at least this value
+     */
+    String expectedEdvSuffixValue = "v=DMARC1";
     for (DnsName domain : domains) {
+      /**
+       * Dmarc
+       */
       try {
         String dmarc = domain.getDmarcRecord();
         String expectedDmarc = domain.getExpectedDmarcRecord();
         if (dmarc.equals(expectedDmarc)) {
           this.addSuccess(checkName, domain, "The dmarc is correct");
         } else {
-          this.addFailure(checkName, domain, "The dmarc is incorrect. It should be (" + expectedDmarc + ") and not ("+dmarc+")");
+          this.addFailure(checkName, domain, "The dmarc is incorrect. It should be (" + expectedDmarc + ") and not (" + dmarc + ")");
         }
       } catch (DnsException e) {
         this.addFailure(checkName, domain, "The dmarc record query fires an exception: " + e.getMessage());
       } catch (DnsNotFoundException e) {
         this.addFailure(checkName, domain, "The dmarc record was not found");
       }
+      /**
+       * EDV (external domain verification (EDV))
+       * Non-first party dmarc email domain should add a record known as EDV in their
+       * domain to allow it.
+       * See https://datatracker.ietf.org/doc/html/rfc7489#section-7.1
+       * <p>
+       */
+      for (BMailInternetAddress email : domain.getDmarcEmails()) {
+        DnsName emailDomain;
+        try {
+          emailDomain = this.dnsSession.createDnsName(email.getDomain());
+          if (!emailDomain.equals(domain)) {
+            DnsName dmarcReportName = emailDomain
+              .getSubdomain("_dmarc")
+              .getSubdomain("_report");
+            DnsName edvDomainName = dmarcReportName
+              .getSubdomain(domain.getNameWithoutRoot());
+            try {
+              String edvValue = edvDomainName.getFirstTxtValue();
+              if (!edvValue.trim().startsWith(expectedEdvSuffixValue)) {
+                this.addFailure(checkName, dmarcReportName, "The edv dmarc txt record should be (" + expectedEdvSuffixValue + "), not (" + edvValue + ")");
+              } else {
+                this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value is good.");
+              }
+            } catch (DnsException e) {
+              this.addFailure(checkName, dmarcReportName, "The edv dmarc record query fires an exception: " + e.getMessage());
+            } catch (DnsNotFoundException e) {
+              /**
+               * A Report Receiver that is willing to receive reports for any domain
+               * can use a wildcard DNS record.
+               * For example, a TXT resource record at "*._report._dmarc.example.com"
+               */
+              DnsName edvWildcardName = dmarcReportName.getSubdomain("*");
+              try {
+                String edvWildcardValue = edvWildcardName.getFirstTxtValue();
+                if (!edvWildcardValue.trim().startsWith(expectedEdvSuffixValue)) {
+                  this.addFailure(checkName, dmarcReportName, "The edv wildcard dmarc txt record (" + edvWildcardName + ") should be (" + expectedEdvSuffixValue + "), not (" + edvWildcardValue + ")");
+                } else {
+                  this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value is good.");
+                }
+              } catch (DnsException wildcardException) {
+                this.addFailure(checkName, dmarcReportName, "The edv dmarc record query (" + edvWildcardName + ") fires an exception: " + wildcardException.getMessage());
+              } catch (DnsNotFoundException wildcardException) {
+                this.addFailure(checkName, dmarcReportName, "An EDV dmarc text record was not found under one of theses names (" + edvDomainName + "," + edvWildcardName + ")");
+              }
+            }
+          }
+        } catch (DnsIllegalArgumentException e) {
+
+          throw new RuntimeException("Illegal name should not happen", e);
+        }
+      }
     }
+
     return this;
   }
 

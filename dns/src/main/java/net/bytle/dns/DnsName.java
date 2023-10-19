@@ -163,6 +163,19 @@ public class DnsName {
 
 
     try {
+      return this.getTxtRecords()
+        .stream()
+        .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
+        .findFirst()
+        .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
+    } catch (Exception e) {
+      throw this.session.handleLookupException(this, e);
+    }
+
+  }
+
+  private List<TXTRecord> getTxtRecords() throws DnsNotFoundException, DnsException {
+    try {
       return this.session
         .getLookupSession()
         .lookupAsync(this.dnsName, Type.TXT)
@@ -171,13 +184,10 @@ public class DnsName {
         .getRecords()
         .stream()
         .map(TXTRecord.class::cast)
-        .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
-        .findFirst()
-        .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
+        .collect(Collectors.toList());
     } catch (Exception e) {
       throw this.session.handleLookupException(this, e);
     }
-
   }
 
 
@@ -377,16 +387,52 @@ public class DnsName {
   }
 
   public String getExpectedDmarcRecord() {
-    String dmarc = "v=DMARC1; p=none";
+    String dmarc = "v=DMARC1";
+    /**
+     * Policy (none, quarantine, reject)
+     * If your domain uses BIMI, the DMARC p option must be set to quarantine or reject.
+     * BIMI doesn't support DMARC policies with the p option set to none.
+     */
+    String rejectPolicy = "none";
+    dmarc += "; p=" + rejectPolicy;
+    /**
+     * #########################
+     * Percentage of unauthorized messages
+     * BIMI doesn't support DMARC policies with the pct value set to less than 100.
+     * dmarc += "; pct=100";
+     * #########################
+     * Subdomain Policy (sp)
+     * Optional - Inherited from p
+     * dmarc += "; sp=" + rejectPolicy;
+     */
     if (this.expectedDmarcEmails.size() == 0) {
       return dmarc;
     }
     String mailToSchema = "mailto:";
-    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(BMailInternetAddress::getAddress).collect(Collectors.joining("," + mailToSchema));
+    /**
+     * We put a space as shown in google here:
+     * https://support.google.com/a/answer/2466563#dmarc-record-tags
+     */
+
+    String ruaDelimiter = ", " + mailToSchema;
+    return dmarc + "; rua=" + mailToSchema + this.expectedDmarcEmails.stream().map(BMailInternetAddress::getAddress).collect(Collectors.joining(ruaDelimiter));
   }
 
   public DnsName addExpectedDmarcEmail(BMailInternetAddress mail) {
     this.expectedDmarcEmails.add(mail);
     return this;
   }
+
+  public List<BMailInternetAddress> getDmarcEmails() {
+    return this.expectedDmarcEmails;
+  }
+
+  public String getFirstTxtValue() throws DnsException, DnsNotFoundException {
+    List<TXTRecord> txtRecords = this.getTxtRecords();
+    if (txtRecords.size() == 0) {
+      throw new DnsNotFoundException();
+    }
+    return DnsUtil.getStringFromTxtRecord(txtRecords.get(0));
+  }
+
 }
