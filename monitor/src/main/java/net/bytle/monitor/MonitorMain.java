@@ -2,6 +2,8 @@ package net.bytle.monitor;
 
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpConnectionParameters;
@@ -50,10 +52,13 @@ public class MonitorMain extends AbstractVerticle {
           MonitorReport apiTokenReport = MonitorApiToken.create(cloudflareApi, configAccessor).check();
           monitorReports.add(apiTokenReport);
 
-          LOGGER.info("Monitor Dns Checks");
+          LOGGER.info("Monitor Services Checks");
           CloudflareDns cloudflareDns = CloudflareDns.create(cloudflareApi);
-          MonitorDns monitorDns = MonitorDns.create(cloudflareDns);
-          monitorReports.addAll(monitorDns.checkAll());
+          NetClientOptions options = new NetClientOptions();
+          options.setSsl(true);
+          NetClient sslNetClient = vertx.createNetClient(options);
+          MonitorServices monitorServices = MonitorServices.create(cloudflareDns, sslNetClient, configAccessor);
+          monitorReports.addAll(monitorServices.checkAll());
 
           LOGGER.info("Monitor Mailing");
           List<Future<MonitorReport>> futureMonitorReportResolved = new ArrayList<>();

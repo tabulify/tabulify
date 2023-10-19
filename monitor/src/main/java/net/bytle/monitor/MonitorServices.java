@@ -1,21 +1,31 @@
 package net.bytle.monitor;
 
 import io.vertx.core.Future;
+import io.vertx.core.net.NetClient;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.*;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.MXRecord;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.UnknownHostException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
+ * Monitor Services (DNS name, Certificates)
  * To finish it, see
  * <a href="https://support.google.com/mail/answer/81126">...</a>
  */
-public class MonitorDns {
+public class MonitorServices {
 
   public static Logger LOGGER = LogManager.getLogger(MonitorMain.class);
 
@@ -31,8 +41,19 @@ public class MonitorDns {
   private final Set<DnsName> apexDomains;
   private final Map<String, Integer> mxs;
   private final DnsSession dnsSession;
+  private final NetClient netClient;
+  private final long certificateExpirationDelayBeforeFailure;
+  private final HashMap<DnsName, Future<List<MonitorReportResult>>> asyncListResults = new HashMap<>();
 
-  public MonitorDns(CloudflareDns cloudflareDns) {
+  public MonitorServices(CloudflareDns cloudflareDns, NetClient sslNetClient, ConfigAccessor configAccessor) {
+
+    /**
+     * Because the check may run every week
+     * The default is above 7 days
+     */
+    long defaultValue = 10L;
+    this.certificateExpirationDelayBeforeFailure = configAccessor.getLong("certificate.expiration.delay.before.failure", defaultValue);
+    LOGGER.info("Certificate expiration warning set to " + this.certificateExpirationDelayBeforeFailure);
 
     // we are at cloudflare, no need to wait the sync
     // we resolve to cloudflare immediately
@@ -43,6 +64,7 @@ public class MonitorDns {
       .build();
     this.reports = new HashMap<>();
     this.cloudflareDns = cloudflareDns;
+    this.netClient = sslNetClient;
 
     /**
      * Host
@@ -125,8 +147,8 @@ public class MonitorDns {
   }
 
 
-  public static MonitorDns create(CloudflareDns cloudflareDns) {
-    return new MonitorDns(cloudflareDns);
+  public static MonitorServices create(CloudflareDns cloudflareDns, NetClient netClient, ConfigAccessor configAccessor) {
+    return new MonitorServices(cloudflareDns, netClient, configAccessor);
   }
 
 
@@ -143,7 +165,7 @@ public class MonitorDns {
    * <a href="https://support.google.com/mail/answer/81126#ip-practices">...</a> for more 550
    */
 
-  public MonitorDns checkMailersPtr(List<DnsHost> mailers) throws DnsException {
+  public MonitorServices checkMailersPtr(List<DnsHost> mailers) throws DnsException {
 
     String checkName = "Check Mailer Host (Ptr)";
     for (DnsHost dnsHost : mailers) {
@@ -242,7 +264,7 @@ public class MonitorDns {
    * @param thirdDomains - the name of domains that should include the original spf records
    * @param mailersName  - the name where the A record name of the mailers are stored
    */
-  public MonitorDns checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
+  public MonitorServices checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
 
 
     DnsName spfSubDomainName = mainDomain.getSubdomain("spf");
@@ -307,7 +329,7 @@ public class MonitorDns {
   }
 
 
-  public MonitorDns checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
+  public MonitorServices checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
 
     try {
@@ -332,7 +354,7 @@ public class MonitorDns {
 
   }
 
-  public MonitorDns checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
+  public MonitorServices checkMx(Map<String, Integer> mxs, Set<DnsName> domains) {
     String mxCheck = "Mx Check";
 
     for (DnsName domain : domains) {
@@ -379,10 +401,10 @@ public class MonitorDns {
 
   /**
    * A record for web hosting are proxied
-   * We need then to go throught the cloudflare api
+   * We need then to go through the cloudflare api
    * to get the real value
    */
-  public MonitorDns checkCloudflareARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
+  public MonitorServices checkCloudflareARecord(DnsHost host, Set<DnsName> domains, String checkTitle) {
 
 
     for (DnsName dnsName : domains) {
@@ -416,56 +438,120 @@ public class MonitorDns {
   public List<MonitorReport> checkAll() throws DnsException, DnsIllegalArgumentException {
 
 
-    LOGGER.info("Monitor Check Host");
+    LOGGER.info("Monitor Check Services started");
 
 
+    LOGGER.info("Monitor Check Mail");
+    /**
+     * See also https://support.google.com/mail/answer/9981691
+     */
     DnsName mailersName = eraldyDomain.getSubdomain("mailers");
-    LOGGER.info("Monitor Check Mailers");
+    LOGGER.info("  * Check Mailers A record");
     this.checkMailersARecord(mailers, mailersName);
+    LOGGER.info("  * Check Mailers Ptr record");
     this.checkMailersPtr(mailers);
-
-
-    LOGGER.info("Monitor Check Domain Spf");
+    LOGGER.info("  * Check Spf");
     this.checkSpf(eraldyDomain, mailersName, apexDomains);
+    LOGGER.info("  * Check Mx");
+    this.checkMx(mxs, apexDomains);
+    LOGGER.info("  * Check Dmarc");
+    this.checkDmarc(apexDomains);
+    LOGGER.info("  * Check Dkim");
+    this.checkDkim(apexDomains);
 
-    LOGGER.info("Monitor A record for HTTP website");
-    // gerardnico.github.io hosted domain does not have cname but A and AAAAA records
-    Set<DnsName> hostedDomains = new HashSet<>(apexDomains);
+    LOGGER.info("Monitor HTTP services");
+    LOGGER.info("  * Check A record");
+    // We check the A record and not a CNAME record
+    // Why ? gerardnico.github.io hosted domain does not have cname but A and AAAAA records
+    Set<DnsName> httpServices = new HashSet<>(apexDomains);
     DnsName rixt = gerardNicoDomain.getSubdomain("rixt");
-    hostedDomains.add(rixt);
+    httpServices.add(rixt);
     for (DnsName dnsName : apexDomains) {
       // the www format
-      hostedDomains.add(dnsName.getSubdomain("www"));
+      httpServices.add(dnsName.getSubdomain("www"));
     }
-    this.checkCloudflareARecord(monitorBeauHost, hostedDomains, "HTTP website hosting");
+    this.checkCloudflareARecord(monitorBeauHost, httpServices, "HTTP A record");
+    LOGGER.info("  * Check certificates");
+    this.checkCertificates(httpServices, 443, "HTTP Certificates");
 
-    LOGGER.info("Monitor A record for home");
+    LOGGER.info("Monitor Private Network");
+    LOGGER.info("  * Check A record for home");
     DnsName oeg = gerardNicoDomain.getSubdomain("oeg");
     this.checkCloudflareARecord(monitorOegHost, Set.of(oeg), "Monitor Subdomain A record");
-
-    LOGGER.info("Monitor Check Mx");
-    this.checkMx(mxs, apexDomains);
-
-    LOGGER.info("Monitor Check Dmarc");
-    this.checkDmarc(apexDomains);
-
-    LOGGER.info("Monitor Check Dkim");
-    /**
-     * Verification of DKIM value
-     * <p>
-     * Note that the ansible postfix role
-     * has a real verification
-     * with the task `Verification of the DNS Zone against the private key`
-     * that starts
-     * ```
-     * ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags dkim-test-key -v
-     * ```
-     */
-    this.checkDkim(apexDomains);
 
 
     return this.getMonitorReports();
 
+  }
+
+  private void checkCertificates(Set<DnsName> dnsNames, int port, String checkTitle) {
+
+    for (DnsName dnsName : dnsNames) {
+      String nameWithoutRoot = dnsName.getNameWithoutRoot();
+      String service = nameWithoutRoot + ":" + port;
+      Future<List<MonitorReportResult>> futureResults = this.netClient.connect(port, nameWithoutRoot)
+        .compose(netSocket -> {
+
+            List<MonitorReportResult> monitorReportResults = new ArrayList<>();
+            List<Certificate> certs;
+            try {
+              certs = netSocket.peerCertificates();
+            } catch (SSLPeerUnverifiedException e) {
+              monitorReportResults.add(createResult(checkTitle, "SSLPeerUnverifiedException for the service (" + service + "). Message: " + e.getMessage(), MonitorReportResultStatus.FAILURE));
+              return Future.succeededFuture(monitorReportResults);
+            }
+            if (certs == null) {
+              monitorReportResults.add(createResult(checkTitle, "The connection to the service (" + service + ") is not SSL/TLS. No certificate were returned", MonitorReportResultStatus.FAILURE));
+              return Future.succeededFuture(monitorReportResults);
+            }
+
+            for (Certificate cert : certs) {
+
+              if (!(cert instanceof java.security.cert.X509Certificate)) {
+                monitorReportResults.add(createResult(checkTitle, "The certificate type (" + cert.getType() + ") returned by the service (" + service + ") is not supported", MonitorReportResultStatus.FAILURE));
+                continue;
+              }
+
+              X509Certificate x509Certificate = (X509Certificate) cert;
+              String subjectDn = x509Certificate.getSubjectDN().getName();
+              try {
+                x509Certificate.checkValidity();
+              } catch (CertificateExpiredException e) {
+                monitorReportResults.add(createResult(checkTitle, "The certificate (" + subjectDn + ") of the service service (" + service + ") has expired", MonitorReportResultStatus.FAILURE));
+                continue;
+              } catch (CertificateNotYetValidException e) {
+                monitorReportResults.add(createResult(checkTitle, "The certificate (" + subjectDn + ") of the service (" + service + ") is not yet valid", MonitorReportResultStatus.FAILURE));
+                continue;
+              }
+
+              Date expirationDate = x509Certificate.getNotAfter();
+              long duration = Duration.between(Instant.now(), expirationDate.toInstant()).toDays();
+              if (duration < this.certificateExpirationDelayBeforeFailure) {
+                monitorReportResults.add(createResult(checkTitle, "The certificate (" + subjectDn + ") of the service (" + service + ") expires over " + duration + " days", MonitorReportResultStatus.FAILURE));
+                continue;
+              }
+              /**
+               * We report not the certificate chain success only the first one
+               */
+              if (monitorReportResults.size() == 0) {
+                monitorReportResults.add(createResult(checkTitle, "The certificate (" + subjectDn + ") of the service (" + service + ") expires only over " + duration + " days", MonitorReportResultStatus.SUCCESS));
+              }
+            }
+            return Future.succeededFuture(monitorReportResults);
+          },
+          err -> {
+            List<MonitorReportResult> monitorReportResults = new ArrayList<>();
+            monitorReportResults.add(createResult(checkTitle, "Unable to connect to the service (" + port + "). Message:" + err.getMessage(), MonitorReportResultStatus.FAILURE));
+            return Future.succeededFuture(monitorReportResults);
+          }
+        );
+      this.addAsyncListResult(dnsName, futureResults);
+    }
+
+  }
+
+  private void addAsyncListResult(DnsName dnsName, Future<List<MonitorReportResult>> futureResults) {
+    this.asyncListResults.put(dnsName, futureResults);
   }
 
   public List<MonitorReport> getMonitorReports() {
@@ -473,6 +559,7 @@ public class MonitorDns {
     LOGGER.info("Monitor Creating report");
     HashSet<DnsName> allNames = new HashSet<>(reports.keySet());
     allNames.addAll(asyncResults.keySet());
+    allNames.addAll(asyncListResults.keySet());
     List<MonitorReport> monitorReports = new ArrayList<>();
     for (DnsName dnsName : allNames) {
 
@@ -492,10 +579,26 @@ public class MonitorDns {
           monitorReport.addFutureResult(monitorReportResult);
         }
       }
+      // Async List
+      Future<List<MonitorReportResult>> asyncListMonitorReportResults = asyncListResults.get(dnsName);
+      if (asyncListMonitorReportResults != null) {
+        monitorReport.addFutureResults(asyncListMonitorReportResults);
+      }
     }
     return monitorReports;
   }
 
+  /**
+   * Verification of DKIM value
+   * <p>
+   * Note that the ansible postfix role
+   * has a real verification
+   * with the task `Verification of the DNS Zone against the private key`
+   * that starts
+   * ```
+   * ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags dkim-test-key -v
+   * ```
+   */
   private void checkDkim(Set<DnsName> domains) {
 
     String checkName = "Dkim check";
@@ -525,7 +628,7 @@ public class MonitorDns {
     }
   }
 
-  private MonitorDns checkDmarc(Set<DnsName> domains) {
+  private MonitorServices checkDmarc(Set<DnsName> domains) {
 
     String checkName = "Dmarc check";
     /**
