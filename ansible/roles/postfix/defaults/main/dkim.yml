@@ -11,7 +11,7 @@ dkim_keys_path: /etc/opendkim/keys
 # The key selector
 # This is the first part of the DNS key
 # Default was found in /etc/opendkim.conf
-dkim_selector: 'combostrap'
+dkim_selector: 'eraldy'
 
 # The location of the global key
 dkim_key_path: '{{ dkim_keys_path }}/{{ dkim_selector }}.private'
@@ -90,4 +90,3 @@ dkim_private_key: !vault |
   30643531666439313730346430636364343633306135316139613162623261633937633064633335
   64626234656334366539373462663334383131353637613039666164613463393137616637666632
   6437
-

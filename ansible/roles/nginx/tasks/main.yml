@@ -50,7 +50,6 @@
   tags: nginx-conf, nginx-internal-tool
   block:
     - include_tasks: nginx_internal_tool.yml
-  notify: reload nginx
 
 - name: 'Www - static www folder configuration'
   become: true

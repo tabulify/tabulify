@@ -83,11 +83,11 @@ public class MonitorDns {
         gerardNicoDomain,
         tabulifyDomain
       );
-      LOGGER.info("Monitor DNS - Add Combostrap Dkim to domains");
-      String combostrapDkimSelector = "combostrap";
+      LOGGER.info("Monitor DNS - Add Eraldy Dkim to domains");
+      String eraldyDkimSelector = "eraldy";
       String combostrapExpectedDkimValue = "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQUtHxTD63yxwq5fmjJ3RtXw2NP5/QEiSq3Xx85faTHnnj3/PA/igwWaueDsoeUuZOpkL74gDNGWBoQPecRaFrAXdPoEKGDYNBeMXzIkWQOth9Oaq4N+38LV08Ui86so8B2BhcvgXiqpACsrPur0hbDQWI183tZve7MKMPs3KPIQIDAQAB";
       for (DnsName dnsName : apexDomains) {
-        dnsName.addExpectedDkim(combostrapDkimSelector, combostrapExpectedDkimValue);
+        dnsName.addExpectedDkim(eraldyDkimSelector, combostrapExpectedDkimValue);
       }
       LOGGER.info("Monitor DNS - Add Google Dkim to domains");
       // They are configuration of the Gmail app: https://admin.google.com/ac/apps/gmail/authenticateemail
@@ -102,7 +102,7 @@ public class MonitorDns {
       try {
         bytleDomain.addExpectedDmarcEmail(BMailInternetAddress.of("44801f5f73014104b1898b84a16eb826@dmarc-reports.cloudflare.net"));
         combostrapDomain.addExpectedDmarcEmail(BMailInternetAddress.of("970a4434804f4e449ca040d51d4e4588@dmarc-reports.cloudflare.net"));
-        BMailInternetAddress dmarcInternal = BMailInternetAddress.of("dmarc@combostrap.com");
+        BMailInternetAddress dmarcInternal = BMailInternetAddress.of("dmarc@eraldy.com");
         for (DnsName apexDomain : apexDomains) {
           apexDomain.addExpectedDmarcEmail(dmarcInternal);
         }
@@ -572,7 +572,7 @@ public class MonitorDns {
               if (!edvValue.trim().startsWith(expectedEdvSuffixValue)) {
                 this.addFailure(checkName, dmarcReportName, "The edv dmarc txt record should be (" + expectedEdvSuffixValue + "), not (" + edvValue + ")");
               } else {
-                this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value is good.");
+                this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value for the name (" + edvDomainName + ") is " + edvValue);
               }
             } catch (DnsException e) {
               this.addFailure(checkName, dmarcReportName, "The edv dmarc record query fires an exception: " + e.getMessage());
@@ -588,7 +588,7 @@ public class MonitorDns {
                 if (!edvWildcardValue.trim().startsWith(expectedEdvSuffixValue)) {
                   this.addFailure(checkName, dmarcReportName, "The edv wildcard dmarc txt record (" + edvWildcardName + ") should be (" + expectedEdvSuffixValue + "), not (" + edvWildcardValue + ")");
                 } else {
-                  this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value is good.");
+                  this.addSuccess(checkName, dmarcReportName, "The edv dmarc record value for the name (" + edvWildcardName + ") is " + edvWildcardValue);
                 }
               } catch (DnsException wildcardException) {
                 this.addFailure(checkName, dmarcReportName, "The edv dmarc record query (" + edvWildcardName + ") fires an exception: " + wildcardException.getMessage());

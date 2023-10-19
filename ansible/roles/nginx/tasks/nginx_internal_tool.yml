@@ -22,6 +22,7 @@
 
 - name: Internal Tool - CA Client certificate directory
   become: true
+  notify: reload nginx
   file:
     path: '{{ nginx_client_certificate_directory }}'
     state: directory
@@ -29,6 +30,7 @@
 
 - name: Internal Tool - Copy the trusted CA certificate
   become: true
+  notify: reload nginx
   copy:
     src: "files/{{ nginx_root_ca_for_client }}"
     dest: "{{ nginx_root_ca_for_client_location }}"

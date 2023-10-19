@@ -35,7 +35,7 @@ See [Add new mail alias](mail.md)
 Example with the actual value for the selector as default.
 
 ```
-combostrap._domainkey        IN TXT    ( "v=DKIM1; k=rsa; p=thePublicKey" )
+eraldy._domainkey        IN TXT    ( "v=DKIM1; k=rsa; p=thePublicKey" )
 ```
 
 
@@ -152,5 +152,3 @@ More:
 
   * Most of the configuration comes from: http://www.postfix.org/BASIC_CONFIGURATION_README.html
   * https://wiki.centos.org/HowTos/postfix
-
-
