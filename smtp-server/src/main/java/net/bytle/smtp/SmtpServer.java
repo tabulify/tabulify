@@ -8,7 +8,6 @@ import io.vertx.core.net.SocketAddress;
 import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.exception.CastException;
 import net.bytle.java.JavaEnvs;
-import net.bytle.s3.AwsBucket;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.smtp.mailbox.SmtpMailbox;
 import net.bytle.smtp.mailbox.SmtpMailboxForward;
@@ -33,7 +32,7 @@ import static net.bytle.smtp.SmtpSyntax.LOG_TAB;
 
 public class SmtpServer {
 
-  private static final Logger LOGGER = LogManager.getLogger(AwsBucket.class);
+  private static final Logger LOGGER = LogManager.getLogger(SmtpServer.class);
 
   /**
    * The software name is given in the {@link SmtpEhloCommandHandler Ehlo command}

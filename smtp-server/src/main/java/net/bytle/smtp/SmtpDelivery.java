@@ -20,10 +20,13 @@ public class SmtpDelivery implements Handler<Long> {
   private static final int DEFAULT_RETRY_INTERVAL = 15;
   private final Map<Integer, SmtpDeliveryEnvelope> deliveryQueue = new HashMap<>();
   private final Integer retryIntervalBetweenFailures;
+  private final Vertx vertx;
   private boolean isRunning = false;
   private Instant lastDeliveringTentative;
 
   public SmtpDelivery(Vertx vertx, ConfigAccessor configAccessor) {
+
+    this.vertx = vertx;
 
     Integer deliveryInterval = configAccessor.getInteger(DELIVERY_INTERVAL_KEY, DEFAULT_INTERVAL);
     LOGGER.info("Delivery interval (" + DELIVERY_RETRY_INTERVAL_KEY + ") set to " + deliveryInterval + " minutes");
@@ -51,26 +54,30 @@ public class SmtpDelivery implements Handler<Long> {
       return;
     }
 
-    this.isRunning = true;
-    List<Future<Void>> envelopeDeliveries = new ArrayList<>();
+    this.vertx.executeBlocking(() -> {
 
-    for (Integer enveloppeId : deliveryQueue.keySet()) {
-      SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
-      Future<Void> envelopeDelivery = this.deliver(envelope)
-        .compose(v -> {
-          if (envelope.hasBeenDelivered()) {
-            deliveryQueue.remove(enveloppeId);
-          }
+      this.isRunning = true;
+      List<Future<Void>> envelopeDeliveries = new ArrayList<>();
+
+      for (Integer enveloppeId : deliveryQueue.keySet()) {
+        SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
+        Future<Void> envelopeDelivery = this.deliver(envelope)
+          .compose(v -> {
+            if (envelope.hasBeenDelivered()) {
+              deliveryQueue.remove(enveloppeId);
+            }
+            return Future.succeededFuture();
+          });
+        envelopeDeliveries.add(envelopeDelivery);
+      }
+      return Future.join(envelopeDeliveries)
+        .compose(ar -> {
+          this.isRunning = false;
+          LOGGER.info("Delivery done");
           return Future.succeededFuture();
         });
-      envelopeDeliveries.add(envelopeDelivery);
-    }
-    Future.join(envelopeDeliveries)
-      .onComplete(ar -> {
-        this.isRunning = false;
-        LOGGER.info("Delivery done");
-      });
 
+    });
   }
 
   public void addEnvelopeToDeliver(SmtpDeliveryEnvelope enveloppe) {

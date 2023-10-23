@@ -41,8 +41,12 @@ public class SmtpUser {
     return this.password;
   }
 
-  public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope)  {
+  public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope) {
     return this.mailBox.deliver(this, smtpDeliveryEnvelope.getMimeMessage());
   }
 
+  @Override
+  public String toString() {
+    return name + "@" + this.smtpDomain;
+  }
 }
