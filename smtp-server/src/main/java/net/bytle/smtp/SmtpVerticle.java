@@ -23,9 +23,6 @@ public class SmtpVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LogManager.getLogger(SmtpVerticle.class);
   private static final String APPLICATION_NAME = "smtp";
 
-  public static final String DEV_KEY_PEM = "../tower/cert/key.pem";
-  public static final String DEV_CERT_PEM = "../tower/cert/cert.pem";
-
 
   public static void main(String[] args) {
 
@@ -57,12 +54,31 @@ public class SmtpVerticle extends AbstractVerticle {
             return;
           }
 
+
           /**
            * Build a net server for each smtp service
            */
           List<Future<NetServer>> netServers = new ArrayList<>();
           for (SmtpService smtpService : smtpServer.getSmtpServices()) {
 
+            /**
+             * Server Certificates
+             */
+            PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions();
+            for (SmtpHost host : smtpServer.getHostedHosts().values()) {
+              String keyPath = host.getPrivateKeyPath();
+              if (keyPath == null) {
+                continue;
+              }
+              String certificatePath = host.getCertificatePath();
+              if (certificatePath == null) {
+                verticlePromise.fail(new ConfigIllegalException("The certificate of the host (" + host + ") is null but not its key"));
+                return;
+              }
+              pemKeyCertOptions
+                .addKeyPath(keyPath)
+                .addCertPath(certificatePath);
+            }
             /**
              * Note on protcol: The protocol is TLS, there is no old SSL allowed
              * The default are = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }
@@ -80,15 +96,7 @@ public class SmtpVerticle extends AbstractVerticle {
              */
             NetServerOptions serverOption = new NetServerOptions()
               .setPort(smtpService.getListeningPort())
-              .setPemKeyCertOptions(
-                /**
-                 * We have for now only one certificate, but
-                 * we may add more than one by {@link SmtpService#getHostedHosts() hosted hosts}
-                 */
-                new PemKeyCertOptions()
-                  .addKeyPath(DEV_KEY_PEM)
-                  .addCertPath(DEV_CERT_PEM)
-              )
+              .setPemKeyCertOptions(pemKeyCertOptions)
               .setSsl(smtpService.getIsTlsEnabled())
               // SNI returns the certificate for the indicated server name in a SSL connection
               .setSni(smtpService.getIsSniEnabled())

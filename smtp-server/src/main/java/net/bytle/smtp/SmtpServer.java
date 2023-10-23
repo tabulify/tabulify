@@ -156,6 +156,10 @@ public class SmtpServer {
         throw new ConfigIllegalException("The postmaster email for the domain (" + virtualHostnameString + ") is mandatory");
       }
       smtpVirtualHostConf.setPostmasterEmail(postMasterEmailConf);
+      String keyPath = hostedDomainConfigurationData.getString("key");
+      smtpVirtualHostConf.setPrivateKeyPath(keyPath);
+      String certificatePath = hostedDomainConfigurationData.getString("cert");
+      smtpVirtualHostConf.setCertificatePath(certificatePath);
 
       SmtpHost smtpHost = smtpVirtualHostConf.build();
 

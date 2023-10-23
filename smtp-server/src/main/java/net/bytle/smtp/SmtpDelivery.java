@@ -45,7 +45,7 @@ public class SmtpDelivery implements Handler<Long> {
   }
 
   void run() {
-    LOGGER.info("Delivery started");
+
     if (deliveryQueue.size() == 0) {
       LOGGER.info("Delivery: Nothing to deliver");
       return;
@@ -54,6 +54,7 @@ public class SmtpDelivery implements Handler<Long> {
       return;
     }
 
+    LOGGER.info("Delivery started");
     this.vertx.executeBlocking(() -> {
 
       this.isRunning = true;

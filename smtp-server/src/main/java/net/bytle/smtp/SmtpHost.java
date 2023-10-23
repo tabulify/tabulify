@@ -36,10 +36,12 @@ public class SmtpHost {
    * for any problem
    */
   private final SmtpPostMaster postmaster;
+  private final SmtpHost.conf conf;
 
   public SmtpHost(conf conf) throws ConfigIllegalException {
     this.hostedHostName = conf.hostName.toLowerCase();
     this.domain = conf.hostedDomainName;
+    this.conf = conf;
     try {
       postmaster = SmtpPostMaster.create(this, conf.postmaster);
     } catch (AddressException e) {
@@ -70,10 +72,20 @@ public class SmtpHost {
     return postmaster;
   }
 
+  public String getPrivateKeyPath() {
+    return this.conf.keyPath;
+  }
+
+  public String getCertificatePath() {
+    return this.conf.certificatePath;
+  }
+
   public static class conf {
     private final String hostName;
     private SmtpDomain hostedDomainName;
     private String postmaster;
+    private String keyPath;
+    private String certificatePath;
 
     public conf(String hostName) {
       this.hostName = hostName;
@@ -93,5 +105,17 @@ public class SmtpHost {
       return new SmtpHost(this);
     }
 
+    /**
+     * The private key for SSL
+     */
+    public conf setPrivateKeyPath(String keyPath) {
+      this.keyPath = keyPath;
+      return this;
+    }
+
+    public conf setCertificatePath(String certificatePath) {
+      this.certificatePath = certificatePath;
+      return this;
+    }
   }
 }
