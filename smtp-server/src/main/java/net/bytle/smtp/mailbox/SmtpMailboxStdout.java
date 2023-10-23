@@ -1,5 +1,6 @@
 package net.bytle.smtp.mailbox;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.smtp.SmtpUser;
@@ -17,10 +18,11 @@ public class SmtpMailboxStdout extends SmtpMailbox {
   }
 
   @Override
-  public void deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
+  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
 
     System.out.println("Delivery on Stdout to " + smtpUser + ":");
     System.out.println(mimeMessage.toEml());
+    return Future.succeededFuture();
 
   }
 

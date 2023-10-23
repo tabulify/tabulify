@@ -1,5 +1,6 @@
 package net.bytle.smtp;
 
+import io.vertx.core.Future;
 import net.bytle.smtp.mailbox.SmtpMailbox;
 
 /**
@@ -40,7 +41,8 @@ public class SmtpUser {
     return this.password;
   }
 
-  public void deliver(SmtpEnvelope smtpEnvelope) throws SmtpException {
-    this.mailBox.deliver(this, smtpEnvelope.getMimeMessage());
+  public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope)  {
+    return this.mailBox.deliver(this, smtpDeliveryEnvelope.getMimeMessage());
   }
+
 }

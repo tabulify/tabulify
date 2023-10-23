@@ -11,7 +11,7 @@ import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
-import net.bytle.vertx.ServerStartLogger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ import java.util.List;
 
 public class SmtpVerticle extends AbstractVerticle {
 
-  private static final Logger LOGGER = ServerStartLogger.START_LOGGER;
+  private static final Logger LOGGER = LogManager.getLogger(SmtpVerticle.class);
   private static final String APPLICATION_NAME = "smtp";
 
   public static final String DEV_KEY_PEM = "../tower/cert/key.pem";
@@ -107,7 +107,7 @@ public class SmtpVerticle extends AbstractVerticle {
           /**
            * Promise handling
            */
-          Future.all(netServers)
+          Future.join(netServers)
             .onSuccess(result -> {
               try {
                 for (NetServer netServer : Casts.castToList(result.list(), NetServer.class)) {

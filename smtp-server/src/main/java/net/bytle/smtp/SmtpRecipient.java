@@ -20,13 +20,13 @@ import java.util.Objects;
  * From: vertx@googlegroups.com
  */
 public class SmtpRecipient {
-  private final SmtpDeliveryType delivery;
+  private final SmtpDeliveryType deliveryType;
   private final BMailInternetAddress internetAddress;
   private final SmtpUser smtpUser;
 
-  private SmtpRecipient(BMailInternetAddress internetAddress, SmtpDeliveryType delivery, SmtpUser smtpUser) {
+  private SmtpRecipient(BMailInternetAddress internetAddress, SmtpDeliveryType deliveryType, SmtpUser smtpUser) {
     this.internetAddress = internetAddress;
-    this.delivery = delivery;
+    this.deliveryType = deliveryType;
     this.smtpUser = smtpUser;
   }
 
@@ -82,7 +82,7 @@ public class SmtpRecipient {
   }
 
   public SmtpDeliveryType getDeliveryType() {
-    return this.delivery;
+    return this.deliveryType;
   }
 
   public SmtpUser getLocalUser() {

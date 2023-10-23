@@ -14,11 +14,12 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class AwsBucket {
 
-  private static final Logger LOGGER = LogManager.getLogger();
+  private static final Logger LOGGER = LogManager.getLogger(AwsBucket.class);
   static final String S3_BUCKET_NAME = "s3.bucket.name";
   private static AwsBucket awsBucket;
 
@@ -69,7 +70,7 @@ public class AwsBucket {
     if (bucketName == null) {
       throw new IllegalConfiguration("The s3 bucket name end point was not found via the configuration (" + AwsBucket.S3_BUCKET_NAME + ")");
     }
-    return createAwsBucket(bucketName,awsClient);
+    return createAwsBucket(bucketName, awsClient);
 
   }
 
@@ -93,17 +94,18 @@ public class AwsBucket {
     Context context = awsClient.getVertx().getOrCreateContext();
     // https://vertx.io/docs/vertx-core/java/#_completionstage_interoperability
     return Future.fromCompletionStage(completableFuture.toCompletableFuture(), context)
-      .onFailure(event -> LOGGER.error("Unable to create a connection to bucket (" + this + ")"))
       .compose(listObjectsV2Response -> {
-        LOGGER.info("Successfully placed " + awsObject.getObjectPath() + " into bucket " + bucketName);
+        LOGGER.trace("Successfully placed " + awsObject.getObjectPath() + " into bucket " + this);
         return Future.succeededFuture();
+      }, err -> {
+        String message = "Unable to deliver the object " + awsObject.getObjectPath() + " into bucket " + this;
+        return Future.failedFuture(new IOException(message, err));
       });
-
 
   }
 
   @Override
   public String toString() {
-    return bucketName+"@"+awsClient;
+    return bucketName + "@" + awsClient;
   }
 }

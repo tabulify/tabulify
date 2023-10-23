@@ -617,8 +617,12 @@ public class BMailMimeMessage {
     return this;
   }
 
-  public String getMessageId() throws MessagingException {
-    return this.mimeMessage.getMessageID();
+  public String getMessageId()  {
+    try {
+      return this.mimeMessage.getMessageID();
+    } catch (MessagingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 

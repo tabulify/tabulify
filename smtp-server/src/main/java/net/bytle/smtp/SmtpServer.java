@@ -8,6 +8,7 @@ import io.vertx.core.net.SocketAddress;
 import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.exception.CastException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.s3.AwsBucket;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.smtp.mailbox.SmtpMailbox;
 import net.bytle.smtp.mailbox.SmtpMailboxForward;
@@ -16,6 +17,8 @@ import net.bytle.smtp.mailbox.SmtpMailboxStdout;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -26,10 +29,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static net.bytle.email.BMailLogger.LOGGER;
 import static net.bytle.smtp.SmtpSyntax.LOG_TAB;
 
 public class SmtpServer {
+
+  private static final Logger LOGGER = LogManager.getLogger(AwsBucket.class);
 
   /**
    * The software name is given in the {@link SmtpEhloCommandHandler Ehlo command}
@@ -65,6 +69,8 @@ public class SmtpServer {
   private final long handShakeTimeoutSecond;
   private final boolean localhostAuthenticationRequired;
   private final Map<String, SmtpDomain> smtpDomains = new HashMap<>();
+  private final SmtpReception smtpReception;
+  private final SmtpDelivery smtpDelivery;
 
   public List<SmtpService> getSmtpServices() {
     return services;
@@ -241,6 +247,12 @@ public class SmtpServer {
 
     }
 
+    /**
+     * Reception/Delivery
+     */
+    this.smtpDelivery = new SmtpDelivery(smtpVerticle.getVertx(), configAccessor);
+    this.smtpReception = new SmtpReception(smtpDelivery);
+
 
   }
 
@@ -266,7 +278,7 @@ public class SmtpServer {
   protected void removeIdleSessions(Long aLong) {
 
     LocalDateTime now = LocalDateTime.now();
-    LOGGER.fine("There is " + activeSessions.size() + " session");
+    LOGGER.trace("There is " + activeSessions.size() + " session");
     if (!JavaEnvs.IS_IDE_DEBUGGING) {
       for (SmtpSession smtpSession : activeSessions.values()) {
         LocalDateTime deadlineTime = smtpSession.getLastInteractiveTime().plusSeconds(this.idleTimeoutSecond);
@@ -350,5 +362,13 @@ public class SmtpServer {
     return localhostAuthenticationRequired;
   }
 
+
+  public SmtpReception getSmtpReception() {
+    return this.smtpReception;
+  }
+
+  public SmtpDelivery getSmtpDeliveryQueue() {
+    return this.smtpDelivery;
+  }
 
 }

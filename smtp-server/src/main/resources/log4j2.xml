@@ -8,10 +8,9 @@
   </Appenders>
 
   <Loggers>
-    <Root level="warn"/>
-    <Logger name="ServerStartLogger" level="info" additivity="false" >
+    <Root level="info">
       <AppenderRef ref="Console"/>
-    </Logger>
+    </Root>
   </Loggers>
 
 </Configuration>

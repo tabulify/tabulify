@@ -1,13 +1,11 @@
 package net.bytle.smtp.mailbox;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.s3.AwsBucket;
 import net.bytle.s3.AwsObject;
-import net.bytle.smtp.SmtpException;
-import net.bytle.smtp.SmtpReplyCode;
 import net.bytle.smtp.SmtpUser;
 import net.bytle.smtp.filter.DmarcFilter;
 import net.bytle.vertx.ConfigAccessor;
@@ -17,12 +15,12 @@ public class SmtpMailboxS3 extends SmtpMailbox {
   private final AwsBucket awsBucket;
 
   public SmtpMailboxS3(Vertx vertx, ConfigAccessor configAccessor) throws IllegalConfiguration {
-    super(vertx,configAccessor);
+    super(vertx, configAccessor);
     this.awsBucket = AwsBucket.init(vertx, configAccessor);
   }
 
   @Override
-  public void deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) throws SmtpException {
+  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
 
     AwsObject awsObject;
 
@@ -31,17 +29,13 @@ public class SmtpMailboxS3 extends SmtpMailbox {
       awsObject = DmarcFilter.parse(mimeMessage);
 
     } else {
-      String messageId;
-      try {
-        messageId = mimeMessage.getMessageId();
-      } catch (MessagingException e) {
-        throw new SmtpException("Unable to get the message id", e, SmtpReplyCode.SYNTAX_ERROR_501);
-      }
+      String messageId = mimeMessage.getMessageId();
+
       awsObject = AwsObject.create(messageId + ".eml")
         .setContent(mimeMessage.getPlainText());
     }
 
-    this.awsBucket.putObject(awsObject);
+    return this.awsBucket.putObject(awsObject);
 
   }
 

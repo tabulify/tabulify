@@ -1,8 +1,8 @@
 package net.bytle.smtp.mailbox;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import net.bytle.email.BMailMimeMessage;
-import net.bytle.smtp.SmtpException;
 import net.bytle.smtp.SmtpUser;
 import net.bytle.vertx.ConfigAccessor;
 
@@ -17,8 +17,8 @@ public class SmtpMailboxForward extends SmtpMailbox{
    * <a href="https://www.rfc-editor.org/rfc/rfc822.html#section-4.2">Note on Forward</a>
    */
   @Override
-  public void deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) throws SmtpException {
-    throw SmtpException.createNotSupportedImplemented("Forwarding is not yet supported");
+  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
+    return Future.failedFuture("Forwarding is not yet supported");
   }
 
   @Override

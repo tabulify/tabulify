@@ -4,6 +4,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.net.NetSocket;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.NotFoundException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpBdatCommandHandler;
 import net.bytle.smtp.command.SmtpQuitCommandHandler;
 import net.bytle.smtp.command.SmtpRsetCommandHandler;
@@ -347,19 +348,21 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
     /**
      * Reception
      */
-    SmtpEnvelope smtpEnvelope = SmtpReception.create(this.getTransactionState())
-      .reception();
-
-    /**
-     * Delivery
-     * TODO: Delivery should be done async but not yet
-     */
-    SmtpDelivery.delivery(smtpEnvelope);
-
+    this.smtpService.getSmtpServer().getSmtpReception().reception(this.transactionState);
     /**
      * Reset the transaction state
      */
     this.resetTransactionState();
+
+    if (JavaEnvs.IS_DEV) {
+
+      /**
+       * Delivery
+       */
+      this.smtpService.getSmtpServer().getSmtpDeliveryQueue().run();
+
+    }
+
 
   }
 
@@ -447,8 +450,6 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
   public void handle(List<SmtpInput> smtpInputs) {
 
     try {
-
-
 
 
       /**

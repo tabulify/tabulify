@@ -1,13 +1,13 @@
 package net.bytle.smtp.mailbox;
 
+import io.vertx.core.Future;
 import net.bytle.email.BMailMimeMessage;
-import net.bytle.smtp.SmtpException;
 import net.bytle.smtp.SmtpUser;
 
 public interface SmtpMailboxInterface {
 
 
-  void deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) throws SmtpException;
+  Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage);
 
   String getName();
 

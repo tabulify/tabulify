@@ -34,9 +34,11 @@ max.message.size.bytes: 1048576 # the maximum message size in bytes 1 Mo
 max.exception.count.by.session: 3 # the maximum number of exception by session
 max.recipients: 100 # the maximum number of recipients (should be bigger or equal to 100 as specified in the spec)
 
-# quotas by account (same as SES by account)
-quota.remote.delivery: 200 # by day
-quota.remote.delivery.rate: 1 # by second
+
+# Delivery
+delivery.quota.remote: 200 # by day by account (same as SES by account)
+delivery.quota.remote.rate: 1 # by second by account (same as SES by account)
+delivery.retry.interval: 15 # minutes
 
 # Users
 users:

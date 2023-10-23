@@ -3,32 +3,26 @@ package net.bytle.smtp;
 import io.vertx.core.buffer.Buffer;
 import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
-import net.bytle.java.JavaEnvs;
-import net.bytle.type.Strings;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.simplejavamail.converter.EmailConverter;
 
 import java.io.IOException;
+import java.util.Set;
 
 public class SmtpReception {
 
 
-  private static final Logger LOGGER = LogManager.getLogger(SmtpReception.class);
-  private final SmtpTransactionState transactionState;
+  private final SmtpDelivery smtpDelivery;
 
-  public SmtpReception(SmtpTransactionState transactionState) {
-
-    this.transactionState = transactionState;
-
+  public SmtpReception(SmtpDelivery smtpDelivery) {
+    this.smtpDelivery = smtpDelivery;
   }
 
 
   /**
    * A reception is when you store the SMTP transaction.
-   * The {@link SmtpDelivery#delivery(SmtpEnvelope)} is normally done later on schedule
+   * The {@link SmtpDelivery#deliver(SmtpDeliveryEnvelope)} is normally done later on schedule
    */
-  public SmtpEnvelope reception() throws SmtpException {
+  public void reception(SmtpTransactionState transactionState) throws SmtpException {
+
 
     BMailMimeMessage mimeMessage;
     try {
@@ -46,11 +40,7 @@ public class SmtpReception {
       }
 
       String eml = textMessage.toString();
-      if (JavaEnvs.IS_DEV) {
-        System.out.println(eml);
-      }
-      mimeMessage = BMailMimeMessage.createFromMimeMessage(EmailConverter.emlToMimeMessage(eml));
-      LOGGER.trace("Message received: Message (" + Strings.createFromString(mimeMessage.getSubject()).toMaxLength(20, "...") + ") from (" + mimeMessage.getFromAsString() + ")");
+      mimeMessage = BMailMimeMessage.createFromEml(eml);
 
     } catch (MessagingException | IOException e) {
       throw SmtpException.createForInternalException("Reception Error: ", e);
@@ -69,7 +59,7 @@ public class SmtpReception {
     /**
      * Email Dkim
      */
-    SmtpSession session = this.transactionState.getSession();
+    SmtpSession session = transactionState.getSession();
     SmtpDkim.check(session);
 
     /**
@@ -80,21 +70,16 @@ public class SmtpReception {
     /**
      * Create the envelope
      */
-    return SmtpEnvelope.create(
+    Set<SmtpRecipient> recipients = transactionState.getRecipients();
+    SmtpDeliveryEnvelope enveloppe = SmtpDeliveryEnvelope.create(
       transactionState.getSender(),
-      transactionState.getRecipients(),
+      recipients,
       mimeMessage
     );
+    this.smtpDelivery.addEnvelopeToDeliver(enveloppe);
 
   }
 
 
-  public static SmtpReception create(SmtpTransactionState transactionState) throws SmtpException {
-    return new SmtpReception(transactionState);
-  }
 
-
-  public SmtpSession getSession() {
-    return this.transactionState.getSession();
-  }
 }
