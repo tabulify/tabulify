@@ -15,7 +15,7 @@ import java.util.Scanner;
  * <p>
  * See {@link BMailMimeMessage#createFromRawTextViaMime4j(String)}
  *
- * Note that this function is also native See {@link BMailMimeMessage#createFromRawTextNative(String)}
+ * Note that this function is also native See {@link BMailMimeMessage#createFromEml(String)}
  *
  */
 public class BMailMimeTextMime4JParser extends AbstractContentHandler {

@@ -27,9 +27,6 @@ public class SmtpUser {
 
   }
 
-  public SmtpMailbox getMailBox() {
-    return this.mailBox;
-  }
 
   public SmtpDomain getDomain() {
     return this.smtpDomain;
@@ -41,5 +38,9 @@ public class SmtpUser {
 
   public String getPassword() {
     return this.password;
+  }
+
+  public void deliver(SmtpEnvelope smtpEnvelope) throws SmtpException {
+    this.mailBox.deliver(this, smtpEnvelope.getMimeMessage());
   }
 }

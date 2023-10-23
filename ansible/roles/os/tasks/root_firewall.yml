@@ -14,31 +14,31 @@
     state: enabled
     zone: '{{ firewalld_zone }}'
 
-- name: Firewall - Ipset Home Ipv4
+- name: Firewall - Create Ipset Home Ipv4
   notify: 'firewalld reload'
   template:
     src: 'ipset/{{ ipset_home_ipv4 }}.xml'
     dest: '/etc/firewalld/ipsets/{{ ipset_home_ipv4 }}.xml'
 
-- name: Firewall - Ipset Home Mac
+- name: Firewall - Create Ipset Home Mac
   notify: 'firewalld reload'
   template:
     src: 'ipset/{{ ipset_home_mac }}.xml'
     dest: '/etc/firewalld/ipsets/{{ ipset_home_mac }}.xml'
 
-- name: Firewall - Ipset Cloudflare Ipv4
+- name: Firewall - Create Ipset Cloudflare Ipv4
   notify: 'firewalld reload'
   template:
     src: 'ipset/{{ ipset_cloudflare_ipv4 }}.xml'
     dest: '/etc/firewalld/ipsets/{{ ipset_cloudflare_ipv4 }}.xml'
 
-- name: Firewall - Ipset Cloudflare Ipv6
+- name: Firewall - Create Ipset Cloudflare Ipv6
   notify: 'firewalld reload'
   template:
     src: 'ipset/{{ ipset_cloudflare_ipv6 }}.xml'
     dest: '/etc/firewalld/ipsets/{{ ipset_cloudflare_ipv6 }}.xml'
 
-- name: Firewall - Ipset Nl Ipv4
+- name: Firewall - Create Ipset Nl Ipv4
   notify: 'firewalld reload'
   template:
     src: 'ipset/{{ ipset_nl_ipv4 }}.xml'

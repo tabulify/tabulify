@@ -63,6 +63,7 @@ public class AwsBucket {
   }
 
   public static AwsBucket init(Vertx vertx, ConfigAccessor configAccessor) throws IllegalConfiguration {
+
     AwsClient awsClient = AwsClient.create(vertx, configAccessor);
     String bucketName = configAccessor.getString(AwsBucket.S3_BUCKET_NAME);
     if (bucketName == null) {

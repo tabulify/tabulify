@@ -1,15 +1,14 @@
 package net.bytle.smtp;
 
-import java.util.List;
+import java.util.Set;
 
 public class SmtpDelivery {
 
 
   /**
-   * 3 choices:
+   * 2 choices:
    * * local delivery: storing the email in a local mailbox (disk, http endpoint)
-   * * remote delivery: transmitting it to remote mailbox
-   * * forwarding it (alias): SRS
+   * * remote delivery: transmitting it to remote mailbox with or without forwarding (alias): SRS
    */
   public static void delivery(SmtpEnvelope smtpEnvelope) throws SmtpException {
 
@@ -17,14 +16,14 @@ public class SmtpDelivery {
     /**
      * Recipients
      */
-    List<SmtpRecipient> recipientsPaths = smtpEnvelope.getRecipients();
+    Set<SmtpRecipient> recipientsPaths = smtpEnvelope.getRecipients();
     for (SmtpRecipient recipient : recipientsPaths) {
 
       try {
         SmtpDeliveryType deliveryType = recipient.getDeliveryType();
         switch (deliveryType) {
           case LOCAL:
-            recipient.getLocalUser().getMailBox().deliver(smtpEnvelope);
+            recipient.getLocalUser().deliver(smtpEnvelope);
             break;
           case REMOTE:
             /**
@@ -60,8 +59,6 @@ public class SmtpDelivery {
          */
       }
     }
-
-
 
 
   }

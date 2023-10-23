@@ -6,11 +6,13 @@ val junit4Version = "4.13.2"
 val junit5Version = "5.10.0"
 val javaLanguageVersion = 11
 val slf4jVersion = "2.0.6"
+// Jackson is used in vertx
 val jacksonVersion = "2.13.4"
 // email SMTP server
 // https://mvnrepository.com/artifact/com.github.davidmoten/subethasmtp
 val subethaVersion = "6.0.7"
-val jakartaEmailVersion = "2.0.1" // should be the same as in SimpleEmail (don't know how to do that)
+// should be the same as in SimpleEmail (don't know how to do that)
+val jakartaEmailVersion = "2.0.1"
 val simpleEmailVersion =  "8.1.3"
 // DnsJava
 val dnsJavaVersion =  "3.5.2"

@@ -14,7 +14,7 @@ public class AwsObject {
    */
   private static final String X_AMZ_META_PREFIX = "x-amz-meta-";
   private final String objectPath;
-  private byte[] textContent;
+  private byte[] content;
   private MediaType mediaType = MediaTypes.BINARY_FILE;
 
   Map<String, String> metadata = new HashMap<>();
@@ -28,7 +28,7 @@ public class AwsObject {
   }
 
   public AwsObject setContent(String text) {
-    this.textContent = text.getBytes(StandardCharsets.UTF_8);
+    this.content = text.getBytes(StandardCharsets.UTF_8);
     return this;
   }
 
@@ -57,7 +57,7 @@ public class AwsObject {
 
   public AsyncRequestBody getRequestBody() {
 
-    return AsyncRequestBody.fromBytes(this.textContent);
+    return AsyncRequestBody.fromBytes(this.content);
 
   }
 

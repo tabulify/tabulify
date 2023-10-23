@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class BMailMimeMessage {
 
 
-  private static final Charset emailCharset = StandardCharsets.UTF_8;
+  private static final Charset EMAIL_CHARSET = StandardCharsets.UTF_8;
 
   private final MimeMessage mimeMessage;
 
@@ -150,12 +150,11 @@ public class BMailMimeMessage {
     }
   }
 
-  public static BMailMimeMessage createFromRawTextNative(String message) throws IOException, MessagingException {
+  public static BMailMimeMessage createFromEml(String message) throws IOException, MessagingException {
 
-    message = message.replace("\r\n", "\n");
     Session session = Session.getInstance(new Properties());
 
-    ByteArrayInputStream is = new ByteArrayInputStream(message.getBytes(emailCharset));
+    ByteArrayInputStream is = new ByteArrayInputStream(message.getBytes(EMAIL_CHARSET));
     MimeMessage mimeMessage = new MimeMessage(session, is);
     return createFromMimeMessage(mimeMessage);
 
@@ -282,14 +281,14 @@ public class BMailMimeMessage {
         String plain = bodyText;
         if (plain != null) {
           MimeBodyPart textBodyPart = new MimeBodyPart();
-          textBodyPart.setText(plain, emailCharset.name(), TEXT_MIME.getSubType());
+          textBodyPart.setText(plain, EMAIL_CHARSET.name(), TEXT_MIME.getSubType());
           mp.addBodyPart(textBodyPart);
         }
 
         String html = bodyHtml;
         if (html != null) {
           MimeBodyPart htmlBodyPart = new MimeBodyPart();
-          htmlBodyPart.setText(html, emailCharset.name(), HTML_MIME.getSubType());
+          htmlBodyPart.setText(html, EMAIL_CHARSET.name(), HTML_MIME.getSubType());
           mp.addBodyPart(htmlBodyPart);
         }
 
@@ -466,7 +465,7 @@ public class BMailMimeMessage {
     try {
       MimeMessage mimeMessage = toMimeMessage();
       mimeMessage.writeTo(copyBoas);
-      return copyBoas.toString(emailCharset);
+      return copyBoas.toString(EMAIL_CHARSET);
     } catch (IOException | MessagingException e) {
       throw new RuntimeException(e);
     }
@@ -544,7 +543,7 @@ public class BMailMimeMessage {
     try {
       MimeMessage mimeMessage = toMimeMessage();
       mimeMessage.writeTo(copyBoas, ignoreList);
-      return copyBoas.toString(emailCharset);
+      return copyBoas.toString(EMAIL_CHARSET);
     } catch (IOException | MessagingException e) {
       throw new RuntimeException(e);
     }
@@ -616,5 +615,36 @@ public class BMailMimeMessage {
   public BMailMimeMessage addHeader(BMailMimeMessageHeader received, String value) {
     this.headers.put(received, value);
     return this;
+  }
+
+  public String getMessageId() throws MessagingException {
+    return this.mimeMessage.getMessageID();
+  }
+
+
+  public List<MimeBodyPart> getAttachments() {
+
+    try {
+      String contentType = this.mimeMessage.getContentType();
+
+      List<MimeBodyPart> bodyParts = new ArrayList<>();
+
+      if (!contentType.contains("multipart")) {
+        return bodyParts;
+      }
+
+      Multipart multiPart = (Multipart) this.mimeMessage.getContent();
+
+      for (int i = 0; i < multiPart.getCount(); i++) {
+        MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
+        if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
+          bodyParts.add(part);
+        }
+      }
+      return bodyParts;
+
+    } catch (MessagingException | IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

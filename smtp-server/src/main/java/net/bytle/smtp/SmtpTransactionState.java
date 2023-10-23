@@ -8,7 +8,10 @@ import net.bytle.smtp.command.SmtpDataCommandHandler;
 import net.bytle.smtp.command.SmtpRcptCommandHandler;
 import net.bytle.smtp.sasl.SimpleAuthMechanism;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +28,7 @@ public class SmtpTransactionState {
   private BMailInternetAddress sender;
   private Integer messageSizeFromMailCommand;
   private final SmtpSession smtpSession;
-  private final List<SmtpRecipient> recipients = new ArrayList<>();
+  private final Set<SmtpRecipient> recipients = new HashSet<>();
 
   /**
    * The type of the data (ie body)
@@ -264,7 +267,7 @@ public class SmtpTransactionState {
     return this.textMessage;
   }
 
-  public List<SmtpRecipient> getRecipients() {
+  public Set<SmtpRecipient> getRecipients() {
     return this.recipients;
   }
 

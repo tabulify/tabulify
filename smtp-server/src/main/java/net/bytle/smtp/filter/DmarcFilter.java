@@ -1,14 +1,12 @@
 package net.bytle.smtp.filter;
 
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import net.bytle.dmarc.DmarcFeedback;
 import net.bytle.dmarc.DmarcFeedbackMetadata;
 import net.bytle.dmarc.DmarcManager;
 import net.bytle.dmarc.DmarcReport;
+import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.InternalException;
-import net.bytle.s3.AwsBucket;
 import net.bytle.s3.AwsObject;
 import net.bytle.type.MediaTypes;
 import net.bytle.type.time.Timestamp;
@@ -16,7 +14,7 @@ import net.bytle.type.time.Timestamp;
 import java.time.LocalDateTime;
 
 
-public class DmarcFilter  {
+public class DmarcFilter {
 
 
   /**
@@ -32,37 +30,52 @@ public class DmarcFilter  {
    * Dmarc Post Handler
    * from a <a href="https://forwardemail.net/en/faq#do-you-support-webhooks">forwardEmail json data</a>
    */
-  public static Future<Void> parseAndUpload(JsonObject json) {
+  public static AwsObject parse(JsonObject json) {
 
-    AwsObject awsObject;
+
     try {
-      DmarcReport dmarcReport = DmarcManager.getDmarcReportFromEmail(json);
+      DmarcReport dmarcReport = DmarcManager.getDmarcReportFromJsonEmail(json);
       String remoteUniquePath = getRemoteUniquePath(dmarcReport.getFeedbackObject());
-      awsObject = AwsObject.create(remoteUniquePath)
+      return AwsObject.create(remoteUniquePath)
         .setContent(dmarcReport.getFeedbackXml())
         .setMediaType(MediaTypes.TEXT_XML);
     } catch (IllegalStructure e) {
-      JsonObject errorJsonWithDataObject = new JsonObject();
-      errorJsonWithDataObject.put("data", json);
-      JsonObject errorJson = new JsonObject();
-      errorJson.put("message", e.getMessage());
-      errorJson.put("code", e.getClass().getName());
-      errorJsonWithDataObject.put("error", errorJson);
-      Timestamp now = Timestamp.createFromNow();
-      String errorName = now.toString(ISO_DATE_FORMAT);
-      String partition = now.toString("yyyy-MM");
-      awsObject = AwsObject.create(ERROR_DIRECTORY + partition + "/" + errorName + "-error.json")
-        .setContent(errorJsonWithDataObject.encode())
-        .setMediaType(MediaTypes.TEXT_JSON);
+      return getErrorObject(e, json.toString());
     }
 
-    AwsBucket awsBucket = AwsBucket.get();
-    if (awsBucket == null) {
-      throw new InternalException("awsS3 object was not initialized.");
-    }
-    return awsBucket.putObject(awsObject);
 
   }
+
+  public static AwsObject parse(BMailMimeMessage mimeMessage) {
+
+    try {
+      DmarcReport dmarcReport = DmarcManager.getDmarcReportFromMime(mimeMessage);
+      String remoteUniquePath = getRemoteUniquePath(dmarcReport.getFeedbackObject());
+      return AwsObject.create(remoteUniquePath)
+        .setContent(dmarcReport.getFeedbackXml())
+        .setMediaType(MediaTypes.TEXT_XML);
+    } catch (IllegalStructure e) {
+      return getErrorObject(e, mimeMessage.toEml());
+    }
+
+
+  }
+
+  private static AwsObject getErrorObject(IllegalStructure e, String data) {
+    JsonObject errorJsonWithDataObject = new JsonObject();
+    errorJsonWithDataObject.put("data", data);
+    JsonObject errorJson = new JsonObject();
+    errorJson.put("message", e.getMessage());
+    errorJson.put("code", e.getClass().getName());
+    errorJsonWithDataObject.put("error", errorJson);
+    Timestamp now = Timestamp.createFromNow();
+    String errorName = now.toString(ISO_DATE_FORMAT);
+    String partition = now.toString("yyyy-MM");
+    return AwsObject.create(ERROR_DIRECTORY + partition + "/" + errorName + "-error.json")
+      .setContent(errorJsonWithDataObject.encode())
+      .setMediaType(MediaTypes.TEXT_JSON);
+  }
+
 
   /**
    * @return a file path with a name that is unique and a parent path to create a partition on the remote bucket
@@ -84,7 +97,6 @@ public class DmarcFilter  {
       ".xml";
 
   }
-
 
 
 }

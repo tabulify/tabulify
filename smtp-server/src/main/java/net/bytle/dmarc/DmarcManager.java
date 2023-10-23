@@ -2,14 +2,19 @@ package net.bytle.dmarc;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeBodyPart;
+import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.type.Gzip;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -27,7 +32,7 @@ public class DmarcManager {
    * @return the Dmarc Report
    * @throws IllegalStructure if any error
    */
-  public static DmarcReport getDmarcReportFromEmail(JsonObject forwardEmailJsonObject) throws IllegalStructure {
+  public static DmarcReport getDmarcReportFromJsonEmail(JsonObject forwardEmailJsonObject) throws IllegalStructure {
 
     JsonArray jsonArrayAttachements = forwardEmailJsonObject.getJsonArray("attachments");
     if (jsonArrayAttachements == null) {
@@ -105,4 +110,90 @@ public class DmarcManager {
 
   }
 
+  public static DmarcReport getDmarcReportFromMime(BMailMimeMessage mimeMessage) throws IllegalStructure {
+    List<MimeBodyPart> attachments = mimeMessage.getAttachments();
+    if (attachments.size() == 0) {
+      throw new IllegalStructure("A dmarc message should have at minimal an attachment");
+    }
+
+    for (MimeBodyPart mimeBodyPart : attachments) {
+
+      String contentType;
+      try {
+        contentType = mimeBodyPart.getContentType();
+      } catch (MessagingException e) {
+        continue;
+      }
+      String xmlString = null;
+      String xmlFileName = null;
+      InputStream inputStream;
+      switch (contentType) {
+        case ZIP_CONTENT_TYPE:
+
+          try {
+            inputStream = mimeBodyPart.getInputStream();
+          } catch (IOException | MessagingException e) {
+            throw new IllegalStructure(e);
+          }
+          try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            ZipEntry localFileHeader;
+            while ((localFileHeader = zipInputStream.getNextEntry()) != null) {
+              if (localFileHeader.isDirectory()) {
+                continue;
+              }
+
+              ArrayList<Byte> fileAttachementBytes = new ArrayList<>();
+              int readLen;
+              while ((readLen = zipInputStream.read()) != -1) {
+                fileAttachementBytes.add((byte) readLen);
+              }
+              byte[] fileAttachementBytesArray = new byte[fileAttachementBytes.size()];
+              for (int k = 0; k < fileAttachementBytes.size(); k++) {
+                fileAttachementBytesArray[k] = fileAttachementBytes.get(k);
+              }
+
+              xmlString = new String(fileAttachementBytesArray, StandardCharsets.UTF_8);
+              xmlFileName = localFileHeader.getName();
+
+            }
+          } catch (IOException e) {
+            throw new IllegalStructure("Unable to read the zip data attachment", e);
+          }
+          if (xmlString == null) {
+            throw new IllegalStructure("The content is null");
+          }
+          try {
+            return DmarcReport.create(xmlFileName, xmlString);
+          } catch (XMLStreamException | IOException e) {
+            throw new IllegalStructure("Unable to create the Dmarc Report", e);
+          }
+        case GZIP_CONTENT_TYPE:
+          try {
+            xmlFileName = mimeBodyPart.getFileName();
+          } catch (MessagingException e) {
+            throw new IllegalStructure("Unable to read the gzip file name", e);
+          }
+          try {
+
+            try {
+              inputStream = mimeBodyPart.getInputStream();
+            } catch (IOException | MessagingException e) {
+              throw new IllegalStructure(e);
+            }
+            xmlString = Gzip.decompress(inputStream.readAllBytes());
+          } catch (IOException e) {
+            throw new IllegalStructure("Unable to read the gzip data attachment", e);
+          }
+          try {
+            return DmarcReport.create(xmlFileName, xmlString);
+          } catch (XMLStreamException | IOException e) {
+            throw new IllegalStructure("Unable to create the Dmarc Report", e);
+          }
+        default:
+          throw new IllegalStructure("Attachement Content Type (" + contentType + ") not supported");
+      }
+
+    }
+    throw new IllegalStructure("No Attachements found");
+  }
 }

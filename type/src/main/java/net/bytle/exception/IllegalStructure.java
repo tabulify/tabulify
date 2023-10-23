@@ -13,4 +13,8 @@ public class IllegalStructure extends Exception {
   public IllegalStructure() {
 
   }
+
+  public IllegalStructure(Exception e) {
+    super(e);
+  }
 }

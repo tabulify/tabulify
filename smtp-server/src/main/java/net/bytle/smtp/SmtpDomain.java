@@ -45,7 +45,7 @@ public class SmtpDomain {
 
   @Override
   public String toString() {
-    return getDnsDomain().toString();
+    return getDnsDomain().getNameWithoutRoot();
   }
 
   public SmtpDomain addUser(SmtpUser smtpUser) {

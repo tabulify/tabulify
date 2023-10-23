@@ -3,6 +3,8 @@ package net.bytle.smtp;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.NullValueException;
 
+import java.util.Objects;
+
 /**
  * The envelope recipient
  * <p>
@@ -19,11 +21,11 @@ import net.bytle.exception.NullValueException;
  */
 public class SmtpRecipient {
   private final SmtpDeliveryType delivery;
-  private final BMailInternetAddress internetAddres;
+  private final BMailInternetAddress internetAddress;
   private final SmtpUser smtpUser;
 
   private SmtpRecipient(BMailInternetAddress internetAddress, SmtpDeliveryType delivery, SmtpUser smtpUser) {
-    this.internetAddres = internetAddress;
+    this.internetAddress = internetAddress;
     this.delivery = delivery;
     this.smtpUser = smtpUser;
   }
@@ -76,7 +78,7 @@ public class SmtpRecipient {
 
   @Override
   public String toString() {
-    return internetAddres.toString();
+    return internetAddress.toString();
   }
 
   public SmtpDeliveryType getDeliveryType() {
@@ -86,4 +88,18 @@ public class SmtpRecipient {
   public SmtpUser getLocalUser() {
     return this.smtpUser;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SmtpRecipient that = (SmtpRecipient) o;
+    return Objects.equals(internetAddress, that.internetAddress);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(internetAddress);
+  }
+
 }

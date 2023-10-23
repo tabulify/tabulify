@@ -12,7 +12,7 @@ services:
   465: # SSL port
     tls.enabled: true # start as TLS connection
     starttls.enabled: false # as we have a TLS connection
-    auth.required: true # auth is required, it may not for local delivery but we use it to test
+    auth.required: true # auth is required, it may not for local delivery, but we use it to test
 host: mx1.eraldy.dev # the default host (chosen when the connection is not secured (no TLS) as we don't have the requested host)
 hosts: # the hosted hosts by hostname
   mx1.eraldy.dev: # the host name (ie DNS cname)

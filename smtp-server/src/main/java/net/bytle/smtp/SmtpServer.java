@@ -214,7 +214,7 @@ public class SmtpServer {
         } else {
           smtpMailbox = this.mailboxes.get(mailBoxString.toLowerCase());
           if (smtpMailbox == null) {
-            throw new ConfigIllegalException("The mailbox (" + mailBoxString + ") of the user (" + userName + ")does not exist");
+            throw new ConfigIllegalException("The mailbox (" + mailBoxString + ") of the user (" + userName + ") does not exist");
           }
         }
         String password = userConfigAccessor.getString("password");
