@@ -108,7 +108,7 @@ public class SmtpParser implements Handler<Buffer> {
          * * A command line ended by {@link SmtpSyntax#LINE_DELIMITER}
          * * A list of command lines (Pipelining) separated by {@link SmtpSyntax#LINE_DELIMITER}
          * * The eml content after the {@link net.bytle.smtp.command.SmtpDataCommandHandler DATA command}
-         * * A BDAT command line and its data (may be partial)
+         * * A BDAT command line and its data (maybe partial)
          */
         List<SmtpInput> parsedSmtpInput = new ArrayList<>();
 
@@ -137,12 +137,13 @@ public class SmtpParser implements Handler<Buffer> {
           boolean shouldBreakRecordParsing = false;
           while (pointer < this.bufferToParse.length() - 1) {
 
-            Buffer parsedBuffer = Buffer.buffer();
+            Buffer parsedBuffer = null;
             if (this.parserMode == SmtpParserMode.LINE) {
               try {
+                parsedBuffer = Buffer.buffer();
                 pointer = this.advancePointerAndReturnLine(parsedBuffer, pointer);
-              } catch (SmtpException e) {
-                conf.exceptionHandler.handle(e);
+              } catch (SmtpParserEndBuffer e) {
+                shouldBreakBufferParsing = true;
                 break;
               }
               if (!this.pipelineBatchEnabled) {
@@ -154,7 +155,7 @@ public class SmtpParser implements Handler<Buffer> {
             } else {
 
               /**
-               * Fix bytes size record
+               * Fixed bytes size record
                */
               if (this.bufferToParse.length() - (pointer + 1) >= this.fetchFixedSize) {
                 int fixedSizeStart = pointer + 1;
@@ -174,10 +175,14 @@ public class SmtpParser implements Handler<Buffer> {
 
             /**
              * Handle the input
+             * Note that the buffer may be the empty line
+             * Parsed buffer null means that the parsing is not yet final
              */
-            SmtpInput smtpInput = SmtpInput.create(smtpSession, parsedBuffer, inputType);
-            smtpSession.getSessionHistory().addInteraction(smtpInput);
-            parsedSmtpInput.add(smtpInput);
+            if (parsedBuffer != null) {
+              SmtpInput smtpInput = SmtpInput.create(smtpSession, parsedBuffer, inputType);
+              smtpSession.getSessionHistory().addInteraction(smtpInput);
+              parsedSmtpInput.add(smtpInput);
+            }
 
             /**
              * Break/Stop the loop
@@ -267,16 +272,18 @@ public class SmtpParser implements Handler<Buffer> {
   }
 
 
-  private Integer advancePointerAndReturnLine(Buffer commandLineBuffer, Integer actualBufferPosition) throws SmtpException {
+  private Integer advancePointerAndReturnLine(Buffer lineBuffer, Integer actualBufferPosition) throws SmtpParserEndBuffer {
 
-    int beginPosition = actualBufferPosition;
     Buffer delimiterBuffer = Buffer.buffer();
-    while (actualBufferPosition < bufferToParse.length()) {
+    while (true) {
       /**
        * Advance the pointer, the start is minus 1,
        * We get the first one at 0 then
        */
       actualBufferPosition++;
+      if (actualBufferPosition > bufferToParse.length() - 1) {
+        break;
+      }
       byte actualByte = bufferToParse.getByte(actualBufferPosition);
       if (actualByte == this.lineDelim[delimiterBuffer.length()]) {
         delimiterBuffer.appendByte(actualByte);
@@ -286,15 +293,18 @@ public class SmtpParser implements Handler<Buffer> {
         continue;
       }
       if (delimiterBuffer.length() != 0) {
-        commandLineBuffer.appendBuffer(delimiterBuffer);
+        lineBuffer.appendBuffer(delimiterBuffer);
         delimiterBuffer = Buffer.buffer();
       }
-      commandLineBuffer.appendByte(actualByte);
+      lineBuffer.appendByte(actualByte);
 
     }
 
-    Buffer rest = bufferToParse.getBuffer(beginPosition, bufferToParse.length());
-    throw SmtpException.createBadSyntax("A command should always be terminated by a CRLF. The following is not terminated by a CRLF (" + rest.toString() + ")");
+    /**
+     * With a big data body, the message is split by MTU
+     * We may be in the middle of one
+     */
+    throw new SmtpParserEndBuffer();
 
   }
 

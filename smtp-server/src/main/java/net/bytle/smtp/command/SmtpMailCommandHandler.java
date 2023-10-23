@@ -113,8 +113,9 @@ public class SmtpMailCommandHandler extends SmtpInputCommandDirectReplyHandler {
               throw SmtpException.createBadSyntax("The size value (" + value + ") is not a valid integer");
             }
 
-            if (size > smtpInputContext.getSmtpService().getSmtpServer().getMaxMessageSizeInBytes()) {
-              throw SmtpException.create(SmtpReplyCode.MESSAGE_SIZE_EXCEED_LIMIT_552);
+            int maxMessageSizeInBytes = smtpInputContext.getSmtpService().getSmtpServer().getMaxMessageSizeInBytes();
+            if (size > maxMessageSizeInBytes) {
+              throw SmtpException.create(SmtpReplyCode.MESSAGE_SIZE_EXCEED_LIMIT_552,"Message Size ("+size+") exceeds max size ("+maxMessageSizeInBytes+")");
             }
             smtpInputContext.getSessionState().setMessageSize(size);
             LOGGER.trace("The message size was found: " + size);

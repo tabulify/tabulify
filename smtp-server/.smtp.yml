@@ -30,7 +30,7 @@ idle.session.timeout.second: 50 # to allow long debug session
 handshake.timeout.second: 10 # the default
 max.sessions: 50 # the maximum total of connection/sockets
 max.sessions.by.ip: 3 # the maximum total of sockets by remote ip
-max.message.size.bytes: 1024 # the maximum message size in bytes 1 Mo
+max.message.size.bytes: 1048576 # the maximum message size in bytes 1 Mo
 max.exception.count.by.session: 3 # the maximum number of exception by session
 max.recipients: 100 # the maximum number of recipients (should be bigger or equal to 100 as specified in the spec)
 
@@ -42,22 +42,16 @@ quota.remote.delivery.rate: 1 # by second
 users:
   eraldy.dev:
     alice:
+      password: secret
       mailbox:
         type: stdout
-      password: secret
-  combostrap.dev:
     dmarc:
-      milters:
-        - dmarc
       mailbox:
         type: s3
-        connection: s3
-        bucket.name: 'dmarc-dev'
-
-connections:
-  s3:
-    type: s3
-    region: 'ca-mtl'
-    url.endpoint: 'https://h0k0.ca.idrivee2-22.com'
-    access.key.id: YOUR_ACCESS_KEY_ID
-    secret.access.key: YOUR_SECRET_ACCESS_KEY
+        milters:
+          - dmarc
+        s3.bucket.name: 'dmarc-dev'
+        s3.region: 'ca-mtl'
+        s3.url.endpoint: 'https://h0k0.ca.idrivee2-22.com'
+        #    access.key.id: YOUR_ACCESS_KEY_ID
+        #    secret.access.key: YOUR_SECRET_ACCESS_KEY

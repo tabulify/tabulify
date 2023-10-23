@@ -1,6 +1,7 @@
 package net.bytle.smtp;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
@@ -10,11 +11,13 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.smtp.mailbox.SmtpMailbox;
 import net.bytle.smtp.mailbox.SmtpMailboxForward;
+import net.bytle.smtp.mailbox.SmtpMailboxS3;
 import net.bytle.smtp.mailbox.SmtpMailboxStdout;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,7 +65,6 @@ public class SmtpServer {
   private final long handShakeTimeoutSecond;
   private final boolean localhostAuthenticationRequired;
   private final Map<String, SmtpDomain> smtpDomains = new HashMap<>();
-  private final HashMap<String, SmtpMailbox> mailboxes = new HashMap<>();
 
   public List<SmtpService> getSmtpServices() {
     return services;
@@ -109,7 +111,7 @@ public class SmtpServer {
     LOGGER.info(LOG_TAB + "Max total connections set to " + this.maxTotalConnections);
     this.maxConnectionBySource = configAccessor.getInteger("max.sessions.by.ip", 3);
     LOGGER.info(LOG_TAB + "Max connection count by IP set to " + this.maxConnectionBySource);
-    this.maxMessageSizeInBytes = configAccessor.getInteger("max.message.size.bytes", 1024);
+    this.maxMessageSizeInBytes = configAccessor.getInteger("max.message.size.bytes", 1048576);
     LOGGER.info(SmtpSyntax.LOG_TAB + "Max message size in bytes set to " + this.maxMessageSizeInBytes);
     this.maximumExceptionCountBySession = configAccessor.getInteger("max.exception.count.by.session", 3);
     LOGGER.info(SmtpSyntax.LOG_TAB + "Max exceptions by session set to " + this.maximumExceptionCountBySession);
@@ -183,10 +185,11 @@ public class SmtpServer {
     /**
      * Create the mailboxes
      */
-    SmtpMailboxStdout defaultStdOutMailBox = new SmtpMailboxStdout();
-    this.mailboxes.put(defaultStdOutMailBox.getName(), defaultStdOutMailBox);
-    SmtpMailboxForward forwardMailbox = new SmtpMailboxForward();
-    this.mailboxes.put(forwardMailbox.getName(), forwardMailbox);
+
+    HashMap<String, Class<? extends SmtpMailbox>> mailboxClasses = new HashMap<>();
+    mailboxClasses.put("stdout", SmtpMailboxStdout.class);
+    mailboxClasses.put("forward", SmtpMailboxForward.class);
+    mailboxClasses.put("s3", SmtpMailboxS3.class);
 
     /**
      * Define the users
@@ -201,32 +204,46 @@ public class SmtpServer {
 
       SmtpDomain smtpDomain = this.smtpDomains.get(domain.toLowerCase());
       if (smtpDomain == null) {
-        throw new ConfigIllegalException("The users domain  (" + domain + ") was not found in the hosts");
+        throw new ConfigIllegalException("The users domain (" + domain + ") was not found in the hosts");
       }
       JsonObject users = usersConfiguration.getJsonObject(domain);
       for (String userName : users.getMap().keySet()) {
 
         ConfigAccessor userConfigAccessor = configAccessor.getSubConfigAccessor(usersConfKey, domain, userName);
-        String mailBoxString = userConfigAccessor.getString("mailbox");
-        SmtpMailbox smtpMailbox;
-        if (mailBoxString == null) {
-          smtpMailbox = defaultStdOutMailBox;
+        ConfigAccessor mailBoxConfigAccessor = userConfigAccessor.getSubConfigAccessor("mailbox");
+        Class<? extends SmtpMailbox> smtpMailboxClass;
+        if (mailBoxConfigAccessor == null) {
+          smtpMailboxClass = SmtpMailboxStdout.class;
         } else {
-          smtpMailbox = this.mailboxes.get(mailBoxString.toLowerCase());
-          if (smtpMailbox == null) {
-            throw new ConfigIllegalException("The mailbox (" + mailBoxString + ") of the user (" + userName + ") does not exist");
+          String type = mailBoxConfigAccessor.getString("type");
+          if (type == null) {
+            throw new ConfigIllegalException("The type of mailbox of the user (" + userName + ") is not set");
+          }
+          smtpMailboxClass = mailboxClasses.get(type);
+          if (smtpMailboxClass == null) {
+            throw new ConfigIllegalException("The type (" + type + ") of mailbox of the user (" + userName + ") is unknown");
           }
         }
+
+        SmtpMailbox smtpMailbox;
+        try {
+          smtpMailbox = smtpMailboxClass.getDeclaredConstructor(Vertx.class, ConfigAccessor.class).newInstance(smtpVerticle.getVertx(), mailBoxConfigAccessor);
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
+          throw new ConfigIllegalException("Error while creating the mailbox (" + smtpMailboxClass.getName() + ") of the user (" + userName + ")", e);
+        }
+
         String password = userConfigAccessor.getString("password");
         SmtpUser smtpUser = SmtpUser.createFrom(smtpDomain, userName, smtpMailbox, password);
         smtpDomain.addUser(smtpUser);
         LOGGER.info(LOG_TAB + "User added: " + smtpUser);
       }
 
-
     }
 
+
   }
+
 
   private SmtpDomain getOrCreateDomainByName(String domainName) throws DnsIllegalArgumentException {
     String domainNameNormalization = domainName.toLowerCase();

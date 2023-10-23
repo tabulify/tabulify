@@ -20,13 +20,13 @@ public class AwsClient {
    */
   private final S3AsyncClient s3;
 
-  private static final String S3_ACCESS_KEY_ID = "s3_access_key_id";
+  private static final String S3_ACCESS_KEY_ID = "s3.access.key.id";
   /**
    * example: ca-mtl
    */
-  private static final String S3_REGION = "s3_region";
-  private static final String S3_ACCESS_KEY_SECRET = "s3_access_key_secret";
-  private static final String S3_URL_ENDPOINT = "s3_url_endpoint";
+  private static final String S3_REGION = "s3.region";
+  private static final String S3_ACCESS_KEY_SECRET = "s3.access.key.secret";
+  private static final String S3_URL_ENDPOINT = "s3.url.endpoint";
   private final Region region;
   private final URI endpoint;
   private final Vertx vertx;
@@ -82,19 +82,19 @@ public class AwsClient {
 
     String url = configAccessor.getString(S3_URL_ENDPOINT);
     if (url == null) {
-      throw new IllegalArgumentException("The s3 url end point was not found via the configuration (" + S3_URL_ENDPOINT + ")");
+      throw new IllegalArgumentException("The s3 url end point was not found via the configuration (" + configAccessor.getPossibleVariableNames(S3_URL_ENDPOINT) + ")");
     }
 
     try {
       this.endpoint = URI.create(url);
     } catch (Exception e) {
-      throw new IllegalArgumentException("The s3 url end point (" + url + ") from the configuration (" + S3_URL_ENDPOINT + ") is not valid URL");
+      throw new IllegalArgumentException("The s3 url end point (" + url + ") from the configuration (" + configAccessor.getPossibleVariableNames(S3_URL_ENDPOINT) + ") is not valid URL");
     }
 
 
     String regionString = configAccessor.getString(S3_REGION);
     if (regionString == null) {
-      throw new IllegalArgumentException("The s3 region was not found via the configuration (" + S3_REGION + ")");
+      throw new IllegalArgumentException("The s3 region was not found via the configuration (" + configAccessor.getPossibleVariableNames(S3_REGION) + ")");
     }
     this.region = Region.of(regionString);
 

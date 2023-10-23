@@ -14,10 +14,10 @@ import net.bytle.vertx.ConfigAccessor;
 
 public class SmtpMailboxS3 extends SmtpMailbox {
 
-
   private final AwsBucket awsBucket;
 
   public SmtpMailboxS3(Vertx vertx, ConfigAccessor configAccessor) throws IllegalConfiguration {
+    super(vertx,configAccessor);
     this.awsBucket = AwsBucket.init(vertx, configAccessor);
   }
 

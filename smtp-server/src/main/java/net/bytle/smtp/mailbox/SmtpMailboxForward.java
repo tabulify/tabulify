@@ -1,10 +1,16 @@
 package net.bytle.smtp.mailbox;
 
+import io.vertx.core.Vertx;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.smtp.SmtpException;
 import net.bytle.smtp.SmtpUser;
+import net.bytle.vertx.ConfigAccessor;
 
 public class SmtpMailboxForward extends SmtpMailbox{
+
+  public SmtpMailboxForward(Vertx vertx, ConfigAccessor configAccessor) {
+    super(vertx, configAccessor);
+  }
 
   /**
    * Forward must be implemented with SRS

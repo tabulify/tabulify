@@ -11,7 +11,8 @@ public enum SmtpExtensionParameter {
   /**
    * <a href="https://datatracker.ietf.org/doc/html/rfc1870">...</a>
    * SIZE is an option of the {@link SmtpMailCommandHandler MailCommand}
-   * that gives the size of the message
+   * that gives the size of the message.
+   * The size is in octet
    */
   SIZE("SIZE"),
 

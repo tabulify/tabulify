@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 public class AwsBucket {
 
   private static final Logger LOGGER = LogManager.getLogger();
-  static final String S3_BUCKET_NAME = "s3_bucket_name";
+  static final String S3_BUCKET_NAME = "s3.bucket.name";
   private static AwsBucket awsBucket;
 
   private final String bucketName;
