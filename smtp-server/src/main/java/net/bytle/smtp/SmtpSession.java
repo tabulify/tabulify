@@ -55,7 +55,7 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
     this.smtpService = smtpService;
 
 
-    this.sessionInteractionHistory = new SmtpSessionInteractionHistory();
+    this.sessionInteractionHistory = new SmtpSessionInteractionHistory(this);
     this.transactionState = SmtpTransactionState.create(this);
 
   }

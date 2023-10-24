@@ -11,11 +11,13 @@ import java.util.List;
 public class SmtpSessionInteractionHistory {
 
   private final List<SmtpSessionInteractionTimed> interactions = new ArrayList<>();
+  private final SmtpSession smtpSession;
 
   private LocalDateTime lastInteractiveTime = LocalDateTime.now();
 
 
-  public SmtpSessionInteractionHistory() {
+  public SmtpSessionInteractionHistory(SmtpSession smtpSession) {
+    this.smtpSession = smtpSession;
   }
 
 
@@ -30,22 +32,24 @@ public class SmtpSessionInteractionHistory {
 
   public void endAndReplay() {
 
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("Session Replay:" + SmtpSyntax.LINE_DELIMITER);
-    for (SmtpSessionInteractionTimed interactionTimed : this.interactions) {
+    if(this.smtpSession.getSmtpService().getSmtpServer().isSessionReplayEnabled()) {
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.append("Session Replay:" + SmtpSyntax.LINE_DELIMITER);
+      for (SmtpSessionInteractionTimed interactionTimed : this.interactions) {
 
-      SmtpSessionInteraction interaction = interactionTimed.getInteraction();
-      String sessionHistoryLine = interaction.getSessionHistoryLine();
-      if (sessionHistoryLine.trim().startsWith(SmtpCommand.AUTH.toString())) {
-        String[] parts = sessionHistoryLine.split(" ");
-        if (parts.length > 2) {
-          sessionHistoryLine = parts[0] + " " + parts[1] + " " + "x".repeat(parts[2].length()) + SmtpSyntax.LINE_DELIMITER;
+        SmtpSessionInteraction interaction = interactionTimed.getInteraction();
+        String sessionHistoryLine = interaction.getSessionHistoryLine();
+        if (sessionHistoryLine.trim().startsWith(SmtpCommand.AUTH.toString())) {
+          String[] parts = sessionHistoryLine.split(" ");
+          if (parts.length > 2) {
+            sessionHistoryLine = parts[0] + " " + parts[1] + " " + "x".repeat(parts[2].length()) + SmtpSyntax.LINE_DELIMITER;
+          }
         }
+        stringBuilder.append(sessionHistoryLine);
       }
-      stringBuilder.append(sessionHistoryLine);
-
+      System.out.println(stringBuilder);
     }
-    System.out.println(stringBuilder);
+
   }
 
   public LocalDateTime getLastInteractiveTime() {

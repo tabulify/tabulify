@@ -42,7 +42,11 @@ public class SimpleAuthPlain extends SimpleAuth {
       throw SimpleAuthException.create("Unknown authorization identity");
     }
 
-    if(!smtpUser.getPassword().equals(passwordIdentity)){
+    String password = smtpUser.getPassword();
+    if (password == null) {
+      throw SimpleAuthException.create("User not allowed to login");
+    }
+    if (!password.equals(passwordIdentity)) {
       throw SimpleAuthException.create("Bad credentials");
     }
 

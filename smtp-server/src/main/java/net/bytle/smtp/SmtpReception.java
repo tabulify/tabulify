@@ -40,6 +40,7 @@ public class SmtpReception {
       }
 
       String eml = textMessage.toString();
+
       mimeMessage = BMailMimeMessage.createFromEml(eml);
 
     } catch (MessagingException | IOException e) {
@@ -76,7 +77,7 @@ public class SmtpReception {
       recipients,
       mimeMessage
     );
-    this.smtpDelivery.addEnvelopeToDeliver(enveloppe);
+    this.smtpDelivery.addEnvelopeToQueue(enveloppe);
 
   }
 

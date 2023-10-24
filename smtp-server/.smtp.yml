@@ -2,6 +2,7 @@
 # to be consistent with the configuration of Java Mail
 software.name: Eraldy # software name advertised in the banner
 auth.localhost.required: false # localhost does not need any authentication
+session.replay: true # print the session on stdout
 # The services started by ports
 services:
   2525: # port 2525 (PaperCut got already the port 25)
@@ -51,6 +52,7 @@ users:
       mailbox:
         type: stdout
     memory:
+      password: secret
       mailbox:
         type: memory # an in-memory map, so that we can retrieve the email
     dmarc:

@@ -170,8 +170,17 @@ public class SmtpTransactionState {
    * function
    */
   public void addLineToBodyData(String line) throws SmtpException {
-    this.textMessage.appendString(line + SmtpSyntax.LINE_DELIMITER);
+    /**
+     * The last line of data is a line delimiter with a point  {@link SmtpDataCommandHandler#END_OF_BODY}
+     * We should not add the last end of line delimiter
+     */
+    if (this.textMessage.length() == 0) {
+      this.textMessage.appendString(line);
+    } else {
+      this.textMessage.appendString(SmtpSyntax.LINE_DELIMITER + line);
+    }
     this.checkBodySize();
+
   }
 
   private void checkBodySize() throws SmtpException {
@@ -179,7 +188,7 @@ public class SmtpTransactionState {
     int maxMessageSizeInBytes = this.smtpSession.getSmtpService().getSmtpServer().getMaxMessageSizeInBytes();
     if (messageSize > maxMessageSizeInBytes) {
       throw SmtpException
-        .create(SmtpReplyCode.MESSAGE_SIZE_EXCEED_LIMIT_552,"Message Size ("+messageSize+") exceeds max size ("+maxMessageSizeInBytes+")")
+        .create(SmtpReplyCode.MESSAGE_SIZE_EXCEED_LIMIT_552, "Message Size (" + messageSize + ") exceeds max size (" + maxMessageSizeInBytes + ")")
         .setShouldQuit(true);
     }
   }

@@ -37,6 +37,7 @@ import static net.bytle.smtp.SmtpSyntax.LOG_TAB;
 public class SmtpServer {
 
   private static final Logger LOGGER = LogManager.getLogger(SmtpServer.class);
+  static final String SESSION_REPLAY_CONF = "session.replay";
 
   /**
    * The software name is given in the {@link SmtpEhloCommandHandler Ehlo command}
@@ -74,6 +75,7 @@ public class SmtpServer {
   private final Map<String, SmtpDomain> smtpDomains = new HashMap<>();
   private final SmtpReception smtpReception;
   private final SmtpDelivery smtpDelivery;
+  private final boolean sessionReplayEnabled;
 
   public List<SmtpService> getSmtpServices() {
     return services;
@@ -106,6 +108,7 @@ public class SmtpServer {
      */
     this.softwareName = configAccessor.getString("software.name", "Eraldy");
     LOGGER.info(SmtpSyntax.LOG_TAB + "Software Name set to " + this.softwareName);
+    this.sessionReplayEnabled = configAccessor.getBoolean(SESSION_REPLAY_CONF, false);
 
     /**
      * Authentication from Localhost is not required by default
@@ -380,7 +383,7 @@ public class SmtpServer {
     return this.smtpDelivery;
   }
 
-  public List<BMailMimeMessage> getAndResetMessagesForUser(String email) throws SmtpException, NotFoundException {
+  public List<BMailMimeMessage> pumpMessagesForUser(String email) throws SmtpException, NotFoundException {
     BMailInternetAddress internetAddress;
     try {
       internetAddress = BMailInternetAddress.of(email);
@@ -405,7 +408,11 @@ public class SmtpServer {
       throw SmtpException.createForInternalException("The user (" + email + ") has not a memory mailbox. The message cannot be retrieved");
     }
     SmtpMailboxMemory mailboxMemory = (SmtpMailboxMemory) mailbox;
-    return mailboxMemory.getAndResetMessages();
+    return mailboxMemory.pumpMessages();
 
+  }
+
+  public boolean isSessionReplayEnabled() {
+    return this.sessionReplayEnabled;
   }
 }

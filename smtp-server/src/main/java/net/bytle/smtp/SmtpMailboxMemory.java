@@ -11,7 +11,7 @@ import java.util.List;
 
 public class SmtpMailboxMemory extends SmtpMailbox {
 
-  private List<BMailMimeMessage> messages = new ArrayList<>();
+  private final List<BMailMimeMessage> messages = new ArrayList<>();
 
   /**
    * @param vertx          - the vertx in case an async should be run
@@ -27,10 +27,10 @@ public class SmtpMailboxMemory extends SmtpMailbox {
     return Future.succeededFuture();
   }
 
-  public List<BMailMimeMessage> getAndResetMessages() {
-    ArrayList<BMailMimeMessage> receivedMessage = new ArrayList<>(this.messages);
-    this.messages = new ArrayList<>();
-    return receivedMessage;
+  public List<BMailMimeMessage> pumpMessages() {
+    List<BMailMimeMessage> actualMessages = new ArrayList<>(this.messages);
+    this.messages.clear();
+    return actualMessages;
   }
 
 }

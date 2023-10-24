@@ -46,7 +46,8 @@ public class SmtpDelivery implements Handler<Long> {
 
   Future<Void> run() {
 
-    if (deliveryQueue.size() == 0) {
+    int size = deliveryQueue.size();
+    if (size == 0) {
       LOGGER.info("Delivery: Nothing to deliver");
       return Future.succeededFuture();
     }
@@ -54,7 +55,7 @@ public class SmtpDelivery implements Handler<Long> {
       return Future.succeededFuture();
     }
 
-    LOGGER.info("Delivery started");
+    LOGGER.info("Delivery started for " + size + " enveloppes");
     return this.vertx.executeBlocking(() -> {
 
         this.isRunning = true;
@@ -75,15 +76,17 @@ public class SmtpDelivery implements Handler<Long> {
         return Future.join(envelopeDeliveries)
           .compose(ar -> {
             this.isRunning = false;
-            LOGGER.info("Delivery done");
+            LOGGER.info("Delivery done. Still to deliver next time: " + this.deliveryQueue.size());
             return Future.succeededFuture();
           });
       })
       .compose(v -> Future.succeededFuture());
   }
 
-  public void addEnvelopeToDeliver(SmtpDeliveryEnvelope enveloppe) {
-    this.deliveryQueue.put(enveloppe.hashCode(), enveloppe);
+  public void addEnvelopeToQueue(SmtpDeliveryEnvelope enveloppe) {
+    int key = enveloppe.hashCode();
+    LOGGER.info("Reception of the enveloppe (" + key + "), Message Id: " + enveloppe.getMimeMessage().getMessageId());
+    this.deliveryQueue.put(key, enveloppe);
   }
 
   /**
