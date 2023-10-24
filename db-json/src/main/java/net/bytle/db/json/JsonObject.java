@@ -15,7 +15,7 @@ public class JsonObject {
   private final com.google.gson.JsonObject jsonObject = new com.google.gson.JsonObject();
 
   /**
-   * An instant needs a timezone to be formatedd
+   * An instant needs a timezone to be formatted
    */
   static DateTimeFormatter formatter = DateTimeFormatter
     .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
@@ -75,7 +75,7 @@ public class JsonObject {
       this.addProperty(property, (Number) value);
     } else if (value instanceof Collection) {
       JsonArray jsonArray = new JsonArray();
-      Collection col = (Collection) value;
+      Collection<Object> col = (Collection<Object>) value;
       switch (col.size()) {
         case 0:
           break;

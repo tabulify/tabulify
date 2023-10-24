@@ -1,7 +1,13 @@
 package net.bytle.smtp;
 
 import io.vertx.core.Future;
+import net.bytle.email.BMailMimeMessage;
 import net.bytle.smtp.mailbox.SmtpMailbox;
+import net.bytle.smtp.milter.SmtpMilter;
+import net.bytle.type.MediaType;
+import net.bytle.type.MediaTypes;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * A user
@@ -41,7 +47,39 @@ public class SmtpUser {
   }
 
   public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope) {
-    return this.mailBox.deliver(smtpDeliveryEnvelope.getMimeMessage());
+    BMailMimeMessage mimeMessage = smtpDeliveryEnvelope.getMimeMessage();
+    SmtpMessage smtpMessage = new SmtpMessage() {
+
+      @Override
+      public Object getObject() {
+        return mimeMessage;
+      }
+
+      @Override
+      public byte[] getBytes() {
+        return mimeMessage.toEml().getBytes(StandardCharsets.UTF_8);
+      }
+
+      @Override
+      public String getPath() {
+        return mimeMessage.getMessageId() + "." + MediaTypes.TEXT_EML.getExtension();
+      }
+
+      @Override
+      public MediaType getMediaType() {
+        return MediaTypes.TEXT_EML;
+      }
+    };
+
+    /**
+     * Milters
+     */
+    for(SmtpMilter milter: this.mailBox.getMilters()){
+      smtpMessage = milter.apply(smtpMessage);
+    }
+
+    return this.mailBox.deliver(smtpMessage);
+
   }
 
   @Override

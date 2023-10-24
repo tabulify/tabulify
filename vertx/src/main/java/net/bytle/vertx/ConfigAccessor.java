@@ -1,5 +1,6 @@
 package net.bytle.vertx;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 
@@ -7,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A config accessor helps retrieve configuration
@@ -165,5 +167,13 @@ public class ConfigAccessor {
    */
   public String getPossibleVariableNames(String confName) {
     return confName + " (Env: " + getEnvName(confName) + ")";
+  }
+
+  public List<String> getList(String key) {
+    JsonArray jsonArray = this.jsonObject.getJsonArray(key);
+    if (jsonArray == null) {
+      return new ArrayList<>();
+    }
+    return jsonArray.stream().map(Object::toString).collect(Collectors.toList());
   }
 }

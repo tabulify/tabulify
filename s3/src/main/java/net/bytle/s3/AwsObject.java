@@ -4,7 +4,6 @@ import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,8 +26,8 @@ public class AwsObject {
     return new AwsObject(objectPath);
   }
 
-  public AwsObject setContent(String text) {
-    this.content = text.getBytes(StandardCharsets.UTF_8);
+  public AwsObject setContent(byte[] bytes) {
+    this.content = bytes;
     return this;
   }
 

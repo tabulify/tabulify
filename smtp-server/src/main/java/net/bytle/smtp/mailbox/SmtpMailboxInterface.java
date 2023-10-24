@@ -1,13 +1,12 @@
 package net.bytle.smtp.mailbox;
 
 import io.vertx.core.Future;
-import net.bytle.email.BMailMimeMessage;
+import net.bytle.smtp.SmtpMessage;
 
 public interface SmtpMailboxInterface {
 
 
-  Future<Void> deliver(BMailMimeMessage mimeMessage);
-
+  Future<Void> deliver(SmtpMessage smtpMessage);
 
 
 }

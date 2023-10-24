@@ -1,4 +1,4 @@
-package net.bytle.smtp.filter;
+package net.bytle.smtp.milter;
 
 import io.vertx.core.json.JsonObject;
 import net.bytle.dmarc.DmarcFeedback;
@@ -7,14 +7,16 @@ import net.bytle.dmarc.DmarcManager;
 import net.bytle.dmarc.DmarcReport;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.s3.AwsObject;
+import net.bytle.smtp.SmtpMessage;
+import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
 import net.bytle.type.time.Timestamp;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 
-public class DmarcFilter {
+public class DmarcMilter implements SmtpMilter {
 
 
   /**
@@ -26,42 +28,53 @@ public class DmarcFilter {
   private static final String ERROR_DIRECTORY = "error/";
 
 
-  /**
-   * Dmarc Post Handler
-   * from a <a href="https://forwardemail.net/en/faq#do-you-support-webhooks">forwardEmail json data</a>
-   */
-  public static AwsObject parse(JsonObject json) {
 
+  public SmtpMessage apply(SmtpMessage smtpMessage) {
 
+    Object object = smtpMessage.getObject();
     try {
-      DmarcReport dmarcReport = DmarcManager.getDmarcReportFromJsonEmail(json);
+      DmarcReport dmarcReport;
+
+      if (object.getClass().equals(BMailMimeMessage.class)) {
+        dmarcReport = DmarcManager.getDmarcReportFromMime((BMailMimeMessage) object);
+      } else if (object.getClass().equals(JsonObject.class)) {
+        dmarcReport = DmarcManager.getDmarcReportFromJsonEmail((JsonObject) object);
+      } else {
+        return smtpMessage;
+      }
+
       String remoteUniquePath = getRemoteUniquePath(dmarcReport.getFeedbackObject());
-      return AwsObject.create(remoteUniquePath)
-        .setContent(dmarcReport.getFeedbackXml())
-        .setMediaType(MediaTypes.TEXT_XML);
+      return new SmtpMessage() {
+
+        @Override
+        public Object getObject() {
+          return dmarcReport.getFeedbackXml();
+        }
+
+        @Override
+        public byte[] getBytes() {
+          return dmarcReport.getFeedbackXml().getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public String getPath() {
+          return remoteUniquePath;
+        }
+
+        @Override
+        public MediaType getMediaType() {
+          return MediaTypes.TEXT_XML;
+        }
+
+      };
     } catch (IllegalStructure e) {
-      return getErrorObject(e, json.toString());
+      return getErrorObject(e, object.toString());
     }
 
 
   }
 
-  public static AwsObject parse(BMailMimeMessage mimeMessage) {
-
-    try {
-      DmarcReport dmarcReport = DmarcManager.getDmarcReportFromMime(mimeMessage);
-      String remoteUniquePath = getRemoteUniquePath(dmarcReport.getFeedbackObject());
-      return AwsObject.create(remoteUniquePath)
-        .setContent(dmarcReport.getFeedbackXml())
-        .setMediaType(MediaTypes.TEXT_XML);
-    } catch (IllegalStructure e) {
-      return getErrorObject(e, mimeMessage.toEml());
-    }
-
-
-  }
-
-  private static AwsObject getErrorObject(IllegalStructure e, String data) {
+  private static SmtpMessage getErrorObject(IllegalStructure e, String data) {
     JsonObject errorJsonWithDataObject = new JsonObject();
     errorJsonWithDataObject.put("data", data);
     JsonObject errorJson = new JsonObject();
@@ -71,9 +84,30 @@ public class DmarcFilter {
     Timestamp now = Timestamp.createFromNow();
     String errorName = now.toString(ISO_DATE_FORMAT);
     String partition = now.toString("yyyy-MM");
-    return AwsObject.create(ERROR_DIRECTORY + partition + "/" + errorName + "-error.json")
-      .setContent(errorJsonWithDataObject.encode())
-      .setMediaType(MediaTypes.TEXT_JSON);
+    return new SmtpMessage() {
+
+      @Override
+      public Object getObject() {
+        return errorJsonWithDataObject.encode();
+      }
+
+      @Override
+      public byte[] getBytes() {
+        return errorJsonWithDataObject.encode().getBytes(StandardCharsets.UTF_8);
+      }
+
+      @Override
+      public String getPath() {
+        return ERROR_DIRECTORY + partition + "/" + errorName + "-error.json";
+      }
+
+      @Override
+      public MediaType getMediaType() {
+        return MediaTypes.TEXT_JSON;
+      }
+
+    };
+
   }
 
 

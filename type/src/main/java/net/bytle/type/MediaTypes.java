@@ -50,6 +50,7 @@ public enum MediaTypes implements MediaType {
   TEXT_YAML(TEXT_TYPE, "yaml", false, "yml"),
   TEXT_JAVASCRIPT(TEXT_TYPE, "javascript", false, "js"),
   TEXT_XML(TEXT_TYPE, "xml", false, "xml"),
+  TEXT_EML(TEXT_TYPE, "eml", false, "eml"),
   EXCEL_FILE(TEXT_TYPE, "xlsx", false, "xlsx");
 
   private final String type;

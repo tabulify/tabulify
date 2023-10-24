@@ -55,6 +55,11 @@ users:
       password: secret
       mailbox:
         type: memory # an in-memory map, so that we can retrieve the email
+    dmarc-memory:
+      mailbox:
+        type: memory
+        milters:
+          - dmarc
     dmarc:
       mailbox:
         type: s3

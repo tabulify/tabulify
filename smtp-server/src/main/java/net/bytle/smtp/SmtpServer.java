@@ -8,7 +8,6 @@ import io.vertx.core.net.SocketAddress;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.email.BMailInternetAddress;
-import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
@@ -17,6 +16,8 @@ import net.bytle.smtp.mailbox.SmtpMailbox;
 import net.bytle.smtp.mailbox.SmtpMailboxForward;
 import net.bytle.smtp.mailbox.SmtpMailboxS3;
 import net.bytle.smtp.mailbox.SmtpMailboxStdout;
+import net.bytle.smtp.milter.DmarcMilter;
+import net.bytle.smtp.milter.SmtpMilter;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.ConfigIllegalException;
@@ -88,8 +89,6 @@ public class SmtpServer {
   Integer DEFAULT_IDLE_TIMEOUT_SECOND = 5 * 60;
 
   public SmtpServer(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws ConfigIllegalException {
-
-
 
 
     long defaultSslHandshakeTimeout = SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT;
@@ -214,6 +213,10 @@ public class SmtpServer {
     mailboxClasses.put("s3", SmtpMailboxS3.class);
     mailboxClasses.put("memory", SmtpMailboxMemory.class);
 
+    // milter
+    HashMap<String, SmtpMilter> milters = new HashMap<>();
+    milters.put("dmarc", new DmarcMilter());
+
     /**
      * Define the users
      * Smtp Users
@@ -248,13 +251,25 @@ public class SmtpServer {
           }
         }
 
+        List<SmtpMilter> mailBoxMiltersObject = new ArrayList<>();
+        if (mailBoxConfigAccessor != null) {
+          List<String> mailBoxMiltersConf = mailBoxConfigAccessor.getList("milters");
+          for (String mailboxMilterConfKey : mailBoxMiltersConf) {
+            SmtpMilter mailBoxMilterObject = milters.get(mailboxMilterConfKey);
+            if (mailBoxMilterObject == null) {
+              throw new ConfigIllegalException("The milter (" + mailboxMilterConfKey + ") of the mailbox of the user (" + userName + ") is unknown");
+            }
+            mailBoxMiltersObject.add(mailBoxMilterObject);
+          }
+        }
+
         String password = userConfigAccessor.getString("password");
         SmtpUser smtpUser = SmtpUser.createFrom(smtpDomain, userName, password);
         smtpDomain.addUser(smtpUser);
 
         SmtpMailbox smtpMailbox;
         try {
-          smtpMailbox = smtpMailboxClass.getDeclaredConstructor(SmtpUser.class, Vertx.class, ConfigAccessor.class).newInstance(smtpUser, smtpVerticle.getVertx(), mailBoxConfigAccessor);
+          smtpMailbox = smtpMailboxClass.getDeclaredConstructor(SmtpUser.class, Vertx.class, List.class, ConfigAccessor.class).newInstance(smtpUser, smtpVerticle.getVertx(), mailBoxMiltersObject, mailBoxConfigAccessor);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
                  InvocationTargetException e) {
           throw new ConfigIllegalException("Error while creating the mailbox (" + smtpMailboxClass.getName() + ") of the user (" + userName + ")", e);
@@ -390,7 +405,7 @@ public class SmtpServer {
     return this.smtpDelivery;
   }
 
-  public List<BMailMimeMessage> pumpMessagesForUser(String email) throws SmtpException, NotFoundException {
+  public List<SmtpMessage> pumpMessagesForUser(String email) throws SmtpException, NotFoundException {
     BMailInternetAddress internetAddress;
     try {
       internetAddress = BMailInternetAddress.of(email);

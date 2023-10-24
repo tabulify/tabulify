@@ -614,7 +614,7 @@ public class BMailMimeMessage {
     return this;
   }
 
-  public String getMessageId()  {
+  public String getMessageId() {
     try {
       return this.mimeMessage.getMessageID();
     } catch (MessagingException e) {
@@ -624,7 +624,6 @@ public class BMailMimeMessage {
 
 
   /**
-   *
    * @return the attachment part
    * ie returns :
    * * the mime message if this is a part
@@ -641,7 +640,7 @@ public class BMailMimeMessage {
       /**
        * The body may be the attachment
        */
-      if (Part.ATTACHMENT.equalsIgnoreCase(this.mimeMessage.getDisposition())){
+      if (Part.ATTACHMENT.equalsIgnoreCase(this.mimeMessage.getDisposition())) {
         parts.add(this.mimeMessage);
         return parts;
       }
@@ -667,4 +666,11 @@ public class BMailMimeMessage {
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  public String toString() {
+    return toEml();
+  }
+
+
 }
