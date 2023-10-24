@@ -90,8 +90,7 @@ public class SmtpServer {
   public SmtpServer(AbstractVerticle smtpVerticle, ConfigAccessor configAccessor) throws ConfigIllegalException {
 
 
-    idleTimeoutSecond = configAccessor.getInteger("idle.session.timeout.second", DEFAULT_IDLE_TIMEOUT_SECOND);
-    smtpVerticle.getVertx().setPeriodic(idleTimeoutSecond + 20, this::removeIdleSessions);
+
 
     long defaultSslHandshakeTimeout = SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT;
     if (JavaEnvs.IS_IDE_DEBUGGING) {
@@ -108,7 +107,15 @@ public class SmtpServer {
      */
     this.softwareName = configAccessor.getString("software.name", "Eraldy");
     LOGGER.info(SmtpSyntax.LOG_TAB + "Software Name set to " + this.softwareName);
+
+    /**
+     * Session Conf
+     */
+    idleTimeoutSecond = configAccessor.getInteger("session.idle.timeout.second", DEFAULT_IDLE_TIMEOUT_SECOND);
+    LOGGER.info(LOG_TAB + "Session idle timeout set to " + idleTimeoutSecond);
+    smtpVerticle.getVertx().setPeriodic(idleTimeoutSecond + 20, this::removeIdleSessions);
     this.sessionReplayEnabled = configAccessor.getBoolean(SESSION_REPLAY_CONF, false);
+    LOGGER.info(LOG_TAB + "Session replay set to " + this.sessionReplayEnabled);
 
     /**
      * Authentication from Localhost is not required by default
