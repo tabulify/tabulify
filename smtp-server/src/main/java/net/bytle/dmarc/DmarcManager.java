@@ -3,7 +3,8 @@ package net.bytle.dmarc;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.Part;
+import jakarta.mail.internet.ContentType;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.type.Gzip;
@@ -111,27 +112,28 @@ public class DmarcManager {
   }
 
   public static DmarcReport getDmarcReportFromMime(BMailMimeMessage mimeMessage) throws IllegalStructure {
-    List<MimeBodyPart> attachments = mimeMessage.getAttachments();
+    List<Part> attachments = mimeMessage.getAttachments();
     if (attachments.size() == 0) {
       throw new IllegalStructure("A dmarc message should have at minimal an attachment");
     }
 
-    for (MimeBodyPart mimeBodyPart : attachments) {
+    for (Part mailPart : attachments) {
 
-      String contentType;
+      ContentType contentType;
       try {
-        contentType = mimeBodyPart.getContentType();
+        contentType = new ContentType(mailPart.getContentType());
       } catch (MessagingException e) {
         continue;
       }
       String xmlString = null;
       String xmlFileName = null;
       InputStream inputStream;
-      switch (contentType) {
+      String baseType = contentType.getBaseType();
+      switch (baseType) {
         case ZIP_CONTENT_TYPE:
 
           try {
-            inputStream = mimeBodyPart.getInputStream();
+            inputStream = mailPart.getInputStream();
           } catch (IOException | MessagingException e) {
             throw new IllegalStructure(e);
           }
@@ -169,14 +171,14 @@ public class DmarcManager {
           }
         case GZIP_CONTENT_TYPE:
           try {
-            xmlFileName = mimeBodyPart.getFileName();
+            xmlFileName = mailPart.getFileName();
           } catch (MessagingException e) {
             throw new IllegalStructure("Unable to read the gzip file name", e);
           }
           try {
 
             try {
-              inputStream = mimeBodyPart.getInputStream();
+              inputStream = mailPart.getInputStream();
             } catch (IOException | MessagingException e) {
               throw new IllegalStructure(e);
             }

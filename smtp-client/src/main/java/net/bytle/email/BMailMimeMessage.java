@@ -2,10 +2,7 @@ package net.bytle.email;
 
 import jakarta.activation.DataHandler;
 import jakarta.mail.*;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeBodyPart;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.*;
 import net.bytle.exception.NotAbsoluteException;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.MediaType;
@@ -626,15 +623,34 @@ public class BMailMimeMessage {
   }
 
 
-  public List<MimeBodyPart> getAttachments() {
+  /**
+   *
+   * @return the attachment part
+   * ie returns :
+   * * the mime message if this is a part
+   * * or one of the part if this is a multipart message
+   */
+  public List<Part> getAttachments() {
 
     try {
-      String contentType = this.mimeMessage.getContentType();
+      String contentTypeHeader = this.mimeMessage.getContentType();
+      ContentType contentType = new ContentType(contentTypeHeader);
 
-      List<MimeBodyPart> bodyParts = new ArrayList<>();
+      List<Part> parts = new ArrayList<>();
 
-      if (!contentType.contains("multipart")) {
-        return bodyParts;
+      /**
+       * The body may be the attachment
+       */
+      if (Part.ATTACHMENT.equalsIgnoreCase(this.mimeMessage.getDisposition())){
+        parts.add(this.mimeMessage);
+        return parts;
+      }
+
+      /**
+       * Multiparts
+       */
+      if (!contentType.getPrimaryType().equals("multipart")) {
+        return parts;
       }
 
       Multipart multiPart = (Multipart) this.mimeMessage.getContent();
@@ -642,10 +658,10 @@ public class BMailMimeMessage {
       for (int i = 0; i < multiPart.getCount(); i++) {
         MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
         if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-          bodyParts.add(part);
+          parts.add(part);
         }
       }
-      return bodyParts;
+      return parts;
 
     } catch (MessagingException | IOException e) {
       throw new RuntimeException(e);
