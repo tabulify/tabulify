@@ -245,9 +245,9 @@ public class MailServiceSmtpProvider {
   }
 
 
-  public BMailMimeMessage createBMailMessage() {
+  public BMailMimeMessage.builder createBMailMessage() {
     BMailInternetAddress sender = this.providerConfig.smtpConnectionParameters.getSender();
-    BMailMimeMessage mimeMessage = BMailMimeMessage.createEmpty();
+    BMailMimeMessage.builder mimeMessage = BMailMimeMessage.createFromBuilder();
     if (sender != null) {
       mimeMessage
         .addHeader(BMailMimeMessageHeader.ERRORS_TO, sender.getAddress())

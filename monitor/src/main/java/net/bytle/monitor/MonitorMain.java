@@ -81,11 +81,17 @@ public class MonitorMain extends AbstractVerticle {
               } else {
                 subject += " - " + failures + " failures";
               }
-              BMailMimeMessage email = smtpMailProvider.createBMailMessage()
-                .setTo(mail)
-                .setFrom("no-reply@bytle.net")
-                .setSubject(subject)
-                .setBodyPlainText(emailText.toString());
+              BMailMimeMessage email = null;
+              try {
+                email = smtpMailProvider.createBMailMessage()
+                  .setTo(mail)
+                  .setFrom("no-reply@bytle.net")
+                  .setSubject(subject)
+                  .setBodyPlainText(emailText.toString())
+                  .build();
+              } catch (MessagingException e) {
+                this.handleGeneralFailure(e);
+              }
               try {
                 smtpMailProvider.getBMailClient()
                   .sendMessage(email);

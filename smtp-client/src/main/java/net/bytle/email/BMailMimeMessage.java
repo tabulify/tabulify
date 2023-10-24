@@ -4,17 +4,9 @@ import jakarta.activation.DataHandler;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import net.bytle.exception.NotAbsoluteException;
-import net.bytle.exception.NullValueException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.type.MediaType;
-import net.bytle.type.MediaTypeExtension;
 import net.bytle.type.MediaTypes;
-import org.apache.james.mime4j.MimeException;
-import org.apache.james.mime4j.codec.DecodeMonitor;
-import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
-import org.apache.james.mime4j.parser.ContentHandler;
-import org.apache.james.mime4j.parser.MimeStreamParser;
-import org.apache.james.mime4j.stream.BodyDescriptorBuilder;
-import org.apache.james.mime4j.stream.MimeConfig;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,7 +20,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * A builder for the internet text messages (known as a mail)
  * A wrapper around a {@link MimeMessage}
  * See also the new {@link com.sun.mail.smtp.SMTPMessage}
  * that wraps the Mime Message for other options
@@ -45,96 +36,23 @@ public class BMailMimeMessage {
 
   private final MimeMessage mimeMessage;
 
-  /**
-   * content parts is there to
-   * be able to construct a multipart email
-   * You can't do when setting html or text body
-   * because this is not the same
-   */
-  private final List<MimeBodyPart> attachmentParts = new ArrayList<>();
-  private final MediaType HTML_MIME = MediaTypes.TEXT_HTML;
-  private final MediaType TEXT_MIME = MediaTypes.TEXT_PLAIN;
 
-  private String bodyText;
-  private String bodyHtml;
-  private final Map<BMailMimeMessageHeader, String> headers = new HashMap<>();
+  private static final MediaType HTML_MIME = MediaTypes.TEXT_HTML;
+  private static final MediaType TEXT_MIME = MediaTypes.TEXT_PLAIN;
 
-  private BMailMimeMessage(MimeMessage mimeMessage) throws MessagingException, IOException {
+
+  private BMailMimeMessage(MimeMessage mimeMessage) {
 
     this.mimeMessage = mimeMessage;
 
-    if (!hasNoContent()) {
-      this.parseContent();
-    }
 
   }
 
-  /**
-   * We recreate a MimeMessage at {@link BMailMimeMessage#toMimeMessage()}
-   * after the user has changed the value with the setter
-   * To know if it's a multipart or not, we parse the email parts
-   *
-   * @throws MessagingException - throw
-   * @throws IOException        - throw
-   */
-  private void parseContent() throws MessagingException, IOException {
-    /**
-     * A rapid hack to extract the HTML and plain text
-     * This code could check also the content type of each part but yeah.
-     */
-    String messageContentType = this.mimeMessage.getContentType();
-    String messageMime;
-    try {
-      messageMime = MediaTypes.createFromMimeValue(messageContentType)
-        .getExtension();
-    } catch (NullValueException e) {
-      throw new MessagingException("The message ContentType was null for the email message, we can't parse its content");
-    }
-    switch (messageMime) {
-      case MediaTypeExtension.TEXT_EXTENSION:
-        this.bodyText = mimeMessage.getContent().toString();
-        break;
-      case MediaTypeExtension.HTML_EXTENSION:
-        this.bodyHtml = mimeMessage.getContent().toString();
-        break;
-      case "alternative":
-        // ie "multipart/alternative":
-        Multipart multipart = (Multipart) this.mimeMessage.getContent();
-        for (int i = 0; i < multipart.getCount(); i++) {
-          BodyPart bodyPart = multipart.getBodyPart(i);
-          String partMime;
-          try {
-            partMime = MediaTypes.createFromMimeValue(bodyPart.getContentType())
-              .getExtension();
-          } catch (NullValueException e) {
-            throw new MessagingException("The ContentType of this body part email message was null, we can't parse its content");
-          }
-          if (partMime.equals(MediaTypeExtension.TEXT_EXTENSION) & this.bodyText == null) {
-            this.bodyText = bodyPart.getContent().toString();
-          } else if (partMime.equals(MediaTypeExtension.HTML_EXTENSION) & this.bodyHtml == null) {
-            this.bodyHtml = bodyPart.getContent().toString();
-          } else {
-            MimeBodyPart attachmentPart = new MimeBodyPart();
-            this.attachmentParts.add(attachmentPart);
-          }
-        }
-        break;
-    }
-  }
 
+  public static BMailMimeMessage.builder createFromBuilder() {
 
-  public static BMailMimeMessage createEmpty() {
+    return new builder();
 
-    /**
-     * Note: Passing a null session works also
-     */
-    Properties props = new Properties();
-    Session session = Session.getDefaultInstance(props, null);
-    try {
-      return new BMailMimeMessage(new MimeMessage(session));
-    } catch (MessagingException | IOException e) {
-      throw new RuntimeException(e);
-    }
 
   }
 
@@ -157,28 +75,6 @@ public class BMailMimeMessage {
 
   }
 
-  /**
-   * @param message - the mime message in string format
-   * @return the BMailMessage
-   * @deprecated - does not work fully (body is not captured)
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  public static BMailMimeMessage createFromRawTextViaMime4j(String message) throws MimeException, IOException {
-
-    BMailMimeMessage bmailMimeMessage = BMailMimeMessage.createEmpty();
-    ContentHandler handler = new BMailMimeTextMime4JParser(bmailMimeMessage);
-
-    MimeConfig mime4jParserConfig = MimeConfig.DEFAULT;
-    BodyDescriptorBuilder bodyDescriptorBuilder = new DefaultBodyDescriptorBuilder();
-    MimeStreamParser parser = new MimeStreamParser(mime4jParserConfig, DecodeMonitor.SILENT, bodyDescriptorBuilder);
-    parser.setContentDecoding(true);
-    parser.setContentHandler(handler);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));
-    parser.parse(inputStream);
-
-    return bmailMimeMessage;
-  }
 
   @SuppressWarnings("unused")
   public BMailMimeMessage createMessageFromRawString(String emailContent) {
@@ -212,112 +108,14 @@ public class BMailMimeMessage {
 
   }
 
-  public BMailMimeMessage setFromInternetAddress(InternetAddress internetAddress) {
-
-    try {
-      mimeMessage.setFrom(internetAddress);
-    } catch (MessagingException e) {
-      throw new RuntimeException(e);
-    }
-    return this;
-
-  }
-
 
   public MimeMessage toMimeMessage() {
 
-
-    /**
-     * We set the content back
-     * <p>
-     * This is the only data that can be scalar or a list
-     * <p>
-     * Scalar: the content is only  HTML or Text content
-     * Multipart: the body text, the body html and the attachement if any
-     * <p>
-     * All other data are in the mime message
-     */
-    try {
-
-      /**
-       * https://javaee.github.io/javamail/FAQ
-       * You'll want to send a MIME multipart/alternative message.
-       * You construct such a message essentially the same way you construct a multipart/mixed message,
-       * using a MimeMultipart object constructed using new MimeMultipart("alternative").
-       * You then insert the text/plain body part as the first part in the multi-part
-       * and insert the text/html body part as the second part in the multipart.
-       * You'll need to construct the plain and html parts yourself to have appropriate content.
-       * See RFC2046 for details of the structure of such a message.
-       */
-      int partCount = attachmentParts.size();
-      boolean bodyPartFound = false;
-      if (bodyText != null) {
-        bodyPartFound = true;
-        partCount++;
-      }
-      if (bodyHtml != null) {
-        bodyPartFound = true;
-        partCount++;
-      }
-      if (!bodyPartFound) {
-        throw new RuntimeException("A body part should be present (html or txt)");
-      }
-      if (partCount == 1) {
-
-        if (bodyHtml != null) {
-          this.mimeMessage.setContent(bodyHtml, HTML_MIME.toString());
-        }
-        if (bodyText != null) {
-          this.mimeMessage.setContent(bodyText, TEXT_MIME.toString());
-        }
-
-      } else {// create the Multipart and its parts to it
-
-        Multipart mp = new MimeMultipart("alternative");
-
-        String plain = bodyText;
-        if (plain != null) {
-          MimeBodyPart textBodyPart = new MimeBodyPart();
-          textBodyPart.setText(plain, EMAIL_CHARSET.name(), TEXT_MIME.getSubType());
-          mp.addBodyPart(textBodyPart);
-        }
-
-        String html = bodyHtml;
-        if (html != null) {
-          MimeBodyPart htmlBodyPart = new MimeBodyPart();
-          htmlBodyPart.setText(html, EMAIL_CHARSET.name(), HTML_MIME.getSubType());
-          mp.addBodyPart(htmlBodyPart);
-        }
-
-        for (MimeBodyPart attachmentPart : attachmentParts) {
-          mp.addBodyPart(attachmentPart);
-        }
-
-        // add the Multipart to the message
-        this.mimeMessage.setContent(mp);
-
-      }
-
-      /**
-       * Headers
-       */
-      for (Map.Entry<BMailMimeMessageHeader, String> header : headers.entrySet()) {
-        this.mimeMessage.addHeader(header.getKey().toString(), header.getValue());
-      }
-
-      // Computes additional headers
-      // Updates the appropriate header fields of this message to be consistent with the message's contents.
-      this.mimeMessage.saveChanges();
-      return this.mimeMessage;
-
-    } catch (
-      MessagingException e) {
-      throw new RuntimeException(e);
-    }
-
+    return this.mimeMessage;
 
   }
 
+  @SuppressWarnings("unused")
   public boolean hasNoContent() {
     boolean hasNoContent = false;
     try {
@@ -381,17 +179,6 @@ public class BMailMimeMessage {
     return this;
   }
 
-  public BMailMimeMessage setBodyPlainText(String bodyText) {
-    assert bodyText != null;
-    this.bodyText = bodyText;
-    return this;
-  }
-
-  public BMailMimeMessage setBodyHtml(String bodyHtml) {
-    assert bodyHtml != null;
-    this.bodyHtml = bodyHtml;
-    return this;
-  }
 
   public BMailMimeMessage setSubject(String title) {
     try {
@@ -442,16 +229,6 @@ public class BMailMimeMessage {
     return null;
   }
 
-  public String getHtml() {
-    return bodyHtml;
-
-  }
-
-  public String getPlainText() {
-    return bodyText;
-  }
-
-
   /**
    * @return the raw data of the message (ie mime encoding)
    * You can pipe it to `sendmail` to send it for instance
@@ -479,56 +256,11 @@ public class BMailMimeMessage {
     return getFromInternetAddress().toString();
   }
 
-  /**
-   * @param absolutePath an absolute path
-   * @return the message
-   * @throws MessagingException if any errors occurs
-   */
-  public BMailMimeMessage addAttachment(Path absolutePath) throws MessagingException {
-
-    MimeBodyPart attachmentPart = new MimeBodyPart();
-
-    attachmentPart.setFileName(absolutePath.getFileName().toString());
-    DataHandler dataHandler;
-    try {
-      dataHandler = new DataHandler(absolutePath.toUri().toURL());
-    } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
-    }
-
-    attachmentPart.setDataHandler(dataHandler);
-    try {
-      attachmentPart.setHeader("Content-Type", MediaTypes.createFromPath(absolutePath).toString());
-    } catch (NotAbsoluteException e) {
-      throw new MessagingException(e.getMessage(), e);
-    }
-    this.attachmentParts.add(attachmentPart);
-    return this;
-
-  }
-
-  public BMailMimeMessage setBody(String result, String subType) {
-
-    switch (subType) {
-      case "plain":
-        return this.setBodyPlainText(result);
-      case "html":
-        return this.setBodyHtml(result);
-      default:
-        throw new IllegalArgumentException("The type (" + subType + ") is not a body type");
-    }
-
-  }
 
   @SuppressWarnings("unused")
-  public int getAttachmentSize() {
-    return this.attachmentParts.size();
-  }
-
-  @SuppressWarnings("unused")
-  public String getContentType() {
+  public ContentType getContentType() {
     try {
-      return this.mimeMessage.getContentType();
+      return new ContentType(this.mimeMessage.getContentType());
     } catch (MessagingException e) {
       throw new RuntimeException(e);
     }
@@ -556,23 +288,6 @@ public class BMailMimeMessage {
 
   }
 
-  public BMailMimeMessage setCcInternetAddresses(List<InternetAddress> cc) {
-    try {
-      this.mimeMessage.setRecipients(MimeMessage.RecipientType.CC, cc.toArray(new InternetAddress[0]));
-    } catch (MessagingException e) {
-      throw new RuntimeException(e);
-    }
-    return this;
-  }
-
-  public BMailMimeMessage setBccInternetAddresses(List<InternetAddress> bcc) {
-    try {
-      this.mimeMessage.setRecipients(MimeMessage.RecipientType.BCC, bcc.toArray(new InternetAddress[0]));
-    } catch (MessagingException e) {
-      throw new RuntimeException(e);
-    }
-    return this;
-  }
 
   public List<InternetAddress> getToInternetAddresses() {
 
@@ -608,11 +323,6 @@ public class BMailMimeMessage {
     }
   }
 
-
-  public BMailMimeMessage addHeader(BMailMimeMessageHeader received, String value) {
-    this.headers.put(received, value);
-    return this;
-  }
 
   public String getMessageId() {
     try {
@@ -672,5 +382,285 @@ public class BMailMimeMessage {
     return toEml();
   }
 
+  public void addHeader(BMailMimeMessageHeader messageHeader, String value) {
+    try {
+      mimeMessage.addHeader(messageHeader.getName(), value);
+    } catch (MessagingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
+  public String getPlainText() throws NotFoundException {
+
+    return getPart("text/plain").toString();
+
+  }
+
+  /**
+   * @param baseType ie primaryType + '/' + subType;
+   * @return the object
+   * @throws NotFoundException - not found
+   */
+  public Object getPart(String baseType) throws NotFoundException {
+
+    ContentType messageContentType = this.getContentType();
+
+    if (messageContentType.getBaseType().equals(baseType)) {
+      try {
+        return mimeMessage.getContent();
+      } catch (IOException | MessagingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    if (!messageContentType.getPrimaryType().equals("multipart")) {
+      throw new NotFoundException();
+    }
+
+    // ie "multipart/alternative":
+    try {
+      Multipart multipart = (Multipart) mimeMessage.getContent();
+
+      for (int i = 0; i < multipart.getCount(); i++) {
+        BodyPart bodyPart = multipart.getBodyPart(i);
+        ContentType contentType = new ContentType(bodyPart.getContentType());
+
+        if (contentType.getBaseType().equals(baseType)) {
+          return bodyPart.getContent().toString();
+        }
+      }
+    } catch (IOException | MessagingException e) {
+      throw new RuntimeException(e);
+    }
+    throw new NotFoundException();
+  }
+
+  public String getHtml() throws NotFoundException {
+    return getPart("text/html").toString();
+  }
+
+
+  public static class builder {
+
+
+    private String from;
+    private String to;
+    private String subject;
+    private String bodyText;
+    private String bodyHtml;
+    private final Map<BMailMimeMessageHeader, String> headers = new HashMap<>();
+
+    /**
+     * content parts is there to
+     * be able to construct a multipart email
+     * You can't do when setting html or text body
+     * because this is not the same
+     */
+    private final List<MimeBodyPart> attachmentParts = new ArrayList<>();
+    private InternetAddress fromInternetAddress;
+    private final List<InternetAddress> tos = new ArrayList<>();
+    private final List<InternetAddress> ccs = new ArrayList<>();
+    private final List<InternetAddress> bccs = new ArrayList<>();
+
+
+    public BMailMimeMessage build() throws MessagingException {
+      /**
+       * Note: Passing a null session works also
+       */
+      Properties props = new Properties();
+      Session session = Session.getDefaultInstance(props, null);
+      MimeMessage mimeMessage = new MimeMessage(session);
+      if (this.from != null) {
+        mimeMessage.setFrom(this.from);
+      }
+      if (this.fromInternetAddress != null) {
+        mimeMessage.setFrom(this.fromInternetAddress);
+      }
+      if (this.to != null) {
+        mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(this.to));
+      }
+      for (InternetAddress to : tos) {
+        mimeMessage.addRecipient(Message.RecipientType.TO, to);
+      }
+      for (InternetAddress cc : ccs) {
+        mimeMessage.addRecipient(Message.RecipientType.CC, cc);
+      }
+      for (InternetAddress bcc : bccs) {
+        mimeMessage.addRecipient(Message.RecipientType.BCC, bcc);
+      }
+
+      if (this.subject != null) {
+        mimeMessage.setSubject(subject);
+      }
+      /**
+       * We set the content back
+       * <p>
+       * This is the only data that can be scalar or a list
+       * <p>
+       * Scalar: the content is only  HTML or Text content
+       * Multipart: the body text, the body html and the attachement if any
+       * <p>
+       * All other data are in the mime message
+       */
+      try {
+
+        /**
+         * https://javaee.github.io/javamail/FAQ
+         * You'll want to send a MIME multipart/alternative message.
+         * You construct such a message essentially the same way you construct a multipart/mixed message,
+         * using a MimeMultipart object constructed using new MimeMultipart("alternative").
+         * You then insert the text/plain body part as the first part in the multi-part
+         * and insert the text/html body part as the second part in the multipart.
+         * You'll need to construct the plain and html parts yourself to have appropriate content.
+         * See RFC2046 for details of the structure of such a message.
+         */
+        int partCount = attachmentParts.size();
+        boolean bodyPartFound = false;
+        if (bodyText != null) {
+          bodyPartFound = true;
+          partCount++;
+        }
+        if (bodyHtml != null) {
+          bodyPartFound = true;
+          partCount++;
+        }
+        if (!bodyPartFound) {
+          throw new RuntimeException("A body part should be present (html or txt)");
+        }
+        if (partCount == 1) {
+
+          if (bodyHtml != null) {
+            mimeMessage.setContent(bodyHtml, HTML_MIME.toString());
+          }
+          if (bodyText != null) {
+            mimeMessage.setContent(bodyText, TEXT_MIME.toString());
+          }
+
+        } else {
+
+          // create the Multipart and its parts to it
+
+          Multipart mp = new MimeMultipart("alternative");
+
+          String plain = bodyText;
+          if (plain != null) {
+            MimeBodyPart textBodyPart = new MimeBodyPart();
+            textBodyPart.setText(plain, EMAIL_CHARSET.name(), TEXT_MIME.getSubType());
+            mp.addBodyPart(textBodyPart);
+          }
+
+          String html = bodyHtml;
+          if (html != null) {
+            MimeBodyPart htmlBodyPart = new MimeBodyPart();
+            htmlBodyPart.setText(html, EMAIL_CHARSET.name(), HTML_MIME.getSubType());
+            mp.addBodyPart(htmlBodyPart);
+          }
+
+          for (MimeBodyPart attachmentPart : attachmentParts) {
+            mp.addBodyPart(attachmentPart);
+          }
+
+          // add the Multipart to the message
+          mimeMessage.setContent(mp);
+
+        }
+
+        /**
+         * Headers
+         */
+        for (Map.Entry<BMailMimeMessageHeader, String> header : headers.entrySet()) {
+          mimeMessage.addHeader(header.getKey().toString(), header.getValue());
+        }
+
+        // Computes additional headers
+        // Updates the appropriate header fields of this message to be consistent with the message's contents.
+        mimeMessage.saveChanges();
+
+      } catch (
+        MessagingException e) {
+        throw new RuntimeException(e);
+      }
+      return new BMailMimeMessage(mimeMessage);
+    }
+
+    public builder setFrom(String from) {
+      this.from = from;
+      return this;
+    }
+
+    public builder setTo(String to) {
+      this.to = to;
+      return this;
+    }
+
+    public builder setSubject(String subject) {
+      this.subject = subject;
+      return this;
+    }
+
+    public builder setBodyPlainText(String plain) {
+      this.bodyText = plain;
+      return this;
+    }
+
+    public builder setBodyHtml(String html) {
+      this.bodyHtml = html;
+      return this;
+    }
+
+
+    /**
+     * @param absolutePath an absolute path
+     * @return the message
+     * @throws MessagingException if any errors occurs
+     */
+    public builder addAttachment(Path absolutePath) throws MessagingException {
+
+      MimeBodyPart attachmentPart = new MimeBodyPart();
+
+      attachmentPart.setFileName(absolutePath.getFileName().toString());
+      DataHandler dataHandler;
+      try {
+        dataHandler = new DataHandler(absolutePath.toUri().toURL());
+      } catch (MalformedURLException e) {
+        throw new RuntimeException(e);
+      }
+
+      attachmentPart.setDataHandler(dataHandler);
+      try {
+        attachmentPart.setHeader("Content-Type", MediaTypes.createFromPath(absolutePath).toString());
+      } catch (NotAbsoluteException e) {
+        throw new MessagingException(e.getMessage(), e);
+      }
+      this.attachmentParts.add(attachmentPart);
+      return this;
+
+    }
+
+    public builder addHeader(BMailMimeMessageHeader messageHeader, String value) {
+      this.headers.put(messageHeader, value);
+      return this;
+    }
+
+    public builder setFromInternetAddress(InternetAddress from) {
+      this.fromInternetAddress = from;
+      return this;
+    }
+
+    public builder addToInternetAddresses(List<InternetAddress> to) {
+      this.tos.addAll(to);
+      return this;
+    }
+
+    public builder addCcInternetAddresses(List<InternetAddress> cc) {
+      this.ccs.addAll(cc);
+      return this;
+    }
+
+    public builder addBccInternetAddresses(List<InternetAddress> bcc) {
+      this.bccs.addAll(bcc);
+      return this;
+    }
+
+  }
 }

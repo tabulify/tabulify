@@ -37,7 +37,7 @@ dependencies {
 
   // To parse Mime String Message (core and dom)
   // https://mvnrepository.com/artifact/org.apache.james/apache-mime4j
-  api("org.apache.james:apache-mime4j:0.8.9")
+  // api("org.apache.james:apache-mime4j:0.8.9")
 
 
   implementation(project(":bytle-type"))

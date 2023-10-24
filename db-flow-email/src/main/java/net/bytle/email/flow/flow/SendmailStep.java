@@ -27,6 +27,7 @@ import net.bytle.email.BMailAddressStatic;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpClient;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.type.*;
@@ -120,7 +121,7 @@ public class SendmailStep extends FilterStepAbs {
 
       private void resourceRun() {
 
-        BMailMimeMessage mimeMessage = BMailMimeMessage.createEmpty();
+        BMailMimeMessage.builder mimeMessage = BMailMimeMessage.createFromBuilder();
         SmtpConnection connectionRun = this.getConnectionRun();
 
         /**
@@ -142,7 +143,7 @@ public class SendmailStep extends FilterStepAbs {
             throw new RuntimeException("Error in this resource run, we couldn't determine the `to` email address (not defined in the step, nor as connection default). If you want to run a record run, you need to define it in `granularity`.");
           }
         }
-        mimeMessage.setToInternetAddresses(to);
+        mimeMessage.addToInternetAddresses(to);
         /**
          * cc
          */
@@ -151,7 +152,7 @@ public class SendmailStep extends FilterStepAbs {
           cc = connectionRun.getDefaultCcInternetAddresses();
         }
         if (cc != null) {
-          mimeMessage.setCcInternetAddresses(cc);
+          mimeMessage.addCcInternetAddresses(cc);
         }
         /**
          * bcc
@@ -161,7 +162,7 @@ public class SendmailStep extends FilterStepAbs {
           bcc = connectionRun.getDefaultBccInternetAddresses();
         }
         if (bcc != null) {
-          mimeMessage.setBccInternetAddresses(bcc);
+          mimeMessage.addBccInternetAddresses(bcc);
         }
 
         String subject = SendmailStep.this.getSubject();
@@ -209,7 +210,7 @@ public class SendmailStep extends FilterStepAbs {
 
         try (InsertStream logInsertStream = logDataPath.getInsertStream()) {
           try {
-            this.sendMail(messageLogicalName, mimeMessage, logInsertStream, smtpServer);
+            this.sendMail(messageLogicalName, mimeMessage.build(), logInsertStream, smtpServer);
           } catch (MessagingException e) {
             throw new RuntimeException("Error while sending. Error: " + e.getMessage() +
               "\rSmtpServer:" + smtpServer +
@@ -247,7 +248,7 @@ public class SendmailStep extends FilterStepAbs {
             try (SelectStream selectStream = dataPath.getSelectStream()) {
               while (selectStream.next()) {
                 recordId++;
-                BMailMimeMessage mimeMessage = BMailMimeMessage.createEmpty();
+                BMailMimeMessage.builder mimeMessage = BMailMimeMessage.createFromBuilder();
 
                 /**
                  * From
@@ -290,7 +291,7 @@ public class SendmailStep extends FilterStepAbs {
                     throw new RuntimeException("Error with the `to` addresses were found. Error: " + e.getMessage());
                   }
                 }
-                mimeMessage.setToInternetAddresses(toAddress);
+                mimeMessage.addToInternetAddresses(toAddress);
                 /**
                  * Cc
                  */
@@ -307,7 +308,7 @@ public class SendmailStep extends FilterStepAbs {
                   }
                 }
                 if (ccAddresses != null) {
-                  mimeMessage.setCcInternetAddresses(ccAddresses);
+                  mimeMessage.addCcInternetAddresses(ccAddresses);
                 }
                 /**
                  * Bcc
@@ -325,7 +326,7 @@ public class SendmailStep extends FilterStepAbs {
                   }
                 }
                 if (bccAddresses != null) {
-                  mimeMessage.setBccInternetAddresses(bccAddresses);
+                  mimeMessage.addBccInternetAddresses(bccAddresses);
                 }
                 String subject = selectStream.getString(SendmailStepArgument.SUBJECT.toColumnName());
                 if (subject == null) {
@@ -346,7 +347,11 @@ public class SendmailStep extends FilterStepAbs {
                 if (bodyHtml == null && bodyTxt == null) {
                   throw new RuntimeException("We couldn't found a txt or html column for the `body` email");
                 }
-                bMailMimeMessageList.add(mimeMessage);
+                try {
+                  bMailMimeMessageList.add(mimeMessage.build());
+                } catch (MessagingException e) {
+                  throw new RuntimeException("Error while building the message",e);
+                }
               }
             } catch (SelectException e) {
               throw new RuntimeException("Error while getting the select stream for the data path (" + dataPath + ")");
@@ -546,7 +551,12 @@ public class SendmailStep extends FilterStepAbs {
           break;
         case TO:
           if (value instanceof Map) {
-            Map<String, String> tos = Casts.castToSameMap(value, String.class, String.class);
+            Map<String, String> tos;
+            try {
+              tos = Casts.castToSameMap(value, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String, string should not result in a cast exception",e);
+            }
             try {
               this.setTo(BMailAddressStatic.mapToListInternetAddress(tos));
             } catch (AddressException | UnsupportedEncodingException e) {
@@ -562,7 +572,12 @@ public class SendmailStep extends FilterStepAbs {
           break;
         case FROM:
           if (value instanceof Map) {
-            Map<String, String> froms = Casts.castToSameMap(value, String.class, String.class);
+            Map<String, String> froms;
+            try {
+              froms = Casts.castToSameMap(value, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String, string should not result in a cast exception",e);
+            }
             try {
               List<InternetAddress> internetAddresses = BMailAddressStatic.mapToListInternetAddress(froms);
               if (internetAddresses.size() > 1) {
@@ -586,7 +601,12 @@ public class SendmailStep extends FilterStepAbs {
           break;
         case CC:
           if (value instanceof Map) {
-            Map<String, String> tos = Casts.castToSameMap(value, String.class, String.class);
+            Map<String, String> tos;
+            try {
+              tos = Casts.castToSameMap(value, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String, string should not result in a cast exception",e);
+            }
             try {
               this.setCc(BMailAddressStatic.mapToListInternetAddress(tos));
             } catch (AddressException | UnsupportedEncodingException e) {
@@ -602,7 +622,12 @@ public class SendmailStep extends FilterStepAbs {
           break;
         case BCC:
           if (value instanceof Map) {
-            Map<String, String> tos = Casts.castToSameMap(value, String.class, String.class);
+            Map<String, String> tos;
+            try {
+              tos = Casts.castToSameMap(value, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String, string should not result in a cast exception",e);
+            }
             try {
               this.setBcc(BMailAddressStatic.mapToListInternetAddress(tos));
             } catch (AddressException | UnsupportedEncodingException e) {
