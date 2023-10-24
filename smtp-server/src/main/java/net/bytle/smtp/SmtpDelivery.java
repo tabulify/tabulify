@@ -44,41 +44,42 @@ public class SmtpDelivery implements Handler<Long> {
 
   }
 
-  void run() {
+  Future<Void> run() {
 
     if (deliveryQueue.size() == 0) {
       LOGGER.info("Delivery: Nothing to deliver");
-      return;
+      return Future.succeededFuture();
     }
     if (this.isRunning) {
-      return;
+      return Future.succeededFuture();
     }
 
     LOGGER.info("Delivery started");
-    this.vertx.executeBlocking(() -> {
+    return this.vertx.executeBlocking(() -> {
 
-      this.isRunning = true;
-      List<Future<Void>> envelopeDeliveries = new ArrayList<>();
+        this.isRunning = true;
+        List<Future<Void>> envelopeDeliveries = new ArrayList<>();
 
-      for (Integer enveloppeId : deliveryQueue.keySet()) {
-        SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
-        Future<Void> envelopeDelivery = this.deliver(envelope)
-          .compose(v -> {
-            if (envelope.hasBeenDelivered()) {
-              deliveryQueue.remove(enveloppeId);
-            }
+        for (Integer enveloppeId : deliveryQueue.keySet()) {
+          SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
+          Future<Void> envelopeDelivery = this.deliver(envelope)
+            .compose(v -> {
+              if (envelope.hasBeenDelivered()) {
+                deliveryQueue.remove(enveloppeId);
+              }
+              return Future.succeededFuture();
+            });
+          envelopeDeliveries.add(envelopeDelivery);
+        }
+
+        return Future.join(envelopeDeliveries)
+          .compose(ar -> {
+            this.isRunning = false;
+            LOGGER.info("Delivery done");
             return Future.succeededFuture();
           });
-        envelopeDeliveries.add(envelopeDelivery);
-      }
-      return Future.join(envelopeDeliveries)
-        .compose(ar -> {
-          this.isRunning = false;
-          LOGGER.info("Delivery done");
-          return Future.succeededFuture();
-        });
-
-    });
+      })
+      .compose(v -> Future.succeededFuture());
   }
 
   public void addEnvelopeToDeliver(SmtpDeliveryEnvelope enveloppe) {

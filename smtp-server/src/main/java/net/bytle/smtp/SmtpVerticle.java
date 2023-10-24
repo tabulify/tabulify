@@ -22,6 +22,7 @@ public class SmtpVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(SmtpVerticle.class);
   private static final String APPLICATION_NAME = "smtp";
+  private SmtpServer smtpServer;
 
 
   public static void main(String[] args) {
@@ -46,7 +47,6 @@ public class SmtpVerticle extends AbstractVerticle {
           /**
            * Smtp Server Configuration
            */
-          SmtpServer smtpServer;
           try {
             smtpServer = SmtpServer.create(this, configAccessor);
           } catch (ConfigIllegalException e) {
@@ -132,4 +132,7 @@ public class SmtpVerticle extends AbstractVerticle {
   }
 
 
+  public SmtpServer getSmtpServer() {
+    return this.smtpServer;
+  }
 }

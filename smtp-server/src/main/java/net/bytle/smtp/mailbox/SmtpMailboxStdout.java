@@ -13,21 +13,18 @@ public class SmtpMailboxStdout extends SmtpMailbox {
    * @param vertx          - the vertx in case an async should be run
    * @param configAccessor - the configuration
    */
-  public SmtpMailboxStdout(Vertx vertx, ConfigAccessor configAccessor) {
-    super(vertx, configAccessor);
+  public SmtpMailboxStdout(SmtpUser smtpUser, Vertx vertx, ConfigAccessor configAccessor) {
+    super(smtpUser, vertx, configAccessor);
   }
 
   @Override
-  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
+  public Future<Void> deliver(BMailMimeMessage mimeMessage) {
 
-    System.out.println("Delivery on Stdout to " + smtpUser + ":");
+    System.out.println("Delivery on Stdout to " + this.getSmtpUser() + ":");
     System.out.println(mimeMessage.toEml());
     return Future.succeededFuture();
 
   }
 
-  public String getName() {
-    return "stdout";
-  }
 
 }

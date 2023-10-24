@@ -6,10 +6,10 @@ import net.bytle.email.BMailMimeMessage;
 import net.bytle.smtp.SmtpUser;
 import net.bytle.vertx.ConfigAccessor;
 
-public class SmtpMailboxForward extends SmtpMailbox{
+public class SmtpMailboxForward extends SmtpMailbox {
 
-  public SmtpMailboxForward(Vertx vertx, ConfigAccessor configAccessor) {
-    super(vertx, configAccessor);
+  public SmtpMailboxForward(SmtpUser smtpUser, Vertx vertx, ConfigAccessor configAccessor) {
+    super(smtpUser, vertx, configAccessor);
   }
 
   /**
@@ -17,13 +17,9 @@ public class SmtpMailboxForward extends SmtpMailbox{
    * <a href="https://www.rfc-editor.org/rfc/rfc822.html#section-4.2">Note on Forward</a>
    */
   @Override
-  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
+  public Future<Void> deliver(BMailMimeMessage mimeMessage) {
     return Future.failedFuture("Forwarding is not yet supported");
   }
 
-  @Override
-  public String getName() {
-    return "forward";
-  }
 
 }

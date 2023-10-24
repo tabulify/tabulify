@@ -14,17 +14,17 @@ public class SmtpMailboxS3 extends SmtpMailbox {
 
   private final AwsBucket awsBucket;
 
-  public SmtpMailboxS3(Vertx vertx, ConfigAccessor configAccessor) throws IllegalConfiguration {
-    super(vertx, configAccessor);
+  public SmtpMailboxS3(SmtpUser smtpUser, Vertx vertx, ConfigAccessor configAccessor) throws IllegalConfiguration {
+    super(smtpUser, vertx, configAccessor);
     this.awsBucket = AwsBucket.init(vertx, configAccessor);
   }
 
   @Override
-  public Future<Void> deliver(SmtpUser smtpUser, BMailMimeMessage mimeMessage) {
+  public Future<Void> deliver(BMailMimeMessage mimeMessage) {
 
     AwsObject awsObject;
 
-    if (smtpUser.getName().equals("dmarc")) {
+    if (this.getSmtpUser().getName().equals("dmarc")) {
 
       awsObject = DmarcFilter.parse(mimeMessage);
 
@@ -37,11 +37,6 @@ public class SmtpMailboxS3 extends SmtpMailbox {
 
     return this.awsBucket.putObject(awsObject);
 
-  }
-
-  @Override
-  public String getName() {
-    return "s3";
   }
 
 }

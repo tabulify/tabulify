@@ -5,8 +5,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
+import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsIllegalArgumentException;
+import net.bytle.email.BMailInternetAddress;
+import net.bytle.email.BMailMimeMessage;
 import net.bytle.exception.CastException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpEhloCommandHandler;
 import net.bytle.smtp.mailbox.SmtpMailbox;
@@ -194,11 +198,11 @@ public class SmtpServer {
     /**
      * Create the mailboxes
      */
-
     HashMap<String, Class<? extends SmtpMailbox>> mailboxClasses = new HashMap<>();
     mailboxClasses.put("stdout", SmtpMailboxStdout.class);
     mailboxClasses.put("forward", SmtpMailboxForward.class);
     mailboxClasses.put("s3", SmtpMailboxS3.class);
+    mailboxClasses.put("memory", SmtpMailboxMemory.class);
 
     /**
      * Define the users
@@ -234,17 +238,19 @@ public class SmtpServer {
           }
         }
 
+        String password = userConfigAccessor.getString("password");
+        SmtpUser smtpUser = SmtpUser.createFrom(smtpDomain, userName, password);
+        smtpDomain.addUser(smtpUser);
+
         SmtpMailbox smtpMailbox;
         try {
-          smtpMailbox = smtpMailboxClass.getDeclaredConstructor(Vertx.class, ConfigAccessor.class).newInstance(smtpVerticle.getVertx(), mailBoxConfigAccessor);
+          smtpMailbox = smtpMailboxClass.getDeclaredConstructor(SmtpUser.class, Vertx.class, ConfigAccessor.class).newInstance(smtpUser, smtpVerticle.getVertx(), mailBoxConfigAccessor);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
                  InvocationTargetException e) {
           throw new ConfigIllegalException("Error while creating the mailbox (" + smtpMailboxClass.getName() + ") of the user (" + userName + ")", e);
         }
+        smtpUser.setMailBox(smtpMailbox);
 
-        String password = userConfigAccessor.getString("password");
-        SmtpUser smtpUser = SmtpUser.createFrom(smtpDomain, userName, smtpMailbox, password);
-        smtpDomain.addUser(smtpUser);
         LOGGER.info(LOG_TAB + "User added: " + smtpUser);
       }
 
@@ -374,4 +380,32 @@ public class SmtpServer {
     return this.smtpDelivery;
   }
 
+  public List<BMailMimeMessage> getAndResetMessagesForUser(String email) throws SmtpException, NotFoundException {
+    BMailInternetAddress internetAddress;
+    try {
+      internetAddress = BMailInternetAddress.of(email);
+    } catch (AddressException e) {
+      throw SmtpException.createForInternalException("bad email address" + email, e);
+    }
+    String userDomain = internetAddress.getDomain();
+    SmtpDomain domain = this.hostedDomains
+      .values()
+      .stream()
+      .map(SmtpHost::getDomain)
+      .filter(d -> d.getDnsDomain().getNameWithoutRoot().equals(userDomain))
+      .findFirst()
+      .orElse(null);
+    if (domain == null) {
+      throw SmtpException.createForInternalException("The domain (" + userDomain + ") of the user (" + email + ") does not exist");
+    }
+
+    SmtpUser user = domain.getUser(internetAddress.getLocalPart());
+    SmtpMailbox mailbox = user.getMailbox();
+    if (!(mailbox instanceof SmtpMailboxMemory)) {
+      throw SmtpException.createForInternalException("The user (" + email + ") has not a memory mailbox. The message cannot be retrieved");
+    }
+    SmtpMailboxMemory mailboxMemory = (SmtpMailboxMemory) mailbox;
+    return mailboxMemory.getAndResetMessages();
+
+  }
 }

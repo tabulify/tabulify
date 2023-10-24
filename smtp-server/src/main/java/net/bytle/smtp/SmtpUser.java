@@ -19,10 +19,9 @@ public class SmtpUser {
     this.name = name.trim().toLowerCase();
   }
 
-  public static SmtpUser createFrom(SmtpDomain smtpDomain, String userName, SmtpMailbox smtpMailbox, String password) {
+  public static SmtpUser createFrom(SmtpDomain smtpDomain, String userName, String password) {
 
     SmtpUser smtpUser = new SmtpUser(smtpDomain, userName);
-    smtpUser.mailBox = smtpMailbox;
     smtpUser.password = password;
     return smtpUser;
 
@@ -42,11 +41,20 @@ public class SmtpUser {
   }
 
   public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope) {
-    return this.mailBox.deliver(this, smtpDeliveryEnvelope.getMimeMessage());
+    return this.mailBox.deliver(smtpDeliveryEnvelope.getMimeMessage());
   }
 
   @Override
   public String toString() {
     return name + "@" + this.smtpDomain;
   }
+
+  public void setMailBox(SmtpMailbox smtpMailbox) {
+    this.mailBox = smtpMailbox;
+  }
+
+  public SmtpMailbox getMailbox() {
+    return this.mailBox;
+  }
+
 }
