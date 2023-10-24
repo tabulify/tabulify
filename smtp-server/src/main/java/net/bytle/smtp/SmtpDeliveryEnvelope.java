@@ -2,9 +2,11 @@ package net.bytle.smtp;
 
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailMimeMessage;
+import net.bytle.exception.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +27,7 @@ public class SmtpDeliveryEnvelope {
   private final BMailInternetAddress sender;
   private final Set<SmtpRecipient> recipientsToDeliver;
   private final BMailMimeMessage mimeMessage;
-  private final Map<SmtpRecipient, Integer> deliveryFailuresForRecipient = new HashMap<>();
+  private final Map<SmtpRecipient, SmtpDeliveryFailure> deliveryFailuresForRecipient = new HashMap<>();
 
   public SmtpDeliveryEnvelope(BMailInternetAddress sender, Set<SmtpRecipient> recipientsToDeliver, BMailMimeMessage mimeMessage) {
     this.sender = sender;
@@ -93,11 +95,18 @@ public class SmtpDeliveryEnvelope {
    */
   public void deliveryFailureForRecipient(SmtpRecipient recipient, Throwable e) {
 
-    Integer failuresNumber = this.deliveryFailuresForRecipient.computeIfAbsent(recipient, k -> 0);
-    failuresNumber++;
-    this.deliveryFailuresForRecipient.put(recipient, failuresNumber);
-    LOGGER.error("Unable to deliver the enveloppe (" + this + ") to the recipient (" + recipient + "). " + failuresNumber + " times", e);
+    SmtpDeliveryFailure deliveryFailure = this.deliveryFailuresForRecipient.computeIfAbsent(recipient, k -> new SmtpDeliveryFailure());
+    deliveryFailure.inc(e);
+    this.deliveryFailuresForRecipient.put(recipient, deliveryFailure);
+    LOGGER.error("Unable to deliver the enveloppe (" + this + ") to the recipient (" + recipient + "). " + deliveryFailure + " times", e);
 
   }
 
+  public Instant getLastDeliveryTentative(SmtpRecipient smtpRecipient) throws NotFoundException {
+    SmtpDeliveryFailure deliveryFailure = this.deliveryFailuresForRecipient.get(smtpRecipient);
+    if(deliveryFailure==null){
+      throw new NotFoundException();
+    }
+    return deliveryFailure.getLastTentative();
+  }
 }

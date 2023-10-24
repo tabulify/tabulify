@@ -3,6 +3,7 @@ package net.bytle.smtp;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +23,7 @@ public class SmtpDelivery implements Handler<Long> {
   private final Integer retryIntervalBetweenFailures;
   private final Vertx vertx;
   private boolean isRunning = false;
-  private Instant lastDeliveringTentative;
+
 
   public SmtpDelivery(Vertx vertx, ConfigAccessor configAccessor) {
 
@@ -96,14 +97,6 @@ public class SmtpDelivery implements Handler<Long> {
    */
   public Future<Void> deliver(SmtpDeliveryEnvelope smtpDeliveryEnvelope) {
 
-    if (this.lastDeliveringTentative != null) {
-      long duration = Duration.between(this.lastDeliveringTentative, Instant.now()).toMinutes();
-      if (duration < retryIntervalBetweenFailures) {
-        return Future.succeededFuture();
-      }
-    }
-
-    this.lastDeliveringTentative = Instant.now();
 
     /**
      * Recipients
@@ -122,6 +115,23 @@ public class SmtpDelivery implements Handler<Long> {
   }
 
   private Future<Void> deliverToRecipient(SmtpRecipient recipient, SmtpDeliveryEnvelope smtpDeliveryEnvelope) {
+
+    /**
+     * Retry Handling
+     */
+    try {
+      Instant lastDeliveringTentative = smtpDeliveryEnvelope.getLastDeliveryTentative(recipient);
+      long duration = Duration.between(lastDeliveringTentative, Instant.now()).toMinutes();
+      if (duration < retryIntervalBetweenFailures) {
+        return Future.succeededFuture();
+      }
+    } catch (NotFoundException e) {
+      // no failed delivery has happened
+    }
+
+    /**
+     * Delivery
+     */
     Future<Void> deliveryFuture;
     SmtpDeliveryType deliveryType = recipient.getDeliveryType();
     switch (deliveryType) {
@@ -145,6 +155,7 @@ public class SmtpDelivery implements Handler<Long> {
         return Future.succeededFuture();
       }, err -> {
         smtpDeliveryEnvelope.deliveryFailureForRecipient(recipient, err);
+        LOGGER.error("could not deliver an enveloppe to the recipient: (" + recipient + ")", err);
         return Future.failedFuture(err);
       }
     );
