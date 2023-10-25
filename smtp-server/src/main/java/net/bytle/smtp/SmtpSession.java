@@ -4,7 +4,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.net.NetSocket;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.NotFoundException;
-import net.bytle.java.JavaEnvs;
 import net.bytle.smtp.command.SmtpBdatCommandHandler;
 import net.bytle.smtp.command.SmtpQuitCommandHandler;
 import net.bytle.smtp.command.SmtpRsetCommandHandler;
@@ -353,16 +352,6 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
      * Reset the transaction state
      */
     this.resetTransactionState();
-
-    if (JavaEnvs.IS_DEV) {
-
-      /**
-       * Delivery
-       */
-      this.smtpService.getSmtpServer().getSmtpDeliveryQueue().run();
-
-    }
-
 
   }
 

@@ -1,3 +1,5 @@
+# This file is the dev/test configuration file
+#
 # The separators in key are points
 # to be consistent with the configuration of Java Mail
 software.name: Eraldy # software name advertised in the banner
@@ -42,25 +44,27 @@ max.recipients: 100 # the maximum number of recipients (should be bigger or equa
 # Delivery
 delivery.quota.remote: 200 # by day by account (same as SES by account)
 delivery.quota.remote.rate: 1 # by second by account (same as SES by account)
-delivery.retry.interval: 15 # minutes
+delivery.retry.interval: 15 # minutes, the interval in which a failed delivery is not retried
+delivery.run.after.reception: true # deliver the message immediately after reception
+delivery.run.interval: 1 # minutes (if 0 not delivery occurs at interval)
+
 
 # Users
 users:
   eraldy.dev:
-    alice:
-      password: secret
-      mailbox:
-        type: stdout
+    # memory is to test email reception
     memory:
       password: secret
       mailbox:
         type: memory # an in-memory map, so that we can retrieve the email
+    # dmarc-memory is to test dmarc email
     dmarc-memory:
       mailbox:
         type: memory
         milters:
           - dmarc
-    dmarc:
+    # dmarc-s3 is to send a dmarc email to s3
+    dmarc-s3:
       mailbox:
         type: s3
         milters:
@@ -68,5 +72,6 @@ users:
         s3.bucket.name: 'dmarc-dev'
         s3.region: 'ca-mtl'
         s3.url.endpoint: 'https://h0k0.ca.idrivee2-22.com'
-        #    access.key.id: YOUR_ACCESS_KEY_ID
-        #    secret.access.key: YOUR_SECRET_ACCESS_KEY
+        # in the s3 local credentials file or in env:
+        #  s3.access.key.id: ACCESS_KEY_ID
+        #  s3.secret.access.key: SECRET_ACCESS_KEY

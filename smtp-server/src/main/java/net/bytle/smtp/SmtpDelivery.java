@@ -14,24 +14,30 @@ import java.util.*;
 
 public class SmtpDelivery implements Handler<Long> {
 
+  public static final String DELIVERY_RUN_AFTER_RECEPTION_CONF = "delivery.run.after.reception";
   private static final String DELIVERY_RETRY_INTERVAL_KEY = "delivery.retry.interval";
-  private static final Integer DEFAULT_INTERVAL = 1;
-  private static final String DELIVERY_INTERVAL_KEY = "delivery.interval";
+  private static final Integer DEFAULT_INTERVAL = 5;
+  public static final String DELIVERY_RUN_INTERVAL_KEY = "delivery.run.interval";
   static Logger LOGGER = LogManager.getLogger(SmtpDelivery.class);
   private static final int DEFAULT_RETRY_INTERVAL = 15;
   private final Map<Integer, SmtpDeliveryEnvelope> deliveryQueue = new HashMap<>();
   private final Integer retryIntervalBetweenFailures;
-  private final Vertx vertx;
+  private final Boolean immediateDelivery;
   private boolean isRunning = false;
 
 
   public SmtpDelivery(Vertx vertx, ConfigAccessor configAccessor) {
 
-    this.vertx = vertx;
+    this.immediateDelivery = configAccessor.getBoolean(DELIVERY_RUN_AFTER_RECEPTION_CONF, false);
+    LOGGER.info("Delivery does " + (this.immediateDelivery ? "" : "not") + " run after reception");
 
-    Integer deliveryInterval = configAccessor.getInteger(DELIVERY_INTERVAL_KEY, DEFAULT_INTERVAL);
-    LOGGER.info("Delivery interval (" + DELIVERY_RETRY_INTERVAL_KEY + ") set to " + deliveryInterval + " minutes");
-    vertx.setPeriodic(deliveryInterval * 60 * 1000, this);
+    Integer deliveryInterval = configAccessor.getInteger(DELIVERY_RUN_INTERVAL_KEY, DEFAULT_INTERVAL);
+    if (deliveryInterval > 0) {
+      LOGGER.info("Delivery run interval (" + DELIVERY_RETRY_INTERVAL_KEY + ") set to " + deliveryInterval + " minutes");
+      vertx.setPeriodic(deliveryInterval * 60 * 1000, this);
+    } else {
+      LOGGER.info("Delivery run at interval disabled. The interval value (" + deliveryInterval + ") of the configuration (" + DELIVERY_RETRY_INTERVAL_KEY + ") is negative or null.");
+    }
 
     this.retryIntervalBetweenFailures = configAccessor.getInteger(DELIVERY_RETRY_INTERVAL_KEY, DEFAULT_RETRY_INTERVAL);
     LOGGER.info("Delivery retry interval (" + DELIVERY_RETRY_INTERVAL_KEY + ") between failures set to " + this.retryIntervalBetweenFailures + " minutes");
@@ -53,41 +59,44 @@ public class SmtpDelivery implements Handler<Long> {
       return Future.succeededFuture();
     }
     if (this.isRunning) {
+      LOGGER.info("Delivery already running");
       return Future.succeededFuture();
     }
+    this.isRunning = true;
 
     LOGGER.info("Delivery started for " + size + " enveloppes");
-    return this.vertx.executeBlocking(() -> {
 
-        this.isRunning = true;
-        List<Future<Void>> envelopeDeliveries = new ArrayList<>();
 
-        for (Integer enveloppeId : deliveryQueue.keySet()) {
-          SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
-          Future<Void> envelopeDelivery = this.deliver(envelope)
-            .compose(v -> {
-              if (envelope.hasBeenDelivered()) {
-                deliveryQueue.remove(enveloppeId);
-              }
-              return Future.succeededFuture();
-            });
-          envelopeDeliveries.add(envelopeDelivery);
-        }
+    List<Future<Void>> envelopeDeliveries = new ArrayList<>();
 
-        return Future.join(envelopeDeliveries)
-          .compose(ar -> {
-            this.isRunning = false;
-            LOGGER.info("Delivery done. Still to deliver next time: " + this.deliveryQueue.size());
-            return Future.succeededFuture();
-          });
-      })
-      .compose(v -> Future.succeededFuture());
+    for (Integer enveloppeId : deliveryQueue.keySet()) {
+      SmtpDeliveryEnvelope envelope = deliveryQueue.get(enveloppeId);
+      Future<Void> envelopeDelivery = this.deliver(envelope)
+        .compose(v -> {
+          if (envelope.hasBeenDelivered()) {
+            deliveryQueue.remove(enveloppeId);
+          }
+          return Future.succeededFuture();
+        });
+      envelopeDeliveries.add(envelopeDelivery);
+    }
+
+    return Future.join(envelopeDeliveries)
+      .compose(ar -> {
+        this.isRunning = false;
+        LOGGER.info("Delivery done. Still to deliver next time: " + this.deliveryQueue.size());
+        return Future.succeededFuture();
+      });
+
   }
 
   public void addEnvelopeToQueue(SmtpDeliveryEnvelope enveloppe) {
     int key = enveloppe.hashCode();
     LOGGER.info("Reception of the enveloppe (" + key + "), Message Id: " + enveloppe.getMimeMessage().getMessageId());
     this.deliveryQueue.put(key, enveloppe);
+    if (this.immediateDelivery) {
+      this.run();
+    }
   }
 
   /**
@@ -155,7 +164,6 @@ public class SmtpDelivery implements Handler<Long> {
         return Future.succeededFuture();
       }, err -> {
         smtpDeliveryEnvelope.deliveryFailureForRecipient(recipient, err);
-        LOGGER.error("could not deliver an enveloppe to the recipient: (" + recipient + ")", err);
         return Future.failedFuture(err);
       }
     );

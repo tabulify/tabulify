@@ -16,3 +16,12 @@ fly ssh console
 ## Custom Domain
 
 https://fly.io/docs/getting-started/working-with-fly-apps/#fly-io-and-custom-domains
+
+## Secret
+
+```bash
+fly secrets import < .dotenv
+# or to restart later
+fly secrets --stage import < .dotenv
+```
+https://fly.io/docs/flyctl/secrets-import/

@@ -95,7 +95,7 @@ public class AwsBucket {
     // https://vertx.io/docs/vertx-core/java/#_completionstage_interoperability
     return Future.fromCompletionStage(completableFuture.toCompletableFuture(), context)
       .compose(listObjectsV2Response -> {
-        LOGGER.trace("Successfully placed " + awsObject.getObjectPath() + " into bucket " + this);
+        LOGGER.info("Successfully placed " + awsObject.getObjectPath() + " into bucket " + this);
         return Future.succeededFuture();
       }, err -> {
         String message = "Unable to deliver the object " + awsObject.getObjectPath() + " into bucket " + this;
