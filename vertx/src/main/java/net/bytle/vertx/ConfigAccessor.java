@@ -3,6 +3,7 @@ package net.bytle.vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
+import net.bytle.type.env.DotEnv;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,8 +18,6 @@ import java.util.stream.Collectors;
  * * the environment that does have a prefix and underscore separator
  */
 public class ConfigAccessor {
-  private static final String ENV_NAME_SEPARATOR = "_";
-  private static final String FILE_NAME_SEPARATOR = ".";
   private static ConfigAccessor configAccessor;
   private final JsonObject jsonObject;
   private final List<String> keys;
@@ -94,12 +93,9 @@ public class ConfigAccessor {
     }
     Collections.reverse(keyParts);
     keyParts.add(key);
-    String envName = String.join(ENV_NAME_SEPARATOR, keyParts);
-    // env separator is the underscore
-    // Env Name only allows letters, numbers, and underscores
-    return envName
-      .replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR)
-      .replace("-", ENV_NAME_SEPARATOR);
+    String envName = String.join(DotEnv.ENV_NAME_SEPARATOR, keyParts);
+
+    return DotEnv.toValidKey(envName);
 
   }
 

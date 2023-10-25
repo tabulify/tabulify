@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.env.DotEnv;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -210,9 +211,10 @@ public class ConfigManager {
      * <a href="https://vertx.io/docs/vertx-config/java/#_environment_variables">Doc</a>
      */
     JsonArray envVarKeys = new JsonArray();
+    String envConfigName = DotEnv.toValidKey(this.configName);
     System.getenv().keySet()
       .forEach(s -> {
-        if (s.startsWith(this.configName)) {
+        if (s.startsWith(envConfigName)) {
           LOGGER.info("Configuration: environment variable (" + s + ") found and monitored");
           envVarKeys.add(s);
         }

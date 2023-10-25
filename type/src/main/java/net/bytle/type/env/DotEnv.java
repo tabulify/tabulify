@@ -1,4 +1,4 @@
-package net.bytle.type.dotenv;
+package net.bytle.type.env;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,13 +20,14 @@ import java.util.stream.Collectors;
  * Dotenv load variables from a .env file into ENV when the environment is bootstrapped.
  * <p>
  * -- Brandon Keepers
- * https://github.com/cdimascio/dotenv-java
+ * <a href="https://github.com/cdimascio/dotenv-java">...</a>
  * based on
- * https://12factor.net/config - twelve factor app
+ * <a href="https://12factor.net/config">...</a> - twelve factor app
  */
 public class DotEnv {
 
 
+  public static final String ENV_NAME_SEPARATOR = "_";
   private final Properties dotenv;
 
   public DotEnv(Path path) {
@@ -75,6 +76,15 @@ public class DotEnv {
         e -> e.getKey().toString(),
         e -> e.getValue().toString()
       ));
+  }
+
+  /**
+   * Env Name only allows letters, numbers, and underscores
+   */
+  public static String toValidKey(String name) {
+    return name
+      .replace(".", "_")
+      .replace("-", "_");
   }
 
 }

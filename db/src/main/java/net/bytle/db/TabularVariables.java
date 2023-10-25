@@ -1,13 +1,14 @@
 package net.bytle.db;
 
 import net.bytle.conf.ConfManager;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoValueException;
 import net.bytle.exception.NoVariableException;
 import net.bytle.java.JavaEnvs;
-import net.bytle.os.OsEnvs;
 import net.bytle.type.*;
-import net.bytle.type.dotenv.DotEnv;
+import net.bytle.type.env.DotEnv;
+import net.bytle.type.env.OsEnvs;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +37,7 @@ public class TabularVariables {
         case IS_DEV:
           variable
             .setOriginalValue(JavaEnvs.IS_DEV)
-            .setValueProvider(()->JavaEnvs.IS_DEV);
+            .setValueProvider(() -> JavaEnvs.IS_DEV);
           break;
         case TABULIFY_HOME_PATH:
           variable
@@ -47,7 +48,7 @@ public class TabularVariables {
           variable.setValueProvider(tabular::getEnvironment);
           break;
         case PROJECT_CONNECTION:
-          variable.setValueProvider(()-> {
+          variable.setValueProvider(() -> {
             if (projectConfigurationFile == null) {
               return null;
             }
@@ -55,7 +56,7 @@ public class TabularVariables {
           });
           break;
         case PROJECT_VARIABLE:
-          variable.setValueProvider(()-> {
+          variable.setValueProvider(() -> {
             if (projectConfigurationFile == null) {
               return null;
             }
@@ -96,13 +97,18 @@ public class TabularVariables {
   }
 
   private void loadSys() {
-    Map<String, Object> sysProperties = Casts.castToSameMap(System.getProperties(), String.class, Object.class)
-      .entrySet()
-      .stream()
-      .collect(Collectors.toMap(
-        Map.Entry::getKey,
-        Map.Entry::getValue
-      ));
+    Map<String, Object> sysProperties;
+    try {
+      sysProperties = Casts.castToSameMap(System.getProperties(), String.class, Object.class)
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(
+          Map.Entry::getKey,
+          Map.Entry::getValue
+        ));
+    } catch (CastException e) {
+      throw new InternalException("String, object should not bring a cast exception", e);
+    }
     this.addAllConf(sysProperties, Origin.SYS);
   }
 
@@ -111,11 +117,13 @@ public class TabularVariables {
     if (variablePathArgument == null) {
       return;
     }
-    Map<String, Object> confMap = ConfManager.createFromPath(variablePathArgument).getConfMap();
+    Map<String, Object> confMap;
+    try (ConfManager confManager = ConfManager.createFromPath(variablePathArgument)) {
+      confMap = confManager.getConfMap();
+    }
     this.addAllConf(confMap, Origin.COMMAND_LINE);
 
   }
-
 
 
   private void loadTabularAttributes(Set<Variable> tabularVariables) {
@@ -138,7 +146,12 @@ public class TabularVariables {
   }
 
   private void loadEnvironmentVariable() {
-    Map<String, Object> actualEnvEntries = Casts.castToSameMap(OsEnvs.getAll(), String.class, Object.class);
+    Map<String, Object> actualEnvEntries;
+    try {
+      actualEnvEntries = Casts.castToSameMap(OsEnvs.getAll(), String.class, Object.class);
+    } catch (CastException e) {
+      throw new InternalException("String, object should not bring a cast exception", e);
+    }
     Map<String, Object> newConfMap = new HashMap<>();
     Pattern pattern = Pattern.compile("(?i:tabli_)");
     for (Map.Entry<String, Object> actual : actualEnvEntries.entrySet()) {
@@ -174,7 +187,12 @@ public class TabularVariables {
         continue;
       }
       DotEnv dotenv = DotEnv.createFromPath(dotEnvPath);
-      Map<String, Object> confMap = Casts.castToSameMap(dotenv.getAll(), String.class, Object.class);
+      Map<String, Object> confMap;
+      try {
+        confMap = Casts.castToSameMap(dotenv.getAll(), String.class, Object.class);
+      } catch (CastException e) {
+        throw new InternalException("String, object should not bring a cast exception", e);
+      }
       this.addAllConf(confMap, Origin.DOTENV);
       DbLoggers.LOGGER_TABULAR_START.info("The dotenv file (" + envName + ") was loaded (" + dotEnvPath + ")");
     }
@@ -205,10 +223,13 @@ public class TabularVariables {
     /**
      * Load default configuration file
      */
+    Map<String, Object> confMap;
+    try (ConfManager confManager = ConfManager
+      .createFromPath(getUserConfigurationFile())) {
+      confMap = confManager.getConfMap();
+    }
     this.addAllConf(
-      ConfManager
-        .createFromPath(getUserConfigurationFile())
-        .getConfMap(),
+      confMap,
       Origin.USER
     );
   }
