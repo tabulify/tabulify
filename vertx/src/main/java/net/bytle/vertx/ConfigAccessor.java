@@ -97,7 +97,9 @@ public class ConfigAccessor {
     String envName = String.join(ENV_NAME_SEPARATOR, keyParts);
     // env separator is the underscore
     // Env Name only allows letters, numbers, and underscores
-    return envName.replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR);
+    return envName
+      .replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR)
+      .replace("-", ENV_NAME_SEPARATOR);
 
   }
 

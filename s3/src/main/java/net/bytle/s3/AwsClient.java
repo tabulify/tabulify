@@ -52,14 +52,14 @@ public class AwsClient {
       accessKeyId = defaultAwsCredential.accessKeyId();
     }
     if (accessKeyId == null) {
-      throw new IllegalArgumentException("The s3 access key id was not found  in the default aws credentials file or with the configuration (" + S3_ACCESS_KEY_ID + ")");
+      throw new IllegalArgumentException("The s3 access key id was not found  in the default aws credentials file or with the configuration (" + configAccessor.getPossibleVariableNames(S3_ACCESS_KEY_ID) + ")");
     }
     String accessKeySecret = configAccessor.getString(S3_ACCESS_KEY_SECRET);
     if (accessKeySecret == null && defaultAwsCredential != null) {
       accessKeySecret = defaultAwsCredential.secretAccessKey();
     }
     if (accessKeySecret == null) {
-      throw new IllegalArgumentException("The s3 access key secret was not found  in the default aws credentials file or with the configuration (" + S3_ACCESS_KEY_SECRET + ")");
+      throw new IllegalArgumentException("The s3 access key secret was not found  in the default aws credentials file or with the configuration (" + configAccessor.getPossibleVariableNames(S3_ACCESS_KEY_SECRET) + ")");
     }
 
     String finalAccessKeyId = accessKeyId;
