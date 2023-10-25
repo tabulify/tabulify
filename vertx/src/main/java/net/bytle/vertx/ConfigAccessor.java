@@ -70,11 +70,24 @@ public class ConfigAccessor {
   }
 
   public String getString(String key, String def) {
-    String value = this.jsonObject.getString(getEnvName(key));
+    String value = this.getEnvJson().getString(getEnvName(key));
     if (value != null) {
       return value;
     }
     return this.jsonObject.getString(key, def);
+  }
+
+  /**
+   *
+   * @return the root json that contains the environment variable
+   */
+  private JsonObject getEnvJson() {
+    ConfigAccessor parent = this;
+    while (parent.parentConfigAccessor != null) {
+      parent = parent.parentConfigAccessor;
+    }
+    // the root
+    return parent.jsonObject;
   }
 
   /**
@@ -104,7 +117,7 @@ public class ConfigAccessor {
   }
 
   public Integer getInteger(String key, Integer defaultValue) {
-    Integer value = this.jsonObject.getInteger(getEnvName(key));
+    Integer value = this.getEnvJson().getInteger(getEnvName(key));
     if (value != null) {
       return value;
     }
@@ -120,7 +133,7 @@ public class ConfigAccessor {
   }
 
   public Object getValue(String key, Object defaultValue) {
-    Object value = this.jsonObject.getValue(getEnvName(key));
+    Object value = this.getEnvJson().getValue(getEnvName(key));
     if (value != null) {
       return value;
     }
@@ -132,7 +145,7 @@ public class ConfigAccessor {
   }
 
   public Boolean getBoolean(String key, Boolean b) {
-    Boolean value = this.jsonObject.getBoolean(getEnvName(key));
+    Boolean value = this.getEnvJson().getBoolean(getEnvName(key));
     if (value != null) {
       return value;
     }
@@ -153,7 +166,7 @@ public class ConfigAccessor {
   }
 
   public long getLong(String key, long defaultValue) {
-    Long value = this.jsonObject.getLong(getEnvName(key));
+    Long value = this.getEnvJson().getLong(getEnvName(key));
     if (value != null) {
       return value;
     }
@@ -175,4 +188,6 @@ public class ConfigAccessor {
     }
     return jsonArray.stream().map(Object::toString).collect(Collectors.toList());
   }
+
+
 }

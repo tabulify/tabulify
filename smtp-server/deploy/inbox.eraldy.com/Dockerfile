@@ -5,7 +5,7 @@ ENV APP_NAME smtp-server
 # uber/fat jar
 ENV APP_FILE  bytle-${APP_NAME}-all.jar
 
-# EXPOSE 8084
+EXPOSE 25
 
 RUN echo "==> Update"  && \
     apt-get update && \
