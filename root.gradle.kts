@@ -1,3 +1,4 @@
+// For plugin management, there is also some version in the gradle.properties
 val log4jVersion = "2.20.0"
 // https://mvnrepository.com/artifact/org.assertj/assertj-core
 val assertJAssertionVersion = "3.24.2"

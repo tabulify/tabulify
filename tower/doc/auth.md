@@ -2,6 +2,12 @@
 
 ## About
 
+## Url
+
+Example of authorize endpoint on fly.io
+
+https://api.fly.io/oauth/authorize
+
 ## Vertx
 
 This is a short version of [Ref](https://vertx.io/docs/vertx-auth-common/java/)

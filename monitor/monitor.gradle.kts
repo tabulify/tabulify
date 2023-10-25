@@ -5,6 +5,7 @@ description = "Monitoring"
 val appName = "monitor"
 
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
+val vertxPluginVersion = rootProject.ext.get("vertxPluginVersion").toString()
 dependencies {
 
   implementation(project(":bytle-dns"))
@@ -18,7 +19,7 @@ dependencies {
 
 plugins {
   // https://github.com/jponge/vertx-gradle-plugin
-  id("io.vertx.vertx-plugin") version "1.2.0"
+  id("io.vertx.vertx-plugin")
 }
 
 val monitorVerticle = "net.bytle.monitor.MonitorMain"

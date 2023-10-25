@@ -9,4 +9,4 @@ build/
 .env
 .yarn
 logs
-**/*secret.yml
+**/*secret.*

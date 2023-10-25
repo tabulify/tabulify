@@ -93,10 +93,11 @@ public class ConfigAccessor {
       parent = parent.parentConfigAccessor;
     }
     Collections.reverse(keyParts);
+    keyParts.add(key);
+    String envName = String.join(ENV_NAME_SEPARATOR, keyParts);
     // env separator is the underscore
-    String keyWithEnvSep = key.replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR);
-    keyParts.add(keyWithEnvSep);
-    return String.join(ENV_NAME_SEPARATOR, keyParts);
+    // Env Name only allows letters, numbers, and underscores
+    return envName.replace(FILE_NAME_SEPARATOR, ENV_NAME_SEPARATOR);
 
   }
 

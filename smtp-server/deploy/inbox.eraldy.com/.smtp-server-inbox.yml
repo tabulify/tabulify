@@ -6,8 +6,8 @@ services:
     starttls.enabled: false # We don't have any certificate management for now
     starttls.required: false
     auth.required: false
-smtp.host: inbox.eraldy.com
-smtp.hosts:
+host: inbox.eraldy.com
+hosts:
   inbox.eraldy.com:
     domain: 'inbox.eraldy.com'
     postmaster: 'nico@eraldy.com'

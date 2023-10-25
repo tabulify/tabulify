@@ -11,7 +11,7 @@ It will check:
 
 ## Deploy
 
-The machine should be created first. See [](./doc/monitor-init.md)
+The machine should be created first. See [](./doc/monitor-fly-machine-init.md)
 
 Then deploy by updating the image.
 

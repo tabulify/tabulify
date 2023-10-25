@@ -1,4 +1,6 @@
-description = "Vertx Smtp"
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+description = "Smtp Server"
 
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val simpleEmailVersion = rootProject.ext.get("simpleEmailVersion").toString()
@@ -33,4 +35,56 @@ dependencies {
   testFixturesApi(project(":bytle-vertx"))
 
 
+}
+
+plugins {
+  // https://github.com/jponge/vertx-gradle-plugin
+  id("io.vertx.vertx-plugin")
+}
+
+val smtpVerticle = "net.bytle.smtp.SmtpVerticle"
+
+vertx {
+  mainVerticle = smtpVerticle
+  vertxVersion
+}
+
+val vertxLauncher = "io.vertx.core.Launcher"
+val shadowJarTaskName = "shadowJar"
+tasks.named<ShadowJar>(shadowJarTaskName) {
+
+  mergeServiceFiles()
+  // Doc https://vertx.io/docs/vertx-core/java/#_using_the_launcher_in_fat_jars
+  manifest {
+    attributes(
+      mapOf(
+        "Main-Class" to vertxLauncher,
+        "Main-Verticle" to smtpVerticle,
+        "Main-Command" to "run",
+        "FatJar" to "yes",
+        "Multi-Release" to "true"
+      )
+    )
+
+  }
+
+}
+
+val deployTaskName = "deploy"
+tasks.register(deployTaskName) {
+  dependsOn(shadowJarTaskName)
+  doLast {
+
+    println("Fly Update Image")
+    exec {
+      commandLine(
+        "fly",
+        "deploy",
+        "--local-only"
+      )
+    }
+
+    println("Fly completed")
+
+  }
 }

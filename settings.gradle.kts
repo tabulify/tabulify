@@ -1,3 +1,11 @@
+pluginManagement {
+  val vertxPluginVersion: String by settings
+  plugins {
+    // https://github.com/jponge/vertx-gradle-plugin
+    id("io.vertx.vertx-plugin") version vertxPluginVersion
+  }
+}
+
 /*
  * The settings files is the main entry to every project
  */

@@ -31,7 +31,7 @@ The following is not implemented:
 
 The SMTP server is capable to start a Net Server on multiple port with different configurations.
 
-The standard configuration in [.smtp.yml](.smtp.yml) is:
+The standard configuration in [.smtp.yml](.smtp-server.yml) is:
 * a PLAIN port with STARTTLS (port 25 or 2525)
 * a TLS port (port 465)
 
@@ -42,7 +42,7 @@ The server can host SMTP server (virtual SMTP host)
 In case of PLAIN connection, we can get the requested host via SNI, we
 show then not the domain but the hostname.
 
-See the [configuration file](.smtp.yml) for an example of hosts definition.
+See the [configuration file](.smtp-server.yml) for an example of hosts definition.
 
 ### Extensions
 
@@ -86,7 +86,7 @@ Transactional Reception:
   * Streaming:
     * Not implemented: the whole message is in memory
   * Quota:
-    * See the [configuration file](.smtp.yml)
+    * See the [configuration file](.smtp-server.yml)
   * Tracing:
     * We add a `Received` headers (not yet `Return Path`)
   * Postmaster:
@@ -107,7 +107,7 @@ The delivery into `mailbox` is done in the [SmtpDelivery class](./src/main/java/
 
 ### Configuration
 
-There is only one configuration file, the [.smtp.yml](.smtp.yml) file.
+There is only one configuration file, the [.smtp.yml](.smtp-server.yml) file.
 
 ## Dev note
 

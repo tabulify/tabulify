@@ -127,6 +127,7 @@ public class SmtpDelivery implements Handler<Long> {
 
     /**
      * Retry Handling
+     * TODO: Retry for X more hours and notified if the delivery fails permanently. Gmail retries for 46 more hours.
      */
     try {
       Instant lastDeliveringTentative = smtpDeliveryEnvelope.getLastDeliveryTentative(recipient);

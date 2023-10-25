@@ -21,7 +21,7 @@ import java.util.List;
 public class SmtpVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LogManager.getLogger(SmtpVerticle.class);
-  private static final String APPLICATION_NAME = "smtp";
+  private static final String APPLICATION_NAME = "smtp-server";
   private SmtpServer smtpServer;
 
 
