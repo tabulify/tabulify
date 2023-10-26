@@ -34,5 +34,12 @@ scrape_configs:
       - targets: [ 'localhost:{{ prometheus_node_exporter_port }}' ]
   # https://learn.netdata.cloud/docs/exporting/prometheus#querying-metrics
   - job_name: "netdata"
+    metrics_path: '/api/v1/allmetrics?format=prometheus&help=yes'
     static_configs:
-      - targets: [ 'localhost:{{ netdata_default_port }}/api/v1/allmetrics?format=prometheus&help=yes' ]
+      - targets: [ 'localhost:{{ netdata_default_port }}' ]
+
+remote_write:
+  - url: https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push
+    basic_auth:
+      username: 182629
+      password: {{ grafana_cloud_password }}
