@@ -11,6 +11,8 @@ import net.bytle.email.BMailInternetAddress;
  * other breach of security-- an SMTP server may block mail directed to
  * Postmaster.  However, such arrangements SHOULD be narrowly tailored
  * so as, to avoid blocking messages which are not part of such attacks.
+ * <p>
+ * See also: <a href="https://www.postfix.org/BASIC_CONFIGURATION_README.html#notify">What trouble to report to the postmaster</a>
  */
 public class SmtpPostMaster {
 

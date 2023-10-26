@@ -1,3 +1,5 @@
 ---
 
-postfix_conf_path: '/etc/postfix/main.cf'
+postfix_conf_main_path: '/etc/postfix/main.cf'
+postfix_conf_master_path: '/etc/postfix/master.cf'
+postfix_smtp_port: 25

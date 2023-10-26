@@ -7,7 +7,7 @@ template.cache: true
 
 # mail (postfix as TLS and is available on port 25 and 587)
 # on 587, there is relay restriction, not on 25
-mail.smtp.default.port: 25
+mail.smtp.default.port: {{ postfix_smtp_port }}
 # starttls disabled is mandatory otherwise it tries a TLS connection, and
 # we get `No subject alternative DNS name matching localhost found`
 mail.smtp.default.starttls: 'disabled'

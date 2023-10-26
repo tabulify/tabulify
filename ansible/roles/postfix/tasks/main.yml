@@ -6,8 +6,16 @@
   when: ansible_os_family != "RedHat" # Centos
 
 
-- name: Root postfix task
+- name: Postfix Installation task
   import_tasks: 'post.yml'
+  become: true
+
+- name: Postfix Master conf
+  import_tasks: 'post_master_cf.yml'
+  become: true
+
+- name: Postfix Main conf
+  import_tasks: 'post_main_cf.yml'
   become: true
 
 - name: Create the user mail accounts
@@ -40,3 +48,8 @@
   become: true
   import_tasks: 'post_submission.yml'
 
+- name: Ensure postfix is started and enabled at boot.
+  service:
+    name: postfix
+    state: started
+    enabled: true

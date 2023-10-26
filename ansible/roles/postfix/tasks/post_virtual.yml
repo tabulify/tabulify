@@ -4,7 +4,7 @@
 - name: Update Postfix Virtual table alias file
   notify: restart postfix
   lineinfile:
-    dest: "{{ postfix_conf_path }}"
+    dest: "{{ postfix_conf_main_path }}"
     line: "{{ item.name }} = {{ item.value }}"
     regexp: "^[#]{0,1}{{ item.name }}"
   with_items:
@@ -21,9 +21,3 @@
     path: '{{ postfix_virtual_alias_file }}'
     block: '{{ postfix_virtual_alias_lines }}'
     marker: "# {mark} ANSIBLE MANAGED BLOCK Postfix Virtual alias"
-
-
-
-
-
-

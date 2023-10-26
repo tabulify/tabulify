@@ -76,7 +76,7 @@
 - name: Update Postfix configuration.
   notify: restart postfix
   lineinfile:
-    dest: '{{postfix_conf_path}}'
+    dest: '{{postfix_conf_main_path}}'
     line: "{{ item.name }} = {{ item.value }}"
     regexp: "^[#]{0,1}{{ item.name }}"
   with_items:
@@ -99,5 +99,3 @@
     cmd: "opendkim-testkey -d {{ item.name }} -s {{ dkim_selector }} -k {{ dkim_key_path }}"
   with_items: "{{ dkim_domains }}"
   tags: dkim-test-key
-
-
