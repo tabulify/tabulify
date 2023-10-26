@@ -15,9 +15,7 @@ The command that we have run to init the fly environment
 ..\gradlew assemble
 ```
 
-```bash
-docker build -t com.eraldy/smtp-inbox -f deploy/inbox.eraldy.com/Dockerfile .
-```
+
 
 ```dos
 fly launch ^
@@ -35,4 +33,14 @@ flyctl secrets import < deploy/inbox.eraldy.com/.smtp-server-inbox-fly-secret.en
 ```
 ```bash
 fly scale count 1
+```
+
+### Docker
+  * Creating the image
+```bash
+docker build -t com.eraldy/smtp-inbox -f deploy/inbox.eraldy.com/Dockerfile .
+```
+  * Running it
+```bash
+docker run --rm -p 2525:25 --env-file deploy/inbox.eraldy.com/.smtp-server-inbox-fly-secret.env --name smtp-inbox com.eraldy/smtp-inbox
 ```

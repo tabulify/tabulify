@@ -77,6 +77,7 @@ tasks.register(deployTaskName) {
 
     println("Fly Update Image")
     exec {
+      // fly deploy -c </path/to/fly.toml>
       commandLine(
         "fly",
         "deploy",

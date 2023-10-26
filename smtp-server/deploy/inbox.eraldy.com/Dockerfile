@@ -5,7 +5,6 @@ ENV APP_NAME smtp-server
 # uber/fat jar
 ENV APP_FILE  bytle-${APP_NAME}-all.jar
 
-EXPOSE 25
 
 RUN echo "==> Update"  && \
     apt-get update && \
@@ -17,5 +16,7 @@ COPY ./build/libs/$APP_FILE $APP_DIR/$APP_FILE
 COPY ./deploy/inbox.eraldy.com/.smtp-server-inbox.yml $APP_DIR/.$APP_NAME.yml
 
 WORKDIR $APP_DIR
+EXPOSE 25
 ENTRYPOINT ["sh", "-c"]
-CMD ["exec java -jar $APP_FILE"]
+# 192 = 256/4*3
+CMD ["exec java -Xmx192m -jar $APP_FILE"]
