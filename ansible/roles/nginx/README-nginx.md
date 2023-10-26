@@ -60,7 +60,6 @@ openssl x509 -in /opt/nginx/client_certificate/root_certificate.pem -noout -text
 The client certificate are available for one year.
 
 
+## Default HTML pages
 
-
-
-
+The default HTML pages are located in `/usr/share/nginx/html`

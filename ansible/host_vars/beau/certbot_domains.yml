@@ -35,9 +35,9 @@ cloudflare_domains:
   gogs.bytle.net:
     fqdn: '{{ gogs_fqdn }}'
     dir: '{{ gogs_fqdn }}'
-  prometheus.bytle.net:
-    fqdn: '{{ prometheus_node_exporter_fqdn }}'
-    dir: '{{ prometheus_node_exporter_fqdn }}'
+  beau.bytle.net:
+    fqdn: '{{ hostname }}'
+    dir: '{{ hostname }}'
   combostrap.com:
     fqdn: '{{ combo_fqdn }}'
     dir: '{{ combo_fqdn }}'
@@ -50,9 +50,6 @@ cloudflare_domains:
   tabulify.com:
     fqdn: '{{ tabulify_fqdn }}'
     dir: '{{ tabulify_fqdn }}'
-  hostname:
-    fqdn: '{{ hostname }}'
-    dir: '{{ hostname }}'
   drill.bytle.net:
     fqdn: '{{ drill_fqdn }}'
     dir: '{{ drill_fqdn }}'

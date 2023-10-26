@@ -1,0 +1,51 @@
+
+
+- name: Check if Prometheus node exporter is already installed.
+  stat:
+    path: "{{ prometheus_node_exporter_home }}/node_exporter"
+  register: node_exporter_exe
+- name: Download
+  when: not node_exporter_exe.stat.exists
+  block:
+
+    - name: Download Node exporter
+      get_url:
+        url: "{{ prometheus_node_exporter_binary_url }}"
+        dest: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
+        owner: "{{ prometheus_user_name }}"
+        group: "{{ prometheus_user_group }}"
+        checksum: "{{ prometheus_node_exporter_checksum }}"
+
+    - name: Unzip Node exporter
+      unarchive:
+        src: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
+        dest: "{{ prometheus_install_dir }}"
+        owner: "{{ prometheus_user_name }}"
+        group: "{{ prometheus_user_group }}"
+        #creates: "{{ gogs_home }}/gogs"
+        copy: false
+    - name: Copy files
+      become: yes
+      become_user: "{{ prometheus_user_name }}"
+      shell:
+        cmd: "/bin/cp -rf {{ prometheus_install_dir }}/{{ prometheus_node_exporter_name }}/* {{ prometheus_node_exporter_home }}"
+
+- name: Copy the systemd node-exporter.service file
+  template:
+    src: node-exporter.service
+    dest: /etc/systemd/system/node-exporter.service
+    mode: 0644
+- name: 'Prometheus node exporter reload'
+  systemd:
+    name: 'node-exporter.service'
+    enabled: 'yes'
+    daemon_reload: yes
+    state: restarted
+- name: Test that the service is up
+  uri:
+    url: http://localhost:{{ prometheus_node_exporter_port }}/metrics
+    method: GET
+  register: httpcall
+  until: httpcall.status == 200
+  delay: 5 # Every 5 seconds
+  retries: 5 # 5 * 5 seconds = 25

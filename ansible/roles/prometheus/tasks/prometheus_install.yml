@@ -1,0 +1,59 @@
+# https://prometheus.io/docs/introduction/first_steps/
+
+- name: Check if Prometheus is already installed.
+  stat:
+    path: "{{ prometheus_home }}/prometheus"
+  register: prometheus
+- name: Download
+  when: not prometheus.stat.exists
+  block:
+
+    - name: Download Prometheus
+      get_url:
+        url: "{{ prometheus_binary_url }}"
+        dest: "{{ prometheus_install_dir }}/prometheus.tar.gz"
+        owner: "{{ prometheus_user_name }}"
+        group: "{{ prometheus_user_group }}"
+        checksum: "{{ prometheus_checksum }}"
+
+    - name: Unzip Prometheus Binary
+      unarchive:
+        src: "{{ prometheus_install_dir }}/prometheus.tar.gz"
+        dest: "{{ prometheus_install_dir }}"
+        owner: "{{ prometheus_user_name }}"
+        group: "{{ prometheus_user_group }}"
+        copy: false
+    - name: Move files
+      become: yes
+      become_user: "{{ prometheus_user_name }}"
+      shell:
+        cmd: "/bin/cp -rf {{ prometheus_install_dir }}/{{ prometheus_binary_name }}/* {{ prometheus_home }}"
+
+- name: Copy the configuration
+  template:
+    src: prometheus.yml
+    dest: "{{ prometheus_home }}/prometheus.yml"
+    owner: "{{ prometheus_user_name }}"
+    group: "{{ prometheus_user_group }}"
+
+- name: Copy the systemd prometheus.service file
+  template:
+    src: prometheus.service
+    dest: /etc/systemd/system/prometheus.service
+    mode: 0644
+
+- name: 'Prometheus Service Enabled'
+  systemd:
+    name: 'prometheus.service'
+    enabled: 'yes'
+    daemon_reload: yes
+    state: restarted
+
+- name: Test that the prometheus service is up
+  uri:
+    url: http://localhost:{{ prometheus_port }}/metrics
+    method: GET
+  register: httpcall
+  until: httpcall.status == 200
+  delay: 5 # Every 5 seconds
+  retries: 5 # 5 * 5 seconds = 25

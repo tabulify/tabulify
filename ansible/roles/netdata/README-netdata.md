@@ -18,10 +18,10 @@ They have also written in the meantime a playbook. Check it out at
 
 ## Conf
 
-  * To get a version of the [conf file](templates/netdata.conf) with all possible properties commented at [Actual Conf](https://netdata.bytle.net/netdata.conf)
+  * To get a version of the conf file `netdata.conf` with all possible properties commented at [Actual Conf](https://netdata.bytle.net/netdata.conf)
   * To edit or create a conf file, you can use the [edit-conf utility](https://learn.netdata.cloud/docs/configure/nodes#use-edit-config-to-edit-configuration-files)
 
-!!! location is not the same than in the doc !!!
+!!! location is not the same as in the doc !!!
 
 ```bash
 /usr/libexec/netdata/edit-config

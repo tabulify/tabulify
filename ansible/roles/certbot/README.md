@@ -6,7 +6,7 @@ This role will install certbot of let's encrypt in order to get certificate.
 
 Certificate are used:
 
-  * in website ([nginx](../nginx/README.md))
+  * in website ([nginx](../nginx/README-nginx.md))
   * for the server (smtp). See [Postfix](../postfix/README-postfix.md)
 
 ## Usage

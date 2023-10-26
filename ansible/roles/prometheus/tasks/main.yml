@@ -21,60 +21,14 @@
         owner: '{{ prometheus_user_group }}'
         mode: 'u=rwx,g=rwx,o='
         recurse: true
-    - name: Check if Prometheus is already installed.
-      stat:
-        path: "{{ prometheus_home }}/node_exporter"
-      register: node_exporter_exe
-    - name: Download
-      when: not node_exporter_exe.stat.exists
-      block:
-
-      - name: Create Prometheus Install dir
-        file:
-          path: "{{ prometheus_install_dir }}"
-          state: directory
-          owner: "{{ prometheus_user_name }}"
-          group: "{{ prometheus_user_group }}"
-          mode: 'u=rwx,g=rx,o=rx'
-
-      - name: Download Node exporter
-        get_url:
-          url: "{{ prometheus_node_exporter_binary_url }}"
-          dest: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
-          owner: "{{ prometheus_user_name }}"
-          group: "{{ prometheus_user_group }}"
-          checksum: "{{ prometheus_node_exporter_checksum }}"
-
-      - name: Unzip Node exporter
-        unarchive:
-          src: "{{ prometheus_install_dir }}/node_exporter.tar.gz"
-          dest: "{{ prometheus_install_dir }}"
-          owner: "{{ prometheus_user_name }}"
-          group: "{{ prometheus_user_group }}"
-          #creates: "{{ gogs_home }}/gogs"
-          copy: false
-      - name: Copy files
-        become: yes
-        become_user: "{{ prometheus_user_name }}"
-        shell:
-          cmd: "/bin/cp {{ prometheus_install_dir }}/{{ prometheus_node_exporter_name }}/* {{ prometheus_home }}"
-
-    - name: Copy the systemd prometheus.service file
-      template:
-        src: prometheus.service
-        dest: /etc/systemd/system/prometheus.service
-        mode: 0644
-    - name: 'Prometheus reload'
-      systemd:
-        name: 'prometheus.service'
-        enabled: 'yes'
-        daemon_reload: yes
-        state: restarted
-    - name: Test that the service is up
-      uri:
-        url: http://localhost:{{ prometheus_node_exporter_port }}/metrics
-        method: GET
-      register: httpcall
-      until: httpcall.status == 200
-      delay: 5 # Every 5 seconds
-      retries: 5 # 5 * 5 seconds = 25
+    - name: Create Prometheus Temporary Install dir
+      file:
+        path: "{{ prometheus_install_dir }}"
+        state: directory
+        owner: "{{ prometheus_user_name }}"
+        group: "{{ prometheus_user_group }}"
+        mode: 'u=rwx,g=rx,o=rx'
+    - name: Install Prometheus
+      include: prometheus_install.yml
+    - name: Install Node exporter
+      include: prometheus_node_exporter.yml

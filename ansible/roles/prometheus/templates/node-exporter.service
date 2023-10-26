@@ -1,0 +1,19 @@
+[Unit]
+Description=Prometheus Node Exporter
+Documentation=https://github.com/prometheus/node_exporter
+After=syslog.target
+After=network.target
+
+
+[Service]
+Type=simple
+User={{ prometheus_user_name }}
+Group={{ prometheus_user_group }}
+WorkingDirectory={{ prometheus_node_exporter_home }}
+ExecStart={{ prometheus_node_exporter_home }}/node_exporter --collector.systemd
+Restart=always
+Environment=USER={{ prometheus_user_name }} HOME={{ prometheus_node_exporter_home }}
+
+
+[Install]
+WantedBy=multi-user.target

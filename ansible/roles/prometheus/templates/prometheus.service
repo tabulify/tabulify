@@ -1,6 +1,5 @@
 [Unit]
-Description=Prometheus Node Explorer
-Documentation=https://github.com/prometheus/node_exporter
+Description=Prometheus
 After=syslog.target
 After=network.target
 
@@ -10,7 +9,9 @@ Type=simple
 User={{ prometheus_user_name }}
 Group={{ prometheus_user_group }}
 WorkingDirectory={{ prometheus_home }}
-ExecStart={{ prometheus_home }}/node_exporter --collector.systemd
+ExecStart={{ prometheus_home }}/prometheus \
+  --config.file={{ prometheus_home }}/prometheus.yml \
+  --web.listen-address=:{{ prometheus_port }}
 Restart=always
 Environment=USER={{ prometheus_user_name }} HOME={{ prometheus_home }}
 

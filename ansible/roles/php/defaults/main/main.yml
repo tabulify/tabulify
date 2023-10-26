@@ -39,7 +39,7 @@ fpm_base_log: /var/log/php-fpm
 fpm_error_log: '{{ fpm_base_log }}/{{ fpm_spool_www_name }}-error.log'
 
 # The name where php-fpm will send the status page
-fpm_status_path: '/php-status'
+fpm_status_path: '/php-fpm/status'
 
 ###################################
 ### php.ini

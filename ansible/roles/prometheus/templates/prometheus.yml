@@ -1,0 +1,30 @@
+# Prometheus conf
+# https://prometheus.io/docs/operating/configuration
+
+# The global block Prometheus server's global configuration
+global:
+  scrape_interval:     15s # how often Prometheus will scrape targets
+  evaluation_interval: 15s # how often Prometheus will evaluate rules
+  # scrape_timeout is set to the global default (10s).
+
+# The location of any rules we want the Prometheus server to load
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+# - "first.rules"
+# - "second.rules"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# The scrape jobs
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus" # Prometheus scrapes itself.
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+      - targets: ['localhost:{{ prometheus_port }}']

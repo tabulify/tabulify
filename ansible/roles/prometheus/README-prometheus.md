@@ -7,6 +7,11 @@ Installation of the Node exporter as describe in this [page](https://prometheus.
 
 To do: [Basic Auth](https://prometheus.io/docs/guides/basic-auth/#nginx-example)
 
+## Run
+
+```bash
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags prometheus
+```
 
 ## Php-fpm
 
@@ -15,4 +20,4 @@ To do: [Basic Auth](https://prometheus.io/docs/guides/basic-auth/#nginx-example)
 
 ## URL
 
-  https://prometheus.bytle.net/
+  https://beau.bytle.net/prometheus

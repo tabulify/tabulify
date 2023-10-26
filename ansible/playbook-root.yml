@@ -24,7 +24,7 @@
     - name: Install Gogs
       role: gogs
       tags: gogs
-    - name: Install Prometheus Exporter
+    - name: Install Prometheus and node exporter
       role: prometheus
       tags: prometheus
     - name: Install Certbot and asks for the certificate
