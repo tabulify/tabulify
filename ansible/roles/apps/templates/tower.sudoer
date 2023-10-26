@@ -1,2 +1,2 @@
-Cmnd_Alias {{ tower_service_name }} = /usr/bin/systemctl start {{ tower_app_name }}, /usr/bin/systemctl stop {{ tower_app_name }}, /usr/bin/systemctl reload {{ tower_app_name }}, /usr/bin/systemctl restart {{ tower_app_name }}, /usr/bin/systemctl status {{ tower_app_name }}, /usr/bin/systemctl enable {{ tower_app_name }}
+Cmnd_Alias {{ tower_service_name }} = /usr/bin/systemctl start {{ tower_app_name }}, /usr/bin/systemctl stop {{ tower_app_name }}, /usr/bin/systemctl reload {{ tower_app_name }}, /usr/bin/systemctl restart {{ tower_app_name }}, /usr/bin/systemctl status {{ tower_app_name }}, /usr/bin/systemctl enable {{ tower_app_name }}, /usr/bin/journalctl -u {{ tower_app_name }}*
 {{ apps_user_name }} ALL = (ALL) NOPASSWD: {{ tower_service_name }}
