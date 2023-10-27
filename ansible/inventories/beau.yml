@@ -13,5 +13,5 @@ all: # keys must be unique, i.e. only one 'hosts' per group
             ansible_port: 22
             ansible_become_pass: '{{ ssh_user_password }}'
             # Version
-            openjdk_version: '1.8.0'
+            openjdk_version: '11'
             php_version: '7.4'

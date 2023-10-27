@@ -1,6 +1,7 @@
 
-
-- name: Ensure latest {{ openjdk_package_name }} is installed
+# the installation path is
+# /etc/alternatives/java_sdk_xxx_openjdk/
+- name: Install {{ openjdk_package_name }}
   yum:
     name: "{{ openjdk_package_name }}"
     state: latest

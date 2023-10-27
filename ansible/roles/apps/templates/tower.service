@@ -8,9 +8,11 @@ Type=simple
 User={{ apps_user_name }}
 Group={{ apps_user_group }}
 WorkingDirectory={{ tower_install_path }}
+# ExecStartPre should run as root
 # Systemd version > 231: The `+` prefix before the command is to run the command as root (ie +/usr/bin/...)
 # Systemd version < 231: PermissionsStartOnly=true: User & Group are only applied to ExecStart
 # https://www.freedesktop.org/software/systemd/man/systemd.service.html#ExecStart=
+# even if idea say that it's deprecated, it's not on CentOs7
 PermissionsStartOnly=true
 ExecStartPre=/usr/bin/cp /root/.tower.secret.yml {{ tower_install_path }}/.tower.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ tower_install_path }}/.tower.secret.yml
 # Log4j mitigation https://twitter.com/yazicivo/status/1469393075768373255?s=27
@@ -21,4 +23,3 @@ TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target
-

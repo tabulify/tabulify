@@ -1,6 +1,6 @@
 ---
 
 # see version at: https://jdk.java.net/archive/
-openjdk_version: 1.8.0
+openjdk_version: 11
 # the devel suffix add the jdk (ie javac, ...) needed by drill
 openjdk_package_name: "java-{{ openjdk_version }}-openjdk-devel"

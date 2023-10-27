@@ -8,13 +8,15 @@ Type=simple
 User={{ apps_user_name }}
 Group={{ apps_user_group }}
 WorkingDirectory={{ inbox_home }}
+# ExecStartPre should run as root
 # Systemd version > 231: The `+` prefix before the command is to run the command as root (ie +/usr/bin/...)
 # Systemd version < 231: PermissionsStartOnly=true: User & Group are only applied to ExecStart
 # https://www.freedesktop.org/software/systemd/man/systemd.service.html#ExecStart=
-# PermissionsStartOnly=true
-ExecStartPre=/usr/bin/cp /root/.{{ inbox_app_name }}.yml {{ inbox_home }}/.smtp-server.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ inbox_home }}/.smtp-server.secret.yml
+# even if idea say that it's deprecated, it's not on CentOs7
+PermissionsStartOnly=true
+ExecStartPre=/usr/bin/cp /root/.{{ inbox_app_name }}.secret.yml {{ inbox_home }}/.smtp-server.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ inbox_home }}/.smtp-server.secret.yml
 # Log4j mitigation https://twitter.com/yazicivo/status/1469393075768373255?s=27
-ExecStart=/bin/java -jar {{ inbox_fat_jar_path }} -Dvertx.cacheDirBase={{ inbox_cache_dir }} -Dlog4j2.formatMsgNoLookups=true
+ExecStart=/etc/alternatives/java_sdk_11_openjdk/bin/java -jar {{ inbox_fat_jar_path }} -Dvertx.cacheDirBase={{ inbox_cache_dir }} -Dlog4j2.formatMsgNoLookups=true
 Restart=on-failure
 TimeoutStopSec=5
 

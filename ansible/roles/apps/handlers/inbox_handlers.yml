@@ -5,7 +5,7 @@
     - name: 'Restarting the service'
       systemd:
         name: '{{ inbox_app_name }}'
-        state: restart
+        state: restarted
         daemon_reload: yes
 #    - name: Test that the service is up
 #      uri:
