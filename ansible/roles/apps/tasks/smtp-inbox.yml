@@ -1,0 +1,24 @@
+- name: Inbox | Create the cache dir
+  file:
+    state: directory
+    path: '{{ inbox_cache_dir }}'
+    group: '{{ apps_user_group }}'
+    owner: '{{ apps_user_name }}'
+    mode: 'u=rwx,g=rwx,o='
+- name: Inbox | Copy the systemd service file
+  notify: inbox restart
+  template:
+    src: '{{inbox_app_name}}.service'
+    dest: '/etc/systemd/system/{{tower_app_name}}.service'
+    mode: 0644
+- name: Enable {{ inbox_app_name }} service
+  notify: inbox restart
+  systemd:
+    name: '{{ inbox_app_name }}'
+    enabled: true
+- name: Copy the secret configuration file
+  notify: inbox restart
+  template:
+    src: '.{{ inbox_app_name }}.secret.yml'
+    dest: '/root/.{{ inbox_app_name }}.secret.yml'
+    mode: 'u=rwx,g=rwx,o='

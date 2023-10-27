@@ -12,7 +12,11 @@ Based on [rpm](https://packagecloud.io/netdata/netdata/install#manual-rpm)
 Netdata is an agent with  minimal functionality such as alerting, UI.
 If you want to create dashboard you need a Netdata cloud account (cost is 3 euro by node)
 
+The filtering by website is done by graph.
+https://community.netdata.cloud/t/go-web-log-aggregates-the-metrics-how-can-i-monitor-a-web-log-by-web-site/4803
+
 What we want is a database, so that we can query it and integrate it in our application.
+
 
 ## GUI
 

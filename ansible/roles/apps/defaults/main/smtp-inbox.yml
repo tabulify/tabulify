@@ -1,0 +1,7 @@
+# App to receive email
+
+inbox_app_name: 'inbox'
+
+inbox_home: '{{ apps_install_path }}/{{ inbox_app_name }}'
+
+inbox_cache_dir: '{{ inbox_home }}/cache'
