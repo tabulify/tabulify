@@ -39,7 +39,7 @@ scrape_configs:
       - targets: [ 'localhost:{{ netdata_default_port }}' ]
 
 remote_write:
-  - url: https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push
+  - url: '{{ grafana_cloud_prometheus_url }}'
     basic_auth:
-      username: 182629
-      password: {{ grafana_cloud_password }}
+      username: '{{ grafana_cloud_prometheus_user }}'
+      password: '{{ grafana_cloud_prometheus_password }}'

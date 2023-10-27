@@ -7,7 +7,7 @@ in this [doc](https://docs.ovh.com/fr/vps/conseils-securisation-vps/)
 
 ## Run
 
-See [](../../README.md)
+See [](../../README-ansible.md)
 
 ## Configuration
 

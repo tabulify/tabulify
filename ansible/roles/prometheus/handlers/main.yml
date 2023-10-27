@@ -1,9 +1,1 @@
 ---
-
-- name: 'prometheus reload'
-  become: yes
-  systemd:
-    name: 'prometheus.service'
-    enabled: 'yes'
-    daemon_reload: yes
-    state: restarted

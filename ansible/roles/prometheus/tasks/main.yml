@@ -31,4 +31,5 @@
     - name: Install Prometheus
       include: prometheus_install.yml
     - name: Install Node exporter
+      tags: prom-node-exporter
       include: prometheus_node_exporter.yml

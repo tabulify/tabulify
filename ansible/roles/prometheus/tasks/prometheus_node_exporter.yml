@@ -1,4 +1,5 @@
-
+# doc
+# https://github.com/prometheus/node_exporter
 
 - name: Check if Prometheus node exporter is already installed.
   stat:
@@ -25,27 +26,15 @@
         #creates: "{{ gogs_home }}/gogs"
         copy: false
     - name: Copy files
+      notify: 'prom-node-exporter restart'
       become: yes
       become_user: "{{ prometheus_user_name }}"
       shell:
         cmd: "/bin/cp -rf {{ prometheus_install_dir }}/{{ prometheus_node_exporter_name }}/* {{ prometheus_node_exporter_home }}"
 
 - name: Copy the systemd node-exporter.service file
+  notify: 'prom-node-exporter restart'
   template:
     src: node-exporter.service
     dest: /etc/systemd/system/node-exporter.service
     mode: 0644
-- name: 'Prometheus node exporter reload'
-  systemd:
-    name: 'node-exporter.service'
-    enabled: 'yes'
-    daemon_reload: yes
-    state: restarted
-- name: Test that the service is up
-  uri:
-    url: http://localhost:{{ prometheus_node_exporter_port }}/metrics
-    method: GET
-  register: httpcall
-  until: httpcall.status == 200
-  delay: 5 # Every 5 seconds
-  retries: 5 # 5 * 5 seconds = 25
