@@ -1,4 +1,5 @@
 # Weblog connector
+# https://learn.netdata.cloud/docs/miscellaneous/monitor-nginx-or-apache-web-server-log-files-with-netdata
 # Python: https://learn.netdata.cloud/docs/agent/collectors/python.d.plugin/web_log
 # Go was not still available https://learn.netdata.cloud/docs/agent/collectors/go.d.plugin/modules/weblog#custom-log-format
 # cd /usr/libexec/netdata
@@ -9,15 +10,23 @@
 - name: Netdata - Web Log - Add the Netdata user to Nginx
   tags: netdata-weblog
   ansible.builtin.user:
-    name: netdata
+    name: '{{ netdata_user }}'
     groups: "nginx, {{www_group}}"
     append: yes
+
+- name: Netdata | Create the conf dir
+  file:
+    state: directory
+    path: '{{ netdata_go_conf_dir }}'
+    group: '{{ netdata_user }}'
+    owner: '{{ netdata_user }}'
+    mode: 'u=rwx,g=rwx,o='
 
 # Add web log for nginx and datacadamia
 # looking for 'web_log.conf' in ['/etc/netdata/python.d', '/usr/lib/netdata/conf.d/python.d']
 - name: Netdata - Web Log - Conf file
   tags: netdata-weblog
   template:
-    src: web_log.conf
-    dest: /etc/netdata/python.d/web_log.conf
+    src: go/web_log.conf
+    dest: '{{ netdata_go_conf_dir }}/web_log.conf'
   notify: netdata reload

@@ -1,4 +1,4 @@
-# Netdata Ansible Role Installation and Configuration
+# Netdata
 
 
 ## About
@@ -7,6 +7,14 @@ An [Ansible](https://www.ansible.com) role to install/configure [Netdata](https:
 
 Based on [rpm](https://packagecloud.io/netdata/netdata/install#manual-rpm)
 
+## Netdata business model
+
+Netdata is an agent with  minimal functionality such as alerting, UI.
+If you want to create dashboard you need a Netdata cloud account (cost is 3 euro by node)
+
+## GUI
+
+https://beau.bytle.net/netdata/
 
 ## Reference
 
