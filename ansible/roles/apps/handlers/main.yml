@@ -1,10 +1,4 @@
 ---
-# handlers file
-#
-- name: tower reload
-  become: true
-  systemd:
-    name: tower
-    state: reloaded
-    daemon_reload: yes
 
+- name: tower reload
+  include_tasks: handlers/tower_handlers.yml

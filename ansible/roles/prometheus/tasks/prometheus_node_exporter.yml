@@ -26,14 +26,14 @@
         #creates: "{{ gogs_home }}/gogs"
         copy: false
     - name: Copy files
-      notify: 'prom-node-exporter restart'
+      notify: 'restart prom-node-exporter'
       become: yes
       become_user: "{{ prometheus_user_name }}"
       shell:
         cmd: "/bin/cp -rf {{ prometheus_install_dir }}/{{ prometheus_node_exporter_name }}/* {{ prometheus_node_exporter_home }}"
 
 - name: Copy the systemd node-exporter.service file
-  notify: 'prom-node-exporter restart'
+  notify: 'restart prom-node-exporter'
   template:
     src: node-exporter.service
     dest: /etc/systemd/system/node-exporter.service

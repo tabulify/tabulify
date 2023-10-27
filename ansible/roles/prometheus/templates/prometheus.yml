@@ -33,10 +33,11 @@ scrape_configs:
     static_configs:
       - targets: [ 'localhost:{{ prometheus_node_exporter_port }}' ]
   # https://learn.netdata.cloud/docs/exporting/prometheus#querying-metrics
-  - job_name: "netdata"
-    metrics_path: '/api/v1/allmetrics?format=prometheus&help=yes'
-    static_configs:
-      - targets: [ 'localhost:{{ netdata_default_port }}' ]
+  # We don't need all this metrics.
+  #  - job_name: "netdata"
+  #    metrics_path: '/api/v1/allmetrics?format=prometheus&help=yes'
+  #    static_configs:
+  #      - targets: [ 'localhost:{{ netdata_default_port }}' ]
 
 remote_write:
   - url: '{{ grafana_cloud_prometheus_url }}'
