@@ -132,7 +132,8 @@ echo ""
 case ${COMMAND} in
 ls)
   echo -e "\nList"
-  echo -e "  * tower"
+  echo -e "  * tower: Api Application"
+  echo -e "  * inbox: Inbox Smtp Server"
   ;;
 monitoring)
   # to see the log as it happens in a tail fashion

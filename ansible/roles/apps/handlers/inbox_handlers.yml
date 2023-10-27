@@ -1,11 +1,11 @@
 
-- name: Restart Tower
+- name: Restart {{ inbox_app_name }}
   become: yes
   block:
     - name: 'Restarting the service'
       systemd:
-        name: tower
-        state: reloaded
+        name: '{{ inbox_app_name }}'
+        state: restart
         daemon_reload: yes
 #    - name: Test that the service is up
 #      uri:

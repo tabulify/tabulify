@@ -1,4 +1,7 @@
 ---
 
-- name: tower reload
+- name: tower restart
   include_tasks: handlers/tower_handlers.yml
+
+- name: inbox restart
+  include_tasks: handlers/inbox_handlers.yml

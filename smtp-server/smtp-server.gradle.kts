@@ -1,9 +1,17 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import java.text.SimpleDateFormat
+import java.util.*
 
 description = "Smtp Server"
 
+// version
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val simpleEmailVersion = rootProject.ext.get("simpleEmailVersion").toString()
+val antJschVersion = rootProject.ext.get("antJschVersion").toString()
+
+// ant
+val sshAntTask = configurations.create("sshAntTask")
+
 dependencies {
 
   implementation(project(":bytle-vertx"))
@@ -13,6 +21,9 @@ dependencies {
   implementation(project(":bytle-dns"))
   // A client delivery part that can be embedded in a normal server
   implementation(project(":bytle-smtp-client-delivery"))
+
+  sshAntTask("org.apache.ant:ant-jsch:$antJschVersion")
+
   // Does not pass a basic test to find a SPF record ...
   // we put it in test only
   // https://mvnrepository.com/artifact/org.apache.james.jspf/apache-jspf-resolver
@@ -70,8 +81,8 @@ tasks.named<ShadowJar>(shadowJarTaskName) {
 
 }
 
-val deployTaskName = "deploy"
-tasks.register(deployTaskName) {
+val deployFlyTaskName = "fly"
+tasks.register(deployFlyTaskName) {
   dependsOn(shadowJarTaskName)
   doLast {
 
@@ -87,5 +98,85 @@ tasks.register(deployTaskName) {
 
     println("Fly completed")
 
+  }
+}
+
+val deployTaskName = "deploy"
+tasks.register(deployTaskName) {
+  dependsOn(shadowJarTaskName)
+  doLast {
+
+    // Variable
+    val backendServerHost: String by project
+    val backendServerPort: String by project
+    val backendUserName: String by project
+    val backendUserPwd: String by project
+    val backendAppName = "inbox"
+    val backendAppHome = "/opt/apps/${backendAppName}"
+    val backendAppArchive = "bytle-smtp-server-all"
+
+    /**
+     * Upload the file
+     */
+    ant.withGroovyBuilder {
+      "taskdef"(
+        "name" to "scp",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.Scp",
+        "classpath" to sshAntTask.asPath
+      )
+    }
+
+    val timeStamp = SimpleDateFormat("yyyy.MM.dd-HH.mm.ss").format(Calendar.getInstance().time)
+    val appFile = "${backendAppArchive}.jar"
+    val deploymentFile = "build/libs/$appFile"
+    val remoteDeploymentFile = "${backendAppArchive}-to-deploy-${timeStamp}.jar"
+
+    println("Uploading the deployment file to ${backendAppHome}/$deploymentFile")
+    // https://ant.apache.org/manual/Tasks/scp.html
+    ant.withGroovyBuilder {
+      "scp"(
+        "file" to deploymentFile,
+        "remoteTofile" to "${backendUserName}@${backendServerHost}:${backendAppHome}/$remoteDeploymentFile",
+        "sftp" to "true",
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true,
+        "failonerror" to true
+      )
+    }
+    println("Upload completed")
+
+    /**
+     * Stop the service and rename the jar file
+     */
+    println("Restarting the service")
+    // Add the class path for sshexec
+
+    ant.withGroovyBuilder {
+      "taskdef"(
+        "name" to "sshexec",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.SSHExec",
+        "classpath" to sshAntTask.asPath
+      )
+    }
+    // https://ant.apache.org/manual/Tasks/sshexec.html
+    // The echo done at the end is to make the command always successful
+    val backupFile = "${backendAppArchive}-backup-${timeStamp}.jar"
+    val command =
+      "sudo systemctl stop $backendAppName ; mv ${backendAppHome}/$appFile ${backendAppHome}/${backupFile} ; mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} ;  sudo systemctl start $backendAppName; echo Stop, Move and Start Done"
+    ant.withGroovyBuilder {
+      "sshexec"(
+        "command" to command,
+        "host" to backendServerHost,
+        "username" to backendUserName,
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true,
+        "failonerror" to true
+      )
+    }
+    println("Restart completed")
   }
 }

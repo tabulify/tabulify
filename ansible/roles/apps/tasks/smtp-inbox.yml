@@ -9,7 +9,7 @@
   notify: inbox restart
   template:
     src: '{{inbox_app_name}}.service'
-    dest: '/etc/systemd/system/{{tower_app_name}}.service'
+    dest: '/etc/systemd/system/{{inbox_app_name}}.service'
     mode: 0644
 - name: Enable {{ inbox_app_name }} service
   notify: inbox restart
@@ -19,6 +19,6 @@
 - name: Copy the secret configuration file
   notify: inbox restart
   template:
-    src: '.{{ inbox_app_name }}.secret.yml'
+    src: '.{{ inbox_app_name }}.yml'
     dest: '/root/.{{ inbox_app_name }}.secret.yml'
     mode: 'u=rwx,g=rwx,o='

@@ -1,3 +1,4 @@
+// Version could be in the gradle.properties
 // For plugin management, there is also some version in the gradle.properties
 val log4jVersion = "2.20.0"
 // https://mvnrepository.com/artifact/org.assertj/assertj-core
@@ -17,6 +18,7 @@ val jakartaEmailVersion = "2.0.1"
 val simpleEmailVersion =  "8.1.3"
 // DnsJava
 val dnsJavaVersion =  "3.5.2"
+val antJschVersion = "1.9.2"
 
 ext {
   set("vertxVersion", vertxVersion)
@@ -25,6 +27,7 @@ ext {
   set("simpleEmailVersion", simpleEmailVersion)
   set("jakartaEmailVersion", jakartaEmailVersion)
   set("dnsJavaVersion", dnsJavaVersion)
+  set("antJschVersion", antJschVersion)
 }
 
 /**

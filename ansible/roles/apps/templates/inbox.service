@@ -1,24 +1,23 @@
 # Adapted from https://vertx.io/blog/vert-x-3-init-d-script/
 [Unit]
-Description={{ tower_app_name }} app
+Description={{ inbox_app_domain }} app
 After=network.target
 
 [Service]
 Type=simple
 User={{ apps_user_name }}
 Group={{ apps_user_group }}
-WorkingDirectory={{ tower_install_path }}
+WorkingDirectory={{ inbox_home }}
 # Systemd version > 231: The `+` prefix before the command is to run the command as root (ie +/usr/bin/...)
 # Systemd version < 231: PermissionsStartOnly=true: User & Group are only applied to ExecStart
 # https://www.freedesktop.org/software/systemd/man/systemd.service.html#ExecStart=
-PermissionsStartOnly=true
-ExecStartPre=/usr/bin/cp /root/.tower.secret.yml {{ tower_install_path }}/.tower.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ tower_install_path }}/.tower.secret.yml
+# PermissionsStartOnly=true
+ExecStartPre=/usr/bin/cp /root/.{{ inbox_app_name }}.yml {{ inbox_home }}/.smtp-server.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ inbox_home }}/.smtp-server.secret.yml
 # Log4j mitigation https://twitter.com/yazicivo/status/1469393075768373255?s=27
-ExecStart=/bin/java -jar {{ tower_fat_jar_path }} -Dvertx.cacheDirBase={{ tower_cache_dir }} -Dlog4j2.formatMsgNoLookups=true
+ExecStart=/bin/java -jar {{ inbox_fat_jar_path }} -Dvertx.cacheDirBase={{ inbox_cache_dir }} -Dlog4j2.formatMsgNoLookups=true
 Restart=on-failure
 TimeoutStopSec=5
 
 
 [Install]
 WantedBy=multi-user.target
-

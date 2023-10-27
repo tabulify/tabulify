@@ -8,13 +8,13 @@
 - name: Populate service data
   service_facts:
 - name: Copy the systemd backend.service file
-  notify: tower reload
+  notify: tower restart
   template:
     src: '{{tower_app_name}}.service'
     dest: '/etc/systemd/system/{{tower_app_name}}.service'
     mode: 0644
 - name: Enable {{ tower_app_name }} service
-  notify: tower reload
+  notify: tower restart
   systemd:
     name: '{{ tower_app_name }}'
     enabled: true

@@ -13,3 +13,8 @@
   become: true
   include: tabli.yml
   tags: app-tabli
+
+- name: Tabli
+  become: true
+  include: smtp-inbox.yml
+  tags: app-inbox

@@ -8,6 +8,8 @@ import java.util.*
 // change also the flyway version plugin !
 val flywayVersion = "9.7.0"
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
+val antJschVersion = rootProject.ext.get("antJschVersion").toString()
+
 val sshAntTask = configurations.create("sshAntTask")
 
 plugins {
@@ -33,6 +35,7 @@ val towerLauncher = "net.bytle.tower.MainLauncher"
 val towerMainVerticle = "net.bytle.tower.MainVerticle"
 // duplicate with the version in the vertx module
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
+
 vertx {
   mainVerticle = towerMainVerticle
   vertxVersion = this@Tower_gradle.vertxVersion
@@ -150,7 +153,7 @@ dependencies {
   // Wiser code
   testImplementation(testFixtures(project(":bytle-smtp-client")))
 
-  sshAntTask("org.apache.ant:ant-jsch:1.9.2")
+  sshAntTask("org.apache.ant:ant-jsch:$antJschVersion")
 
   // Test
   testImplementation(testFixtures(project(":bytle-vertx")))
@@ -630,8 +633,8 @@ tasks.register<Copy>(javascriptCopyToWebRoot) {
   //dependsOn(javascriptBuildFrontendTask)
 }
 
-val releaseTaskName = "release"
-tasks.register(releaseTaskName) {
+val deployTaskName = "deploy"
+tasks.register(deployTaskName) {
   dependsOn(shadowJarTaskName)
   doLast {
 

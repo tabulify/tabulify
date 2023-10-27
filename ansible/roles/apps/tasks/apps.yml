@@ -22,3 +22,10 @@
         owner: '{{ apps_user_group }}'
         mode: 'u=rwx,g=rwx,o='
         recurse: true
+    - name: Copy Appctl script
+      copy:
+        src: script/appctl
+        dest: /usr/bin/appctl
+        owner: root
+        group: root
+        mode: 'u=rwx,g=rwx,o='
