@@ -174,9 +174,9 @@ public class ConfigManager {
      * Retrieve the config data
      */
     if (Files.exists(this.configFile)) {
-      LOGGER.info("Configuration: tower configuration file found (" + this.configFile.toAbsolutePath() + ")");
+      LOGGER.info("Configuration: " + configName + " configuration file found (" + this.configFile.toAbsolutePath() + ")");
     } else {
-      LOGGER.warn("Configuration: tower configuration file not found (" + this.configFile.toAbsolutePath() + ")");
+      LOGGER.warn("Configuration: " + configName + " configuration file not found (" + this.configFile.toAbsolutePath() + ")");
     }
 
     ConfigStoreOptions yamlFile = new ConfigStoreOptions()

@@ -27,7 +27,7 @@ dependencies {
   // Does not pass a basic test to find a SPF record ...
   // we put it in test only
   // https://mvnrepository.com/artifact/org.apache.james.jspf/apache-jspf-resolver
-  testImplementation("org.apache.james.jspf:apache-jspf-resolver:1.0.3"){
+  testImplementation("org.apache.james.jspf:apache-jspf-resolver:1.0.3") {
     exclude(group = "commons-cli", module = "commons-cli")
     because("We don't use the cli")
   }
@@ -101,8 +101,8 @@ tasks.register(deployFlyTaskName) {
   }
 }
 
-val deployTaskName = "deploy"
-tasks.register(deployTaskName) {
+val deployServerTaskName = "deploy"
+tasks.register(deployServerTaskName) {
   dependsOn(shadowJarTaskName)
   doLast {
 
@@ -131,12 +131,31 @@ tasks.register(deployTaskName) {
     val deploymentFile = "build/libs/$appFile"
     val remoteDeploymentFile = "${backendAppArchive}-to-deploy-${timeStamp}.jar"
 
-    println("Uploading the deployment file to ${backendAppHome}/$deploymentFile")
+    println("Uploading the deployment file to ${backendAppHome}/$remoteDeploymentFile")
     // https://ant.apache.org/manual/Tasks/scp.html
     ant.withGroovyBuilder {
       "scp"(
         "file" to deploymentFile,
         "remoteTofile" to "${backendUserName}@${backendServerHost}:${backendAppHome}/$remoteDeploymentFile",
+        "sftp" to "true",
+        "port" to backendServerPort,
+        "trust" to "yes",
+        "password" to backendUserPwd,
+        "verbose" to true,
+        "failonerror" to true
+      )
+    }
+    println("Upload completed")
+
+    // Configuration file
+    val configurationFile = "deploy/inbox.eraldy.com/.smtp-server-inbox.yml"
+    val remoteConfigurationFile = "${backendAppHome}/.smtp-server.yml"
+    println("Uploading the configuration file to ${remoteConfigurationFile}")
+    // https://ant.apache.org/manual/Tasks/scp.html
+    ant.withGroovyBuilder {
+      "scp"(
+        "file" to configurationFile,
+        "remoteTofile" to "${backendUserName}@${backendServerHost}:${remoteConfigurationFile}",
         "sftp" to "true",
         "port" to backendServerPort,
         "trust" to "yes",
@@ -161,10 +180,14 @@ tasks.register(deployTaskName) {
       )
     }
     // https://ant.apache.org/manual/Tasks/sshexec.html
-    // The echo done at the end is to make the command always successful
+    // The && means that they should all be successful
     val backupFile = "${backendAppArchive}-backup-${timeStamp}.jar"
     val command =
-      "sudo systemctl stop $backendAppName ; mv ${backendAppHome}/$appFile ${backendAppHome}/${backupFile} ; mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} ;  sudo systemctl start $backendAppName; echo Stop, Move and Start Done"
+      "sudo systemctl stop $backendAppName &&" +
+        " mv ${backendAppHome}/$appFile ${backendAppHome}/${backupFile} &&" +
+        " mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} &&" +
+        " sudo systemctl start $backendAppName &&" +
+        " echo Stop, Move and Start Done"
     ant.withGroovyBuilder {
       "sshexec"(
         "command" to command,
