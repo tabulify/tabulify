@@ -71,7 +71,7 @@ ansible-bash
 ```
 then
 ```bash
-ansible-vault encrypt_string --vault-id passphrase.sh 'the_password_to_encrypt'
+ansible-vault encrypt_string --vault-id passphrase.sh the_password_to_encrypt
 # for a file
 cat cert.pem | ansible-vault encrypt_string --vault-id passphrase.sh
 ```
