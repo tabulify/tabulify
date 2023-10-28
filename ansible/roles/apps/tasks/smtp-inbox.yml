@@ -11,14 +11,20 @@
     src: '{{inbox_app_name}}.service'
     dest: '/etc/systemd/system/{{inbox_app_name}}.service'
     mode: 0644
-- name: Enable {{ inbox_app_name }} service
+- name: Inbox | Enable {{ inbox_app_name }} service
   notify: inbox restart
   systemd:
     name: '{{ inbox_app_name }}'
     enabled: true
-- name: Copy the secret configuration file
+- name: Inbox | Copy the executable
   notify: inbox restart
   template:
-    src: '.{{ inbox_app_name }}.yml'
-    dest: '/root/.{{ inbox_app_name }}.secret.yml'
-    mode: 'u=rwx,g=rwx,o='
+    src: 'inbox'
+    dest: '{{ inbox_home }}/inbox'
+    mode: u=rwx,g=rwx,o=
+    group: '{{ apps_user_group }}'
+    owner: '{{ apps_user_name }}'
+- name: Inbox | Give the permission
+  shell:
+    cmd: |
+      /sbin/setcap 'cap_net_bind_service=+ep' {{ inbox_home}}/inbox

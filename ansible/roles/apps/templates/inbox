@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# We have created an executable
+# to be able to give it the permission to take the port 25
+/etc/alternatives/java_sdk_11_openjdk/bin/java -jar {{ inbox_fat_jar_path }} -Dvertx.cacheDirBase={{ inbox_cache_dir }} -Dlog4j2.formatMsgNoLookups=true

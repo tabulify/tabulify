@@ -50,12 +50,17 @@ public class ConfigManager {
 
     Path currentPath = Paths.get(".");
     //noinspection ReplaceNullCheck
-    if (configManagerConfig.setSecretFilePath == null) {
+    if (configManagerConfig.confSecretFilePath == null) {
       this.secretFilePath = currentPath.resolve("." + this.configName + ".secret.yml").normalize();
     } else {
-      this.secretFilePath = configManagerConfig.setSecretFilePath;
+      this.secretFilePath = configManagerConfig.confSecretFilePath;
     }
-    this.configFile = currentPath.resolve("." + this.configName + ".yml").normalize();
+    //noinspection ReplaceNullCheck
+    if (configManagerConfig.confFilePath == null) {
+      this.configFile = currentPath.resolve("." + this.configName + ".yml").normalize();
+    } else {
+      this.configFile = configManagerConfig.confFilePath;
+    }
 
     this.actualConfig = configManagerConfig.jsonConfig;
 
@@ -159,19 +164,11 @@ public class ConfigManager {
     ConfigRetrieverOptions configRetriever = new ConfigRetrieverOptions();
 
     /**
+     * Retrieve the config data
      * File in the resources directory
      * <a href="https://vertx.io/docs/vertx-config/java/#_yaml_configuration_format">Doc</a>
      * We use Yaml and not properties because it can handle multiple line values.
      * It's handy for cryptographic key
-     */
-
-    /**
-     * The user/env value in the running directory
-     * <a href="https://vertx.io/docs/vertx-config/java/#_file">Doc</a>
-     *
-     */
-    /**
-     * Retrieve the config data
      */
     if (Files.exists(this.configFile)) {
       LOGGER.info("Configuration: " + configName + " configuration file found (" + this.configFile.toAbsolutePath() + ")");
@@ -188,15 +185,14 @@ public class ConfigManager {
         .put("raw-data", true)
       );
 
-    if (Files.exists(secretFilePath)) {
-      LOGGER.info("Configuration: tower secret configuration file found (" + secretFilePath.toAbsolutePath() + ")");
-    } else {
-      LOGGER.warn("Configuration: tower secret configuration file not found (" + secretFilePath.toAbsolutePath() + ")");
-    }
-
     /**
-     * The user/env value in the running directory
+     * Secret
      */
+    if (Files.exists(secretFilePath)) {
+      LOGGER.info("Configuration: " + configName + " secret configuration file found (" + secretFilePath.toAbsolutePath() + ")");
+    } else {
+      LOGGER.warn("Configuration: " + configName + " secret configuration file not found (" + secretFilePath.toAbsolutePath() + ")");
+    }
     ConfigStoreOptions yamlSecretFile = new ConfigStoreOptions()
       .setType("file")
       .setFormat("yaml")
@@ -254,7 +250,8 @@ public class ConfigManager {
     private final String name;
     private final Vertx vertx;
     public JsonObject jsonConfig;
-    private Path setSecretFilePath;
+    private Path confSecretFilePath;
+    private Path confFilePath;
 
     public ConfigManagerConfig(String name, Vertx vertx, JsonObject config) {
       this.name = name;
@@ -263,7 +260,7 @@ public class ConfigManager {
     }
 
     public ConfigManagerConfig setSecretFilePath(Path secretFilePath) {
-      this.setSecretFilePath = secretFilePath;
+      this.confSecretFilePath = secretFilePath;
       return this;
     }
 
@@ -274,5 +271,9 @@ public class ConfigManager {
 
     }
 
+    public ConfigManagerConfig setFilePath(Path path) {
+      this.confFilePath = path;
+      return this;
+    }
   }
 }
