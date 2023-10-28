@@ -16,15 +16,18 @@
   systemd:
     name: '{{ inbox_app_name }}'
     enabled: true
-- name: Inbox | Copy the executable
-  notify: inbox restart
-  template:
-    src: 'inbox'
-    dest: '{{ inbox_home }}/inbox'
-    mode: u=rwx,g=rwx,o=
-    group: '{{ apps_user_group }}'
-    owner: '{{ apps_user_name }}'
-- name: Inbox | Give the permission
-  shell:
-    cmd: |
-      /sbin/setcap 'cap_net_bind_service=+ep' {{ inbox_home}}/inbox
+- name: Inbox | Give the permission to java to use the port 25
+  # See https://bugs.openjdk.org/browse/JDK-7157699
+  block:
+    - name: Inbox | Set the permission to java
+      shell:
+        cmd: |
+          /sbin/setcap 'cap_net_bind_service=+ep' {{ inbox_java_path }}
+    - name: Inbox | Add the jli lib path to the trusted path
+      template:
+        src: 'inbox-ld-java.conf'
+        dest: '/etc/ld.so.conf.d/java.conf'
+    - name: Inbox | Create the ld path list
+      shell:
+        cmd: |
+          ldconfig

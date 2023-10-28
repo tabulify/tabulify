@@ -8,8 +8,8 @@ inbox_home: '{{ apps_install_path }}/{{ inbox_app_name }}'
 inbox_cache_dir: '{{ inbox_home }}/cache'
 inbox_fat_jar_path: '{{ inbox_home }}/bytle-smtp-server-all.jar'
 
-dmarc_s3_key_id: '3WsquWDtCYkFD8shmFZU'
-dmarc_s3_key_secret: !vault |
+inbox_dmarc_s3_key_id: '3WsquWDtCYkFD8shmFZU'
+inbox_dmarc_s3_key_secret: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   33656465313561623563633439623432363163316637316364666162623763313635623630386330
   6466333436646236656237303863336535636337633930620a613865643737663763613164363863
@@ -17,3 +17,6 @@ dmarc_s3_key_secret: !vault |
   3962656534663064630a333964343964363035353162383465316562396661363530373037636437
   61646561366636663237666235396534363666323066393431396534353439333734666130613964
   3934353763623165383065323039336533376663333834653365
+
+inbox_java_home: '/usr/lib/jvm/java-11-openjdk-11.0.20.0.8-1.el7_9.x86_64'
+inbox_java_path: '{{ inbox_java_home }}/bin/java'

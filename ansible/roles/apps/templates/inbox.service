@@ -16,7 +16,7 @@ WorkingDirectory={{ inbox_home }}
 PermissionsStartOnly=true
 ExecStartPre=/usr/bin/cp /root/.{{ inbox_app_name }}.secret.yml {{ inbox_home }}/.smtp-server.secret.yml ; /usr/bin/chown {{ apps_user_name }}:{{ apps_user_group }} {{ inbox_home }}/.smtp-server.secret.yml
 # Log4j mitigation https://twitter.com/yazicivo/status/1469393075768373255?s=27
-ExecStart={{ inbox_home }}/inbox
+ExecStart={{ inbox_java_path }} -jar {{ inbox_fat_jar_path }} -Dvertx.cacheDirBase={{ inbox_cache_dir }} -Dlog4j2.formatMsgNoLookups=true
 Restart=on-failure
 TimeoutStopSec=5
 
