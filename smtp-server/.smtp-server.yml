@@ -48,6 +48,8 @@ delivery.retry.interval: 15 # minutes, the interval in which a failed delivery i
 delivery.run.after.reception: true # deliver the message immediately after reception
 delivery.run.interval: 1 # minutes (if 0 not delivery occurs at interval)
 
+# Reception
+reception.enable.dns.block.list: true # by default false because not home but on cloud host, the DNS is public, and it then does not work
 
 # Users
 users:

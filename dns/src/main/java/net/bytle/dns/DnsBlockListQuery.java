@@ -66,6 +66,7 @@ public class DnsBlockListQuery {
        * InetAddress uses the local DNS of the machine
        * Unfortunately, it does not work for public DNS (ie VPS in the cloud)
        * A DNS server (such as Bind) should be installed
+       * Bind (Berkeley Internet Name Domain)
        */
       InetAddress responseAddress = InetAddress.getByName(host);
 

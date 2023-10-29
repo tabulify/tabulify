@@ -44,6 +44,9 @@ public class SmtpFiltering {
   }
 
   public static void checkIp(SmtpSession smtpSession) throws SmtpException {
+    if(!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()){
+      return;
+    }
     if (shouldNotBeFiltered(smtpSession)) {
       return;
     }

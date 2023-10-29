@@ -77,6 +77,7 @@ public class SmtpServer {
   private final SmtpReception smtpReception;
   private final SmtpDelivery smtpDelivery;
   private final boolean sessionReplayEnabled;
+  private final boolean enableDnsBlockList;
 
   public List<SmtpService> getSmtpServices() {
     return services;
@@ -284,6 +285,10 @@ public class SmtpServer {
     /**
      * Reception/Delivery
      */
+    // false is the default because on a cloud hosting, the DNS is public,
+    // and it's not supported by SpamHaus
+    this.enableDnsBlockList = configAccessor.getBoolean("reception.enable.dns.block.list",false);
+    LOGGER.info(LOG_TAB + "Dns Block List check set to " + this.enableDnsBlockList);
     this.smtpDelivery = new SmtpDelivery(smtpVerticle.getVertx(), configAccessor);
     this.smtpReception = new SmtpReception(smtpDelivery);
 
@@ -439,4 +444,7 @@ public class SmtpServer {
   }
 
 
+  public boolean isDnsBlockListEnabled() {
+    return this.enableDnsBlockList;
+  }
 }
