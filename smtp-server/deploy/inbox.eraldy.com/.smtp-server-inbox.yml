@@ -6,7 +6,9 @@ services:
     starttls.enabled: false # We don't have any certificate management for now
     starttls.required: false
     auth.required: false
-  2525:
+  # to access it from home
+  # 2525 is taken by postfix
+  25025:
     tls.enabled: false
     starttls.enabled: false # We don't have any certificate management for now
     starttls.required: false

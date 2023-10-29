@@ -32,7 +32,14 @@
         cmd: |
           ldconfig
 - name: Open port 25
+  notify: firewalld reload
   firewalld:
     port: 25/tcp
+    permanent: true
+    state: enabled
+- name: Open port 25025
+  notify: firewalld reload
+  firewalld:
+    port: 25025/tcp
     permanent: true
     state: enabled

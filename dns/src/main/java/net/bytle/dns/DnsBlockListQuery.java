@@ -2,6 +2,8 @@ package net.bytle.dns;
 
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -12,9 +14,10 @@ import java.util.*;
  */
 public class DnsBlockListQuery {
 
+  static Logger LOGGER = LogManager.getLogger(DnsBlockListQuery.class);
   private final BuilderConf conf;
 
-  private final HashMap<DnsBlockList, Boolean> responses;
+  private final HashMap<DnsBlockList, DnsBlockListResponseCode> responses;
 
 
   public DnsBlockListQuery(BuilderConf conf) {
@@ -31,7 +34,6 @@ public class DnsBlockListQuery {
   public static BuilderConf forDomain(String domain) {
     return new BuilderConf(DnsBlockListType.DOMAIN, domain);
   }
-
 
 
   /**
@@ -54,30 +56,43 @@ public class DnsBlockListQuery {
    * <a href="  * https://www.spamhaus.org/faq/section/DNSBL%20Usage#252">Can a Spamhaus DNSBL
    * be used on a web server or other applications?</a>
    */
-  private boolean query(DnsBlockList dnsBlockList) {
+  private DnsBlockListResponseCode query(DnsBlockList dnsBlockList) {
 
     try {
 
       String endPartBlockZone = "." + dnsBlockList.getZone();
       String host = this.conf.queryTerm + endPartBlockZone;
-      InetAddress address = InetAddress.getByName(host);
+      InetAddress responseAddress = InetAddress.getByName(host);
 
-      Set<String> blockingKnownResponses = dnsBlockList.getBlockingKnownResponses();
+      Set<DnsBlockListResponseCode> blockingKnownResponses = dnsBlockList.getBlockingKnownResponses();
       if (blockingKnownResponses.size() == 0) {
         /**
          * Response may be error response, we don't know, normally
          * you are blocked if we get a response
          */
-        return true;
+        LOGGER.info("No known responses for the blocking list. We block because we got the DNS response (" + responseAddress + ") for the host (" + host + ")");
+        return DnsBlockListResponseCode.R_INTERNAL_HOST_BLOCKED;
       }
       /**
        * Not all responses are blocking response
        * If we know the blocking responses, we check
        */
-      String responseCode = address.getHostName().replace(endPartBlockZone, "");
-      return blockingKnownResponses.contains(responseCode);
+      String responseCode = responseAddress.getHostAddress().replace(endPartBlockZone, "");
+      DnsBlockListResponseCode response = blockingKnownResponses.stream()
+        .filter(r -> r.getResponseCode().equals(responseCode))
+        .findFirst()
+        .orElse(null);
+      if (response == null) {
+        // Error on our end
+        LOGGER.warn("Internal Error: No response code for the response (" + responseCode + ")");
+        return DnsBlockListResponseCode.R_INTERNAL_RESPONSE_NOT_IN_LIST;
+      }
+      if (!response.getBlocked()) {
+        LOGGER.warn("Dns Blocking Query Error: Response code: " + response.getResponseCode() + ", description: " + response.getDescription());
+      }
+      return response;
     } catch (UnknownHostException e) {
-      return false;
+      return DnsBlockListResponseCode.R_INTERNAL_HOST_NOT_BLOCKED;
     }
 
   }
@@ -96,7 +111,7 @@ public class DnsBlockListQuery {
   }
 
 
-  public boolean getFirst() {
+  public DnsBlockListResponseCode getFirst() {
     return this.responses
       .values()
       .stream()
@@ -104,7 +119,14 @@ public class DnsBlockListQuery {
       .orElseThrow();
   }
 
-  public Map<DnsBlockList, Boolean> getResponses() {
+  public Map.Entry<DnsBlockList, DnsBlockListResponseCode> getFirstRecord() {
+    return this.responses.entrySet()
+      .stream()
+      .findFirst()
+      .orElseThrow();
+  }
+
+  public Map<DnsBlockList, DnsBlockListResponseCode> getResponses() {
     return this.responses;
   }
 

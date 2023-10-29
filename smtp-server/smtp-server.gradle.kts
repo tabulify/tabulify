@@ -188,6 +188,8 @@ tasks.register(deployServerTaskName) {
         " mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} &&" +
         " sudo systemctl start $backendAppName &&" +
         " echo Stop, Move and Start Done"
+    println("with the command")
+    println(command)
     ant.withGroovyBuilder {
       "sshexec"(
         "command" to command,

@@ -10,7 +10,8 @@ RUN echo "==> Update"  && \
     apt-get update && \
     echo "==> Install Dig"  && \
     # added because it's used in private network dns query
-    apt-get install -y bind9-dnsutils
+    apt-get install -y bind9-dnsutils && \
+    apt-get install -y telnet
 
 COPY ./build/libs/$APP_FILE $APP_DIR/$APP_FILE
 COPY ./deploy/inbox.eraldy.com/.smtp-server-inbox.yml $APP_DIR/.$APP_NAME.yml

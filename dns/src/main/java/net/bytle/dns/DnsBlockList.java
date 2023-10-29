@@ -2,6 +2,8 @@ package net.bytle.dns;
 
 import java.util.Set;
 
+import static net.bytle.dns.DnsBlockListResponseCode.*;
+
 public enum DnsBlockList {
 
 
@@ -64,15 +66,18 @@ public enum DnsBlockList {
    * <a href="https://www.spamhaus.org/faq/section/DNSBL%2520Usage#200">Status code</a>
    */
   ZEN_SPAMHAUS_ORG("zen.spamhaus.org", DnsBlockListType.IP, Set.of(
-    "127.0.0.2",
-    "127.0.0.3",
-    "127.0.0.4",
-    "127.0.0.5",
-    "127.0.0.6",
-    "127.0.0.7",
-    "127.0.0.10",
-    "127.0.0.11"
-    )),
+    DnsBlockListResponseCode.R_127_0_0_2,
+    DnsBlockListResponseCode.R_127_0_0_3,
+    DnsBlockListResponseCode.R_127_0_0_4,
+    DnsBlockListResponseCode.R_127_0_0_5,
+    DnsBlockListResponseCode.R_127_0_0_6,
+    DnsBlockListResponseCode.R_127_0_0_7,
+    DnsBlockListResponseCode.R_127_0_0_10,
+    DnsBlockListResponseCode.R_127_0_0_11,
+    DnsBlockListResponseCode.R_127_255_255_252,
+    DnsBlockListResponseCode.R_127_255_255_254,
+    DnsBlockListResponseCode.R_127_255_255_255
+  )),
   zombie_dnsbl_sorbs_net("zombie.dnsbl.sorbs.net", DnsBlockListType.IP, Set.of()),
   /**
    * Spamhaus DBL is a domain DNSBL.
@@ -80,11 +85,25 @@ public enum DnsBlockList {
    * or as a "Right Hand Side Block List" (RHSBL) for email addresses.
    * <a href="https://www.spamhaus.org/dbl/">...</a>
    */
-  DBL_SPAMHAUS_ORG("dbl.spamhaus.org", DnsBlockListType.DOMAIN, Set.of() );
+  DBL_SPAMHAUS_ORG("dbl.spamhaus.org", DnsBlockListType.DOMAIN, Set.of(
+    R_127_0_1_2,
+    R_127_0_1_4,
+    R_127_0_1_5,
+    R_127_0_1_6,
+    R_127_0_1_102,
+    R_127_0_1_103,
+    R_127_0_1_104,
+    R_127_0_1_105,
+    R_127_0_1_106,
+    R_127_0_1_255,
+    R_127_255_255_252,
+    R_127_255_255_254,
+    R_127_255_255_255
+  ));
 
 
   private final String dnsBlockListZone;
-  private final Set<String> blockingKnownResponses;
+  private final Set<DnsBlockListResponseCode> blockingKnownResponses;
   private final DnsBlockListType blockListQueryType;
 
   /**
@@ -92,7 +111,7 @@ public enum DnsBlockList {
    * @param blockListType          - the type of block list
    * @param blockingKnownResponses - the response known to be blocking (any other are errors)
    */
-  DnsBlockList(String dnsZone, DnsBlockListType blockListType, Set<String> blockingKnownResponses) {
+  DnsBlockList(String dnsZone, DnsBlockListType blockListType, Set<DnsBlockListResponseCode> blockingKnownResponses) {
     this.dnsBlockListZone = dnsZone;
     this.blockingKnownResponses = blockingKnownResponses;
     this.blockListQueryType = blockListType;
@@ -102,7 +121,7 @@ public enum DnsBlockList {
     return dnsBlockListZone;
   }
 
-  public Set<String> getBlockingKnownResponses() {
+  public Set<DnsBlockListResponseCode> getBlockingKnownResponses() {
     return this.blockingKnownResponses;
   }
 

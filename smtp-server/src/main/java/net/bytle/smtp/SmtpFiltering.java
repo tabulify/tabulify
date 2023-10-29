@@ -1,9 +1,13 @@
 package net.bytle.smtp;
 
+import net.bytle.dns.DnsBlockList;
 import net.bytle.dns.DnsBlockListQuery;
+import net.bytle.dns.DnsBlockListResponseCode;
 import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalStructure;
+
+import java.util.Map;
 
 /**
  * Filtering third party incoming transaction
@@ -30,11 +34,12 @@ public class SmtpFiltering {
       return;
     }
     String domain = emailAddress.getDomain();
-    boolean isBlocked = DnsBlockListQuery.forDomain(domain)
+    Map.Entry<DnsBlockList, DnsBlockListResponseCode> isBlocked = DnsBlockListQuery.forDomain(domain)
       .query()
-      .getFirst();
-    if (isBlocked) {
-      throw SmtpFiltering.getException("Domain " + domain + " blacklisted");
+      .getFirstRecord();
+    DnsBlockListResponseCode value = isBlocked.getValue();
+    if (value.getBlocked()) {
+      throw SmtpFiltering.getException("Domain " + domain + " blacklisted by " + isBlocked.getKey()+" (Reason: "+value.getDescription()+")");
     }
   }
 
@@ -43,9 +48,9 @@ public class SmtpFiltering {
       return;
     }
     String ipAddressToCheck = smtpSession.getSmtpSocket().getRemoteAddress().hostAddress();
-    boolean isAddressBlocked;
+    DnsBlockListResponseCode response;
     try {
-      isAddressBlocked = DnsBlockListQuery
+      response = DnsBlockListQuery
         .forIp(ipAddressToCheck)
         .query()
         .getFirst();
@@ -53,8 +58,8 @@ public class SmtpFiltering {
       throw SmtpException.create(SmtpReplyCode.TRANSACTION_FAILED_554, "The Ip Address (" + ipAddressToCheck + ") is not Ipv4")
         .setShouldQuit(true);
     }
-    if (isAddressBlocked) {
-      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted");
+    if (response.getBlocked()) {
+      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: "+response.getDescription()+")");
     }
   }
 
