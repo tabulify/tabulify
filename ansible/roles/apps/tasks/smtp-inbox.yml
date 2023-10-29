@@ -31,3 +31,8 @@
       shell:
         cmd: |
           ldconfig
+- name: Open port 25
+  firewalld:
+    port: 25/tcp
+    permanent: true
+    state: enabled

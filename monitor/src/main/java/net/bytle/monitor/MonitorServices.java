@@ -39,7 +39,8 @@ public class MonitorServices {
   private final DnsName eraldyDomain;
   private final DnsName gerardNicoDomain;
   private final Set<DnsName> apexDomains;
-  private final Map<String, Integer> mxs;
+  private final Map<String, Integer> apexMxs;
+  private final Map<String, Integer> eraldyInboxMx;
   private final DnsSession dnsSession;
   private final NetClient netClient;
   private final long certificateExpirationDelayBeforeFailure;
@@ -76,12 +77,8 @@ public class MonitorServices {
         .setIpv6("2607:5300:201:3100::85b")
         .build();
 
-      DnsHost monitorCanaHost = dnsSession.configHost("cana.bytle.net")
-        .setIpv4("51.79.86.27")
-        .build();
       mailers = new ArrayList<>();
       mailers.add(monitorBeauHost);
-      mailers.add(monitorCanaHost);
 
       monitorOegHost = dnsSession.configHost("oeg.bytle.net")
         .setIpv4("143.176.206.82")
@@ -90,7 +87,7 @@ public class MonitorServices {
       /**
        * Domains
        */
-      LOGGER.info("Monitor Dns - Creating domains");
+      LOGGER.info("Monitor Dns - Creating apex domains");
       eraldyDomain = dnsSession.createDnsName("eraldy.com");
       gerardNicoDomain = dnsSession.createDnsName("gerardnico.com");
       DnsName bytleDomain = dnsSession.createDnsName("bytle.net");
@@ -132,13 +129,17 @@ public class MonitorServices {
         throw new RuntimeException("The email are literal, it should not happen", e);
       }
 
-      LOGGER.info("Monitor Main Mx");
-      mxs = new HashMap<>();
-      mxs.put("aspmx.l.google.com", 1);
-      mxs.put("alt1.aspmx.l.google.com", 5);
-      mxs.put("alt2.aspmx.l.google.com", 5);
-      mxs.put("alt3.aspmx.l.google.com", 10);
-      mxs.put("alt4.aspmx.l.google.com", 10);
+      LOGGER.info("Monitor Mx for Apex Domains");
+      apexMxs = new HashMap<>();
+      apexMxs.put("aspmx.l.google.com", 1);
+      apexMxs.put("alt1.aspmx.l.google.com", 5);
+      apexMxs.put("alt2.aspmx.l.google.com", 5);
+      apexMxs.put("alt3.aspmx.l.google.com", 10);
+      apexMxs.put("alt4.aspmx.l.google.com", 10);
+
+      LOGGER.info("Monitor Eraldy Inbox Mx");
+      eraldyInboxMx = new HashMap<>();
+      eraldyInboxMx.put(monitorBeauHost.getName(), 1);
 
     } catch (UnknownHostException | DnsIllegalArgumentException e) {
       throw new RuntimeException(e);
@@ -242,14 +243,14 @@ public class MonitorServices {
 
   private void addMessage(String checkName, DnsName dnsName, String message, MonitorReportResultStatus status) {
     MonitorReportResult monitorReportResult = createResult(checkName, message, status);
-    DnsName apexName = dnsName.getApexName();
-    List<MonitorReportResult> values = this.reports.computeIfAbsent(apexName, k -> new ArrayList<>());
+    //DnsName apexName = dnsName.getApexName();
+    List<MonitorReportResult> values = this.reports.computeIfAbsent(dnsName, k -> new ArrayList<>());
     values.add(monitorReportResult);
   }
 
   private void addAsyncResult(DnsName dnsName, Future<MonitorReportResult> monitorReportResultFuture) {
-    DnsName apexName = dnsName.getApexName();
-    List<Future<MonitorReportResult>> values = this.asyncResults.computeIfAbsent(apexName, k -> new ArrayList<>());
+    //DnsName apexName = dnsName.getApexName();
+    List<Future<MonitorReportResult>> values = this.asyncResults.computeIfAbsent(dnsName, k -> new ArrayList<>());
     values.add(monitorReportResultFuture);
   }
 
@@ -365,7 +366,7 @@ public class MonitorServices {
         this.addFailure(mxCheck, domain, "A DNS exception has occurred: " + e.getMessage());
         continue;
       } catch (DnsNotFoundException e) {
-        this.addFailure(mxCheck, domain, "The mx records were not found");
+        this.addFailure(mxCheck, domain, "The mx records were not found for the domain "+domain);
         continue;
       }
 
@@ -382,7 +383,7 @@ public class MonitorServices {
         Integer actualMxPriority = actualMxs.get(expectedMxHost);
         actualMxs.remove(expectedMxHost);
         if (actualMxPriority == null) {
-          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") was not found");
+          this.addFailure(mxCheck, domain, "The mx (" + expectedMxHost + ") was not found for the domain "+domain);
           continue;
         }
         Integer expectedPriority = expectedMx.getValue();
@@ -441,7 +442,7 @@ public class MonitorServices {
     LOGGER.info("Monitor Check Services started");
 
 
-    LOGGER.info("Monitor Check Mail");
+    LOGGER.info("Monitor Check Mailers");
     /**
      * See also https://support.google.com/mail/answer/9981691
      */
@@ -450,14 +451,20 @@ public class MonitorServices {
     this.checkMailersARecord(mailers, mailersName);
     LOGGER.info("  * Check Mailers Ptr record");
     this.checkMailersPtr(mailers);
+
+    LOGGER.info("Monitor Check Domain Email");
     LOGGER.info("  * Check Spf");
     this.checkSpf(eraldyDomain, mailersName, apexDomains);
     LOGGER.info("  * Check Mx");
-    this.checkMx(mxs, apexDomains);
+    this.checkMx(apexMxs, apexDomains);
     LOGGER.info("  * Check Dmarc");
     this.checkDmarc(apexDomains);
     LOGGER.info("  * Check Dkim");
     this.checkDkim(apexDomains);
+
+    LOGGER.info("Monitor Inbox Mx service");
+    DnsName inboxSubdomain = eraldyDomain.getSubdomain("inbox");
+    this.checkMx(eraldyInboxMx, Set.of(inboxSubdomain));
 
     LOGGER.info("Monitor HTTP services");
     LOGGER.info("  * Check A record");
@@ -471,8 +478,8 @@ public class MonitorServices {
       httpServices.add(dnsName.getSubdomain("www"));
     }
     this.checkCloudflareARecord(monitorBeauHost, httpServices, "HTTP A record");
-    LOGGER.info("  * Check certificates");
-    this.checkCertificates(httpServices, 443, "HTTP Certificates");
+    LOGGER.info("  * Check HTTP Certificates");
+    this.checkHttpsCertificates(httpServices);
 
     LOGGER.info("Monitor Private Network");
     LOGGER.info("  * Check A record for home");
@@ -484,11 +491,14 @@ public class MonitorServices {
 
   }
 
-  private void checkCertificates(Set<DnsName> dnsNames, int port, String checkTitle) {
-
+  private void checkHttpsCertificates(Set<DnsName> dnsNames) {
+    int port = 443;
+    String checkTitle = "Http Certificates";
     for (DnsName dnsName : dnsNames) {
       String nameWithoutRoot = dnsName.getNameWithoutRoot();
+
       String service = nameWithoutRoot + ":" + port;
+
       Future<List<MonitorReportResult>> futureResults = this.netClient.connect(port, nameWithoutRoot)
         .compose(netSocket -> {
 

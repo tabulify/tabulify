@@ -49,9 +49,15 @@ public class ConfigManager {
     this.vertx = configManagerConfig.vertx;
 
     Path currentPath = Paths.get(".");
-    //noinspection ReplaceNullCheck
     if (configManagerConfig.confSecretFilePath == null) {
-      this.secretFilePath = currentPath.resolve("." + this.configName + ".secret.yml").normalize();
+      Path secretFilePath = currentPath.resolve("." + this.configName + ".secret.yml").normalize();
+      if (!Files.exists(secretFilePath)) {
+        Path envSecretFilePath = currentPath.resolve("." + this.configName + ".secret.env").normalize();
+        if (Files.exists(envSecretFilePath)) {
+          secretFilePath = envSecretFilePath;
+        }
+      }
+      this.secretFilePath = secretFilePath;
     } else {
       this.secretFilePath = configManagerConfig.confSecretFilePath;
     }
@@ -188,24 +194,39 @@ public class ConfigManager {
     /**
      * Secret
      */
-    if (Files.exists(secretFilePath)) {
-      LOGGER.info("Configuration: " + configName + " secret configuration file found (" + secretFilePath.toAbsolutePath() + ")");
-    } else {
-      LOGGER.warn("Configuration: " + configName + " secret configuration file not found (" + secretFilePath.toAbsolutePath() + ")");
-    }
-    ConfigStoreOptions yamlSecretFile = new ConfigStoreOptions()
+    ConfigStoreOptions secretFile = new ConfigStoreOptions()
       .setType("file")
-      .setFormat("yaml")
       .setOptional(true)
       .setConfig(new JsonObject()
         .put("path", this.secretFilePath.toAbsolutePath().toString())
         .put("raw-data", true)
       );
+    String secretFileExtension = Fs.getExtension(secretFilePath);
+    switch (secretFileExtension) {
+      case "env":
+      case "properties":
+        // env file (ie property) are used by third party to configure secret (fly.io, ...)
+        // https://vertx.io/docs/vertx-config/java/#_file
+        secretFile.setFormat("properties");
+        break;
+      default:
+      case "yml":
+      case "yaml":
+        secretFile.setFormat("yaml");
+        break;
+    }
+    if (Files.exists(secretFilePath)) {
+      LOGGER.info("Configuration: " + configName + " secret configuration file found (" + secretFilePath.toAbsolutePath() + ")");
+    } else {
+      LOGGER.warn("Configuration: " + configName + " secret configuration file not found (" + secretFilePath.toAbsolutePath() + ")");
+    }
+
 
     /**
      * Env store
      * <a href="https://vertx.io/docs/vertx-config/java/#_environment_variables">Doc</a>
      */
+    LOGGER.info("Configuration: Loading environment");
     JsonArray envVarKeys = new JsonArray();
     String envConfigName = DotEnv.toValidKey(this.configName);
     System.getenv().keySet()
@@ -237,7 +258,7 @@ public class ConfigManager {
 
     return configRetriever
       .addStore(environment)
-      .addStore(yamlSecretFile)
+      .addStore(secretFile)
       .addStore(yamlFile)
       .addStore(sysPropsStore)
       .setScanPeriod(10000);
