@@ -2,6 +2,11 @@ package net.bytle.vertx;
 
 
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -22,12 +27,12 @@ import org.apache.logging.log4j.Logger;
  * <a href="https://github.com/vert-x3/vertx-examples/tree/master/micrometer-metrics-examples">...</a>
  * To create metrics, you get the {@link #getRegistry()} and add micrometer metrics
  * See <a href="https://micrometer.io/docs/concepts#_registry">...</a>
- *
  */
 public class VertxPrometheusMetrics {
 
   private static final Logger LOGGER = LogManager.getLogger(VertxPrometheusMetrics.class);
   private static final String REGISTRY_NAME = "tower";
+  public static final String DEFAULT_METRICS_PATH = "/metrics";
 
   public static MetricsOptions getInitMetricsOptions() {
 
@@ -53,10 +58,14 @@ public class VertxPrometheusMetrics {
   /**
    * Expose the metrics
    */
-  public static void mountOnRouter(Router router) {
+  public static void mountOnRouter(Router router, String path) {
 
+    if (path == null) {
+      // the default prometheus
+      path = DEFAULT_METRICS_PATH;
+    }
     LOGGER.info("Prometheus /metrics point mounted");
-    router.route("/metrics").handler(PrometheusScrapingHandler.create());
+    router.route(path).handler(PrometheusScrapingHandler.create(getRegistry()));
 
   }
 
@@ -69,7 +78,7 @@ public class VertxPrometheusMetrics {
    */
   public static void configEnableHistogramBuckets() {
     LOGGER.info("Enable Prometheus Histogram Buckets");
-    PrometheusMeterRegistry registry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+    PrometheusMeterRegistry registry = getRegistry();
     registry.config().meterFilter(
       new MeterFilter() {
         @Override
@@ -80,5 +89,18 @@ public class VertxPrometheusMetrics {
             .merge(config);
         }
       });
+  }
+
+  /**
+   * <a href="https://vertx.io/docs/vertx-micrometer-metrics/java/#_jvm_or_other_instrumentations">...</a>
+   * <a href="https://micrometer.io/docs/ref/jvm">...</a>
+   */
+  public static void configEnableJvm() {
+    PrometheusMeterRegistry registry = getRegistry();
+    new ClassLoaderMetrics().bindTo(registry);
+    new JvmMemoryMetrics().bindTo(registry);
+    new JvmGcMetrics().bindTo(registry);
+    new ProcessorMetrics().bindTo(registry);
+    new JvmThreadMetrics().bindTo(registry);
   }
 }

@@ -30,6 +30,8 @@ hosts: # the hosted hosts by hostname
     domain: datacadamia.dev
     postmaster: bob@bytle.dev
 
+# Http server for prometheus metrics
+http.server.port: 25026
 
 # System limits
 idle.session.timeout.second: 50 # to allow long debug session

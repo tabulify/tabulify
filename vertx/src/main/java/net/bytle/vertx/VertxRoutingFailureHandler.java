@@ -8,7 +8,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.Exceptions;
-import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
 import net.bytle.type.MediaTypes;
 
@@ -33,14 +32,11 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
 
 
   public VertxRoutingFailureHandler(JsonObject config) {
-    Boolean sendEmailOnErrorConfig = config.getBoolean(ERROR_EMAIL_CONF, null);
-    if (sendEmailOnErrorConfig == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("The sys error configuration (" + ERROR_EMAIL_CONF + ") is mandatory", ERROR_EMAIL_CONF, null);
-    }
+    Boolean sendEmailOnErrorConfig = config.getBoolean(SYS_ERROR_EMAIL_CONF, false);
     this.setSendMailOnError(sendEmailOnErrorConfig);
     failureCounter = VertxPrometheusMetrics
       .getRegistry()
-      .counter("router.failure");
+      .counter("router_failure");
   }
 
   public static VertxRoutingFailureHandler createOrGet(Vertx vertx, JsonObject config) {
@@ -137,7 +133,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
   }
 
 
-  static final String ERROR_EMAIL_CONF = "sys.on.error.send.email";
+  static final String SYS_ERROR_EMAIL_CONF = "sys.on.error.send.email";
 
   private Boolean sendEmailOnError;
 

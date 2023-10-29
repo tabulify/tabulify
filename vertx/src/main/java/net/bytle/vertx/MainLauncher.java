@@ -1,9 +1,7 @@
-package net.bytle.tower;
+package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import net.bytle.vertx.Log4JManager;
-import net.bytle.vertx.VertxPrometheusMetrics;
 
 /**
  * A custom <a href="https://vertx.io/docs/vertx-core/java/#_the_vert_x_launcher">Vertx Launcher</a>
@@ -14,6 +12,12 @@ import net.bytle.vertx.VertxPrometheusMetrics;
  * * and by the vertx command line utility.
  * There is also a cli API
  * <a href="https://vertx.io/docs/vertx-core/java/#_vert_x_command_line_interface_api">CLI</a>
+ * <p>
+ * The launcher can be used in a main method.
+ * ```java
+ * new MainLauncher().dispatch(new String[]{"run", SmtpVerticle.class.getName()});
+ * ```
+ * Don't call {@link MainLauncher#executeCommand(String, String...)}, otherwise the hooks are not called
  */
 public class MainLauncher extends io.vertx.core.Launcher {
 
@@ -31,6 +35,7 @@ public class MainLauncher extends io.vertx.core.Launcher {
   public void afterStartingVertx(Vertx vertx) {
     super.afterStartingVertx(vertx);
     VertxPrometheusMetrics.configEnableHistogramBuckets();
+    VertxPrometheusMetrics.configEnableJvm();
   }
 
   /**

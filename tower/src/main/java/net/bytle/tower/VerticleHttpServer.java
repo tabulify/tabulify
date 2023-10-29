@@ -42,6 +42,8 @@ public class VerticleHttpServer extends AbstractVerticle {
     Router rootRouter = RootRouterBuilder.create(this)
       .addBodyHandler() // body transformation
       .addWebLog() // web log
+      .setBehindProxy() // enable proxy forward
+      .enableFailureHandler() // enable failure handler
       .getRouter();
 
     /**
@@ -49,27 +51,6 @@ public class VerticleHttpServer extends AbstractVerticle {
      */
     HealthChecksRouter.addHealtChecksToRouter(rootRouter, this);
     HealthChecksEventBus.registerHandlerToEventBus(vertx);
-
-    /**
-     * Forward proxy is disabled by default
-     */
-    HttpForwardProxy.addAllowForwardProxy(rootRouter);
-
-
-    /**
-     * Failure Handler / Route match failures
-     * https://vertx.io/docs/vertx-web/java/#_route_match_failures
-     */
-    VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, config());
-    rootRouter.errorHandler(HttpStatus.INTERNAL_ERROR, errorHandlerXXX);
-
-    /**
-     * Handle the failures. ie
-     * ```
-     * ctx.fail(400, error)
-     * ```
-     */
-    rootRouter.route().failureHandler(errorHandlerXXX);
 
     /**
      * Produce an error, not only for dev, also for production to live test (mail, ...)

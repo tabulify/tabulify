@@ -30,6 +30,9 @@ public class SmtpFiltering {
   }
 
   public static void checkIfDomainIsNotBlocked(SmtpSession smtpSession, BMailInternetAddress emailAddress) throws SmtpException {
+    if (!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()) {
+      return;
+    }
     if (shouldNotBeFiltered(smtpSession)) {
       return;
     }
@@ -39,12 +42,12 @@ public class SmtpFiltering {
       .getFirstRecord();
     DnsBlockListResponseCode value = isBlocked.getValue();
     if (value.getBlocked()) {
-      throw SmtpFiltering.getException("Domain " + domain + " blacklisted by " + isBlocked.getKey()+" (Reason: "+value.getDescription()+")");
+      throw SmtpFiltering.getException("Domain " + domain + " blacklisted by " + isBlocked.getKey() + " (Reason: " + value.getDescription() + ")");
     }
   }
 
   public static void checkIp(SmtpSession smtpSession) throws SmtpException {
-    if(!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()){
+    if (!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()) {
       return;
     }
     if (shouldNotBeFiltered(smtpSession)) {
@@ -62,7 +65,7 @@ public class SmtpFiltering {
         .setShouldQuit(true);
     }
     if (response.getBlocked()) {
-      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: "+response.getDescription()+")");
+      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: " + response.getDescription() + ")");
     }
   }
 

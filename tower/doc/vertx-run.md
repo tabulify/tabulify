@@ -14,7 +14,7 @@ There is two ways to start a vertx instance:
 ### Vertx Launcher
 The vertx Launcher is the main entry to start Vertx at the command line.
 
-We have a custom [Vertx Launcher class](../src/main/java/net/bytle/tower/MainLauncher.java).
+We have a custom [Vertx Launcher class](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java).
 
 It's used:
 * in the vertx cli
@@ -55,7 +55,7 @@ From Idea:
 * Working Dir: `D:\code\bytle-mono\tower`
 
 From Idea with the main launcher
-* Main Class: [net.bytle.tower.MainLauncher](../src/main/java/net/bytle/tower/MainLauncher.java)
+* Main Class: [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)
 * VMOption: `-Denv=development`
 * Program Arguments: `run net.bytle.tower.MainVerticle` [net.bytle.tower.MainVerticle](../src/main/java/net/bytle/tower/MainVerticle.java)
 * Working Dir: `D:\code\bytle-mono\tower` (at the start, it will create a db and download the Ip data)
@@ -86,7 +86,7 @@ Otherwise, you can start with automatic reload
 ### With Debug
 
 From a HTTP request:
-* Start a Main Class ([net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java) or [net.bytle.tower.MainLauncher](../src/main/java/net/bytle/tower/MainLauncher.java)) in debug mode
+* Start a Main Class ([net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java) or [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)) in debug mode
 * Put your break point
 * Create a request with the browser
 * Idea should stop on the break point

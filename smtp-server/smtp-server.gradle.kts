@@ -33,6 +33,12 @@ dependencies {
   }
 
   /**
+   * For the promtheus metrics
+   */
+  implementation("io.vertx:vertx-web:$vertxVersion")
+  implementation("io.vertx:vertx-micrometer-metrics:$vertxVersion")
+
+  /**
    * To test chunking (ie BDAT command), otherwise we get this error.
    * Suppressed: org.simplejavamail.internal.moduleloader.ModuleLoaderException: Batch module not found,
    * make sure it is on the classpath (https://github.com/bbottema/simple-java-mail/tree/develop/modules/batch-module)

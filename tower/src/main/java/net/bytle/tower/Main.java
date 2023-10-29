@@ -3,6 +3,7 @@ package net.bytle.tower;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import net.bytle.vertx.Log4JManager;
+import net.bytle.vertx.MainLauncher;
 import net.bytle.vertx.VertxPrometheusMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

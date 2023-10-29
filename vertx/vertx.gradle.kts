@@ -22,7 +22,6 @@ dependencies {
   api("io.vertx:vertx-core:$vertxVersion")
 
   // Monitoring Prometheus
-  // for the service health, api because we need the MetricRegistry of Dropwizard
   implementation("io.vertx:vertx-micrometer-metrics:$vertxVersion")
   // https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
   api("io.micrometer:micrometer-registry-prometheus:1.11.5")
