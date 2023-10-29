@@ -1,9 +1,7 @@
 package net.bytle.smtp;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.Launcher;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -11,6 +9,8 @@ import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
+import net.bytle.vertx.ServerStartLogger;
+import net.bytle.vertx.VertxPrometheusMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +27,21 @@ public class SmtpVerticle extends AbstractVerticle {
 
   public static void main(String[] args) {
 
-    Launcher.executeCommand("run", SmtpVerticle.class.getName());
+    //Launcher.executeCommand("run", SmtpVerticle.class.getName());
+
+    MetricsOptions metricsOptions = VertxPrometheusMetrics.getInitMetricsOptions();
+    VertxOptions options = new VertxOptions();
+    options.setMetricsOptions(metricsOptions);
+    Vertx vertx = Vertx.vertx(options);
+    vertx.deployVerticle(new SmtpVerticle())
+      .onFailure(e -> {
+        ServerStartLogger.START_LOGGER.error("Be careful that you need to change the working directory\n" +
+          "   * to the tower module\n" +
+          "(test are running in the module but main are running in the root of the project)");
+        e.printStackTrace();
+        System.exit(1);
+      })
+      .onSuccess(s -> ServerStartLogger.START_LOGGER.info("Edge verticle started"));
 
   }
 

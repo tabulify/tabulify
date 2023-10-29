@@ -22,9 +22,12 @@ Not yet automatic: IPV6 -
 
 ## No sudo
 
-Note that without sudo, you can still execute administrative task with pkexec
+Note that without sudo, you can still execute administrative task with pkexec if you are in the wheel group.
 
 Example for a bad:
 ```bash
 pkexec rm /etc/sudoers.d/tower
+```
+```
+pkexec visudo -f /etc/sudoers.d/appctl
 ```

@@ -1,8 +1,10 @@
-
 # install path
 apps_name: 'apps'
 apps_install_path: '/opt/{{ apps_name }}'
 
+# appctl (app control script to start stop apps and to give sudo permission)
+app_ctl_name: appctl
+app_ctl_path: '/usr/bin/{{ app_ctl_name }}'
 
 # The password of the repository manager
 # from where the jar can be downloaded

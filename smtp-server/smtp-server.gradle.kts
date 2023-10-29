@@ -183,10 +183,10 @@ tasks.register(deployServerTaskName) {
     // The && means that they should all be successful
     val backupFile = "${backendAppArchive}-backup-${timeStamp}.jar"
     val command =
-      "sudo systemctl stop $backendAppName &&" +
+      "sudo appctl stop $backendAppName &&" +
         " mv ${backendAppHome}/$appFile ${backendAppHome}/${backupFile} &&" +
         " mv ${backendAppHome}/$remoteDeploymentFile ${backendAppHome}/${appFile} &&" +
-        " sudo systemctl start $backendAppName &&" +
+        " sudo appctl start $backendAppName &&" +
         " echo Stop, Move and Start Done"
     println("with the command")
     println(command)

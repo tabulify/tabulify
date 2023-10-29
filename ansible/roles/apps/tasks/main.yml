@@ -2,7 +2,7 @@
 - name: Apps
   become: true
   include: apps.yml
-  tags: apps
+  tags: app-ctl
 
 - name: Tower
   become: true

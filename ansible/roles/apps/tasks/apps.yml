@@ -24,8 +24,13 @@
         recurse: true
     - name: Copy Appctl script
       copy:
-        src: script/appctl
-        dest: /usr/bin/appctl
+        src: 'script/{{ app_ctl_name }}'
+        dest: '{{ app_ctl_path }}'
         owner: root
         group: root
         mode: 'u=rwx,g=rwx,o='
+    - name: Copy the sudoer file
+      template:
+        src: '{{ app_ctl_name }}.sudoer'
+        dest: '/etc/sudoers.d/{{ app_ctl_name }}'
+        mode: 0750

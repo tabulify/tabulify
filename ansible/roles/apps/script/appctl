@@ -1,6 +1,5 @@
 #!/bin/bash
-# Control the apps
-
+# Control the APPS, permit to start, stop, see log, ...
 
 CLI_NAME=$(basename "$0") # Name of the cli
 
@@ -84,8 +83,8 @@ function print_usage() {
   echo "   ${CLI_NAME} command app [--option[=value] ...]"
   echo ""
   echo "where command is one of:"
-  echo "     * ls         - list the apps"
-  echo "     * monitoring - show the app log in tail fashion"
+  echo "     * ls         - list the APPS"
+  echo "     * monitor    - show the app log in tail fashion"
   echo "     * log        - browse the app log in reverse order"
   echo "     * journal    - access to journalctl to pass other args"
   echo "     * start      - start the app"
@@ -95,6 +94,8 @@ function print_usage() {
   echo ""
 
 }
+
+declare -a APPS=("inbox" "tower")
 
 declare -a OPTIONS
 # Parsing
@@ -112,6 +113,10 @@ for arg in "$@"; do
     elif [ -z "$APP" ]; then
       APP=$1
       echo "App ($APP) found"
+      [[ ! "${APPS[*]}" =~ $APP ]] && {
+        echo "App ($APP) is not a valid app name."
+        exit 1
+      }
     fi
     shift
     ;;
@@ -131,11 +136,14 @@ instantOs
 echo ""
 case ${COMMAND} in
 ls)
-  echo -e "\nList"
-  echo -e "  * tower: Api Application"
-  echo -e "  * inbox: Inbox Smtp Server"
+  echo -e "\nList of known apps"
+  for name in "${APPS[@]}"; do
+    echo -e "$name\n"
+  done
+  #  echo -e "  * tower: Api Application"
+  #  echo -e "  * inbox: Inbox Smtp Server"
   ;;
-monitoring)
+monitor)
   # to see the log as it happens in a tail fashion
   sudo journalctl -u "$APP" -f
   ;;
@@ -158,6 +166,9 @@ start)
   ;;
 reload)
   sudo systemctl reload "$APP"
+  ;;
+stop)
+  sudo systemctl stop "$APP"
   ;;
 restart)
   sudo systemctl restart "$APP"

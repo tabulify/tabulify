@@ -30,11 +30,6 @@
     src: '.tower.secret.yml'
     dest: '/root/.tower.secret.yml'
     mode: 'u=rwx,g=rwx,o='
-- name: Copy the sudoer file
-  template:
-    src: '{{tower_app_name}}.sudoer'
-    dest: '/etc/sudoers.d/{{tower_app_name}}'
-    mode: 0750
 #    - name: Delete the jar (Hack because we are for now deploying a snapshot jar that has always the same name)
 #    file:
 #      state: absent

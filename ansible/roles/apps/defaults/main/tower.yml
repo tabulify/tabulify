@@ -4,7 +4,7 @@ tower_install_path: '{{ apps_install_path }}/{{ tower_app_name }}'
 tower_cache_dir: '{{ tower_install_path }}/cache'
 tower_fat_jar_path: '{{ tower_install_path }}/tower-all.jar'
 
-# the service name should be unique
+# the alias name should be unique and uppercase
 tower_service_name: '{{ tower_app_name |upper }}_SERVICE'
 
 # port
