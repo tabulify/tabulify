@@ -62,6 +62,11 @@ public class DnsBlockListQuery {
 
       String endPartBlockZone = "." + dnsBlockList.getZone();
       String host = this.conf.queryTerm + endPartBlockZone;
+      /**
+       * InetAddress uses the local DNS of the machine
+       * Unfortunately, it does not work for public DNS (ie VPS in the cloud)
+       * A DNS server (such as Bind) should be installed
+       */
       InetAddress responseAddress = InetAddress.getByName(host);
 
       Set<DnsBlockListResponseCode> blockingKnownResponses = dnsBlockList.getBlockingKnownResponses();

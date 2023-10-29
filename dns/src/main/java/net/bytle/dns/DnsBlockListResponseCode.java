@@ -8,6 +8,11 @@ public enum DnsBlockListResponseCode {
    * <a href="https://www.spamhaus.org/faq/section/Spamhaus%20DBL#291">...</a>
    */
   R_127_255_255_252("127.255.255.252", "Typing error in DNSBL name", false),
+  /**
+   * With a public cloud, the DNS is public.
+   * From home, this is not the case if you use a router.
+   * A Bind DNS server should be used ?
+   */
   R_127_255_255_254("127.255.255.254", "Anonymous query through public resolver", false),
   R_127_255_255_255("127.255.255.255", "Excessive number of queries", false),
 
