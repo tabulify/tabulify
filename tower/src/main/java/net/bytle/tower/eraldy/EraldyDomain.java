@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy;
 
 import com.google.common.collect.Lists;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
@@ -23,6 +22,8 @@ import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.BrowserCorsUtil;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.PersistentLocalSessionStore;
+import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.HttpServer;
 import net.bytle.vertx.TowerApexDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,20 +55,16 @@ public class EraldyDomain extends TowerApexDomain {
   private Realm realm;
   private User ownerUser;
 
-  public EraldyDomain(String publicHost, AbstractVerticle verticle) {
-    super(publicHost, verticle);
+  public EraldyDomain(String publicHost, HttpServer httpServer) {
+    super(publicHost, httpServer);
   }
 
-  public static EraldyDomain getOrCreate(AbstractVerticle verticle) {
+  public static EraldyDomain getOrCreate(HttpServer httpServer, ConfigAccessor configAccessor) {
     if (eraldyDomain != null) {
       return eraldyDomain;
     }
-    String publicHost = verticle.config().getString(COMBO_APEX_DOMAIN_CONFIG_KEY);
-    if (publicHost != null) {
-      eraldyDomain = new EraldyDomain(publicHost, verticle);
-    } else {
-      eraldyDomain = new EraldyDomain(DEFAULT_VHOST, verticle);
-    }
+    String publicHost = configAccessor.getString(COMBO_APEX_DOMAIN_CONFIG_KEY, DEFAULT_VHOST);
+    eraldyDomain = new EraldyDomain(publicHost, httpServer);
     return eraldyDomain;
   }
 
@@ -99,7 +96,7 @@ public class EraldyDomain extends TowerApexDomain {
   }
 
 
-  public List<Future<?>> mount(Router rootRouter) {
+  public List<Future<?>> mount() {
 
     /**
      * Update the Eraldy realm
@@ -145,7 +142,7 @@ public class EraldyDomain extends TowerApexDomain {
         return Future.succeededFuture(realmCompo);
       });
 
-
+    Router rootRouter = this.getHttpServer().getRouter();
     /**
      * Realm of the request
      */

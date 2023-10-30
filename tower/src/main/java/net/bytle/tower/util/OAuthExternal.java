@@ -28,6 +28,7 @@ import net.bytle.tower.eraldy.model.openapi.RegistrationList;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Date;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.HttpRequestUtil;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApp;
@@ -94,12 +95,13 @@ public class OAuthExternal {
      * Auth Provider
      */
     String clientIdConf = towerApp.getAppConfName() + ".oauth." + provider + ".client.id";
-    String clientId = towerApp.getConfig().getString(clientIdConf);
+    ConfigAccessor configAccessor = towerApp.getApexDomain().getHttpServer().getConfigAccessor();
+    String clientId = configAccessor.getString(clientIdConf);
     if (clientId == null) {
       throw new InternalException("The client id configuration (" + clientIdConf + ") was not found");
     }
     String clientSecretKey = towerApp.getAppConfName() + ".oauth." + provider + ".client.secret";
-    String clientSecret = towerApp.getConfig().getString(clientSecretKey);
+    String clientSecret = configAccessor.getString(clientSecretKey);
     if (clientSecret == null) {
       throw new InternalException("The client secret configuration (" + clientSecretKey + ") was not found");
     }

@@ -1,17 +1,12 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.HealthCheckHandler;
 import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.web.Router;
-import net.bytle.vertx.EventBusChannels;
-import net.bytle.vertx.HealthHandlerCircuitBreaker;
-import net.bytle.vertx.ServerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static net.bytle.tower.VerticleApi.PORT_DEFAULT;
 
 /**
  * Health Check code,
@@ -21,16 +16,15 @@ public class HealthChecksRouter {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(HealthChecksRouter.class);
 
-  public static void addHealtChecksToRouter(Router router, AbstractVerticle verticle) {
+  public static void addHealtChecksToRouter(Router router, AbstractVerticle verticle, HttpServer.builder httpServerBuilder) {
 
 
     String defaultPokemonPath = "v2/pokemon";
-    JsonObject config = verticle.config();
     HealthHandlerCircuitBreaker handlerPokemon = new HealthHandlerCircuitBreaker(verticle.getVertx())
       .setPokeApiUrl(
-        config.getString(ServerProperties.HOST.toString(), "localhost"),
-        config.getInteger(ServerProperties.PORT.toString(), PORT_DEFAULT),
-        config.getString(ServerProperties.PATH.toString(), defaultPokemonPath)
+        httpServerBuilder.getListeningHost(),
+        httpServerBuilder.getListeningPort(),
+        defaultPokemonPath
       );
 
     verticle.getVertx()
@@ -41,8 +35,8 @@ public class HealthChecksRouter {
           JsonObject newConfiguration = message.body();
           handlerPokemon.setPokeApiUrl(
             newConfiguration.getString(ServerProperties.HOST.toString(), "localhost"),
-            newConfiguration.getInteger(ServerProperties.PORT.toString(), PORT_DEFAULT),
-            newConfiguration.getString(ServerProperties.PATH.toString(), defaultPokemonPath)
+            newConfiguration.getInteger(ServerProperties.LISTENING_PORT.toString(),  httpServerBuilder.getListeningPort()),
+            defaultPokemonPath
           );
           LOGGER.debug("Configuration has changed, verticle {} has been updated...", verticle.deploymentID());
         });
@@ -57,7 +51,9 @@ public class HealthChecksRouter {
           promiseOk.complete(Status.OK(content));
         })
     );
-    router.get("/healthy").handler(HealthCheckHandler.createWithHealthChecks(handlerPokemon.getHealthChecks()));
+    router.get("/healthy").handler(
+      HealthCheckHandler
+        .createWithHealthChecks(handlerPokemon.getHealthChecks()));
 
   }
 }

@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.app.memberapp;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.tower.eraldy.app.memberapp.implementer.callback.ListRegistrationEmailCallback;
@@ -11,6 +10,7 @@ import net.bytle.tower.eraldy.app.memberapp.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.util.OAuthExternal;
 import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
 
@@ -50,7 +50,7 @@ public class EraldyMemberApp extends TowerApp {
   }
 
   @Override
-  public EraldyMemberApp openApiBindSecurityScheme(RouterBuilder builder, JsonObject jsonConfig) {
+  public EraldyMemberApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
     // no security scheme
     return this;
   }

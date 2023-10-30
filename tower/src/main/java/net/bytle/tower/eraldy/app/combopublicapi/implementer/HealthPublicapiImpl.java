@@ -4,7 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.interfaces.HealthPublicapi;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiResponse;
-import net.bytle.tower.util.HealthChecksEventBus;
+import net.bytle.vertx.HealthChecksEventBus;
 
 public class HealthPublicapiImpl implements HealthPublicapi {
   @Override

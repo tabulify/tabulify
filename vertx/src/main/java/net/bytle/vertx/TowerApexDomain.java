@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 
 /**
@@ -14,20 +13,25 @@ public abstract class TowerApexDomain {
 
 
   private final String apexNameWithoutPort;
-  private final AbstractVerticle verticle;
+
   private final String apexName;
+  private final HttpServer httpServer;
 
 
-  public TowerApexDomain(String apexName, AbstractVerticle verticle) {
+  public TowerApexDomain(String apexName, HttpServer httpServer) {
     this.apexNameWithoutPort = apexName;
-    this.verticle = verticle;
-    int publicPort = ServerConfig.getPublicPort(verticle.config());
+    int publicPort = httpServer.getPublicPort();
     if (publicPort != 80) {
       this.apexName = this.apexNameWithoutPort + ":" + publicPort;
     } else {
       this.apexName = this.apexNameWithoutPort;
     }
+    this.httpServer = httpServer;
 
+  }
+
+  public HttpServer getHttpServer(){
+    return this.httpServer;
   }
 
   /**
@@ -65,12 +69,9 @@ public abstract class TowerApexDomain {
 
 
   public Vertx getVertx() {
-    return this.verticle.getVertx();
+    return this.httpServer.getVertx();
   }
 
-  public AbstractVerticle getVerticle() {
-    return this.verticle;
-  }
 
   public String getAbsoluteLocalPath() {
     return "/" + this.getPathName();

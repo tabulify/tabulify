@@ -52,7 +52,7 @@ public class OpenApiUtil {
 
         towerApp
           .openApiMount(routerBuilder)
-          .openApiBindSecurityScheme(routerBuilder, towerApp.getConfig());
+          .openApiBindSecurityScheme(routerBuilder, this.towerApp.getApexDomain().getHttpServer().getConfigAccessor());
 
         routerBuilder.setOptions(new RouterBuilderOptions()
           .setRequireSecurityHandlers(true)

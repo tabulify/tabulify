@@ -7,9 +7,8 @@ public enum ServerProperties {
 
   // Because they are constants, the names of an enum type's fields are in uppercase letters.
   HOST("host"),
-  PORT("port"), // the listening port
-  PUBLIC_PORT("port.public"), // the public port (the proxy port, normally 80)
-  PATH("path");
+  LISTENING_PORT("port"), // the private listening port
+  PUBLIC_PORT("port.public"); // the public port (the proxy port, normally 80)
 
 
   private final String confKey;

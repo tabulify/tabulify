@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.app.combopublicapi;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
@@ -9,6 +8,7 @@ import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.auth.provider.ApiTokenAuthenticationProvider;
 import net.bytle.tower.util.JwtAuthManager;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiDoc;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
@@ -50,13 +50,13 @@ public class ComboPublicApiApp extends TowerApp {
   }
 
   @Override
-  public ComboPublicApiApp openApiBindSecurityScheme(RouterBuilder builder, JsonObject jsonConfig) {
+  public ComboPublicApiApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
 
     /**
      * Configuring `AuthenticationHandler`s defined in the OpenAPI document
      * https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
      */
-    ApiTokenAuthenticationProvider apiTokenAuthenticationProvider = new ApiTokenAuthenticationProvider(jsonConfig);
+    ApiTokenAuthenticationProvider apiTokenAuthenticationProvider = new ApiTokenAuthenticationProvider(configAccessor);
     builder
       .securityHandler(ApiTokenAuthenticationProvider.APIKEY_AUTH_SECURITY_SCHEME)
       .bindBlocking(config -> APIKeyHandler.create(apiTokenAuthenticationProvider));

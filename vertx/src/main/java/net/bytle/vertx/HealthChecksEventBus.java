@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.healthchecks.HealthChecks;

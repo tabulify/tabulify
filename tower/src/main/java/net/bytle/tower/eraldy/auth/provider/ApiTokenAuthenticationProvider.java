@@ -8,6 +8,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
 import net.bytle.vertx.TowerApp;
 
@@ -30,8 +31,8 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
   private final String superToken;
 
-  public ApiTokenAuthenticationProvider(JsonObject jsonConfig) {
-    String superToken = (String) jsonConfig.getValue(TowerApp.SUPERUSER_TOKEN_CONF);
+  public ApiTokenAuthenticationProvider(ConfigAccessor configAccessor) {
+    String superToken = configAccessor.getString(TowerApp.SUPERUSER_TOKEN_CONF);
     if (superToken == null) {
       throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + TowerApp.SUPERUSER_TOKEN_CONF + ")");
     }

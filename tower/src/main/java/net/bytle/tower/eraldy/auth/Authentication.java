@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.auth;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.sqlclient.SqlAuthentication;
 import io.vertx.ext.auth.sqlclient.SqlAuthenticationOptions;
@@ -14,6 +13,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.pgclient.PgPool;
 import net.bytle.tower.eraldy.auth.provider.ApiTokenAuthenticationProvider;
 import net.bytle.tower.util.JdbcPostgresPool;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.TowerApp;
 
 /**
@@ -21,10 +21,10 @@ import net.bytle.vertx.TowerApp;
  * <p>
  * All handler are already implemented here
  * <a href="https://github.com/vert-x3/vertx-web/tree/master/vertx-web/src/main/java/io/vertx/ext/web/handler">...</a>
- * You just has to give a provider.
+ * You just have to give a provider.
  * <p>
  * If an authentication handler failed, the whole request fails.
- * With OpenApi, the {@link ApiTokenAuthenticationProvider handler} is bind in the {@link TowerApp#openApiBindSecurityScheme(RouterBuilder, JsonObject)}
+ * With OpenApi, the {@link ApiTokenAuthenticationProvider handler} is bind in the {@link TowerApp#openApiBindSecurityScheme(RouterBuilder, ConfigAccessor)}
  * <p>
  * username / password
  * <a href="https://vertx.io/docs/vertx-web/java/#_handling_authentication_in_your_application">...</a>
@@ -56,7 +56,7 @@ public class Authentication {
     /**
      * Api Authentication
      */
-    AuthenticationProvider authProvider = new ApiTokenAuthenticationProvider(JsonObject.of());
+    AuthenticationProvider authProvider = new ApiTokenAuthenticationProvider(ConfigAccessor.empty());
     APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider);
     BasicAuthHandler basicAuthHandler = BasicAuthHandler.create(authProvider);
     RedirectAuthHandler redirectAuthHandler = RedirectAuthHandler.create(authProvider);

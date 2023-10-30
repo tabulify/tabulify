@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  * * the environment that does have a prefix and underscore separator
  */
 public class ConfigAccessor {
-  private static ConfigAccessor configAccessor;
   private final JsonObject jsonObject;
   private final List<String> keys;
   private final ConfigAccessor parentConfigAccessor;
@@ -52,17 +51,16 @@ public class ConfigAccessor {
     this.keys = keys;
   }
 
-  public static ConfigAccessor get() {
-    return configAccessor;
-  }
-
   public static ConfigAccessor init(String key, JsonObject jsonObject) throws ConfigIllegalException {
-    configAccessor = new ConfigAccessor(Collections.singletonList(key), jsonObject, null);
-    return configAccessor;
+    return new ConfigAccessor(Collections.singletonList(key), jsonObject, null);
   }
 
-  public static ConfigAccessor empty() throws ConfigIllegalException {
-    return new ConfigAccessor(Collections.singletonList("empty"), new JsonObject(), null);
+  public static ConfigAccessor empty() {
+    try {
+      return new ConfigAccessor(Collections.singletonList("empty"), new JsonObject(), null);
+    } catch (ConfigIllegalException e) {
+      throw new InternalException(e);
+    }
   }
 
   public String getString(String key) {

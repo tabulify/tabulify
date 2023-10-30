@@ -3,17 +3,15 @@ package net.bytle.smtp;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.ext.web.Router;
 import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.ConfigManager;
+import net.bytle.vertx.HttpServer;
 import net.bytle.vertx.MainLauncher;
-import net.bytle.vertx.RootRouterBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -129,23 +127,22 @@ public class SmtpVerticle extends AbstractVerticle {
                     /**
                      * Create the HTTP server
                      */
-                    Router router;
+                    Integer port = configAccessor.getInteger("http.server.port", 25026);
+                    HttpServer httpServer;
                     try {
-                      router = RootRouterBuilder.create(this)
+                      httpServer = HttpServer.create(this, configAccessor, port)
                         .addBodyHandler()
                         .addWebLog()
                         .setBehindProxy()
                         .addMetrics()
-                        .getRouter();
+                        .build();
                     } catch (Exception e) {
                       this.handleVerticleFailure(verticlePromise, e);
                       return;
                     }
-                    HttpServerOptions options = new HttpServerOptions()
-                      .setPort(configAccessor.getInteger("http.server.port", 25026));
 
-                    vertx.createHttpServer(options)
-                      .requestHandler(router)
+                    httpServer.getServer()
+                      .requestHandler(httpServer.getRouter())
                       .listen(ar -> {
                         if (ar.succeeded()) {
                           LOGGER.info("HTTP server running on port " + ar.result().actualPort());

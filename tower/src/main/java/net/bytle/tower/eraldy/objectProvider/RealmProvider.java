@@ -37,7 +37,6 @@ import static net.bytle.tower.util.JdbcSchemaManager.REALM_ID_COLUMN;
  */
 public class RealmProvider {
 
-
   public static final String TABLE_PREFIX = "realm";
   public static final String TABLE_NAME = "realm";
   public static final String ID = "id";

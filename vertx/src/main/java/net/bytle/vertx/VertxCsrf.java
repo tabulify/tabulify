@@ -30,7 +30,7 @@ public class VertxCsrf {
      * at {@link io.vertx.ext.web.handler.impl.CSRFHandlerImpl#isValidRequest(RoutingContext)}
      * after server restart
      */
-    String secret = app.getConfig().getString(CSRF_SECRET_KEY_CONF);
+    String secret = app.getApexDomain().getHttpServer().getConfigAccessor().getString(CSRF_SECRET_KEY_CONF);
     if (secret == null) {
       throw new InternalException("The secret CSRF configuration was not found (" + CSRF_SECRET_KEY_CONF + ").");
     }

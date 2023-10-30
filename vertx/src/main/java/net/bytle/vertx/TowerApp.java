@@ -1,13 +1,11 @@
 package net.bytle.vertx;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -32,7 +30,7 @@ import java.util.concurrent.TimeoutException;
  * It's the entry point for app related operations such as:
  * * {@link #getTemplate(String) getting a template}
  * * {@link #getRequestUriForStaticResource(UriEnhanced, String) getting the URL of a static resources}
- * * building the Route with {@link #openApiMount(RouterBuilder)} and the {@link #openApiBindSecurityScheme(RouterBuilder, JsonObject) security}
+ * * building the Route with {@link #openApiMount(RouterBuilder)} and the {@link #openApiBindSecurityScheme(RouterBuilder, ConfigAccessor) security}
  * <p>
  * This class gives three kinds of path:
  * * the relative path (path that does not start with a / - used in resources path)
@@ -53,19 +51,15 @@ public abstract class TowerApp {
    * for the location of the spec file
    */
   private static final String OPEN_API_RESOURCES_PREFIX = "openapi-spec-file";
-  private final TowerApexDomain topLevelDomain;
+  private final TowerApexDomain apexDomain;
   private ProxyUtil proxy;
 
 
   public TowerApp(TowerApexDomain towerApexDomain) {
 
-    this.topLevelDomain = towerApexDomain;
+    this.apexDomain = towerApexDomain;
 
 
-  }
-
-  public AbstractVerticle getVerticle() {
-    return this.topLevelDomain.getVerticle();
   }
 
   public String getRelativeSpecFileResourcesPath() {
@@ -155,7 +149,7 @@ public abstract class TowerApp {
 
   public abstract TowerApp openApiMount(RouterBuilder builder);
 
-  public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, JsonObject jsonConfig);
+  public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor);
 
 
   /**
@@ -502,15 +496,10 @@ public abstract class TowerApp {
     return getApexDomain().getAbsoluteLocalPath() + getAbsoluteLocalPath();
   }
 
-  /**
-   * @return the verticle config
-   */
-  public JsonObject getConfig() {
-    return topLevelDomain.getVerticle().config();
-  }
+
 
   public Vertx getVertx() {
-    return topLevelDomain.getVertx();
+    return apexDomain.getVertx();
   }
 
 
@@ -521,7 +510,7 @@ public abstract class TowerApp {
     if (this.proxy != null) {
       return this.proxy;
     }
-    Boolean useFiddler = this.getConfig().getBoolean("forward.proxy.fiddler", false);
+    Boolean useFiddler = this.apexDomain.getHttpServer().getConfigAccessor().getBoolean("forward.proxy.fiddler", false);
     this.proxy = ProxyUtil
       .config(this)
       .setProxyThroughFiddler(useFiddler)
@@ -653,12 +642,12 @@ public abstract class TowerApp {
    */
   private String getSuperToken() {
 
-    return getConfig().getString(SUPERUSER_TOKEN_CONF);
+    return this.apexDomain.getHttpServer().getConfigAccessor().getString(SUPERUSER_TOKEN_CONF);
 
   }
 
   public TowerApexDomain getApexDomain() {
-    return this.topLevelDomain;
+    return this.apexDomain;
   }
 
   @Override

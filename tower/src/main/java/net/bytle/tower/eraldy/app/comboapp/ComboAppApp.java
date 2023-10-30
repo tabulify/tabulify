@@ -1,8 +1,8 @@
 package net.bytle.tower.eraldy.app.comboapp;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
 
@@ -32,7 +32,7 @@ public class ComboAppApp extends TowerApp {
   }
 
   @Override
-  public TowerApp openApiBindSecurityScheme(RouterBuilder builder, JsonObject jsonConfig) {
+  public TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor jsonConfig) {
     return this;
   }
 

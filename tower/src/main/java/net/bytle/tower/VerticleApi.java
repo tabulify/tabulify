@@ -4,13 +4,13 @@ package net.bytle.tower;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.EraldyDomain;
-import net.bytle.tower.eraldy.app.ErrorFakeHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.DatacadamiaDomain;
+import net.bytle.tower.util.Env;
+import net.bytle.tower.util.GlobalUtilityObjectsCreation;
+import net.bytle.tower.util.PersistentLocalSessionStore;
 import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,39 +54,30 @@ public class VerticleApi extends AbstractVerticle {
         .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
         .onSuccess(Void -> {
 
+
           /**
            * Create the base router with the base Handler
            */
-          Router rootRouter;
+          HttpServer httpServer;
           try {
-            rootRouter = RootRouterBuilder.create(this)
+            httpServer = HttpServer.create(this, configAccessor, PORT_DEFAULT)
               .addBodyHandler() // body transformation
               .addWebLog() // web log
               .setBehindProxy() // enable proxy forward
               .enableFailureHandler() // enable failure handler
-              .getRouter();
+              .addFakeErrorHandler()
+              .addHealthCheck()
+              .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise, e);
             return;
           }
 
           /**
-           * Health check things
-           */
-          HealthChecksRouter.addHealtChecksToRouter(rootRouter, this);
-          HealthChecksEventBus.registerHandlerToEventBus(vertx);
-
-          /**
-           * Produce an error, not only for dev, also for production to live test (mail, ...)
-           */
-          rootRouter.get(ErrorFakeHandler.URI_PATH).handler(new ErrorFakeHandler());
-
-
-          /**
            * Create the domain, its realm and its app
            */
-          List<Future<?>> initFutures = EraldyDomain.getOrCreate(this)
-            .mount(rootRouter);
+          List<Future<?>> initFutures = EraldyDomain.getOrCreate(httpServer, configAccessor)
+            .mount();
 
           if (Env.IS_DEV) {
             /**
@@ -101,37 +92,23 @@ public class VerticleApi extends AbstractVerticle {
            * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
            *  0.0.0.0 means listen on all available addresses
            */
-          Router finalRootRouter = rootRouter;
           Future.all(initFutures)
             .onFailure(FailureStatic::failFutureWithTrace)
-            .onSuccess(apiFutureResult -> {
+            .onSuccess(apiFutureResult -> httpServer.getServer()
 
-              ServerConfig serverConfig = ServerConfig.create(ConfigAccessor.get());
-              int listeningPortNumber = serverConfig.getListeningPort(PORT_DEFAULT);
-              String listeningHostName = serverConfig.getListeningHost();
-              HttpServerOptions options = new HttpServerOptions()
-                .setLogActivity(true)
-                .setHost(listeningHostName)
-                .setPort(listeningPortNumber);
-
-              HttpsCertificateUtil.createOrGet()
-                .enableServerHttps(options);
-
-              vertx.createHttpServer(options)
-                /**
-                 * https://vertx.io/docs/vertx-core/java/#_handling_requests
-                 */
-                .requestHandler(finalRootRouter)
-                .listen(ar -> {
-                  if (ar.succeeded()) {
-                    LOGGER.info("HTTP server running on port " + listeningPortNumber);
-                    verticlePromise.complete();
-                  } else {
-                    LOGGER.error("Could not start a HTTP server on port (" + listeningPortNumber + ") " + ar.cause());
-                    this.handlePromiseFailure(verticlePromise, ar.cause());
-                  }
-                });
-            });
+              /**
+               * https://vertx.io/docs/vertx-core/java/#_handling_requests
+               */
+              .requestHandler(httpServer.getRouter())
+              .listen(ar -> {
+                if (ar.succeeded()) {
+                  LOGGER.info("HTTP server running on port " + ar.result().actualPort());
+                  verticlePromise.complete();
+                } else {
+                  LOGGER.error("Could not start a HTTP server " + ar.cause());
+                  this.handlePromiseFailure(verticlePromise, ar.cause());
+                }
+              }));
 
         }));
 
