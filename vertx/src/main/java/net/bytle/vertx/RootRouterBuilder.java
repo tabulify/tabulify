@@ -6,6 +6,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
+import net.bytle.exception.IllegalConfiguration;
 
 public class RootRouterBuilder {
 
@@ -56,7 +57,7 @@ public class RootRouterBuilder {
   }
 
 
-  public Router getRouter() {
+  public Router getRouter() throws IllegalConfiguration {
     Vertx vertx = this.verticle.getVertx();
     Router router = Router.router(vertx);
     if (this.addBodyHandler) {

@@ -32,19 +32,6 @@ public class SmtpVerticle extends AbstractVerticle {
 
 
     new MainLauncher().dispatch(new String[]{"run", SmtpVerticle.class.getName()});
-//    MetricsOptions metricsOptions = VertxPrometheusMetrics.getInitMetricsOptions();
-//    VertxOptions options = new VertxOptions();
-//    options.setMetricsOptions(metricsOptions);
-//    Vertx vertx = Vertx.vertx(options);
-//    vertx.deployVerticle(new SmtpVerticle())
-//      .onFailure(e -> {
-//        ServerStartLogger.START_LOGGER.error("Be careful that you need to change the working directory\n" +
-//          "   * to the tower module\n" +
-//          "(test are running in the module but main are running in the root of the project)");
-//        e.printStackTrace();
-//        System.exit(1);
-//      })
-//      .onSuccess(s -> ServerStartLogger.START_LOGGER.info("Edge verticle started"));
 
   }
 
@@ -88,7 +75,7 @@ public class SmtpVerticle extends AbstractVerticle {
                   }
                   String certificatePath = host.getCertificatePath();
                   if (certificatePath == null) {
-                    verticlePromise.fail(new ConfigIllegalException("The certificate of the host (" + host + ") is null but not its key"));
+                    this.handleVerticleFailure(verticlePromise, new ConfigIllegalException("The certificate of the host (" + host + ") is null but not its key"));
                     return;
                   }
                   pemKeyCertOptions
@@ -142,12 +129,18 @@ public class SmtpVerticle extends AbstractVerticle {
                     /**
                      * Create the HTTP server
                      */
-                    Router router = RootRouterBuilder.create(this)
-                      .addBodyHandler()
-                      .addWebLog()
-                      .setBehindProxy()
-                      .addMetrics()
-                      .getRouter();
+                    Router router;
+                    try {
+                      router = RootRouterBuilder.create(this)
+                        .addBodyHandler()
+                        .addWebLog()
+                        .setBehindProxy()
+                        .addMetrics()
+                        .getRouter();
+                    } catch (Exception e) {
+                      this.handleVerticleFailure(verticlePromise, e);
+                      return;
+                    }
                     HttpServerOptions options = new HttpServerOptions()
                       .setPort(configAccessor.getInteger("http.server.port", 25026));
 
@@ -159,7 +152,7 @@ public class SmtpVerticle extends AbstractVerticle {
                           verticlePromise.complete();
                         } else {
                           LOGGER.error("Could not start a HTTP server:" + ar.cause());
-                          verticlePromise.fail(ar.cause());
+                          this.handleVerticleFailure(verticlePromise, ar.cause());
                         }
                       });
 
@@ -167,11 +160,16 @@ public class SmtpVerticle extends AbstractVerticle {
                     verticlePromise.fail(e);
                   }
                 })
-                .onFailure(verticlePromise::fail);
+                .onFailure(e -> this.handleVerticleFailure(verticlePromise, e));
             });
 
         }));
 
+  }
+
+  private void handleVerticleFailure(Promise<Void> verticlePromise, Throwable e) {
+    verticlePromise.fail(e);
+    this.vertx.close();
   }
 
 

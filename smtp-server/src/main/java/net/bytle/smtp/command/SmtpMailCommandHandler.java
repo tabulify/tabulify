@@ -130,13 +130,11 @@ public class SmtpMailCommandHandler extends SmtpInputCommandDirectReplyHandler {
              */
             try {
               SmtpInputType smtpInputType = Casts.cast(value, SmtpInputType.class);
-              //noinspection deprecation
               if (smtpInputType.equals(SmtpInputType.TEXT_BIT7)) {
                 /**
                  * We use the {@link io.vertx.core.parsetools.RecordParser}
                  * that requires a 1-1 byte-char mapping
                  */
-                //noinspection deprecation
                 throw SmtpException.createNotSupportedImplemented("We don't support " + SmtpInputType.TEXT_BIT7);
               }
               smtpInputContext.getSessionState().setBodyType(smtpInputType);

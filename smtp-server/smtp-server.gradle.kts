@@ -60,13 +60,16 @@ plugins {
 }
 
 val smtpVerticle = "net.bytle.smtp.SmtpVerticle"
-
+val vertxLauncher = "net.bytle.vertx.MainLauncher"
 vertx {
+  // the launcher in the MANIFEST must be set here otherwise the plugin takes the default
+  // even if we set another one in the ShadowJar task
+  launcher = vertxLauncher
   mainVerticle = smtpVerticle
   vertxVersion
 }
 
-val vertxLauncher = "io.vertx.core.Launcher"
+
 val shadowJarTaskName = "shadowJar"
 tasks.named<ShadowJar>(shadowJarTaskName) {
 

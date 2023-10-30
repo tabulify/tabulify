@@ -16,39 +16,6 @@ where `status="trace"` will show internal log4j2 debug statements
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %m%n"/>
     </Console>
-    <!-- The appenders for analytics event
-    Routing is important because it will evaluate the context variable
-    for each call,
-    Otherwise, it will try to create the RollingFileAppender and you get this error:
-    ERROR StatusConsoleListener Unable to create file logs/analytics/${ctx:realm-guid}/${ctx:event-slug}.jsonl
-    java.io.IOException: The filename, directory name, or volume label syntax is incorrect
-    -->
-    <Routing name="AnalyticsLogger" ignoreExceptions="false">
-      <!--
-      We put a value in pattern to avoid the bellow warning
-      WARN StatusConsoleListener In a Routes element, you must configure either a Script element or a pattern attribute.
-      -->
-      <Routes pattern="toAvoidTheWarning">
-        <Route>
-          <RollingFile
-            name="AnalyticsLogger"
-            fileName="logs/analytics/${ctx:realm-guid}/${ctx:event-slug}.jsonl"
-            filePattern="logs/analytics/${ctx:realm-guid}/history/$${date:yyyy-MM}/analytics_${ctx:realm-guid}_${ctx:event-slug}_%d{yyyy-dd-MM}_%i.jsonl"
-            ignoreExceptions="false">
-            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout>
-              <pattern>%m%n</pattern>
-            </PatternLayout>
-            <Policies>
-              <TimeBasedTriggeringPolicy/>
-              <SizeBasedTriggeringPolicy size="250 MB"/>
-            </Policies>
-          </RollingFile>
-        </Route>
-      </Routes>
-      <!-- Created appender TTL -->
-      <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
-    </Routing>
     <!-- HTTP request log -->
     <RollingFile name="Web"
                  fileName="logs/web.log"

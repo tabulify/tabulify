@@ -1,5 +1,6 @@
 package net.bytle.smtp;
 
+import net.bytle.annotation.Discouraged;
 import net.bytle.smtp.command.SmtpBdatCommandHandler;
 import net.bytle.smtp.command.SmtpMailCommandHandler;
 
@@ -27,8 +28,7 @@ public enum SmtpInputType {
    * Text format on 7bit
    * Not supported, because our parser supports only 8bit = 1 char
    */
-  @Deprecated
-  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Discouraged
   TEXT_BIT7("7BIT", false),
 
   /**

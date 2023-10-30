@@ -2,6 +2,10 @@ package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A custom <a href="https://vertx.io/docs/vertx-core/java/#_the_vert_x_launcher">Vertx Launcher</a>
@@ -21,25 +25,37 @@ import io.vertx.core.VertxOptions;
  */
 public class MainLauncher extends io.vertx.core.Launcher {
 
+  static final Logger LOGGER;
+
   static {
     Log4JManager.setConfigurationProperties();
+    LOGGER = LogManager.getLogger(MainLauncher.class);
   }
 
   @Override
   public void beforeStartingVertx(VertxOptions options) {
     super.beforeStartingVertx(options);
+    LOGGER.info("Enabling Metrics");
     options.setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
   }
 
   @Override
   public void afterStartingVertx(Vertx vertx) {
     super.afterStartingVertx(vertx);
-    VertxPrometheusMetrics.configEnableHistogramBuckets();
-    VertxPrometheusMetrics.configEnableJvm();
+    try {
+      LOGGER.info("Enabling Histogram Metrics");
+      VertxPrometheusMetrics.configEnableHistogramBuckets();
+      LOGGER.info("Enabling Jvm Metrics");
+      VertxPrometheusMetrics.configEnableJvm();
+    } catch (IllegalConfiguration e) {
+      throw new InternalException(e);
+    }
+
   }
 
   /**
    * The arguments are taken from the fat jar
+   *
    * @param args - the arguments to dispatch
    */
   public static void main(String[] args) {

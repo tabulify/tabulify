@@ -48,6 +48,8 @@ public class AnalyticsLogger {
   private static final String LOOKUP_VARIABLE_REALM_GUID = "realm-guid";
   private static final String APPENDER_NAME = "AnalyticsLogger";
 
+  public static String ANALYTICS_CONF_FILE = "log4j2-analytics.xml";
+
   /**
    * We use Log4j for the rolling and writing
    */
@@ -63,6 +65,9 @@ public class AnalyticsLogger {
      */
     Appender analyticsLogger = config.getAppender(APPENDER_NAME);
     if (analyticsLogger == null) {
+      /**
+       * We don't create one dynamically because it's a nightmare
+        */
       throw new InternalException("The appender " + APPENDER_NAME + " was not found in the log4j configuration.");
     }
 
@@ -89,6 +94,7 @@ public class AnalyticsLogger {
      */
     analyticsEventLogger.addAppender(analyticsLogger, Level.INFO, null);
     config.addLogger(analyticsEventLogger.getName(), analyticsEventLogger);
+
 
 
   }

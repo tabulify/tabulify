@@ -2,6 +2,7 @@ package net.bytle.vertx;
 
 
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -16,6 +17,7 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.PrometheusScrapingHandler;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
+import net.bytle.exception.IllegalConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,7 +38,6 @@ public class VertxPrometheusMetrics {
 
   public static MetricsOptions getInitMetricsOptions() {
 
-    LOGGER.info("Setting Prometheus Metrics");
     return new MicrometerMetricsOptions()
       .setEnabled(true)
       .setRegistryName(REGISTRY_NAME)
@@ -47,18 +48,22 @@ public class VertxPrometheusMetrics {
   /**
    * Get the registry
    */
-  public static PrometheusMeterRegistry getRegistry() {
+  public static PrometheusMeterRegistry getRegistry() throws IllegalConfiguration {
     /**
      * By default, a unique registry is used and is shared across the Vert.x instances of the JVM.
      * We just show how to get another registry
      */
-    return (PrometheusMeterRegistry) BackendRegistries.getNow(REGISTRY_NAME);
+    MeterRegistry registry = BackendRegistries.getNow(REGISTRY_NAME);
+    if (registry == null) {
+      throw new IllegalConfiguration("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher");
+    }
+    return (PrometheusMeterRegistry) registry;
   }
 
   /**
    * Expose the metrics
    */
-  public static void mountOnRouter(Router router, String path) {
+  public static void mountOnRouter(Router router, String path) throws IllegalConfiguration {
 
     if (path == null) {
       // the default prometheus
@@ -76,7 +81,7 @@ public class VertxPrometheusMetrics {
    * By default, histogram-kind metrics will not contain averages or quantile stats.
    * See <a href="https://vertx.io/docs/vertx-micrometer-metrics/java/#_averages_and_quantiles_in_prometheus">Ref</a>
    */
-  public static void configEnableHistogramBuckets() {
+  public static void configEnableHistogramBuckets() throws IllegalConfiguration {
     LOGGER.info("Enable Prometheus Histogram Buckets");
     PrometheusMeterRegistry registry = getRegistry();
     registry.config().meterFilter(
@@ -95,7 +100,7 @@ public class VertxPrometheusMetrics {
    * <a href="https://vertx.io/docs/vertx-micrometer-metrics/java/#_jvm_or_other_instrumentations">...</a>
    * <a href="https://micrometer.io/docs/ref/jvm">...</a>
    */
-  public static void configEnableJvm() {
+  public static void configEnableJvm() throws IllegalConfiguration {
     PrometheusMeterRegistry registry = getRegistry();
     new ClassLoaderMetrics().bindTo(registry);
     new JvmMemoryMetrics().bindTo(registry);

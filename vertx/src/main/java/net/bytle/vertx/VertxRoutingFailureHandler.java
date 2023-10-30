@@ -8,6 +8,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.Exceptions;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.type.MediaTypes;
 
@@ -31,7 +32,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
   private final Counter failureCounter;
 
 
-  public VertxRoutingFailureHandler(JsonObject config) {
+  public VertxRoutingFailureHandler(JsonObject config) throws IllegalConfiguration {
     Boolean sendEmailOnErrorConfig = config.getBoolean(SYS_ERROR_EMAIL_CONF, false);
     this.setSendMailOnError(sendEmailOnErrorConfig);
     failureCounter = VertxPrometheusMetrics
@@ -39,7 +40,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
       .counter("router_failure");
   }
 
-  public static VertxRoutingFailureHandler createOrGet(Vertx vertx, JsonObject config) {
+  public static VertxRoutingFailureHandler createOrGet(Vertx vertx, JsonObject config) throws IllegalConfiguration {
     VertxRoutingFailureHandler vertxRoutingFailureHandlerVertx = ErrorHandlersByVertx.get(vertx);
     if (vertxRoutingFailureHandlerVertx != null) {
       return vertxRoutingFailureHandlerVertx;

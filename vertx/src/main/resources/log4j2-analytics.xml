@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <Configuration status="warn">
   <Appenders>
-    <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %m%n"/>
-    </Console>
     <!-- The appenders for analytics event
     Routing is important because it will evaluate the context variable
     for each call,
@@ -39,11 +35,4 @@
       <IdlePurgePolicy timeToLive="15" timeUnit="minutes"/>
     </Routing>
   </Appenders>
-
-  <Loggers>
-    <Root level="info">
-      <AppenderRef ref="Console"/>
-    </Root>
-  </Loggers>
-
 </Configuration>

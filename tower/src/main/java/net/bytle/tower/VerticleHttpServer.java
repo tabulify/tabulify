@@ -6,6 +6,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.web.Router;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.app.ErrorFakeHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -30,8 +31,6 @@ public class VerticleHttpServer extends AbstractVerticle {
   public static final int PORT_DEFAULT = 8083;
 
 
-
-
   @Override
   public void start(Promise<Void> promise) {
 
@@ -39,12 +38,18 @@ public class VerticleHttpServer extends AbstractVerticle {
     /**
      * Create the base router with the base Handler
      */
-    Router rootRouter = RootRouterBuilder.create(this)
-      .addBodyHandler() // body transformation
-      .addWebLog() // web log
-      .setBehindProxy() // enable proxy forward
-      .enableFailureHandler() // enable failure handler
-      .getRouter();
+    Router rootRouter;
+    try {
+      rootRouter = RootRouterBuilder.create(this)
+        .addBodyHandler() // body transformation
+        .addWebLog() // web log
+        .setBehindProxy() // enable proxy forward
+        .enableFailureHandler() // enable failure handler
+        .getRouter();
+    } catch (IllegalConfiguration e) {
+      this.handlePromiseFailure(promise, e);
+      return;
+    }
 
     /**
      * Health check things
@@ -77,6 +82,7 @@ public class VerticleHttpServer extends AbstractVerticle {
      * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
      *  0.0.0.0 means listen on all available addresses
      */
+    Router finalRootRouter = rootRouter;
     Future.all(initFutures)
       .onFailure(FailureStatic::failFutureWithTrace)
       .onSuccess(apiFutureResult -> {
@@ -96,19 +102,24 @@ public class VerticleHttpServer extends AbstractVerticle {
           /**
            * https://vertx.io/docs/vertx-core/java/#_handling_requests
            */
-          .requestHandler(rootRouter)
+          .requestHandler(finalRootRouter)
           .listen(ar -> {
             if (ar.succeeded()) {
               LOGGER.info("HTTP server running on port " + listeningPortNumber);
               promise.complete();
             } else {
               LOGGER.error("Could not start a HTTP server on port (" + listeningPortNumber + ") " + ar.cause());
-              promise.fail(ar.cause());
+              this.handlePromiseFailure(promise, ar.cause());
             }
           });
       });
 
 
+  }
+
+  private void handlePromiseFailure(Promise<Void> promise, Throwable e) {
+    promise.fail(e);
+    this.vertx.close();
   }
 
 
