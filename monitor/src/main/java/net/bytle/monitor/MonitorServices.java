@@ -74,7 +74,7 @@ public class MonitorServices {
     try {
       monitorBeauHost = dnsSession.configHost("beau.bytle.net")
         .setIpv4("192.99.55.226")
-        .setIpv6("2607:5300:201:3100::85b")
+        .setIpv6("2607:5300:201:3100::85b") // 2607:5300:201:3100:0:0:0:85b
         .build();
 
       mailers = new ArrayList<>();
@@ -263,7 +263,7 @@ public class MonitorServices {
   /**
    * @param mainDomain   - the name of the domain where the original spf value is stored
    * @param thirdDomains - the name of domains that should include the original spf records
-   * @param mailersName  - the name where the A record name of the mailers are stored
+   * @param mailersName  - the name where the A and AAAA record name of the mailers are stored
    */
   public MonitorServices checkSpf(DnsName mainDomain, DnsName mailersName, Set<DnsName> thirdDomains) throws DnsIllegalArgumentException {
 
@@ -449,6 +449,7 @@ public class MonitorServices {
     DnsName mailersName = eraldyDomain.getSubdomain("mailers");
     LOGGER.info("  * Check Mailers A record");
     this.checkMailersARecord(mailers, mailersName);
+    this.checkMailersAAAARecord(mailers, mailersName);
     LOGGER.info("  * Check Mailers Ptr record");
     this.checkMailersPtr(mailers);
 
@@ -489,6 +490,28 @@ public class MonitorServices {
 
     return this.getMonitorReports();
 
+  }
+
+  private MonitorServices checkMailersAAAARecord(ArrayList<DnsHost> mailers, DnsName mailersName) {
+    try {
+      Set<DnsIp> aIps;
+      try {
+        aIps = mailersName.getAAAARecords();
+      } catch (DnsNotFoundException e) {
+        aIps = new HashSet<>();
+      }
+      String checkTitle = "check Mailer AAAA record";
+      for (DnsHost dnsHost : mailers) {
+        if (aIps.contains(dnsHost.getIpv6())) {
+          this.addSuccess(checkTitle, mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv6() + ") was found in the name (" + mailersName + ")");
+        } else {
+          this.addFailure(checkTitle, mailersName, "The mailer host (" + dnsHost + ") ip address (" + dnsHost.getIpv6() + ") was NOT found in the name (" + mailersName + ")");
+        }
+      }
+    } catch (DnsException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
   }
 
   private void checkHttpsCertificates(Set<DnsName> dnsNames) {
