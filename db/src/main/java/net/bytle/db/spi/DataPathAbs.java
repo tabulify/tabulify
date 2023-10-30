@@ -513,7 +513,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
         Map<String, Object> document;
         try {
           document = Casts.castToSameMap(data, String.class, Object.class);
-        } catch (ClassCastException e) {
+        } catch (CastException e) {
           String message = "A data Def must be in a map format. ";
           if (data.getClass().equals(java.util.ArrayList.class)) {
             message += "They are in a list format. You should suppress the minus if they are present.";
@@ -625,7 +625,12 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
               /**
                * List of map
                */
-              Map<String, Object> columnProperties = Casts.castToSameMap(column, String.class, Object.class);
+              Map<String, Object> columnProperties;
+              try {
+                columnProperties = Casts.castToSameMap(column, String.class, Object.class);
+              } catch (CastException e) {
+                throw new InternalException("String and Object should not throw a cast exception", e);
+              }
 
               Object columnNameObject = Maps.getPropertyCaseIndependent(columnProperties, ColumnAttribute.NAME.toString());
               if (columnNameObject == null) {
@@ -743,7 +748,7 @@ public abstract class DataPathAbs implements Comparable<DataPath>, StreamDepende
         try {
           relationDef.getColumnDef(columnName);
         } catch (NoColumnException e) {
-          // If the columns does not exist
+          // If the columns do not exist
           relationDef.getOrCreateColumn(columnName, String.class);
         }
       }

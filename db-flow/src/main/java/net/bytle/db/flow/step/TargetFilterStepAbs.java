@@ -74,8 +74,11 @@ public abstract class TargetFilterStepAbs extends FilterStepAbs {
       }
       switch (targetArguments) {
         case TARGET_DATA_DEFINITION:
-          this.targetDataDef = YamlCast.castToSameMap(targetEntry.getValue(), String.class, Object.class);
-
+          try {
+            this.targetDataDef = YamlCast.castToSameMap(targetEntry.getValue(), String.class, Object.class);
+          } catch (CastException e) {
+            throw new InternalException("String and Object should not throw a cast exception", e);
+          }
           break;
         case TARGET_DATA_URI:
           targetUri = tabular.createDataUri(targetEntry.getValue().toString());

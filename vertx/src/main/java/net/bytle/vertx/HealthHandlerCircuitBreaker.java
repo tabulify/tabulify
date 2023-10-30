@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -22,9 +22,10 @@ import java.util.function.Function;
 
 /**
  * Circuit Breaker: Not completely implemented
+ * Code is here for documentation
  * <p>
- * CircuitBreaker: execute HTTP request and if it fails a certain number of time, you can execute an action
- * (ie the circuit break)
+ * CircuitBreaker: execute an action and if it fails a certain number of time,
+ * you can execute an action (ie the circuit break)
  * <p>
  * It keeps track of the number of failures and opens the circuit when a threshold is reached.
  * Optionally, a fallback is executed.

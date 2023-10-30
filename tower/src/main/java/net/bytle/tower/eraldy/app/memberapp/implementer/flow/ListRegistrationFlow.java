@@ -24,7 +24,6 @@ import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.EmailUtil;
 import net.bytle.tower.util.JwtClaimsObject;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
@@ -135,7 +134,7 @@ public class ListRegistrationFlow {
     /**
      * Email validation
      */
-    EmailUtil.validateEmail(publicationSubscriptionPost.getSubscriberEmail(), "subscriberEmail");
+    ValidationUtil.validateEmail(publicationSubscriptionPost.getSubscriberEmail(), "subscriberEmail");
 
     /**
      * We validate the publication id value

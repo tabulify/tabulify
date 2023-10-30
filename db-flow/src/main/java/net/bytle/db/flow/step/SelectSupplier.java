@@ -216,15 +216,6 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
   }
 
 
-  public Tabular getTabular() {
-    return tabular;
-  }
-
-
-  public boolean wasWithDependencies() {
-    return withDependencies;
-  }
-
 
   public SelectSupplier setWithDependencies(Boolean withDependencies) {
     if (withDependencies != null) {
@@ -310,7 +301,12 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
           this.setWithDependencies(localWithDependencies);
           break;
         case ATTRIBUTES:
-          Map<String, ?> attributes = Casts.castToSameMap(value, String.class, Object.class);
+          Map<String, ?> attributes;
+          try {
+            attributes = Casts.castToSameMap(value, String.class, Object.class);
+          } catch (CastException e) {
+            throw new InternalException("String and Object should not throw a cast exception", e);
+          }
           this.setAttributes(attributes);
           break;
         case STRICT:
@@ -326,7 +322,12 @@ public class SelectSupplier extends StepAbs implements DataPathSupplier, Operati
           this.setLogicalName((String) value);
           break;
         case DATA_DEFINITION:
-          Map<String, Object> dataDef = YamlCast.castToSameMap(value, String.class, Object.class);
+          Map<String, Object> dataDef;
+          try {
+            dataDef = YamlCast.castToSameMap(value, String.class, Object.class);
+          } catch (CastException e) {
+            throw new InternalException("String and Object should not throw a cast exception", e);
+          }
           this.setDataDefinition(dataDef);
           break;
         default:

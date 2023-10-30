@@ -23,10 +23,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.VertxRoutingFailureHandler;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -505,8 +502,7 @@ public class AuthMemberappImpl implements AuthMemberapp {
   }
 
   private void validateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
-    EmailUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");
-
+    ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");
     String realmHandle = emailIdentifier.getRealmHandle();
     if (realmHandle == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm cannot be null.", "realmHandle", null);

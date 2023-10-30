@@ -6,15 +6,14 @@ import net.bytle.db.flow.engine.FilterStepAbs;
 import net.bytle.db.spi.DataPath;
 import net.bytle.db.spi.DataPathAttribute;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.type.Attribute;
 import net.bytle.type.Casts;
 import net.bytle.type.Key;
 import net.bytle.type.MapKeyIndependent;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -153,7 +152,12 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
         }
         this.addVirtualColumnFromAttribute(dpAtt);
       } else if (value instanceof Map) {
-        Map<String, String> map = Casts.castToSameMap(value, String.class, String.class);
+        Map<String, String> map;
+        try {
+          map = Casts.castToSameMap(value, String.class, String.class);
+        } catch (CastException e) {
+          throw new InternalException("String and String should not throw a cast exception", e);
+        }
         for (Map.Entry<String, String> virtualColumnEntry : map.entrySet()) {
           DataPathAttribute dpAtt;
           try {
@@ -175,7 +179,12 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
             }
             this.addVirtualColumnFromAttribute(dpAtt);
           } else if (virtualColumn instanceof Map) {
-            Map<String, String> virtualColumnMap = Casts.castToSameMap(virtualColumn, String.class, String.class);
+            Map<String, String> virtualColumnMap;
+            try {
+              virtualColumnMap = Casts.castToSameMap(virtualColumn, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String and String should not throw a cast exception", e);
+            }
             String resourceAttributePublicKey = "resource-attribute";
 
             String name = null;
@@ -278,12 +287,12 @@ public class EnrichStep extends FilterStepAbs implements Function<Set<DataPath>,
     }
 
     @Override
-    public Set<DataPath> get() throws InterruptedException, ExecutionException {
+    public Set<DataPath> get() {
       return this.allOutput;
     }
 
     @Override
-    public Set<DataPath> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Set<DataPath> get(long timeout, TimeUnit unit) {
       return get();
     }
   }

@@ -24,7 +24,7 @@ public class Log4jRootLogger {
     rootLogger.addAppender(log4JXmlConfiguration.getConsoleAppender(), Level.WARN, null);
 
     /**
-     * We catch the error that are not catche by
+     * We catch the error that are not catched by
      * {@link VertxRoutingFailureHandler}
      */
     PatternLayout defaultLayout = PatternLayout.createDefaultLayout();

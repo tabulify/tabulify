@@ -6,6 +6,7 @@ import net.bytle.db.spi.DataPath;
 import net.bytle.db.stream.InsertStream;
 import net.bytle.db.uri.DataUri;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.Key;
 import net.bytle.type.MapKeyIndependent;
@@ -148,7 +149,12 @@ public class DefineStep extends StepAbs implements DataPathSupplier {
       switch (Key.toNormalizedKey(entryDataResource.getKey())) {
         case "datadefinition":
         case "datadef":
-          Map<String, Object> dataDef = YamlCast.castToSameMap(entryDataResource.getValue(), String.class, Object.class);
+          Map<String, Object> dataDef;
+          try {
+            dataDef = YamlCast.castToSameMap(entryDataResource.getValue(), String.class, Object.class);
+          } catch (CastException e) {
+            throw new InternalException("String and Object should not throw a cast exception", e);
+          }
           dataPath = tabular.getAndCreateRandomMemoryDataPath()
             .mergeDataDefinitionFromYamlMap(dataDef);
           dataPaths.add(dataPath);
@@ -176,4 +182,3 @@ public class DefineStep extends StepAbs implements DataPathSupplier {
     }
   }
 }
-

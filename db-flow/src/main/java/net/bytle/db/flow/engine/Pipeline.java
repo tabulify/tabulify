@@ -12,6 +12,7 @@ import net.bytle.db.stream.InsertStream;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.timer.Timer;
 import net.bytle.type.*;
@@ -151,7 +152,12 @@ public class Pipeline implements AutoCloseable {
       MapKeyIndependent<Object> arguments = new MapKeyIndependent<>();
 
       // Loop over the step attribute
-      Map<String, Object> stepMap = Casts.castToSameMap(stepObject, String.class, Object.class);
+      Map<String, Object> stepMap;
+      try {
+        stepMap = Casts.castToSameMap(stepObject, String.class, Object.class);
+      } catch (CastException e) {
+        throw new InternalException("String and Object should not throw a cast exception", e);
+      }
       for (Map.Entry<String, Object> stepEntry : stepMap.entrySet()) {
         String key = stepEntry.getKey();
         Object value = stepEntry.getValue();
@@ -178,15 +184,19 @@ public class Pipeline implements AutoCloseable {
             if (!(value instanceof Map)) {
               throw new IllegalStructure("The arguments of the step (" + stepName + ") are not a list of key-pair values (ie a map) but a " + value.getClass().getSimpleName());
             }
-            arguments = YamlCast.castToSameMap(value, String.class, Object.class)
-              .entrySet()
-              .stream()
-              .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (e1, e2) -> e1,
-                MapKeyIndependent::new
-              ));
+            try {
+              arguments = YamlCast.castToSameMap(value, String.class, Object.class)
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                  Map.Entry::getKey,
+                  Map.Entry::getValue,
+                  (e1, e2) -> e1,
+                  MapKeyIndependent::new
+                ));
+            } catch (CastException e) {
+              throw new InternalException("String and Object should not throw a cast exception", e);
+            }
             break;
           default:
             throw new InternalError("Error while reading the pipeline file, the step attribute (" + stepAttribute + ") should have a branch");
@@ -341,7 +351,7 @@ public class Pipeline implements AutoCloseable {
 
   public Set<DataPath> getDownStreamDataPaths() {
     if (!hasBeenExecuted) {
-      execute();
+      execute().close();
     }
     return this.notConsumedDataPaths;
   }
@@ -477,7 +487,7 @@ public class Pipeline implements AutoCloseable {
 
   public int getRunCount() {
     if (!hasBeenExecuted) {
-      execute();
+      execute().close();
     }
     return this.runsByStep.values().stream()
       .mapToInt(List::size)
@@ -511,12 +521,6 @@ public class Pipeline implements AutoCloseable {
     private final List<FilterOperationStep> descendants;
     private final Pipeline pipeline;
     private final OperationStep operationStep;
-
-
-    /**
-     * The runner for each step
-     */
-    Map<FilterOperationStep, DescendantRunner> descendantRunners = new HashMap<>();
 
 
     public DescendantRunner(Pipeline pipeline, OperationStep parentOperationStep) {

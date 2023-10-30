@@ -126,6 +126,8 @@ subprojects {
     // see log4j.xml
     implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
+    implementation("org.apache.logging.log4j:log4j-jakarta-smtp:$log4jVersion") // log4j is on javax, this made it on javac
+
 
     /**
      * Test

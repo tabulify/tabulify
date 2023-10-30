@@ -1,11 +1,11 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
+
 
 import io.vertx.json.schema.ValidationException;
-import net.bytle.email.BMailAddress;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 
-import javax.mail.internet.AddressException;
-
-public class EmailUtil {
+public class ValidationUtil {
 
   public static void validateEmail(String email, String attribute) {
     /**
@@ -16,7 +16,7 @@ public class EmailUtil {
     }
 
     try {
-      BMailAddress.of(email)
+      BMailInternetAddress.of(email)
         .externalEmailValidation();
     } catch (AddressException e) {
       throw ValidationException.create("The email is not valid. Error: " + e.getMessage(), attribute, email);

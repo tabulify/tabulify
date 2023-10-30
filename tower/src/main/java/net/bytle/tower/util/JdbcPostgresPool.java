@@ -32,7 +32,7 @@ public class JdbcPostgresPool {
    */
   public static PgPool getJdbcPool() {
     if (jdbcPool == null) {
-      throw new InternalException("No Jdbc Pool found for this vertx");
+      throw new InternalException("No Jdbc Pool found");
     }
     return jdbcPool;
   }

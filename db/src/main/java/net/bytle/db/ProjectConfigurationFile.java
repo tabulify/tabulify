@@ -1,6 +1,8 @@
 package net.bytle.db;
 
 import net.bytle.conf.ConfManager;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.fs.Fs;
 import net.bytle.os.Oss;
 import net.bytle.type.Casts;
@@ -49,12 +51,22 @@ public class ProjectConfigurationFile {
     }
 
     Object yamlObject = yaml.loadAll(input).iterator().next();
-    Map<String, Object> yamlRootMap = Casts.castToSameMap(yamlObject, String.class, Object.class);
+    Map<String, Object> yamlRootMap;
+    try {
+      yamlRootMap = Casts.castToSameMap(yamlObject, String.class, Object.class);
+    } catch (CastException e) {
+      throw new InternalException("String and Object should not throw a cast exception", e);
+    }
     Object environmentObject = null;
 
     Object environmentObjects = yamlRootMap.get("envs");
     if (environmentObjects != null) {
-      Map<String, Object> environmentMaps = Casts.castToSameMap(environmentObjects, String.class, Object.class);
+      Map<String, Object> environmentMaps;
+      try {
+        environmentMaps = Casts.castToSameMap(environmentObjects, String.class, Object.class);
+      } catch (CastException e) {
+        throw new InternalException("String and Object should not throw a cast exception", e);
+      }
       String environment = DEVELOPMENT_ENV;
       if (env != null) {
         environmentObject = environmentMaps.get(env);
@@ -86,7 +98,12 @@ public class ProjectConfigurationFile {
       return;
     }
 
-    Map<String, String> environmentMap = Casts.castToSameMap(environmentObject, String.class, String.class);
+    Map<String, String> environmentMap;
+    try {
+      environmentMap = Casts.castToSameMap(environmentObject, String.class, String.class);
+    } catch (CastException e) {
+      throw new InternalException("String and String should not throw a cast exception", e);
+    }
     this.connectionsRelativePath = environmentMap.get("connections");
     this.variablesRelativePath = environmentMap.get("variables");
 
@@ -126,7 +143,9 @@ public class ProjectConfigurationFile {
     Map<String, Object> envs = new HashMap<>();
     envs.put(TabularAttributes.PROJECT_ENV.toString(), this.environment);
     if (Files.exists(projectConf)) {
-      envs.putAll(ConfManager.createFromPath(projectConf).getConfMap());
+      try(ConfManager fromPath = ConfManager.createFromPath(projectConf)) {
+        envs.putAll(fromPath.getConfMap());
+      }
     }
     return envs;
   }

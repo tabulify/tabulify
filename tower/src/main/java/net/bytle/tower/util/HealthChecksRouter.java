@@ -6,11 +6,12 @@ import io.vertx.ext.healthchecks.HealthCheckHandler;
 import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.web.Router;
 import net.bytle.vertx.EventBusChannels;
+import net.bytle.vertx.HealthHandlerCircuitBreaker;
 import net.bytle.vertx.ServerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static net.bytle.tower.VerticleHttpServer.PORT_DEFAULT;
+import static net.bytle.tower.VerticleApi.PORT_DEFAULT;
 
 /**
  * Health Check code,
@@ -21,11 +22,7 @@ public class HealthChecksRouter {
   protected static final Logger LOGGER = LoggerFactory.getLogger(HealthChecksRouter.class);
 
   public static void addHealtChecksToRouter(Router router, AbstractVerticle verticle) {
-    /**
-     * Failure
-     */
-    HealthDropWizardHandlerFailure handlerFailure = new HealthDropWizardHandlerFailure();
-    router.get("/failure").handler(handlerFailure);
+
 
     String defaultPokemonPath = "v2/pokemon";
     JsonObject config = verticle.config();
