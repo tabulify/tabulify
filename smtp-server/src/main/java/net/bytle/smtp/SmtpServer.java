@@ -285,8 +285,9 @@ public class SmtpServer {
     /**
      * Reception/Delivery
      */
-    // false is the default because on a cloud hosting, the DNS is public,
-    // and it's not supported by SpamHaus
+    // false is the default because:
+    // * on a cloud hosting, the DNS is public, and it's not supported by SpamHaus because they can't rate limit
+    // * the filtering happens on ipv4, not ipv6
     this.enableDnsBlockList = configAccessor.getBoolean("reception.enable.dns.block.list",false);
     LOGGER.info(LOG_TAB + "Dns Block List check set to " + this.enableDnsBlockList);
     this.smtpDelivery = new SmtpDelivery(smtpVerticle.getVertx(), configAccessor);
@@ -444,7 +445,8 @@ public class SmtpServer {
   }
 
 
-  public boolean isDnsBlockListEnabled() {
-    return this.enableDnsBlockList;
+  public boolean isDnsBlockListDisabled() {
+    return !this.enableDnsBlockList;
   }
+
 }

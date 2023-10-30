@@ -17,7 +17,6 @@ import java.util.Map;
  */
 public class SmtpFiltering {
 
-
   /**
    * When the session is already authenticated,
    * there is no need to filter (ie check ip, domain, ....)
@@ -30,7 +29,7 @@ public class SmtpFiltering {
   }
 
   public static void checkIfDomainIsNotBlocked(SmtpSession smtpSession, BMailInternetAddress emailAddress) throws SmtpException {
-    if (!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()) {
+    if (smtpSession.getSmtpService().getSmtpServer().isDnsBlockListDisabled()) {
       return;
     }
     if (shouldNotBeFiltered(smtpSession)) {
@@ -47,7 +46,7 @@ public class SmtpFiltering {
   }
 
   public static void checkIp(SmtpSession smtpSession) throws SmtpException {
-    if (!smtpSession.getSmtpService().getSmtpServer().isDnsBlockListEnabled()) {
+    if (smtpSession.getSmtpService().getSmtpServer().isDnsBlockListDisabled()) {
       return;
     }
     if (shouldNotBeFiltered(smtpSession)) {
@@ -61,8 +60,8 @@ public class SmtpFiltering {
         .query()
         .getFirst();
     } catch (IllegalStructure e) {
-      throw SmtpException.create(SmtpReplyCode.TRANSACTION_FAILED_554, "The Ip Address (" + ipAddressToCheck + ") is not Ipv4")
-        .setShouldQuit(true);
+      // ipv6 address, we don't know how to filter
+      return;
     }
     if (response.getBlocked()) {
       throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: " + response.getDescription() + ")");
