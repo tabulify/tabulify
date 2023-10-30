@@ -42,6 +42,13 @@ scrape_configs:
   - job_name: "node_exporter"
     static_configs:
       - targets: [ 'localhost:{{ prometheus_node_exporter_port }}' ]
+  - job_name: "smtp_inbox"
+    static_configs:
+      - targets: [ 'localhost:{{ inbox_http_port }}' ]
+  - job_name: "nginx"
+    metrics_path: '/prom/nginx/metrics'
+    static_configs:
+      - targets: [ 'localhost' ]
   # https://learn.netdata.cloud/docs/exporting/prometheus#querying-metrics
   # We don't need all this metrics.
   #  - job_name: "netdata"

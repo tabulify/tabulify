@@ -83,14 +83,15 @@
     file: 'host_files/{{ inventory_hostname }}/nginx/http/dokuwiki-based/dokuwiki.conf'
     protocol: 'http'
 
-- name: 'Localhost - Configuration'
+- name: 'Localhost - {{ ansible_fqdn }}.conf Configuration'
   become: true
   tags: nginx-conf, nginx-localhost
   notify: reload nginx
   template:
-    src: localhost-nginx.conf
+    src: 'localhost.conf'
     dest: "{{nginx_etc_path_conf}}/http/localhost.conf"
-
+  vars:
+    fqdn: '{{ ansible_fqdn }}'
 
 - name: Nginx | Installation modules
   become: true

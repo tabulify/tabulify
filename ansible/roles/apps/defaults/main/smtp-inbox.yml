@@ -20,3 +20,5 @@ inbox_dmarc_s3_key_secret: !vault |
 
 inbox_java_home: '/usr/lib/jvm/java-11-openjdk-11.0.20.0.8-1.el7_9.x86_64'
 inbox_java_path: '{{ inbox_java_home }}/bin/java'
+
+inbox_http_port: 25026
