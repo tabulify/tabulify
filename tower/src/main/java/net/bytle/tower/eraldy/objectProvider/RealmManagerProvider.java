@@ -8,7 +8,7 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -76,7 +76,8 @@ public class RealmManagerProvider {
   @SuppressWarnings("unused")
   public Future<RealmManager> upsertRealmOwner(RealmManager realmManager) {
 
-    if (!realmManager.getOwner().getRealm().getLocalId().equals(EraldyDomain.get().getEraldyRealm().getLocalId())) {
+    User owner = realmManager.getOwner();
+    if (!UsersUtil.isEraldyUser(owner)) {
       throw new InternalException("The realm manager user is not a Eraldy user and cannot own a realm");
     }
 
@@ -91,7 +92,7 @@ public class RealmManagerProvider {
 
     return JdbcPostgresPool.getJdbcPool()
       .preparedQuery(sql)
-      .execute(Tuple.of(realmManager.getRealm().getLocalId(), realmManager.getOwner().getEmail(), DateTimeUtil.getNowUtc()))
+      .execute(Tuple.of(realmManager.getRealm().getLocalId(), owner.getEmail(), DateTimeUtil.getNowUtc()))
       .onFailure(t -> LOGGER.error("Error while inserting the realm owner with the following sql:\n" + sql, t))
       .compose(rows -> Future.succeededFuture(realmManager));
   }

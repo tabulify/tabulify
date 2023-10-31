@@ -37,9 +37,7 @@ public class JdbcPostgresPool {
 
 
 
-  public JdbcPostgresPool(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
-
-
+  public static void init(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
     String user = jdbcConnectionInfo.getUser();
 
     // Set the working schema
@@ -65,8 +63,5 @@ public class JdbcPostgresPool {
       pgConnectOptions,
       poolOptions
     );
-
-
   }
-
 }

@@ -1,12 +1,20 @@
 package net.bytle.tower;
 
 
+import com.google.common.collect.Lists;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
+import net.bytle.tower.eraldy.app.comboprivateapi.ComboPrivateApiApp;
+import net.bytle.tower.eraldy.app.combopublicapi.ComboPublicApiApp;
+import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
+import net.bytle.tower.eraldy.auth.AuthRealmHandler;
+import net.bytle.tower.eraldy.auth.BrowserSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
@@ -73,11 +81,35 @@ public class VerticleApi extends AbstractVerticle {
             return;
           }
 
+          EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
+          Future<Realm> eraldyRealm = EraldyRealm.create(eraldyDomain).getFutureRealm();
+
           /**
-           * Create the domain, its realm and its app
+           * Domain Handler
            */
-          List<Future<?>> initFutures = EraldyDomain.getOrCreate(httpServer, configAccessor)
-            .mount();
+          Router router = httpServer.getRouter();
+          AuthRealmHandler.createFrom(router, eraldyDomain);
+          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
+          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
+
+          /**
+           * Add the apps
+           */
+          Future<Void> privateApiFuture = ComboPrivateApiApp.create(eraldyDomain)
+            .addToRouter(router);
+          Future<Void> publicApiFuture = ComboPublicApiApp.create(eraldyDomain)
+            .addToRouter(router);
+          Future<Void> memberApiFuture = EraldyMemberApp.create(eraldyDomain)
+            .addToRouter(router);
+          Future<Void> appAppFuture = ComboAppApp.create(eraldyDomain)
+            .addToRouter(router);
+
+          /**
+           * Add the scheduled task
+           */
+          SqlAnalytics.create(eraldyDomain);
+
+          List<Future<?>> initFutures = Lists.newArrayList(privateApiFuture, publicApiFuture, memberApiFuture, appAppFuture, eraldyRealm);
 
           if (Env.IS_DEV) {
             /**
@@ -92,6 +124,7 @@ public class VerticleApi extends AbstractVerticle {
            * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
            *  0.0.0.0 means listen on all available addresses
            */
+
           Future.all(initFutures)
             .onFailure(FailureStatic::failFutureWithTrace)
             .onSuccess(apiFutureResult -> httpServer.getServer()
@@ -99,7 +132,7 @@ public class VerticleApi extends AbstractVerticle {
               /**
                * https://vertx.io/docs/vertx-core/java/#_handling_requests
                */
-              .requestHandler(httpServer.getRouter())
+              .requestHandler(router)
               .listen(ar -> {
                 if (ar.succeeded()) {
                   LOGGER.info("HTTP server running on port " + ar.result().actualPort());
@@ -114,6 +147,7 @@ public class VerticleApi extends AbstractVerticle {
 
 
   }
+
 
   private void handlePromiseFailure(Promise<Void> promise, Throwable e) {
     promise.fail(e);

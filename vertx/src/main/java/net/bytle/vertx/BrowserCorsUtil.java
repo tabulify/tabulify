@@ -1,11 +1,8 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.CorsHandler;
-import net.bytle.vertx.HttpHeaders;
-import net.bytle.vertx.HttpsCertificateUtil;
-import net.bytle.vertx.TowerApexDomain;
 
 import java.util.HashSet;
 import java.util.Set;

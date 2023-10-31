@@ -8,7 +8,7 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.JdbcPostgresPool;
@@ -47,6 +47,7 @@ public class OrganizationUserProvider {
     }
 
 
+    @SuppressWarnings("unused")
     public Future<Boolean> isOrganizationUser(User user) {
         return getOrganizationUserById(user.getLocalId(), user)
                 .compose(organizationUser -> {
@@ -70,7 +71,7 @@ public class OrganizationUserProvider {
     }
 
     public Future<OrganizationUser> getOrganizationUserByUser(User user) {
-        EraldyDomain.get().assertIsEraldyUser(user);
+        UsersUtil.assertEraldyUser(user);
         return getOrganizationUserById(user.getLocalId(), user);
     }
 
@@ -102,7 +103,7 @@ public class OrganizationUserProvider {
         Future<User> futureUser;
         Long userId;
         if (user != null) {
-            EraldyDomain.get().assertIsEraldyUser(user);
+            UsersUtil.assertEraldyUser(user);
             futureUser = Future.succeededFuture(user);
             userId = user.getLocalId();
         } else {

@@ -9,7 +9,6 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.auth.EraldySessionHandler;
 import net.bytle.tower.eraldy.auth.UsersUtil;
@@ -167,7 +166,7 @@ public class AuthInternalAuthenticator {
         /**
          * If Eraldy user realm, add the organization if any
          */
-        if (user.getRealm().getLocalId().equals(EraldyDomain.get().getEraldyRealm().getLocalId())) {
+        if (UsersUtil.isEraldyUser(user)) {
 
           futureOrganizationUser = OrganizationUserProvider.get(ctx.vertx())
             .getOrganizationUserById(user.getLocalId(), user);

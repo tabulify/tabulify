@@ -10,8 +10,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.BasicAuthHandlerImpl;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.vertx.EraldyDomain;
 
 import java.nio.charset.StandardCharsets;
 

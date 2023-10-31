@@ -15,7 +15,7 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -700,7 +700,7 @@ public class UserProvider {
   }
 
   public Future<User> getEraldyUserById(Long ownerId) {
-    return getUserById(ownerId, EraldyDomain.get().getEraldyRealm());
+    return getUserById(ownerId, EraldyRealm.get().getRealm());
   }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {

@@ -15,7 +15,6 @@ import io.vertx.ext.web.impl.RoutingContextInternal;
 import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.vertx.HttpsCertificateUtil;
 import net.bytle.vertx.TowerApexDomain;
 import org.slf4j.Logger;
@@ -73,12 +72,12 @@ public class EraldySessionHandler implements SessionHandler {
   private long cookieMaxAge = -1;
 
 
-  public EraldySessionHandler(SessionStore sessionStore, EraldyDomain eraldyDomain) {
+  public EraldySessionHandler(SessionStore sessionStore, TowerApexDomain apexDomain) {
     this.sessionStore = sessionStore;
-    this.eraldyDomain = eraldyDomain;
+    this.eraldyDomain = apexDomain;
   }
 
-  public static EraldySessionHandler createWithDomain(SessionStore sessionStore, EraldyDomain eraldyDomain) {
+  public static EraldySessionHandler createWithDomain(SessionStore sessionStore, TowerApexDomain eraldyDomain) {
     if (EraldySessionHandler.eraldySessionHandler == null) {
       EraldySessionHandler.eraldySessionHandler = new EraldySessionHandler(sessionStore, eraldyDomain);
     }

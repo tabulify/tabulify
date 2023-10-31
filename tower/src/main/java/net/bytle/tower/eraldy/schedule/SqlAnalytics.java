@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.schedule;
 import io.vertx.core.Handler;
 import io.vertx.pgclient.PgPool;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.JdbcPostgresPool;
 
 import java.io.InputStream;

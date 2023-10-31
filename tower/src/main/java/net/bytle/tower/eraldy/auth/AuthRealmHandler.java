@@ -11,7 +11,6 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;

@@ -37,6 +37,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
 
     INIT_LOGGER.info("Start creation of JDBC Pool");
     JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(configAccessor);
+    JdbcPostgresPool.init(vertx,jdbcConnectionInfo);
 
     INIT_LOGGER.info("Db Migration");
     JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);

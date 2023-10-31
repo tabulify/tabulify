@@ -13,7 +13,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.EraldyDomain;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
@@ -463,7 +463,7 @@ public class RealmProvider {
     Long orgaId = row.getLong(REALM_ORGA_ID);
     Future<Organization> futureOrganization = OrganizationProvider.createFrom(vertx).getById(orgaId);
     Long realmIdContactColumn = row.getLong(REALM_OWNER_ID_COLUMN);
-    Future<User> futureOwnerUser = UserProvider.createFrom(vertx).getUserById(realmIdContactColumn, EraldyDomain.get().getEraldyRealm());
+    Future<User> futureOwnerUser = UserProvider.createFrom(vertx).getUserById(realmIdContactColumn, EraldyRealm.get().getRealm());
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {

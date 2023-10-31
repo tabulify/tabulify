@@ -85,4 +85,20 @@ public abstract class TowerApexDomain {
 
   public abstract String getRealmHandle();
 
+  /**
+   * @return the organisation local id
+   */
+  public abstract Long getOrganisationId();
+
+  /**
+   * @return the realm local id
+   */
+  public abstract Long getRealmLocalId();
+
+  public abstract String getOwnerName();
+
+  public abstract String getOwnerEmail();
+
+  public abstract String getName();
+
 }

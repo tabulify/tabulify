@@ -1,8 +1,8 @@
 package net.bytle.tower.util;
 
 import io.vertx.core.Future;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.VerticleApi;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
@@ -22,7 +22,7 @@ public class DatacadamiaDomain {
 
   public Future<Realm> createRealm() {
 
-    Realm eraldyRealm = EraldyDomain.get().getEraldyRealm();
+    Realm eraldyRealm = EraldyRealm.get().getRealm();
     Realm datacadamiaRealm = new Realm();
     datacadamiaRealm.setHandle(REALM_HANDLE);
     datacadamiaRealm.setName(REALM_HANDLE + " Realm");

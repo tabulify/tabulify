@@ -4,10 +4,10 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
+import net.bytle.vertx.EraldyDomain;
 
 public class UsersUtil {
 
@@ -107,11 +107,12 @@ public class UsersUtil {
   }
 
   public static boolean isEraldyUser(User user) {
-    return EraldyDomain.get().isEraldyUser(user);
+    return EraldyDomain.get().isEraldyId(user.getRealm().getLocalId());
   }
 
   public static void assertEraldyUser(User user) {
-    EraldyDomain.get().assertIsEraldyUser(user);
+    EraldyDomain.get().assertIsEraldyUser(user.getRealm().getLocalId());
   }
+
 
 }

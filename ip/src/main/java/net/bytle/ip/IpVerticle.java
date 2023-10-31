@@ -28,7 +28,7 @@ public class IpVerticle extends AbstractVerticle {
   }
 
   @Override
-  public void start(Promise<Void> verticlePromise) throws Exception {
+  public void start(Promise<Void> verticlePromise) {
     LOGGER.info("IP Verticle Started");
     ConfigManager.config("ip", this.vertx, this.config())
       .build()
@@ -54,7 +54,8 @@ public class IpVerticle extends AbstractVerticle {
           return;
         }
 
-        //new IpHandler(new IpApiImpl()).mount(builder);
+        //new IpApp();
+
 
         httpServer.getServer()
           /**
