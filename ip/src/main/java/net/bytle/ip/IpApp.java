@@ -5,6 +5,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.ip.api.IpApiImpl;
 import net.bytle.ip.handler.IpHandler;
 import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
 
@@ -12,6 +13,10 @@ public class IpApp extends TowerApp {
 
   public IpApp(TowerApexDomain towerApexDomain) {
     super(towerApexDomain);
+  }
+
+  public static TowerApp createForDomain(EraldyDomain eraldyDomain) {
+    return new IpApp(eraldyDomain);
   }
 
   @Override

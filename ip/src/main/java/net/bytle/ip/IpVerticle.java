@@ -3,10 +3,7 @@ package net.bytle.ip;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.vertx.ConfigManager;
-import net.bytle.vertx.HttpServer;
-import net.bytle.vertx.Log4JManager;
-import net.bytle.vertx.MainLauncher;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,23 +51,25 @@ public class IpVerticle extends AbstractVerticle {
           return;
         }
 
-        //new IpApp();
+        EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
 
+        IpApp.createForDomain(eraldyDomain).mount()
+          .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
+          .onSuccess(Void -> httpServer.getServer()
+            /**
+             * https://vertx.io/docs/vertx-core/java/#_handling_requests
+             */
+            .requestHandler(httpServer.getRouter())
+            .listen(ar -> {
+              if (ar.succeeded()) {
+                LOGGER.info("HTTP server running on port " + ar.result().actualPort());
+                verticlePromise.complete();
+              } else {
+                LOGGER.error("Could not start a HTTP server " + ar.cause());
+                this.handlePromiseFailure(verticlePromise, ar.cause());
+              }
+            }));
 
-        httpServer.getServer()
-          /**
-           * https://vertx.io/docs/vertx-core/java/#_handling_requests
-           */
-          .requestHandler(httpServer.getRouter())
-          .listen(ar -> {
-            if (ar.succeeded()) {
-              LOGGER.info("HTTP server running on port " + ar.result().actualPort());
-              verticlePromise.complete();
-            } else {
-              LOGGER.error("Could not start a HTTP server " + ar.cause());
-              this.handlePromiseFailure(verticlePromise, ar.cause());
-            }
-          });
 
       });
 

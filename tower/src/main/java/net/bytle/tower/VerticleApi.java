@@ -95,14 +95,10 @@ public class VerticleApi extends AbstractVerticle {
           /**
            * Add the apps
            */
-          Future<Void> privateApiFuture = ComboPrivateApiApp.create(eraldyDomain)
-            .addToRouter(router);
-          Future<Void> publicApiFuture = ComboPublicApiApp.create(eraldyDomain)
-            .addToRouter(router);
-          Future<Void> memberApiFuture = EraldyMemberApp.create(eraldyDomain)
-            .addToRouter(router);
-          Future<Void> appAppFuture = ComboAppApp.create(eraldyDomain)
-            .addToRouter(router);
+          Future<Void> privateApiFuture = ComboPrivateApiApp.create(eraldyDomain).mount();
+          Future<Void> publicApiFuture = ComboPublicApiApp.create(eraldyDomain).mount();
+          Future<Void> memberApiFuture = EraldyMemberApp.create(eraldyDomain).mount();
+          Future<Void> appAppFuture = ComboAppApp.create(eraldyDomain).mount();
 
           /**
            * Add the scheduled task

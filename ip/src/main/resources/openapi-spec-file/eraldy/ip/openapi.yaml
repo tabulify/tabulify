@@ -20,9 +20,9 @@ security:
 components:
   securitySchemes:
     apiKeyAuth:
-      $ref: '../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
+      $ref: '../../../../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
     bearerAuth:
-      $ref: '../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
+      $ref: '../../../../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
   schemas:
     IpInfo:
       title: IpInfo

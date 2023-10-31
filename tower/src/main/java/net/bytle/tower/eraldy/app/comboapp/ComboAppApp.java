@@ -15,6 +15,7 @@ public class ComboAppApp extends TowerApp {
 
   public ComboAppApp(TowerApexDomain topLevelDomain) {
     super(topLevelDomain);
+    this.mount();
   }
 
   public static ComboAppApp create(TowerApexDomain topLevelDomain) {

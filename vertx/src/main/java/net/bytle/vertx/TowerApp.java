@@ -199,7 +199,10 @@ public abstract class TowerApp {
 
   }
 
-  public Future<Void> addToRouter(Router rootRouter) {
+  public Future<Void> mount() {
+
+
+    Router rootRouter = apexDomain.getHttpServer().getRouter();
 
     /**
      * Browser Specific
