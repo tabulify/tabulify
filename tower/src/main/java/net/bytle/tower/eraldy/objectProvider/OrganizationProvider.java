@@ -9,12 +9,12 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static net.bytle.tower.util.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
 public class OrganizationProvider {
 

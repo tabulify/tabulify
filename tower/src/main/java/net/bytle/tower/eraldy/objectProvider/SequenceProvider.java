@@ -4,8 +4,8 @@ import io.vertx.core.Future;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

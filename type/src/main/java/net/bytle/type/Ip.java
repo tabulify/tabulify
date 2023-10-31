@@ -1,4 +1,4 @@
-package net.bytle.network;
+package net.bytle.type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +14,8 @@ public class Ip {
   /**
    * 1.2.3.4 = 4 + (3 * 256) + (2 * 256 * 256) + (1 * 256 * 256 * 256)
    * is 4 + 768 + 13,1072 + 16,777,216 = 16,909,060
-   *
-   * Integer in java are stored on 32 bits, the same than an IP.
+   * <p>
+   * Integer in java are stored on 32 bits, the same as an IP.
    *
    * @param ip a ipv4 string
    * @return the numeric representation
@@ -29,11 +29,11 @@ public class Ip {
 
   /**
    * Adapted
-   * from https://dba.stackexchange.com/questions/134643/how-to-convert-decimal-number-to-ip-address
-   *
+   * from <a href="https://dba.stackexchange.com/questions/134643/how-to-convert-decimal-number-to-ip-address">...</a>
+   * <p>
    * four octets written in decimal numbers, ranging from 0 to 255
    *
-   * @param ip
+   * @param ip in long format
    * @return an IP in
    */
   static protected String LongToIpv4(Long ip) {

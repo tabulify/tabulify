@@ -2,7 +2,8 @@
 description="Vertx core and utility"
 // https://mvnrepository.com/artifact/io.vertx/vertx-core
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
-
+val scramClientVersion = rootProject.ext.get("scramClientVersion").toString()
+val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 
 dependencies {
 
@@ -46,8 +47,10 @@ dependencies {
   // Mail
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
-  // Sql Client : Native Postgres
+  // Sql
+  implementation("org.flywaydb:flyway-core:$flywayVersion")
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
+  implementation("com.ongres.scram:client:$scramClientVersion") // Postgres Optional dependency that is not so optional
 
   // Vertx service
   //  implementation("io.vertx:vertx-service-proxy:$projectVertxVersion")

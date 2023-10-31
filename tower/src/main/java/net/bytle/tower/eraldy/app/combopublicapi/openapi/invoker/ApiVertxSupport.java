@@ -1,12 +1,10 @@
 package net.bytle.tower.eraldy.app.combopublicapi.openapi.invoker;
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.tower.eraldy.app.combopublicapi.implementer.*;
 import net.bytle.tower.eraldy.app.combopublicapi.openapi.interfaces.*;
+import net.bytle.vertx.RoutingContextWrapper;
 
 import java.util.function.Function;
 
@@ -30,8 +28,6 @@ private final static CspPublicapiHandler cspHandler = new CspPublicapiHandler(ne
 
 private final static HealthPublicapiHandler healthHandler = new HealthPublicapiHandler(new HealthPublicapiImpl());
 
-private final static IpPublicapiHandler ipHandler = new IpPublicapiHandler(new IpPublicapiImpl());
-
 private final static ListPublicapiHandler listHandler = new ListPublicapiHandler(new ListPublicapiImpl());
 
 private final static RealmPublicapiHandler realmHandler = new RealmPublicapiHandler(new RealmPublicapiImpl());
@@ -47,7 +43,6 @@ private final static UserPublicapiHandler userHandler = new UserPublicapiHandler
     appHandler.mount(builder);
     cspHandler.mount(builder);
     healthHandler.mount(builder);
-    ipHandler.mount(builder);
     listHandler.mount(builder);
     realmHandler.mount(builder);
     registrationHandler.mount(builder);
@@ -61,45 +56,8 @@ private final static UserPublicapiHandler userHandler = new UserPublicapiHandler
   public static void respond(RoutingContext ctx, ApiResponse<?> apiResponse) {
 
     Object data = apiResponse.getData();
-    if (ctx.response().headWritten()) {
-      if (data == null) {
-        if (!ctx.response().ended()) {
-          ctx.end();
-        }
-        return;
-      }
-      ctx.fail(new HttpException(500, "Response already written"));
-    }
-
-    if (data == null) {
-      int statusCode = apiResponse.getStatusCode();
-      if (statusCode == 200) {
-        statusCode = 204;  // No Content success status response
-      }
-      ctx.response()
-         .setStatusCode(statusCode)
-         .end();
-      return;
-    }
-
-    final boolean hasContentType = ctx.response().headers().contains(HttpHeaders.CONTENT_TYPE);
-    if (data instanceof Buffer) {
-      if (!hasContentType) {
-        ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
-      }
-      ctx.end((Buffer) data);
-      return;
-    }
-
-    if (data instanceof String) {
-      if (!hasContentType) {
-        ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "text/html");
-      }
-      ctx.end((String) data);
-      return;
-    }
-
-    ctx.json(data);
+    RoutingContextWrapper.createFrom(ctx)
+      .respond(data);
 
   }
 

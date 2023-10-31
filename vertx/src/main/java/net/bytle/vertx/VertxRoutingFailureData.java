@@ -236,4 +236,8 @@ public class VertxRoutingFailureData {
     exitStatusResponse.setMessage(this.getDescription());
     return exitStatusResponse;
   }
+
+  public VertxRoutingFailureException getFailure() {
+    return new VertxRoutingFailureException(this);
+  }
 }

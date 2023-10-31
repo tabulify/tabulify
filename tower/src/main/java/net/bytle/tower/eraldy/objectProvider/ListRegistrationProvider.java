@@ -14,11 +14,11 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

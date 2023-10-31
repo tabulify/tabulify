@@ -12,16 +12,16 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.bytle.tower.util.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
 /**
  * Manage the get/upsert of a {@link RealmManager} object asynchronously

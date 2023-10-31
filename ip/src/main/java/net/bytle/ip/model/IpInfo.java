@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.model.openapi;
+package net.bytle.ip.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -116,14 +116,4 @@ public class IpInfo   {
     "}";
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

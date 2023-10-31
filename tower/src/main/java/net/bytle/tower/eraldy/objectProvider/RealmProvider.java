@@ -17,10 +17,10 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +28,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.tower.util.JdbcSchemaManager.COLUMN_PART_SEP;
-import static net.bytle.tower.util.JdbcSchemaManager.REALM_ID_COLUMN;
+import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
 /**
  * Manage the get/upsert of a {@link Realm} object asynchronously
@@ -44,6 +43,7 @@ public class RealmProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(RealmProvider.class);
 
+  public static final String REALM_ID_COLUMN = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID;
   private static final Map<Vertx, RealmProvider> mapRealmByVertx = new HashMap<>();
 
   public static final String REALM_HANDLE_URL_PARAMETER = "realm";

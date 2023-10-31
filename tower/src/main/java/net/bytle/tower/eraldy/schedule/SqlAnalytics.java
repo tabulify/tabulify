@@ -4,7 +4,7 @@ import io.vertx.core.Handler;
 import io.vertx.pgclient.PgPool;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.EraldyDomain;
-import net.bytle.tower.util.JdbcPostgresPool;
+import net.bytle.vertx.JdbcPostgresPool;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -12,10 +12,8 @@ import java.util.Scanner;
 public class SqlAnalytics implements Handler<Long> {
 
   private static final String SQL_RESOURCES_PATH = "/analytics/RealmAnalytics.sql";
-  private final EraldyDomain eraldyDomain;
 
   public SqlAnalytics(EraldyDomain eraldyDomain) {
-    this.eraldyDomain = eraldyDomain;
     long delayMsEveryHour = 1000 * 60 * 60;
     eraldyDomain.getVertx().setPeriodic(delayMsEveryHour, this);
   }

@@ -11,12 +11,12 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static net.bytle.tower.util.JdbcSchemaManager.COLUMN_PART_SEP;
+import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
 
 public class OrganizationUserProvider {

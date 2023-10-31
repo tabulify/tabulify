@@ -1,8 +1,7 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.pgclient.PgConnectOptions;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.ConfigAccessor;
 
 import java.util.Arrays;
 
@@ -10,7 +9,7 @@ import java.util.Arrays;
  * A wrapper around connection information
  * <p>
  * It's passed to synchronize all JDBC library
- * with the same data (ie {@link JdbcPostgresPool}, {@link JdbcSchemaManager}, {@link net.bytle.db.Tabular}, ..)
+ * with the same data (ie {@link JdbcPostgresPool}, {@link JdbcSchemaManager}, ..)
  */
 public class JdbcConnectionInfo {
   private String url;

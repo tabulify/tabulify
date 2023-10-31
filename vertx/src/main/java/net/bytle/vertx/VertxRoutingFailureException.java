@@ -1,6 +1,6 @@
 package net.bytle.vertx;
 
-public class VertxRoutingFailureException extends Throwable {
+public class VertxRoutingFailureException extends Exception {
 
 
   private final VertxRoutingFailureData contextFailure;
@@ -8,6 +8,7 @@ public class VertxRoutingFailureException extends Throwable {
   public VertxRoutingFailureException(VertxRoutingFailureData vertxRoutingFailureData) {
     this.contextFailure = vertxRoutingFailureData;
   }
+
 
   public VertxRoutingFailureData getFailureContext() {
     return this.contextFailure;

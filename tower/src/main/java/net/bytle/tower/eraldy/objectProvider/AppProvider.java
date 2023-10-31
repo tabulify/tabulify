@@ -19,19 +19,15 @@ import net.bytle.tower.eraldy.model.openapi.AppPostBody;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.JdbcPostgresPool;
-import net.bytle.tower.util.JdbcSchemaManager;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpsCertificateUtil;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.*;
 
-import static net.bytle.tower.util.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+import static net.bytle.vertx.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
 
 /**
  * Manage the get/upsert of a {@link App} object asynchronously

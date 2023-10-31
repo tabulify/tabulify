@@ -1,8 +1,7 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
-import net.bytle.vertx.ConfigAccessor;
 
 public enum JdbcConnectionAttribute {
 

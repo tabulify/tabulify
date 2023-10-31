@@ -1,15 +1,12 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 /**
  * Manage, create and migrate schema
@@ -35,7 +32,6 @@ public class JdbcSchemaManager {
    * We, therefore add it in the java code).
    */
   public static final String CREATION_TIME_COLUMN_SUFFIX = "creation_time";
-  public static final String REALM_ID_COLUMN = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID;
   public static final String MODIFICATION_TIME_COLUMN_SUFFIX = "modification_time";
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSchemaManager.class);
   public static final String VERSION_LOG_TABLE = "version_log";
@@ -46,9 +42,6 @@ public class JdbcSchemaManager {
    */
   private static final String SCHEMA_PREFIX = "cs_";
   private static JdbcSchemaManager jdbcSchemaManager;
-
-
-  private DataSource dataSource;
 
   /**
    * Tabular does not support actually directly to wrap a SQL connection
@@ -77,22 +70,17 @@ public class JdbcSchemaManager {
 
 
   private FluentConfiguration getFlyWayCommonConf() {
-    FluentConfiguration fluentConfiguration = Flyway
+    return Flyway
       .configure()
       .sqlMigrationPrefix(SCRIPT_MIGRATION_PREFIX)
       .cleanDisabled(true)
       .table(VERSION_LOG_TABLE)
-      .createSchemas(true);
-    if (this.dataSource != null) {
-      fluentConfiguration.dataSource(this.dataSource);
-    } else {
-      fluentConfiguration.dataSource(
+      .createSchemas(true)
+      .dataSource(
         this.jdbcConnectionInfo.getUrl(),
         this.jdbcConnectionInfo.getUser(),
         this.jdbcConnectionInfo.getPassword()
       );
-    }
-    return fluentConfiguration;
   }
 
   /**
@@ -144,8 +132,4 @@ public class JdbcSchemaManager {
     return this.jdbcConnectionInfo;
   }
 
-  public JdbcSchemaManager setDataSource(DataSource dataSource) {
-    this.dataSource = dataSource;
-    return this;
-  }
 }

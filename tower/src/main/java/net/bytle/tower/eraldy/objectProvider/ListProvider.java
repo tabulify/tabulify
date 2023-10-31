@@ -18,10 +18,10 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.util.*;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpsCertificateUtil;
+import net.bytle.tower.util.Guid;
+import net.bytle.tower.util.OAuthQueryProperty;
+import net.bytle.tower.util.Postgres;
+import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

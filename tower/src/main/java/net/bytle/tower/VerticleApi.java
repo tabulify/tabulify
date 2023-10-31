@@ -44,7 +44,7 @@ public class VerticleApi extends AbstractVerticle {
     ConfigManager.config("tower", this.vertx, this.config())
       .build()
       .getConfigAccessor()
-      .onFailure(verticlePromise::fail)
+      .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
       .onSuccess(configAccessor -> vertx.executeBlocking(() -> {
           GlobalUtilityObjectsCreation
             .create(vertx, configAccessor)

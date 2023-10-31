@@ -6,7 +6,6 @@ import io.vertx.core.Vertx;
 import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
-import net.bytle.tower.eraldy.app.combopublicapi.implementer.IpPublicapiImpl;
 import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,13 +37,9 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
 
     INIT_LOGGER.info("Start creation of JDBC Pool");
     JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(configAccessor);
-    JdbcPostgresPool jdbcPools = JdbcPostgresPool.createFromJdbcConnectionInfo(vertx, jdbcConnectionInfo);
 
     INIT_LOGGER.info("Db Migration");
-    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo)
-      .setDataSource(jdbcPools.getDataSource());
-    // Ip migration
-    IpPublicapiImpl.initSchema(jdbcSchemaManager);
+    JdbcSchemaManager jdbcSchemaManager = JdbcSchemaManager.create(jdbcConnectionInfo);
     // Realms
     String schema = JdbcSchemaManager.getSchemaFromHandle("realms");
     JdbcSchema realmSchema = JdbcSchema.builder()

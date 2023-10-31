@@ -19,9 +19,13 @@ import net.bytle.tower.eraldy.EraldyDomain;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.Guid;
+import net.bytle.tower.util.PasswordHashManager;
+import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

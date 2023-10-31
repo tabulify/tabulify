@@ -6,7 +6,7 @@ import java.util.*
 // this version should also be changed manually in the plugin
 // // https://github.com/gradle/gradle/issues/9830
 // change also the flyway version plugin !
-val flywayVersion = "9.7.0"
+val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val antJschVersion = rootProject.ext.get("antJschVersion").toString()
 
@@ -93,9 +93,6 @@ tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayRealms") {
 dependencies {
 
 
-  // implementation "org.xerial:sqlite-jdbc:3.28.0"
-  implementation("org.flywaydb:flyway-core:$flywayVersion")
-
   implementation(project(":bytle-db"))
   implementation(project(":bytle-db-jdbc"))
   implementation(project(":bytle-fs"))
@@ -115,6 +112,8 @@ dependencies {
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
   // Sql
+  // implementation "org.xerial:sqlite-jdbc:3.28.0"
+  implementation("org.flywaydb:flyway-core:$flywayVersion")
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
   implementation("com.ongres.scram:client:2.1") // Postgres Optional dependency that is not so optional
 

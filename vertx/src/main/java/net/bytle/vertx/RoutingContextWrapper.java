@@ -1,8 +1,11 @@
 package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
@@ -24,11 +27,11 @@ public class RoutingContextWrapper {
   private static final String ROUTING_CONTEXT_WRAPPER_CTX_KEY = "RoutingContextWrapper";
 
 
-  private final RoutingContext routingContext;
+  private final RoutingContext ctx;
   private UriEnhanced requestUri;
 
   public RoutingContextWrapper(RoutingContext routingContext) {
-    this.routingContext = routingContext;
+    this.ctx = routingContext;
 
   }
 
@@ -47,12 +50,12 @@ public class RoutingContextWrapper {
 
   public String getRealRemoteClientIp() throws NotFoundException {
 
-    return HttpRequestUtil.getRealRemoteClientIp(this.routingContext.request());
+    return HttpRequestUtil.getRealRemoteClientIp(this.ctx.request());
   }
 
   public URI getReferer() throws NotFoundException {
 
-    String refererValue = this.routingContext.request().getHeader(HttpHeaders.REFERER);
+    String refererValue = this.ctx.request().getHeader(HttpHeaders.REFERER);
     if (refererValue == null) {
       throw new NotFoundException("No referer");
     }
@@ -82,7 +85,7 @@ public class RoutingContextWrapper {
    */
   @SuppressWarnings("unused")
   public void seeOtherUriRedirect(String redirectUri) {
-    this.routingContext.response()
+    this.ctx.response()
       .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI)
       .putHeader(HttpHeaders.LOCATION, redirectUri)
       .putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8")
@@ -96,7 +99,7 @@ public class RoutingContextWrapper {
     if (this.requestUri != null) {
       return this.requestUri;
     }
-    String url = this.routingContext.request().absoluteURI();
+    String url = this.ctx.request().absoluteURI();
     try {
       this.requestUri = UriEnhanced.createFromString(url);
     } catch (IllegalStructure e) {
@@ -114,11 +117,11 @@ public class RoutingContextWrapper {
    * @return the path of the original request before any rerouting
    */
   private String getOriginalRequestPath() {
-    String pathBeforeRerouting = routingContext.get(CONTEXT_REROUTED_PATH, null);
+    String pathBeforeRerouting = ctx.get(CONTEXT_REROUTED_PATH, null);
     if (pathBeforeRerouting != null) {
       return pathBeforeRerouting;
     }
-    return routingContext.request().path();
+    return ctx.request().path();
   }
 
 
@@ -127,20 +130,20 @@ public class RoutingContextWrapper {
    * This utility helps with it.
    */
   public boolean isReRouteOccurring() {
-    String oldPath = routingContext.get(CONTEXT_REROUTED_PATH, null);
+    String oldPath = ctx.get(CONTEXT_REROUTED_PATH, null);
     return oldPath != null;
   }
 
   public void reroute(String reRouteString) {
-    String oldPath = routingContext.request().path();
-    routingContext
+    String oldPath = ctx.request().path();
+    ctx
       .put(RoutingContextWrapper.CONTEXT_REROUTED_PATH, oldPath)
       .reroute(reRouteString);
   }
 
   public User getSignedInUser() throws NotFoundException {
-    io.vertx.ext.auth.User user = this.routingContext.user();
-    if(user==null){
+    io.vertx.ext.auth.User user = this.ctx.user();
+    if (user == null) {
       throw new NotFoundException();
     }
     return user;
@@ -148,12 +151,57 @@ public class RoutingContextWrapper {
 
 
   public Vertx getVertx() {
-    return this.routingContext.vertx();
+    return this.ctx.vertx();
   }
 
   public RoutingContext getRoutingContext() {
-    return this.routingContext;
+    return this.ctx;
   }
 
 
+  public void respond(Object data) {
+    HttpServerResponse response = ctx.response();
+    if (response.headWritten()) {
+      if (data == null) {
+        if (!response.ended()) {
+          ctx.end();
+        }
+        return;
+      }
+      ctx.fail(new HttpException(500, "Response already written"));
+    }
+
+    if (data == null) {
+      int statusCode = response.getStatusCode();
+      if (statusCode == 200) {
+        response.setStatusCode(204);  // No Content success status response
+      }
+      response.end();
+      return;
+    }
+
+    final boolean hasContentType = response.headers().contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE);
+    if (data instanceof Buffer) {
+      if (!hasContentType) {
+        response.putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "application/octet-stream");
+      }
+      ctx.end((Buffer) data);
+      return;
+    }
+
+    if (data instanceof String) {
+      if (!hasContentType) {
+        response.putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "text/html");
+      }
+      ctx.end((String) data);
+      return;
+    }
+
+    ctx.json(data);
+
+  }
+
+  public HttpServerResponse response() {
+    return this.ctx.response();
+  }
 }

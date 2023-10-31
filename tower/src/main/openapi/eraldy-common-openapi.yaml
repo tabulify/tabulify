@@ -203,27 +203,6 @@ components:
           type: string
           format: date-time
           description: The timestamp when the object was created
-    IpInfo:
-      title: IpInfo
-      description: The geo-localization information based on Ip
-      type: object
-      properties:
-        ip:
-          type: string
-          description: The ip, the data is based on
-          example: 143.176.206.76
-        country:
-          type: string
-          description: The country name
-          example: Netherlands
-        country2:
-          type: string
-          description: The country ISO code on two characters
-          example: NL
-        country3:
-          type: string
-          description: The country ISO code on three characters
-          example: NLD
     Service:
       type: object
       description: |
