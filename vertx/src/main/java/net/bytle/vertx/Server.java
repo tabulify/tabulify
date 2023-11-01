@@ -49,7 +49,7 @@ public class Server {
   }
 
   /**
-   * @param name - the key prefix to add a namespace (example: http )
+   * @param name - the name is used as prefix for the configuration (ie with the http name, the conf key are `http.host, http.port, ...`)
    */
   public static builder create(String name, Vertx vertx, ConfigAccessor configAccessor) {
     return new builder(name, vertx, configAccessor);

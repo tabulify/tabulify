@@ -62,13 +62,15 @@ public class VerticleApi extends AbstractVerticle {
         .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
         .onSuccess(Void -> {
 
-
-          Server server  = Server.create("http",vertx, configAccessor)
+          /**
+           * Create the server
+           */
+          Server server = Server.create("http", vertx, configAccessor)
             .setFromConfigAccessorWithPort(PORT_DEFAULT)
             .build();
 
           /**
-           * Create the base router with the base Handler
+           * Create the HTTP server
            */
           HttpServer httpServer;
           try {
