@@ -11,7 +11,6 @@ import net.bytle.db.spi.Tabulars;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.ip.api.IpApiImpl;
 import net.bytle.ip.handler.IpHandler;
-import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
 import org.apache.logging.log4j.LogManager;
@@ -115,19 +114,15 @@ public class IpApp extends TowerApp {
   }
 
   public void migrateDatabaseSchema() throws DbMigrationException {
+
     JdbcSchema ipSchema = JdbcSchema.builder()
       .setLocation("classpath:db/cs-ip")
       .setSchema(CS_IP_SCHEMA)
       .build();
     JdbcSchemaManager jdbcManager = getApexDomain().getHttpServer().getServer().getJdbcManager();
     jdbcManager.migrate(ipSchema);
-    if (!JavaEnvs.IS_DEV) {
-      /**
-       * Take 10 seconds to load the tabular env ...
-       * We load in test and prod only
-       */
-      loadIpDataIfNeeded(jdbcManager.getConnectionInfo());
-    }
+    loadIpDataIfNeeded(jdbcManager.getConnectionInfo());
+
   }
 
   @Override

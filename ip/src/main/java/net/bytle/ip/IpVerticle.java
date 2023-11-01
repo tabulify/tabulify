@@ -62,7 +62,7 @@ public class IpVerticle extends AbstractVerticle {
 
         EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
 
-        IpApp.createForDomain(eraldyDomain).mount()
+        vertx.executeBlocking(() -> IpApp.createForDomain(eraldyDomain).mount())
           .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
           .onSuccess(Void -> httpServer.getHttpServer()
             .requestHandler(httpServer.getRouter())
