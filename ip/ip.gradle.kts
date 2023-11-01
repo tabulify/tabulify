@@ -22,6 +22,7 @@ dependencies {
   implementation("org.flywaydb:flyway-core:$flywayVersion")
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
   implementation("com.ongres.scram:client:$scramClientVersion") // Postgres Optional dependency that is not so optional
-
+  implementation(project(":bytle-db-jdbc")) // posgtres driver
+  implementation(project(":bytle-db-csv")) // csv loading
 
 }

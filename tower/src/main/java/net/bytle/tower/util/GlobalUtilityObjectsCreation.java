@@ -36,7 +36,7 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
   public void init() throws DbMigrationException, NoSecretException, ConfigIllegalException {
 
     INIT_LOGGER.info("Start creation of JDBC Pool");
-    JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(configAccessor);
+    JdbcConnectionInfo jdbcConnectionInfo = JdbcConnectionInfo.createFromJson("jdbc",configAccessor);
     JdbcPostgresPool.create(vertx,jdbcConnectionInfo);
 
     INIT_LOGGER.info("Db Migration");

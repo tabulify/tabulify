@@ -6,8 +6,8 @@ import io.vertx.ext.web.handler.FileSystemAccess;
 import io.vertx.ext.web.handler.StaticHandler;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utility class that add the handle of static resources for
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class StaticResourcesUtil {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourcesUtil.class);
+  private static final Logger LOGGER = LogManager.getLogger(StaticResourcesUtil.class);
 
   /**
    * This is:

@@ -39,7 +39,7 @@ public class IpVerticle extends AbstractVerticle {
         server = Server
           .create("http", vertx, configAccessor)
           .setFromConfigAccessorWithPort(PORT_DEFAULT)
-          .addJdbcPool()
+          .addJdbcPool("pg")
           .build();
 
         /**

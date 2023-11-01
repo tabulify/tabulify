@@ -122,7 +122,7 @@ public class Server {
     private int publicPort;
     private String listeningHost;
     private Boolean ssl = false;
-    private boolean addJdbcPool = false;
+    private String poolName;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -176,16 +176,20 @@ public class Server {
 
     public Server build() {
       Server server = new Server(this);
-      if (this.addJdbcPool) {
-        LOGGER.info("Start creation of JDBC Pool");
-        server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(server.getConfigAccessor());
+      if (this.poolName != null) {
+        LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
+        server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(this.poolName, server.getConfigAccessor());
         server.jdbcPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
       }
       return server;
     }
 
-    public builder addJdbcPool() {
-      this.addJdbcPool = true;
+    /**
+     *
+     * @param name - the name is used in the configuration as prefix
+     */
+    public builder addJdbcPool(String name) {
+      this.poolName = name;
       return this;
     }
   }

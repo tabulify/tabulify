@@ -1,7 +1,9 @@
 package net.bytle.vertx;
 
 import io.vertx.pgclient.PgConnectOptions;
-import net.bytle.exception.InternalException;
+import net.bytle.type.Strings;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 
@@ -12,30 +14,59 @@ import java.util.Arrays;
  * with the same data (ie {@link JdbcPostgresPool}, {@link JdbcSchemaManager}, ..)
  */
 public class JdbcConnectionInfo {
+
+  static Logger LOGGER = LogManager.getLogger(JdbcConnectionInfo.class);
   private String url;
   private String user;
   private String password;
   private Integer maxPoolSize;
   private String schemaPath;
 
-  public static JdbcConnectionInfo createFromJson(ConfigAccessor config) {
-    String url = JdbcConnectionAttribute.URL.getValue(config, String.class);
+  public static JdbcConnectionInfo createFromJson(String prefix, ConfigAccessor config) {
+
+    String urlKey = prefix + "." + JdbcConnectionAttribute.URL.getKey();
+    String url = config.getString(urlKey);
     if (url == null) {
-      throw new InternalException("The jdbc url configuration was not found. You should add it with the " + JdbcConnectionAttribute.URL.getKey() + " attribute.");
+      url = (String) JdbcConnectionAttribute.URL.getDefault();
+      LOGGER.info("The jdbc url configuration (" + urlKey + ") was not found and got the default value: " + url);
+    } else {
+      LOGGER.info("The jdbc url configuration (" + urlKey + ") was found and got the value: " + url);
     }
-    String user = JdbcConnectionAttribute.USER.getValue(config, String.class);
+
+    String userKey = prefix + "." + JdbcConnectionAttribute.USER.getKey();
+    String user = config.getString(userKey);
     if (user == null) {
-      throw new InternalException("The user configuration was not found. You should add it with the " + JdbcConnectionAttribute.USER.getKey() + " attribute.");
+      user = (String) JdbcConnectionAttribute.USER.getDefault();
+      LOGGER.info("The jdbc user configuration (" + userKey + ") was not found and got the default value: " + user);
+    } else {
+      LOGGER.info("The jdbc user configuration (" + userKey + ") was found and got the value: " + user);
     }
-    String password = JdbcConnectionAttribute.PASSWORD.getValue(config, String.class);
+
+    String passwordKey = prefix + "." + JdbcConnectionAttribute.PASSWORD.getKey();
+    String password = config.getString(passwordKey);
     if (password == null) {
-      throw new InternalException("The password configuration was not found. You should add it with the " + JdbcConnectionAttribute.PASSWORD.getKey() + " attribute.");
+      password = (String) JdbcConnectionAttribute.PASSWORD.getDefault();
+      LOGGER.info("The jdbc password configuration (" + passwordKey + ") was not found and got the default value.");
+    } else {
+      LOGGER.info("The jdbc password configuration (" + passwordKey + ") was found and got the value: " + Strings.createFromString("x").multiply(password.length()).toString());
     }
-    String workingSchema = JdbcConnectionAttribute.SCHEMA_PATH.getValue(config, String.class);
+
+    String workingSchemaKey = prefix + "." + JdbcConnectionAttribute.SCHEMA_PATH.getKey();
+    String workingSchema = config.getString(workingSchemaKey);
     if (workingSchema == null) {
-      throw new InternalException("The schema path configuration was not found. You should add it with the " + JdbcConnectionAttribute.SCHEMA_PATH.getKey() + " attribute.");
+      LOGGER.info("The jdbc workingSchema configuration (" + workingSchemaKey + ") was not found and got no value.");
+    } else {
+      LOGGER.info("The jdbc workingSchema configuration (" + workingSchemaKey + ") was found and got the value " + workingSchema);
     }
-    Integer maxPoolSize = JdbcConnectionAttribute.POOL_SIZE.getValueOrDefault(config, Integer.class);
+
+    String maxPoolSizeKey = prefix + "." + JdbcConnectionAttribute.POOL_SIZE.getKey();
+    Integer maxPoolSize = config.getInteger(maxPoolSizeKey);
+    if (maxPoolSize == null) {
+      maxPoolSize = (Integer) JdbcConnectionAttribute.POOL_SIZE.getDefault();
+      LOGGER.info("The jdbc max pool size configuration (" + maxPoolSizeKey + ") was not found and got the value:" + maxPoolSize);
+    } else {
+      LOGGER.info("The jdbc max pool size configuration (" + maxPoolSizeKey + ") was found and got the value:" + maxPoolSize);
+    }
 
     return new JdbcConnectionInfo()
       .setUrl(url)
@@ -106,6 +137,7 @@ public class JdbcConnectionInfo {
    * <p>
    * For PG, the current_schema returns the name of the schema that is at the front of the search path
    * <a href="https://www.postgresql.org/docs/current/ddl-schemas.html">...</a>
+   *
    * @return the working schema
    */
   @SuppressWarnings("unused")

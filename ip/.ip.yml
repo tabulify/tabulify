@@ -1,2 +1,4 @@
 superuser.token: 'hello-world'
 http.ssl: false
+
+pg.url: jdbc:postgresql://localhost:5433/postgres

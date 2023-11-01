@@ -2,11 +2,11 @@ package net.bytle.vertx;
 
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Manage, create and migrate schema
@@ -33,7 +33,7 @@ public class JdbcSchemaManager {
    */
   public static final String CREATION_TIME_COLUMN_SUFFIX = "creation_time";
   public static final String MODIFICATION_TIME_COLUMN_SUFFIX = "modification_time";
-  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSchemaManager.class);
+  private static final Logger LOGGER = LogManager.getLogger(JdbcSchemaManager.class);
   public static final String VERSION_LOG_TABLE = "version_log";
 
   /**
