@@ -15,7 +15,6 @@ import io.vertx.ext.web.impl.RoutingContextInternal;
 import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SessionInternal;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.HttpsCertificateUtil;
 import net.bytle.vertx.TowerApexDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,7 +191,7 @@ public class EraldySessionHandler implements SessionHandler {
     /**
      * Over Https
      */
-    cookie.setSecure(HttpsCertificateUtil.createOrGet().isHttpsEnable());
+    cookie.setSecure(eraldyDomain.getHttpServer().isHttpsEnabled());
 
     if (!expired) {
       // set max age if user requested it - else it's a session cookie

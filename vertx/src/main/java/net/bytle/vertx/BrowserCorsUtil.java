@@ -40,7 +40,7 @@ public class BrowserCorsUtil {
     allowedMethods.add(HttpMethod.PATCH);
     allowedMethods.add(HttpMethod.PUT);
     String routePath = towerApexDomain.getAbsoluteLocalPath() + "/*";
-    String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
+    String scheme = towerApexDomain.getHttpServer().getHttpScheme();
     /**
      * Allow to receive credentials from everywhere
      * This will respond with the `Access-Control-Allow-Origin` sets to the origin

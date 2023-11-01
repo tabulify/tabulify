@@ -22,8 +22,8 @@ public class HealthChecksRouter {
     String defaultPokemonPath = "v2/pokemon";
     HealthHandlerCircuitBreaker handlerPokemon = new HealthHandlerCircuitBreaker(verticle.getVertx())
       .setPokeApiUrl(
-        httpServerBuilder.getListeningHost(),
-        httpServerBuilder.getListeningPort(),
+        httpServerBuilder.serverProperties.getListeningHost(),
+        httpServerBuilder.serverProperties.getListeningPort(),
         defaultPokemonPath
       );
 
@@ -34,8 +34,8 @@ public class HealthChecksRouter {
           LOGGER.debug("Configuration has changed, verticle {} is updating...", verticle.deploymentID());
           JsonObject newConfiguration = message.body();
           handlerPokemon.setPokeApiUrl(
-            newConfiguration.getString(ServerProperties.HOST.toString(), "localhost"),
-            newConfiguration.getInteger(ServerProperties.LISTENING_PORT.toString(),  httpServerBuilder.getListeningPort()),
+            newConfiguration.getString(ServerProperties.HOST, "localhost"),
+            newConfiguration.getInteger(ServerProperties.LISTENING_PORT,  httpServerBuilder.serverProperties.getListeningPort()),
             defaultPokemonPath
           );
           LOGGER.debug("Configuration has changed, verticle {} has been updated...", verticle.deploymentID());

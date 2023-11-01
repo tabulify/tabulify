@@ -38,7 +38,7 @@ public class IpVerticle extends AbstractVerticle {
          */
         HttpServer httpServer;
         try {
-          httpServer = HttpServer.create(this, configAccessor, PORT_DEFAULT)
+          httpServer = HttpServer.create("http", this, configAccessor, PORT_DEFAULT)
             .addBodyHandler() // body transformation
             .addWebLog() // web log
             .setBehindProxy() // enable proxy forward
@@ -52,20 +52,16 @@ public class IpVerticle extends AbstractVerticle {
         }
 
         EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-
         IpApp.createForDomain(eraldyDomain).mount()
           .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
           .onSuccess(Void -> httpServer.getServer()
-            /**
-             * https://vertx.io/docs/vertx-core/java/#_handling_requests
-             */
             .requestHandler(httpServer.getRouter())
             .listen(ar -> {
               if (ar.succeeded()) {
                 LOGGER.info("HTTP server running on port " + ar.result().actualPort());
                 verticlePromise.complete();
               } else {
-                LOGGER.error("Could not start a HTTP server " + ar.cause());
+                LOGGER.error("Could not start the HTTP server " + ar.cause());
                 this.handlePromiseFailure(verticlePromise, ar.cause());
               }
             }));

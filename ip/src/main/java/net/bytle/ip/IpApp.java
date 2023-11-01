@@ -1,6 +1,7 @@
 package net.bytle.ip;
 
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.ip.api.IpApiImpl;
 import net.bytle.ip.handler.IpHandler;
@@ -8,6 +9,7 @@ import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
 
 public class IpApp extends TowerApp {
 
@@ -32,6 +34,12 @@ public class IpApp extends TowerApp {
 
   @Override
   public TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
+
+    ApiTokenAuthenticationProvider apiTokenAuthenticationProvider = new ApiTokenAuthenticationProvider(configAccessor);
+    builder
+      .securityHandler(ApiTokenAuthenticationProvider.BEARER_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> APIKeyHandler.create(apiTokenAuthenticationProvider));
+
     return this;
   }
 

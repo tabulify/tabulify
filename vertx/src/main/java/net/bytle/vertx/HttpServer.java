@@ -3,27 +3,20 @@ package net.bytle.vertx;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import net.bytle.exception.IllegalConfiguration;
+import net.bytle.java.JavaEnvs;
 
 /**
- * A builder to create quickly a HTTP server
+ * This class represents an HTTP server:
  * with standard handlers
  */
 public class HttpServer {
 
-  /**
-   * Listen from all hostname
-   * On ipv4 and Ipv6.
-   * The wildcard implementation depends on the language
-   * and in Java it works for the 2 Ip formats.
-   */
-  public static final String WILDCARD_IPV4_ADDRESS = "0.0.0.0";
-  @SuppressWarnings("unused")
-  public static final String WILDCARD_IPV6_ADDRESS = "[::]";
   private final HttpServer.builder builder;
   private Router router;
 
@@ -33,9 +26,9 @@ public class HttpServer {
   }
 
 
-  public static builder create(AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
+  public static builder create(String prefix, AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
 
-    return new HttpServer.builder(verticle, configAccessor, portDefault);
+    return new HttpServer.builder(prefix, verticle, configAccessor, portDefault);
 
   }
 
@@ -53,15 +46,23 @@ public class HttpServer {
   public io.vertx.core.http.HttpServer getServer() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
-      .setHost(this.builder.getListeningHost())
-      .setPort(this.builder.getListeningPort());
-    HttpsCertificateUtil.createOrGet()
-      .enableServerHttps(options);
+      .setHost(this.builder.serverProperties.getListeningHost())
+      .setPort(this.builder.serverProperties.getListeningPort());
+    /**
+     * https://vertx.io/docs/apidocs/io/vertx/core/net/PemKeyCertOptions.html
+     */
+    if (JavaEnvs.IS_DEV) {
+      options
+        .setPemKeyCertOptions(
+          new PemKeyCertOptions().addKeyPath(ServerProperties.DEV_KEY_PEM).addCertPath(ServerProperties.DEV_CERT_PEM)
+        )
+        .setSsl(true);
+    }
     return this.builder.verticle.getVertx().createHttpServer(options);
   }
 
   public int getPublicPort() {
-    return this.builder.getPublicPort();
+    return this.builder.serverProperties.getPublicPort();
   }
 
   public Vertx getVertx() {
@@ -72,10 +73,38 @@ public class HttpServer {
     return this.builder.configAccessor;
   }
 
+  /**
+   * @return the scheme always secure
+   */
+  public String getHttpScheme() {
+    if (isHttpsEnabled()) return "https";
+    return "http";
+  }
+
+  /**
+   * @return if https is enabled on the system
+   * See the https.md documentation for more info.
+   */
+  public boolean isHttpsEnabled() {
+    /**
+     * Note that Chrome does not allow to set a third-party cookie (ie same site: None)
+     * if the connection is not secure.
+     * It must be true then everywhere.
+     * For non-app, https comes from the proxy.
+     */
+    return true;
+  }
+
+  public ServerProperties getServerProperties() {
+    return this.builder.serverProperties;
+  }
+
+
   public static class builder {
     private final AbstractVerticle verticle;
     private final ConfigAccessor configAccessor;
     private final int portDefault;
+    private final String prefix;
 
     private boolean addBodyHandler = true;
     private boolean addWebLog = true;
@@ -84,8 +113,10 @@ public class HttpServer {
     private boolean enableMetrics = true;
     private boolean fakeErrorHandler = false;
     private boolean healthCheck = false;
+    ServerProperties serverProperties;
 
-    public builder(AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
+    public builder(String prefix, AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
+      this.prefix = prefix;
       this.verticle = verticle;
       this.configAccessor = configAccessor;
       this.portDefault = portDefault;
@@ -128,24 +159,9 @@ public class HttpServer {
 
     }
 
-
-    public String getListeningHost() {
-
-      return configAccessor.getString(ServerProperties.HOST.toString(), WILDCARD_IPV4_ADDRESS);
-
-    }
-
-    public Integer getListeningPort() {
-      return configAccessor.getInteger(ServerProperties.LISTENING_PORT.toString(), portDefault);
-    }
-
-    public Integer getPublicPort(){
-      return configAccessor.getInteger(ServerProperties.PUBLIC_PORT.toString(), 80);
-    }
-
     /**
      * A handler which gathers the entire request body and sets it on the {@link RoutingContext}
-     * You can't request the body from the request afterwards
+     * You can't request the body from the request after-wards
      * You need to get if from the context object
      * <p>
      * BodyHandler is required to process POST requests for instance
@@ -203,6 +219,11 @@ public class HttpServer {
 
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpBuilder = new HttpServer(this);
+      // serverProperties is used to build the router and should be then local
+      serverProperties = ServerProperties
+        .create(this.prefix)
+        .fromConfigAccessor(this.configAccessor, this.portDefault)
+        .build();
       httpBuilder.router = this.buildRouter();
       return httpBuilder;
     }

@@ -49,6 +49,7 @@ public class ProxyUtil {
 
     this.app = towerApp;
 
+
     /**
      * The port where the dev server (HTML/Javascript) is running locally
      */
@@ -61,12 +62,12 @@ public class ProxyUtil {
     /**
      * The host
      */
-    String targtHostWithoutPort = this.app.getPublicDomainHost();
-    int portSeparatorLocation = targtHostWithoutPort.indexOf(":");
+    String targetHostWithoutPort = this.app.getPublicDomainHost();
+    int portSeparatorLocation = targetHostWithoutPort.indexOf(":");
     if (portSeparatorLocation != -1) {
-      targtHostWithoutPort = targtHostWithoutPort.substring(0, portSeparatorLocation);
+      targetHostWithoutPort = targetHostWithoutPort.substring(0, portSeparatorLocation);
     }
-    this.targetHost = targtHostWithoutPort;
+    this.targetHost = targetHostWithoutPort;
 
     /**
      * Fiddler Proxy
@@ -86,38 +87,18 @@ public class ProxyUtil {
 
   private HttpClient createHttpClient(Boolean useFiddlerProxy) {
 
-    /**
-     * Http Clients Options
-     */
-    HttpClientOptions httpClientOptions = new HttpClientOptions();
-
-    /**
-     * Enable Ssl
-     */
-    HttpsCertificateUtil.createOrGet().enableClientHttps(httpClientOptions);
-
+    ServerProperties serverProperties = this.app.getApexDomain().getHttpServer().getServerProperties();
+    HttpClientBuilder towerHttpClient = HttpClientBuilder.builder(this.app.getVertx())
+      .withServerProperties(serverProperties)
+    .setDefaultPort(targetPort)
+      .setDefaultHost(targetHost);
+    if (useFiddlerProxy) {
+      towerHttpClient.setProxyOptions(fiddlerProxy);
+    }
     /**
      * Target Host and port
      */
-    httpClientOptions.setDefaultPort(targetPort);
-    httpClientOptions.setDefaultHost(targetHost);
-
-
-    if (useFiddlerProxy) {
-      httpClientOptions.setProxyOptions(fiddlerProxy);
-    }
-
-    /**
-     * TCP Timeout
-     */
-    //httpClientOptions.setConnectTimeout(100); // ms
-    //httpClientOptions.setIdleTimeout(1); // second, a normal answer is of 22 ms
-    //httpClientOptions.setKeepAlive(true);
-
-    /**
-     * Http client
-     */
-    return this.app.getVertx().createHttpClient(httpClientOptions);
+    return towerHttpClient.buildHttpClient();
 
   }
 

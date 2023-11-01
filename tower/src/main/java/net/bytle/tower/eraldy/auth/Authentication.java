@@ -11,10 +11,10 @@ import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.pgclient.PgPool;
-import net.bytle.tower.eraldy.auth.provider.ApiTokenAuthenticationProvider;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
 
 /**
  * Authentication in Vertx

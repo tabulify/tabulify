@@ -21,7 +21,10 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -474,7 +477,8 @@ public class ListProvider {
         }
 
         try {
-          String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
+          //String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
+          String scheme = "http";
           publisherAppUri = URI.create(
             scheme + "://" + BMailInternetAddress.of(publisherEmail)
               .getDomain()

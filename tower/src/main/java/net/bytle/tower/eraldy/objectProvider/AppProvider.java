@@ -20,7 +20,10 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.*;
+import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.JdbcPostgresPool;
+import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,9 +95,6 @@ public class AppProvider {
     if (scheme == null) {
       // without the scheme, the host is seen as path
       throw new IllegalStructure("The scheme is mandatory");
-    }
-    if (!scheme.equals("https") && HttpsCertificateUtil.createOrGet().isHttpsEnable()) {
-      throw new IllegalStructure("The scheme (" + scheme + ") is not supported as app uri (only https)");
     }
     String query = uri.getQuery();
     if (query != null) {

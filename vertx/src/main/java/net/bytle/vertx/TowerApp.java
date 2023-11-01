@@ -149,6 +149,11 @@ public abstract class TowerApp {
 
   public abstract TowerApp openApiMount(RouterBuilder builder);
 
+  /**
+   * To add security handlers for the openApi Security handler
+   * Configuring `AuthenticationHandler`s defined in the OpenAPI document
+   * <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">...</a>
+   */
   public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor);
 
 
@@ -236,7 +241,7 @@ public abstract class TowerApp {
      * <p>
      * The Strict-Transport-Security HTTP header tells browsers to always use HTTPS.
      */
-    if (HttpsCertificateUtil.createOrGet().isHttpsEnable()) {
+    if (getApexDomain().getHttpServer().isHttpsEnabled()) {
       rootRouter.route(this.getAbsoluteLocalPathWithDomain())
         /**
          * With the value `max-age=31536000; includeSubDomains`
@@ -500,7 +505,6 @@ public abstract class TowerApp {
   }
 
 
-
   public Vertx getVertx() {
     return apexDomain.getVertx();
   }
@@ -542,7 +546,7 @@ public abstract class TowerApp {
      * We create a URI each time as it may be accessed multiple time in one request,
      * and we don't want to mix query parameters
      */
-    String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
+    String scheme = apexDomain.getHttpServer().getHttpScheme();
     try {
       return UriEnhanced.create()
         .setScheme(scheme)
@@ -660,6 +664,7 @@ public abstract class TowerApp {
 
   /**
    * Utility method that returns if the request is for this app
+   *
    * @param routingContext - the routing context
    * @return if the request is for this app
    */
