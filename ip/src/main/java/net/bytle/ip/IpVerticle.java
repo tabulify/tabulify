@@ -33,12 +33,19 @@ public class IpVerticle extends AbstractVerticle {
       .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
       .onSuccess(configAccessor -> {
 
+
+        // The server
+        Server server = Server
+          .create("http", vertx, configAccessor)
+          .setFromConfigAccessorWithPort(PORT_DEFAULT)
+          .build();
+
         /**
          * Create the base router with the base Handler
          */
         HttpServer httpServer;
         try {
-          httpServer = HttpServer.create("http", this, configAccessor, PORT_DEFAULT)
+          httpServer = HttpServer.createFromServer(server)
             .addBodyHandler() // body transformation
             .addWebLog() // web log
             .setBehindProxy() // enable proxy forward
@@ -54,7 +61,7 @@ public class IpVerticle extends AbstractVerticle {
         EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
         IpApp.createForDomain(eraldyDomain).mount()
           .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-          .onSuccess(Void -> httpServer.getServer()
+          .onSuccess(Void -> httpServer.getHttpServer()
             .requestHandler(httpServer.getRouter())
             .listen(ar -> {
               if (ar.succeeded()) {

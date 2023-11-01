@@ -8,10 +8,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import net.bytle.exception.CastException;
 import net.bytle.type.Casts;
-import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.ConfigManager;
-import net.bytle.vertx.HttpServer;
-import net.bytle.vertx.MainLauncher;
+import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -125,12 +122,18 @@ public class SmtpVerticle extends AbstractVerticle {
                     }
 
                     /**
+                     * Create the server object
+                     */
+                    Server server = Server.create("http", vertx, configAccessor)
+                      .setFromConfigAccessorWithPort(25026)
+                      .build();
+
+                    /**
                      * Create the HTTP server
                      */
-                    Integer port = configAccessor.getInteger("http.server.port", 25026);
                     HttpServer httpServer;
                     try {
-                      httpServer = HttpServer.create(this, configAccessor, port)
+                      httpServer = HttpServer.createFromServer(server)
                         .addBodyHandler()
                         .addWebLog()
                         .setBehindProxy()
@@ -141,7 +144,7 @@ public class SmtpVerticle extends AbstractVerticle {
                       return;
                     }
 
-                    httpServer.getServer()
+                    httpServer.getHttpServer()
                       .requestHandler(httpServer.getRouter())
                       .listen(ar -> {
                         if (ar.succeeded()) {

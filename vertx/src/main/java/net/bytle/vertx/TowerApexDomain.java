@@ -1,7 +1,5 @@
 package net.bytle.vertx;
 
-import io.vertx.core.Vertx;
-
 /**
  * This class represents the apex domain of an app
  * ie in member.xxx.combostrap.com, the apex is combostrap.com
@@ -65,11 +63,6 @@ public abstract class TowerApexDomain {
    */
   public String getApexNameWithoutPort() {
     return apexNameWithoutPort;
-  }
-
-
-  public Vertx getVertx() {
-    return this.httpServer.getVertx();
   }
 
 

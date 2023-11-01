@@ -1,6 +1,9 @@
 package net.bytle.vertx;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Properties for a net/http server
@@ -9,7 +12,9 @@ import io.vertx.core.json.JsonObject;
  * * to read
  * * or create a Json Config pass for easy testing
  */
-public class ServerProperties {
+public class Server {
+
+  static Logger LOGGER = LogManager.getLogger(Server.class);
 
   /**
    * Listen from all hostname
@@ -37,23 +42,23 @@ public class ServerProperties {
   private final builder builder;
 
 
-  ServerProperties(builder builder) {
+  Server(builder builder) {
 
     this.builder = builder;
 
   }
 
   /**
-   * @param prefix - the key prefix to add a namespace (example: http )
+   * @param name - the key prefix to add a namespace (example: http )
    */
-  public static builder create(String prefix) {
-    return new builder(prefix);
+  public static builder create(String name, Vertx vertx, ConfigAccessor configAccessor) {
+    return new builder(name, vertx, configAccessor);
   }
 
 
   @Override
   public String toString() {
-    return builder.serverPrefix;
+    return builder.name;
   }
 
   public String getListeningHost() {
@@ -82,39 +87,61 @@ public class ServerProperties {
       .put(this.builder.getSslKey(), this.builder.ssl);
   }
 
+  public Vertx getVertx() {
+    return this.builder.vertx;
+  }
+
+  public ConfigAccessor getConfigAccessor() {
+    return this.builder.configAccessor;
+  }
+
   public static class builder {
-    private final String serverPrefix;
+    private final String name;
+    private final Vertx vertx;
+    private final ConfigAccessor configAccessor;
     private int listeningPort;
     private int publicPort;
     private String listeningHost;
     private Boolean ssl = false;
 
-    public builder(String serverPrefix) {
-      this.serverPrefix = serverPrefix;
+    public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
+      this.name = name;
+      this.vertx = vertx;
+      this.configAccessor = configAccessor;
     }
 
     String getListeningHostKey() {
-      return this.serverPrefix + "." + ServerProperties.HOST;
+      return this.name + "." + Server.HOST;
     }
 
-    public builder fromConfigAccessor(ConfigAccessor configAccessor, int portDefault) {
+    public builder setFromConfigAccessorWithPort(int portDefault) {
       this.listeningHost = configAccessor.getString(getListeningHostKey(), WILDCARD_IPV4_ADDRESS);
+      LOGGER.info("The listening host was set to: " + this.listeningHost + " via the conf (" + getListeningHostKey() + ")");
       this.listeningPort = configAccessor.getInteger(getListeningPortKey(), portDefault);
+      LOGGER.info("The listening port was set to: " + this.listeningPort + " via the conf (" + getListeningPortKey() + ")");
       this.publicPort = configAccessor.getInteger(getPublicPortKey(), 80);
-      this.ssl = configAccessor.getBoolean(getSslKey(), false);
+      LOGGER.info("The public port was set to: " + this.publicPort + " via the conf (" + getPublicPortKey() + ")");
+      /**
+       * Note that Chrome does not allow to set a third-party cookie (ie same site: None)
+       * if the connection is not secure.
+       * It must be true then everywhere.
+       * For non-app, https comes from the proxy.
+       */
+      this.ssl = configAccessor.getBoolean(getSslKey(), true);
+      LOGGER.info("SSL was set to: " + this.ssl + " via the conf (" + getSslKey() + ")");
       return this;
     }
 
     private String getSslKey() {
-      return this.serverPrefix+"."+ServerProperties.SSL;
+      return this.name + "." + Server.SSL;
     }
 
     private String getPublicPortKey() {
-      return this.serverPrefix + "." + ServerProperties.PUBLIC_PORT;
+      return this.name + "." + Server.PUBLIC_PORT;
     }
 
     private String getListeningPortKey() {
-      return this.serverPrefix + "." + ServerProperties.LISTENING_PORT;
+      return this.name + "." + Server.LISTENING_PORT;
     }
 
     public builder setListeningPort(int listeningPort) {
@@ -127,8 +154,8 @@ public class ServerProperties {
       return this;
     }
 
-    public ServerProperties build() {
-      return new ServerProperties(this);
+    public Server build() {
+      return new Server(this);
     }
   }
 }

@@ -63,12 +63,16 @@ public class VerticleApi extends AbstractVerticle {
         .onSuccess(Void -> {
 
 
+          Server server  = Server.create("http",vertx, configAccessor)
+            .setFromConfigAccessorWithPort(PORT_DEFAULT)
+            .build();
+
           /**
            * Create the base router with the base Handler
            */
           HttpServer httpServer;
           try {
-            httpServer = HttpServer.create(this, configAccessor, PORT_DEFAULT)
+            httpServer = HttpServer.createFromServer(server)
               .addBodyHandler() // body transformation
               .addWebLog() // web log
               .setBehindProxy() // enable proxy forward
@@ -123,7 +127,7 @@ public class VerticleApi extends AbstractVerticle {
 
           Future.all(initFutures)
             .onFailure(FailureStatic::failFutureWithTrace)
-            .onSuccess(apiFutureResult -> httpServer.getServer()
+            .onSuccess(apiFutureResult -> httpServer.getHttpServer()
 
               /**
                * https://vertx.io/docs/vertx-core/java/#_handling_requests

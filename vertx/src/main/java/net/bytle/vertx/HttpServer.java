@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -9,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.java.JavaEnvs;
 
 /**
  * This class represents an HTTP server:
@@ -26,9 +24,9 @@ public class HttpServer {
   }
 
 
-  public static builder create(String prefix, AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
+  public static builder createFromServer(Server server) {
 
-    return new HttpServer.builder(prefix, verticle, configAccessor, portDefault);
+    return new HttpServer.builder(server);
 
   }
 
@@ -43,35 +41,28 @@ public class HttpServer {
    * (in email, in oauth callback, ...)
    */
 
-  public io.vertx.core.http.HttpServer getServer() {
+  public io.vertx.core.http.HttpServer getHttpServer() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
-      .setHost(this.builder.serverProperties.getListeningHost())
-      .setPort(this.builder.serverProperties.getListeningPort());
+      .setHost(this.builder.server.getListeningHost())
+      .setPort(this.builder.server.getListeningPort());
     /**
      * https://vertx.io/docs/apidocs/io/vertx/core/net/PemKeyCertOptions.html
      */
-    if (JavaEnvs.IS_DEV) {
+    if (this.getServer().getSsl()) {
       options
         .setPemKeyCertOptions(
-          new PemKeyCertOptions().addKeyPath(ServerProperties.DEV_KEY_PEM).addCertPath(ServerProperties.DEV_CERT_PEM)
+          new PemKeyCertOptions().addKeyPath(Server.DEV_KEY_PEM).addCertPath(Server.DEV_CERT_PEM)
         )
         .setSsl(true);
     }
-    return this.builder.verticle.getVertx().createHttpServer(options);
+    return this.builder.server.getVertx().createHttpServer(options);
   }
 
   public int getPublicPort() {
-    return this.builder.serverProperties.getPublicPort();
+    return this.builder.server.getPublicPort();
   }
 
-  public Vertx getVertx() {
-    return this.builder.verticle.getVertx();
-  }
-
-  public ConfigAccessor getConfigAccessor() {
-    return this.builder.configAccessor;
-  }
 
   /**
    * @return the scheme always secure
@@ -86,25 +77,16 @@ public class HttpServer {
    * See the https.md documentation for more info.
    */
   public boolean isHttpsEnabled() {
-    /**
-     * Note that Chrome does not allow to set a third-party cookie (ie same site: None)
-     * if the connection is not secure.
-     * It must be true then everywhere.
-     * For non-app, https comes from the proxy.
-     */
-    return true;
+
+    return this.builder.server.getSsl();
   }
 
-  public ServerProperties getServerProperties() {
-    return this.builder.serverProperties;
+  public Server getServer() {
+    return this.builder.server;
   }
 
 
   public static class builder {
-    private final AbstractVerticle verticle;
-    private final ConfigAccessor configAccessor;
-    private final int portDefault;
-    private final String prefix;
 
     private boolean addBodyHandler = true;
     private boolean addWebLog = true;
@@ -113,14 +95,13 @@ public class HttpServer {
     private boolean enableMetrics = true;
     private boolean fakeErrorHandler = false;
     private boolean healthCheck = false;
-    ServerProperties serverProperties;
+    final Server server;
 
-    public builder(String prefix, AbstractVerticle verticle, ConfigAccessor configAccessor, int portDefault) {
-      this.prefix = prefix;
-      this.verticle = verticle;
-      this.configAccessor = configAccessor;
-      this.portDefault = portDefault;
+
+    public builder(Server server) {
+      this.server = server;
     }
+
 
     /**
      * Logging Web Request
@@ -172,7 +153,7 @@ public class HttpServer {
     }
 
     private Router buildRouter() throws IllegalConfiguration {
-      Vertx vertx = this.verticle.getVertx();
+      Vertx vertx = this.server.getVertx();
       Router router = Router.router(vertx);
       if (this.addBodyHandler) {
         router.route().handler(BodyHandler.create());
@@ -189,7 +170,7 @@ public class HttpServer {
          * Failure Handler / Route match failures
          * https://vertx.io/docs/vertx-web/java/#_route_match_failures
          */
-        VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, this.verticle.config());
+        VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, this.server.getConfigAccessor());
         router.errorHandler(HttpStatus.INTERNAL_ERROR, errorHandlerXXX);
 
         /**
@@ -211,7 +192,7 @@ public class HttpServer {
         router.get(ErrorFakeHandler.URI_PATH).handler(new ErrorFakeHandler());
       }
       if (this.healthCheck) {
-        HealthChecksRouter.addHealtChecksToRouter(router, this.verticle, this);
+        HealthChecksRouter.addHealtChecksToRouter(router, this.server.getVertx(), this);
         HealthChecksEventBus.registerHandlerToEventBus(vertx);
       }
       return router;
@@ -219,11 +200,6 @@ public class HttpServer {
 
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpBuilder = new HttpServer(this);
-      // serverProperties is used to build the router and should be then local
-      serverProperties = ServerProperties
-        .create(this.prefix)
-        .fromConfigAccessor(this.configAccessor, this.portDefault)
-        .build();
       httpBuilder.router = this.buildRouter();
       return httpBuilder;
     }

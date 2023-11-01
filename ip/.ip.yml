@@ -1,1 +1,2 @@
 superuser.token: 'hello-world'
+http.ssl: false

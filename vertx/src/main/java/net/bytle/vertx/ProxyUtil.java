@@ -54,7 +54,7 @@ public class ProxyUtil {
      * The port where the dev server (HTML/Javascript) is running locally
      */
     String key = this.app.getAppConfName() + ".forward.proxy.port";
-    this.targetPort = this.app.getApexDomain().getHttpServer().getConfigAccessor().getInteger(key);
+    this.targetPort = this.app.getApexDomain().getHttpServer().getServer().getConfigAccessor().getInteger(key);
     if (targetPort == null) {
       throw new RuntimeException("The port was not found in the conf " + key);
     }
@@ -87,9 +87,9 @@ public class ProxyUtil {
 
   private HttpClient createHttpClient(Boolean useFiddlerProxy) {
 
-    ServerProperties serverProperties = this.app.getApexDomain().getHttpServer().getServerProperties();
-    HttpClientBuilder towerHttpClient = HttpClientBuilder.builder(this.app.getVertx())
-      .withServerProperties(serverProperties)
+    Server server = this.app.getApexDomain().getHttpServer().getServer();
+    HttpClientBuilder towerHttpClient = HttpClientBuilder.builder(this.app.getApexDomain().getHttpServer().getServer().getVertx())
+      .withServerProperties(server)
     .setDefaultPort(targetPort)
       .setDefaultHost(targetHost);
     if (useFiddlerProxy) {

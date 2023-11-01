@@ -2,7 +2,6 @@ package net.bytle.vertx;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -52,13 +51,14 @@ public abstract class TowerApp {
    */
   private static final String OPEN_API_RESOURCES_PREFIX = "openapi-spec-file";
   private final TowerApexDomain apexDomain;
+  private final ConfigAccessor configAccessor;
   private ProxyUtil proxy;
 
 
   public TowerApp(TowerApexDomain towerApexDomain) {
 
     this.apexDomain = towerApexDomain;
-
+    this.configAccessor = apexDomain.getHttpServer().getServer().getConfigAccessor();
 
   }
 
@@ -173,7 +173,7 @@ public abstract class TowerApp {
    */
   public Template getTemplate(String templateName) {
     String templateResourcesPath = getApexDomain().getPathName() + "/" + this.getAppName() + "/" + templateName;
-    return TemplateEngine.getLocalHtmlEngine(this.getVertx())
+    return TemplateEngine.getLocalHtmlEngine(this.apexDomain.getHttpServer().getServer().getVertx())
       .compile(templateResourcesPath);
   }
 
@@ -273,7 +273,7 @@ public abstract class TowerApp {
      * Otherwise, it seems that the `CompletableFuture.get` is called
      * quickly and that the mountOpenApi code goes into the wild (ie is not executed)
      */
-    return getVertx().executeBlocking(() -> {
+    return this.apexDomain.getHttpServer().getServer().getVertx().executeBlocking(() -> {
       CompletableFuture<String> openApiMounter = new CompletableFuture<>();
       if (this.hasOpenApiSpec()) {
         /**
@@ -505,9 +505,6 @@ public abstract class TowerApp {
   }
 
 
-  public Vertx getVertx() {
-    return apexDomain.getVertx();
-  }
 
 
   /**
@@ -517,7 +514,7 @@ public abstract class TowerApp {
     if (this.proxy != null) {
       return this.proxy;
     }
-    Boolean useFiddler = this.apexDomain.getHttpServer().getConfigAccessor().getBoolean("forward.proxy.fiddler", false);
+    Boolean useFiddler = configAccessor.getBoolean("forward.proxy.fiddler", false);
     this.proxy = ProxyUtil
       .config(this)
       .setProxyThroughFiddler(useFiddler)
@@ -649,7 +646,7 @@ public abstract class TowerApp {
    */
   private String getSuperToken() {
 
-    return this.apexDomain.getHttpServer().getConfigAccessor().getString(SUPERUSER_TOKEN_CONF);
+    return configAccessor.getString(SUPERUSER_TOKEN_CONF);
 
   }
 

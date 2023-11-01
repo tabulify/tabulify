@@ -29,9 +29,11 @@ The indexing uses a diff.
 It should be done once a week in a normal setup with a team.
 
 Steps:
+  * If done locally, close Idea
   * Download the cli tool and unzip it
   * Create the indexes for a project
 ```dos
+cd /D C:\ij-shared-indexes-tool-cli-0.9.8\
 .\bin\ij-shared-indexes-tool-cli indexes --ij C:\IntelliJ-IDEA-2023.1 --project d:\code\java-mono --base-url https://idea-shared-indexes.t0w0.c15.e2-3.dev
 ```
   * Upload the indexes created for all projects
@@ -50,11 +52,16 @@ sharedIndex:
       decision: allowed
 ```
 
-### How to verify?
+### How to verify, log error ?
 You can also search in the Log the URL: C:\Users\gerardnico\AppData\Local\JetBrains\IntelliJIdea2023.1\log
 You can see that it download the list first:
 ```
 https://idea-shared-indexes.t0w0.c15.e2-3.dev/project/java-mono/vcs/list.json.xz
+```
+
+Example:
+```
+2023-11-01 14:52:43,150 [ 100716]   INFO - #c.i.i.s.download - There is no need to download shared indexes for ProjectSharedIndexSuggestion(SharedIndexId(kind=project, url=https://idea-shared-indexes.t0w0.c15.e2-3.dev/project/java-mono, indexId=2f1e24c5-7f75c59c9a7f772ec50cabbcecc006da33ec1453a2f2babdc9db62103120720f), https://idea-shared-indexes.t0w0.c15.e2-3....
 ```
 
 ### Where are the index?

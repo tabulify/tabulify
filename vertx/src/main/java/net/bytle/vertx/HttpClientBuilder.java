@@ -22,14 +22,14 @@ public class HttpClientBuilder {
 
 
   private final Vertx vertx;
-  private ServerProperties serverProperties;
+  private Server server;
   private ProxyOptions proxyOptions;
   private Integer defaultPort;
   private String defaultHost;
 
 
-  public HttpClientBuilder withServerProperties(ServerProperties serverProperties) {
-    this.serverProperties = serverProperties;
+  public HttpClientBuilder withServerProperties(Server server) {
+    this.server = server;
     return this;
   }
 
@@ -63,7 +63,7 @@ public class HttpClientBuilder {
      * <p>
      * See: https://groups.google.com/g/vertx/c/NYLcHzY8EYM
      */
-    if (this.serverProperties.getSsl()) {
+    if (this.server.getSsl()) {
       httpClientOptions
         .setSsl(true)
         .setTrustAll(true);
@@ -72,7 +72,7 @@ public class HttpClientBuilder {
     /**
      * Target Host and port
      */
-    Integer port = this.defaultPort != null ? defaultPort : this.serverProperties.getListeningPort();
+    Integer port = this.defaultPort != null ? defaultPort : this.server.getListeningPort();
     httpClientOptions.setDefaultPort(port);
     String host = this.defaultHost != null ? this.defaultHost : "localhost";
     httpClientOptions.setDefaultHost(host);

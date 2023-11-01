@@ -48,13 +48,13 @@ public class OpenApiUtil {
      * https://vertx.io/docs/vertx-web-openapi/java/
      */
     String specFileString = specFile.toString();
-    return RouterBuilder.create(towerApp.getVertx(), specFileString)
+    return RouterBuilder.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), specFileString)
       .onFailure(err-> LOGGER.error("Unable to build the openapi memory model for the spec file ("+specFileString+"). Check the inputScope to see where the error is.", err))
       .compose(routerBuilder -> {
 
         towerApp
           .openApiMount(routerBuilder)
-          .openApiBindSecurityScheme(routerBuilder, this.towerApp.getApexDomain().getHttpServer().getConfigAccessor());
+          .openApiBindSecurityScheme(routerBuilder, this.towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor());
 
         routerBuilder.setOptions(new RouterBuilderOptions()
           .setRequireSecurityHandlers(true)

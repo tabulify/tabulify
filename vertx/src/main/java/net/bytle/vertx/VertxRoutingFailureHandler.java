@@ -4,7 +4,6 @@ import io.micrometer.core.instrument.Counter;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.Exceptions;
@@ -32,7 +31,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
   private final Counter failureCounter;
 
 
-  public VertxRoutingFailureHandler(JsonObject config) throws IllegalConfiguration {
+  public VertxRoutingFailureHandler(ConfigAccessor config) throws IllegalConfiguration {
     Boolean sendEmailOnErrorConfig = config.getBoolean(SYS_ERROR_EMAIL_CONF, false);
     this.setSendMailOnError(sendEmailOnErrorConfig);
     failureCounter = VertxPrometheusMetrics
@@ -40,7 +39,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
       .counter("router_failure");
   }
 
-  public static VertxRoutingFailureHandler createOrGet(Vertx vertx, JsonObject config) throws IllegalConfiguration {
+  public static VertxRoutingFailureHandler createOrGet(Vertx vertx, ConfigAccessor config) throws IllegalConfiguration {
     VertxRoutingFailureHandler vertxRoutingFailureHandlerVertx = ErrorHandlersByVertx.get(vertx);
     if (vertxRoutingFailureHandlerVertx != null) {
       return vertxRoutingFailureHandlerVertx;
