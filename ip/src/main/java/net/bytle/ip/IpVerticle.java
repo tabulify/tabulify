@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 public class IpVerticle extends AbstractVerticle {
 
 
+  public static Server server;
+
   static {
     Log4JManager.setConfigurationProperties();
   }
@@ -33,11 +35,11 @@ public class IpVerticle extends AbstractVerticle {
       .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
       .onSuccess(configAccessor -> {
 
-
         // The server
-        Server server = Server
+        server = Server
           .create("http", vertx, configAccessor)
           .setFromConfigAccessorWithPort(PORT_DEFAULT)
+          .addJdbcPool()
           .build();
 
         /**
@@ -59,6 +61,7 @@ public class IpVerticle extends AbstractVerticle {
         }
 
         EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
+
         IpApp.createForDomain(eraldyDomain).mount()
           .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
           .onSuccess(Void -> httpServer.getHttpServer()

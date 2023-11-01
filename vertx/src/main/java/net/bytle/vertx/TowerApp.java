@@ -205,6 +205,21 @@ public abstract class TowerApp {
   }
 
   public Future<Void> mount() {
+    Future<Void> mountOnRouter = mountOnRouter();
+    Future<Void> mountOnThirdServices = mountOnThirdServices();
+    return Future.join(mountOnThirdServices, mountOnRouter)
+      .compose(ar -> {
+        if (ar.succeeded()) {
+          return Future.succeededFuture();
+        } else {
+          return Future.failedFuture(ar.cause());
+        }
+      });
+  }
+
+  protected abstract Future<Void> mountOnThirdServices();
+
+  private Future<Void> mountOnRouter() {
 
 
     Router rootRouter = apexDomain.getHttpServer().getRouter();
@@ -503,8 +518,6 @@ public abstract class TowerApp {
   public String getAbsoluteLocalPathWithDomain() {
     return getApexDomain().getAbsoluteLocalPath() + getAbsoluteLocalPath();
   }
-
-
 
 
   /**

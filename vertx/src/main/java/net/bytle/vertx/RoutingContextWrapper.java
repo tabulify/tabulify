@@ -32,7 +32,6 @@ public class RoutingContextWrapper {
 
   public RoutingContextWrapper(RoutingContext routingContext) {
     this.ctx = routingContext;
-
   }
 
   public static RoutingContextWrapper createFrom(RoutingContext routingContext) {

@@ -24,10 +24,12 @@ public class JdbcPostgresPool {
 
 
   /**
+   * @deprecated use {@link Server#getJdbcPool() instead}
    * @return the JDBCPool
    * @throws InternalException - a runtime internal error if not found
    *                           we don't throw an Exception at compile time because it should not happen
    */
+  @Deprecated
   public static PgPool getJdbcPool() {
     if (jdbcPool == null) {
       throw new InternalException("No Jdbc Pool found");
@@ -37,7 +39,7 @@ public class JdbcPostgresPool {
 
 
 
-  public static void init(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
+  public static PgPool create(Vertx vertx, JdbcConnectionInfo jdbcConnectionInfo) {
     String user = jdbcConnectionInfo.getUser();
 
     // Set the working schema
@@ -63,5 +65,6 @@ public class JdbcPostgresPool {
       pgConnectOptions,
       poolOptions
     );
+    return jdbcPool;
   }
 }

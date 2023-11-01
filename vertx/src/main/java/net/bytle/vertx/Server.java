@@ -2,6 +2,8 @@ package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.pgclient.PgPool;
+import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,6 +42,8 @@ public class Server {
 
 
   private final builder builder;
+  private PgPool jdbcPool;
+  private JdbcConnectionInfo jdbcConnectionInfo;
 
 
   Server(builder builder) {
@@ -95,6 +99,21 @@ public class Server {
     return this.builder.configAccessor;
   }
 
+  public JdbcSchemaManager getJdbcManager() {
+    if (jdbcConnectionInfo == null) {
+      throw new InternalException("No Jdbc Pool for the server");
+    }
+    return JdbcSchemaManager.create(jdbcConnectionInfo);
+  }
+
+  public PgPool getJdbcPool() {
+    if (this.jdbcPool == null) {
+      throw new InternalException("No Jdbc Pool for the server");
+    }
+    return this.jdbcPool;
+  }
+
+
   public static class builder {
     private final String name;
     private final Vertx vertx;
@@ -103,6 +122,7 @@ public class Server {
     private int publicPort;
     private String listeningHost;
     private Boolean ssl = false;
+    private boolean addJdbcPool = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -155,7 +175,18 @@ public class Server {
     }
 
     public Server build() {
-      return new Server(this);
+      Server server = new Server(this);
+      if (this.addJdbcPool) {
+        LOGGER.info("Start creation of JDBC Pool");
+        server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(server.getConfigAccessor());
+        server.jdbcPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
+      }
+      return server;
+    }
+
+    public builder addJdbcPool() {
+      this.addJdbcPool = true;
+      return this;
     }
   }
 }

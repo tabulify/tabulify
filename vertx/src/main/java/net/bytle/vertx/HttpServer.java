@@ -201,8 +201,10 @@ public class HttpServer {
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpBuilder = new HttpServer(this);
       httpBuilder.router = this.buildRouter();
+
       return httpBuilder;
     }
+
 
   }
 }

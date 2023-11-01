@@ -21,7 +21,7 @@ public class JdbcConnectionInfo {
   public static JdbcConnectionInfo createFromJson(ConfigAccessor config) {
     String url = JdbcConnectionAttribute.URL.getValue(config, String.class);
     if (url == null) {
-      throw new InternalException("The url configuration was not found. You should add it with the " + JdbcConnectionAttribute.URL.getKey() + " attribute.");
+      throw new InternalException("The jdbc url configuration was not found. You should add it with the " + JdbcConnectionAttribute.URL.getKey() + " attribute.");
     }
     String user = JdbcConnectionAttribute.USER.getValue(config, String.class);
     if (user == null) {
