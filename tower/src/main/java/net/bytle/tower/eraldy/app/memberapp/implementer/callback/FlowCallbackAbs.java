@@ -49,7 +49,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
    */
   @Override
   public void addCallback(Router router) {
-    String callbackLocalRouterPath = app.getAbsoluteLocalPathWithDomain() + this.getCallbackOperationPath();
+    String callbackLocalRouterPath = app.getPathMount() + this.getCallbackOperationPath();
     router.route(callbackLocalRouterPath)
       .method(HttpMethod.GET)
       .handler(this);

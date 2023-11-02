@@ -118,12 +118,12 @@ public class EraldyMemberApp extends TowerApp {
   }
 
   @Override
-  public String getPublicDefaultOperationPath() {
+  public String getDefaultOperationPath() {
     return "/login";
   }
 
   @Override
-  protected String getPublicAbsolutePathMount() {
+  public String getPathMount() {
     return "";
   }
 

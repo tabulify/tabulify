@@ -4,8 +4,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
+import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpRequest;
@@ -13,6 +13,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.HSTSHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.InternalException;
 import net.bytle.template.api.Template;
 import net.bytle.type.UriEnhanced;
 
@@ -63,7 +64,7 @@ public abstract class TowerApp {
   }
 
   public String getRelativeSpecFileResourcesPath() {
-    return OPEN_API_RESOURCES_PREFIX + getAbsoluteDomainName() + getAbsoluteLocalPath() + OPENAPI_YAML_PATH;
+    return OPEN_API_RESOURCES_PREFIX + getAbsoluteDomainName() + "/" + getAppName() + OPENAPI_YAML_PATH;
   }
 
 
@@ -71,9 +72,6 @@ public abstract class TowerApp {
     return "/" + getApexDomain().getPathName();
   }
 
-  private String getAbsoluteLocalPath() {
-    return "/" + this.getAppName();
-  }
 
   /**
    * The internal name of the component
@@ -105,39 +103,14 @@ public abstract class TowerApp {
     String hostWithPort = remoteRequestUri.getHostWithPort();
     String publicDomainHostWithPort = getPublicDomainHost();
     if (hostWithPort.equals(publicDomainHostWithPort)) {
-      return remoteRequestUri.setPath(getPublicAbsolutePathMount() + operationPath);
+      return remoteRequestUri.setPath(getPathMount() + operationPath);
     }
     if (!hostWithPort.startsWith(HttpRequestUtil.LOCALHOST)) {
       throw new IllegalArgumentException("For the app (" + this + "), the host (" + hostWithPort + ") should be " + publicDomainHostWithPort + " or starts with " + HttpRequestUtil.LOCALHOST + ". We couldn't create a request uri for the operation (" + operationPath + ")");
     }
-    return remoteRequestUri.setPath(getAbsoluteLocalPathWithDomain() + operationPath);
+    return remoteRequestUri.setPath(getPathMount() + operationPath);
 
   }
-
-  /**
-   * @return a path that starts with / (ie absolute) and has the {@link TowerApexDomain#getAbsoluteLocalPath()}  toplevel domain} and the {@link #getAbsoluteLocalPath() app path}
-   */
-  public String getAbsoluteLocalPathWithDomain() {
-
-    if (this.addDomainInLocalhostPath()) {
-      return getApexDomain().getName() + getAbsoluteLocalPath();
-    } else {
-      return getAbsoluteLocalPath();
-    }
-
-  }
-
-  /**
-   *
-   * This is an old feature when we didn't know that a proxy could do this feature
-   * The value should be false and the server should be reached via a proxy
-   *
-   * @return should return
-   * * false (default) - if the server host only one domain
-   * * true - if the server hosts multiple domain without going through a proxy
-   *
-   */
-  protected abstract boolean addDomainInLocalhostPath();
 
 
   /**
@@ -146,7 +119,7 @@ public abstract class TowerApp {
    */
   public UriEnhanced getPublicRequestUriForOperationPath(String operationPath) {
 
-    return this.createPublicUriHostOnly().setPath(getPublicAbsolutePathMount() + operationPath);
+    return this.createPublicUriHostOnly().setPath(getPathMount() + operationPath);
 
   }
 
@@ -164,7 +137,7 @@ public abstract class TowerApp {
       throw new RuntimeException(e);
     }
     String path = requestUri.getPath();
-    String absoluteLocalPathWithDomain = this.getAbsoluteLocalPathWithDomain();
+    String absoluteLocalPathWithDomain = this.getPathMount();
     if (path.startsWith(absoluteLocalPathWithDomain)) {
       path = path.substring(absoluteLocalPathWithDomain.length());
       requestUri.setPath(path);
@@ -190,7 +163,7 @@ public abstract class TowerApp {
    * on the whole app or domain
    */
   public String getAbsoluteStaticResourcesPath() {
-    return this.getAbsoluteLocalPathWithDomain() + StaticResourcesUtil.ASSETS_PATH_OPERATION;
+    return this.getPathMount() + StaticResourcesUtil.ASSETS_PATH_OPERATION;
   }
 
   /**
@@ -231,19 +204,8 @@ public abstract class TowerApp {
   }
 
   public Future<Void> mount() {
-    Future<Void> mountOnRouter = mountOnRouter();
-    Future<Void> mountOnThirdServices = mountOnThirdServices();
-    return Future.join(mountOnThirdServices, mountOnRouter)
-      .compose(ar -> {
-        if (ar.succeeded()) {
-          return Future.succeededFuture();
-        } else {
-          return Future.failedFuture(ar.cause());
-        }
-      });
+    return mountOnRouter();
   }
-
-  protected abstract Future<Void> mountOnThirdServices();
 
   private Future<Void> mountOnRouter() {
 
@@ -283,14 +245,20 @@ public abstract class TowerApp {
      * The Strict-Transport-Security HTTP header tells browsers to always use HTTPS.
      */
     if (getApexDomain().getHttpServer().isHttpsEnabled()) {
-      rootRouter.route(this.getAbsoluteLocalPathWithDomain())
-        /**
-         * With the value `max-age=31536000; includeSubDomains`
-         * Once a browser sees this header, it will only visit the site over HTTPS
-         * for the time specified (1 year) at max-age,
-         * including the subdomains.
-         */
-        .handler(HSTSHandler.create(31536000, true));
+      String pathMount = this.getPathMount();
+      Route route;
+      if (!pathMount.equals("")) {
+        route = rootRouter.route(pathMount);
+      } else {
+        route = rootRouter.route();
+      }
+      /**
+       * With the value `max-age=31536000; includeSubDomains`
+       * Once a browser sees this header, it will only visit the site over HTTPS
+       * for the time specified (1 year) at max-age,
+       * including the subdomains.
+       */
+      route.handler(HSTSHandler.create(31536000, true));
     }
 
 
@@ -393,142 +361,51 @@ public abstract class TowerApp {
    */
   public TowerApp reRouteOrRedirect(Router rootRouter) {
 
+    String pathMount = this.getPathMount();
+    if (pathMount == null) {
+      throw new InternalException("The public absolute path mount should not be null for the app (" + this + ")");
+    }
 
     /**
      * Reroute a URL without path to the default operation
+     * if this is not mounted to root
      */
-    String localPath = this.getAbsoluteLocalPathWithDomain();
-    rootRouter
-      .get(localPath)
-      .handler(ctx -> {
-        String publicDefaultOperationPath = this.getPublicDefaultOperationPath();
-        if (publicDefaultOperationPath == null || publicDefaultOperationPath.equals("")) {
-          ctx.next();
-          return;
-        }
-        String uri = getPublicOrLocalRequestUri(ctx, publicDefaultOperationPath).toUri().toString();
-        ctx.redirect(uri);
-      });
-
-
-    /**
-     * Reroute if the domain is in the path
-     */
-    if (!this.addDomainInLocalhostPath()) {
-      return this;
+    if (
+      !pathMount.equals("")
+        && !pathMount.equals("/")
+    ) {
+      rootRouter
+        .get(pathMount)
+        .handler(ctx -> {
+          String publicDefaultOperationPath = this.getDefaultOperationPath();
+          if (publicDefaultOperationPath == null || publicDefaultOperationPath.equals("")) {
+            ctx.next();
+            return;
+          }
+          String uri = getPublicOrLocalRequestUri(ctx, publicDefaultOperationPath).toUri().toString();
+          ctx.redirect(uri);
+        });
     }
-    rootRouter
-      .route() // empty is equivalent to all, ie to `/*`
-      .handler(ctx -> {
 
-        RoutingContextWrapper ctxWrapper = RoutingContextWrapper.createFrom(ctx);
-
-        /**
-         * Continue if already rerouted to avoid recursion and other bad
-         * behaviour
-         * ie if in a `reroute` context, continue
-         */
-        if (ctxWrapper.isReRouteOccurring()) {
-          ctx.next();
-          return;
-        }
-
-        HttpServerRequest httpRequest = ctx.request();
-
-        /**
-         * We reroute only public request
-         */
-        String remoteHost = HttpRequestUtil.getRemoteHost(ctx);
-        String publicDomainHost = getPublicDomainHost();
-        if (!remoteHost.equals(publicDomainHost)) {
-          ctx.next();
-          return;
-        }
-
-        /**
-         * Safeguard in case of refactoring
-         * We shouldn't reroute `/assets`
-         * {@link StaticResourcesUtil} does it
-         */
-        String path = httpRequest.path();
-        if (path.startsWith(StaticResourcesUtil.ASSETS_PATH_OPERATION)) {
-          ctx.next();
-          return;
-        }
-
-        /**
-         * we redirect an internal path on a public host
-         * to a public host on a public path
-         * http://member.combostrap.local:8083/combo/member/oauth/protected
-         * It can happen with oAuth as this how the vertx library create the URL.
-         */
-        String absoluteInternalPath = getAbsoluteLocalPathWithDomain();
-        if (path.startsWith(absoluteInternalPath)) {
-
-          String newPath = path.substring(absoluteInternalPath.length());
-          String redirect = this.createPublicUriHostOnly()
-            .setPath(newPath)
-            .setQueryString(httpRequest.query())
-            .toUri()
-            .toString();
-          /**
-           * Redirection via HTTP
-           * <p>
-           * We don't {@link RoutingContext#reroute(String) reroute}
-           * otherwise we get a recursion
-           */
-          ctx.redirect(redirect);
-          return;
-        }
-
-        /**
-         * If it does not start with the public path mount
-         * return
-         */
-        String publicAbsolutePathMount = getPublicAbsolutePathMount();
-        if (!path.startsWith(publicAbsolutePathMount)) {
-          ctx.next();
-          return;
-        }
-
-        /**
-         * https://vertx.io/docs/vertx-web/java/#_reroute
-         * Note that the `reroute` method will silently discard and ignore any html fragment from the path
-         */
-        String newPath;
-        if (!publicAbsolutePathMount.equals("")) {
-          String requestRoute = path.substring(publicAbsolutePathMount.length());
-          newPath = getAbsoluteLocalPathWithDomain() + requestRoute;
-        } else {
-          newPath = absoluteInternalPath + path;
-        }
-        String reRoutePathString = UriEnhanced
-          .create()
-          .setPath(newPath)
-          .setQueryString(httpRequest.query())
-          .toUri()
-          .toString();
-
-        ctxWrapper.reroute(reRoutePathString);
-
-      });
     return this;
+
   }
 
   /**
    * @return the path operation where to redirect when the URL has only the domain. The call is then redirected this operation path
    */
 
-  public abstract String getPublicDefaultOperationPath();
+  public abstract String getDefaultOperationPath();
 
 
   /**
    * @return the path where the app should be mounted
    * <p>
-   * Example: for the private api, the value us `/_private`
-   * meaning that the private path is `api.combostrap.com/_private`
+   * Example:
+   * * for the private api, the value us `/_private` meaning that the private path is `api.combostrap.com/_private`
+   * * for the ip api, the value is the empty string `` meaning that the base path is `api.combostrap.com/`
    */
-  protected abstract String getPublicAbsolutePathMount();
+  public abstract String getPathMount();
 
   /**
    * @return true if this App returns HTML page (ie not an API app)

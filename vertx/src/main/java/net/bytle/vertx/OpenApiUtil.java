@@ -49,7 +49,7 @@ public class OpenApiUtil {
      */
     String specFileString = specFile.toString();
     return RouterBuilder.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), specFileString)
-      .onFailure(err-> LOGGER.error("Unable to build the openapi memory model for the spec file ("+specFileString+"). Check the inputScope to see where the error is.", err))
+      .onFailure(err -> LOGGER.error("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err))
       .compose(routerBuilder -> {
 
         towerApp
@@ -75,15 +75,20 @@ public class OpenApiUtil {
           openApiRouter = routerBuilder
             .createRouter();
         } catch (Exception e) {
-          RuntimeException error = new RuntimeException("Error while building the router for the app ("+towerApp+")", e);
+          RuntimeException error = new RuntimeException("Error while building the router for the app (" + towerApp + ")", e);
           return Future.failedFuture(error);
         }
         /**
          * Sub-router tip from https://vertx.io/docs/vertx-web-openapi/java/#_generate_the_router
          */
-        String apiAbsolutePath = towerApp.getAbsoluteLocalPathWithDomain() + "/*";
-        rootRouter.route(apiAbsolutePath)
-          .subRouter(openApiRouter);
+        String localhostAbsolutePathMount = towerApp.getPathMount();
+        if (!localhostAbsolutePathMount.equals("") && !localhostAbsolutePathMount.equals("/")) {
+          String apiAbsolutePath = localhostAbsolutePathMount + "/*";
+          rootRouter.route(apiAbsolutePath)
+            .subRouter(openApiRouter);
+        } else {
+          rootRouter.route().subRouter(openApiRouter);
+        }
 
         return Future.succeededFuture();
 
@@ -112,7 +117,7 @@ public class OpenApiUtil {
        */
       String specFilePathInDev = "src/main/resources/" + resourceSpecFile;
       Path mainSpecFile = Paths.get(specFilePathInDev);
-      if(Files.exists(mainSpecFile)){
+      if (Files.exists(mainSpecFile)) {
         resourceSpecFile = specFilePathInDev;
       }
 

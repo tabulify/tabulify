@@ -64,7 +64,7 @@ public class CspUtil {
     /**
      * Add it for all routes of the app
      */
-    String path = app.getAbsoluteLocalPathWithDomain() + "/*";
+    String path = app.getPathMount() + "/*";
     rootRouter.route(path).handler(cspHandler);
 
   }

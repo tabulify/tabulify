@@ -77,13 +77,13 @@ public class ComboPrivateApiApp extends TowerApp {
   }
 
   @Override
-  public String getPublicDefaultOperationPath() {
+  public String getDefaultOperationPath() {
     return OpenApiDoc.DOC_OPERATION_PATH;
   }
 
 
   @Override
-  protected String getPublicAbsolutePathMount() {
+  public String getPathMount() {
     return "/" + ComboAppApp.COMBO_NAME + "/_private";
   }
 

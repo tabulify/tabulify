@@ -89,13 +89,13 @@ public class OAuthExternal {
     this.towerApp = towerApp;
     this.provider = provider;
     this.pkce = pkce;
-    this.prng = VertxContextPRNG.current(towerApp.getVertx());
+    this.prng = VertxContextPRNG.current(towerApp.getApexDomain().getHttpServer().getServer().getVertx());
 
     /**
      * Auth Provider
      */
     String clientIdConf = towerApp.getAppConfName() + ".oauth." + provider + ".client.id";
-    ConfigAccessor configAccessor = towerApp.getApexDomain().getHttpServer().getConfigAccessor();
+    ConfigAccessor configAccessor = towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
     String clientId = configAccessor.getString(clientIdConf);
     if (clientId == null) {
       throw new InternalException("The client id configuration (" + clientIdConf + ") was not found");
@@ -133,7 +133,7 @@ public class OAuthExternal {
   private void addCallBackHandler(Router router) {
 
 
-    String callbackLocalRouterPath = towerApp.getAbsoluteLocalPathWithDomain() + this.getCallbackOperationPath();
+    String callbackLocalRouterPath = towerApp.getPathMount() + this.getCallbackOperationPath();
     router.route(callbackLocalRouterPath)
       .method(HttpMethod.GET)
       .handler(AuthOAuthCallbackHandler

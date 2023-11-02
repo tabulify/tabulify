@@ -34,7 +34,7 @@ public class VertxCsrf {
     if (secret == null) {
       throw new InternalException("The secret CSRF configuration was not found (" + CSRF_SECRET_KEY_CONF + ").");
     }
-    String path = app.getAbsoluteLocalPathWithDomain() + "/*";
+    String path = app.getPathMount() + "/*";
     rootRouter.route(path).handler(
       CSRFHandler.create(app.getApexDomain().getHttpServer().getServer().getVertx(), secret)
         .setCookieName(getCsrfCookieName())

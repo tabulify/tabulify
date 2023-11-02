@@ -7,8 +7,8 @@ info:
   # and the data is seen as date, not as string
   version: "v2023-06-18"
 servers:
-  - url: 'https://api.eraldy.com/'
-  - url: 'http://localhost:8084/'
+  - url: 'https://api.eraldy.com'
+  - url: 'http://localhost:8084'
 # check the openApi.md file to know more about tags.
 tags:
   - name: ip
@@ -25,10 +25,11 @@ components:
     IpInfo:
       $ref: '../../../../vertx/src/main/openapi/ip-geolocation.yaml#/components/schemas/IpInfo'
 paths:
-  /ping:
+  /ip/ping:
     get:
       operationId: "pingGet"
       summary: A health check endpoint
+      security: []
       tags:
         - ip
       responses:
@@ -38,6 +39,7 @@ paths:
     get:
       operationId: "ipGet"
       summary: "Return client information based on the HTTP request ip"
+      security: []
       tags:
         - ip
       responses:
@@ -55,6 +57,7 @@ paths:
       summary: "Return client information based on the ip"
       tags:
         - ip
+      security: []
       parameters:
         - name: ip
           description: "The IP (default to the IP of the HTTP request)"

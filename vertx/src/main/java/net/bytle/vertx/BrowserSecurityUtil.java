@@ -15,7 +15,7 @@ public class BrowserSecurityUtil {
    */
   public static void addSecurityDirectives(Router rootRouter, TowerApp app) {
 
-    String path = app.getAbsoluteLocalPathWithDomain() + "/*";
+    String path = app.getPathMount() + "/*";
 
     /**
      * Don't render in a frame, iframe, embed or object

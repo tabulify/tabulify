@@ -44,7 +44,7 @@ public class ComboAppApp extends TowerApp {
 
   @Override
   protected TowerApp addSpecificAppHandlers(Router router) {
-    String apiAbsolutePath = this.getAbsoluteLocalPathWithDomain() + "/*";
+    String apiAbsolutePath = this.getPathMount() + "/*";
     /**
      * Add login
      */
@@ -59,12 +59,12 @@ public class ComboAppApp extends TowerApp {
   }
 
   @Override
-  public String getPublicDefaultOperationPath() {
+  public String getDefaultOperationPath() {
     return "";
   }
 
   @Override
-  protected String getPublicAbsolutePathMount() {
+  public String getPathMount() {
     return "";
   }
 

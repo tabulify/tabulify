@@ -1,6 +1,5 @@
 package net.bytle.ip;
 
-import io.vertx.core.Future;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -30,11 +29,6 @@ public class IpApp extends TowerApp {
   }
 
   @Override
-  protected boolean addDomainInLocalhostPath() {
-    return false;
-  }
-
-  @Override
   public TowerApp openApiMount(RouterBuilder builder) {
     new IpHandler(new IpApiImpl(this)).mount(builder);
     return this;
@@ -58,11 +52,6 @@ public class IpApp extends TowerApp {
   }
 
   @Override
-  protected Future<Void> mountOnThirdServices() {
-    return Future.succeededFuture();
-  }
-
-  @Override
   protected TowerApp addSpecificAppHandlers(Router router) {
     return this;
   }
@@ -76,13 +65,14 @@ public class IpApp extends TowerApp {
    * @return default is ipGet (ie /ip)
    */
   @Override
-  public String getPublicDefaultOperationPath() {
+  public String getDefaultOperationPath() {
     return "/ip";
   }
 
   @Override
-  protected String getPublicAbsolutePathMount() {
-    return "/ip";
+  public String getPathMount() {
+    // mount at the root
+    return "";
   }
 
   @Override

@@ -17,7 +17,10 @@ public class OpenApiDoc {
   public static void addHandler(Router router, TowerApp towerApp) {
 
 
-    String localPath = towerApp.getAbsoluteLocalPathWithDomain();
+    String localPath = towerApp.getPathMount();
+    if (localPath.equals("")) {
+      localPath = "/" + towerApp.getAppName();
+    }
     String docLocalPath = localPath + DOC_OPERATION_PATH;
 
     /**

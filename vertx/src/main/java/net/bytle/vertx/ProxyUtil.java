@@ -109,7 +109,7 @@ public class ProxyUtil {
   public static void addProxyHandler(Router rootRouter, TowerApp towerApp) {
 
 
-    String absoluteInternalPath = towerApp.getAbsoluteLocalPathWithDomain();
+    String absoluteInternalPath = towerApp.getPathMount();
     String route = absoluteInternalPath + "/*";
 
     ProxyUtil proxy = towerApp.getProxy();
@@ -151,7 +151,7 @@ public class ProxyUtil {
     /**
      * Request URI
      */
-    String absoluteInternalPath = this.app.getAbsoluteLocalPathWithDomain();
+    String absoluteInternalPath = this.app.getPathMount();
     String requestUri = serverRequest.uri();
     if (requestUri.startsWith(absoluteInternalPath)) {
       requestUri = requestUri.substring(absoluteInternalPath.length());
