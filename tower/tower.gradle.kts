@@ -14,13 +14,12 @@ val sshAntTask = configurations.create("sshAntTask")
 
 plugins {
   // https://github.com/jponge/vertx-gradle-plugin
-  id("io.vertx.vertx-plugin") version "1.2.0"
+  id("io.vertx.vertx-plugin")
   id("maven-publish")
   // Does not support yarn3
   // https://github.com/node-gradle/gradle-node-plugin/issues/176
   // id("com.github.node-gradle.node") version "5.0.0"
-  // https://plugins.gradle.org/plugin/org.openapi.generator
-  id("org.openapi.generator") version "7.0.0"
+  id("org.openapi.generator")
   // Version is manual because https://github.com/gradle/gradle/issues/9830
   // https://documentation.red-gate.com/fd/first-steps-gradle-166985825.html
   // change also the flyway version library !

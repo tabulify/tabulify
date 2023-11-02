@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 public class IpVerticle extends AbstractVerticle {
 
 
-  public static Server server;
 
   static {
     Log4JManager.setConfigurationProperties();
@@ -36,45 +35,47 @@ public class IpVerticle extends AbstractVerticle {
       .onSuccess(configAccessor -> {
 
         // The server
-        server = Server
-          .create("http", vertx, configAccessor)
-          .setFromConfigAccessorWithPort(PORT_DEFAULT)
-          .addJdbcPool("pg")
-          .build();
+        vertx.executeBlocking(() -> Server
+            .create("http", vertx, configAccessor)
+            .setFromConfigAccessorWithPort(PORT_DEFAULT)
+            .addJdbcPool("pg") // postgres
+            .addIpGeolocation() // ip geolocation
+            .build()
+          ).onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
+          .onSuccess(server -> {
+            /**
+             * Create the base router with the base Handler
+             */
+            HttpServer httpServer;
+            try {
+              httpServer = HttpServer.createFromServer(server)
+                .addBodyHandler() // body transformation
+                .addWebLog() // web log
+                .setBehindProxy() // enable proxy forward
+                .enableFailureHandler() // enable failure handler
+                .addFakeErrorHandler()
+                .addHealthCheck()
+                .build();
+            } catch (IllegalConfiguration e) {
+              this.handlePromiseFailure(verticlePromise, e);
+              return;
+            }
 
-        /**
-         * Create the base router with the base Handler
-         */
-        HttpServer httpServer;
-        try {
-          httpServer = HttpServer.createFromServer(server)
-            .addBodyHandler() // body transformation
-            .addWebLog() // web log
-            .setBehindProxy() // enable proxy forward
-            .enableFailureHandler() // enable failure handler
-            .addFakeErrorHandler()
-            .addHealthCheck()
-            .build();
-        } catch (IllegalConfiguration e) {
-          this.handlePromiseFailure(verticlePromise, e);
-          return;
-        }
-
-        EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-
-        vertx.executeBlocking(() -> IpApp.createForDomain(eraldyDomain).mount())
-          .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-          .onSuccess(Void -> httpServer.getHttpServer()
-            .requestHandler(httpServer.getRouter())
-            .listen(ar -> {
-              if (ar.succeeded()) {
-                LOGGER.info("HTTP server running on port " + ar.result().actualPort());
-                verticlePromise.complete();
-              } else {
-                LOGGER.error("Could not start the HTTP server " + ar.cause());
-                this.handlePromiseFailure(verticlePromise, ar.cause());
-              }
-            }));
+            EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
+            vertx.executeBlocking(() -> IpApp.createForDomain(eraldyDomain).mount())
+              .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
+              .onSuccess(Void -> httpServer.getHttpServer()
+                .requestHandler(httpServer.getRouter())
+                .listen(ar -> {
+                  if (ar.succeeded()) {
+                    LOGGER.info("HTTP server running on port " + ar.result().actualPort());
+                    verticlePromise.complete();
+                  } else {
+                    LOGGER.error("Could not start the HTTP server " + ar.cause());
+                    this.handlePromiseFailure(verticlePromise, ar.cause());
+                  }
+                }));
+          });
 
 
       });

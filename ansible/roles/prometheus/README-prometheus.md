@@ -13,6 +13,15 @@ To do: [Basic Auth](https://prometheus.io/docs/guides/basic-auth/#nginx-example)
 ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags prometheus
 ```
 
+## TODO
+
+For batch: https://github.com/prometheus/pushgateway
+
+The Prometheus Pushgateway exists to allow ephemeral and batch jobs to expose their metrics to Prometheus.
+  * It's a service running at:http:\\localhost:9091
+
+See https://prometheus.github.io/client_java/
+
 ## Php-fpm
 
   * https://github.com/bakins/php-fpm-exporter

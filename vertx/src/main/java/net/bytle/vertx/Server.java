@@ -3,6 +3,7 @@ package net.bytle.vertx;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
+import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,8 @@ public class Server {
   private final builder builder;
   private PgPool jdbcPool;
   private JdbcConnectionInfo jdbcConnectionInfo;
+  private IpGeolocation ipGeolocation;
+  private JdbcSchemaManager jdbcManager;
 
 
   Server(builder builder) {
@@ -99,18 +102,18 @@ public class Server {
     return this.builder.configAccessor;
   }
 
-  public JdbcSchemaManager getJdbcManager() {
-    if (jdbcConnectionInfo == null) {
-      throw new InternalException("No Jdbc Pool for the server");
-    }
-    return JdbcSchemaManager.create(jdbcConnectionInfo);
-  }
-
   public PgPool getJdbcPool() {
     if (this.jdbcPool == null) {
       throw new InternalException("No Jdbc Pool for the server");
     }
     return this.jdbcPool;
+  }
+
+  public IpGeolocation getIpGeolocation() {
+    if (this.ipGeolocation == null) {
+      throw new InternalException("No IpGeolocation configured for the server");
+    }
+    return this.ipGeolocation;
   }
 
 
@@ -123,6 +126,7 @@ public class Server {
     private String listeningHost;
     private Boolean ssl = false;
     private String poolName;
+    private boolean enableIpGeoLocation = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -174,23 +178,35 @@ public class Server {
       return this;
     }
 
-    public Server build() {
+    public Server build() throws DbMigrationException {
       Server server = new Server(this);
       if (this.poolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
         server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(this.poolName, server.getConfigAccessor());
         server.jdbcPool = JdbcPostgresPool.create(server.getVertx(), server.jdbcConnectionInfo);
+        server.jdbcManager = JdbcSchemaManager.create(server.jdbcConnectionInfo);
+      }
+      if (this.enableIpGeoLocation) {
+        server.ipGeolocation = IpGeolocation.create(server.jdbcPool, server.jdbcManager);
       }
       return server;
     }
 
     /**
-     *
      * @param name - the name is used in the configuration as prefix
      */
     public builder addJdbcPool(String name) {
       this.poolName = name;
       return this;
     }
+
+    public Server.builder addIpGeolocation() {
+      if (this.poolName == null) {
+        throw new InternalException("To enable Ip Geolocation, the jdbc pool service should be enabled first");
+      }
+      this.enableIpGeoLocation = true;
+      return this;
+    }
+
   }
 }

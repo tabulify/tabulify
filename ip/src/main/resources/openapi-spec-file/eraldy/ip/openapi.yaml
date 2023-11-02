@@ -1,98 +1,101 @@
 openapi: 3.0.3
 info:
+  description: An API for IP geolocalization
   title: IP
-  description: A API for IP geolocalization
-  # Quote are deleted https://github.com/OpenAPITools/openapi-generator/issues/3196
-  # We can't therefore use a date string as the generated openapi.yaml file has no quote
-  # and the data is seen as date, not as string
-  version: "v2023-06-18"
+  version: v2023-06-18
 servers:
-  - url: 'https://api.eraldy.com/'
-# check the openApi.md file to know more about tags.
-tags:
-  - name: ip
-    description: Ip operation
-# Secure by default, if you want to make an operation public, you need to set the security for an operation to the empty array
-# security: []
+- url: https://api.eraldy.com/
 security:
-  - bearerAuth: [ ]
-components:
-  securitySchemes:
-    bearerAuth:
-      $ref: '../../../../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
-  schemas:
-    IpInfo:
-      title: IpInfo
-      description: The geo-localization information based on Ip
-      type: object
-      properties:
-        ip:
-          type: string
-          description: The ip, the data is based on
-          example: 143.176.206.76
-        country:
-          type: string
-          description: The country name
-          example: Netherlands
-        country2:
-          type: string
-          description: The country ISO code on two characters
-          example: NL
-        country3:
-          type: string
-          description: The country ISO code on three characters
-          example: NLD
+- bearerAuth: []
+tags:
+- description: Ip operation
+  name: ip
 paths:
   /ping:
     get:
-      operationId: "pingGet"
-      summary: A health check endpoint
-      # tag is the prefix of the API
-      security: [ ]
-      tags:
-        - ip
+      operationId: pingGet
       responses:
-        '200':
+        "200":
           description: API health status
+      security: []
+      summary: A health check endpoint
+      tags:
+      - ip
+      x-accepts: application/json
   /ip:
     get:
-      operationId: "ipGet"
-      summary: "Return client information based on the HTTP request ip"
-      tags:
-        - ip
+      operationId: ipGet
       responses:
-        '200':
-          description: "Geolocation data based on the IP"
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/IpInfo'
-        '404':
-          description: "Not Found"
+          description: Geolocation data based on the IP
+        "404":
+          description: Not Found
+      summary: Return client information based on the HTTP request ip
+      tags:
+      - ip
+      x-accepts: application/json
   /ip/{ip}:
     get:
-      operationId: "ipIpGet"
-      summary: "Return client information based on the ip"
-      tags:
-        - ip
-      security: [ ]
+      operationId: ipIpGet
       parameters:
-        - name: ip
-          description: "The IP (default to the IP of the HTTP request)"
-          # Path parameters are mandatory
-          # https://github.com/OAI/OpenAPI-Specification/issues/622
-          required: true
-          in: path
-          schema:
-            type: string
-            format: ipv4
-            example: "143.176.206.80"
+      - description: The IP (default to the IP of the HTTP request)
+        explode: false
+        in: path
+        name: ip
+        required: true
+        schema:
+          example: 143.176.206.80
+          format: ipv4
+          type: string
+        style: simple
       responses:
-        '200':
-          description: "Geolocation data based on the IP"
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/IpInfo'
-        '404':
-          description: "Not Found"
+          description: Geolocation data based on the IP
+        "404":
+          description: Not Found
+      security: []
+      summary: Return client information based on the ip
+      tags:
+      - ip
+      x-accepts: application/json
+components:
+  schemas:
+    IpInfo:
+      description: The geo-localization information based on Ip
+      example:
+        country: Netherlands
+        ip: 143.176.206.76
+        country3: NLD
+        country2: NL
+      properties:
+        ip:
+          description: "The ip, the data is based on"
+          example: 143.176.206.76
+          type: string
+        country:
+          description: The country name
+          example: Netherlands
+          type: string
+        country2:
+          description: The country ISO code on two characters
+          example: NL
+          type: string
+        country3:
+          description: The country ISO code on three characters
+          example: NLD
+          type: string
+      title: IpInfo
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWS
+      scheme: bearer
+      type: http

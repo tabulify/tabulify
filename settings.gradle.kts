@@ -1,8 +1,12 @@
 pluginManagement {
+  // version are in the gradle.properties files
   val vertxPluginVersion: String by settings
+  val openApiGeneratorPluginVersion: String by settings
   plugins {
     // https://github.com/jponge/vertx-gradle-plugin
     id("io.vertx.vertx-plugin") version vertxPluginVersion
+    // https://plugins.gradle.org/plugin/org.openapi.generator
+    id("org.openapi.generator") version openApiGeneratorPluginVersion
   }
 }
 

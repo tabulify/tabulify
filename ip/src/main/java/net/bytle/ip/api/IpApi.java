@@ -1,7 +1,7 @@
 package net.bytle.ip.api;
 
 import io.vertx.core.Future;
-import net.bytle.ip.model.IpInfo;
+import net.bytle.vertx.IpInfo;
 import net.bytle.vertx.RoutingContextWrapper;
 
 

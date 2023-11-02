@@ -47,10 +47,19 @@ dependencies {
   // Mail
   implementation("io.vertx:vertx-mail-client:$vertxVersion")
   implementation(project(":bytle-smtp-client"))
-  // Sql
+
+  /**
+   * SQL and Schema Management
+   */
   implementation("org.flywaydb:flyway-core:$flywayVersion")
   implementation("io.vertx:vertx-pg-client:$vertxVersion")
   implementation("com.ongres.scram:client:$scramClientVersion") // Postgres Optional dependency that is not so optional
+
+  /**
+   * IpGeolocation CSV loading
+   */
+  implementation(project(":bytle-db-jdbc")) // posgtres driver
+  implementation(project(":bytle-db-csv")) // csv loading
 
   // Vertx service
   //  implementation("io.vertx:vertx-service-proxy:$projectVertxVersion")
