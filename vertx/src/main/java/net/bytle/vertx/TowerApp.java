@@ -1,10 +1,6 @@
 package net.bytle.vertx;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Future;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -54,6 +50,7 @@ public abstract class TowerApp {
   private final TowerApexDomain apexDomain;
   private final ConfigAccessor configAccessor;
   private ProxyUtil proxy;
+  private WebClient webClient;
 
 
   public TowerApp(TowerApexDomain towerApexDomain) {
@@ -176,8 +173,14 @@ public abstract class TowerApp {
       .compile(templateResourcesPath);
   }
 
-  public HttpAppRequestBuilder getRequestBuilder(WebClient webClient, String path) {
-    return new HttpAppRequestBuilder(webClient, path);
+  public TowerAppRequestBuilder getRequestBuilder(String path) {
+    if (webClient == null) {
+      Server server = this.getApexDomain().getHttpServer().getServer();
+      webClient = HttpClientBuilder.builder(server.getVertx())
+        .withServerProperties(server)
+        .buildWebClient();
+    }
+    return new TowerAppRequestBuilder(this, webClient, path);
   }
 
   /**
@@ -474,92 +477,7 @@ public abstract class TowerApp {
   }
 
 
-  public class HttpAppRequestBuilder {
 
-    private final WebClient webClient;
-    private final String path;
-    private boolean withForwardProxyHostHeader = false;
-    private boolean withSuperApiToken;
-    private boolean withPublicDomain = false;
-    private HttpMethod method = HttpMethod.GET;
-    private String bearerToken;
-
-    public HttpAppRequestBuilder(WebClient webClient, String path) {
-      this.webClient = webClient;
-      this.path = path;
-    }
-
-    public HttpRequest<Buffer> build() {
-      String requestUri = getPublicRequestUriForOperationPath(this.path).toUrl().toString();
-      HttpRequest<Buffer> httpRequest;
-      switch (this.method.name()) {
-        case "POST":
-          httpRequest = webClient.postAbs(requestUri);
-          break;
-        case "GET":
-          httpRequest = webClient.getAbs(requestUri);
-          break;
-        default:
-          throw new RuntimeException("The method " + this.method.name() + " is unknown");
-      }
-
-      if (this.withForwardProxyHostHeader) {
-        /**
-         * Simulate behind a {@link net.bytle.tower.util.HttpForwardProxy forward proxy}
-         */
-        httpRequest.putHeader(HttpHeaders.X_FORWARDED_HOST, getPublicDomainHost());
-      }
-      if (this.withSuperApiToken) {
-        String httpAuthorization = new UsernamePasswordCredentials("user", getSuperToken()).toHttpAuthorization();
-        httpRequest.putHeader(HttpHeaderNames.AUTHORIZATION.toString(), httpAuthorization);
-        httpRequest.putHeader(HttpHeaders.X_API_KEY, getSuperToken());
-      }
-      if (this.bearerToken != null) {
-        // https://vertx.io/docs/vertx-auth-jwt/java/#_authnauthz_with_jwt
-        httpRequest.putHeader(HttpHeaderNames.AUTHORIZATION.toString(), "bearer " + this.bearerToken);
-      }
-      if (this.withPublicDomain) {
-        httpRequest.putHeader(HttpHeaders.HOST, getPublicDomainHost());
-      }
-      return httpRequest;
-    }
-
-    public HttpAppRequestBuilder withForwardProxyHeader() {
-      this.withForwardProxyHostHeader = true;
-      return this;
-    }
-
-    public HttpAppRequestBuilder withSuperApiToken() {
-      this.withSuperApiToken = true;
-      return this;
-    }
-
-    public HttpAppRequestBuilder withPublicDomainHost() {
-      this.withPublicDomain = true;
-      return this;
-    }
-
-    public HttpAppRequestBuilder asPost() {
-      this.method = HttpMethod.POST;
-      return this;
-    }
-
-    public HttpAppRequestBuilder withBearerToken(String accessToken) {
-      this.bearerToken = accessToken;
-      return this;
-    }
-
-  }
-
-  /**
-   * The super token
-   * (used mostly to make request in test for now)
-   */
-  private String getSuperToken() {
-
-    return configAccessor.getString(SUPERUSER_TOKEN_CONF);
-
-  }
 
   public TowerApexDomain getApexDomain() {
     return this.apexDomain;

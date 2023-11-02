@@ -28,6 +28,11 @@ dependencies {
   implementation(project(":bytle-db-jdbc")) // posgtres driver
   implementation(project(":bytle-db-csv")) // csv loading
 
+  /**
+   * Test
+   */
+  testImplementation("io.vertx:vertx-web-client:$vertxVersion")
+
 }
 
 plugins {

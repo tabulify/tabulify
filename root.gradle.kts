@@ -22,6 +22,9 @@ val antJschVersion = "1.9.2"
 // SASL Salted password used by the Vertx Postgres Client
 val scramClientVersion = "2.1"
 // Flyway
+// this version should also be changed manually in the plugin
+// https://github.com/gradle/gradle/issues/9830
+// change also the flyway version plugin !
 val flywayVersion = "9.7.0"
 // Postgres
 // from https://jdbc.postgresql.org/download.html

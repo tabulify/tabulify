@@ -1,7 +1,6 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 
-import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
  * Pojo that contains the OAuth authorization
@@ -13,7 +12,7 @@ public class OAuthAuthorization {
 
 
   private String redirectUri;
-  private User user;
+  private AuthUser user;
 
   public void setRedirectUri(String redirectUri) {
     this.redirectUri = redirectUri;
@@ -23,11 +22,11 @@ public class OAuthAuthorization {
     return redirectUri;
   }
 
-  public User getUser() {
+  public AuthUser getUser() {
     return user;
   }
 
-  public void setUser(User contextUser) {
+  public void setUser(AuthUser contextUser) {
     this.user = contextUser;
   }
 

@@ -13,7 +13,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.JwtClaimsObject;
+import net.bytle.vertx.AuthUser;
+import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.MailServiceSmtpProvider;
 import net.bytle.vertx.VertxRoutingFailureHandler;
 import org.slf4j.Logger;
@@ -47,10 +48,11 @@ public class UserRegistrationFlow {
         User userRegister = new User();
         userRegister.setEmail(emailIdentifier.getUserEmail());
         userRegister.setRealm(realm);
+        AuthUser authUserToRegister = UsersUtil.toAuthUser(userRegister);
 
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(userRegister, routingContext.vertx(), routingContext);
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserToRegister,  routingContext);
         BMailTransactionalTemplate letter = EraldyMemberApp.get()
           .getUserRegistrationValidation()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, userRegister, jwtClaims)

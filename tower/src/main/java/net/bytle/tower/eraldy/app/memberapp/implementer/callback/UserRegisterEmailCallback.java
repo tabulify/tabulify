@@ -4,7 +4,7 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.app.memberapp.implementer.flow.UserRegistrationFlow;
-import net.bytle.tower.util.JwtClaimsObject;
+import net.bytle.vertx.JwtClaimsObject;
 
 /**
  * The letter (in HTML format)

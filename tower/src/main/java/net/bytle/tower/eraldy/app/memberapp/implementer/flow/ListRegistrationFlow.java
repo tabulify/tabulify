@@ -24,7 +24,6 @@ import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.JwtClaimsObject;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
@@ -153,9 +152,9 @@ public class ListRegistrationFlow {
         userRegister.setEmail(publicationSubscriptionPost.getSubscriberEmail());
         Realm listRealm = registrationList.getRealm();
         userRegister.setRealm(listRealm);
+        AuthUser authUserRegister = UsersUtil.toAuthUser(userRegister);
 
-
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(userRegister, routingContext.vertx(), routingContext)
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserRegister, routingContext)
           .setListGuidClaim(publicationGuid);
 
         BMailTransactionalTemplate publicationValidationLetter = EraldyMemberApp.get()

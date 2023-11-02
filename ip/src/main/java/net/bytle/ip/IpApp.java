@@ -1,15 +1,12 @@
 package net.bytle.ip;
 
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.APIKeyHandler;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import net.bytle.exception.InternalException;
 import net.bytle.ip.api.IpApiImpl;
 import net.bytle.ip.handler.IpHandler;
-import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.EraldyDomain;
-import net.bytle.vertx.TowerApexDomain;
-import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
+import net.bytle.vertx.*;
 
 public class IpApp extends TowerApp {
 
@@ -18,7 +15,7 @@ public class IpApp extends TowerApp {
     super(towerApexDomain);
   }
 
-  public static TowerApp createForDomain(EraldyDomain eraldyDomain) {
+  public static IpApp createForDomain(EraldyDomain eraldyDomain) {
     return new IpApp(eraldyDomain);
   }
 
@@ -38,10 +35,13 @@ public class IpApp extends TowerApp {
   @Override
   public TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
 
-    ApiTokenAuthenticationProvider apiTokenAuthenticationProvider = new ApiTokenAuthenticationProvider(configAccessor);
+    AuthenticationHandler tokenAuthenticator = this.getApexDomain().getHttpServer().getBearerAuthenticator();
+    if (tokenAuthenticator == null) {
+      throw new InternalException("The bearer authenticator should be added to the HTTP server");
+    }
     builder
-      .securityHandler(ApiTokenAuthenticationProvider.BEARER_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> APIKeyHandler.create(apiTokenAuthenticationProvider));
+      .securityHandler(OpenApiUtil.BEARER_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> tokenAuthenticator);
 
     return this;
   }

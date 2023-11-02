@@ -8,8 +8,8 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
+import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 
 /**
@@ -20,21 +20,14 @@ import net.bytle.vertx.TowerApp;
  */
 public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
-  /**
-   * The security auth name used in the spec file
-   */
-  @SuppressWarnings("unused")
-  public static final String BASIC_AUTH_SECURITY_SCHEME = "basicAuth";
-  public static final String APIKEY_AUTH_SECURITY_SCHEME = "apiKeyAuth";
-  public static final String BEARER_AUTH_SECURITY_SCHEME = "bearerAuth";
 
   private final String superToken;
 
-  public ApiTokenAuthenticationProvider(ConfigAccessor configAccessor) {
+  public ApiTokenAuthenticationProvider(Server server) {
     /**
      * For now, only a super token.
      */
-    String superToken = configAccessor.getString(TowerApp.SUPERUSER_TOKEN_CONF);
+    String superToken = server.getConfigAccessor().getString(TowerApp.SUPERUSER_TOKEN_CONF);
     if (superToken == null) {
       throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + TowerApp.SUPERUSER_TOKEN_CONF + ")");
     }
@@ -74,5 +67,9 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
   }
 
+
+  public String getSuperToken() {
+    return this.superToken;
+  }
 
 }

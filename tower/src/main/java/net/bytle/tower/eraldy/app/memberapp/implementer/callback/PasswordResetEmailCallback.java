@@ -6,8 +6,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.tower.util.JwtClaimsObject;
 import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.JwtClaimsObject;
 
 /**
  * Handle the password reset

@@ -3,9 +3,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.text.SimpleDateFormat
 import java.util.*
 
-// this version should also be changed manually in the plugin
-// // https://github.com/gradle/gradle/issues/9830
-// change also the flyway version plugin !
 val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val antJschVersion = rootProject.ext.get("antJschVersion").toString()
@@ -13,17 +10,10 @@ val antJschVersion = rootProject.ext.get("antJschVersion").toString()
 val sshAntTask = configurations.create("sshAntTask")
 
 plugins {
-  // https://github.com/jponge/vertx-gradle-plugin
   id("io.vertx.vertx-plugin")
   id("maven-publish")
-  // Does not support yarn3
-  // https://github.com/node-gradle/gradle-node-plugin/issues/176
-  // id("com.github.node-gradle.node") version "5.0.0"
   id("org.openapi.generator")
-  // Version is manual because https://github.com/gradle/gradle/issues/9830
-  // https://documentation.red-gate.com/fd/first-steps-gradle-166985825.html
-  // change also the flyway version library !
-  id("org.flywaydb.flyway") version "9.7.0"
+  id("org.flywaydb.flyway")
 }
 
 /**
@@ -37,7 +27,7 @@ val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 
 vertx {
   mainVerticle = towerMainVerticle
-  vertxVersion = this@Tower_gradle.vertxVersion
+  vertxVersion
   launcher = towerLauncher
 }
 
@@ -55,25 +45,15 @@ flyway {
 }
 
 
-val csIpDbSchema = "cs_ip"
+
 val cspRealmsSchema = "cs_realms"
 
 tasks.getByName<org.flywaydb.gradle.task.FlywayCleanTask>("flywayClean") {
 
-  schemas = arrayOf(csIpDbSchema, cspRealmsSchema)
+  schemas = arrayOf(cspRealmsSchema)
 
 }
 
-// https://flywaydb.org/documentation/usage/gradle/#build-script-multiple-databases
-tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayIp") {
-
-  // https://flywaydb.org/documentation/configuration/parameters/locations
-  // classpath does not work when called from here
-  // locations = arrayOf("classpath:db/cs-ip") # don't use that, classpath location has cache issue (the file is in the jar and not always updated)
-  locations = arrayOf("filesystem:src/main/resources/db/cs-ip")
-  schemas = arrayOf(csIpDbSchema)
-
-}
 
 tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayRealms") {
 

@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -9,9 +9,6 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NoSecretException;
-import net.bytle.tower.eraldy.model.openapi.OAuthAccessTokenResponse;
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.ConfigAccessor;
 
 /**
  * Jwt Authentication wrapper around the {@link JWTAuth}
@@ -31,7 +28,6 @@ public class JwtAuthManager {
 
 
   private JWTAuth provider;
-  private Vertx vertx;
 
 
   public static JwtAuthManager get() {
@@ -54,8 +50,6 @@ public class JwtAuthManager {
 
     jwtAuthManager.provider = JWTAuth.create(vertx, config);
 
-    jwtAuthManager.vertx = vertx;
-
   }
 
 
@@ -77,20 +71,20 @@ public class JwtAuthManager {
   }
 
   private String generateTokenFromAuthorization(OAuthAuthorization authorization, RoutingContext routingContext) {
-    User user = authorization.getUser();
+    AuthUser user = authorization.getUser();
     int delay60daysInMinutes = 60 * 60 * 24;
     return generateTokenFromUser(user, delay60daysInMinutes, routingContext);
   }
 
-  public String generateTokenFromUser(User user, Integer expirationMinutes, RoutingContext routingContext) {
-    JsonObject claims = JwtClaimsObject.createFromUser(user, vertx, routingContext)
+  public String generateTokenFromUser(AuthUser user, Integer expirationMinutes, RoutingContext routingContext) {
+    JsonObject claims = JwtClaimsObject.createFromUser(user, routingContext)
       .toClaimsWithExpiration(expirationMinutes);
     JWTOptions jwtOptions = new JWTOptions();
     return provider.generateToken(claims, jwtOptions);
   }
 
 
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(User user, RoutingContext routingContext) {
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUser user, RoutingContext routingContext) {
     OAuthAuthorization authorization = new OAuthAuthorization();
     authorization.setUser(user);
     return generateOAuthAccessTokenResponseFromAuthorization(authorization, routingContext);
@@ -100,8 +94,8 @@ public class JwtAuthManager {
     return this.provider;
   }
 
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(User comboUser) {
-    return generateOAuthAccessTokenResponseFromUser(comboUser, null);
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUser authUser) {
+    return generateOAuthAccessTokenResponseFromUser(authUser, null);
   }
 
 }

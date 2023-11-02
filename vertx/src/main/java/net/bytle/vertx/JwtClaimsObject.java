@@ -1,14 +1,9 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
-import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Date;
-import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,28 +14,27 @@ import java.net.URISyntaxException;
 public class JwtClaimsObject {
 
 
-  private static final String ERALDY_ISSUER_VALUE = EraldyMemberApp.get().createPublicUriHostOnly().toUri().toString();
+  private static final String ERALDY_ISSUER_VALUE = "eraldy.com";
   private final JsonObject claims;
 
   public JwtClaimsObject(JsonObject claims) {
     this.claims = claims;
   }
 
-  public static JwtClaimsObject createFromUser(User user, Vertx vertx, RoutingContext routingContext) {
+  public static JwtClaimsObject createFromUser(AuthUser user, RoutingContext routingContext) {
     JsonObject claims = new JsonObject();
     /**
      * Claims may be created for user registration, meaning that the user
      * does not exist in the database yet and has therefore no id
      */
-    if (user.getLocalId() != null) {
-      UserProvider.createFrom(vertx)
-        .toPublicCloneWithRealm(user);
-      claims.put(JwtClaims.SUBJECT.toString(), user.getGuid());
+    String subjectGuid = user.getSubjectGuid();
+    if (subjectGuid != null) {
+      claims.put(JwtClaims.SUBJECT.toString(), subjectGuid);
     }
-    claims.put(JwtClaims.AUDIENCE.toString(), user.getRealm().getGuid());
+    claims.put(JwtClaims.AUDIENCE.toString(), user.getAudienceRealmGuid());
     claims.put(JwtClaims.CUSTOM_EMAIL.toString(), user.getEmail());
     claims.put(JwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), user.getHandle());
-    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), user.getRealm().getHandle());
+    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), user.getAudienceHandle());
     claims.put(JwtClaims.ISSUER.toString(), ERALDY_ISSUER_VALUE);
 
     /**
@@ -172,7 +166,6 @@ public class JwtClaimsObject {
     claims.put(JwtClaims.CUSTOM_LIST_GUID.toString(), listGuid);
     return this;
   }
-
 
 
 }

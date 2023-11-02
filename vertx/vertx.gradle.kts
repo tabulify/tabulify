@@ -61,6 +61,11 @@ dependencies {
   implementation(project(":bytle-db-jdbc")) // posgtres driver
   implementation(project(":bytle-db-csv")) // csv loading
 
+  /**
+   * Auth
+   */
+  implementation("io.vertx:vertx-auth-jwt:$vertxVersion") // Jwt
+
   // Vertx service
   //  implementation("io.vertx:vertx-service-proxy:$projectVertxVersion")
   //  compileOnly("io.vertx:vertx-codegen:$projectVertxVersion")
@@ -77,5 +82,27 @@ dependencies {
   testFixturesApi("io.vertx:vertx-unit:$vertxVersion") // junit 4
   testFixturesApi("io.vertx:vertx-junit5:$vertxVersion")
   testFixturesApi(project(":bytle-base"))
+
+}
+
+plugins {
+  id("org.flywaydb.flyway")
+}
+
+val csIpDbSchema = "cs_ip"
+// https://flywaydb.org/documentation/usage/gradle/#build-script-multiple-databases
+tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayIp") {
+
+  // https://flywaydb.org/documentation/configuration/parameters/locations
+  // classpath does not work when called from here
+  // locations = arrayOf("classpath:db/cs-ip") # don't use that, classpath location has cache issue (the file is in the jar and not always updated)
+  locations = arrayOf("filesystem:src/main/resources/db/cs-ip")
+  schemas = arrayOf(csIpDbSchema)
+
+}
+
+tasks.getByName<org.flywaydb.gradle.task.FlywayCleanTask>("flywayClean") {
+
+  schemas = arrayOf(csIpDbSchema)
 
 }

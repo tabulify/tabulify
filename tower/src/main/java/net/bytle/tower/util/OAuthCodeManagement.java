@@ -4,7 +4,9 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.ext.auth.VertxContextPRNG;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.vertx.OAuthAuthorization;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +46,7 @@ public class OAuthCodeManagement {
     String authCode = prng.nextString(10);
     OAuthAuthorization OAuthAuthorization = new OAuthAuthorization();
     OAuthAuthorization.setRedirectUri(redirectUri);
-    OAuthAuthorization.setUser(contextUser);
+    OAuthAuthorization.setUser(UsersUtil.toAuthUser(contextUser));
     cache.put(authCode, OAuthAuthorization);
     return authCode;
   }

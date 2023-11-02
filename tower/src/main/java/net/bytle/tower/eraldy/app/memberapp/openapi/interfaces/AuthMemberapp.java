@@ -3,7 +3,11 @@ package net.bytle.tower.eraldy.app.memberapp.openapi.interfaces;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.app.memberapp.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
+import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
+import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
+import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
+import net.bytle.vertx.OAuthAccessTokenResponse;
 
 public interface AuthMemberapp  {
     Future<ApiResponse<String>> loginEmailGet(RoutingContext routingContext, String redirectUri, String clientId, String responseType, String state, String realmHandle);

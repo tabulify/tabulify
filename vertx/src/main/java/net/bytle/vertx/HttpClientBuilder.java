@@ -40,15 +40,15 @@ public class HttpClientBuilder {
 
   public WebClient buildWebClient() {
 
-    WebClientOptions webClientOptions = new WebClientOptions(getHttpClientOptions());
+    WebClientOptions webClientOptions = new WebClientOptions(buildHttpClientOptions());
     return WebClient.create(this.vertx, webClientOptions);
   }
 
   public HttpClient buildHttpClient() {
-    return this.vertx.createHttpClient(getHttpClientOptions());
+    return this.vertx.createHttpClient(buildHttpClientOptions());
   }
 
-  public HttpClientOptions getHttpClientOptions() {
+  private HttpClientOptions buildHttpClientOptions() {
 
     /**
      * Http Clients Options
@@ -63,7 +63,8 @@ public class HttpClientBuilder {
      * <p>
      * See: https://groups.google.com/g/vertx/c/NYLcHzY8EYM
      */
-    if (this.server.getSsl()) {
+    boolean ssl = this.server != null ? this.server.getSsl() : false;
+    if (ssl) {
       httpClientOptions
         .setSsl(true)
         .setTrustAll(true);
@@ -72,7 +73,7 @@ public class HttpClientBuilder {
     /**
      * Target Host and port
      */
-    Integer port = this.defaultPort != null ? defaultPort : this.server.getListeningPort();
+    int port = this.defaultPort != null ? defaultPort : (this.server != null ? this.server.getListeningPort() : 80);
     httpClientOptions.setDefaultPort(port);
     String host = this.defaultHost != null ? this.defaultHost : "localhost";
     httpClientOptions.setDefaultHost(host);

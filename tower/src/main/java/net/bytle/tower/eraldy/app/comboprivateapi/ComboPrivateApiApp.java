@@ -1,15 +1,10 @@
 package net.bytle.tower.eraldy.app.comboprivateapi;
 
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
 import net.bytle.tower.eraldy.app.comboprivateapi.openapi.invoker.ApiVertxSupport;
-import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.OpenApiDoc;
-import net.bytle.vertx.TowerApexDomain;
-import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
+import net.bytle.vertx.*;
 
 /**
  * The combo private api app
@@ -51,10 +46,9 @@ public class ComboPrivateApiApp extends TowerApp {
   public ComboPrivateApiApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor jsonConfig) {
 
 
-    ApiTokenAuthenticationProvider apiTokenAuthenticationProvider = new ApiTokenAuthenticationProvider(jsonConfig);
     builder
-      .securityHandler(ApiTokenAuthenticationProvider.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> APIKeyHandler.create(apiTokenAuthenticationProvider));
+      .securityHandler(OpenApiUtil.APIKEY_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthenticator());
 
     return this;
 
