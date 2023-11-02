@@ -16,4 +16,5 @@ This project is not deployed yet.
 # it will generate a indepedent spec file into the resource file for easy deployment
 ..\gradlew openapi
 ```
-* the main verticle is [IpVerticle](src/main/java/net/bytle/ip/IpVerticle.java)
+* You can start the app with the main method of the [IpVerticle](src/main/java/net/bytle/ip/IpVerticle.java)
+* The openapi doc will be at: http://localhost:8084/ip/doc/
