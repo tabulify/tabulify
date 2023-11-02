@@ -29,8 +29,6 @@ paths:
     get:
       operationId: "pingGet"
       summary: A health check endpoint
-      # tag is the prefix of the API
-      security: [ ]
       tags:
         - ip
       responses:
