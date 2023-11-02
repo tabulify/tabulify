@@ -1,6 +1,7 @@
 package net.bytle.vertx;
 
 import io.vertx.pgclient.PgConnectOptions;
+import net.bytle.exception.NullValueException;
 import net.bytle.type.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -127,7 +128,10 @@ public class JdbcConnectionInfo {
     return this.url.substring("jdbc:".length());
   }
 
-  public String getSchemaPath() {
+  public String getSchemaPath() throws NullValueException {
+    if (this.schemaPath == null) {
+      throw new NullValueException();
+    }
     return this.schemaPath;
   }
 

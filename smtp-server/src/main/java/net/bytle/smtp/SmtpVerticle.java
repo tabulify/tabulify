@@ -7,6 +7,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import net.bytle.exception.CastException;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.type.Casts;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
@@ -124,9 +125,14 @@ public class SmtpVerticle extends AbstractVerticle {
                     /**
                      * Create the server object
                      */
-                    Server server = Server.create("http", vertx, configAccessor)
-                      .setFromConfigAccessorWithPort(25026)
-                      .build();
+                    Server server;
+                    try {
+                      server = Server.create("http", vertx, configAccessor)
+                        .setFromConfigAccessorWithPort(25026)
+                        .build();
+                    } catch (IllegalConfiguration e) {
+                      throw new RuntimeException(e);
+                    }
 
                     /**
                      * Create the HTTP server
@@ -144,7 +150,7 @@ public class SmtpVerticle extends AbstractVerticle {
                       return;
                     }
 
-                    httpServer.getHttpServer()
+                    httpServer.buildHttpServer()
                       .requestHandler(httpServer.getRouter())
                       .listen(ar -> {
                         if (ar.succeeded()) {

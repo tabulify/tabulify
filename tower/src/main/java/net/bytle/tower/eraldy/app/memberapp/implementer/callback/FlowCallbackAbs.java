@@ -106,7 +106,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     /**
      * Template
      */
-    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(app.getVertx());
+    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(app.getApexDomain().getHttpServer().getServer().getVertx());
     BMailTransactionalTemplate template = BMailTransactionalTemplate
       .createFromName(BMailTransactionalTemplate.DEFAULT_TEMPLATE_NAME, templateEngine);
 
@@ -190,7 +190,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     } else {
       validationJson = JsonObject.mapFrom(validationObject);
     }
-    String encryptedData = JsonToken.get(app.getVertx()).encrypt(validationJson, DATA_CIPHER);
+    String encryptedData = JsonToken.get(app.getApexDomain().getHttpServer().getServer().getVertx()).encrypt(validationJson, DATA_CIPHER);
 
     return app
       .getPublicRequestUriForOperationPath(this.getCallbackOperationPath())

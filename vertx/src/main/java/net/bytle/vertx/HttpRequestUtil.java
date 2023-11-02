@@ -64,7 +64,7 @@ public class HttpRequestUtil {
     if (xForwardedHost != null) {
       return xForwardedHost;
     }
-    return routingContext.request().authority().host();
+    return routingContext.request().authority().toString();
   }
 
   /**

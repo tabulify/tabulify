@@ -115,6 +115,32 @@ public abstract class TowerApp {
   }
 
   /**
+   * @return a path that starts with / (ie absolute) and has the {@link TowerApexDomain#getAbsoluteLocalPath()}  toplevel domain} and the {@link #getAbsoluteLocalPath() app path}
+   */
+  public String getAbsoluteLocalPathWithDomain() {
+
+    if (this.addDomainInLocalhostPath()) {
+      return getApexDomain().getName() + getAbsoluteLocalPath();
+    } else {
+      return getAbsoluteLocalPath();
+    }
+
+  }
+
+  /**
+   *
+   * This is an old feature when we didn't know that a proxy could do this feature
+   * The value should be false and the server should be reached via a proxy
+   *
+   * @return should return
+   * * false (default) - if the server host only one domain
+   * * true - if the server hosts multiple domain without going through a proxy
+   *
+   */
+  protected abstract boolean addDomainInLocalhostPath();
+
+
+  /**
    * @param operationPath - the operation path
    * @return the public uri for an operation
    */
@@ -367,15 +393,16 @@ public abstract class TowerApp {
    */
   public TowerApp reRouteOrRedirect(Router rootRouter) {
 
+
     /**
-     * Reroute the HOME
+     * Reroute a URL without path to the default operation
      */
     String localPath = this.getAbsoluteLocalPathWithDomain();
     rootRouter
       .get(localPath)
       .handler(ctx -> {
         String publicDefaultOperationPath = this.getPublicDefaultOperationPath();
-        if (publicDefaultOperationPath.equals("")) {
+        if (publicDefaultOperationPath == null || publicDefaultOperationPath.equals("")) {
           ctx.next();
           return;
         }
@@ -385,8 +412,11 @@ public abstract class TowerApp {
 
 
     /**
-     * Reroute
+     * Reroute if the domain is in the path
      */
+    if (!this.addDomainInLocalhostPath()) {
+      return this;
+    }
     rootRouter
       .route() // empty is equivalent to all, ie to `/*`
       .handler(ctx -> {
@@ -486,8 +516,7 @@ public abstract class TowerApp {
   }
 
   /**
-   * @return the path operation where to redirect when the user is entering the domain name without any path
-   * if the string is empty, no redirect is taking place
+   * @return the path operation where to redirect when the URL has only the domain. The call is then redirected this operation path
    */
 
   public abstract String getPublicDefaultOperationPath();
@@ -510,14 +539,6 @@ public abstract class TowerApp {
    * See {@link BrowserSecurityUtil}
    */
   public abstract boolean getIsHtmlApp();
-
-
-  /**
-   * @return a path that starts with / (ie absolute) and has the {@link TowerApexDomain#getAbsoluteLocalPath()}  toplevel domain} and the {@link #getAbsoluteLocalPath() app path}
-   */
-  public String getAbsoluteLocalPathWithDomain() {
-    return getApexDomain().getAbsoluteLocalPath() + getAbsoluteLocalPath();
-  }
 
 
   /**

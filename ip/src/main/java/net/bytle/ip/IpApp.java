@@ -30,6 +30,11 @@ public class IpApp extends TowerApp {
   }
 
   @Override
+  protected boolean addDomainInLocalhostPath() {
+    return false;
+  }
+
+  @Override
   public TowerApp openApiMount(RouterBuilder builder) {
     new IpHandler(new IpApiImpl(this)).mount(builder);
     return this;
@@ -67,6 +72,9 @@ public class IpApp extends TowerApp {
     return true;
   }
 
+  /**
+   * @return default is ipGet (ie /ip)
+   */
   @Override
   public String getPublicDefaultOperationPath() {
     return "/ip";

@@ -4,6 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import net.bytle.exception.DbMigrationException;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -178,7 +179,7 @@ public class Server {
       return this;
     }
 
-    public Server build() throws DbMigrationException {
+    public Server build() throws IllegalConfiguration {
       Server server = new Server(this);
       if (this.poolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
@@ -187,7 +188,11 @@ public class Server {
         server.jdbcManager = JdbcSchemaManager.create(server.jdbcConnectionInfo);
       }
       if (this.enableIpGeoLocation) {
-        server.ipGeolocation = IpGeolocation.create(server.jdbcPool, server.jdbcManager);
+        try {
+          server.ipGeolocation = IpGeolocation.create(server.jdbcPool, server.jdbcManager);
+        } catch (DbMigrationException e) {
+          throw new IllegalConfiguration("Ip geolocation bad schema migration", e);
+        }
       }
       return server;
     }

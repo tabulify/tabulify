@@ -65,9 +65,15 @@ public class VerticleApi extends AbstractVerticle {
           /**
            * Create the server
            */
-          Server server = Server.create("http", vertx, configAccessor)
-            .setFromConfigAccessorWithPort(PORT_DEFAULT)
-            .build();
+          Server server = null;
+          try {
+            server = Server.create("http", vertx, configAccessor)
+              .setFromConfigAccessorWithPort(PORT_DEFAULT)
+              .build();
+          } catch (IllegalConfiguration e) {
+            this.handlePromiseFailure(verticlePromise,e);
+            return;
+          }
 
           /**
            * Create the HTTP server
@@ -129,7 +135,7 @@ public class VerticleApi extends AbstractVerticle {
 
           Future.all(initFutures)
             .onFailure(FailureStatic::failFutureWithTrace)
-            .onSuccess(apiFutureResult -> httpServer.getHttpServer()
+            .onSuccess(apiFutureResult -> httpServer.buildHttpServer()
 
               /**
                * https://vertx.io/docs/vertx-core/java/#_handling_requests

@@ -41,7 +41,7 @@ public class HttpServer {
    * (in email, in oauth callback, ...)
    */
 
-  public io.vertx.core.http.HttpServer getHttpServer() {
+  public io.vertx.core.http.HttpServer buildHttpServer() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
