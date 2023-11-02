@@ -4,10 +4,12 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.FileSystemAccess;
 import io.vertx.ext.web.handler.StaticHandler;
-import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Utility class that add the handle of static resources for
@@ -32,9 +34,11 @@ public class StaticResourcesUtil {
   public static StaticHandler getStaticHandlerForRelativeResourcePath(String relativeRootPath) {
     StaticHandler staticHandler;
     /**
-     * Caching
+     * In dev, the files are not in the archive
+     * We disable the cache to be able to develop
      */
-    if (JavaEnvs.IS_DEV) {
+    String projectRootPath = "src/main/resources/" + relativeRootPath;
+    if (Files.exists(Paths.get(projectRootPath))) {
       /**
        * We set this property to prevent Vert.x caching files loaded from the classpath on disk
        * This means if you edit the static files in your IDE then the next time they are served the new ones will
@@ -45,7 +49,7 @@ public class StaticResourcesUtil {
        */
       System.setProperty("vertx.disableFileCaching", "true");
       staticHandler = StaticHandler
-        .create(FileSystemAccess.RELATIVE, "src/main/resources/" + relativeRootPath)
+        .create(FileSystemAccess.RELATIVE, projectRootPath)
         .setCachingEnabled(false);
       LOGGER.info("Static resources started with cache disabled");
     } else {

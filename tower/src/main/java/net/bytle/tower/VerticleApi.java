@@ -65,7 +65,7 @@ public class VerticleApi extends AbstractVerticle {
           /**
            * Create the server
            */
-          Server server = null;
+          Server server;
           try {
             server = Server.create("http", vertx, configAccessor)
               .setFromConfigAccessorWithPort(PORT_DEFAULT)
