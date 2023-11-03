@@ -12,14 +12,22 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserPostBody   {
 
-  private String userGuid;
-  private String realmGuid;
-  private String realmHandle;
-  private String userEmail;
-  private String userName;
-  private String userFullname;
-  private String userTitle;
-  private URI userAvatar;
+
+  protected String userGuid;
+
+  protected String realmGuid;
+
+  protected String realmHandle;
+
+  protected String userEmail;
+
+  protected String userName;
+
+  protected String userFullname;
+
+  protected String userTitle;
+
+  protected URI userAvatar;
 
   /**
   * The empty constructor is

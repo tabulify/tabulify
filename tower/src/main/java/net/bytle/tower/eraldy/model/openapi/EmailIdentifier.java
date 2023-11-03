@@ -11,8 +11,10 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EmailIdentifier   {
 
-  private String userEmail;
-  private String realmHandle;
+
+  protected String userEmail;
+
+  protected String realmHandle;
 
   /**
   * The empty constructor is
@@ -77,7 +79,9 @@ public class EmailIdentifier   {
   @Override
   public String toString() {
     return "class EmailIdentifier {\n" +
+
     "    userEmail: " + toIndentedString(userEmail) + "\n" +
+
     "    realmHandle: " + toIndentedString(realmHandle) + "\n" +
     "}";
   }

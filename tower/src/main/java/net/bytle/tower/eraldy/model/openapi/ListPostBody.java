@@ -12,17 +12,28 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListPostBody   {
 
-  private String listGuid;
-  private String listHandle;
-  private String listName;
-  private String listTitle;
-  private String listDescription;
-  private String ownerAppGuid;
-  private URI ownerAppUri;
-  private String realmGuid;
-  private String realmHandle;
-  private String ownerUserEmail;
-  private String ownerUserGuid;
+
+  protected String listGuid;
+
+  protected String listHandle;
+
+  protected String listName;
+
+  protected String listTitle;
+
+  protected String listDescription;
+
+  protected String ownerAppGuid;
+
+  protected URI ownerAppUri;
+
+  protected String realmGuid;
+
+  protected String realmHandle;
+
+  protected String ownerUserEmail;
+
+  protected String ownerUserGuid;
 
   /**
   * The empty constructor is

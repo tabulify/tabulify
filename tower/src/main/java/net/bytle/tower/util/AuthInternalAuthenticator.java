@@ -9,13 +9,13 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
 import net.bytle.tower.eraldy.auth.EraldySessionHandler;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.VertxRoutingFailureData;
 
@@ -226,13 +226,13 @@ public class AuthInternalAuthenticator {
               if (this.appOperationPath == null) {
                 throw new InternalException("The app operation path for redirection should not be null");
               }
-              UriEnhanced redirectToHtmlApp = EraldyMemberApp.get()
-                .getPublicRequestUriForOperationPath(this.appOperationPath);
-              if (finalRedirectUri != null) {
-                redirectToHtmlApp.addQueryProperty(OAuthQueryProperty.REDIRECT_URI.toString(), finalRedirectUri.toUrl().toString());
-              }
-              authenticationRedirect(redirectToHtmlApp);
-              break;
+
+              //UriEnhanced redirectToHtmlApp =  .getPublicRequestUriForOperationPath(this.appOperationPath);
+//              if (finalRedirectUri != null) {
+//                redirectToHtmlApp.addQueryProperty(OAuthQueryProperty.REDIRECT_URI.toString(), finalRedirectUri.toUrl().toString());
+//              }
+//              authenticationRedirect(redirectToHtmlApp);
+              throw new InternalException("No idea what to do");
             case NONE:
               /**
                * The client does the redirect (Javascript)
@@ -289,7 +289,7 @@ public class AuthInternalAuthenticator {
        * If the client is a third-party client,
        * we had the code and the state
        */
-      if (!redirection.getApexWithoutPort().equals(EraldyMemberApp.get().getApexDomain().getApexNameWithoutPort())) {
+      if (!redirection.getApexWithoutPort().equals(EraldyDomain.get().getApexNameWithoutPort())) {
         String inState = session.get(OAuthInternalSession.STATE_KEY);
         if (inState == null) {
           throw new NotFoundException("The session state is null");

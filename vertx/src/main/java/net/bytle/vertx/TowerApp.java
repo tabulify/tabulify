@@ -473,10 +473,8 @@ public abstract class TowerApp {
    * @return the name used in the configuration file
    */
   public String getAppConfName() {
-    return this.getApexDomain().getPathName() + "." + this.getAppName();
+    return (this.getApexDomain().getPathName() + "." + this.getAppName()).toLowerCase();
   }
-
-
 
 
   public TowerApexDomain getApexDomain() {

@@ -12,9 +12,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListRegistrationPostBody   {
 
-  private String subscriberEmail;
-  private String listGuid;
-  private URI redirectUri;
+
+  protected String subscriberEmail;
+
+  protected String listGuid;
+
+  protected URI redirectUri;
 
   /**
   * The empty constructor is
@@ -96,8 +99,11 @@ public class ListRegistrationPostBody   {
   @Override
   public String toString() {
     return "class ListRegistrationPostBody {\n" +
+
     "    subscriberEmail: " + toIndentedString(subscriberEmail) + "\n" +
+
     "    listGuid: " + toIndentedString(listGuid) + "\n" +
+
     "    redirectUri: " + toIndentedString(redirectUri) + "\n" +
     "}";
   }

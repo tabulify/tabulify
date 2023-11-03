@@ -47,7 +47,7 @@ public class BrowserSessionHandler {
       syncInterval = PersistentLocalSessionStore.INTERVAL_5_SEC;
     }
     PersistentLocalSessionStore sessionStore = PersistentLocalSessionStore
-      .create(apexDomain.getVertx(), syncInterval);
+      .create(apexDomain.getHttpServer().getServer().getVertx(), syncInterval);
     /**
      * Reconnect once every
      */

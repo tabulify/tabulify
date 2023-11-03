@@ -51,7 +51,7 @@ public class OrganizationProvider {
 
   public Organization toPublicClone(Organization organization) {
     Organization organizationClone = JsonObject.mapFrom(organization).mapTo(Organization.class);
-    organizationClone.setId(null);
+    organizationClone.setLocalId(null);
     return organizationClone;
   }
 
@@ -86,7 +86,7 @@ public class OrganizationProvider {
     Long orgaId = row.getLong(ORGA_ID_COLUMN);
 
     Organization organization = new Organization();
-    organization.setId(orgaId);
+    organization.setLocalId(orgaId);
     organization.setName(orgaName);
     organization.setGuid(this.computeGuid(organization));
 

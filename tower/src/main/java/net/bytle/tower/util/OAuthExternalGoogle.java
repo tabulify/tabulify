@@ -31,7 +31,7 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
 
   public OAuthExternalGoogle(TowerApp towerApp, String clientId, String clientSecret) {
 
-    super(GoogleAuth.create(towerApp.getVertx(), clientId, clientSecret, new HttpClientOptions()));
+    super(GoogleAuth.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), clientId, clientSecret, new HttpClientOptions()));
 
   }
 

@@ -8,8 +8,10 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RegistrationShort   {
 
-  private String guid;
-  private String subscriberEmail;
+
+  protected String guid;
+
+  protected String subscriberEmail;
 
   /**
   * The empty constructor is

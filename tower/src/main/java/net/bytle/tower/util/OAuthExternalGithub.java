@@ -37,7 +37,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       /**
        * same as GithubAuth.create(verticle.getVertx(), this.clientId, this.clientSecret);
        */
-      OAuth2Auth.create(towerApp.getVertx(), new OAuth2Options()
+      OAuth2Auth.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), new OAuth2Options()
         .setHttpClientOptions(new HttpClientOptions())
         .setFlow(OAuth2FlowType.AUTH_CODE)
         .setClientId(clientId)

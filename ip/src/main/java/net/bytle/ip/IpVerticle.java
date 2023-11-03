@@ -44,7 +44,7 @@ public class IpVerticle extends AbstractVerticle {
             .setFromConfigAccessorWithPort(PORT_DEFAULT)
             .addJdbcPool("pg") // postgres
             .addIpGeolocation() // ip geolocation
-            .addApiKeyAuth() // Api Key Auth
+            .enableApiKeyAuth() // Api Key Auth
             .build()
           ).onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
           .onSuccess(server -> {

@@ -6,19 +6,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * A realm.  It identifies a protection space where the user and their credentials are stored  * In a marketing level, it represent a brand. When people log in, they see the realm logo. * In a web/dns level, it would be the apex domain (and apps would be the DNS entry) * In a security level, this is the authentication realm
+ * A realm.  It identifies a protection space where the user and their credentials are stored.  * In a marketing level, it represents a brand. When people log in, they see the realm logo. * In a web/dns level, it would be a domain name (and apps would be subdomain) * In a security level, this is the authentication realm. * In an infrastructure level, this is called a tenant.
  **/
 @com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = Realm.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Realm   {
 
-  private Long localId;
+
+  protected Long localId;
+
   protected String guid;
-  private String name;
-  private Organization organization;
-  private User ownerUser;
-  private String handle;
-  private App defaultApp;
+
+  protected String name;
+
+  protected Organization organization;
+
+  protected User ownerUser;
+
+  protected String handle;
+
+  protected App defaultApp;
 
   /**
   * The empty constructor is
@@ -168,7 +175,10 @@ public class Realm   {
   @Override
   public String toString() {
     return "class Realm {\n" +
+
     "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    handle: " + toIndentedString(handle) + "\n" +
     "}";
   }
 

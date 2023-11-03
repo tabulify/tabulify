@@ -12,18 +12,30 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AppPostBody   {
 
-  private String appGuid;
-  private URI appUri;
-  private String realmGuid;
-  private String realmHandle;
-  private String userGuid;
-  private String userEmail;
-  private String appName;
-  private String appSlogan;
-  private URI appHome;
-  private URI appLogo;
-  private String appPrimaryColor;
-  private URI appTerms;
+
+  protected String appGuid;
+
+  protected URI appUri;
+
+  protected String realmGuid;
+
+  protected String realmHandle;
+
+  protected String userGuid;
+
+  protected String userEmail;
+
+  protected String appName;
+
+  protected String appSlogan;
+
+  protected URI appHome;
+
+  protected URI appLogo;
+
+  protected String appPrimaryColor;
+
+  protected URI appTerms;
 
   /**
   * The empty constructor is

@@ -11,11 +11,16 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Campaign   {
 
-  private Long id;
-  private String guid;
-  private String name;
-  private String type;
-  private Object data;
+
+  protected Long id;
+
+  protected String guid;
+
+  protected String name;
+
+  protected String type;
+
+  protected Object data;
 
   /**
   * The empty constructor is

@@ -12,16 +12,26 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RegistrationList   {
 
-  private Long localId;
-  private String guid;
-  private String handle;
-  private String name;
-  private String title;
-  private String description;
-  private User ownerUser;
-  private App ownerApp;
-  private Realm realm;
-  private URI registrationUrl;
+
+  protected Long localId;
+
+  protected String guid;
+
+  protected String handle;
+
+  protected String name;
+
+  protected String title;
+
+  protected String description;
+
+  protected User ownerUser;
+
+  protected App ownerApp;
+
+  protected Realm realm;
+
+  protected URI registrationUrl;
 
   /**
   * The empty constructor is
@@ -222,6 +232,10 @@ public class RegistrationList   {
   @Override
   public String toString() {
     return "class RegistrationList {\n" +
+
+    "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    handle: " + toIndentedString(handle) + "\n" +
     "}";
   }
 

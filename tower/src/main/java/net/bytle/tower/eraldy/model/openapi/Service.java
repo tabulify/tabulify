@@ -11,13 +11,20 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Service   {
 
-  private Long id;
-  private String guid;
-  private String uri;
-  private String type;
-  private Object data;
-  private User impersonatedUser;
-  private Realm realm;
+
+  protected Long id;
+
+  protected String guid;
+
+  protected String uri;
+
+  protected String type;
+
+  protected Object data;
+
+  protected User impersonatedUser;
+
+  protected Realm realm;
 
   /**
   * The empty constructor is

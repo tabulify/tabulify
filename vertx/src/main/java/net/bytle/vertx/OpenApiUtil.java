@@ -22,6 +22,8 @@ public class OpenApiUtil {
    */
   @SuppressWarnings("unused")
   public static final String BASIC_AUTH_SECURITY_SCHEME = "basicAuth";
+
+  public static final String COOKIE_SECURITY_SCHEME = "cookieAuth";
   public static final String APIKEY_AUTH_SECURITY_SCHEME = "apiKeyAuth";
   public static final String BEARER_AUTH_SECURITY_SCHEME = "bearerAuth";
   private static final Logger LOGGER = LogManager.getLogger(OpenApiUtil.class);

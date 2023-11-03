@@ -45,7 +45,7 @@ We have:
   https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaVertXWebServer)
   * added the description in the `pojo.mustache`.
 
-The added custom templates (SupportingFiles) are defined in the [openapi-generator-config.yaml](../.openapi-generator-eraldy-combo-private-config.yaml)
+The added custom templates (SupportingFiles) are defined in the [openapi-generator-config.yaml](../.openapi-generator-eraldy-api-config.yaml)
 
 See [Vertx Web generator](https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/java-vertx-web.md) where you can see the option and the data type mapping
 

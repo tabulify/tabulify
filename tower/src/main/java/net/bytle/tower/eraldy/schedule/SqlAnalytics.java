@@ -15,7 +15,7 @@ public class SqlAnalytics implements Handler<Long> {
 
   public SqlAnalytics(EraldyDomain eraldyDomain) {
     long delayMsEveryHour = 1000 * 60 * 60;
-    eraldyDomain.getVertx().setPeriodic(delayMsEveryHour, this);
+    eraldyDomain.getHttpServer().getServer().getVertx().setPeriodic(delayMsEveryHour, this);
   }
 
   public static SqlAnalytics create(EraldyDomain eraldyDomain) {

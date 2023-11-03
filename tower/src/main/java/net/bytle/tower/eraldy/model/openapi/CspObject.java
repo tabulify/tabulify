@@ -11,7 +11,8 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CspObject   {
 
-  private CspReport cspReport;
+
+  protected CspReport cspReport;
 
   /**
   * The empty constructor is
@@ -59,6 +60,7 @@ public class CspObject   {
   @Override
   public String toString() {
     return "class CspObject {\n" +
+
     "    cspReport: " + toIndentedString(cspReport) + "\n" +
     "}";
   }

@@ -162,39 +162,38 @@ tasks.named<ShadowJar>(shadowJarTaskName) {
 
 // https://openapi-generator.tech/docs/plugins#gradle
 // https://github.com/OpenAPITools/openapi-generator/blob/master/modules/openapi-generator-gradle-plugin/README.adoc
-val comboPrivateApiGenerateServerCodeTaskName = "ComboPrivateGenerateServerCode"
+val apiGenerateServerCodeTaskName = "apiGenerateServerCode"
 val eraldyDomainName = "eraldy"
 val specResourcePrefix = "openapi-spec-file"
-val comboPrivateApiName = "combo-private"
-// private is a reserved java word
-// package name should be lowercase
+val apiAppName = "api"
+// private/public are reserved java word, package name should be lowercase
 // open-api generator does not support uppercase letter in the body for api prefix
-val comboPrivateApiJavaName = "comboprivateapi"
-val eraldyAppJavaPackagePath = "net.bytle.tower.${eraldyDomainName}.app"
+val apiAppJavaName = "api"
+val eraldyAppJavaPackagePath = "net.bytle.tower.${eraldyDomainName}"
 val eraldyModelOpenApiJavaPackage = "net.bytle.tower.${eraldyDomainName}.model.openapi"
 val openApiFileName = "openapi.yaml"
 val openApiGroup = "OpenApi"
 val mainResourcesDir = "${projectDir}/src/main/resources"
-tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(comboPrivateApiGenerateServerCodeTaskName) {
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(apiGenerateServerCodeTaskName) {
 
   group = openApiGroup
 
   /**
    * The name of the api
    */
-  apiNameSuffix.set(comboPrivateApiJavaName)
+  apiNameSuffix.set(apiAppJavaName)
   /**
    * The location of the spec file
    */
-  inputSpec.set("$projectDir/src/main/openapi/${eraldyDomainName}-${comboPrivateApiName}-${openApiFileName}")
+  inputSpec.set("$projectDir/src/main/openapi/${eraldyDomainName}-${apiAppName}-${openApiFileName}")
   /**
    * The location of the generated interface
    */
-  apiPackage.set("${eraldyAppJavaPackagePath}.${comboPrivateApiJavaName}.openapi.interfaces")
+  apiPackage.set("${eraldyAppJavaPackagePath}.${apiAppJavaName}.openapi.interfaces")
   /**
    * The location of the classes that tied interface, implementer and vertx
    */
-  invokerPackage.set("${eraldyAppJavaPackagePath}.${comboPrivateApiJavaName}.openapi.invoker")
+  invokerPackage.set("${eraldyAppJavaPackagePath}.${apiAppJavaName}.openapi.invoker")
   /**
    * The pojos (they are shared)
    */
@@ -202,7 +201,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(comb
   /**
    * The open-api config files
    */
-  configFile.set("$projectDir/.openapi-generator-${eraldyDomainName}-${comboPrivateApiName}-config.yaml")
+  configFile.set("$projectDir/.openapi-generator-${eraldyDomainName}-${apiAppName}-config.yaml")
 
   /**
    * Common to API, vertx-based
@@ -331,11 +330,11 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(gene
 /**
  * Generate the admin API server code and copy the openapi.yaml
  */
-val comboPrivateApiGenerateTaskName = "ComboPrivateGenerate"
+val openapiGenerateTaskName = "openapi"
 
-tasks.register(comboPrivateApiGenerateTaskName) {
+tasks.register(openapiGenerateTaskName) {
   group = openApiGroup
-  dependsOn(comboPrivateApiGenerateServerCodeTaskName)
+  dependsOn(apiGenerateServerCodeTaskName)
 
   /**
    * Copy the openapi.yaml
@@ -344,7 +343,7 @@ tasks.register(comboPrivateApiGenerateTaskName) {
     ant.withGroovyBuilder {
       "move"(
         "file" to "${mainResourcesDir}/${openApiFileName}",
-        "todir" to "${mainResourcesDir}/${specResourcePrefix}/${eraldyDomainName}/${comboPrivateApiName}"
+        "todir" to "${mainResourcesDir}/${specResourcePrefix}/${eraldyDomainName}/${apiAppName}"
       )
     }
   }

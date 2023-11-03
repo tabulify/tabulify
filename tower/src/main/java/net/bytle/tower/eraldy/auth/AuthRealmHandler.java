@@ -10,13 +10,10 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
-import net.bytle.tower.eraldy.app.memberapp.implementer.util.FrontEndCookie;
+import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 
@@ -64,18 +61,6 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
 
     RealmProvider realmProvider = RealmProvider.createFrom(routingContext.vertx());
 
-    /**
-     * IF this is an eraldy app except the `member` app (it accepts other realm as parameter),
-     * return the Eraldy realm
-     */
-    if (!requestUri.getHostWithPort().equals(EraldyMemberApp.get().getPublicDomainHost())) {
-      String apexNameWithoutPort = eraldyDomain.getApexNameWithoutPort();
-      String requestHost = requestUri.getApexWithoutPort();
-      if (requestHost.equals(apexNameWithoutPort)) {
-        return realmProvider.getRealmFromHandle(eraldyDomain.getRealmHandle());
-      }
-    }
-
 
     /**
      * From header
@@ -87,57 +72,6 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     String realmGuid = request.getHeader(X_AUTH_REALM_HEADER_GUID);
     if (realmGuid != null) {
       return realmProvider.getRealmFromGuid(realmGuid);
-    }
-
-
-    /**
-     * Member App?
-     */
-    if (EraldyMemberApp.get().isAppRequest(routingContext)) {
-
-      /**
-       * In query properties?
-       */
-      realmHandle = request.getParam(OAuthQueryProperty.REALM_HANDLE.toString());
-      if (realmHandle != null) {
-        return realmProvider.getRealmFromHandle(realmHandle);
-      }
-      realmGuid = request.getParam(OAuthQueryProperty.REALM_GUID.toString());
-      if (realmGuid != null) {
-        return realmProvider.getRealmFromGuid(realmGuid);
-      }
-
-      /**
-       * From the redirect URI for the Eraldy domain
-       * (ie if the redirect URI is an eraldy domain without any realm query parameters, this is the eraldy realm)
-       * We do it after the query parameters and header because they have
-       * a higher priority
-       */
-      String redirectUri = request.getParam(OAuthQueryProperty.REDIRECT_URI.toString());
-      UriEnhanced redirectUriAsUri;
-      try {
-        redirectUriAsUri = UriEnhanced.createFromString(redirectUri);
-        String eraldyApexNameWithoutPort = eraldyDomain.getApexNameWithoutPort();
-        String redirectUriHost = redirectUriAsUri.getApexWithoutPort();
-        if (redirectUriHost.equals(eraldyApexNameWithoutPort)) {
-          return realmProvider.getRealmFromHandle(eraldyDomain.getRealmHandle());
-        }
-      } catch (IllegalStructure e) {
-        // should not happen
-      }
-
-      /**
-       * From the Auth Realm Cookie
-       * Use for {@link net.bytle.tower.util.OAuthExternal.AuthOAuthCallbackHandler}
-       */
-      try {
-        Realm cookieRealm = getAuthRealmCookie(routingContext).getValue();
-        return realmProvider.getRealmFromHandle(cookieRealm.getHandle());
-      } catch (NullValueException e) {
-        // not found
-      }
-
-
     }
 
     /**
@@ -209,20 +143,17 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
             return;
           }
 
-          EraldyMemberApp eraldyMemberApp = EraldyMemberApp.get();
-          if (eraldyMemberApp.isAppRequest(context)) {
 
-            /**
-             * We need to set the realm in a cookie for OAuth callback
-             * Why?
-             * Because the realm is mandatory as the state is stored in the session
-             * and that the session is realm dependent
-             */
-            FrontEndCookie<Realm> authRealmCookie = getAuthRealmCookie(context);
-            Realm frontEndRealm = RealmProvider.createFrom(context.vertx()).toEraldyFrontEnd(currentAuthRealm);
-            authRealmCookie.setValue(frontEndRealm);
+          /**
+           * We need to set the realm in a cookie for OAuth callback
+           * Why?
+           * Because the realm is mandatory as the state is stored in the session
+           * and that the session is realm dependent
+           */
+          FrontEndCookie<Realm> authRealmCookie = getAuthRealmCookie(context);
+          Realm frontEndRealm = RealmProvider.createFrom(context.vertx()).toEraldyFrontEnd(currentAuthRealm);
+          authRealmCookie.setValue(frontEndRealm);
 
-          }
 
           /**
            * To retrieve the request realm quickly
@@ -250,7 +181,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
 
   private FrontEndCookie<Realm> getAuthRealmCookie(RoutingContext routingContext) {
 
-    String cookieName = EraldyMemberApp.get().getApexDomain().getPrefixName() + "-auth-realm";
+    String cookieName = EraldyDomain.get().getPrefixName() + "-auth-realm";
     return FrontEndCookie.conf(routingContext, cookieName, Realm.class)
       .setPath("/") // available to all pages
       .build();

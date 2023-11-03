@@ -11,7 +11,8 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrganizationUser extends User  {
 
-  private Organization organization;
+
+  protected Organization organization;
 
   /**
   * The empty constructor is
@@ -60,6 +61,12 @@ public class OrganizationUser extends User  {
   public String toString() {
     return "class OrganizationUser {\n" +
     "    " + toIndentedString(super.toString()) + "\n" +
+
+    "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    handle: " + toIndentedString(handle) + "\n" +
+
+    "    email: " + toIndentedString(email) + "\n" +
     "}";
   }
 

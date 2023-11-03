@@ -15,11 +15,8 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
-import net.bytle.tower.eraldy.app.memberapp.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
@@ -702,11 +699,12 @@ public class ListProvider {
       listClone.setOwnerUser(ownerUser);
     }
 
-    URI registrationUrl = EraldyMemberApp
-      .get()
-      .getPublicRequestUriForOperationPath(ListRegistrationFlow.getRegistrationOperationPath(registrationList))
-      .addQueryProperty(OAuthQueryProperty.REALM_GUID, registrationList.getRealm().getGuid())
-      .toUri();
+//    URI registrationUrl = EraldyMemberApp
+//      .get()
+//      .getPublicRequestUriForOperationPath(ListRegistrationFlow.getRegistrationOperationPath(registrationList))
+//      .addQueryProperty(OAuthQueryProperty.REALM_GUID, registrationList.getRealm().getGuid())
+//      .toUri();
+    URI registrationUrl = URI.create("https://example.com/todo/registration");
     listClone.setRegistrationUrl(registrationUrl);
 
     /**

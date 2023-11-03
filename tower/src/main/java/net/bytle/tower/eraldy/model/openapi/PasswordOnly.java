@@ -11,7 +11,8 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PasswordOnly   {
 
-  private String password;
+
+  protected String password;
 
   /**
   * The empty constructor is
@@ -59,6 +60,7 @@ public class PasswordOnly   {
   @Override
   public String toString() {
     return "class PasswordOnly {\n" +
+
     "    password: " + toIndentedString(password) + "\n" +
     "}";
   }

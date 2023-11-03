@@ -6,9 +6,10 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import java.util.function.Function;
+import net.bytle.vertx.TowerApp;
 {{#apiInfo}}{{#apis}}
 import {{apiPackage}}.{{classname}}Handler;
-import net.bytle.tower.eraldy.app.{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
+import net.bytle.tower.eraldy.{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
 {{/apis}}{{/apiInfo}}
 
 /**
@@ -21,13 +22,11 @@ import net.bytle.tower.eraldy.app.{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.im
 public class ApiVertxSupport {
 
 
-{{#apiInfo}}{{#apis}}
-private final static {{classname}}Handler {{classVarName}}Handler = new {{classname}}Handler(new {{classname}}Impl());
-{{/apis}}{{/apiInfo}}
 
-  public static void mount(RouterBuilder builder) {
+  public static void mount(RouterBuilder builder, TowerApp towerApp) {
+    // we pass the app so that the implementation can use the services attached to the server and http server (jwt, ..)
 {{#apiInfo}}{{#apis}}
-    {{classVarName}}Handler.mount(builder);{{/apis}}{{/apiInfo}}
+    new {{classname}}Handler(new {{classname}}Impl(towerApp)).mount(builder);{{/apis}}{{/apiInfo}}
 
   }
 

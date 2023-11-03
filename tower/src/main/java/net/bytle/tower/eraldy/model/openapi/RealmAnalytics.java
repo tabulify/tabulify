@@ -11,10 +11,14 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RealmAnalytics extends Realm  {
 
-  private Integer userCount;
-  private Integer appCount;
-  private Integer listCount;
-  private Integer subscriberCount;
+
+  protected Integer userCount;
+
+  protected Integer appCount;
+
+  protected Integer listCount;
+
+  protected Integer subscriberCount;
 
   /**
   * The empty constructor is
@@ -114,7 +118,10 @@ public class RealmAnalytics extends Realm  {
   public String toString() {
     return "class RealmAnalytics {\n" +
     "    " + toIndentedString(super.toString()) + "\n" +
+
     "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    handle: " + toIndentedString(handle) + "\n" +
     "}";
   }
 

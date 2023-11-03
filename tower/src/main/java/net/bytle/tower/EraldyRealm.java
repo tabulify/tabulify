@@ -39,7 +39,7 @@ public class EraldyRealm {
      * Note: The eraldy realm already exists thanks to the database migration
      */
     Organization organization = new Organization();
-    organization.setId(apexDomain.getOrganisationId());
+    organization.setLocalId(apexDomain.getOrganisationId());
 
     realm = new Realm();
     realm.setHandle(apexDomain.getRealmHandle());
@@ -57,14 +57,14 @@ public class EraldyRealm {
     } catch (URISyntaxException e) {
       throw new InternalException("The eraldy owner URL is not valid", e);
     }
-    return UserProvider.createFrom(apexDomain.getVertx())
+    return UserProvider.createFrom(apexDomain.getHttpServer().getServer().getVertx())
       .upsertUser(ownerUser)
       .onFailure(t -> {
         throw new InternalException("Error while creating the eraldy owner realm", t);
       })
       .compose(ownerDb -> {
         realm.setOwnerUser(ownerDb);
-        return RealmProvider.createFrom(apexDomain.getVertx())
+        return RealmProvider.createFrom(apexDomain.getHttpServer().getServer().getVertx())
           .upsertRealm(realm)
           .onFailure(t -> {
               throw new InternalException("Error while creating the eraldy realm", t);

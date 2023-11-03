@@ -11,10 +11,14 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListSummary   {
 
-  private String guid;
-  private String handle;
-  private String appUri;
-  private Integer subscriberCount;
+
+  protected String guid;
+
+  protected String handle;
+
+  protected String appUri;
+
+  protected Integer subscriberCount;
 
   /**
   * The empty constructor is

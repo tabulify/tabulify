@@ -12,9 +12,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CspReport extends HashMap<String, String>  {
 
-  private String documentUri;
-  private String referrer;
-  private String blockedUri;
+
+  protected String documentUri;
+
+  protected String referrer;
+
+  protected String blockedUri;
 
   /**
   * The empty constructor is

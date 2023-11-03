@@ -9,20 +9,34 @@ import java.util.Objects;
 /**
  * An app is the container for branding elements (such as logo, color)
  **/
+@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = Realm.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class App   {
 
-  private Long localId;
-  private String guid;
-  private URI uri;
-  private String name;
-  private URI home;
-  private String slogan;
-  private URI logo;
-  private String primaryColor;
-  private User user;
-  private Realm realm;
-  private URI terms;
+
+  protected Long localId;
+
+  protected String guid;
+
+  protected URI uri;
+
+  protected String clientId;
+
+  protected String name;
+
+  protected URI home;
+
+  protected String slogan;
+
+  protected URI logo;
+
+  protected String primaryColor;
+
+  protected User user;
+
+  protected Realm realm;
+
+  protected URI terms;
 
   /**
   * The empty constructor is
@@ -79,6 +93,22 @@ public class App   {
   @SuppressWarnings("unused")
   public void setUri(URI uri) {
     this.uri = uri;
+  }
+
+  /**
+  * @return clientId The client id used to connect
+  */
+  @JsonProperty("clientId")
+  public String getClientId() {
+    return clientId;
+  }
+
+  /**
+  * @param clientId The client id used to connect
+  */
+  @SuppressWarnings("unused")
+  public void setClientId(String clientId) {
+    this.clientId = clientId;
   }
 
   /**
@@ -222,6 +252,7 @@ public class App   {
     return Objects.equals(localId, app.localId) &&
         Objects.equals(guid, app.guid) &&
         Objects.equals(uri, app.uri) &&
+        Objects.equals(clientId, app.clientId) &&
         Objects.equals(name, app.name) &&
         Objects.equals(home, app.home) &&
         Objects.equals(slogan, app.slogan) &&
@@ -234,12 +265,16 @@ public class App   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, uri, name, home, slogan, logo, primaryColor, user, realm, terms);
+    return Objects.hash(localId, guid, uri, clientId, name, home, slogan, logo, primaryColor, user, realm, terms);
   }
 
   @Override
   public String toString() {
     return "class App {\n" +
+
+    "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    uri: " + toIndentedString(uri) + "\n" +
     "}";
   }
 

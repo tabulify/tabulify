@@ -11,9 +11,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PasswordCredentials   {
 
-  private String loginRealm;
-  private String loginHandle;
-  private String loginPassword;
+
+  protected String loginRealm;
+
+  protected String loginHandle;
+
+  protected String loginPassword;
 
   /**
   * The empty constructor is
@@ -95,8 +98,11 @@ public class PasswordCredentials   {
   @Override
   public String toString() {
     return "class PasswordCredentials {\n" +
+
     "    loginRealm: " + toIndentedString(loginRealm) + "\n" +
+
     "    loginHandle: " + toIndentedString(loginHandle) + "\n" +
+
     "    loginPassword: " + toIndentedString(loginPassword) + "\n" +
     "}";
   }

@@ -11,10 +11,14 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CampaignEmailPostBody   {
 
-  private String campaignGuid;
-  private String campaignHandle;
-  private String emailSubject;
-  private String listGuid;
+
+  protected String campaignGuid;
+
+  protected String campaignHandle;
+
+  protected String emailSubject;
+
+  protected String listGuid;
 
   /**
   * The empty constructor is

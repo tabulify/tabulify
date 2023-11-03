@@ -127,7 +127,7 @@ public class Server {
 
   public JwtAuthManager getJwtAuth() {
     if (this.jwtAuthManager == null) {
-      throw new InternalException("No Jwt configured for the server");
+      throw new InternalException("Jwt is not enabled for the server");
     }
     return this.jwtAuthManager;
   }
@@ -253,7 +253,7 @@ public class Server {
      * Add a JWT manager to create JWT token and authentice
      */
     @SuppressWarnings("unused")
-    public Server.builder addJwtManager() {
+    public Server.builder enableJwt() {
       this.addJwt = true;
       return this;
     }
@@ -262,7 +262,7 @@ public class Server {
      * Add an authentication via an API key
      * (super user token)
      */
-    public Server.builder addApiKeyAuth() {
+    public Server.builder enableApiKeyAuth() {
       this.addApiKeyAuth = true;
       return this;
     }

@@ -7,10 +7,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.tower.eraldy.app.comboapp.ComboAppApp;
-import net.bytle.tower.eraldy.app.comboprivateapi.ComboPrivateApiApp;
-import net.bytle.tower.eraldy.app.combopublicapi.ComboPublicApiApp;
-import net.bytle.tower.eraldy.app.memberapp.EraldyMemberApp;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.BrowserSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -37,6 +34,7 @@ public class VerticleApi extends AbstractVerticle {
   protected static final Logger LOGGER = LoggerFactory.getLogger(VerticleApi.class);
 
   public static final int PORT_DEFAULT = 8083;
+  private TowerApp apiApp;
 
   public static void main(String[] args) {
 
@@ -69,6 +67,8 @@ public class VerticleApi extends AbstractVerticle {
           try {
             server = Server.create("http", vertx, configAccessor)
               .setFromConfigAccessorWithPort(PORT_DEFAULT)
+              .enableApiKeyAuth()
+              .enableJwt()
               .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise,e);
@@ -107,17 +107,15 @@ public class VerticleApi extends AbstractVerticle {
           /**
            * Add the apps
            */
-          Future<Void> privateApiFuture = ComboPrivateApiApp.create(eraldyDomain).mount();
-          Future<Void> publicApiFuture = ComboPublicApiApp.create(eraldyDomain).mount();
-          Future<Void> memberApiFuture = EraldyMemberApp.create(eraldyDomain).mount();
-          Future<Void> appAppFuture = ComboAppApp.create(eraldyDomain).mount();
+          apiApp = EraldyApiApp.create(eraldyDomain);
+          Future<Void> publicApiFuture = apiApp.mount();
 
           /**
            * Add the scheduled task
            */
           SqlAnalytics.create(eraldyDomain);
 
-          List<Future<?>> initFutures = Lists.newArrayList(privateApiFuture, publicApiFuture, memberApiFuture, appAppFuture, eraldyRealm);
+          List<Future<?>> initFutures = Lists.newArrayList(publicApiFuture, eraldyRealm);
 
           if (Env.IS_DEV) {
             /**
@@ -133,7 +131,7 @@ public class VerticleApi extends AbstractVerticle {
            *  0.0.0.0 means listen on all available addresses
            */
 
-          Future.all(initFutures)
+          Future.join(initFutures)
             .onFailure(FailureStatic::failFutureWithTrace)
             .onSuccess(apiFutureResult -> httpServer.buildHttpServer()
 
@@ -143,10 +141,10 @@ public class VerticleApi extends AbstractVerticle {
               .requestHandler(router)
               .listen(ar -> {
                 if (ar.succeeded()) {
-                  LOGGER.info("HTTP server running on port " + ar.result().actualPort());
+                  LOGGER.info("API HTTP server running on port " + ar.result().actualPort());
                   verticlePromise.complete();
                 } else {
-                  LOGGER.error("Could not start a HTTP server " + ar.cause());
+                  LOGGER.error("Could not start the API HTTP server " + ar.cause());
                   this.handlePromiseFailure(verticlePromise, ar.cause());
                 }
               }));
@@ -194,7 +192,6 @@ public class VerticleApi extends AbstractVerticle {
         .close();
 
       stopPromise.complete();
-      //stopPromise.fail(); otherwise
       return null;
 
     });
@@ -203,7 +200,7 @@ public class VerticleApi extends AbstractVerticle {
 
 
   public TowerApp getApp() {
-    // we don't have for now one app
-    return null;
+    return apiApp;
   }
+
 }

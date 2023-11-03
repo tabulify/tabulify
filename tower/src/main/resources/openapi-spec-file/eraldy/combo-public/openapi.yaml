@@ -28,50 +28,6 @@ paths:
       tags:
       - health
       x-accepts: application/json
-  /ip:
-    get:
-      operationId: ipGet
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IpInfo'
-          description: Geolocation data based on the IP
-        "404":
-          description: Not Found
-      summary: Return client information based on the HTTP request ip
-      tags:
-      - ip
-      x-accepts: application/json
-  /ip/{ip}:
-    get:
-      operationId: ipIpGet
-      parameters:
-      - description: The IP (default to the IP of the HTTP request)
-        explode: false
-        in: path
-        name: ip
-        required: true
-        schema:
-          example: 143.176.206.80
-          format: ipv4
-          type: string
-        style: simple
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IpInfo'
-          description: Geolocation data based on the IP
-        "404":
-          description: Not Found
-      security: []
-      summary: Return client information based on the ip
-      tags:
-      - ip
-      x-accepts: application/json
   /realm:
     get:
       operationId: realmGet

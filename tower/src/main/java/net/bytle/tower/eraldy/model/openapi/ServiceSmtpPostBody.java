@@ -11,17 +11,28 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ServiceSmtpPostBody   {
 
-  private String serviceGuid;
-  private String serviceUri;
-  private String realmGuid;
-  private String realmHandle;
-  private String impersonatedUserEmail;
-  private String impersonatedUserGuid;
-  private String smtpHost;
-  private Integer smtpPort;
-  private String smtpStartTls;
-  private String smtpUserName;
-  private String smtpPassword;
+
+  protected String serviceGuid;
+
+  protected String serviceUri;
+
+  protected String realmGuid;
+
+  protected String realmHandle;
+
+  protected String impersonatedUserEmail;
+
+  protected String impersonatedUserGuid;
+
+  protected String smtpHost;
+
+  protected Integer smtpPort;
+
+  protected String smtpStartTls;
+
+  protected String smtpUserName;
+
+  protected String smtpPassword;
 
   /**
   * The empty constructor is

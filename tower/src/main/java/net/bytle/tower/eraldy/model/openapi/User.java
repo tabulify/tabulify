@@ -10,25 +10,42 @@ import java.util.Objects;
 /**
  * A user
  **/
+@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class User   {
 
-  private String guid;
-  private Long localId;
-  private String handle;
-  private String email;
-  private String name;
-  private String fullname;
-  private String title;
-  private Boolean disabled;
-  private String disabledReason;
-  private URI avatar;
-  private String bio;
-  private URI website;
-  private String location;
-  private LocalDateTime creationTime;
-  private LocalDateTime modificationTime;
-  private Realm realm;
+
+  protected String guid;
+
+  protected Long localId;
+
+  protected String handle;
+
+  protected String email;
+
+  protected String name;
+
+  protected String fullname;
+
+  protected String title;
+
+  protected Boolean disabled;
+
+  protected String disabledReason;
+
+  protected URI avatar;
+
+  protected String bio;
+
+  protected URI website;
+
+  protected String location;
+
+  protected LocalDateTime creationTime;
+
+  protected LocalDateTime modificationTime;
+
+  protected Realm realm;
 
   /**
   * The empty constructor is
@@ -331,6 +348,12 @@ public class User   {
   @Override
   public String toString() {
     return "class User {\n" +
+
+    "    guid: " + toIndentedString(guid) + "\n" +
+
+    "    handle: " + toIndentedString(handle) + "\n" +
+
+    "    email: " + toIndentedString(email) + "\n" +
     "}";
   }
 

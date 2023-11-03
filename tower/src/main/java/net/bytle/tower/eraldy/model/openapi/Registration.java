@@ -12,16 +12,26 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Registration   {
 
-  private String guid;
-  private String status;
-  private RegistrationList list;
-  private User subscriber;
-  private String confirmationTime;
-  private String confirmationIp;
-  private String optInTime;
-  private String optInIp;
-  private URI optInUri;
-  private RegistrationFlow flow;
+
+  protected String guid;
+
+  protected String status;
+
+  protected RegistrationList list;
+
+  protected User subscriber;
+
+  protected String confirmationTime;
+
+  protected String confirmationIp;
+
+  protected String optInTime;
+
+  protected String optInIp;
+
+  protected URI optInUri;
+
+  protected RegistrationFlow flow;
 
   /**
   * The empty constructor is

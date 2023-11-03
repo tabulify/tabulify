@@ -11,8 +11,10 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RealmPostBody   {
 
-  private String name;
-  private String handle;
+
+  protected String name;
+
+  protected String handle;
 
   /**
   * The empty constructor is
@@ -77,6 +79,7 @@ public class RealmPostBody   {
   @Override
   public String toString() {
     return "class RealmPostBody {\n" +
+
     "    name: " + toIndentedString(name) + "\n" +
     "}";
   }

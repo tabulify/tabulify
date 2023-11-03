@@ -11,9 +11,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Organization   {
 
-  private Long id;
-  private String guid;
-  private String name;
+
+  protected String guid;
+
+  protected Long localId;
+
+  protected String name;
 
   /**
   * The empty constructor is
@@ -22,22 +25,6 @@ public class Organization   {
   */
   @SuppressWarnings("unused")
   public Organization () {
-  }
-
-  /**
-  * @return id The organization id in the database
-  */
-  @JsonProperty("id")
-  public Long getLocalId() {
-    return id;
-  }
-
-  /**
-  * @param id The organization id in the database
-  */
-  @SuppressWarnings("unused")
-  public void setId(Long id) {
-    this.id = id;
   }
 
   /**
@@ -54,6 +41,22 @@ public class Organization   {
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
     this.guid = guid;
+  }
+
+  /**
+  * @return localId The organization id in the database
+  */
+  @JsonProperty("localId")
+  public Long getLocalId() {
+    return localId;
+  }
+
+  /**
+  * @param localId The organization id in the database
+  */
+  @SuppressWarnings("unused")
+  public void setLocalId(Long localId) {
+    this.localId = localId;
   }
 
   /**
@@ -82,14 +85,14 @@ public class Organization   {
       return false;
     }
     Organization organization = (Organization) o;
-    return Objects.equals(id, organization.id) &&
-        Objects.equals(guid, organization.guid) &&
+    return Objects.equals(guid, organization.guid) &&
+        Objects.equals(localId, organization.localId) &&
         Objects.equals(name, organization.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, guid, name);
+    return Objects.hash(guid, localId, name);
   }
 
   @Override
