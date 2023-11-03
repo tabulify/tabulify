@@ -42,6 +42,8 @@ public class IpVerticle extends AbstractVerticle {
             .setFromConfigAccessorWithPort(PORT_DEFAULT)
             .addJdbcPool("pg") // postgres
             .addIpGeolocation() // ip geolocation
+            .addJwtManager() // Jwt Manager
+            .addApiKeyAuth() // Api Key Auth
             .build()
           ).onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
           .onSuccess(server -> {
@@ -57,7 +59,6 @@ public class IpVerticle extends AbstractVerticle {
                 .enableFailureHandler() // enable failure handler
                 .addFakeErrorHandler()
                 .addHealthCheck()
-                .addApiKeyAuthenticator()
                 .build();
             } catch (IllegalConfiguration e) {
               this.handlePromiseFailure(verticlePromise, e);

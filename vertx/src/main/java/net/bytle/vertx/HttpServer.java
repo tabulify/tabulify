@@ -5,14 +5,11 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.AuthenticationHandler;
+import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.exception.InternalException;
-import net.bytle.vertx.auth.ApiKeyAuthenticationHandler;
-import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
 
 /**
  * This class represents an HTTP server:
@@ -23,8 +20,8 @@ public class HttpServer {
   private final HttpServer.builder builder;
   private Router router;
 
-  private ApiKeyAuthenticationHandler apiKeyAuthenticator;
-  private JWTAuthHandler bearerAuthenticator;
+  private APIKeyHandler apiKeyAuthenticator;
+  private JWTAuthHandler bearerAuthenticationHandler;
 
   public HttpServer(builder builder) {
     this.builder = builder;
@@ -93,13 +90,24 @@ public class HttpServer {
   }
 
 
-  public AuthenticationHandler getBearerAuthenticator() {
-    return this.bearerAuthenticator;
+  /**
+   * @return the JWT bearer authentication handler
+   * An utility class, JWT should be enabled on the server
+   */
+  public JWTAuthHandler getBearerAuthenticationHandler() {
+    if (bearerAuthenticationHandler == null) {
+      bearerAuthenticationHandler = JWTAuthHandler.create(this.getServer().getJwtAuth().getProvider());
+    }
+    return this.bearerAuthenticationHandler;
   }
 
-  public ApiKeyAuthenticationHandler getApiKeyAuthenticator() {
+  /**
+   * @return the API key handler
+   * An utility class, API key should be enabled on the server
+   */
+  public APIKeyHandler getApiKeyHandler() {
     if (this.apiKeyAuthenticator == null) {
-      throw new InternalException("The Api key authentication is not enabled on the Http server");
+      this.apiKeyAuthenticator = APIKeyHandler.create(this.getServer().getApiKeyAuth());
     }
     return this.apiKeyAuthenticator;
   }
@@ -115,8 +123,7 @@ public class HttpServer {
     private boolean fakeErrorHandler = false;
     private boolean healthCheck = false;
     final Server server;
-    private boolean addApiKeyAuthenticator;
-    private boolean addBearerAuthenticator;
+
 
 
     public builder(Server server) {
@@ -222,26 +229,13 @@ public class HttpServer {
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpserver = new HttpServer(this);
       httpserver.router = this.buildRouter();
-      if (addApiKeyAuthenticator) {
 
-        httpserver.apiKeyAuthenticator = new ApiKeyAuthenticationHandler(new ApiTokenAuthenticationProvider(this.server));
-      }
-      if (addBearerAuthenticator) {
-        httpserver.bearerAuthenticator = JWTAuthHandler.create(JwtAuthManager.get().getProvider());
-      }
+
+
+
       return httpserver;
     }
 
 
-    public HttpServer.builder addApiKeyAuthenticator() {
-      this.addApiKeyAuthenticator = true;
-      return this;
-    }
-
-    @SuppressWarnings("unused")
-    public HttpServer.builder addApiBearerAuthenticator() {
-      this.addBearerAuthenticator = true;
-      return this;
-    }
   }
 }

@@ -6,6 +6,8 @@ import io.vertx.pgclient.PgPool;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NoSecretException;
+import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,7 +50,8 @@ public class Server {
   private JdbcConnectionInfo jdbcConnectionInfo;
   private IpGeolocation ipGeolocation;
   private JdbcSchemaManager jdbcManager;
-
+  private JwtAuthManager jwtAuthManager;
+  private ApiKeyAuthenticationProvider apiKeyAuth;
 
   Server(builder builder) {
 
@@ -117,6 +120,20 @@ public class Server {
     return this.ipGeolocation;
   }
 
+  public JwtAuthManager getJwtAuth() {
+    if(this.jwtAuthManager ==null ){
+      throw new InternalException("No Jwt configured for the server");
+    }
+    return this.jwtAuthManager;
+  }
+
+  public ApiKeyAuthenticationProvider getApiKeyAuth() {
+    if(this.apiKeyAuth ==null ){
+      throw new InternalException("No API Key configured for the server");
+    }
+    return this.apiKeyAuth;
+  }
+
 
   public static class builder {
     private final String name;
@@ -128,6 +145,8 @@ public class Server {
     private Boolean ssl = false;
     private String poolName;
     private boolean enableIpGeoLocation = false;
+    private boolean addJwt = false;
+    private boolean addApiKeyAuth = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -194,6 +213,16 @@ public class Server {
           throw new IllegalConfiguration("Ip geolocation bad schema migration", e);
         }
       }
+      if(this.addJwt){
+        try {
+          server.jwtAuthManager = JwtAuthManager.create(server);
+        } catch (NoSecretException e) {
+          throw new IllegalConfiguration("Unable to init JWT", e);
+        }
+      }
+      if(this.addApiKeyAuth){
+        server.apiKeyAuth = new ApiKeyAuthenticationProvider(server.getConfigAccessor());
+      }
       return server;
     }
 
@@ -213,5 +242,21 @@ public class Server {
       return this;
     }
 
+    /**
+     * Add a JWT manager to create JWT token and authentice
+     */
+    public Server.builder addJwtManager() {
+      this.addJwt = true;
+      return this;
+    }
+
+    /**
+     * Add an authentication via an API key
+     * (super user token)
+     */
+    public Server.builder addApiKeyAuth() {
+      this.addApiKeyAuth = true;
+      return this;
+    }
   }
 }

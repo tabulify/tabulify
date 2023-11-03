@@ -14,7 +14,7 @@ import io.vertx.pgclient.PgPool;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
+import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 
 /**
  * Authentication in Vertx
@@ -24,7 +24,7 @@ import net.bytle.vertx.auth.ApiTokenAuthenticationProvider;
  * You just have to give a provider.
  * <p>
  * If an authentication handler failed, the whole request fails.
- * With OpenApi, the {@link ApiTokenAuthenticationProvider handler} is bind in the {@link TowerApp#openApiBindSecurityScheme(RouterBuilder, ConfigAccessor)}
+ * With OpenApi, the {@link ApiKeyAuthenticationProvider handler} is bind in the {@link TowerApp#openApiBindSecurityScheme(RouterBuilder, ConfigAccessor)}
  * <p>
  * username / password
  * <a href="https://vertx.io/docs/vertx-web/java/#_handling_authentication_in_your_application">...</a>
@@ -56,7 +56,7 @@ public class Authentication {
     /**
      * Api Authentication
      */
-    AuthenticationProvider authProvider = new ApiTokenAuthenticationProvider(ConfigAccessor.empty());
+    AuthenticationProvider authProvider = new ApiKeyAuthenticationProvider(ConfigAccessor.empty());
     APIKeyHandler apiKeyHandler = APIKeyHandler.create(authProvider);
     BasicAuthHandler basicAuthHandler = BasicAuthHandler.create(authProvider);
     RedirectAuthHandler redirectAuthHandler = RedirectAuthHandler.create(authProvider);

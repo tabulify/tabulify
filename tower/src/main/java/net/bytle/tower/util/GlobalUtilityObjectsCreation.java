@@ -78,9 +78,6 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
       .config(vertx, configAccessor, mailSmtpParameterFromConfig)
       .create();
 
-    INIT_LOGGER.info("Start instantiation of JWT authentication");
-    JwtAuthManager.init(vertx, configAccessor);
-
     INIT_LOGGER.info("Start instantiation of the password Hash manager");
     PasswordHashManager.init(configAccessor);
 

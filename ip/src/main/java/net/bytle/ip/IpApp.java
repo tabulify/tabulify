@@ -1,9 +1,7 @@
 package net.bytle.ip;
 
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.exception.InternalException;
 import net.bytle.ip.api.IpApiImpl;
 import net.bytle.ip.handler.IpHandler;
 import net.bytle.vertx.*;
@@ -35,13 +33,12 @@ public class IpApp extends TowerApp {
   @Override
   public TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
 
-    AuthenticationHandler tokenAuthenticator = this.getApexDomain().getHttpServer().getBearerAuthenticator();
-    if (tokenAuthenticator == null) {
-      throw new InternalException("The bearer authenticator should be added to the HTTP server");
-    }
+    /**
+     * Only authentication via super token
+     */
     builder
-      .securityHandler(OpenApiUtil.BEARER_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> tokenAuthenticator);
+      .securityHandler(OpenApiUtil.APIKEY_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyHandler());
 
     return this;
   }

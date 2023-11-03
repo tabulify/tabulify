@@ -8,8 +8,8 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
+import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
-import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 
 /**
@@ -18,16 +18,16 @@ import net.bytle.vertx.TowerApp;
  * The binding of the open api scheme name and the handler is done in the {@link OpenApiUtil.config#mountOpenApi(Router)}
  * with the <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">Doc</a>
  */
-public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
+public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
 
 
   private final String superToken;
 
-  public ApiTokenAuthenticationProvider(Server server) {
+  public ApiKeyAuthenticationProvider(ConfigAccessor configAccessor) {
     /**
      * For now, only a super token.
      */
-    String superToken = server.getConfigAccessor().getString(TowerApp.SUPERUSER_TOKEN_CONF);
+    String superToken = configAccessor.getString(TowerApp.SUPERUSER_TOKEN_CONF);
     if (superToken == null) {
       throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + TowerApp.SUPERUSER_TOKEN_CONF + ")");
     }

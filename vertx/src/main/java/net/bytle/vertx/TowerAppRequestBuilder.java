@@ -60,7 +60,7 @@ public class TowerAppRequestBuilder {
   }
 
   private String getSuperToken() {
-    return towerApp.getApexDomain().getHttpServer().getApiKeyAuthenticator().getSuperToken();
+    return towerApp.getApexDomain().getHttpServer().getServer().getApiKeyAuth().getSuperToken();
   }
 
   public TowerAppRequestBuilder withForwardProxyHeader() {

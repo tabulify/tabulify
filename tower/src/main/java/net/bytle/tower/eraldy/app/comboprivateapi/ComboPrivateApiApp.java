@@ -48,7 +48,7 @@ public class ComboPrivateApiApp extends TowerApp {
 
     builder
       .securityHandler(OpenApiUtil.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthenticator());
+      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyHandler());
 
     return this;
 
