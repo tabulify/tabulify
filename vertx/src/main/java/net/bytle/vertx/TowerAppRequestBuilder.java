@@ -7,6 +7,7 @@ import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 
+
 public class TowerAppRequestBuilder {
 
   private final String path;
@@ -14,9 +15,10 @@ public class TowerAppRequestBuilder {
   private final TowerApp towerApp;
   private boolean withForwardProxyHostHeader = false;
   private boolean withSuperApiToken;
-  private boolean withPublicDomain = false;
+  private boolean withPublicDomainNameHostHeader = false;
   private HttpMethod method = HttpMethod.GET;
   private String bearerToken;
+  private boolean withPublicUri = false;
 
   public TowerAppRequestBuilder(TowerApp towerApp, WebClient webClient, String path) {
     this.towerApp = towerApp;
@@ -25,14 +27,30 @@ public class TowerAppRequestBuilder {
   }
 
   public HttpRequest<Buffer> build() {
-    String requestUri = towerApp.getPublicRequestUriForOperationPath(this.path).toUrl().toString();
+    String requestUri;
+    boolean absUri;
+    if (withPublicUri) {
+      requestUri = towerApp.getPublicRequestUriForOperationPath(this.path).toUrl().toString();
+      absUri = true;
+    } else {
+      requestUri = this.path;
+      absUri = false;
+    }
     HttpRequest<Buffer> httpRequest;
     switch (this.method.name()) {
       case "POST":
-        httpRequest = webClient.postAbs(requestUri);
+        if (absUri) {
+          httpRequest = webClient.postAbs(requestUri);
+        } else {
+          httpRequest = webClient.post(requestUri);
+        }
         break;
       case "GET":
-        httpRequest = webClient.getAbs(requestUri);
+        if (absUri) {
+          httpRequest = webClient.getAbs(requestUri);
+        } else {
+          httpRequest = webClient.get(requestUri);
+        }
         break;
       default:
         throw new RuntimeException("The method " + this.method.name() + " is unknown");
@@ -53,7 +71,7 @@ public class TowerAppRequestBuilder {
       // https://vertx.io/docs/vertx-auth-jwt/java/#_authnauthz_with_jwt
       httpRequest.putHeader(HttpHeaderNames.AUTHORIZATION.toString(), "bearer " + this.bearerToken);
     }
-    if (this.withPublicDomain) {
+    if (this.withPublicDomainNameHostHeader) {
       httpRequest.putHeader(HttpHeaders.HOST, towerApp.getPublicDomainHost());
     }
     return httpRequest;
@@ -73,8 +91,21 @@ public class TowerAppRequestBuilder {
     return this;
   }
 
-  public TowerAppRequestBuilder withPublicDomainHost() {
-    this.withPublicDomain = true;
+  public TowerAppRequestBuilder withPublicDomainNameInHostHeader() {
+    this.withPublicDomainNameHostHeader = true;
+    return this;
+  }
+
+  /**
+   * Will use the public uri to make the request
+   * ie with the defined host
+   * For instance:
+   * * api.eraldy.dev on test/dev (the mapping should be in the local host file)
+   * * api.eraldy.com on prod
+   */
+  @SuppressWarnings("unused")
+  public TowerAppRequestBuilder withPublicUri() {
+    this.withPublicUri = true;
     return this;
   }
 

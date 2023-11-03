@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: IP
-  description: An API for IP geo-localisation
+  description: An API for IP geo-localisation data
   # Quote are deleted https://github.com/OpenAPITools/openapi-generator/issues/3196
   # We can't therefore use a date string as the generated openapi.yaml file has no quote
   # and the data is seen as date, not as string
@@ -16,11 +16,11 @@ tags:
 # Secure by default, if you want to make an operation public, you need to set the security for an operation to the empty array
 # security: []
 security:
-  - bearerAuth: [ ]
+  - apiKeyAuth: [ ]
 components:
   securitySchemes:
-    bearerAuth:
-      $ref: '../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
+    apiKeyAuth:
+      $ref: '../../../../tower/src/main/openapi/eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
   schemas:
     IpInfo:
       $ref: '../../../../vertx/src/main/openapi/ip-geolocation.yaml#/components/schemas/IpInfo'
@@ -39,7 +39,6 @@ paths:
     get:
       operationId: "ipGet"
       summary: "Return client information based on the HTTP request ip"
-      security: []
       tags:
         - ip
       responses:
@@ -57,7 +56,6 @@ paths:
       summary: "Return client information based on the ip"
       tags:
         - ip
-      security: []
       parameters:
         - name: ip
           description: "The IP (default to the IP of the HTTP request)"

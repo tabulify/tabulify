@@ -11,12 +11,12 @@ import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 /**
- * Properties for a net/http server
+ * Properties, configuration and capabilities for a server (net/http)
  * <p>
- * An HTTP server object:
- * * to read
- * * or create a Json Config pass for easy testing
  */
 public class Server {
 
@@ -66,6 +66,18 @@ public class Server {
     return new builder(name, vertx, configAccessor);
   }
 
+  /**
+   *
+   * @return a test server conf with port randomly picked.
+   */
+  public static JsonObject getTestServerConf(String serverName) throws IOException {
+
+    ServerSocket socket = new ServerSocket(0);
+    int testVerticlePort = socket.getLocalPort();
+    socket.close();
+    return new JsonObject().put(serverName + "." + LISTENING_PORT, testVerticlePort);
+  }
+
 
   @Override
   public String toString() {
@@ -90,13 +102,6 @@ public class Server {
     return this.builder.ssl;
   }
 
-  public JsonObject toJson() {
-    return new JsonObject()
-      .put(this.builder.getListeningHostKey(), this.builder.listeningHost)
-      .put(this.builder.getListeningPortKey(), this.builder.listeningPort)
-      .put(this.builder.getPublicPortKey(), this.builder.publicPort)
-      .put(this.builder.getSslKey(), this.builder.ssl);
-  }
 
   public Vertx getVertx() {
     return this.builder.vertx;
@@ -121,14 +126,14 @@ public class Server {
   }
 
   public JwtAuthManager getJwtAuth() {
-    if(this.jwtAuthManager ==null ){
+    if (this.jwtAuthManager == null) {
       throw new InternalException("No Jwt configured for the server");
     }
     return this.jwtAuthManager;
   }
 
   public ApiKeyAuthenticationProvider getApiKeyAuth() {
-    if(this.apiKeyAuth ==null ){
+    if (this.apiKeyAuth == null) {
       throw new InternalException("No API Key configured for the server");
     }
     return this.apiKeyAuth;
@@ -188,11 +193,13 @@ public class Server {
       return this.name + "." + Server.LISTENING_PORT;
     }
 
+    @SuppressWarnings("unused")
     public builder setListeningPort(int listeningPort) {
       this.listeningPort = listeningPort;
       return this;
     }
 
+    @SuppressWarnings("unused")
     public builder setPublicPort(int publicPort) {
       this.publicPort = publicPort;
       return this;
@@ -213,14 +220,14 @@ public class Server {
           throw new IllegalConfiguration("Ip geolocation bad schema migration", e);
         }
       }
-      if(this.addJwt){
+      if (this.addJwt) {
         try {
           server.jwtAuthManager = JwtAuthManager.create(server);
         } catch (NoSecretException e) {
           throw new IllegalConfiguration("Unable to init JWT", e);
         }
       }
-      if(this.addApiKeyAuth){
+      if (this.addApiKeyAuth) {
         server.apiKeyAuth = new ApiKeyAuthenticationProvider(server.getConfigAccessor());
       }
       return server;
@@ -245,6 +252,7 @@ public class Server {
     /**
      * Add a JWT manager to create JWT token and authentice
      */
+    @SuppressWarnings("unused")
     public Server.builder addJwtManager() {
       this.addJwt = true;
       return this;

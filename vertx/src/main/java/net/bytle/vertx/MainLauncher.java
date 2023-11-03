@@ -32,6 +32,7 @@ public class MainLauncher extends io.vertx.core.Launcher {
     LOGGER = LogManager.getLogger(MainLauncher.class);
   }
 
+
   @Override
   public void beforeStartingVertx(VertxOptions options) {
     super.beforeStartingVertx(options);

@@ -23,3 +23,8 @@ A platform is a set of modules which "work well together".
 ## Daemon
 
 See [gradle daemon](gradle-daemon.md)
+
+## Debug, more info
+
+* Run with --info or --debug option to get more log output.
+* Run with --scan to get full insights.

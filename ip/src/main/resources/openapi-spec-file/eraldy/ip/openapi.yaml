@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
-  description: An API for IP geo-localisation
+  description: An API for IP geo-localisation data
   title: IP
   version: v2023-06-18
 servers:
 - url: https://api.eraldy.com
 - url: http://localhost:8084
 security:
-- bearerAuth: []
+- apiKeyAuth: []
 tags:
 - description: Ip operation
   name: ip
@@ -35,7 +35,6 @@ paths:
           description: Geolocation data based on the IP
         "404":
           description: Not Found
-      security: []
       summary: Return client information based on the HTTP request ip
       tags:
       - ip
@@ -63,7 +62,6 @@ paths:
           description: Geolocation data based on the IP
         "404":
           description: Not Found
-      security: []
       summary: Return client information based on the ip
       tags:
       - ip
@@ -97,7 +95,7 @@ components:
       title: IpInfo
       type: object
   securitySchemes:
-    bearerAuth:
-      bearerFormat: JWS
-      scheme: bearer
-      type: http
+    apiKeyAuth:
+      in: header
+      name: x-api-key
+      type: apiKey

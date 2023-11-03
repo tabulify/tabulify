@@ -55,7 +55,7 @@ public class VertxPrometheusMetrics {
      */
     MeterRegistry registry = BackendRegistries.getNow(REGISTRY_NAME);
     if (registry == null) {
-      throw new IllegalConfiguration("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher");
+      throw new IllegalConfiguration("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher or the test Vertx?");
     }
     return (PrometheusMeterRegistry) registry;
   }

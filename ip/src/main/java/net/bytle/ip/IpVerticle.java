@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 public class IpVerticle extends AbstractVerticle {
 
 
+  public static final String IP_SERVER_NAME = "http";
+
   static {
     Log4JManager.setConfigurationProperties();
   }
@@ -38,11 +40,10 @@ public class IpVerticle extends AbstractVerticle {
 
         // The server
         vertx.executeBlocking(() -> Server
-            .create("http", vertx, configAccessor)
+            .create(IP_SERVER_NAME, vertx, configAccessor)
             .setFromConfigAccessorWithPort(PORT_DEFAULT)
             .addJdbcPool("pg") // postgres
             .addIpGeolocation() // ip geolocation
-            .addJwtManager() // Jwt Manager
             .addApiKeyAuth() // Api Key Auth
             .build()
           ).onFailure(err -> this.handlePromiseFailure(verticlePromise, err))

@@ -202,4 +202,8 @@ public class VerticleApi extends AbstractVerticle {
   }
 
 
+  public TowerApp getApp() {
+    // we don't have for now one app
+    return null;
+  }
 }
