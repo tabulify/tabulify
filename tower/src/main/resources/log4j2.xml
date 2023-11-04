@@ -49,7 +49,9 @@ where `status="trace"` will show internal log4j2 debug statements
     WARN StatusConsoleListener No Loggers were configured, using default. Is the Loggers element missing?
   -->
   <Loggers>
-    <Root level="warn"/>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+    </Root>
   </Loggers>
 
 </Configuration>

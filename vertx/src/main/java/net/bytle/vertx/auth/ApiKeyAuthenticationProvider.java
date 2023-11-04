@@ -10,7 +10,8 @@ import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
-import net.bytle.vertx.TowerApp;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * An authentication provider for tokens
@@ -20,6 +21,8 @@ import net.bytle.vertx.TowerApp;
  */
 public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
 
+  public static final String SUPERUSER_TOKEN_CONF = "superuser.token";
+  static Logger LOGGER = LogManager.getLogger(ApiKeyAuthenticationProvider.class);
 
   private final String superToken;
 
@@ -27,11 +30,12 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     /**
      * For now, only a super token.
      */
-    String superToken = configAccessor.getString(TowerApp.SUPERUSER_TOKEN_CONF);
+    String superToken = configAccessor.getString(SUPERUSER_TOKEN_CONF);
     if (superToken == null) {
-      throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + TowerApp.SUPERUSER_TOKEN_CONF + ")");
+      throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + SUPERUSER_TOKEN_CONF + ")");
     }
     this.superToken = superToken;
+    LOGGER.info("ApiKey Authentication Provider created with the conf ("+SUPERUSER_TOKEN_CONF+")");
   }
 
   @Override

@@ -17,8 +17,8 @@ import net.bytle.tower.util.Env;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
 import net.bytle.tower.util.PersistentLocalSessionStore;
 import net.bytle.vertx.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class VerticleApi extends AbstractVerticle {
     Log4JManager.setConfigurationProperties();
   }
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(VerticleApi.class);
+  protected static final Logger LOGGER = LogManager.getLogger(VerticleApi.class);
 
   public static final int PORT_DEFAULT = 8083;
   private TowerApp apiApp;

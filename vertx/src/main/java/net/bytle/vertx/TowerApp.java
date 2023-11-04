@@ -40,7 +40,6 @@ public abstract class TowerApp {
 
 
   public static final String OPENAPI_YAML_PATH = "/openapi.yaml";
-  public static final String SUPERUSER_TOKEN_CONF = "superuser.token";
 
   /**
    * The first directory in the resource main directory

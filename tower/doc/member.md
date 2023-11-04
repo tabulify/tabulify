@@ -15,7 +15,7 @@ The member app is:
 but we want to be able to register user from a `list subscription`.
 
 ## How to start the app
-* Start the [backend](vertx-run.md)
+* Start the [API backend](vertx-run.md)
 * Start the [frontend app](../../../js-mono/apps/member)
 ```shell
 yarn dev
@@ -29,7 +29,6 @@ yarn dev
 
 It's defined by:
 * the [combo member app](../src/main/openapi/eraldy-member-openapi.yaml)
-* the [combo member App Object](../src/main/java/net/bytle/tower/eraldy/app/memberapp/EraldyMemberApp.java)
 * the [Frontend Javascript app](../../../js-mono/apps/member)
 
 ## Name
@@ -43,7 +42,6 @@ to convey a more social aspect.
   * [vertx auth/openid](https://vertx.io/docs/vertx-auth-oauth2/java/)
 * [One Time Password (Multi-Factor Authentication)](https://vertx.io/docs/vertx-web/java/#_one_time_password_multi_factor_authentication)
 * [WebAuthn](https://vertx.io/docs/vertx-web/java/#_webauthn)
-
 
 
 

@@ -14,8 +14,10 @@ import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.*;
+import net.bytle.vertx.EraldyDomain;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.TowerApexDomain;
 
 import java.net.URI;
 
@@ -56,8 +58,6 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
      * without accessing the database
      */
     HttpServerRequest request = routingContext.request();
-    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
-    UriEnhanced requestUri = routingContextWrapper.getOriginalRequestAsUri();
 
     RealmProvider realmProvider = RealmProvider.createFrom(routingContext.vertx());
 
@@ -100,7 +100,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
       throw new InternalException("The URI (" + uri + ") is not valid." + e.getMessage(), e);
     }
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
+    PgPool jdbcPool = this.eraldyDomain.getHttpServer().getServer().getJdbcPool();
     String sql = "SELECT realm.*, app_uri FROM cs_realms.realm INNER JOIN cs_realms.realm_app ON cs_realms.realm.realm_id = cs_realms.realm_app.app_realm_id and app_uri = $1 order by app_uri limit 1";
     String likeScopeValue = uri.toString();
     return jdbcPool.preparedQuery(sql)
@@ -179,9 +179,12 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     return realm;
   }
 
+  /**
+   * The cookie that stores the realm information when the front end is loaded
+   */
   private FrontEndCookie<Realm> getAuthRealmCookie(RoutingContext routingContext) {
 
-    String cookieName = EraldyDomain.get().getPrefixName() + "-auth-realm";
+    String cookieName = this.eraldyDomain.getPrefixName() + "-auth-realm";
     return FrontEndCookie.conf(routingContext, cookieName, Realm.class)
       .setPath("/") // available to all pages
       .build();

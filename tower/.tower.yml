@@ -53,10 +53,11 @@ sys.on.error.send.email: false
 
 # The local listening port (define where to start the server)
 # default to 8083 if not defined
-port: 8083
-# The public port, the por in the browser, default to 80 as combo is behind a proxy
+http.port: 8083
+# The public port, the port in the browser, default to 80 as combo is behind a proxy
 # (This may be needed in dev)
-port.public: 8083
+http.port.public: 8083
+http.ssl: false
 
 # Define the virtual host of the combo components to allow rerouting on the path
 # used only in test or dev mode
