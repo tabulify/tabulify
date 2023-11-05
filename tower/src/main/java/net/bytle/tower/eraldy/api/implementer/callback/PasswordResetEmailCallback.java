@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.JwtClaimsObject;
@@ -56,7 +56,9 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
 
     String email = jwtClaimsObject.getEmail();
     String realmHandle = jwtClaimsObject.getRealmHandle();
-    UserProvider.createFrom(ctx.vertx())
+    EraldyApiApp apiApp = (EraldyApiApp) this.getApp();
+    apiApp
+      .getUserProvider()
       .getUserByEmail(email, realmHandle)
       .onFailure(ctx::fail)
       .onSuccess(userInDb -> {
@@ -65,7 +67,7 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
           return;
         }
         AuthInternalAuthenticator
-          .createWith(ctx, userInDb)
+          .createWith(apiApp, ctx, userInDb)
           .redirectViaFrontEnd(FRONT_END_UPDATE_OPERATION_PATH)
           .authenticate();
       });

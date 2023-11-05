@@ -6,11 +6,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
+import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.Service;
 import net.bytle.tower.eraldy.model.openapi.ServiceSmtp;
@@ -55,26 +57,20 @@ public class ServiceProvider {
   public static final String IMPERSONATED_USER_COLUMN = COL_PREFIX + COLUMN_PART_SEP + IMPERSONATED_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   private static final String CREATION_COLUMN = COL_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_COLUMN = COL_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static final String HASH_PREFIX = "srv";
+  private static final String SRV_GUID_PREFIX = "srv";
 
 
-  private final Vertx vertx;
+  private final EraldyApiApp apiApp;
+  private final PgPool jdbcPool;
 
 
-  public ServiceProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public ServiceProvider(EraldyApiApp apiApp) {
+
+    this.apiApp = apiApp;
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+
   }
 
-  public static ServiceProvider create(Vertx vertx) {
-    ServiceProvider serviceProvider;
-    serviceProvider = ServiceProvider.mapServiceProviderByVertx.get(vertx);
-    if (serviceProvider != null) {
-      return serviceProvider;
-    }
-    serviceProvider = new ServiceProvider(vertx);
-    ServiceProvider.mapServiceProviderByVertx.put(vertx, serviceProvider);
-    return serviceProvider;
-  }
 
   public Service toPublicClone(Service service) {
 
@@ -84,7 +80,7 @@ public class ServiceProvider {
 
     User impersonatedUser = service.getImpersonatedUser();
     if (impersonatedUser != null) {
-      serviceClone.setImpersonatedUser(UserProvider.createFrom(vertx).toPublicCloneWithoutRealm(impersonatedUser));
+      serviceClone.setImpersonatedUser(apiApp.getUserProvider().toPublicCloneWithoutRealm(impersonatedUser));
     }
 
     return serviceClone;
@@ -98,8 +94,12 @@ public class ServiceProvider {
     if (service.getGuid() != null) {
       return;
     }
-    String guid = Guid.createGuidStringFromRealmAndObjectId(HASH_PREFIX, service.getRealm(), service.getId(), vertx);
+    String guid = this.getGuidFromService(service).toString();
     service.setGuid(guid);
+  }
+
+  private Guid getGuidFromService(Service service) {
+    return this.apiApp.createGuidFromRealmAndObjectId(SRV_GUID_PREFIX, service.getRealm(), service.getId());
   }
 
   /**
@@ -318,13 +318,13 @@ public class ServiceProvider {
 
     Future<User> futureImpersonatedUser = Future.succeededFuture();
     if (impersonatedUserId != null) {
-      futureImpersonatedUser = UserProvider.createFrom(vertx)
+      futureImpersonatedUser = apiApp.getUserProvider()
         .getUserById(impersonatedUserId, realm);
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {
       Long realmId = row.getLong(TABLE_NAME + COLUMN_PART_SEP + RealmProvider.TABLE_NAME + COLUMN_PART_SEP + RealmProvider.ID);
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromId(realmId);
     }
     return Future.all(futureImpersonatedUser, realmFuture)
@@ -364,12 +364,17 @@ public class ServiceProvider {
     Long serviceId = null;
     if (guid != null) {
       try {
-        serviceId = Guid.getIdFromGuidAndRealm(guid, realm, vertx);
+        serviceId = this.getGuidFromHash(guid)
+          .validateRealmAndGetFirstObjectId(realm.getLocalId());
       } catch (CastException e) {
-        throw ValidationException.create("The service guid is not valid", "userGuid", guid);
+        throw ValidationException.create("The service guid is not valid", "srvGuid", guid);
       }
     }
     return getServiceFromIdOrUri(serviceId, uri, realm);
+  }
+
+  private Guid getGuidFromHash(String guid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(SRV_GUID_PREFIX, guid);
   }
 
   private Future<Service> getServiceFromIdOrUri(Long serviceId, String serviceUri, Realm realm) {
@@ -392,7 +397,7 @@ public class ServiceProvider {
       " WHERE\n" +
       " " + URI_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2\n";
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(selectSql)
       .execute(Tuple.of(
         serviceUri,
@@ -425,7 +430,7 @@ public class ServiceProvider {
       realm.getLocalId(),
       serviceId
     );
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(FailureStatic::failFutureWithTrace)

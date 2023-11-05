@@ -1,9 +1,13 @@
 package net.bytle.vertx;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * A user object
  */
-public class AuthUser {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UserClaims {
 
   private String subjectGuid;
   private String audienceRealmGuid;
@@ -11,6 +15,7 @@ public class AuthUser {
   private String subjectHandle;
   private String email;
 
+  @JsonProperty("subject")
   public String getSubjectGuid() {
     return this.subjectGuid;
   }
@@ -18,14 +23,17 @@ public class AuthUser {
   /**
    * @return the audience (ie realm identifier)
    */
+  @JsonProperty("audience")
   public String getAudienceRealmGuid() {
     return this.audienceRealmGuid;
   }
 
+  @JsonProperty("email")
   public String getEmail() {
     return this.email;
   }
 
+  @JsonProperty("handle")
   public String getHandle() {
     return this.subjectHandle;
   }

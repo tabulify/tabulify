@@ -304,22 +304,6 @@ paths:
           description: "Processed. An email was send for password resetting if it was found."
         '400':
           description: "The email provided is not valid"
-  /auth/user:
-    get:
-      operationId: "authUserGet"
-      summary: "Get the registered user"
-      tags:
-        - auth
-      security: [ ]
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
-        '401':
-          description: Requires authentication if not authenticated
   /auth/user/register:
     post:
       operationId: "authUserRegisterPost"
@@ -485,6 +469,25 @@ paths:
                 type: array
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
+        '403':
+          description: "Not authenticated"
+  /realms/owned-by/me:
+    get:
+      operationId: "realmsOwnedByMeGet"
+      summary: "Return the list of realms owned by the authenticated user"
+      tags:
+        - realm
+      security:
+        - apiKeyAuth: [ 'read:realm' ]
+      responses:
+        '200':
+          description: "Return the list of realms owned by the authenticated user"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
         '403':
           description: "Not authenticated"
   /realm/{realmGuid}/users/new:
@@ -770,6 +773,22 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+  /user/me:
+    get:
+      operationId: "userMeGet"
+      summary: "Get the authenticated user"
+      tags:
+        - user
+      security: [ ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+        '401':
+          description: Requires authentication if not authenticated
   /user/{guid}:
     get:
       operationId: userGuidGet

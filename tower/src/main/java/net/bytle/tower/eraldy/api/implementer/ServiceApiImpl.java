@@ -7,12 +7,11 @@ import io.vertx.ext.mail.StartTLSOptions;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.CastException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ServiceApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.ServiceProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.CryptoSymmetricUtil;
 import net.bytle.type.Casts;
 import net.bytle.vertx.FailureStatic;
@@ -23,16 +22,17 @@ import java.util.stream.Collectors;
 
 public class ServiceApiImpl implements ServiceApi {
 
-  @SuppressWarnings("unused")
-  public ServiceApiImpl(TowerApp towerApp) {
+  private final EraldyApiApp apiApp;
 
+  public ServiceApiImpl(TowerApp towerApp) {
+    this.apiApp = (EraldyApiApp) towerApp;
   }
 
   @Override
   public Future<ApiResponse<Service>> serviceGet(RoutingContext routingContext, String serviceGuid, String serviceUri, String realmHandle, String realmGuid) {
-    Vertx vertx = routingContext.vertx();
-    ServiceProvider serviceProvider = ServiceProvider.create(vertx);
-    return RealmProvider.createFrom(vertx)
+
+    ServiceProvider serviceProvider = apiApp.getServiceProvider();
+    return this.apiApp.getRealmProvider()
       .getRealmFromGuidOrHandle(realmGuid, realmHandle)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> serviceProvider
@@ -79,16 +79,16 @@ public class ServiceApiImpl implements ServiceApi {
     String impersonatedUserEmail = serviceSmtpPostBody.getImpersonatedUserEmail();
     String impersonatedUserGuid = serviceSmtpPostBody.getImpersonatedUserGuid();
     boolean impersonatedUserWasGiven = impersonatedUserEmail != null || impersonatedUserGuid != null;
-    ServiceProvider serviceProvider = ServiceProvider.create(vertx);
+    ServiceProvider serviceProvider = apiApp.getServiceProvider();
 
-    return RealmProvider.createFrom(vertx)
+    return this.apiApp.getRealmProvider()
       .getRealmFromGuidOrHandle(serviceSmtpPostBody.getRealmGuid(), serviceSmtpPostBody.getRealmHandle())
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
 
         Future<User> userFuture = Future.succeededFuture();
         if (impersonatedUserWasGiven) {
-          userFuture = UserProvider.createFrom(vertx)
+          userFuture = apiApp.getUserProvider()
             .getUserFromGuidOrEmail(impersonatedUserGuid, impersonatedUserEmail, realm);
         }
 
@@ -132,8 +132,8 @@ public class ServiceApiImpl implements ServiceApi {
   @Override
   public Future<ApiResponse<List<Service>>> servicesGet(RoutingContext routingContext, String realmGuid, String realmHandle) {
     Vertx vertx = routingContext.vertx();
-    ServiceProvider serviceProvider = ServiceProvider.create(vertx);
-    return RealmProvider.createFrom(vertx)
+    ServiceProvider serviceProvider = apiApp.getServiceProvider();
+    return this.apiApp.getRealmProvider()
       .getRealmFromGuidOrHandle(realmGuid, realmHandle)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(serviceProvider::getServices)

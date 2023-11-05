@@ -7,8 +7,8 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
-import net.bytle.vertx.AuthUser;
 import net.bytle.vertx.EraldyDomain;
+import net.bytle.vertx.UserClaims;
 
 public class UsersUtil {
 
@@ -116,13 +116,13 @@ public class UsersUtil {
   }
 
 
-  public static AuthUser toAuthUser(User appUser) {
-    AuthUser authUser = new AuthUser();
-    authUser.setSubject(appUser.getGuid());
-    authUser.setSubjectHandle(appUser.getHandle());
-    authUser.setAudience(appUser.getRealm().getGuid());
-    authUser.setAudienceHandle(appUser.getRealm().getHandle());
-    authUser.setEmail(appUser.getEmail());
-    return authUser;
+  public static UserClaims toAuthUser(User appUser) {
+    UserClaims userClaims = new UserClaims();
+    userClaims.setSubject(appUser.getGuid());
+    userClaims.setSubjectHandle(appUser.getHandle());
+    userClaims.setAudience(appUser.getRealm().getGuid());
+    userClaims.setAudienceHandle(appUser.getRealm().getHandle());
+    userClaims.setEmail(appUser.getEmail());
+    return userClaims;
   }
 }

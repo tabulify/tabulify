@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
@@ -14,6 +13,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.AppPostBody;
 import net.bytle.tower.eraldy.model.openapi.Realm;
@@ -28,7 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static net.bytle.vertx.JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
 
@@ -42,12 +44,10 @@ public class AppProvider {
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String COLUMN_PREFIX = "app";
-  private static final String SHORT_PREFIX = "app";
+  private static final String APP_GUID_PREFIX = "app";
   protected static final String TABLE_NAME = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + COLUMN_PREFIX;
   public static final String REALM_ID_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String USER_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-
-  private static final Map<Vertx, AppProvider> mapPublisherProviderByVertx = new HashMap<>();
 
   /**
    * Domain is used as specified in
@@ -62,22 +62,11 @@ public class AppProvider {
   public static final String URI_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
-  private final Vertx vertx;
+  private final EraldyApiApp apiApp;
 
 
-  public AppProvider(Vertx routingContext) {
-    this.vertx = routingContext;
-  }
-
-  public static AppProvider create(Vertx vertx) {
-    AppProvider appProvider;
-    appProvider = AppProvider.mapPublisherProviderByVertx.get(vertx);
-    if (appProvider != null) {
-      return appProvider;
-    }
-    appProvider = new AppProvider(vertx);
-    AppProvider.mapPublisherProviderByVertx.put(vertx, appProvider);
-    return appProvider;
+  public AppProvider(EraldyApiApp apiApp) {
+    this.apiApp = apiApp;
   }
 
   public App toPublicClone(App app) {
@@ -130,7 +119,7 @@ public class AppProvider {
     if (appId == null) {
       throw new InternalException("The app id should not be null to compute the guid");
     }
-    String hashGuid = Guid.createGuidStringFromRealmAndObjectId(SHORT_PREFIX, app.getRealm(), app.getLocalId(), vertx);
+    String hashGuid = this.apiApp.createGuidFromRealmAndObjectId(APP_GUID_PREFIX, app.getRealm(), app.getLocalId()).toString();
     app.setGuid(hashGuid);
   }
 
@@ -386,12 +375,11 @@ public class AppProvider {
 
   private Future<App> getFromRow(Row row, Realm realm) {
     Long userId = row.getLong(USER_COLUMN);
-    Future<User> userFuture = UserProvider
-      .createFrom(vertx)
+    Future<User> userFuture = apiApp.getUserProvider()
       .getUserById(userId, realm);
     Future<Realm> realmFuture;
     Long realmId = row.getLong(REALM_ID_COLUMN);
-    RealmProvider realmProvider = RealmProvider.createFrom(vertx);
+    RealmProvider realmProvider = this.apiApp.getRealmProvider();
     //noinspection ConstantConditions
     if (realm == null) {
       realmFuture = realmProvider.getRealmFromId(realmId);
@@ -466,7 +454,7 @@ public class AppProvider {
     requestedApp.setGuid(appPostBody.getAppGuid());
     requestedApp.setUri(appPostBody.getAppUri());
 
-    return AppProvider.create(vertx)
+    return apiApp.getAppProvider()
       .getRealmAndUpdateIdEventuallyFromRequested(requestedRealm, requestedApp)
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(realm -> {
@@ -492,7 +480,8 @@ public class AppProvider {
           app.setGuid(appGuid);
           long appId;
           try {
-            appId = Guid.getIdFromGuidAndRealm(appGuid, realm, vertx);
+            appId = this.getGuid(appGuid)
+              .validateRealmAndGetFirstObjectId(realm.getLocalId());
           } catch (CastException e) {
             throw ValidationException.create("The app guid is not valid", "appGuid", appGuid);
           }
@@ -506,7 +495,7 @@ public class AppProvider {
         String userGuid = appPostBody.getUserGuid();
         if (userGuid != null) {
           try {
-            userId = Guid.getIdFromGuidAndRealm(userGuid, realm, vertx);
+            userId = apiApp.getUserProvider().getGuid(userGuid).validateRealmAndGetFirstObjectId(realm.getLocalId());
           } catch (CastException e) {
             throw ValidationException.create("The user guid is not valid", "userGuid", userGuid);
           }
@@ -515,16 +504,19 @@ public class AppProvider {
         userToGetOrCreate.setLocalId(userId);
         userToGetOrCreate.setEmail(userEmail);
         userToGetOrCreate.setRealm(realm);
-        return UserProvider.createFrom(vertx)
+        return apiApp.getUserProvider()
           .getOrCreateUserFromEmail(userToGetOrCreate)
           .onFailure(t -> LOGGER.error("Error on app upsert", t))
           .compose(user -> {
             app.setUser(user);
-            return AppProvider.create(vertx)
-              .upsertApp(app);
+            return upsertApp(app);
           });
       });
 
+  }
+
+  private Guid getGuid(String appGuid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
   private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(Realm requestedRealm, App requestedApp) {
@@ -540,23 +532,23 @@ public class AppProvider {
       if (realmHandle == null && realmGuid == null) {
         throw ValidationException.create("With the appUri, a realm Handle or Guid should be given", "realmHandle", null);
       }
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromGuidOrHandle(realmGuid, realmHandle);
     } else {
 
       Guid guid;
       try {
-        guid = Guid.createObjectFromRealmIdAndOneObjectId(SHORT_PREFIX, appGuid, vertx);
+        guid = apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
       } catch (CastException e) {
         return Future.failedFuture(new IllegalArgumentException("The app guid is not valid (" + appGuid + ")"));
       }
 
-      long realmId = guid.getRealmId();
+      long realmId = guid.getRealmOrOrganizationId();
 
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromId(realmId);
 
-      long userIdFromGuid = guid.getFirstObjectId();
+      long userIdFromGuid = guid.validateRealmAndGetFirstObjectId(realmId);
       requestedApp.setLocalId(userIdFromGuid);
 
     }
@@ -566,13 +558,13 @@ public class AppProvider {
   public Future<App> getAppByGuid(String appGuid) {
     Guid guid;
     try {
-      guid = Guid.createObjectFromRealmIdAndOneObjectId(SHORT_PREFIX, appGuid, vertx);
+      guid = apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
     } catch (CastException e) {
       throw ValidationException.create("The appGuid is not valid", "appGuid", appGuid);
     }
-    return RealmProvider.createFrom(vertx)
-      .getRealmFromId(guid.getRealmId())
-      .compose(realm -> getAppById(guid.getFirstObjectId(), realm));
+    return this.apiApp.getRealmProvider()
+      .getRealmFromId(guid.getRealmOrOrganizationId())
+      .compose(realm -> getAppById(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
   }
 
   Future<App> getAppById(long appId, Realm realm) {
@@ -602,7 +594,7 @@ public class AppProvider {
   private App toClone(App app, boolean template) {
     App cloneApp = JsonObject.mapFrom(app).mapTo(App.class);
     cloneApp.setLocalId(null);
-    UserProvider userProvider = UserProvider.createFrom(vertx);
+    UserProvider userProvider = apiApp.getUserProvider();
     User owner = app.getUser();
     if (template) {
       owner = userProvider.toTemplateCloneWithoutRealm(owner);

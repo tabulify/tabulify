@@ -13,6 +13,7 @@ public interface UserApi  {
     Future<ApiResponse<OrganizationUser>> userAuthGet(RoutingContext routingContext);
     Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userGuid, String userEmail, String realmHandle, String realmGuid);
     Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid);
+    Future<ApiResponse<User>> userMeGet(RoutingContext routingContext);
     Future<ApiResponse<User>> userPost(RoutingContext routingContext, UserPostBody userPostBody);
     Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmGuid, String realmHandle);
 }

@@ -16,6 +16,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -29,7 +30,9 @@ import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Manage the get/upsert of a {@link User} object asynchronously
@@ -42,7 +45,6 @@ public class UserProvider {
   protected static final String TABLE_NAME = "realm_user";
   protected static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
 
-  private static final Map<Vertx, UserProvider> mapUserProviderByVertx = new HashMap<>();
 
   private static final String TABLE_PREFIX = "user";
   public static final String EMAIL_COLUMN = TABLE_PREFIX + JdbcSchemaManager.COLUMN_PART_SEP + "email";
@@ -58,26 +60,22 @@ public class UserProvider {
   protected static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
-  public static final String GUID_PREFIX = "usr";
+  public static final String USR_GUID_PREFIX = "usr";
 
   private final Vertx vertx;
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private final EraldyApiApp apiApp;
+  private final PgPool jdbcPool;
 
 
-  public UserProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public UserProvider(EraldyApiApp apiApp) {
+
+    this.apiApp = apiApp;
+    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
+    this.jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+
   }
 
-  public static UserProvider createFrom(Vertx vertx) {
-    UserProvider publicationProvider;
-    publicationProvider = UserProvider.mapUserProviderByVertx.get(vertx);
-    if (publicationProvider != null) {
-      return publicationProvider;
-    }
-    publicationProvider = new UserProvider(vertx);
-    UserProvider.mapUserProviderByVertx.put(vertx, publicationProvider);
-    return publicationProvider;
-  }
 
 
   public User toPublicCloneWithoutRealm(User user) {
@@ -91,7 +89,7 @@ public class UserProvider {
   private User toPublicClone(User user, Boolean withRealm) {
     User userClone = JsonObject.mapFrom(user).mapTo(User.class);
     if (withRealm) {
-      Realm publicRealm = RealmProvider.createFrom(vertx).toPublicClone(user.getRealm());
+      Realm publicRealm = this.apiApp.getRealmProvider().toPublicClone(user.getRealm());
       userClone.setRealm(publicRealm);
     } else {
       userClone.setRealm(null);
@@ -367,7 +365,7 @@ public class UserProvider {
     Future<Realm> realmFuture = Future.succeededFuture(knownRealm);
     if (knownRealm == null) {
       Long realmId = row.getLong(REALM_COLUMN);
-      realmFuture = RealmProvider.createFrom(this.vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromId(realmId);
     }
     return realmFuture
@@ -395,15 +393,19 @@ public class UserProvider {
   }
 
   private void computeGuid(User user) {
-    if(user.getGuid()!=null){
+    if (user.getGuid() != null) {
       return;
     }
-    String guid = Guid.getGuid(GUID_PREFIX, user.getRealm(), user.getLocalId(), vertx);
+    String guid = this.getGuidFromUser(user).toString();
     user.setGuid(guid);
   }
 
+  private Guid getGuidFromUser(User user) {
+    return apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, user.getRealm(), user.getLocalId());
+  }
+
   public Future<User> getUserById(Long userId, Realm realm) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
+
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE \n" +
       " " + ID_COLUMN + " = $1\n" +
@@ -426,7 +428,7 @@ public class UserProvider {
 
 
   public Future<User> getUserByEmail(String userEmail, String realmHandle) {
-    return RealmProvider.createFrom(this.vertx)
+    return this.apiApp.getRealmProvider()
       .getRealmFromHandle(realmHandle)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
       .compose(realm -> getUserByEmail(userEmail, realm));
@@ -438,7 +440,6 @@ public class UserProvider {
    * @return the user or null
    */
   public Future<User> getUserByEmail(String userEmail, Realm realm) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
@@ -508,7 +509,8 @@ public class UserProvider {
     Long userId = null;
     if (userGuid != null) {
       try {
-        userId = Guid.getIdFromGuidAndRealm(userGuid, realm, vertx);
+        userId = this.getGuidFromHash(userGuid)
+          .validateRealmAndGetFirstObjectId(realm.getLocalId());
       } catch (CastException e) {
         throw ValidationException.create("The user guid is not valid", "userGuid", userGuid);
       }
@@ -516,18 +518,22 @@ public class UserProvider {
     return getUserFromIdOrEmail(userId, userEmail, realm);
   }
 
+  private Guid getGuidFromHash(String userGuid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
+  }
+
   public Future<User> getUserByGuid(String guid) {
 
     Guid guidObject;
     try {
-      guidObject = Guid.createObjectFromRealmIdAndOneObjectId(GUID_PREFIX, guid, vertx);
+      guidObject = this.getGuidFromHash(guid);
     } catch (CastException e) {
       throw ValidationException.create("The user guid is not valid", "userGuid", guid);
     }
 
-    return RealmProvider.createFrom(vertx)
-      .getRealmFromId(guidObject.getRealmId())
-      .compose(realm -> this.getUserById(guidObject.getFirstObjectId(), realm));
+    return this.apiApp.getRealmProvider()
+      .getRealmFromId(guidObject.getRealmOrOrganizationId())
+      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
 
 
   }
@@ -551,23 +557,23 @@ public class UserProvider {
       if (realmHandle == null && realmGuid == null) {
         throw ValidationException.create("With the userEmail, a realm Handle or Guid should be given", "realmHandle", null);
       }
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class);
     } else {
 
       Guid guid;
       try {
-        guid = Guid.createObjectFromRealmIdAndOneObjectId(GUID_PREFIX, userGuid, vertx);
+        guid = this.getGuidFromHash(userGuid);
       } catch (CastException e) {
         return Future.failedFuture(new IllegalArgumentException("The user guid is not valid (" + userGuid + ")"));
       }
 
-      long realmId = guid.getRealmId();
+      long realmId = guid.getRealmOrOrganizationId();
 
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromId(realmId);
 
-      long userIdFromGuid = guid.getFirstObjectId();
+      long userIdFromGuid = guid.validateRealmAndGetFirstObjectId(realmId);
       userRequested.setLocalId(userIdFromGuid);
 
     }
@@ -643,7 +649,7 @@ public class UserProvider {
       "  " + ID_COLUMN + "= $3\n" +
       "AND " + REALM_COLUMN + " = $4 ";
 
-    return JdbcPostgresPool.getJdbcPool()
+    return this.jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
         passwordHashed,
@@ -664,7 +670,6 @@ public class UserProvider {
    */
   public Future<User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
@@ -704,7 +709,6 @@ public class UserProvider {
   }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     String sql = "SELECT *\n" +
       "FROM  " + QUALIFIED_TABLE_NAME + "\n" +
@@ -737,5 +741,9 @@ public class UserProvider {
         List<User> list = results.list();
         return Future.succeededFuture(list);
       });
+  }
+
+  public Guid getGuid(String userGuid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
   }
 }

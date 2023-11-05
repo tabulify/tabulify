@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
@@ -48,7 +49,7 @@ public class ListRegistrationEmailCallback extends FlowCallbackAbs {
     } catch (IllegalStructure e) {
       return;
     }
-    ListRegistrationFlow.handleStep2EmailValidationLinkClick(ctx, jwtClaimsObject);
+    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getApp(), ctx, jwtClaimsObject);
 
   }
 

@@ -26,6 +26,7 @@ public void mount(RouterBuilder builder) {
     builder.operation("userAuthGet").handler(this::userAuthGet);
     builder.operation("userGet").handler(this::userGet);
     builder.operation("userGuidGet").handler(this::userGuidGet);
+    builder.operation("userMeGet").handler(this::userMeGet);
     builder.operation("userPost").handler(this::userPost);
     builder.operation("usersGet").handler(this::usersGet);
 }
@@ -78,6 +79,20 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.userGuidGet(routingContext, guid)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void userMeGet(RoutingContext routingContext) {
+    logger.info("userMeGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+
+
+    // Based on Route#respond
+    api.userMeGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

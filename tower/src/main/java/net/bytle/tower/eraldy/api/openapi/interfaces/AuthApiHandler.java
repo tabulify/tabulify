@@ -32,7 +32,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("authLoginPasswordResetPost").handler(this::authLoginPasswordResetPost);
     builder.operation("authLoginPasswordUpdatePost").handler(this::authLoginPasswordUpdatePost);
     builder.operation("authLogoutGet").handler(this::authLogoutGet);
-    builder.operation("authUserGet").handler(this::authUserGet);
     builder.operation("authUserRegisterPost").handler(this::authUserRegisterPost);
 }
 
@@ -162,20 +161,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.authLogoutGet(routingContext, redirectUri)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void authUserGet(RoutingContext routingContext) {
-    logger.info("authUserGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-
-
-    // Based on Route#respond
-    api.authUserGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

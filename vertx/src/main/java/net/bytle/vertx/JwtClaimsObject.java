@@ -21,20 +21,20 @@ public class JwtClaimsObject {
     this.claims = claims;
   }
 
-  public static JwtClaimsObject createFromUser(AuthUser user, RoutingContext routingContext) {
+  public static JwtClaimsObject createFromUser(UserClaims userClaims, RoutingContext routingContext) {
     JsonObject claims = new JsonObject();
     /**
      * Claims may be created for user registration, meaning that the user
      * does not exist in the database yet and has therefore no id
      */
-    String subjectGuid = user.getSubjectGuid();
+    String subjectGuid = userClaims.getSubjectGuid();
     if (subjectGuid != null) {
       claims.put(JwtClaims.SUBJECT.toString(), subjectGuid);
     }
-    claims.put(JwtClaims.AUDIENCE.toString(), user.getAudienceRealmGuid());
-    claims.put(JwtClaims.CUSTOM_EMAIL.toString(), user.getEmail());
-    claims.put(JwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), user.getHandle());
-    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), user.getAudienceHandle());
+    claims.put(JwtClaims.AUDIENCE.toString(), userClaims.getAudienceRealmGuid());
+    claims.put(JwtClaims.CUSTOM_EMAIL.toString(), userClaims.getEmail());
+    claims.put(JwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), userClaims.getHandle());
+    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), userClaims.getAudienceHandle());
     claims.put(JwtClaims.ISSUER.toString(), ERALDY_ISSUER_VALUE);
 
     /**

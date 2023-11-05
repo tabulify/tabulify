@@ -34,7 +34,7 @@ public class VerticleApi extends AbstractVerticle {
   protected static final Logger LOGGER = LogManager.getLogger(VerticleApi.class);
 
   public static final int PORT_DEFAULT = 8083;
-  private TowerApp apiApp;
+  private EraldyApiApp apiApp;
 
   public static void main(String[] args) {
 
@@ -69,6 +69,8 @@ public class VerticleApi extends AbstractVerticle {
               .setFromConfigAccessorWithPort(PORT_DEFAULT)
               .enableApiKeyAuth()
               .enableJwt()
+              .enableHashId()
+              .enableJdbcPool("jdbc")
               .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise,e);
@@ -94,15 +96,6 @@ public class VerticleApi extends AbstractVerticle {
           }
 
           EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-          Future<Realm> eraldyRealm = EraldyRealm.create(eraldyDomain).getFutureRealm();
-
-          /**
-           * Domain Handler
-           */
-          Router router = httpServer.getRouter();
-          AuthRealmHandler.createFrom(router, eraldyDomain);
-          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
-          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
 
           /**
            * Add the apps
@@ -110,6 +103,16 @@ public class VerticleApi extends AbstractVerticle {
           apiApp = EraldyApiApp.create(eraldyDomain);
           Future<Void> publicApiFuture = apiApp.mount();
 
+          /**
+           * Domain Handler
+           */
+          Router router = httpServer.getRouter();
+          AuthRealmHandler.createFrom(router, apiApp);
+          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
+          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
+
+
+          Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm();
           /**
            * Add the scheduled task
            */
@@ -199,7 +202,7 @@ public class VerticleApi extends AbstractVerticle {
   }
 
 
-  public TowerApp getApp() {
+  public EraldyApiApp getApp() {
     return apiApp;
   }
 

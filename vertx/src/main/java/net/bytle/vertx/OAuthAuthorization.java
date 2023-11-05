@@ -12,7 +12,7 @@ public class OAuthAuthorization {
 
 
   private String redirectUri;
-  private AuthUser user;
+  private UserClaims user;
 
   public void setRedirectUri(String redirectUri) {
     this.redirectUri = redirectUri;
@@ -22,11 +22,11 @@ public class OAuthAuthorization {
     return redirectUri;
   }
 
-  public AuthUser getUser() {
+  public UserClaims getUser() {
     return user;
   }
 
-  public void setUser(AuthUser contextUser) {
+  public void setUser(UserClaims contextUser) {
     this.user = contextUser;
   }
 

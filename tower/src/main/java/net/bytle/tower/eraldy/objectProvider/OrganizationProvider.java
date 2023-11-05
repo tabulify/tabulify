@@ -1,12 +1,12 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.JdbcPostgresPool;
@@ -32,22 +32,13 @@ public class OrganizationProvider {
   public static final String ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String GUID_PREFIX = "org";
   private static OrganizationProvider organizationProvider;
-  private final Vertx vertx;
+  private final EraldyApiApp apiApp;
   public static final String ORGA_NAME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "name";
 
-  public OrganizationProvider(Vertx vertx) {
-    this.vertx = vertx;
+  public OrganizationProvider(EraldyApiApp apiApp) {
+    this.apiApp = apiApp;
   }
 
-  public static OrganizationProvider createFrom(Vertx vertx) {
-
-    if (organizationProvider != null) {
-      return organizationProvider;
-    }
-    organizationProvider = new OrganizationProvider(vertx);
-
-    return organizationProvider;
-  }
 
   public Organization toPublicClone(Organization organization) {
     Organization organizationClone = JsonObject.mapFrom(organization).mapTo(Organization.class);
@@ -88,13 +79,13 @@ public class OrganizationProvider {
     Organization organization = new Organization();
     organization.setLocalId(orgaId);
     organization.setName(orgaName);
-    organization.setGuid(this.computeGuid(organization));
+    organization.setGuid(this.computeGuid(organization).toString());
 
     return Future.succeededFuture(clazz.cast(organization));
 
   }
 
-  private <T extends Organization> String computeGuid(T organization) {
-    return Guid.createGuidStringFromObjectId(GUID_PREFIX, organization.getLocalId(), vertx);
+  private <T extends Organization> Guid computeGuid(T organization) {
+    return apiApp.createGuidFromObjectId(GUID_PREFIX, organization.getLocalId());
   }
 }

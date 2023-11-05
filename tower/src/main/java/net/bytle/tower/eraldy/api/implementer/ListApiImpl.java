@@ -23,7 +23,8 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.tower.eraldy.objectProvider.*;
+import net.bytle.tower.eraldy.objectProvider.ListProvider;
+import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.util.JsonToken;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
@@ -58,13 +59,13 @@ public class ListApiImpl implements ListApi {
 
 
     Future<List<RegistrationList>> futureLists;
-    ListProvider listProvider = ListProvider.create(vertx);
+    ListProvider listProvider = apiApp.getListProvider();
     if (appGuid == null && appUri == null) {
 
       /**
        * Realms selection
        */
-      futureLists = RealmProvider.createFrom(vertx)
+      futureLists = this.apiApp.getRealmProvider()
         .getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class)
         .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
         .compose(listProvider::getListsForRealm);
@@ -76,16 +77,16 @@ public class ListApiImpl implements ListApi {
        */
       Future<App> futureApp;
       if (appGuid != null) {
-        futureApp = AppProvider.create(vertx)
+        futureApp = apiApp.getAppProvider()
           .getAppByGuid(appGuid);
       } else {
         if (realmGuid == null && realmHandle == null) {
           throw ValidationException.create("The realm guid or handle should be given for an appUri", "realmGuid", null);
         }
-        futureApp = RealmProvider.createFrom(vertx)
+        futureApp = this.apiApp.getRealmProvider()
           .getRealmFromGuidOrHandle(realmGuid, realmHandle)
           .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-          .compose(realm -> AppProvider.create(vertx).getAppByUri(URI.create(appUri), realm));
+          .compose(realm -> apiApp.getAppProvider().getAppByUri(URI.create(appUri), realm));
       }
 
       futureLists = futureApp
@@ -120,14 +121,14 @@ public class ListApiImpl implements ListApi {
       throw ValidationException.create("The realm handle or guid should be given", "realmGuid", null);
     }
     Vertx vertx = routingContext.vertx();
-    return RealmProvider.createFrom(vertx)
+    return this.apiApp.getRealmProvider()
       .getRealmFromGuidOrHandle(realmGuid, realmHandle)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realm -> {
         if (realm == null) {
           throw new InternalException("The realm was not found and is mandatory");
         }
-        return ListProvider.create(vertx)
+        return apiApp.getListProvider()
           .getListsSummary(realm);
       })
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
@@ -140,7 +141,7 @@ public class ListApiImpl implements ListApi {
 
     Vertx vertx = routingContext.vertx();
     Future<RegistrationList> listFuture;
-    ListProvider listProvider = ListProvider.create(vertx);
+    ListProvider listProvider = apiApp.getListProvider();
     if (listGuid != null) {
       listFuture = listProvider.getListByGuid(listGuid);
     } else {
@@ -150,7 +151,7 @@ public class ListApiImpl implements ListApi {
       if (realmHandle == null) {
         throw ValidationException.create("A realm Handle is mandatory to retrieve a list with a listHandle", "realmHandle", null);
       }
-      listFuture = RealmProvider.createFrom(vertx)
+      listFuture = this.apiApp.getRealmProvider()
         .getRealmFromHandle(realmHandle)
         .compose(realm -> listProvider.getListByHandle(listHandle, realm));
     }
@@ -160,7 +161,7 @@ public class ListApiImpl implements ListApi {
         /**
          * The realm is deleted by default, but we need it on the frontend
          */
-        registrationListClone.setRealm(RealmProvider.createFrom(vertx).toPublicClone(registrationList.getRealm()));
+        registrationListClone.setRealm(this.apiApp.getRealmProvider().toPublicClone(registrationList.getRealm()));
         ApiResponse<RegistrationList> apiResult = new ApiResponse<>(registrationListClone);
         return Future.succeededFuture(apiResult);
       });
@@ -171,7 +172,7 @@ public class ListApiImpl implements ListApi {
 
     Vertx vertx = routingContext.vertx();
 
-    ListProvider listProvider = ListProvider.create(vertx);
+    ListProvider listProvider = apiApp.getListProvider();
     return listProvider
       .postPublication(publicationPost)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
@@ -206,7 +207,7 @@ public class ListApiImpl implements ListApi {
 
     Vertx vertx = routingContext.vertx();
     Future<Registration> futureRegistration;
-    ListRegistrationProvider registrationProvider = ListRegistrationProvider.create(vertx);
+    ListRegistrationProvider registrationProvider = apiApp.getListRegistrationProvider();
     if (guid != null) {
       futureRegistration = registrationProvider
         .getRegistrationByGuid(guid);
@@ -229,7 +230,7 @@ public class ListApiImpl implements ListApi {
         /**
          * The realm is deleted by default
          */
-        subscriptionClone.getList().setRealm(RealmProvider.createFrom(vertx).toPublicClone(subscription.getList().getRealm()));
+        subscriptionClone.getList().setRealm(this.apiApp.getRealmProvider().toPublicClone(subscription.getList().getRealm()));
         return Future.succeededFuture(new ApiResponse<>(subscription));
       });
 
@@ -251,8 +252,7 @@ public class ListApiImpl implements ListApi {
      * Processing
      */
     String listGuid = token.getPublicationGuid();
-    return ListProvider
-      .create(vertx)
+    return apiApp.getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(listResult -> {
@@ -262,8 +262,7 @@ public class ListApiImpl implements ListApi {
         registrationUser.setName(token.getUserName());
         registrationUser.setEmail(token.getUserEmail());
         Future<RegistrationList> listFuture = Future.succeededFuture(listResult);
-        Future<User> user = UserProvider
-          .createFrom(vertx)
+        Future<User> user = apiApp.getUserProvider()
           .getOrCreateUserFromEmail(registrationUser);
 
         return Future.all(listFuture, user);
@@ -289,7 +288,7 @@ public class ListApiImpl implements ListApi {
           LOGGER.warn("Publication Subscription Validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
 
-        return ListRegistrationProvider.create(vertx)
+        return apiApp.getListRegistrationProvider()
           .upsertRegistration(listRegistration);
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
@@ -361,10 +360,8 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<List<RegistrationShort>>> listRegistrationsGet(RoutingContext
-                                                                                                                                        routingContext, String publicationGuid) {
-    Vertx vertx = routingContext.vertx();
-    return ListRegistrationProvider.create(vertx)
+  public Future<ApiResponse<List<RegistrationShort>>> listRegistrationsGet(RoutingContext routingContext, String publicationGuid) {
+    return apiApp.getListRegistrationProvider()
       .getRegistrations(publicationGuid)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts)));
@@ -374,8 +371,8 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<String>> listRegistrationLetterConfirmationGet(RoutingContext routingContext, String
     subscriberName, String publicationGuid, String publicationName, String publisherName, String
-                                                                                                                                        publisherEmail, String
-                                                                                                                                        publisherLogo) {
+                                                                             publisherEmail, String
+                                                                             publisherLogo) {
 
 
     MultiMap params = routingContext.request().params();
@@ -412,7 +409,7 @@ public class ListApiImpl implements ListApi {
     listRegistrationPostBody.setListGuid(listGuid);
 
     Vertx vertx = routingContext.vertx();
-    return ListProvider.create(vertx)
+    return apiApp.getListProvider()
       .getListByGuid(listGuid)
       .compose(list -> {
 

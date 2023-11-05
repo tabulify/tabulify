@@ -1,13 +1,13 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -25,7 +25,7 @@ public class OrganizationUserProvider {
 
 
     private static OrganizationUserProvider provider;
-    private final Vertx vertx;
+    private final EraldyApiApp apiApp;
     private static final String TABLE_NAME = "organization_user";
 
     private static final String TABLE_PREFIX = "orga_user";
@@ -34,17 +34,10 @@ public class OrganizationUserProvider {
     public static final String ORGA_USER_CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
     public static final String ORGA_USER_MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
-    public OrganizationUserProvider(Vertx vertx) {
-        this.vertx = vertx;
+    public OrganizationUserProvider(EraldyApiApp apiApp) {
+        this.apiApp = apiApp;
     }
 
-    public static OrganizationUserProvider get(Vertx vertx) {
-        if (provider != null) {
-            return provider;
-        }
-        provider = new OrganizationUserProvider(vertx);
-        return provider;
-    }
 
 
     @SuppressWarnings("unused")
@@ -60,7 +53,7 @@ public class OrganizationUserProvider {
     }
 
     public Future<OrganizationUser> getOrganizationUserByGuid(String guid) {
-        return UserProvider.createFrom(vertx)
+        return apiApp.getUserProvider()
                 .getUserByGuid(guid)
                 .compose(user -> {
                     if (user == null) {
@@ -108,7 +101,7 @@ public class OrganizationUserProvider {
             userId = user.getLocalId();
         } else {
             userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-            futureUser = UserProvider.createFrom(vertx)
+            futureUser = apiApp.getUserProvider()
                     .getEraldyUserById(userId);
         }
 
@@ -120,7 +113,7 @@ public class OrganizationUserProvider {
                     }
                     OrganizationUser organizationUser = JsonObject.mapFrom(userFromFuture).mapTo(OrganizationUser.class);
                     Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
-                    return OrganizationProvider.createFrom(vertx)
+                    return apiApp.getOrganizationProvider()
                             .getById(orgaId)
                             .onFailure(t -> LOGGER.error("Error while getting the organization", t))
                             .compose(organization -> {

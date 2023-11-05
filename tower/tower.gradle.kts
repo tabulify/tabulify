@@ -6,6 +6,7 @@ import java.util.*
 val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val antJschVersion = rootProject.ext.get("antJschVersion").toString()
+val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
 
 val sshAntTask = configurations.create("sshAntTask")
 
@@ -107,7 +108,7 @@ dependencies {
 
   // id
   // https://mvnrepository.com/artifact/org.hashids/hashids
-  implementation("org.hashids:hashids:1.0.3")
+  implementation("org.hashids:hashids:$hashIdVersion")
 
 
   // Serialization of LocalDateTime

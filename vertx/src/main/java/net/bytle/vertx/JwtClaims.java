@@ -51,6 +51,7 @@ public enum JwtClaims {
    * <p>
    * The interpretation of audience values is application specific and optional
    * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3">Aud Claim</a>
+   * For some application, it's the client ID of the application that should consume the token.
    */
   AUDIENCE("aud"),
 

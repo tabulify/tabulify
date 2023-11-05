@@ -21,7 +21,6 @@ import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
 import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -127,7 +126,7 @@ public class AuthApiImpl implements AuthApi {
 
     validateEmailIdentifierDataUtil(emailIdentifier);
 
-    return UserProvider.createFrom(routingContext.vertx())
+    return apiApp.getUserProvider()
       .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmHandle())
       .onFailure(routingContext::fail)
       .compose(userToLogin -> {
@@ -248,10 +247,10 @@ public class AuthApiImpl implements AuthApi {
     if (handle == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The handle cannot be null", "handle", null);
     }
-    return RealmProvider.createFrom(routingContext.vertx())
+    return this.apiApp.getRealmProvider()
       .getRealmFromHandle(passwordCredentials.getLoginRealm())
       .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
-      .compose(realm -> UserProvider.createFrom(routingContext.vertx())
+      .compose(realm -> apiApp.getUserProvider()
         .getUserByPassword(handle, password, realm)
         .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
         .compose(user -> {
@@ -263,7 +262,7 @@ public class AuthApiImpl implements AuthApi {
           }
 
           AuthInternalAuthenticator
-            .createWith(routingContext, user)
+            .createWith(apiApp, routingContext, user)
             .redirectViaClient()
             .authenticate();
           return Future.succeededFuture();
@@ -276,7 +275,7 @@ public class AuthApiImpl implements AuthApi {
 
     validateEmailIdentifierDataUtil(emailIdentifier);
 
-    return UserProvider.createFrom(routingContext.vertx())
+    return apiApp.getUserProvider()
       .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmHandle())
       .onFailure(routingContext::fail)
       .compose(userToResetPassword -> {
@@ -358,7 +357,7 @@ public class AuthApiImpl implements AuthApi {
 
     User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
 
-    return UserProvider.createFrom(routingContext.vertx())
+    return apiApp.getUserProvider()
       .updatePassword(user, passwordOnly.getPassword())
       .onFailure(err -> routingContext.fail(HttpStatus.INTERNAL_ERROR, err))
       .compose(futureUser -> {
@@ -442,23 +441,6 @@ public class AuthApiImpl implements AuthApi {
     return UserRegistrationFlow.handleStep1SendEmail(this.apiApp, routingContext, emailIdentifier);
   }
 
-  @Override
-  public Future<ApiResponse<User>> authUserGet(RoutingContext routingContext) {
-
-    try {
-      return AuthInternalAuthenticator.getAuthUserFromContext(routingContext)
-        .onFailure(routingContext::fail)
-        .compose(comboUser -> {
-          comboUser.setOrganization(null);
-          User publicUser = UserProvider.createFrom(routingContext.vertx())
-            .toPublicCloneWithRealm(comboUser);
-          return Future.succeededFuture((new ApiResponse<>(publicUser)));
-        });
-    } catch (NotFoundException e) {
-      return Future.succeededFuture((new ApiResponse<>(HttpStatus.NOT_AUTHORIZED)));
-    }
-
-  }
 
   private void validateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
     ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");

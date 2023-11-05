@@ -9,11 +9,11 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.EraldySessionHandler;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.OrganizationUserProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.HttpStatus;
@@ -29,21 +29,25 @@ import net.bytle.vertx.VertxRoutingFailureData;
 public class AuthInternalAuthenticator {
 
 
-  public static Config createWith(RoutingContext ctx, User user) {
+  public static Config createWith(EraldyApiApp apiApp, RoutingContext ctx, User user) {
     if (user.getLocalId() == null) {
       throw new InternalException("The authenticated user has no database id");
     }
-    return new Config(ctx, user);
+    return new Config(apiApp, ctx, user);
   }
 
 
-  public static Future<OrganizationUser> getAuthUserFromContext(RoutingContext ctx) throws NotFoundException {
+  public static Future<OrganizationUser> getAuthUserFromContext(EraldyApiApp apiApp, RoutingContext ctx) throws NotFoundException {
     io.vertx.ext.auth.User user = ctx.user();
     if (user == null) {
       throw new NotFoundException();
     }
     JsonObject principal = user.principal();
 
+    /**
+     * For OpenID Connect/OAuth2 Access Tokens,
+     * there is a rootClaim
+     */
     String rootClaim = user.attributes().getString("rootClaim");
     if (rootClaim != null && rootClaim.equals("accessToken")) {
       // JWT
@@ -51,11 +55,11 @@ public class AuthInternalAuthenticator {
       if (userGuid == null) {
         return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
       }
-      return OrganizationUserProvider.get(ctx.vertx())
+      return apiApp.getOrganizationUserProvider()
         .getOrganizationUserByGuid(userGuid);
     }
-    OrganizationUser userCombo = principal.mapTo(OrganizationUser.class);
-    return Future.succeededFuture(userCombo);
+    OrganizationUser organizationUser = principal.mapTo(OrganizationUser.class);
+    return Future.succeededFuture(organizationUser);
   }
 
   public enum RedirectionMethod {
@@ -67,6 +71,7 @@ public class AuthInternalAuthenticator {
   public static class Config {
     private final RoutingContext ctx;
     private final User user;
+    private final EraldyApiApp apiApp;
     private RedirectionMethod redirectVia = RedirectionMethod.HTTP;
     private String appOperationPath;
     /**
@@ -76,7 +81,8 @@ public class AuthInternalAuthenticator {
      */
     private boolean redirectUriIsMandatory = true;
 
-    public Config(RoutingContext ctx, User user) {
+    public Config(EraldyApiApp apiApp, RoutingContext ctx, User user) {
+      this.apiApp = apiApp;
       this.ctx = ctx;
       this.user = user;
     }
@@ -168,7 +174,7 @@ public class AuthInternalAuthenticator {
          */
         if (UsersUtil.isEraldyUser(user)) {
 
-          futureOrganizationUser = OrganizationUserProvider.get(ctx.vertx())
+          futureOrganizationUser = apiApp.getOrganizationUserProvider()
             .getOrganizationUserById(user.getLocalId(), user);
 
         } else {

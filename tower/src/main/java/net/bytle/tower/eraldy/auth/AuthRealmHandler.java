@@ -10,11 +10,11 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApexDomain;
@@ -36,16 +36,16 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   private static final String X_AUTH_REALM_HEADER_HANDLE = "X-AUTH-REALM-HANDLE";
   private static final String X_AUTH_REALM_HEADER_GUID = "X-AUTH-REALM-GUID";
 
-  private final EraldyDomain eraldyDomain;
+  private final EraldyApiApp apiApp;
 
-  private AuthRealmHandler(EraldyDomain eraldyDomain) {
-    this.eraldyDomain = eraldyDomain;
+  private AuthRealmHandler(EraldyApiApp apiApp) {
+    this.apiApp = apiApp;
   }
 
 
-  public static AuthRealmHandler createFrom(Router rootRouter, EraldyDomain eraldyDomain) {
-    AuthRealmHandler authHandler = new AuthRealmHandler(eraldyDomain);
-    String routePath = eraldyDomain.getAbsoluteLocalPath() + "/*";
+  public static AuthRealmHandler createFrom(Router rootRouter, EraldyApiApp apiApp) {
+    AuthRealmHandler authHandler = new AuthRealmHandler(apiApp);
+    String routePath = apiApp.getApexDomain().getAbsoluteLocalPath() + "/*";
     rootRouter.route(routePath).handler(authHandler);
     return authHandler;
   }
@@ -59,7 +59,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
      */
     HttpServerRequest request = routingContext.request();
 
-    RealmProvider realmProvider = RealmProvider.createFrom(routingContext.vertx());
+    RealmProvider realmProvider = apiApp.getRealmProvider();
 
 
     /**
@@ -100,7 +100,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
       throw new InternalException("The URI (" + uri + ") is not valid." + e.getMessage(), e);
     }
 
-    PgPool jdbcPool = this.eraldyDomain.getHttpServer().getServer().getJdbcPool();
+    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
     String sql = "SELECT realm.*, app_uri FROM cs_realms.realm INNER JOIN cs_realms.realm_app ON cs_realms.realm.realm_id = cs_realms.realm_app.app_realm_id and app_uri = $1 order by app_uri limit 1";
     String likeScopeValue = uri.toString();
     return jdbcPool.preparedQuery(sql)
@@ -118,7 +118,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
 
         Row row = realmRows.iterator().next();
 
-        return RealmProvider.createFrom(routingContext.vertx()).getRealmFromDatabaseRow(row, Realm.class);
+        return apiApp.getRealmProvider().getRealmFromDatabaseRow(row, Realm.class);
 
       });
   }
@@ -151,7 +151,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
            * and that the session is realm dependent
            */
           FrontEndCookie<Realm> authRealmCookie = getAuthRealmCookie(context);
-          Realm frontEndRealm = RealmProvider.createFrom(context.vertx()).toEraldyFrontEnd(currentAuthRealm);
+          Realm frontEndRealm = apiApp.getRealmProvider().toEraldyFrontEnd(currentAuthRealm);
           authRealmCookie.setValue(frontEndRealm);
 
 
@@ -184,9 +184,9 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
    */
   private FrontEndCookie<Realm> getAuthRealmCookie(RoutingContext routingContext) {
 
-    String cookieName = this.eraldyDomain.getPrefixName() + "-auth-realm";
+    String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
     return FrontEndCookie.conf(routingContext, cookieName, Realm.class)
-      .setPath("/") // available to all pages
+      .setPath("/") // send back from all pages
       .build();
 
   }

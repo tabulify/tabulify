@@ -20,13 +20,12 @@ import io.vertx.ext.web.handler.AuthorizationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
 import net.bytle.tower.eraldy.model.openapi.RegistrationList;
-import net.bytle.tower.eraldy.objectProvider.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Date;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.HttpRequestUtil;
@@ -71,7 +70,7 @@ public class OAuthExternal {
 
 
   private final OAuthExternalProvider oauthExternalProvider;
-  private final TowerApp towerApp;
+  private final EraldyApiApp apiApp;
   private final String provider;
 
   // Extra security layer Proof Key for Code Exchange. PKCE
@@ -86,7 +85,7 @@ public class OAuthExternal {
 
   public OAuthExternal(TowerApp towerApp, String provider, Router router, int pkce) {
 
-    this.towerApp = towerApp;
+    this.apiApp = (EraldyApiApp) towerApp;
     this.provider = provider;
     this.pkce = pkce;
     this.prng = VertxContextPRNG.current(towerApp.getApexDomain().getHttpServer().getServer().getVertx());
@@ -133,7 +132,7 @@ public class OAuthExternal {
   private void addCallBackHandler(Router router) {
 
 
-    String callbackLocalRouterPath = towerApp.getPathMount() + this.getCallbackOperationPath();
+    String callbackLocalRouterPath = apiApp.getPathMount() + this.getCallbackOperationPath();
     router.route(callbackLocalRouterPath)
       .method(HttpMethod.GET)
       .handler(AuthOAuthCallbackHandler
@@ -218,7 +217,7 @@ public class OAuthExternal {
 
     Future<RegistrationList> listFuture;
     if (listGuid != null) {
-      listFuture = ListProvider.create(context.vertx())
+      listFuture = apiApp.getListProvider()
         .getListByGuid(listGuid);
     } else {
       listFuture = Future.succeededFuture();
@@ -250,7 +249,7 @@ public class OAuthExternal {
      * It should be in dev `member.combostrap.local:8083`
      */
     String providerCallbackOperationPath = this.getCallbackOperationPath();
-    String callbackPublicURL = towerApp.getPublicRequestUriForOperationPath(providerCallbackOperationPath).toUri().toString();
+    String callbackPublicURL = apiApp.getPublicRequestUriForOperationPath(providerCallbackOperationPath).toUri().toString();
     LOGGER.info("The calculated callback URL for the provider (" + provider + ") is " + callbackPublicURL);
     return callbackPublicURL;
   }
@@ -485,7 +484,7 @@ public class OAuthExternal {
             /**
              * Create our principal
              */
-            return UserProvider.createFrom(ctx.vertx())
+            return oAuthExternal.apiApp.getUserProvider()
               .createOrPatchIfNull(oauthUser);
 
           });
@@ -504,7 +503,7 @@ public class OAuthExternal {
              * A user registration: redirects to the redirect uri
              */
             if (listGuid == null) {
-              AuthInternalAuthenticator.createWith(ctx, userFromProvider)
+              AuthInternalAuthenticator.createWith(oAuthExternal.apiApp, ctx, userFromProvider)
                 .redirectViaHttp()
                 .authenticate();
               return;
@@ -521,7 +520,7 @@ public class OAuthExternal {
               LOGGER.warn("Oauth List registration: The remote ip client could not be found. Error: " + e.getMessage());
               optInIp = "";
             }
-            ListRegistrationFlow.authenticateAndRegisterUserToList(ctx, listGuid, userFromProvider, optInTime, optInIp, RegistrationFlow.OAUTH);
+            ListRegistrationFlow.authenticateAndRegisterUserToList(oAuthExternal.apiApp, ctx, listGuid, userFromProvider, optInTime, optInIp, RegistrationFlow.OAUTH);
 
           });
       });

@@ -16,4 +16,5 @@ public interface RealmApi  {
     Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmGuid);
     Future<ApiResponse<List<RealmAnalytics>>> realmsGet(RoutingContext routingContext);
     Future<ApiResponse<List<Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid);
+    Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext);
 }

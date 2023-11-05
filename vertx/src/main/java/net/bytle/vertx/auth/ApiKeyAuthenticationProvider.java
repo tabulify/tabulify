@@ -10,6 +10,7 @@ import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
+import net.bytle.vertx.UserClaims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,7 +36,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
       throw new InternalException("The super token should not be null. You can set in the configuration with the key (" + SUPERUSER_TOKEN_CONF + ")");
     }
     this.superToken = superToken;
-    LOGGER.info("ApiKey Authentication Provider created with the conf ("+SUPERUSER_TOKEN_CONF+")");
+    LOGGER.info("ApiKey Authentication Provider created with the conf (" + SUPERUSER_TOKEN_CONF + ")");
   }
 
   @Override
@@ -61,8 +62,9 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
 
     if (superToken.equals(token)) {
-      User user = User.create(new JsonObject());
-
+      UserClaims userClaims = new UserClaims();
+      userClaims.setSubjectHandle("root");
+      User user = User.create(JsonObject.mapFrom(userClaims));
       resultHandler.handle(Future.succeededFuture(user));
       return;
     }

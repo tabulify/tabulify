@@ -198,4 +198,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     return this.getOriginOperationPath()+"/"+ LAST_URL_OPERATION_CALLBACK_PART;
   }
 
+  public TowerApp getApp() {
+    return app;
+  }
 }

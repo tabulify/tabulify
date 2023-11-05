@@ -28,6 +28,7 @@ public void mount(RouterBuilder builder) {
     builder.operation("realmUsersNewGet").handler(this::realmUsersNewGet);
     builder.operation("realmsGet").handler(this::realmsGet);
     builder.operation("realmsOwnedByGet").handler(this::realmsOwnedByGet);
+    builder.operation("realmsOwnedByMeGet").handler(this::realmsOwnedByMeGet);
 }
 
     private void realmGet(RoutingContext routingContext) {
@@ -107,6 +108,20 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.realmsOwnedByGet(routingContext, userGuid)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void realmsOwnedByMeGet(RoutingContext routingContext) {
+    logger.info("realmsOwnedByMeGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+
+
+    // Based on Route#respond
+    api.realmsOwnedByMeGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

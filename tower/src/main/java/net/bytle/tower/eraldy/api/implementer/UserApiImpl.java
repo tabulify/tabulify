@@ -5,13 +5,13 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.FailureStatic;
@@ -23,14 +23,16 @@ import java.util.stream.Collectors;
 
 public class UserApiImpl implements UserApi {
 
-  public UserApiImpl(TowerApp towerApp) {
+  private final EraldyApiApp apiApp;
 
+  public UserApiImpl(TowerApp towerApp) {
+    this.apiApp = (EraldyApiApp) towerApp;
   }
 
   @Override
   public Future<ApiResponse<OrganizationUser>> userAuthGet(RoutingContext routingContext) {
     try {
-      return AuthInternalAuthenticator.getAuthUserFromContext(routingContext)
+      return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
         .onFailure(routingContext::fail)
         .compose(comboUser -> Future.succeededFuture(new ApiResponse<>(comboUser)));
     } catch (NotFoundException e) {
@@ -42,7 +44,7 @@ public class UserApiImpl implements UserApi {
   public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userGuid, String userEmail, String realmHandle, String realmGuid) {
     Vertx vertx = routingContext.vertx();
     Future<User> userFuture;
-    UserProvider userProvider = UserProvider.createFrom(vertx);
+    UserProvider userProvider = apiApp.getUserProvider();
     if (userGuid != null) {
       userFuture = userProvider
         .getUserByGuid(userGuid);
@@ -53,7 +55,7 @@ public class UserApiImpl implements UserApi {
       if (realmHandle == null && realmGuid == null) {
         throw ValidationException.create("With a userEmail, a realm identifiant (realmGuid or realmHandle) should be given", "realmHandle", null);
       }
-      userFuture = RealmProvider.createFrom(vertx)
+      userFuture = this.apiApp.getRealmProvider()
         .getRealmFromGuidOrHandle(realmGuid, realmHandle)
         .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
         .compose(realm -> {
@@ -79,14 +81,32 @@ public class UserApiImpl implements UserApi {
 
   @Override
   public Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid) {
-    Vertx vertx = routingContext.vertx();
-    return UserProvider.createFrom(vertx)
+    return apiApp.getUserProvider()
       .getUserByGuid(guid)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(user -> {
         ApiResponse<User> apiResponse = new ApiResponse<>(user);
         return Future.succeededFuture(apiResponse);
       });
+  }
+
+  @Override
+  public Future<ApiResponse<User>> userMeGet(RoutingContext routingContext) {
+
+      try {
+        return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
+          .onFailure(routingContext::fail)
+          .compose(organizationUser -> {
+            organizationUser.setOrganization(null);
+            User publicUser = apiApp.getUserProvider()
+              .toPublicCloneWithRealm(organizationUser);
+            return Future.succeededFuture((new ApiResponse<>(publicUser)));
+          });
+      } catch (NotFoundException e) {
+        return Future.succeededFuture((new ApiResponse<>(HttpStatus.NOT_AUTHORIZED)));
+      }
+
+
   }
 
   @Override
@@ -106,7 +126,7 @@ public class UserApiImpl implements UserApi {
     userRequested.setTitle(userPostBody.getUserTitle());
     userRequested.setAvatar(userPostBody.getUserAvatar());
 
-    UserProvider userProvider = UserProvider.createFrom(vertx);
+    UserProvider userProvider = apiApp.getUserProvider();
     return userProvider.getUserRealmAndUpdateUserIdEventuallyFromRequestData(userRealmRequested, userRequested)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
@@ -125,9 +145,9 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmGuid, String
     realmHandle) {
-    Vertx vertx = routingContext.vertx();
-    UserProvider userProvider = UserProvider.createFrom(vertx);
-    return RealmProvider.createFrom(vertx)
+
+    UserProvider userProvider = apiApp.getUserProvider();
+    return this.apiApp.getRealmProvider()
       .getRealmFromGuidOrHandle(realmGuid, realmHandle)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(userProvider::getUsers)

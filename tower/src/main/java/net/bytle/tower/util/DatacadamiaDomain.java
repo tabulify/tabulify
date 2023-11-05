@@ -5,8 +5,6 @@ import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.VerticleApi;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 
 public class DatacadamiaDomain {
   public static final String REALM_HANDLE = "datacadamia";
@@ -30,9 +28,9 @@ public class DatacadamiaDomain {
     User owner = new User();
     owner.setRealm(eraldyRealm);
     owner.setEmail("owner@datacadamia.com");
-    return UserProvider.createFrom(this.verticle.getVertx())
+    return verticle.getApp().getUserProvider()
       .upsertUser(owner)
-      .compose(ownerResult -> RealmProvider.createFrom(this.verticle.getVertx())
+      .compose(ownerResult -> this.verticle.getApp().getRealmProvider()
         .upsertRealm(datacadamiaRealm));
 
   }

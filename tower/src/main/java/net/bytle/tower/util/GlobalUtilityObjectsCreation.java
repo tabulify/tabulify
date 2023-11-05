@@ -63,11 +63,6 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
       .config(vertx, configAccessor)
       .create();
 
-    INIT_LOGGER.info("Start Instantiation of Hash Id");
-    HashId
-      .config(vertx, configAccessor)
-      .create();
-
     INIT_LOGGER.info("Start Instantiation of Template Engine");
     TemplateEngine
       .config(vertx, configAccessor)

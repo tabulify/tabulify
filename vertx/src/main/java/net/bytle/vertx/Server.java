@@ -52,6 +52,7 @@ public class Server {
   private JdbcSchemaManager jdbcManager;
   private JwtAuthManager jwtAuthManager;
   private ApiKeyAuthenticationProvider apiKeyAuth;
+  private HashId hashId;
 
   Server(builder builder) {
 
@@ -139,6 +140,10 @@ public class Server {
     return this.apiKeyAuth;
   }
 
+  public HashId getHashId() {
+    return this.hashId;
+  }
+
 
   public static class builder {
     private final String name;
@@ -152,6 +157,7 @@ public class Server {
     private boolean enableIpGeoLocation = false;
     private boolean addJwt = false;
     private boolean addApiKeyAuth = false;
+    private boolean enableHashId = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -230,13 +236,16 @@ public class Server {
       if (this.addApiKeyAuth) {
         server.apiKeyAuth = new ApiKeyAuthenticationProvider(server.getConfigAccessor());
       }
+      if(this.enableHashId){
+        server.hashId = new HashId(server.getConfigAccessor());
+      }
       return server;
     }
 
     /**
      * @param name - the name is used in the configuration as prefix
      */
-    public builder addJdbcPool(String name) {
+    public builder enableJdbcPool(String name) {
       this.poolName = name;
       return this;
     }
@@ -264,6 +273,14 @@ public class Server {
      */
     public Server.builder enableApiKeyAuth() {
       this.addApiKeyAuth = true;
+      return this;
+    }
+
+    /**
+     * Enable the HashId utility
+     */
+    public Server.builder enableHashId() {
+      this.enableHashId = true;
       return this;
     }
   }

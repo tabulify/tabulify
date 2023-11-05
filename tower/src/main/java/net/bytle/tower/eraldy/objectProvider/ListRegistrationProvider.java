@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
@@ -12,6 +11,7 @@ import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
@@ -23,8 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Manage the get/upsert of a {@link Registration} object asynchronously
@@ -38,7 +36,6 @@ public class ListRegistrationProvider {
 
   static final String TABLE_NAME = "realm_list_registration";
 
-  private static final Map<Vertx, ListRegistrationProvider> mapRegistrationProviderByVertx = new HashMap<>();
 
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String REGISTRATION_PREFIX = "registration";
@@ -46,28 +43,23 @@ public class ListRegistrationProvider {
   public static final String ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
   public static final String USER_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  private static final String SHORT_PREFIX = "reg";
+  private static final String GUID_PREFIX = "reg";
   static final String REALM_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String REGISTERED_STATUS = "registered";
   private static final String DATA_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "data";
-  private final Vertx vertx;
+  private final EraldyApiApp apiApp;
   private static final String CREATION_TIME_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+  private final PgPool jdbcPool;
 
 
-  public ListRegistrationProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public ListRegistrationProvider(EraldyApiApp apiApp) {
+
+    this.apiApp = apiApp;
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+
   }
 
-  public static ListRegistrationProvider create(Vertx vertx) {
-    ListRegistrationProvider registrationProvider = ListRegistrationProvider.mapRegistrationProviderByVertx.get(vertx);
-    if (registrationProvider != null) {
-      return registrationProvider;
-    }
-    registrationProvider = new ListRegistrationProvider(vertx);
-    ListRegistrationProvider.mapRegistrationProviderByVertx.put(vertx, registrationProvider);
-    return registrationProvider;
-  }
 
   /**
    * @param registration - the publication to make public
@@ -92,7 +84,7 @@ public class ListRegistrationProvider {
     User subscriberUser = registration.getSubscriber();
     if (subscriberUser != null) {
       User publicCloneWithoutRealm;
-      UserProvider userProvider = UserProvider.createFrom(vertx);
+      UserProvider userProvider = this.apiApp.getUserProvider();
       if (!forTemplate) {
         publicCloneWithoutRealm = userProvider.toPublicCloneWithoutRealm(subscriberUser);
       } else {
@@ -104,7 +96,7 @@ public class ListRegistrationProvider {
     /**
      * List
      */
-    ListProvider listProvider = ListProvider.create(vertx);
+    ListProvider listProvider = this.apiApp.getListProvider();
     RegistrationList registrationList = registration.getList();
     if (!forTemplate) {
       registrationList = listProvider.toPublicClone(registrationList);
@@ -236,17 +228,17 @@ public class ListRegistrationProvider {
   private Future<Registration> getRegistrationFromRow(Row row) {
 
     Long realmId = row.getLong(REALM_COLUMN);
-    Future<Realm> realmFuture = RealmProvider.createFrom(vertx)
+    Future<Realm> realmFuture = this.apiApp.getRealmProvider()
       .getRealmFromId(realmId);
 
     return realmFuture
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        Future<RegistrationList> publicationFuture = ListProvider.create(vertx).getListById(listId, realm);
+        Future<RegistrationList> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
 
         Long subscriberId = row.getLong(USER_COLUMN);
-        Future<User> publisherFuture = UserProvider.createFrom(vertx)
+        Future<User> publisherFuture = apiApp.getUserProvider()
           .getUserById(subscriberId, realm);
 
         return Future
@@ -284,18 +276,18 @@ public class ListRegistrationProvider {
       throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
     }
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * " +
       "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
       REALM_COLUMN + " = $1\n" +
       "AND " + LIST_ID_COLUMN + " = $2\n " +
       "and " + USER_COLUMN + " = $3";
+    long realmId = guidObject.getRealmOrOrganizationId();
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(
-        guidObject.getRealmId(),
-        guidObject.getFirstObjectId(),
-        guidObject.getSecondObjectId())
+        realmId,
+        guidObject.validateRealmAndGetFirstObjectId(realmId),
+        guidObject.validateAndGetSecondObjectId(realmId))
       )
       .onFailure(e -> LOGGER.error("Unable to retrieve the registration. Error: " + e.getMessage() + ". Sql: \n" + sql, e))
       .compose(userRows -> {
@@ -315,18 +307,19 @@ public class ListRegistrationProvider {
   }
 
   private Guid getGuidObject(String registrationGuid) throws CastException {
-    return Guid.createObjectFromRealmIdAndTwoObjectId(SHORT_PREFIX, registrationGuid, vertx);
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(GUID_PREFIX, registrationGuid);
   }
 
 
   public Future<java.util.List<RegistrationShort>> getRegistrations(String listGuid) {
     Guid guid;
     try {
-      guid = ListProvider.create(vertx).getGuidObject(listGuid);
+      guid = apiApp.getListProvider().getGuidObject(listGuid);
     } catch (CastException e) {
       return Future.failedFuture(e);
     }
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
+
+    long realmId = guid.getRealmOrOrganizationId();
     return jdbcPool.preparedQuery(
         "SELECT registration_list_id as list_id, registration_user_id as user_id, user_email as subscriber_email " +
           " FROM cs_realms.realm_list_registration  registration " +
@@ -337,8 +330,8 @@ public class ListRegistrationProvider {
           " AND registration.registration_list_id = $2"
       )
       .execute(Tuple.of(
-        guid.getRealmId(),
-        guid.getFirstObjectId()
+        realmId,
+        guid.validateRealmAndGetFirstObjectId(realmId)
       ))
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(registrationRows -> {
@@ -354,7 +347,8 @@ public class ListRegistrationProvider {
           RegistrationShort registrationShort = new RegistrationShort();
           Long listId = row.getLong("list_id");
           Long userId = row.getLong("user_id");
-          registrationShort.setGuid(Guid.getGuid(listId, userId, vertx));
+          String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
+          registrationShort.setGuid(guidString);
           String subscriberEmail = row.getString("subscriber_email");
           registrationShort.setSubscriberEmail(subscriberEmail);
 
@@ -373,7 +367,7 @@ public class ListRegistrationProvider {
   public Future<Registration> getRegistrationByListGuidAndSubscriberEmail(String listGuid, String subscriberEmail) {
     Guid listGuidObject;
     try {
-      listGuidObject = ListProvider.create(vertx).getGuidObject(listGuid);
+      listGuidObject = apiApp.getListProvider().getGuidObject(listGuid);
     } catch (CastException e) {
       throw ValidationException.create("The listGuid is not valid", "listGuid", listGuid);
     }
@@ -385,12 +379,14 @@ public class ListRegistrationProvider {
       + " registration_realm_id = $1 "
       + "AND registration_list_id = $2 "
       + "and userTable.user_email = $3";
+    long realmId = listGuidObject.getRealmOrOrganizationId();
     Tuple parameters = Tuple.of(
-      listGuidObject.getRealmId(),
-      listGuidObject.getFirstObjectId(),
+      realmId,
+      listGuidObject.validateRealmAndGetFirstObjectId(realmId),
       subscriberEmail
     );
-    return JdbcPostgresPool.getJdbcPool().preparedQuery(sql)
+    return jdbcPool
+      .preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get registration by list guid and subscriber email error: " + e.getMessage(), e))
       .compose(userRows -> {
@@ -412,12 +408,13 @@ public class ListRegistrationProvider {
     if (registration.getGuid() != null) {
       return;
     }
-    String guid = Guid.createGuidStringFromRealmAndTwoObjectId(
-      SHORT_PREFIX,
-      registration.getList().getRealm(),
-      registration.getList().getLocalId(),
-      registration.getSubscriber().getLocalId(),
-      vertx);
+    String guid = apiApp.createGuidStringFromRealmAndTwoObjectId(
+        GUID_PREFIX,
+        registration.getList().getRealm(),
+        registration.getList().getLocalId(),
+        registration.getSubscriber().getLocalId()
+      )
+      .toString();
     registration.setGuid(guid);
   }
 

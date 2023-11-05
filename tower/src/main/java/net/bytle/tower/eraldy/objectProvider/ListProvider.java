@@ -15,6 +15,7 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
@@ -47,28 +48,20 @@ public class ListProvider {
   public static final String DATA_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "data";
   static final String ID_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "id";
   private static final String REALM_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
-  static final String HASH_PREFIX = "lis";
-  private final Vertx vertx;
+  static final String LIST_GUID_PREFIX = "lis";
+  private final EraldyApiApp apiApp;
 
   public static final String HANDLE_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + "handle";
   private static final String MODIFICATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private static final String CREATION_COLUMN = LIST_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private final PgPool jdbcPool;
 
 
-  public ListProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public ListProvider(EraldyApiApp apiApp) {
+    this.apiApp = apiApp;
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
   }
 
-  public static ListProvider create(Vertx vertx) {
-    ListProvider publicationProvider;
-    publicationProvider = ListProvider.mapPublicationByVertx.get(vertx);
-    if (publicationProvider != null) {
-      return publicationProvider;
-    }
-    publicationProvider = new ListProvider(vertx);
-    ListProvider.mapPublicationByVertx.put(vertx, publicationProvider);
-    return publicationProvider;
-  }
 
   /**
    * @param registrationList - the list to make public
@@ -91,7 +84,7 @@ public class ListProvider {
     if (registrationList.getGuid() != null) {
       return;
     }
-    String guid = Guid.createGuidStringFromRealmAndObjectId(HASH_PREFIX, registrationList.getRealm(), registrationList.getLocalId(), vertx);
+    String guid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, registrationList.getRealm(), registrationList.getLocalId()).toString();
     registrationList.setGuid(guid);
   }
 
@@ -352,7 +345,7 @@ public class ListProvider {
     Future<Realm> realmFuture = Future.succeededFuture(appRealm);
     Long realmId = row.getLong(REALM_COLUMN);
     if (appRealm == null) {
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromId(realmId);
     } else {
       if (!Objects.equals(appRealm.getLocalId(), realmId)) {
@@ -368,14 +361,14 @@ public class ListProvider {
         Future<App> appFuture = Future.succeededFuture(knownApp);
         if (knownApp == null) {
           Long publisherAppId = row.getLong(APP_OWNER_COLUMN);
-          appFuture = AppProvider.create(vertx)
+          appFuture = this.apiApp.getAppProvider()
             .getAppById(publisherAppId, realmResult);
         }
 
         Long ownerId = row.getLong(USER_OWNER_COLUMN);
         Future<User> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
-          ownerFuture = UserProvider.createFrom(vertx)
+          ownerFuture = apiApp.getUserProvider()
             .getUserById(ownerId, realmResult);
         }
 
@@ -451,7 +444,7 @@ public class ListProvider {
      */
     Future<Realm> realmFuture = null;
     if (listPostBody.getRealmGuid() != null || listPostBody.getRealmHandle() != null) {
-      realmFuture = RealmProvider.createFrom(vertx)
+      realmFuture = this.apiApp.getRealmProvider()
         .getRealmFromGuidOrHandle(listPostBody.getRealmGuid(), listPostBody.getRealmHandle());
     }
 
@@ -460,7 +453,7 @@ public class ListProvider {
      */
     Future<App> futureApp;
     String publisherAppGuid = listPostBody.getOwnerAppGuid();
-    AppProvider appProvider = AppProvider.create(vertx);
+    AppProvider appProvider = apiApp.getAppProvider();
     if (publisherAppGuid != null) {
       futureApp = appProvider
         .getAppByGuid(publisherAppGuid);
@@ -501,7 +494,7 @@ public class ListProvider {
 
     Future<User> futureUser = Future.succeededFuture(null);
     if (ownerEmail != null || ownerGuid != null) {
-      UserProvider userProvider = UserProvider.createFrom(vertx);
+      UserProvider userProvider = apiApp.getUserProvider();
       Long userId = null;
       if (ownerGuid != null) {
         futureUser = userProvider.getUserByGuid(ownerGuid);
@@ -516,7 +509,7 @@ public class ListProvider {
             userToGetOrCreate.setLocalId(userId);
             userToGetOrCreate.setEmail(ownerEmail);
             userToGetOrCreate.setRealm(realm);
-            return UserProvider.createFrom(vertx)
+            return userProvider
               .getOrCreateUserFromEmail(userToGetOrCreate);
           });
       }
@@ -546,18 +539,17 @@ public class ListProvider {
 
     Guid publicationGuidObject;
     try {
-      publicationGuidObject = Guid.createObjectFromRealmIdAndOneObjectId(HASH_PREFIX, publicationGuid, vertx);
+      publicationGuidObject = apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(LIST_GUID_PREFIX, publicationGuid);
     } catch (CastException e) {
       throw ValidationException.create("The publication guid is not valid", "guid", publicationGuid);
     }
 
-    return RealmProvider.createFrom(vertx)
-      .getRealmFromId(publicationGuidObject.getRealmId())
-      .compose(realm -> getListById(publicationGuidObject.getFirstObjectId(), realm));
+    return this.apiApp.getRealmProvider()
+      .getRealmFromId(publicationGuidObject.getRealmOrOrganizationId())
+      .compose(realm -> getListById(publicationGuidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
   }
 
   public Future<java.util.List<ListSummary>> getListsSummary(Realm realm) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
 
     return jdbcPool.preparedQuery(
         "SELECT list.list_id, list.list_handle, app.app_uri, count(registration.registration_user_id) subscriber_count\n" +
@@ -580,7 +572,7 @@ public class ListProvider {
 
           // List Id
           Long listId = row.getLong(ID_COLUMN);
-          String listGuid = Guid.getGuid(listId, vertx);
+          String listGuid = apiApp.createGuidFromRealmAndObjectId(LIST_GUID_PREFIX, realm, listId).toString();
           listSummary.setGuid(listGuid);
 
           // List Handle
@@ -641,7 +633,7 @@ public class ListProvider {
   }
 
   public Guid getGuidObject(String listGuid) throws CastException {
-    return Guid.createObjectFromRealmIdAndOneObjectId(ListProvider.HASH_PREFIX, listGuid, vertx);
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(ListProvider.LIST_GUID_PREFIX, listGuid);
   }
 
   public Future<RegistrationList> getListByHandle(String listHandle, Realm realm) {
@@ -652,7 +644,7 @@ public class ListProvider {
       " " + HANDLE_COLUMN + " = $1 " +
       " AND " + REALM_COLUMN + " = $2";
     Tuple parameters = Tuple.of(listHandle, realm.getLocalId());
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get list by handle error with the sql.\n" + sql, e))
@@ -676,7 +668,7 @@ public class ListProvider {
 
 
     App ownerApp = listClone.getOwnerApp();
-    AppProvider appProvider = AppProvider.create(vertx);
+    AppProvider appProvider = apiApp.getAppProvider();
     if (template) {
       ownerApp = appProvider.toTemplateClone(ownerApp);
     } else {
@@ -689,7 +681,7 @@ public class ListProvider {
       // owner user is the user app
       ownerUser = registrationList.getOwnerApp().getUser();
     }
-    UserProvider userProvider = UserProvider.createFrom(vertx);
+    UserProvider userProvider = apiApp.getUserProvider();
     if (ownerUser != null) {
       if (template) {
         ownerUser = userProvider.toTemplateCloneWithoutRealm(ownerUser);

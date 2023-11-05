@@ -31,6 +31,8 @@ val flywayVersion = "9.7.0"
 // 42.2.16 is the current version of the driver. This is the driver you should be using.
 // It supports PostgreSQL 8.2 or newer and requires Java 6 or newer. It contains support for SSL and the javax.sql package.
 val postgresVersion = "42.2.16"
+// https://mvnrepository.com/artifact/org.hashids/hashids
+val hashIdVersion = "1.0.3"
 
 ext {
   set("vertxVersion", vertxVersion)
@@ -43,6 +45,7 @@ ext {
   set("scramClientVersion", scramClientVersion)
   set("flywayVersion", flywayVersion)
   set("postgresVersion", postgresVersion)
+  set("hashIdVersion", hashIdVersion)
 }
 
 /**

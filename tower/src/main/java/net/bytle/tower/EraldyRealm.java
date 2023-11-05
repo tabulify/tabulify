@@ -3,12 +3,11 @@ package net.bytle.tower;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.vertx.EraldyDomain;
+import net.bytle.vertx.TowerApexDomain;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,15 +15,15 @@ import java.net.URISyntaxException;
 public class EraldyRealm {
 
   private static EraldyRealm eraldyRealm;
-  private final EraldyDomain apexDomain;
+  private final EraldyApiApp apiApp;
 
   Realm realm;
 
-  public EraldyRealm(EraldyDomain eraldyDomain) {
-    this.apexDomain = eraldyDomain;
+  public EraldyRealm(EraldyApiApp eraldyDomain) {
+    this.apiApp = eraldyDomain;
   }
 
-  public static EraldyRealm create(EraldyDomain eraldyDomain) {
+  public static EraldyRealm create(EraldyApiApp eraldyDomain) {
     eraldyRealm = new EraldyRealm(eraldyDomain);
     return eraldyRealm;
   }
@@ -39,6 +38,7 @@ public class EraldyRealm {
      * Note: The eraldy realm already exists thanks to the database migration
      */
     Organization organization = new Organization();
+    TowerApexDomain apexDomain = apiApp.getApexDomain();
     organization.setLocalId(apexDomain.getOrganisationId());
 
     realm = new Realm();
@@ -57,14 +57,14 @@ public class EraldyRealm {
     } catch (URISyntaxException e) {
       throw new InternalException("The eraldy owner URL is not valid", e);
     }
-    return UserProvider.createFrom(apexDomain.getHttpServer().getServer().getVertx())
+    return apiApp.getUserProvider()
       .upsertUser(ownerUser)
       .onFailure(t -> {
         throw new InternalException("Error while creating the eraldy owner realm", t);
       })
       .compose(ownerDb -> {
         realm.setOwnerUser(ownerDb);
-        return RealmProvider.createFrom(apexDomain.getHttpServer().getServer().getVertx())
+        return this.apiApp.getRealmProvider()
           .upsertRealm(realm)
           .onFailure(t -> {
               throw new InternalException("Error while creating the eraldy realm", t);

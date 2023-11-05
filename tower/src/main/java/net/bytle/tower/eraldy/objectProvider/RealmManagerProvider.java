@@ -2,12 +2,12 @@ package net.bytle.tower.eraldy.objectProvider;
 
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
@@ -42,29 +42,20 @@ public class RealmManagerProvider {
 
   private static final String CREATION_TIME_COLUMN = REALM_MANAGER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_TIME_COLUMN = REALM_MANAGER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  private static RealmManagerProvider REALM_OWNER_PROVIDER;
+
+  private final EraldyApiApp apiApp;
 
 
-  private final Vertx vertx;
-
-
-  public RealmManagerProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public RealmManagerProvider(EraldyApiApp eraldyApiApp) {
+    this.apiApp = eraldyApiApp;
   }
 
-  public static RealmManagerProvider createFrom(Vertx vertx) {
-    if (REALM_OWNER_PROVIDER != null) {
-      return REALM_OWNER_PROVIDER;
-    }
-    REALM_OWNER_PROVIDER = new RealmManagerProvider(vertx);
-    return REALM_OWNER_PROVIDER;
-  }
 
 
   public RealmManager toPublicClone(RealmManager realmManager) {
     RealmManager clone = JsonObject.mapFrom(realmManager).mapTo(RealmManager.class);
-    clone.setRealm(RealmProvider.createFrom(vertx).toPublicClone(realmManager.getRealm()));
-    clone.setOwner(UserProvider.createFrom(vertx).toPublicCloneWithoutRealm(realmManager.getOwner()));
+    clone.setRealm(this.apiApp.getRealmProvider().toPublicClone(realmManager.getRealm()));
+    clone.setOwner(this.apiApp.getUserProvider().toPublicCloneWithoutRealm(realmManager.getOwner()));
     return clone;
   }
 
@@ -115,7 +106,7 @@ public class RealmManagerProvider {
         for (Row row : realmRows) {
 
           Long realmId = row.getLong(REALM_MANAGER_REALM_ID_COLUMN);
-          Future<Realm> futureRealm = RealmProvider.createFrom(vertx).getRealmFromId(realmId);
+          Future<Realm> futureRealm = this.apiApp.getRealmProvider().getRealmFromId(realmId);
           futureRealms.add(futureRealm);
 
         }
@@ -131,8 +122,8 @@ public class RealmManagerProvider {
 
     Long realmId = row.getLong(REALM_MANAGER_REALM_ID_COLUMN);
     Long managerId = row.getLong(REALM_MANAGER_EMAIL_COLUMN);
-    Future<Realm> futureRealm = RealmProvider.createFrom(vertx).getRealmFromId(realmId);
-    Future<User> futureUser = UserProvider.createFrom(vertx).getEraldyUserById(managerId);
+    Future<Realm> futureRealm = this.apiApp.getRealmProvider().getRealmFromId(realmId);
+    Future<User> futureUser = this.apiApp.getUserProvider().getEraldyUserById(managerId);
     return Future.all(futureRealm, futureUser)
       .onFailure(t -> LOGGER.error("Error while building the realm manager"))
       .compose(result -> {

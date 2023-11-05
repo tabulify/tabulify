@@ -13,9 +13,9 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.AuthUser;
 import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.UserClaims;
 import net.bytle.vertx.VertxRoutingFailureHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ public class UserRegistrationFlow {
    */
   public static Future<ApiResponse<Void>> handleStep1SendEmail(EraldyApiApp apiApp, RoutingContext routingContext, EmailIdentifier emailIdentifier) {
 
-    return RealmProvider.createFrom(routingContext.vertx())
+    return apiApp.getRealmProvider()
       .getRealmFromHandle(emailIdentifier.getRealmHandle())
       .onFailure(routingContext::fail)
       .compose(realm -> {
@@ -48,11 +48,11 @@ public class UserRegistrationFlow {
         User userRegister = new User();
         userRegister.setEmail(emailIdentifier.getUserEmail());
         userRegister.setRealm(realm);
-        AuthUser authUserToRegister = UsersUtil.toAuthUser(userRegister);
+        UserClaims userClaimsToRegister = UsersUtil.toAuthUser(userRegister);
 
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserToRegister,  routingContext);
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(userClaimsToRegister,  routingContext);
         BMailTransactionalTemplate letter = apiApp
           .getUserRegistrationValidation()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, userRegister, jwtClaims)
@@ -121,10 +121,10 @@ public class UserRegistrationFlow {
    * @param ctx - the context
    * @param jwtClaimsObject - the claims
    */
-  public static void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
+  public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
 
 
-    RealmProvider.createFrom(ctx.vertx())
+    apiApp.getRealmProvider()
       .getRealmFromHandle(jwtClaimsObject.getRealmHandle())
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
@@ -132,7 +132,7 @@ public class UserRegistrationFlow {
         User user = new User();
         user.setRealm(realm);
         user.setEmail(jwtClaimsObject.getEmail());
-        UserProvider userProvider = UserProvider.createFrom(ctx.vertx());
+        UserProvider userProvider = apiApp.getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())
           .onFailure(ctx::fail)
@@ -143,7 +143,7 @@ public class UserRegistrationFlow {
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
               AuthInternalAuthenticator
-                .createWith(ctx, userInDb)
+                .createWith(apiApp, ctx, userInDb)
                 .redirectViaHttp()
                 .authenticate();
               return;
@@ -151,7 +151,7 @@ public class UserRegistrationFlow {
             userProvider.insertUser(user)
               .onFailure(ctx::fail)
               .onSuccess(userInserted -> AuthInternalAuthenticator
-                .createWith(ctx, userInserted)
+                .createWith(apiApp, ctx, userInserted)
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
                 .authenticate());
           });

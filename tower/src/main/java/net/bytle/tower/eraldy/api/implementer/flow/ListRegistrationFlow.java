@@ -20,8 +20,6 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
-import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.type.UriEnhanced;
@@ -64,11 +62,10 @@ public class ListRegistrationFlow {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public static void authenticateAndRegisterUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public static void authenticateAndRegisterUserToList(EraldyApiApp apiApp, RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
 
-    ListProvider listProvider = ListProvider
-      .create(ctx.vertx());
-    listProvider
+
+    apiApp.getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
       .compose(list -> {
@@ -86,14 +83,13 @@ public class ListRegistrationFlow {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
         inputRegistration.setFlow(registrationFlow);
-        ListRegistrationProvider listRegistrationProvider = ListRegistrationProvider.create(ctx.vertx());
-        return listRegistrationProvider
+        return apiApp.getListRegistrationProvider()
           .upsertRegistration(inputRegistration)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
-            addRegistrationConfirmationCookieData(ctx, registration);
+            addRegistrationConfirmationCookieData(apiApp, ctx, registration);
             AuthInternalAuthenticator
-              .createWith(ctx, user)
+              .createWith(apiApp, ctx, user)
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .setMandatoryRedirectUri(false)
               .authenticate();
@@ -115,8 +111,8 @@ public class ListRegistrationFlow {
    * @param routingContext - the context
    * @param registration   - the registration
    */
-  public static void addRegistrationConfirmationCookieData(RoutingContext routingContext, Registration registration) {
-    Registration templateClone = ListRegistrationProvider.create(routingContext.vertx())
+  public static void addRegistrationConfirmationCookieData(EraldyApiApp apiApp, RoutingContext routingContext, Registration registration) {
+    Registration templateClone = apiApp.getListRegistrationProvider()
       .toTemplateClone(registration);
     FrontEndCookie.createCookieData(routingContext, Registration.class)
       .setValue(templateClone);
@@ -144,7 +140,7 @@ public class ListRegistrationFlow {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("Publication guid should not be null", "publicationGuid", null);
     }
     Vertx vertx = routingContext.vertx();
-    return ListProvider.create(vertx)
+    return apiApp.getListProvider()
       .getListByGuid(publicationGuid)
       .compose(registrationList -> {
 
@@ -152,9 +148,9 @@ public class ListRegistrationFlow {
         userRegister.setEmail(publicationSubscriptionPost.getSubscriberEmail());
         Realm listRealm = registrationList.getRealm();
         userRegister.setRealm(listRealm);
-        AuthUser authUserRegister = UsersUtil.toAuthUser(userRegister);
+        UserClaims userClaimsRegister = UsersUtil.toAuthUser(userRegister);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserRegister, routingContext)
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(userClaimsRegister, routingContext)
           .setListGuidClaim(publicationGuid);
 
         BMailTransactionalTemplate publicationValidationLetter = apiApp
@@ -225,7 +221,7 @@ public class ListRegistrationFlow {
       });
   }
 
-  public static void handleStep2EmailValidationLinkClick(RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
+  public static void handleStep2EmailValidationLinkClick(EraldyApiApp apiApp, RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
     String realmHandleClaims = jwtClaimsObject.getRealmHandle();
     String emailClaims = jwtClaimsObject.getEmail();
     String listGuid;
@@ -245,7 +241,7 @@ public class ListRegistrationFlow {
     }
 
     String finalOptInIp = optInIp;
-    RealmProvider.createFrom(ctx.vertx())
+    apiApp.getRealmProvider()
       .getRealmFromHandle(realmHandleClaims)
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
@@ -253,7 +249,7 @@ public class ListRegistrationFlow {
         User user = new User();
         user.setRealm(realm);
         user.setEmail(emailClaims);
-        UserProvider userProvider = UserProvider.createFrom(ctx.vertx());
+        UserProvider userProvider = apiApp.getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())
           .onFailure(ctx::fail)
@@ -267,7 +263,7 @@ public class ListRegistrationFlow {
             }
             futureUser
               .onFailure(ctx::fail)
-              .onSuccess(userToRegister -> authenticateAndRegisterUserToList(ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL));
+              .onSuccess(userToRegister -> authenticateAndRegisterUserToList(apiApp, ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL));
 
           });
       });
@@ -289,7 +285,7 @@ public class ListRegistrationFlow {
 
 
     Vertx vertx = routingContext.vertx();
-    return ListProvider.create(vertx)
+    return apiApp.getListProvider()
       .getListByGuid(listGuid)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(list -> {
@@ -340,11 +336,11 @@ public class ListRegistrationFlow {
    * and is used by the front end to redirect if present
    */
   public static Future<ApiResponse<String>> handleStep3Confirmation(EraldyApiApp apiApp, RoutingContext routingContext, String registrationGuid) {
-    return ListRegistrationProvider.create(routingContext.vertx())
+    return apiApp.getListRegistrationProvider()
       .getRegistrationByGuid(registrationGuid)
       .onFailure(routingContext::fail)
       .compose(registration -> {
-        ListRegistrationFlow.addRegistrationConfirmationCookieData(routingContext, registration);
+        ListRegistrationFlow.addRegistrationConfirmationCookieData(apiApp, routingContext, registration);
         return FrontEndRouter.toPrivatePage(apiApp, routingContext, false);
       });
   }

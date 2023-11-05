@@ -4,6 +4,7 @@ description="Vertx core and utility"
 val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val scramClientVersion = rootProject.ext.get("scramClientVersion").toString()
 val flywayVersion = rootProject.ext.get("flywayVersion").toString()
+val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
 
 dependencies {
 
@@ -75,6 +76,9 @@ dependencies {
   // Analytics
   // mixpanel test
   implementation("com.mixpanel:mixpanel-java:1.5.2")
+
+  // https://mvnrepository.com/artifact/org.hashids/hashids
+  implementation("org.hashids:hashids:$hashIdVersion")
 
   // For test api to pass it on
   testImplementation("io.vertx:vertx-unit:$vertxVersion")

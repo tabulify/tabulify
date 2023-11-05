@@ -3,7 +3,10 @@ package net.bytle.tower.eraldy.api.openapi.interfaces;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
+import net.bytle.tower.eraldy.model.openapi.OAuthAccessTokenResponse;
+import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
+import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
 
 public interface AuthApi  {
     Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
@@ -13,6 +16,5 @@ public interface AuthApi  {
     Future<ApiResponse<Void>> authLoginPasswordResetPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
     Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly);
     Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String redirectUri);
-    Future<ApiResponse<User>> authUserGet(RoutingContext routingContext);
     Future<ApiResponse<Void>> authUserRegisterPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
 }

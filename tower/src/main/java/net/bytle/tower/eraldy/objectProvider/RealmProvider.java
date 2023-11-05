@@ -14,18 +14,20 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
@@ -44,7 +46,6 @@ public class RealmProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RealmProvider.class);
 
   public static final String REALM_ID_COLUMN = RealmProvider.TABLE_PREFIX + COLUMN_PART_SEP + RealmProvider.ID;
-  private static final Map<Vertx, RealmProvider> mapRealmByVertx = new HashMap<>();
 
   public static final String REALM_HANDLE_URL_PARAMETER = "realm";
   public static final String ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
@@ -56,26 +57,17 @@ public class RealmProvider {
   private static final String ANALYTICS_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "analytics";
   private static final String CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
-  public static final String SHORT_PREFIX = "rea";
-
-
+  public static final String REALM_GUID_PREFIX = "rea";
   private final Vertx vertx;
+  private final PgPool jdbcPool;
+  private final EraldyApiApp apiApp;
 
-
-  public RealmProvider(Vertx routingContext) {
-    this.vertx = routingContext;
+  public RealmProvider(EraldyApiApp apiApp) {
+    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+    this.apiApp = apiApp;
   }
 
-  public static RealmProvider createFrom(Vertx vertx) {
-    RealmProvider realmProvider;
-    realmProvider = RealmProvider.mapRealmByVertx.get(vertx);
-    if (realmProvider != null) {
-      return realmProvider;
-    }
-    realmProvider = new RealmProvider(vertx);
-    RealmProvider.mapRealmByVertx.put(vertx, realmProvider);
-    return realmProvider;
-  }
 
   /**
    * @param realm - the realm
@@ -89,14 +81,15 @@ public class RealmProvider {
   }
 
 
+
   public <T extends Realm> T toPublicClone(T realm) {
     // uses unchecked or unsafe operations.
     //noinspection unchecked
     JsonObject entries = JsonObject.mapFrom(realm);
     T clone = (T) entries.mapTo(realm.getClass());
     clone.setLocalId(null);
-    clone.setOrganization(OrganizationProvider.createFrom(vertx).toPublicClone(realm.getOrganization()));
-    clone.setOwnerUser(UserProvider.createFrom(vertx).toPublicCloneWithoutRealm(realm.getOwnerUser()));
+    clone.setOrganization(apiApp.getOrganizationProvider().toPublicClone(realm.getOrganization()));
+    clone.setOwnerUser(this.apiApp.getUserProvider().toPublicCloneWithoutRealm(realm.getOwnerUser()));
     return clone;
   }
 
@@ -106,11 +99,11 @@ public class RealmProvider {
    *
    * @param realm - the realm
    */
-  private void computeGuid(Realm realm) {
+  private void getGuidFromLong(Realm realm) {
     if (realm.getGuid() != null) {
       return;
     }
-    String guid = this.computeGuid(realm.getLocalId());
+    String guid = this.getGuidFromLong(realm.getLocalId()).toString();
     realm.setGuid(guid);
   }
 
@@ -140,7 +133,7 @@ public class RealmProvider {
         }
         Long realmId = rowSet.iterator().next().getLong(REALM_ID_COLUMN);
         realm.setLocalId(realmId);
-        this.computeGuid(realm);
+        this.getGuidFromLong(realm);
         return Future.succeededFuture(realm);
       });
   }
@@ -166,7 +159,7 @@ public class RealmProvider {
       sql = "select " + ID_COLUMN +
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
         " where " + ID_COLUMN + " = ?";
-      futureResponse = JdbcPostgresPool.getJdbcPool()
+      futureResponse = this.jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(realm.getLocalId()));
     } else {
@@ -179,7 +172,7 @@ public class RealmProvider {
       sql = "select " + ID_COLUMN +
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
         " where " + REALM_HANDLE_COLUMN + " = $1";
-      futureResponse = JdbcPostgresPool.getJdbcPool()
+      futureResponse = this.jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(handle));
     }
@@ -208,7 +201,7 @@ public class RealmProvider {
       " values ($1, $2, $3, $4, $5)\n" +
       " returning " + REALM_ID_COLUMN;
     JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
-    return JdbcPostgresPool.getJdbcPool()
+    return this.jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
         realm.getHandle(),
@@ -222,15 +215,6 @@ public class RealmProvider {
         realm.setLocalId(realmId);
         return Future.succeededFuture(realm);
       });
-  }
-
-  private void checkEraldyOwnerUser(User owner) {
-    if (!UsersUtil.isEraldyUser(owner)) {
-      throw new InternalException("The realm owner (" + UsersUtil.toHandleRealmIdentifier(owner) + ") is not an eraldy user");
-    }
-    if (owner.getLocalId() == null) {
-      throw new InternalException("The realm owner (" + UsersUtil.toHandleRealmIdentifier(owner) + ") has no id");
-    }
   }
 
   private Future<Realm> updateRealm(Realm realm) {
@@ -252,7 +236,7 @@ public class RealmProvider {
        */
       JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
 
-      return JdbcPostgresPool.getJdbcPool()
+      return this.jdbcPool
         .preparedQuery(sql)
         .execute(
           Tuple.of(
@@ -268,7 +252,7 @@ public class RealmProvider {
             // Compute the guid: A realm may have an id without guid
             // This is the case for the Eraldy realm where the database id is known
             // as instantiation but not the guid
-            this.computeGuid(realm);
+            this.getGuidFromLong(realm);
             return Future.succeededFuture(realm);
           }
         );
@@ -284,7 +268,7 @@ public class RealmProvider {
       .compose(rows -> {
         Long realmId = rows.iterator().next().getLong(REALM_ID_COLUMN);
         realm.setLocalId(realmId);
-        this.computeGuid(realm);
+        this.getGuidFromLong(realm);
         return Future.succeededFuture(realm);
       });
 
@@ -312,7 +296,7 @@ public class RealmProvider {
      */
     JsonObject pgJsonObject = this.getRealmAsJsonObject(realm);
 
-    return JdbcPostgresPool.getJdbcPool()
+    return this.jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
         organization.getLocalId(),
@@ -340,7 +324,7 @@ public class RealmProvider {
     if (guid == null) {
       throw new NotFoundException("The guid is empty");
     }
-    Long id = Guid.getSingleIdFromGuid(SHORT_PREFIX, guid, vertx);
+    Long id = apiApp.createGuidFromRealmOrOrganizationId(REALM_GUID_PREFIX, guid).getRealmOrOrganizationId();
     realm.setLocalId(id);
   }
 
@@ -354,7 +338,6 @@ public class RealmProvider {
    */
   private <T extends Realm> Future<T> getRealmFromId(Long realmId, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + REALM_ID_COLUMN + " = $1";
@@ -381,8 +364,9 @@ public class RealmProvider {
 
   private <T extends Realm> Future<T> getRealmFromHandle(String realmHandle, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
-    return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm WHERE realm_handle = $1")
+
+    return this.jdbcPool
+      .preparedQuery("SELECT * FROM cs_realms.realm WHERE realm_handle = $1")
       .execute(Tuple.of(realmHandle))
       .onFailure(e -> {
         throw new InternalException(e);
@@ -405,7 +389,7 @@ public class RealmProvider {
 
   public <T extends Realm> Future<List<T>> getRealmsForOwner(User user, Class<T> clazz) {
     UsersUtil.assertEraldyUser(user);
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
+
     return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
         "where\n" +
         " " + REALM_ORGA_ID + " = $1")
@@ -459,17 +443,17 @@ public class RealmProvider {
 
     realm.setHandle(realmHandle);
     realm.setLocalId(realmId);
-    this.computeGuid(realm);
+    this.getGuidFromLong(realm);
     Long orgaId = row.getLong(REALM_ORGA_ID);
-    Future<Organization> futureOrganization = OrganizationProvider.createFrom(vertx).getById(orgaId);
+    Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long realmIdContactColumn = row.getLong(REALM_OWNER_ID_COLUMN);
-    Future<User> futureOwnerUser = UserProvider.createFrom(vertx).getUserById(realmIdContactColumn, EraldyRealm.get().getRealm());
+    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserById(realmIdContactColumn, EraldyRealm.get().getRealm());
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {
       futureApp = Future.succeededFuture();
     } else {
-      futureApp = AppProvider.create(vertx)
+      futureApp = apiApp.getAppProvider()
         .getAppById(defaultAppId, realm);
     }
     return Future.all(futureOrganization, futureOwnerUser, futureApp)
@@ -490,16 +474,19 @@ public class RealmProvider {
   private <T extends Realm> Future<T> getRealmFromGuid(String guid, Class<T> clazz) {
     long realmId;
     try {
-      realmId = Guid.getSingleIdFromGuid(SHORT_PREFIX, guid, vertx);
+      realmId = this.getGuidFromHash(guid).getRealmOrOrganizationId();
     } catch (CastException e) {
       return Future.failedFuture(e);
     }
     return getRealmFromId(realmId, clazz);
   }
 
+  private Guid getGuidFromHash(String guid) throws CastException {
+    return apiApp.createGuidFromHashWithOneId(REALM_GUID_PREFIX, guid);
+  }
+
   @SuppressWarnings("unused")
   public Future<List<RealmWithAppUris>> getRealmsWithAppUris() {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String aliasAppUris = "app_uris";
     String selectRealmSql = "select " +
       REALM_ID_COLUMN + ",\n" +
@@ -523,7 +510,7 @@ public class RealmProvider {
           realmsWithDomains.add(realmWithDomains);
 
           Long realmId = row.getLong(ID_COLUMN);
-          realmWithDomains.setGuid(this.computeGuid(realmId));
+          realmWithDomains.setGuid(this.getGuidFromLong(realmId).toString());
 
           String realmHandle = row.getString(REALM_HANDLE_COLUMN);
           realmWithDomains.setHandle(realmHandle);
@@ -543,10 +530,11 @@ public class RealmProvider {
       });
   }
 
-  private String computeGuid(Long realmId) {
-    return Guid.createGuidStringFromObjectId(SHORT_PREFIX, realmId, vertx);
+  private Guid getGuidFromLong(Long realmId) {
+    return apiApp.createGuidFromObjectId(REALM_GUID_PREFIX, realmId);
   }
 
+  @SuppressWarnings("unused")
   public Future<Realm> getRealmFromGuidOrHandle(String realmGuid, String realmHandle) {
     return getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class);
   }
@@ -562,8 +550,9 @@ public class RealmProvider {
     throw new InternalException("getRealmFromGuidOrHandle: The realmGuid or realmHandle should be given");
   }
 
-  public Guid getGuidObject(String guid) throws CastException {
-    return Guid.createObjectFromRealmId(SHORT_PREFIX, guid, vertx);
+
+  public Future<RealmAnalytics> getRealmAnalyticsFromGuidOrHandle(String realmGuid, String realmHandle) {
+    return getRealmFromGuidOrHandle(realmGuid, realmHandle, RealmAnalytics.class);
   }
 
 
@@ -576,18 +565,6 @@ public class RealmProvider {
     frontEndRealm.setLocalId(null);
     frontEndRealm.setName(getNameOrHandle(frontEndRealm));
     return frontEndRealm;
-  }
-
-  public Future<RealmAnalytics> getRealmAnalyticsFromGuidOrHandle(String realmGuid, String realmHandle) {
-    return getRealmFromGuidOrHandle(realmGuid, realmHandle, RealmAnalytics.class);
-  }
-
-
-  public Realm clone(Realm realm) {
-    Realm realmClone = JsonObject.mapFrom(realm).mapTo(Realm.class);
-    // The local id is ignored in Json serialization
-    realmClone.setLocalId(realm.getLocalId());
-    return realmClone;
   }
 
 }
