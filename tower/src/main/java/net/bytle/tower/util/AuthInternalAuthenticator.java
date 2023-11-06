@@ -137,7 +137,7 @@ public class AuthInternalAuthenticator {
         }
         VertxRoutingFailureData.create()
           .setDescription(message)
-          .setStatusCode(HttpStatus.INTERNAL_ERROR)
+          .setStatus(HttpStatus.INTERNAL_ERROR)
           .setName("Bad URL redirect")
           .failContextAsHtml(ctx);
         return;
@@ -146,7 +146,7 @@ public class AuthInternalAuthenticator {
         if (this.redirectUriIsMandatory) {
           VertxRoutingFailureData.create()
             .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
-            .setStatusCode(HttpStatus.INTERNAL_ERROR)
+            .setStatus(HttpStatus.INTERNAL_ERROR)
             .setName("URL redirect was not found")
             .failContextAsHtml(ctx);
           return;
@@ -220,7 +220,7 @@ public class AuthInternalAuthenticator {
             case HTTP:
               if (finalRedirectUri == null) {
                 VertxRoutingFailureData.create()
-                  .setStatusCode(HttpStatus.INTERNAL_ERROR)
+                  .setStatus(HttpStatus.INTERNAL_ERROR)
                   .setName("URL redirect is mandatory for HTTP redirect")
                   .setDescription("For an http redirect, the redirect uri is mandatory and was not found")
                   .failContextAsHtml(ctx);
@@ -266,7 +266,7 @@ public class AuthInternalAuthenticator {
         .putHeader(HttpHeaders.EXPIRES, "0")
         // redirect (when there is no state, redirect to home)
         .putHeader(HttpHeaders.LOCATION, redirectionUrl.toUrl().toString())
-        .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI)
+        .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI.httpStatusCode())
         .end("Redirecting to " + redirectionUrl + ".");
     }
 

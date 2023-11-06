@@ -81,8 +81,8 @@ public class AuthApiImpl implements AuthApi {
        * For a list registration, it's not as the flow may end in the confirmation page
        */
       if (listGuid == null) {
-        routingContext.fail(HttpStatus.BAD_REQUEST, new IllegalArgumentException("Internal Error: the (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client could not be found. Was it passed or set on the login endpoint?"));
-        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST));
+        routingContext.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), new IllegalArgumentException("Internal Error: the (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client could not be found. Was it passed or set on the login endpoint?"));
+        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
       }
     } catch (IllegalArgumentException e) {
       return Future.failedFuture(e);
@@ -96,8 +96,8 @@ public class AuthApiImpl implements AuthApi {
     realmGuid = routingContext.request().getParam(OAuthQueryProperty.REALM_GUID.toString());
     realmHandle = routingContext.request().getParam(OAuthQueryProperty.REALM_HANDLE.toString());
     if (realmGuid == null && realmHandle == null) {
-      routingContext.fail(HttpStatus.BAD_REQUEST, new IllegalArgumentException("A realm query property (" + OAuthQueryProperty.REALM_HANDLE + " or " + OAuthQueryProperty.REALM_GUID + ") is madnatory."));
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST));
+      routingContext.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), new IllegalArgumentException("A realm query property (" + OAuthQueryProperty.REALM_HANDLE + " or " + OAuthQueryProperty.REALM_GUID + ") is madnatory."));
+      return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
     }
 
 
@@ -247,7 +247,8 @@ public class AuthApiImpl implements AuthApi {
     if (handle == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The handle cannot be null", "handle", null);
     }
-    return this.apiApp.getRealmProvider()
+    return this.apiApp
+      .getRealmProvider()
       .getRealmFromHandle(passwordCredentials.getLoginRealm())
       .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
       .compose(realm -> apiApp.getUserProvider()
@@ -255,17 +256,18 @@ public class AuthApiImpl implements AuthApi {
         .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
         .compose(user -> {
           if (user == null) {
-            /**
-             * We don't want to leak the information that the user is not found
-             */
-            return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED));
+            return Future.failedFuture(
+              VertxRoutingFailureData.create()
+                .setStatus(HttpStatus.NOT_FOUND)
+                .getFailedException()
+            );
           }
 
           AuthInternalAuthenticator
             .createWith(apiApp, routingContext, user)
             .redirectViaClient()
             .authenticate();
-          return Future.succeededFuture();
+          return Future.succeededFuture(new ApiResponse<>());
         }));
 
   }
@@ -352,14 +354,18 @@ public class AuthApiImpl implements AuthApi {
   public Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly) {
     io.vertx.ext.auth.User vertxUser = routingContext.user();
     if (vertxUser == null) {
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED));
+      return Future.failedFuture(
+        VertxRoutingFailureData
+          .create()
+          .setStatus(HttpStatus.NOT_LOGGED_IN)
+          .getFailedException()
+      );
     }
 
     User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
 
     return apiApp.getUserProvider()
       .updatePassword(user, passwordOnly.getPassword())
-      .onFailure(err -> routingContext.fail(HttpStatus.INTERNAL_ERROR, err))
       .compose(futureUser -> {
         /**
          * Because this is a POST, we can't redirect via HTTP

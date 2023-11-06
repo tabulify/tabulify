@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.NotFoundException;
@@ -17,6 +16,7 @@ import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.VertxRoutingFailureData;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,13 +36,13 @@ public class UserApiImpl implements UserApi {
         .onFailure(routingContext::fail)
         .compose(comboUser -> Future.succeededFuture(new ApiResponse<>(comboUser)));
     } catch (NotFoundException e) {
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_FOUND));
+      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_FOUND.httpStatusCode()));
     }
   }
 
   @Override
   public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userGuid, String userEmail, String realmHandle, String realmGuid) {
-    Vertx vertx = routingContext.vertx();
+
     Future<User> userFuture;
     UserProvider userProvider = apiApp.getUserProvider();
     if (userGuid != null) {
@@ -103,7 +103,12 @@ public class UserApiImpl implements UserApi {
             return Future.succeededFuture((new ApiResponse<>(publicUser)));
           });
       } catch (NotFoundException e) {
-        return Future.succeededFuture((new ApiResponse<>(HttpStatus.NOT_AUTHORIZED)));
+        return Future.failedFuture(
+          VertxRoutingFailureData.create()
+            .setStatus(HttpStatus.NOT_LOGGED_IN)
+            .setDescription("The authenticated user was not found")
+            .getFailedException()
+        );
       }
 
 
@@ -111,8 +116,6 @@ public class UserApiImpl implements UserApi {
 
   @Override
   public Future<ApiResponse<User>> userPost(RoutingContext routingContext, UserPostBody userPostBody) {
-    Vertx vertx = routingContext.vertx();
-
 
     Realm userRealmRequested = new Realm();
     userRealmRequested.setHandle(userPostBody.getRealmHandle());

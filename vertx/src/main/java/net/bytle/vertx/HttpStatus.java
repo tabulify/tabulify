@@ -1,35 +1,66 @@
 package net.bytle.vertx;
 
-@SuppressWarnings("unused")
-public class HttpStatus {
+
+import io.netty.handler.codec.http.HttpResponseStatus;
+import net.bytle.exception.NotFoundException;
+
+/**
+ * An HTTP status that permits more
+ * status error for the same error code
+ */
+public enum HttpStatus {
 
 
-  public static final int SUCCESS_NO_CONTENT = 204;
+  SUCCESS_NO_CONTENT(204),
 
   /**
    * Used when a user is logged in
    * but does not have the authorization
    */
-  public static final int NOT_AUTHORIZED = 401;
+  NOT_AUTHORIZED(401),
 
-  public static final int NOT_FOUND = 404;
+  NOT_LOGGED_IN(401),
 
-  public static final int REDIRECT = 302;
+  NOT_FOUND(404),
+
+  REDIRECT( 302),
 
 
   /**
    * Send by CSRF check for instance
    */
-  public static final int FORBIDDEN = 403;
+  FORBIDDEN(403),
 
-  public static final int BAD_REQUEST = 400;
+  BAD_REQUEST(HttpResponseStatus.BAD_REQUEST.code()),
 
-  public static final int INTERNAL_ERROR = 500;
+  INTERNAL_ERROR (500),
 
   /**
    * Tracking redirect
    * (Does not work in Chrome for a POST as it does not perform a GET)
    */
-  public static final int REDIRECT_SEE_OTHER_URI = 303;
+  REDIRECT_SEE_OTHER_URI (303),
+  /**
+   * Used when the HTTP status is unknown
+   */
+  UNKNOWN_STATUS(500);
 
+  private final int httpStatusCode;
+
+  HttpStatus(int httpStatusCode) {
+    this.httpStatusCode = httpStatusCode;
+  }
+
+  public static HttpStatus fromHttpStatusCode(int httpStatusCode) throws NotFoundException {
+    for(HttpStatus httpStatus: values()){
+      if(httpStatus.httpStatusCode == httpStatusCode){
+        return httpStatus;
+      }
+    }
+    throw new NotFoundException();
+  }
+
+  public int httpStatusCode() {
+    return this.httpStatusCode;
+  }
 }

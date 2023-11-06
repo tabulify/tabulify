@@ -12,10 +12,7 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.RoutingContextWrapper;
-import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,9 +61,12 @@ public class RealmApiImpl implements RealmApi {
       .getRealmFromGuid(guid)
       .compose(realm -> {
         if (realm == null) {
-          NotFoundException theRealmWasNotFound = new NotFoundException("The realm was not found");
-          routingContext.fail(HttpStatus.NOT_FOUND, theRealmWasNotFound);
-          return Future.failedFuture(theRealmWasNotFound);
+          return Future.failedFuture(
+            VertxRoutingFailureData.create()
+              .setStatus(HttpStatus.NOT_FOUND)
+              .setDescription("The realm was not found")
+              .getFailedException()
+          );
         }
         UserProvider userProvider = apiApp.getUserProvider();
         return Authorization.checkForRealm(apiApp, RoutingContextWrapper.createFrom(routingContext), realm)
@@ -94,7 +94,12 @@ public class RealmApiImpl implements RealmApi {
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realm -> {
         if (realm == null) {
-          return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST));
+          return Future.failedFuture(
+            VertxRoutingFailureData.create()
+              .setStatus(HttpStatus.NOT_FOUND)
+              .setDescription("The realm was not found")
+              .getFailedException()
+          );
         }
         RealmAnalytics publicRealm = realmProvider.toPublicClone(realm);
         return Future.succeededFuture(new ApiResponse<>(publicRealm));
@@ -104,13 +109,18 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<RealmWithAppUris>>> realmsGet(RoutingContext routingContext) {
 
-    if(!RoleBasedAuthorization.create("root").match(routingContext.user())){
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED));
+    if (!RoleBasedAuthorization.create("root").match(routingContext.user())) {
+      return Future.failedFuture(
+        VertxRoutingFailureData
+          .create()
+          .setStatus(HttpStatus.NOT_AUTHORIZED)
+          .getFailedException()
+      );
     }
 
-    return  this.apiApp.getRealmProvider()
-        .getRealmsWithAppUris()
-        .compose(realms -> Future.succeededFuture(new ApiResponse<>(realms)));
+    return this.apiApp.getRealmProvider()
+      .getRealmsWithAppUris()
+      .compose(realms -> Future.succeededFuture(new ApiResponse<>(realms)));
 
 
   }
@@ -131,9 +141,12 @@ public class RealmApiImpl implements RealmApi {
     try {
       vertxUser = RoutingContextWrapper.createFrom(routingContext).getSignedInUser();
     } catch (NotFoundException e) {
-      IllegalArgumentException youShouldBeLoggedIn = new IllegalArgumentException("You should be logged in");
-      routingContext.fail(HttpStatus.NOT_AUTHORIZED, youShouldBeLoggedIn);
-      return Future.failedFuture(youShouldBeLoggedIn);
+      return Future.failedFuture(
+        VertxRoutingFailureData.create()
+          .setStatus(HttpStatus.NOT_FOUND)
+          .setDescription("You should be logged in")
+          .getFailedException()
+      );
     }
     User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();

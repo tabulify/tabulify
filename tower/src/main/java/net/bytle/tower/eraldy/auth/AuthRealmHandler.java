@@ -139,7 +139,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
              * it's too difficult to manage the {@link EraldySessionHandler session}
              * at the api implementation (too late in the calls)
              */
-            context.fail(HttpStatus.BAD_REQUEST, new IllegalArgumentException("The realm could not be determined."));
+            context.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), new IllegalArgumentException("The realm could not be determined."));
             return;
           }
 

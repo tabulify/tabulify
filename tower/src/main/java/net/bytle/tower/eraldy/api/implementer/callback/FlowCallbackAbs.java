@@ -158,7 +158,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     try {
       jwtClaimsObject.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
-      ctx.fail(HttpStatus.BAD_REQUEST, e);
+      ctx.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), e);
       throw new IllegalStructure();
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";

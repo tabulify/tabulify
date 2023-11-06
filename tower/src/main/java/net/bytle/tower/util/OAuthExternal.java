@@ -441,7 +441,7 @@ public class OAuthExternal {
           if (!responsesScopes.contains(requestedScope)) {
             response
               .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
-              .setStatusCode(HttpStatus.NOT_AUTHORIZED)
+              .setStatusCode(HttpStatus.NOT_AUTHORIZED.httpStatusCode())
               .end("The requested scope (" + requestedScope + ") was not granted.");
             return;
           }

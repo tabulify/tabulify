@@ -199,7 +199,7 @@ public class HttpServer {
          * https://vertx.io/docs/vertx-web/java/#_route_match_failures
          */
         VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, this.server.getConfigAccessor());
-        router.errorHandler(HttpStatus.INTERNAL_ERROR, errorHandlerXXX);
+        router.errorHandler(HttpStatus.INTERNAL_ERROR.httpStatusCode(), errorHandlerXXX);
 
         /**
          * Handle the failures. ie

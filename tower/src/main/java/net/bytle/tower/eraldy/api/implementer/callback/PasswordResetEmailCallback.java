@@ -63,7 +63,7 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
       .onFailure(ctx::fail)
       .onSuccess(userInDb -> {
         if (userInDb == null) {
-          ctx.fail(HttpStatus.INTERNAL_ERROR, new InternalException("The user (" + email + "," + realmHandle + ")  send by mail, does not exist"));
+          ctx.fail(HttpStatus.INTERNAL_ERROR.httpStatusCode(), new InternalException("The user (" + email + "," + realmHandle + ")  send by mail, does not exist"));
           return;
         }
         AuthInternalAuthenticator

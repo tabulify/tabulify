@@ -85,7 +85,7 @@ public class RoutingContextWrapper {
   @SuppressWarnings("unused")
   public void seeOtherUriRedirect(String redirectUri) {
     this.ctx.response()
-      .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI)
+      .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI.httpStatusCode())
       .putHeader(HttpHeaders.LOCATION, redirectUri)
       .putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8")
       .end("Redirecting to " + redirectUri + ".");

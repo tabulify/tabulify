@@ -297,7 +297,7 @@ public class ListRegistrationFlow {
             .setName("The list was not found")
             .setDescription("The list <mark>" + listGuid + "</mark> was not found.")
             .failContextAsHtml(routingContext);
-          return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_FOUND));
+          return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_FOUND.httpStatusCode()));
         }
         Map<String, Object> variables = new HashMap<>();
         list.setGuid(listGuid); // all object does not have any guid by default when retrieved

@@ -7,6 +7,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.RoutingContextWrapper;
+import net.bytle.vertx.VertxRoutingFailureData;
 
 public class Authorization {
   public static Future<Boolean> checkForRealm(EraldyApiApp apiApp, RoutingContextWrapper routingContext, Realm requestedRealm) {
@@ -18,7 +19,8 @@ public class Authorization {
       return notAuthorized(routingContext);
     }
     User signedInUser = UsersUtil.vertxUserToEraldyUser(vertxUser);
-    return apiApp.getRealmProvider()
+    return apiApp
+      .getRealmProvider()
       .getRealmsForOwner(signedInUser, Realm.class)
       .compose(userRealms -> {
         boolean authorized = false;
@@ -37,7 +39,10 @@ public class Authorization {
   }
 
   private static Future<Boolean> notAuthorized(RoutingContextWrapper routingContext) {
-    routingContext.getRoutingContext().fail(HttpStatus.NOT_AUTHORIZED);
-    return Future.failedFuture("Not authorized");
+    VertxRoutingFailureData.create()
+      .setStatus(HttpStatus.NOT_AUTHORIZED)
+      .failContext(routingContext.getRoutingContext());
+    return Future.succeededFuture(false);
   }
+
 }

@@ -92,7 +92,7 @@ public class FrontEndRouter {
         .setDescription(message)
         .setName(message)
         .failContextAsHtml(routingContext);
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED));
+      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED.httpStatusCode()));
     }
 
 
@@ -107,7 +107,7 @@ public class FrontEndRouter {
           .setName("Redirect Uri is mandatory")
           .setDescription("The redirect URI is mandatory and was not found")
           .failContextAsHtml(routingContext);
-        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST));
+        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
       }
     }
 
