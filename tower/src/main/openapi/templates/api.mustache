@@ -15,6 +15,11 @@ import java.util.Map;
 public interface {{classname}}  {
 {{#operations}}
   {{#operation}}
+    {{#summary}}{{! has summary }}
+    /**
+     * {{{.}}}
+    */
+    {{/summary}}
     Future<ApiResponse<{{{returnType}}}>> {{operationId}}(RoutingContext routingContext{{#allParams}}, {{{dataType}}} {{paramName}}{{/allParams}});
   {{/operation}}
 {{/operations}}

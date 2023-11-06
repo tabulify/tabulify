@@ -8,5 +8,9 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import java.util.Map;
 
 public interface EnvApi  {
+
+    /**
+     * Return environment data
+    */
     Future<ApiResponse<Map<String, Object>>> envGet(RoutingContext routingContext);
 }

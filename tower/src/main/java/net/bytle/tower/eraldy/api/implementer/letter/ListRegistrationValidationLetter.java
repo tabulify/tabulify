@@ -101,7 +101,7 @@ public class ListRegistrationValidationLetter {
     public UriEnhanced getValidationUri(RoutingContext routingContext, ListRegistrationValidationToken validationToken) {
       String encryptedData = getEncryptedData(validationToken, routingContext.vertx());
       return this.towerApp
-        .getPublicRequestUriForOperationPath(URI_PATH)
+        .getOperationUriForPublicHost(URI_PATH)
         .addQueryProperty(URI_DATA_PARAMETER, encryptedData);
     }
 

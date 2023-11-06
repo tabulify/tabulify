@@ -249,7 +249,7 @@ public class OAuthExternal {
      * It should be in dev `member.combostrap.local:8083`
      */
     String providerCallbackOperationPath = this.getCallbackOperationPath();
-    String callbackPublicURL = apiApp.getPublicRequestUriForOperationPath(providerCallbackOperationPath).toUri().toString();
+    String callbackPublicURL = apiApp.getOperationUriForPublicHost(providerCallbackOperationPath).toUri().toString();
     LOGGER.info("The calculated callback URL for the provider (" + provider + ") is " + callbackPublicURL);
     return callbackPublicURL;
   }

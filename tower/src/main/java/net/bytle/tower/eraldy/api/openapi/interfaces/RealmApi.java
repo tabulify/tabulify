@@ -11,10 +11,34 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import java.util.List;
 
 public interface RealmApi  {
-    Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle);
-    Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPostBody);
+
+    /**
+     * Return the list of recent new users for the realm
+    */
     Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmGuid);
+
+    /**
+     * Return the realm for the request
+    */
+    Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+
+    /**
+     * Create a realm
+    */
+    Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPostBody);
+
+    /**
+     * Return the list of realms for the connected user
+    */
     Future<ApiResponse<List<RealmAnalytics>>> realmsGet(RoutingContext routingContext);
+
+    /**
+     * Return the list of realms owned by the user
+    */
     Future<ApiResponse<List<Realm>>> realmsOwnedByGet(RoutingContext routingContext, String userGuid);
+
+    /**
+     * Return the list of realms owned by the authenticated user
+    */
     Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext);
 }

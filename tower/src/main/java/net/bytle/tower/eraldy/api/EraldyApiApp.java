@@ -171,13 +171,13 @@ public class EraldyApiApp extends TowerApp {
    * @return the login uri
    */
   public UriEnhanced getLoginUriForEraldyRealm(String redirectUri) {
-    return this.getPublicRequestUriForOperationPath("/login")
+    return this.getOperationUriForPublicHost("/login")
       .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
       .addQueryProperty(OAuthQueryProperty.REALM_HANDLE, this.getApexDomain().getRealmHandle());
   }
 
   public UriEnhanced getLogoutUriForEraldyRealm(String redirectUri) {
-    return this.getPublicRequestUriForOperationPath("/logout")
+    return this.getOperationUriForPublicHost("/logout")
       .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
       .addQueryProperty(OAuthQueryProperty.REALM_HANDLE, this.getApexDomain().getRealmHandle());
   }

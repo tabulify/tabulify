@@ -188,7 +188,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     String encryptedData = JsonToken.get(app.getApexDomain().getHttpServer().getServer().getVertx()).encrypt(validationJson, DATA_CIPHER);
 
     return app
-      .getPublicRequestUriForOperationPath(this.getCallbackOperationPath())
+      .getOperationUriForPublicHost(this.getCallbackOperationPath())
       .addQueryProperty(URI_DATA_PARAMETER, encryptedData);
 
   }

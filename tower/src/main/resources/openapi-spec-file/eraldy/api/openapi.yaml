@@ -427,7 +427,7 @@ paths:
       x-accepts: application/json
   /realm/{realmGuid}/users/new:
     get:
-      operationId: realmUsersNewGet
+      operationId: activityRealmUsersNewGet
       parameters:
       - description: The guid of the realm
         explode: false

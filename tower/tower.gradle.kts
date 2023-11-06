@@ -244,10 +244,13 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(apiG
   configOptions.set(configs)
 
   // https://openapi-generator.tech/docs/globals/
+  // https://openapi-generator.tech/docs/debugging/#templates
   globalProperties.set(
     mapOf(
-      // print the data model passed to template
+      // print the data model passed to template (not the api, pojo only)
       // "debugModels" to "true"
+      // print the paths (api) passed to template (only the api, not the pojo)
+      // "debugOperations" to "true"
     )
   )
 
@@ -345,191 +348,6 @@ tasks.register(openapiGenerateTaskName) {
       "move"(
         "file" to "${mainResourcesDir}/${openApiFileName}",
         "todir" to "${mainResourcesDir}/${specResourcePrefix}/${eraldyDomainName}/${apiAppName}"
-      )
-    }
-  }
-}
-
-val publicApiGenerateServerCodeTaskName = "ComboPublicGenerateServerCode"
-val publicApiInternalName = "combo-public"
-// public is a reserved java word
-// package name should be lowercase
-// open-api generator does not support uppercase letter in the body
-val publicApiJavaInternalName = "combopublicapi"
-tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(publicApiGenerateServerCodeTaskName) {
-
-  group = openApiGroup
-
-  /**
-   * The name of the api in Java
-   */
-  apiNameSuffix.set(publicApiJavaInternalName)
-  /**
-   * The location of the spec file
-   */
-  inputSpec.set("$projectDir/src/main/openapi/${eraldyDomainName}-${publicApiInternalName}-${openApiFileName}")
-  /**
-   * The location of the generated interface
-   */
-  apiPackage.set("${eraldyAppJavaPackagePath}.${publicApiJavaInternalName}.openapi.interfaces")
-  /**
-   * The location of the classes that tied interface, implementer and vertx
-   */
-  invokerPackage.set("${eraldyAppJavaPackagePath}.${publicApiJavaInternalName}.openapi.invoker")
-  /**
-   * The pojos (they are shared with the private api)
-   */
-  modelPackage.set(eraldyModelOpenApiJavaPackage)
-  /**
-   * The open-api config files
-   */
-  configFile.set("$projectDir/.openapi-generator-${eraldyDomainName}-${publicApiInternalName}-config.yaml")
-
-  /**
-   * Common to API, vertx-based
-   */
-  outputDir.set("$projectDir")
-  generatorName.set("java-vertx-web")
-  templateDir.set("$projectDir/src/main/openapi/templates")
-
-  typeMappings.set(
-    mapOf(
-      "OffsetDateTime" to "LocalDateTime"
-    )
-  )
-  importMappings.set(
-    mapOf(
-      "java.time.OffsetDateTime" to "java.time.LocalDateTime"
-    )
-  )
-
-  /**
-   * For inheritance, see openapi.md
-   */
-  openapiNormalizer.set(
-    mapOf(
-      "REF_AS_PARENT_IN_ALLOF" to "true"
-    )
-  )
-
-  reservedWordsMappings.set(
-    mapOf(
-      "list" to "list"
-    )
-  )
-  // https://openapi-generator.tech/docs/generators/java-vertx-web
-  val configs = mapOf(
-    "dateLibrary" to "java8"
-  )
-  configOptions.set(configs)
-  // https://openapi-generator.tech/docs/globals/
-//  val globalOptionsConf = mapOf("generateAliasAsModel" to "true")
-//  globalProperties.set(globalOptionsConf)
-
-}
-
-/**
- * Generate the admin API server code and copy the openapi.yaml
- */
-val publicApiGenerateTaskName = "ComboPublicGenerate"
-tasks.register(publicApiGenerateTaskName) {
-
-  group = openApiGroup
-
-  dependsOn(publicApiGenerateServerCodeTaskName)
-
-  /**
-   * Copy the openapi.yaml
-   */
-  doLast {
-    ant.withGroovyBuilder {
-      "move"(
-        "file" to "${mainResourcesDir}/${openApiFileName}",
-        "todir" to "${mainResourcesDir}/${specResourcePrefix}/${eraldyDomainName}/${publicApiInternalName}"
-      )
-    }
-  }
-}
-
-val memberApiGenerateServerCodeTaskName = "MemberAppGenerateServerCode"
-val memberApiInternalName = "member"
-// Package should be lowercase
-val memberApiJavaPackageInternalName = "memberapp"
-// Unfortunately, the case in class name is not preserved in the generation of the class,
-// ie the file with a suffix of MemberApp would create a file name Memberapp with a class MemberApp
-// It should be lowercase then
-val memberApiSuffixJavaPackageInternalName = memberApiJavaPackageInternalName
-tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(memberApiGenerateServerCodeTaskName) {
-
-
-  group = openApiGroup
-
-  /**
-   * The name of the api in Java
-   */
-  apiNameSuffix.set(memberApiSuffixJavaPackageInternalName)
-  /**
-   * The location of the spec file
-   */
-  inputSpec.set("$projectDir/src/main/openapi/${eraldyDomainName}-${memberApiInternalName}-${openApiFileName}")
-  /**
-   * The location of the generated interface
-   */
-  apiPackage.set("${eraldyAppJavaPackagePath}.${memberApiJavaPackageInternalName}.openapi.interfaces")
-  /**
-   * The location of the classes that tied interface, implementer and vertx
-   */
-  invokerPackage.set("${eraldyAppJavaPackagePath}.${memberApiJavaPackageInternalName}.openapi.invoker")
-  /**
-   * The pojos (they are shared)
-   */
-  modelPackage.set(eraldyModelOpenApiJavaPackage)
-  /**
-   * The open-api config files
-   */
-  configFile.set("$projectDir/.openapi-generator-${eraldyDomainName}-${memberApiInternalName}-config.yaml")
-
-  /**
-   * Common to API, vertx-based
-   */
-  outputDir.set("$projectDir")
-  generatorName.set("java-vertx-web")
-  templateDir.set("$projectDir/src/main/openapi/templates")
-
-  reservedWordsMappings.set(
-    mapOf(
-      "list" to "list"
-    )
-  )
-  // https://openapi-generator.tech/docs/generators/java-vertx-web
-  val configs = mapOf(
-    "dateLibrary" to "java8"
-  )
-  configOptions.set(configs)
-  // https://openapi-generator.tech/docs/globals/
-//  val globalOptionsConf = mapOf("generateAliasAsModel" to "true")
-//  globalProperties.set(globalOptionsConf)
-
-}
-
-/**
- * Generate the member API server code and copy the openapi.yaml
- */
-val memberGenerateServerCodeTaskName = "MemberGenerate"
-tasks.register(memberGenerateServerCodeTaskName) {
-
-  group = openApiGroup
-
-  dependsOn(memberApiGenerateServerCodeTaskName)
-
-  /**
-   * Copy the openapi.yaml
-   */
-  doLast {
-    ant.withGroovyBuilder {
-      "move"(
-        "file" to "${mainResourcesDir}/${openApiFileName}",
-        "todir" to "${mainResourcesDir}/${specResourcePrefix}/${eraldyDomainName}/${memberApiInternalName}"
       )
     }
   }

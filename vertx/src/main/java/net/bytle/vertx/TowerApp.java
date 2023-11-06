@@ -10,6 +10,7 @@ import io.vertx.ext.web.handler.HSTSHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.template.api.Template;
 import net.bytle.type.UriEnhanced;
 
@@ -82,29 +83,51 @@ public abstract class TowerApp {
    * @param operationPath  - the operation path
    * @return a public or local uri with the path that depends on the HTTP request URL
    */
-  public UriEnhanced getPublicOrLocalRequestUri(RoutingContext routingContext, String operationPath) {
+  public UriEnhanced getOperationUriFromRequestContext(RoutingContext routingContext, String operationPath) {
 
     UriEnhanced remoteBaseUri = HttpRequestUtil.geRemoteBaseUri(routingContext);
-    return getPublicOrLocalRequestUri(remoteBaseUri, operationPath);
+    return getOperationUriFromBaseRequestUri(remoteBaseUri, operationPath);
 
   }
 
   /**
-   * @param remoteRequestUri - the chosen URI (public or localhost)
-   * @param operationPath    - the operation path
+   * @param operationPath - the operation path
+   * @return the localhost URI
+   */
+  public UriEnhanced getOperationUriForLocalhost(String operationPath) {
+
+    HttpServer httpServer = this.apexDomain.getHttpServer();
+    String scheme = httpServer.getHttpScheme();
+    UriEnhanced uri;
+    try {
+      uri = UriEnhanced.create()
+        .setScheme(scheme)
+        .setHost("localhost")
+        .setPort(httpServer.getServer().getListeningPort());
+    } catch (IllegalStructure e) {
+      throw new InternalException(e);
+    }
+
+    return getOperationUriFromBaseRequestUri(uri, operationPath);
+
+  }
+
+  /**
+   * @param baseRequestUri - the chosen URI (public or localhost)
+   * @param operationPath  - the operation path
    * @return the URI
    */
-  public UriEnhanced getPublicOrLocalRequestUri(UriEnhanced remoteRequestUri, String operationPath) {
+  private UriEnhanced getOperationUriFromBaseRequestUri(UriEnhanced baseRequestUri, String operationPath) {
 
-    String hostWithPort = remoteRequestUri.getHostWithPort();
+    String hostWithPort = baseRequestUri.getHostWithPort();
     String publicDomainHostWithPort = getPublicDomainHost();
     if (hostWithPort.equals(publicDomainHostWithPort)) {
-      return remoteRequestUri.setPath(getPathMount() + operationPath);
+      return baseRequestUri.setPath(getPathMount() + operationPath);
     }
     if (!hostWithPort.startsWith(HttpRequestUtil.LOCALHOST)) {
       throw new IllegalArgumentException("For the app (" + this + "), the host (" + hostWithPort + ") should be " + publicDomainHostWithPort + " or starts with " + HttpRequestUtil.LOCALHOST + ". We couldn't create a request uri for the operation (" + operationPath + ")");
     }
-    return remoteRequestUri.setPath(getPathMount() + operationPath);
+    return baseRequestUri.setPath(getPathMount() + operationPath);
 
   }
 
@@ -113,32 +136,11 @@ public abstract class TowerApp {
    * @param operationPath - the operation path
    * @return the public uri for an operation
    */
-  public UriEnhanced getPublicRequestUriForOperationPath(String operationPath) {
+  public UriEnhanced getOperationUriForPublicHost(String operationPath) {
 
-    return this.createPublicUriHostOnly().setPath(getPathMount() + operationPath);
+    UriEnhanced publicUriHostOnly = this.createPublicUriHostOnly();
+    return getOperationUriFromBaseRequestUri(publicUriHostOnly, operationPath);
 
-  }
-
-  /**
-   * This is used before any redirection.
-   *
-   * @param ctx - the request context
-   * @return the request uri in a public format
-   */
-  public UriEnhanced getPublicRequestUriFromRoutingContext(RoutingContext ctx) {
-    UriEnhanced requestUri;
-    try {
-      requestUri = UriEnhanced.createFromString(ctx.request().absoluteURI());
-    } catch (IllegalStructure e) {
-      throw new RuntimeException(e);
-    }
-    String path = requestUri.getPath();
-    String absoluteLocalPathWithDomain = this.getPathMount();
-    if (path.startsWith(absoluteLocalPathWithDomain)) {
-      path = path.substring(absoluteLocalPathWithDomain.length());
-      requestUri.setPath(path);
-    }
-    return requestUri;
   }
 
 
@@ -187,14 +189,18 @@ public abstract class TowerApp {
    * (ie it contains the port part)
    */
   public String getPublicDomainHost() {
-    return this.getPublicSubdomainName() + "." + getApexDomain().getApexName();
+    try {
+      return this.getPublicSubdomainName() + "." + getApexDomain().getApexName();
+    } catch (NotFoundException e) {
+      return getApexDomain().getApexName();
+    }
   }
 
   /**
    * The name of the subdomain
-   * Ie foo in foo@example.com
+   * Ie foo in foo.example.com
    */
-  protected abstract String getPublicSubdomainName();
+  protected abstract String getPublicSubdomainName() throws NotFoundException;
 
 
   @SuppressWarnings("unused")
@@ -384,7 +390,7 @@ public abstract class TowerApp {
             ctx.next();
             return;
           }
-          String uri = getPublicOrLocalRequestUri(ctx, publicDefaultOperationPath).toUri().toString();
+          String uri = getOperationUriFromRequestContext(ctx, publicDefaultOperationPath).toUri().toString();
           ctx.redirect(uri);
         });
     }
@@ -494,5 +500,6 @@ public abstract class TowerApp {
   public boolean isAppRequest(RoutingContext routingContext) {
     return RoutingContextWrapper.createFrom(routingContext).getOriginalRequestAsUri().getHostWithPort().equals(getPublicDomainHost());
   }
+
 
 }

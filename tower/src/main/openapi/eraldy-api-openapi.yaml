@@ -381,7 +381,7 @@ paths:
   /realm:
     get:
       operationId: "realmGet"
-      summary: "Return the realm for the request"
+      summary: "Return the asked realm"
       tags:
         - realm
       parameters:
@@ -428,14 +428,14 @@ paths:
   /realms:
     get:
       operationId: "realmsGet"
-      summary: "Return the list of realms for the connected user"
+      summary: "Return the list of realms"
       tags:
         - realm
       security:
         - apiKeyAuth: [ 'read:realm' ]
       responses:
         '200':
-          description: "Return the list of realms for the connected user"
+          description: "Return the list of realms"
           content:
             application/json:
               schema:

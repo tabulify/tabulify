@@ -30,7 +30,7 @@ public class TowerAppRequestBuilder {
     String requestUri;
     boolean absUri;
     if (withPublicUri) {
-      requestUri = towerApp.getPublicRequestUriForOperationPath(this.path).toUrl().toString();
+      requestUri = towerApp.getOperationUriForPublicHost(this.path).toUrl().toString();
       absUri = true;
     } else {
       requestUri = this.path;

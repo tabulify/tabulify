@@ -7,5 +7,9 @@ import net.bytle.tower.eraldy.model.openapi.Campaign;
 import net.bytle.tower.eraldy.model.openapi.CampaignEmailPostBody;
 
 public interface CampaignApi  {
+
+    /**
+     * Create an email campaign
+    */
     Future<ApiResponse<Campaign>> campaignEmailPost(RoutingContext routingContext, CampaignEmailPostBody campaignEmailPostBody);
 }
