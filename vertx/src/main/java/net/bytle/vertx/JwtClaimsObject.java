@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
 import net.bytle.type.time.Date;
+import net.bytle.vertx.auth.AuthUserClaims;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,20 +22,20 @@ public class JwtClaimsObject {
     this.claims = claims;
   }
 
-  public static JwtClaimsObject createFromUser(UserClaims userClaims, RoutingContext routingContext) {
+  public static JwtClaimsObject createFromUser(AuthUserClaims authUserClaims, RoutingContext routingContext) {
     JsonObject claims = new JsonObject();
     /**
      * Claims may be created for user registration, meaning that the user
      * does not exist in the database yet and has therefore no id
      */
-    String subjectGuid = userClaims.getSubjectGuid();
+    String subjectGuid = authUserClaims.getSubjectGuid();
     if (subjectGuid != null) {
       claims.put(JwtClaims.SUBJECT.toString(), subjectGuid);
     }
-    claims.put(JwtClaims.AUDIENCE.toString(), userClaims.getAudienceRealmGuid());
-    claims.put(JwtClaims.CUSTOM_EMAIL.toString(), userClaims.getEmail());
-    claims.put(JwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), userClaims.getHandle());
-    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), userClaims.getAudienceHandle());
+    claims.put(JwtClaims.AUDIENCE.toString(), authUserClaims.getAudienceRealmGuid());
+    claims.put(JwtClaims.CUSTOM_EMAIL.toString(), authUserClaims.getEmail());
+    claims.put(JwtClaims.CUSTOM_SUBJECT_HANDLE.toString(), authUserClaims.getHandle());
+    claims.put(JwtClaims.CUSTOM_AUDIENCE_HANDLE.toString(), authUserClaims.getAudienceHandle());
     claims.put(JwtClaims.ISSUER.toString(), ERALDY_ISSUER_VALUE);
 
     /**

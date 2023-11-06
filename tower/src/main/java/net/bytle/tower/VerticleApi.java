@@ -100,7 +100,12 @@ public class VerticleApi extends AbstractVerticle {
           /**
            * Add the apps
            */
-          apiApp = EraldyApiApp.create(eraldyDomain);
+          try {
+            apiApp = EraldyApiApp.create(eraldyDomain);
+          } catch (IllegalConfiguration e) {
+            this.handlePromiseFailure(verticlePromise, e);
+            return;
+          }
           Future<Void> publicApiFuture = apiApp.mount();
 
           /**

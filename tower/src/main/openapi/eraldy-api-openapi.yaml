@@ -441,7 +441,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmWithAppUris'
         '403':
           description: "Not authenticated"
   /realms/owned-by/{userGuid}:

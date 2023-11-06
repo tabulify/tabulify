@@ -6,11 +6,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
+import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.ConfigAccessor;
 import net.bytle.vertx.OpenApiUtil;
-import net.bytle.vertx.UserClaims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,9 +62,11 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
 
     if (superToken.equals(token)) {
-      UserClaims userClaims = new UserClaims();
-      userClaims.setSubjectHandle("root");
-      User user = User.create(JsonObject.mapFrom(userClaims));
+      AuthUserClaims authUserClaims = new AuthUserClaims();
+      authUserClaims.setSubjectHandle("root");
+      User user = authUserClaims.toVertxUser();
+      RoleBasedAuthorization root = RoleBasedAuthorization.create("root");
+      user.authorizations().add("apiKey", root);
       resultHandler.handle(Future.succeededFuture(user));
       return;
     }

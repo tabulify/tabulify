@@ -304,4 +304,10 @@ public class UriEnhanced {
     }
     return host.substring(0, host.length() - apexLength - 1);
   }
+
+  @Override
+  public String toString() {
+    return toUri().toString();
+  }
+
 }

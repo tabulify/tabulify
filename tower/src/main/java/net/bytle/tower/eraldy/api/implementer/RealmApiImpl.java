@@ -1,7 +1,7 @@
 package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -9,10 +9,7 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.Authorization;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
-import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.FailureStatic;
@@ -48,7 +45,6 @@ public class RealmApiImpl implements RealmApi {
     realm.setHandle(handle);
     realm.setName(realmPost.getName());
 
-    Vertx vertx = routingContext.vertx();
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     return realmProvider
       .upsertRealm(realm)
@@ -91,7 +87,7 @@ public class RealmApiImpl implements RealmApi {
 
   @Override
   public Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle) {
-    Vertx vertx = routingContext.vertx();
+
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     return realmProvider
       .getRealmAnalyticsFromGuidOrHandle(realmGuid, realmHandle)
@@ -106,12 +102,15 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<RealmAnalytics>>> realmsGet(RoutingContext routingContext) {
+  public Future<ApiResponse<List<RealmWithAppUris>>> realmsGet(RoutingContext routingContext) {
 
-//    return  this.apiApp.getRealmProvider()
-//        .getRealmsWithAppUris()
-//        .compose(realms -> Future.succeededFuture(new ApiResponse<>(realms))));
-    return null;
+    if(!RoleBasedAuthorization.create("root").match(routingContext.user())){
+      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED));
+    }
+
+    return  this.apiApp.getRealmProvider()
+        .getRealmsWithAppUris()
+        .compose(realms -> Future.succeededFuture(new ApiResponse<>(realms)));
 
 
   }
@@ -127,7 +126,7 @@ public class RealmApiImpl implements RealmApi {
 
   @Override
   public Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext) {
-    Vertx vertx = routingContext.vertx();
+
     io.vertx.ext.auth.User vertxUser;
     try {
       vertxUser = RoutingContextWrapper.createFrom(routingContext).getSignedInUser();

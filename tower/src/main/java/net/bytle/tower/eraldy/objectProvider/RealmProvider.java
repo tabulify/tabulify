@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
@@ -58,12 +57,10 @@ public class RealmProvider {
   private static final String CREATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_TIME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   public static final String REALM_GUID_PREFIX = "rea";
-  private final Vertx vertx;
   private final PgPool jdbcPool;
   private final EraldyApiApp apiApp;
 
   public RealmProvider(EraldyApiApp apiApp) {
-    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
     this.apiApp = apiApp;
   }
@@ -485,7 +482,7 @@ public class RealmProvider {
     return apiApp.createGuidFromHashWithOneId(REALM_GUID_PREFIX, guid);
   }
 
-  @SuppressWarnings("unused")
+
   public Future<List<RealmWithAppUris>> getRealmsWithAppUris() {
     String aliasAppUris = "app_uris";
     String selectRealmSql = "select " +

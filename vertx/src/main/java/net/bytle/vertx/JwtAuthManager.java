@@ -8,6 +8,7 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NoSecretException;
+import net.bytle.vertx.auth.AuthUserClaims;
 
 /**
  * Jwt Authentication class
@@ -66,12 +67,12 @@ public class JwtAuthManager {
   }
 
   private String generateTokenFromAuthorization(OAuthAuthorization authorization, RoutingContext routingContext) {
-    UserClaims user = authorization.getUser();
+    AuthUserClaims user = authorization.getUser();
     int delay60daysInMinutes = 60 * 60 * 24;
     return generateTokenFromUser(user, delay60daysInMinutes, routingContext);
   }
 
-  public String generateTokenFromUser(UserClaims user, Integer expirationMinutes, RoutingContext routingContext) {
+  public String generateTokenFromUser(AuthUserClaims user, Integer expirationMinutes, RoutingContext routingContext) {
     JsonObject claims = JwtClaimsObject.createFromUser(user, routingContext)
       .toClaimsWithExpiration(expirationMinutes);
     JWTOptions jwtOptions = new JWTOptions();
@@ -79,7 +80,7 @@ public class JwtAuthManager {
   }
 
 
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(UserClaims user, RoutingContext routingContext) {
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUserClaims user, RoutingContext routingContext) {
     OAuthAuthorization authorization = new OAuthAuthorization();
     authorization.setUser(user);
     return generateOAuthAccessTokenResponseFromAuthorization(authorization, routingContext);
@@ -90,8 +91,8 @@ public class JwtAuthManager {
   }
 
   @SuppressWarnings("unused")
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(UserClaims userClaims) {
-    return generateOAuthAccessTokenResponseFromUser(userClaims, null);
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUserClaims authUserClaims) {
+    return generateOAuthAccessTokenResponseFromUser(authUserClaims, null);
   }
 
 }

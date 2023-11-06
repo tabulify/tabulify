@@ -3,6 +3,8 @@ package net.bytle.tower.eraldy.api;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.callback.PasswordResetEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
@@ -15,6 +17,8 @@ import net.bytle.tower.util.OAuthExternal;
 import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -24,6 +28,8 @@ import static net.bytle.tower.util.Guid.*;
 public class EraldyApiApp extends TowerApp {
 
 
+  static Logger LOGGER = LogManager.getLogger(EraldyApiApp.class);
+  private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   private final UserProvider userProvider;
   private final RealmProvider realmProvider;
   private final ListProvider listProvider;
@@ -33,8 +39,9 @@ public class EraldyApiApp extends TowerApp {
   private final ListRegistrationProvider listRegistrationProvider;
   private final ServiceProvider serviceProvider;
   private final OrganizationUserProvider organizationUserProvider;
+  private final UriEnhanced memberApp;
 
-  public EraldyApiApp(TowerApexDomain topLevelDomain) {
+  public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
     super(topLevelDomain);
     this.realmProvider = new RealmProvider(this);
     this.userProvider = new UserProvider(this);
@@ -44,10 +51,17 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
+    String memberUri = topLevelDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + topLevelDomain.getApexName());
+    try {
+      this.memberApp = UriEnhanced.createFromString(memberUri);
+      LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
+    } catch (IllegalStructure e) {
+      throw new IllegalConfiguration("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
+    }
   }
 
 
-  public static EraldyApiApp create(TowerApexDomain topLevelDomain) {
+  public static EraldyApiApp create(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
 
     return new EraldyApiApp(topLevelDomain);
 
@@ -168,19 +182,16 @@ public class EraldyApiApp extends TowerApp {
   }
 
   /**
-   * @return the login uri
+   * @return the login uri used for redirection in case of non-authentication
+   * For an API, it's a no-sense but yeah
    */
   public UriEnhanced getLoginUriForEraldyRealm(String redirectUri) {
-    return this.getOperationUriForPublicHost("/login")
+
+    return this.memberApp.setPath("/login")
       .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
       .addQueryProperty(OAuthQueryProperty.REALM_HANDLE, this.getApexDomain().getRealmHandle());
   }
 
-  public UriEnhanced getLogoutUriForEraldyRealm(String redirectUri) {
-    return this.getOperationUriForPublicHost("/logout")
-      .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
-      .addQueryProperty(OAuthQueryProperty.REALM_HANDLE, this.getApexDomain().getRealmHandle());
-  }
 
   public RealmProvider getRealmProvider() {
     return this.realmProvider;
@@ -226,12 +237,6 @@ public class EraldyApiApp extends TowerApp {
 
   }
 
-  public Guid createObjectFromRealmIdAndTwoObjectId(String shortPrefix, String guid) throws CastException {
-    return Guid.builder(this.hashIds, shortPrefix)
-      .setCipherText(guid, REALM_ID_TWO_OBJECT_ID_TYPE)
-      .build();
-  }
-
   public Guid createGuidStringFromRealmAndTwoObjectId(String shortPrefix, Realm realm, Long id1, Long id2) {
 
     return createGuidStringFromRealmAndTwoObjectId(shortPrefix, realm.getLocalId(), id1, id2);
@@ -269,6 +274,6 @@ public class EraldyApiApp extends TowerApp {
   }
 
   public OrganizationUserProvider getOrganizationUserProvider() {
-      return this.organizationUserProvider;
+    return this.organizationUserProvider;
   }
 }

@@ -1,13 +1,15 @@
-package net.bytle.vertx;
+package net.bytle.vertx.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 
 /**
- * A user object
+ * An auth user object to bridge with the Vertx User and the model user
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserClaims {
+public class AuthUserClaims {
 
   private String subjectGuid;
   private String audienceRealmGuid;
@@ -60,6 +62,26 @@ public class UserClaims {
 
   public void setEmail(String email) {
     this.email = email;
+  }
+
+  public User toVertxUser(){
+
+    /**
+     * Not finish
+     * A second argument attributes can be provided to provide extra metadata for later usage.
+     * One example are the following attributes:
+     * * exp - Expires at in seconds.
+     * * iat - Issued at in seconds.
+     * * nbf - Not before in seconds.
+     * * leeway - clock drift leeway in seconds.
+     * <p>
+     * The first 3 control how the expired method will compute the expiration of the user,
+     * the last can be used to allow clock drifting compensation while computing the expiration time.
+     */
+    JsonObject principal = new JsonObject();
+    principal.put("userHandle",this.getHandle());
+    return  User.create(principal);
+
   }
 
 }

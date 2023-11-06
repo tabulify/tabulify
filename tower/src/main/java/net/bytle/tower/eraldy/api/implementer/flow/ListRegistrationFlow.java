@@ -26,6 +26,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthUserClaims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -148,9 +149,9 @@ public class ListRegistrationFlow {
         userRegister.setEmail(publicationSubscriptionPost.getSubscriberEmail());
         Realm listRealm = registrationList.getRealm();
         userRegister.setRealm(listRealm);
-        UserClaims userClaimsRegister = UsersUtil.toAuthUser(userRegister);
+        AuthUserClaims authUserClaimsRegister = UsersUtil.toAuthUser(userRegister);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(userClaimsRegister, routingContext)
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsRegister, routingContext)
           .setListGuidClaim(publicationGuid);
 
         BMailTransactionalTemplate publicationValidationLetter = apiApp
