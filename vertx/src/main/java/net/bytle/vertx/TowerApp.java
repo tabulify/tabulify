@@ -8,6 +8,7 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.HSTSHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -151,7 +152,7 @@ public abstract class TowerApp {
    * Configuring `AuthenticationHandler`s defined in the OpenAPI document
    * <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">...</a>
    */
-  public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor);
+  public abstract TowerApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) throws IllegalConfiguration;
 
 
   /**
@@ -491,15 +492,6 @@ public abstract class TowerApp {
     return getApexDomain().getPathName() + "." + getAppName();
   }
 
-  /**
-   * Utility method that returns if the request is for this app
-   *
-   * @param routingContext - the routing context
-   * @return if the request is for this app
-   */
-  public boolean isAppRequest(RoutingContext routingContext) {
-    return RoutingContextWrapper.createFrom(routingContext).getOriginalRequestAsUri().getHostWithPort().equals(getPublicDomainHost());
-  }
 
 
 }

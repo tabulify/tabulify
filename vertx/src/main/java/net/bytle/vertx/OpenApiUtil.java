@@ -6,6 +6,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
+import net.bytle.exception.IllegalConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,22 +18,14 @@ import java.nio.file.Paths;
 
 public class OpenApiUtil {
 
-  /**
-   * The security auth name used in the spec file
-   */
-  @SuppressWarnings("unused")
-  public static final String BASIC_AUTH_SECURITY_SCHEME = "basicAuth";
 
-  public static final String COOKIE_SECURITY_SCHEME = "cookieAuth";
-  public static final String APIKEY_AUTH_SECURITY_SCHEME = "apiKeyAuth";
-  public static final String BEARER_AUTH_SECURITY_SCHEME = "bearerAuth";
   private static final Logger LOGGER = LogManager.getLogger(OpenApiUtil.class);
 
   /**
    * The key in the {@link io.vertx.ext.web.RoutingContext#get(String)} to get access
-   * to the operations
+   * to the operations properties on the routing context
    */
-  private static final String CONTEXT_OPERATION_MODEL_KEY = "comboOpenApiOperationModel";
+  private static final String CONTEXT_OPERATION_MODEL_KEY = "openApiOperationModel";
   private URI specFile;
   private TowerApp towerApp;
 
@@ -40,6 +33,11 @@ public class OpenApiUtil {
     return new OpenApiUtil.config(app);
   }
 
+  /**
+   *
+   * @param routingContext - the routing context
+   * @return the Json Object of the operation path in the openapi spec
+   */
   @SuppressWarnings("unused")
   public JsonObject getOperationModel(RoutingContext routingContext) {
     return routingContext.get(CONTEXT_OPERATION_MODEL_KEY);
@@ -61,9 +59,13 @@ public class OpenApiUtil {
       .onFailure(err -> LOGGER.error("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err))
       .compose(routerBuilder -> {
 
-        towerApp
-          .openApiMount(routerBuilder)
-          .openApiBindSecurityScheme(routerBuilder, this.towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor());
+        try {
+          towerApp
+            .openApiMount(routerBuilder)
+            .openApiBindSecurityScheme(routerBuilder, this.towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor());
+        } catch (IllegalConfiguration e) {
+          return Future.failedFuture(e);
+        }
 
         routerBuilder.setOptions(new RouterBuilderOptions()
           .setRequireSecurityHandlers(true)
@@ -138,6 +140,5 @@ public class OpenApiUtil {
 
     }
   }
-
 
 }

@@ -15,7 +15,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * An authentication provider for tokens
+ * An authentication provider for a token / session id.
+ * <p>
+ * It handles token:
+ * * in header
+ * * in cookie
  * <p>
  * The binding of the open api scheme name and the handler is done in the {@link OpenApiUtil.config#mountOpenApi(Router)}
  * with the <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">Doc</a>

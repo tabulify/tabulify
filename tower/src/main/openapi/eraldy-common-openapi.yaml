@@ -1184,6 +1184,7 @@ components:
           schema:
             $ref: '#/components/schemas/EmailIdentifier'
   # Doc: https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
+  # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#securitySchemeObject
   securitySchemes:
     basicAuth: # binding name (arbitrary name used in code and in the file)
       type: http
@@ -1195,7 +1196,7 @@ components:
     cookieAuth: # binding name (arbitrary name used in code and in the file)
       type: apiKey
       in: cookie
-      name: cs-session-id
+      name: ey-session-id
     bearerAuth: # binding name (arbitrary name used in code and in the file)
       type: http
       scheme: bearer

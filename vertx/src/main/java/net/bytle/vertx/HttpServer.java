@@ -5,10 +5,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.APIKeyHandler;
-import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.JWTAuthHandler;
-import io.vertx.ext.web.handler.LoggerFormat;
+import io.vertx.ext.web.handler.*;
 import net.bytle.exception.IllegalConfiguration;
 
 /**
@@ -22,6 +19,8 @@ public class HttpServer {
 
   private APIKeyHandler apiKeyAuthenticator;
   private JWTAuthHandler bearerAuthenticationHandler;
+  private BasicAuthHandler basicAuthenticator;
+  private APIKeyHandler cookieAuthenticator;
 
   public HttpServer(builder builder) {
     this.builder = builder;
@@ -105,13 +104,31 @@ public class HttpServer {
    * @return the API key handler
    * An utility class, API key should be enabled on the server
    */
-  public APIKeyHandler getApiKeyHandler() {
+  public APIKeyHandler getApiKeyAuthHandler() {
     if (this.apiKeyAuthenticator == null) {
       this.apiKeyAuthenticator = APIKeyHandler.create(this.getServer().getApiKeyAuth());
     }
     return this.apiKeyAuthenticator;
   }
 
+  /**
+   * @return a basic auth handler
+   */
+  @SuppressWarnings("unused")
+  public BasicAuthHandler getBasicAuthHandler() {
+    if (this.basicAuthenticator == null) {
+      this.basicAuthenticator = BasicAuthHandler.create(this.getServer().getApiKeyAuth());
+    }
+    return this.basicAuthenticator;
+  }
+
+  @SuppressWarnings("unused")
+  public APIKeyHandler getCookieAuthHandler() throws IllegalConfiguration {
+    if (this.cookieAuthenticator == null) {
+      throw new IllegalConfiguration("The cookie auth handler was not enabled");
+    }
+    return this.cookieAuthenticator;
+  }
 
   public static class builder {
 
@@ -123,7 +140,7 @@ public class HttpServer {
     private boolean fakeErrorHandler = false;
     private boolean healthCheck = false;
     final Server server;
-
+    private String sessionCookieAuthName;
 
 
     public builder(Server server) {
@@ -229,13 +246,21 @@ public class HttpServer {
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpserver = new HttpServer(this);
       httpserver.router = this.buildRouter();
-
-
-
-
+      if (this.sessionCookieAuthName != null) {
+        httpserver.cookieAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth())
+          .cookie(this.sessionCookieAuthName);
+      }
       return httpserver;
     }
 
 
+    /**
+     * Enable cookie authentication
+     * @param cookieName - the name of the cookie where the token/session id is stored
+     */
+    public HttpServer.builder enableSessionCookieAuth(String cookieName) {
+      this.sessionCookieAuthName = cookieName;
+      return this;
+    }
   }
 }

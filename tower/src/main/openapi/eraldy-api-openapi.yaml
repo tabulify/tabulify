@@ -31,8 +31,9 @@ tags:
 # you need to set the security for an operation to the empty array
 # security: []
 security:
-  # Listed in the combo-common.yaml
+  # Listed in the openapi-common.yaml
   - apiKeyAuth: [ ]
+  - cookieAuth: [ ]
 components:
   securitySchemes:
 #    cookieAuth: # binding name (arbitrary name used in code and in the file)

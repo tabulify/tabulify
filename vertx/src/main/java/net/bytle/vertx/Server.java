@@ -269,7 +269,8 @@ public class Server {
 
     /**
      * Add an authentication via an API key
-     * (super user token)
+     * (ie token/session id)
+     * and add a superuser token functionality
      */
     public Server.builder enableApiKeyAuth() {
       this.addApiKeyAuth = true;

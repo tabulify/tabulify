@@ -37,8 +37,8 @@ public class IpApp extends TowerApp {
      * Only authentication via super token
      */
     builder
-      .securityHandler(OpenApiUtil.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyHandler());
+      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthHandler());
 
     return this;
   }

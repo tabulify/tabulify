@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api;
 
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
@@ -80,18 +81,24 @@ public class EraldyApiApp extends TowerApp {
   }
 
   @Override
-  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) {
+  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) throws IllegalConfiguration {
 
     /**
      * Configuring `AuthenticationHandler`s defined in the OpenAPI document
      * https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
      */
     builder
-      .securityHandler(OpenApiUtil.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyHandler());
+      .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
+      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthHandler());
+
     builder
-      .securityHandler(OpenApiUtil.BEARER_AUTH_SECURITY_SCHEME)
+      .securityHandler(OpenApiSecurityNames.BEARER_AUTH_SECURITY_SCHEME)
       .bindBlocking(config -> this.getApexDomain().getHttpServer().getBearerAuthenticationHandler());
+
+    APIKeyHandler cookieAuthHandler = this.getApexDomain().getHttpServer().getCookieAuthHandler();
+    builder
+      .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
+      .bindBlocking(config -> cookieAuthHandler);
 
     return this;
 

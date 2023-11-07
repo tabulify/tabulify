@@ -89,6 +89,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableFailureHandler() // enable failure handler
               .addFakeErrorHandler()
               .addHealthCheck()
+              .enableSessionCookieAuth("ey-session-id")
               .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise, e);
