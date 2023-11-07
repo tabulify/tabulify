@@ -52,7 +52,7 @@ public abstract class TowerApp {
   private final ConfigAccessor configAccessor;
   private ProxyUtil proxy;
   private WebClient webClient;
-  private OpenApiUtil openApi;
+  private OpenApiManager openApi;
 
 
   public TowerApp(TowerApexDomain towerApexDomain) {
@@ -254,7 +254,8 @@ public abstract class TowerApp {
      * <p>
      * The Strict-Transport-Security HTTP header tells browsers to always use HTTPS.
      */
-    if (getApexDomain().getHttpServer().isHttpsEnabled()) {
+    HttpServer httpServer = this.getApexDomain().getHttpServer();
+    if (httpServer.isHttpsEnabled()) {
       String pathMount = this.getPathMount();
       Route route;
       if (!pathMount.equals("")) {
@@ -278,7 +279,6 @@ public abstract class TowerApp {
      */
     this.addSpecificAppHandlers(rootRouter);
 
-
     /**
      * Load the open api
      * <p>
@@ -292,16 +292,15 @@ public abstract class TowerApp {
      * Otherwise, it seems that the `CompletableFuture.get` is called
      * quickly and that the mountOpenApi code goes into the wild (ie is not executed)
      */
-    return this.apexDomain.getHttpServer().getServer().getVertx().executeBlocking(() -> {
+    return httpServer.getServer().getVertx().executeBlocking(() -> {
       CompletableFuture<String> openApiMounter = new CompletableFuture<>();
       if (this.hasOpenApiSpec()) {
         /**
          * Mount OpenApi
          */
-        openApi = OpenApiUtil.config(this)
+        openApi = OpenApiManager.config(this)
           .build();
-
-        openApi.mountOpenApi(rootRouter)
+        openApi.mountOpenApi(this, rootRouter)
           .onFailure(
             // Something went wrong during router builder initialization
             // "Unable to parse the openApi specification. Error: "
@@ -311,6 +310,7 @@ public abstract class TowerApp {
       } else {
         openApiMounter.complete("done");
       }
+
 
       try {
         /**
@@ -324,9 +324,7 @@ public abstract class TowerApp {
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         throw new RuntimeException("Unable to load the open api spec", e);
       }
-
     });
-
 
   }
 
@@ -495,7 +493,7 @@ public abstract class TowerApp {
   }
 
 
-  public OpenApiUtil getOpenApi() {
-    return this.openApi;
+  public OpenApiManager getOpenApi() {
+    return openApi;
   }
 }

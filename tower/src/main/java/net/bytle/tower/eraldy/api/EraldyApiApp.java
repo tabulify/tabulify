@@ -1,10 +1,10 @@
 package net.bytle.tower.eraldy.api;
 
-import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
+import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.APIKeyHandler;
-import io.vertx.ext.web.handler.ChainAuthHandler;
+import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
@@ -23,8 +23,6 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Set;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -86,35 +84,38 @@ public class EraldyApiApp extends TowerApp {
   }
 
   @Override
-  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder builder, ConfigAccessor configAccessor) throws IllegalConfiguration {
+  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder routerBuilder, ConfigAccessor configAccessor) throws IllegalConfiguration {
 
     /**
-     * Configuring `AuthenticationHandler`s defined in the OpenAPI document
+     * Utility variables
+     */
+    HttpServer httpServer = this.getApexDomain().getHttpServer();
+
+
+    /**
+     * Configuring the handler for api key security scheme
+     * <p>
+     * Note: Configuring `AuthenticationHandler`s defined in the OpenAPI document
      * https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
      */
-    EraldyApiApp apiApp = this;
-    APIKeyHandler apiKeyAuthHandler = apiApp.getApexDomain().getHttpServer().getApiKeyAuthHandler();
-
-    ChainAuthHandler chain = ChainAuthHandler.all()
-      .add(apiKeyAuthHandler);
-      //.add(apiApp::authorizationCheckHandler);
-    builder
+    routerBuilder
       .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> chain);
-
-//    builder
-//      .securityHandler(OpenApiSecurityNames.BEARER_AUTH_SECURITY_SCHEME)
-//      .bindBlocking(config -> this.getApexDomain().getHttpServer().getBearerAuthenticationHandler());
-
-    APIKeyHandler cookieAuthHandler = this.getApexDomain().getHttpServer().getCookieAuthHandler();
-    builder
-      .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
-      .bindBlocking(config -> ChainAuthHandler
-        .all()
-        .add(cookieAuthHandler)
-        //.add(apiApp::authorizationCheckHandler)
+      .bindBlocking(config -> httpServer.getApiKeyAuthHandler()
       );
 
+    /**
+     * Configuring the handler for cookie security scheme
+     */
+    APIKeyHandler cookieAuthHandler = httpServer.getCookieAuthHandler();
+    routerBuilder
+      .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
+      .bindBlocking(config -> cookieAuthHandler);
+
+    Handler<RoutingContext> authorizationHandler = this.getOpenApi().authorizationCheckHandler();
+    for (Operation operation: routerBuilder.operations()){
+      routerBuilder.operation(operation.getOperationId())
+        .handler(authorizationHandler);
+    }
     return this;
 
   }
@@ -299,16 +300,5 @@ public class EraldyApiApp extends TowerApp {
     return this.organizationUserProvider;
   }
 
-  public void authorizationCheckHandler(RoutingContext routingContext) {
 
-    Set<String> scopes = this.getOpenApi().getScopes(routingContext);
-
-    for (String scope : scopes) {
-      if (!RoleBasedAuthorization.create(scope).match(routingContext.user())) {
-        routingContext.fail(HttpStatus.NOT_AUTHORIZED.httpStatusCode());
-      }
-    }
-
-    routingContext.next();
-  }
 }

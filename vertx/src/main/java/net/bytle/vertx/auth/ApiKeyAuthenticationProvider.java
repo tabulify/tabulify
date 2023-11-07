@@ -10,7 +10,8 @@ import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.InternalException;
 import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.OpenApiUtil;
+import net.bytle.vertx.OpenApiManager;
+import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +22,7 @@ import org.apache.logging.log4j.Logger;
  * * in header
  * * in cookie
  * <p>
- * The binding of the open api scheme name and the handler is done in the {@link OpenApiUtil.config#mountOpenApi(Router)}
+ * The binding of the open api scheme name and the handler is done in the {@link OpenApiManager.config#mountOpenApi(TowerApp, Router)}
  * with the <a href="https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document">Doc</a>
  */
 public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
@@ -83,5 +84,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
   public String getSuperToken() {
     return this.superToken;
   }
+
+
 
 }

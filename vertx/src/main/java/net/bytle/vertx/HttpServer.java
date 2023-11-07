@@ -23,6 +23,7 @@ public class HttpServer {
   private BasicAuthHandler basicAuthenticator;
   private APIKeyHandler cookieAuthenticator;
 
+
   public HttpServer(builder builder) {
     this.builder = builder;
   }
@@ -94,6 +95,7 @@ public class HttpServer {
    * @return the JWT bearer authentication handler
    * An utility class, JWT should be enabled on the server
    */
+  @SuppressWarnings("unused")
   public JWTAuthHandler getBearerAuthenticationHandler() {
     if (bearerAuthenticationHandler == null) {
       bearerAuthenticationHandler = JWTAuthHandler.create(this.getServer().getJwtAuth().getProvider());
@@ -131,6 +133,7 @@ public class HttpServer {
     return this.cookieAuthenticator;
   }
 
+
   public static class builder {
 
     private boolean addBodyHandler = true;
@@ -142,7 +145,6 @@ public class HttpServer {
     private boolean healthCheck = false;
     final Server server;
     private String sessionCookieAuthName;
-    private boolean enableOpenApi = false;
 
 
     public builder(Server server) {
@@ -249,18 +251,18 @@ public class HttpServer {
       HttpServer httpserver = new HttpServer(this);
       httpserver.router = this.buildRouter();
       if (this.sessionCookieAuthName != null) {
-        httpserver.cookieAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth())
+        httpserver.cookieAuthenticator = APIKeyHandler
+          .create(this.server.getApiKeyAuth())
           .cookie(this.sessionCookieAuthName);
       }
-      if(this.enableOpenApi){
-        httpserver.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
-      }
+      httpserver.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
       return httpserver;
     }
 
 
     /**
      * Enable cookie authentication
+     *
      * @param cookieName - the name of the cookie where the token/session id is stored
      */
     public HttpServer.builder enableSessionCookieAuth(String cookieName) {
@@ -268,9 +270,5 @@ public class HttpServer {
       return this;
     }
 
-    public HttpServer.builder enableOpenApi() {
-      this.enableOpenApi = true;
-      return this;
-    }
   }
 }

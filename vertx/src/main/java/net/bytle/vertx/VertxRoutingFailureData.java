@@ -119,12 +119,19 @@ public class VertxRoutingFailureData {
     this.setStatusCodeFromFailureContext(context);
 
     Throwable thrown = context.failure();
+    /**
+     * Failure may be not given
+     */
+    if (thrown == null) {
+      return this;
+    }
 
     String message = thrown.getMessage();
     String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
     if (JavaEnvs.IS_DEV) {
       message += "\n" + stackTraceAsString;
     }
+
 
     /**
      * BodyProcessorException may wrap a validation exception
@@ -205,7 +212,6 @@ public class VertxRoutingFailureData {
   }
 
 
-
   public VertxRoutingFailureData setMimeToJson() {
     this.mime = MediaTypes.TEXT_JSON;
     return this;
@@ -248,7 +254,6 @@ public class VertxRoutingFailureData {
   public VertxRoutingFailureException getFailedException() {
     return new VertxRoutingFailureException(this);
   }
-
 
 
 }
