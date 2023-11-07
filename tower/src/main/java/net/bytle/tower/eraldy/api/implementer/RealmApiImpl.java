@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
-import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -109,14 +108,6 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<RealmWithAppUris>>> realmsGet(RoutingContext routingContext) {
 
-    if (!RoleBasedAuthorization.create("root").match(routingContext.user())) {
-      return Future.failedFuture(
-        VertxRoutingFailureData
-          .create()
-          .setStatus(HttpStatus.NOT_AUTHORIZED)
-          .getFailedException()
-      );
-    }
 
     return this.apiApp.getRealmProvider()
       .getRealmsWithAppUris()

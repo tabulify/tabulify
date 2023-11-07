@@ -40,6 +40,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/PasswordOnly.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Realm.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmPostBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/RealmWithAppUris.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Registration.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationFlow.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationList.java

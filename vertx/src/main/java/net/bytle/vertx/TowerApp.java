@@ -52,6 +52,7 @@ public abstract class TowerApp {
   private final ConfigAccessor configAccessor;
   private ProxyUtil proxy;
   private WebClient webClient;
+  private OpenApiUtil openApi;
 
 
   public TowerApp(TowerApexDomain towerApexDomain) {
@@ -297,9 +298,10 @@ public abstract class TowerApp {
         /**
          * Mount OpenApi
          */
-        OpenApiUtil.config(this)
-          .build()
-          .mountOpenApi(rootRouter)
+        openApi = OpenApiUtil.config(this)
+          .build();
+
+        openApi.mountOpenApi(rootRouter)
           .onFailure(
             // Something went wrong during router builder initialization
             // "Unable to parse the openApi specification. Error: "
@@ -493,5 +495,7 @@ public abstract class TowerApp {
   }
 
 
-
+  public OpenApiUtil getOpenApi() {
+    return this.openApi;
+  }
 }

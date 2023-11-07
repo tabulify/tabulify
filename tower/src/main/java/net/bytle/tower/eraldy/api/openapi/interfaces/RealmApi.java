@@ -10,12 +10,7 @@ import java.util.List;
 public interface RealmApi  {
 
     /**
-     * Return the list of recent new users for the realm
-    */
-    Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmGuid);
-
-    /**
-     * Return the realm for the request
+     * Return the asked realm
     */
     Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle);
 
@@ -25,7 +20,12 @@ public interface RealmApi  {
     Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPostBody);
 
     /**
-     * Return the list of realms for the connected user
+     * Return the list of recent new users for the realm
+    */
+    Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmGuid);
+
+    /**
+     * Return the list of realms
     */
     Future<ApiResponse<List<RealmWithAppUris>>> realmsGet(RoutingContext routingContext);
 

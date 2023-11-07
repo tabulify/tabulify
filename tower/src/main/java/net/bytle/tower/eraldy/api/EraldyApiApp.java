@@ -1,7 +1,10 @@
 package net.bytle.tower.eraldy.api;
 
+import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.APIKeyHandler;
+import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
@@ -20,6 +23,8 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Set;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -87,18 +92,28 @@ public class EraldyApiApp extends TowerApp {
      * Configuring `AuthenticationHandler`s defined in the OpenAPI document
      * https://vertx.io/docs/vertx-web-openapi/java/#_configuring_authenticationhandlers_defined_in_the_openapi_document
      */
+    EraldyApiApp apiApp = this;
+    APIKeyHandler apiKeyAuthHandler = apiApp.getApexDomain().getHttpServer().getApiKeyAuthHandler();
+
+    ChainAuthHandler chain = ChainAuthHandler.all()
+      .add(apiKeyAuthHandler);
+      //.add(apiApp::authorizationCheckHandler);
     builder
       .securityHandler(OpenApiSecurityNames.APIKEY_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getApiKeyAuthHandler());
+      .bindBlocking(config -> chain);
 
-    builder
-      .securityHandler(OpenApiSecurityNames.BEARER_AUTH_SECURITY_SCHEME)
-      .bindBlocking(config -> this.getApexDomain().getHttpServer().getBearerAuthenticationHandler());
+//    builder
+//      .securityHandler(OpenApiSecurityNames.BEARER_AUTH_SECURITY_SCHEME)
+//      .bindBlocking(config -> this.getApexDomain().getHttpServer().getBearerAuthenticationHandler());
 
     APIKeyHandler cookieAuthHandler = this.getApexDomain().getHttpServer().getCookieAuthHandler();
     builder
       .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
-      .bindBlocking(config -> cookieAuthHandler);
+      .bindBlocking(config -> ChainAuthHandler
+        .all()
+        .add(cookieAuthHandler)
+        //.add(apiApp::authorizationCheckHandler)
+      );
 
     return this;
 
@@ -282,5 +297,18 @@ public class EraldyApiApp extends TowerApp {
 
   public OrganizationUserProvider getOrganizationUserProvider() {
     return this.organizationUserProvider;
+  }
+
+  public void authorizationCheckHandler(RoutingContext routingContext) {
+
+    Set<String> scopes = this.getOpenApi().getScopes(routingContext);
+
+    for (String scope : scopes) {
+      if (!RoleBasedAuthorization.create(scope).match(routingContext.user())) {
+        routingContext.fail(HttpStatus.NOT_AUTHORIZED.httpStatusCode());
+      }
+    }
+
+    routingContext.next();
   }
 }

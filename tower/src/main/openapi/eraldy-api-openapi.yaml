@@ -36,12 +36,12 @@ security:
   - cookieAuth: [ ]
 components:
   securitySchemes:
-#    cookieAuth: # binding name (arbitrary name used in code and in the file)
-#      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/cookieAuth'
     apiKeyAuth: # binding name (arbitrary name used in code and in the file)
       $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/apiKeyAuth'
-    bearerAuth: # binding name (arbitrary name used in code and in the file)
-      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
+#    bearerAuth: # binding name (arbitrary name used in code and in the file)
+#      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/bearerAuth'
+    cookieAuth: # binding name (arbitrary name used in code and in the file)
+      $ref: './eraldy-common-openapi.yaml#/components/securitySchemes/cookieAuth'
   requestBodies:
     LoginPostBody:
       description: The data needed to log a user in by password credentials
@@ -421,11 +421,6 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/Realm'
-        '405':
-          description: Method Not Allowed
-          content:
-            'application/json': { }
-            'application/xml': { }
   /realms:
     get:
       operationId: "realmsGet"
@@ -433,7 +428,8 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: [ 'read:realm' ]
+        - apiKeyAuth: [ 'root' ]
+        - cookieAuth: [ 'root' ]
       responses:
         '200':
           description: "Return the list of realms"

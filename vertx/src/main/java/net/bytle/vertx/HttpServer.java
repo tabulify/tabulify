@@ -7,6 +7,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
 import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
 
 /**
  * This class represents an HTTP server:
@@ -106,7 +107,7 @@ public class HttpServer {
    */
   public APIKeyHandler getApiKeyAuthHandler() {
     if (this.apiKeyAuthenticator == null) {
-      this.apiKeyAuthenticator = APIKeyHandler.create(this.getServer().getApiKeyAuth());
+      throw new InternalException("Api Key Handler was not initialized");
     }
     return this.apiKeyAuthenticator;
   }
@@ -141,6 +142,7 @@ public class HttpServer {
     private boolean healthCheck = false;
     final Server server;
     private String sessionCookieAuthName;
+    private boolean enableOpenApi = false;
 
 
     public builder(Server server) {
@@ -250,6 +252,9 @@ public class HttpServer {
         httpserver.cookieAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth())
           .cookie(this.sessionCookieAuthName);
       }
+      if(this.enableOpenApi){
+        httpserver.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
+      }
       return httpserver;
     }
 
@@ -260,6 +265,11 @@ public class HttpServer {
      */
     public HttpServer.builder enableSessionCookieAuth(String cookieName) {
       this.sessionCookieAuthName = cookieName;
+      return this;
+    }
+
+    public HttpServer.builder enableOpenApi() {
+      this.enableOpenApi = true;
       return this;
     }
   }

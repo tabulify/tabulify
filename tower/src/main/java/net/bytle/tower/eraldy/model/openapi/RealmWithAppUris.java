@@ -13,10 +13,14 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RealmWithAppUris   {
 
-  private String guid;
-  private String name;
-  private String handle;
-  private List<URI> appUris;
+
+  protected String guid;
+
+  protected String name;
+
+  protected String handle;
+
+  protected List<URI> appUris;
 
   /**
   * The empty constructor is

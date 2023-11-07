@@ -8,6 +8,7 @@ servers:
 - url: https://api.eraldy.com
 security:
 - apiKeyAuth: []
+- cookieAuth: []
 tags:
 - description: Env data
   name: env
@@ -324,7 +325,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RealmAnalytics'
           description: Ok
-      summary: Return the realm for the request
+      summary: Return the asked realm
       tags:
       - realm
       x-accepts: application/json
@@ -339,11 +340,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Realm'
           description: Ok
-        "405":
-          content:
-            application/json: {}
-            application/xml: {}
-          description: Method Not Allowed
       security:
       - apiKeyAuth:
         - write:realm
@@ -361,15 +357,17 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/RealmAnalytics'
+                  $ref: '#/components/schemas/RealmWithAppUris'
                 type: array
-          description: Return the list of realms for the connected user
+          description: Return the list of realms
         "403":
           description: Not authenticated
       security:
       - apiKeyAuth:
-        - read:realm
-      summary: Return the list of realms for the connected user
+        - root
+      - cookieAuth:
+        - root
+      summary: Return the list of realms
       tags:
       - realm
       x-accepts: application/json
@@ -427,7 +425,7 @@ paths:
       x-accepts: application/json
   /realm/{realmGuid}/users/new:
     get:
-      operationId: activityRealmUsersNewGet
+      operationId: realmUsersNewGet
       parameters:
       - description: The guid of the realm
         explode: false
@@ -1930,10 +1928,37 @@ components:
         handle:
           description: A handle (only alphabetical characters)
           example: example
-          maxLength: 10
           type: string
       required:
       - name
+      type: object
+    RealmWithAppUris:
+      description: |
+        A realm with the app Uri that it supports
+      example:
+        name: name
+        guid: guid
+        app_uris:
+        - https://openapi-generator.tech
+        - https://openapi-generator.tech
+        handle: handle
+      properties:
+        guid:
+          description: The public id
+          format: int64
+          type: string
+        name:
+          description: A name
+          type: string
+        handle:
+          description: the handle
+          type: string
+        app_uris:
+          items:
+            description: a app uri
+            format: uri
+            type: string
+          type: array
       type: object
     Service:
       description: |
@@ -2766,7 +2791,7 @@ components:
       in: header
       name: x-api-key
       type: apiKey
-    bearerAuth:
-      bearerFormat: JWS
-      scheme: bearer
-      type: http
+    cookieAuth:
+      in: cookie
+      name: ey-session-id
+      type: apiKey

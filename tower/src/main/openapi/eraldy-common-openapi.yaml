@@ -956,8 +956,7 @@ components:
           description: A name
         handle:
           type: string
-          maxLength: 10
-          description: A handle (only alphabetical characters)
+          description: A handle (follow the same constraint that domain name)
           example: "example"
     EmailIdentifier:
       type: object

@@ -1,12 +1,14 @@
 package net.bytle.vertx;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,6 +16,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class OpenApiUtil {
@@ -34,7 +38,6 @@ public class OpenApiUtil {
   }
 
   /**
-   *
    * @param routingContext - the routing context
    * @return the Json Object of the operation path in the openapi spec
    */
@@ -104,6 +107,26 @@ public class OpenApiUtil {
         return Future.succeededFuture();
 
       });
+  }
+
+  public Set<String> getScopes(RoutingContext routingContext) {
+    Object securities = getOperationModel(routingContext).getMap().get("security");
+    Set<String> scopes = new HashSet<>();
+    if (!(securities instanceof JsonArray)) {
+      throw new InternalException("The OpenApi security scopes should be in a array/list format");
+    }
+    JsonArray arraySecurities = (JsonArray) securities;
+    for (int i = 0; i < arraySecurities.size(); i++) {
+      JsonObject security = arraySecurities.getJsonObject(i);
+      for (String securityKey : security.getMap().keySet()) {
+        JsonArray securityScopes = security.getJsonArray(securityKey);
+        for (int j = 0; j < securityScopes.size(); j++) {
+          scopes.add(securityScopes.getString(j));
+        }
+      }
+    }
+    return scopes;
+
   }
 
 
