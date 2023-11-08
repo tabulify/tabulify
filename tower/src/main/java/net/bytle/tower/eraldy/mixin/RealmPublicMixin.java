@@ -1,8 +1,10 @@
-package net.bytle.tower.eraldy.objectProvider;
+package net.bytle.tower.eraldy.mixin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.Organization;
 
 
 /**
@@ -16,17 +18,19 @@ import net.bytle.tower.eraldy.model.openapi.App;
  * <a href="https://github.com/FasterXML/jackson-docs/wiki/JacksonMixInAnnotations">...</a>
  *
  */
-@SuppressWarnings("unused")
 public abstract class RealmPublicMixin {
 
-  @JsonIgnore
-  Long localId;
-
-  @JsonIgnore
-  App defaultApp;
 
   @JsonIgnore
   @JsonProperty("defaultApp")
   abstract App getDefaultApp();
+
+  @JsonIgnore
+  @JsonProperty("localId")
+  abstract Long getLocalId();
+
+  @JsonSerialize(as = Organization.class)
+  @JsonProperty("organization")
+  abstract Organization getOrganization();
 
 }

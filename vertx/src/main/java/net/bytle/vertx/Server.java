@@ -53,6 +53,7 @@ public class Server {
   private JwtAuthManager jwtAuthManager;
   private ApiKeyAuthenticationProvider apiKeyAuth;
   private HashId hashId;
+  private JacksonMapperManager jacksonMapperManager;
 
   Server(builder builder) {
 
@@ -141,6 +142,10 @@ public class Server {
 
   public HashId getHashId() {
     return this.hashId;
+  }
+
+  public JacksonMapperManager getJacksonMapperManager() {
+    return this.jacksonMapperManager;
   }
 
 
@@ -243,10 +248,12 @@ public class Server {
       if (this.enableHashId) {
         server.hashId = new HashId(server.getConfigAccessor());
       }
+
+        server.jacksonMapperManager = JacksonMapperManager.create();
       if (this.enableJacksonTime) {
-        JacksonMapperManager.initVertxJacksonMapper();
+        server.jacksonMapperManager.enableTimeModuleForVertx();
       } else {
-        LOGGER.info("Jackson time not enabled");
+        LOGGER.info("Jackson time not enabled for vertx");
       }
       return server;
     }

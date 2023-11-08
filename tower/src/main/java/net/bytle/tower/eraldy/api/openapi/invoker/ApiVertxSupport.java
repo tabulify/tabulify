@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -13,8 +12,6 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.*;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApp;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 
@@ -100,16 +97,12 @@ public class ApiVertxSupport {
     /**
     * Json
     */
-    HashMap<Class<?>, Class<?>> mixins = apiResponse.getMixins();
-    if (mixins.size() != 0) {
+    ObjectMapper jsonMapper = apiResponse.getJsonMapper();
+    if (jsonMapper!=null) {
       ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-      ObjectMapper mapper = DatabindCodec.mapper();
-      for(Map.Entry<Class<?>, Class<?>> mixin: mixins.entrySet()) {
-        mapper.addMixIn(mixin.getKey(), mixin.getValue());
-      }
       String json;
       try {
-        json = mapper.writeValueAsString(data);
+        json = jsonMapper.writeValueAsString(data);
       } catch (JsonProcessingException e) {
         ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
         return;

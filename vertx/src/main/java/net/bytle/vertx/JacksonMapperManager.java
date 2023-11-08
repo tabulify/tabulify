@@ -2,6 +2,7 @@ package net.bytle.vertx;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.json.jackson.DatabindCodec;
 import net.bytle.java.JavaEnvs;
@@ -24,7 +25,15 @@ import java.util.Arrays;
  */
 public class JacksonMapperManager {
 
-  static Logger LOGGER  = LogManager.getLogger(JacksonMapperManager.class);
+  static Logger LOGGER = LogManager.getLogger(JacksonMapperManager.class);
+  private final JavaTimeModule javaTimeModule;
+
+  public JacksonMapperManager() {
+    javaTimeModule = new JavaTimeModule();
+    javaTimeModule.addSerializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeSerializer());
+    javaTimeModule.addDeserializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeDeserializer());
+  }
+
   /**
    * Jackson
    * Add support for local date time serialization
@@ -34,20 +43,13 @@ public class JacksonMapperManager {
    * <p>
    * Ref: <a href="https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping">Ref</a>
    */
-  public static void initVertxJacksonMapper() {
+  public static JacksonMapperManager create() {
 
-    Arrays.asList(
-        DatabindCodec.mapper(),
-        DatabindCodec.prettyMapper()
-      )
-      .forEach(JacksonMapperManager::initModule);
-    LOGGER.info("Date time in JSON jackson enabled");
+    return new JacksonMapperManager();
 
   }
 
-  private static void initModule(ObjectMapper mapper) {
-
-
+  public void initMapper(ObjectMapper mapper) {
 
     if (JavaEnvs.IS_DEV) {
       /**
@@ -61,11 +63,32 @@ public class JacksonMapperManager {
 
   }
 
-  public static JavaTimeModule getJavaTimeModule() {
-    JavaTimeModule javaTimeModule = new JavaTimeModule();
-    javaTimeModule.addSerializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeSerializer());
-    javaTimeModule.addDeserializer(LocalDateTime.class, new DateTimeUtil.LocalDateTimeDeserializer());
+  public JavaTimeModule getJavaTimeModule() {
+
     return javaTimeModule;
   }
 
+  public void enableTimeModuleForVertx() {
+    Arrays.asList(
+        DatabindCodec.mapper(),
+        DatabindCodec.prettyMapper()
+      )
+      .forEach(this::initMapper);
+    LOGGER.info("Date time in JSON jackson enabled");
+  }
+
+  /**
+   * @return a json mapper
+   * <p>
+   * Note: It seems that the {@link ObjectMapper#addMixIn(Class, Class) Jackson mixins} cannot be added or deleted
+   * after the first used of a mapper, we create
+   * therefore the mappers in the start phase of the server
+   */
+  public JsonMapper createNewJsonMapper() {
+    JsonMapper mapper = JsonMapper
+      .builder()
+      .build();
+    this.initMapper(mapper);
+    return mapper;
+  }
 }

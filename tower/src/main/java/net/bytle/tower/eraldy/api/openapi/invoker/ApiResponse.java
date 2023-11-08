@@ -1,6 +1,6 @@
 package net.bytle.tower.eraldy.api.openapi.invoker;
 
-import java.util.HashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ApiResponse<T> {
   private final T data;
@@ -35,17 +35,14 @@ public class ApiResponse<T> {
   return statusCode;
   }
 
-  private HashMap<Class<?>, Class<?>> mixIns;
-
-  public void addMixin(Class<?> target, Class<?> mixinSource) {
-    if (mixIns == null) {
-      mixIns = new HashMap<>();
-    }
-    mixIns.put(target, mixinSource);
+  private ObjectMapper jsonMapper;
+  public ApiResponse<T> setMapper(ObjectMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
+    return this;
   }
 
-  public HashMap<Class<?>, Class<?>> getMixins() {
-    return this.mixIns;
+  public ObjectMapper getJsonMapper() {
+    return this.jsonMapper;
   }
 
 }
