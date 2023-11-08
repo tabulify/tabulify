@@ -964,6 +964,11 @@ components:
           description: The realm handle
     Realm:
       type: object
+      # A realm is a container/scope for a user login
+      # A realm may have several apps where the user can log in
+      # with the same credential
+      # We don't use domain because it has strong web connotation
+      # (note there is 197,046,670 domain active, 1,139,467,659 registered)
       description: |
         A realm.
 

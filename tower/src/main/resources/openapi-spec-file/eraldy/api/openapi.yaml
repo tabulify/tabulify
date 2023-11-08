@@ -316,6 +316,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/RealmAnalytics'
           description: Ok
+      security:
+      - apiKeyAuth:
+        - root
       summary: Return the asked realm
       tags:
       - realm
@@ -677,12 +680,13 @@ paths:
         explode: true
         in: query
         name: userIdentifier
-        required: false
+        required: true
         schema:
           example: "[\"usr-xjkkLmi\",\"john@doe.com\"]"
           type: string
         style: form
-      - description: A realm identifier (a guid or handle)
+      - description: A realm identifier (a guid or handle) if the user identifier
+          is an email
         explode: true
         in: query
         name: realmIdentifier

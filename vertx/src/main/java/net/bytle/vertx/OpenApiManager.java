@@ -113,10 +113,15 @@ public class OpenApiManager {
   }
 
   public Set<String> getScopes(RoutingContext routingContext) {
-    Object securities = getOperationModel(routingContext).getMap().get("security");
+    JsonObject operationJsonOpenApiData = getOperationModel(routingContext);
+    String operationId = operationJsonOpenApiData.getString("operationId");
+    Object securities = operationJsonOpenApiData.getMap().get("security");
+    if (securities == null) {
+      throw new InternalException("The OpenApi security was not found for the operation id (" + operationId + ")");
+    }
     Set<String> scopes = new HashSet<>();
     if (!(securities instanceof JsonArray)) {
-      throw new InternalException("The OpenApi security scopes should be in a array/list format");
+      throw new InternalException("The OpenApi security scopes should be in a array/list format for the operation id (" + operationId + ")");
     }
     JsonArray arraySecurities = (JsonArray) securities;
     for (int i = 0; i < arraySecurities.size(); i++) {
@@ -182,7 +187,7 @@ public class OpenApiManager {
         if (!RoleBasedAuthorization.create(scope).match(user)) {
           VertxRoutingFailureData.create()
             .setStatus(HttpStatus.NOT_AUTHORIZED)
-            .setDescription("The scope ("+scope+") is not granted to the user ("+user.subject()+")")
+            .setDescription("The scope (" + scope + ") is not granted to the user (" + user.subject() + ")")
             .setMimeToJson()
             .failContext(routingContext);
           return;

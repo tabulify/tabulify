@@ -87,23 +87,23 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userMeGet(RoutingContext routingContext) {
 
-      try {
-        return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
-          .onFailure(routingContext::fail)
-          .compose(organizationUser -> {
-            organizationUser.setOrganization(null);
-            User publicUser = apiApp.getUserProvider()
-              .toPublicCloneWithRealm(organizationUser);
-            return Future.succeededFuture((new ApiResponse<>(publicUser)));
-          });
-      } catch (NotFoundException e) {
-        return Future.failedFuture(
-          VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.NOT_LOGGED_IN)
-            .setDescription("The authenticated user was not found")
-            .getFailedException()
-        );
-      }
+    try {
+      return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
+        .onFailure(routingContext::fail)
+        .compose(organizationUser -> {
+          organizationUser.setOrganization(null);
+          User publicUser = apiApp.getUserProvider()
+            .toPublicCloneWithRealm(organizationUser);
+          return Future.succeededFuture((new ApiResponse<>(publicUser)));
+        });
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        VertxRoutingFailureData.create()
+          .setStatus(HttpStatus.NOT_LOGGED_IN)
+          .setDescription("The authenticated user was not found")
+          .getFailedException()
+      );
+    }
 
 
   }
