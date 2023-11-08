@@ -63,10 +63,12 @@ public class AppProvider {
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
+  private final PgPool jdbcPool;
 
 
   public AppProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
   }
 
   public App toPublicClone(App app) {
@@ -446,24 +448,19 @@ public class AppProvider {
    */
   public Future<App> postApp(AppPostBody appPostBody) {
 
-    Realm requestedRealm = new Realm();
-    requestedRealm.setGuid(appPostBody.getRealmGuid());
-    requestedRealm.setHandle(appPostBody.getRealmHandle());
 
     App requestedApp = new App();
     requestedApp.setGuid(appPostBody.getAppGuid());
     requestedApp.setUri(appPostBody.getAppUri());
 
+    String realmIdentifier = appPostBody.getRealmIdentifier();
     return apiApp.getAppProvider()
-      .getRealmAndUpdateIdEventuallyFromRequested(requestedRealm, requestedApp)
+      .getRealmAndUpdateIdEventuallyFromRequested(realmIdentifier, requestedApp)
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(realm -> {
 
         if (realm == null) {
-          if (requestedRealm.getGuid() != null) {
-            throw ValidationException.create("The realm was not found with the guid (" + requestedRealm.getGuid() + ")", "realmGuid", requestedRealm.getGuid());
-          }
-          throw ValidationException.create("The realm was not found with the handle (" + requestedRealm.getHandle() + ")", "realmHandle", requestedRealm.getHandle());
+          throw ValidationException.create("A realm was not found with the identifier (" + realmIdentifier + ")", "realmIdentifier", realmIdentifier);
         }
 
         App app = new App();
@@ -519,21 +516,19 @@ public class AppProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
-  private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(Realm requestedRealm, App requestedApp) {
+  private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(String realmIdentifier, App requestedApp) {
     String appGuid = requestedApp.getGuid();
     java.net.URI appUri = requestedApp.getUri();
-    String realmHandle = requestedRealm.getHandle();
-    String realmGuid = requestedRealm.getGuid();
     Future<Realm> realmFuture;
     if (appGuid == null) {
       if (appUri == null) {
         throw ValidationException.create("The appGuid and the appUri cannot be both null", "appGuid", null);
       }
-      if (realmHandle == null && realmGuid == null) {
-        throw ValidationException.create("With the appUri, a realm Handle or Guid should be given", "realmHandle", null);
+      if (realmIdentifier == null) {
+        throw ValidationException.create("With the appUri, a realm identifier should be given", "realmIdentifier", null);
       }
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromGuidOrHandle(realmGuid, realmHandle);
+        .getRealmFromIdentifier(realmIdentifier);
     } else {
 
       Guid guid;
@@ -568,7 +563,6 @@ public class AppProvider {
   }
 
   Future<App> getAppById(long appId, Realm realm) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "

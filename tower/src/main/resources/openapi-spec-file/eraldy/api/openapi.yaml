@@ -296,28 +296,19 @@ paths:
       tags:
       - health
       x-accepts: application/json
-  /realm:
+  /realm/{realmIdentifier}:
     get:
       operationId: realmGet
       parameters:
-      - description: The guid of the realm
-        explode: true
-        in: query
-        name: realmGuid
-        required: false
+      - description: The guid or handle of the realm
+        explode: false
+        in: path
+        name: realmIdentifier
+        required: true
         schema:
-          example: xjkkLmi
+          example: "[\"rea-xjkkLmi\",\"realm-handle\"]"
           type: string
-        style: form
-      - description: The handle of the realm
-        explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
-          example: xjkkLmi
-          type: string
-        style: form
+        style: simple
       responses:
         "200":
           content:
@@ -329,6 +320,7 @@ paths:
       tags:
       - realm
       x-accepts: application/json
+  /realm:
     post:
       operationId: realmPost
       requestBody:
@@ -381,7 +373,7 @@ paths:
         name: userGuid
         required: true
         schema:
-          example: usr-xjkkLmi
+          example: "[\"usr-xjkkLmi\",\"usr@example.com\"]"
           type: string
         style: simple
       responses:
@@ -423,17 +415,17 @@ paths:
       tags:
       - realm
       x-accepts: application/json
-  /realm/{realmGuid}/users/new:
+  /realm/{realmIdentifier}/activity/users/new:
     get:
       operationId: realmUsersNewGet
       parameters:
-      - description: The guid of the realm
+      - description: The guid or handle of the realm
         explode: false
         in: path
-        name: realmGuid
+        name: realmIdentifier
         required: true
         schema:
-          example: rea-xjkkLmi
+          example: "[\"rea-xjkkLmi\",\"realmhandlename\"]"
           type: string
         style: simple
       responses:
@@ -458,21 +450,13 @@ paths:
     get:
       operationId: servicesGet
       parameters:
-      - description: The realm guid of the service
+      - description: A realm identifier (guid or handle)
         explode: true
         in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
-          example: xjkkLmi
-          type: string
-        style: form
-      - description: The realm handle of the service
-        explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
+          example: rea-xjkkLmi
           type: string
         style: form
       responses:
@@ -532,20 +516,11 @@ paths:
         schema:
           type: string
         style: form
-      - description: The realm handle of the service (the realm is needed when only
-          the uri is given)
+      - description: The realm identifier (guid or handle) of the service (the realm
+          is needed when only the uri is given)
         explode: true
         in: query
-        name: realmHandle
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: The realm guid of the service (the realm is needed when only
-          the uri is given)
-        explode: true
-        in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
           type: string
@@ -605,18 +580,10 @@ paths:
         schema:
           type: string
         style: form
-      - description: The realm handle
+      - description: A realm identifier (a guid or handle)
         explode: true
         in: query
-        name: realmHandle
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: The realm guid
-        explode: true
-        in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
           type: string
@@ -661,21 +628,13 @@ paths:
     get:
       operationId: appsGet
       parameters:
-      - description: The realm guid
+      - description: A realm identifier (a guid or handle)
         explode: true
         in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
           example: rea-xjkkLmi
-          type: string
-        style: form
-      - description: The realm Handle
-        explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
           type: string
         style: form
       responses:
@@ -714,35 +673,19 @@ paths:
     get:
       operationId: userGet
       parameters:
-      - description: The guid of the user
+      - description: A user identifier (A guid or an email)
         explode: true
         in: query
-        name: userGuid
+        name: userIdentifier
         required: false
         schema:
-          example: xjkkLmi
+          example: "[\"usr-xjkkLmi\",\"john@doe.com\"]"
           type: string
         style: form
-      - description: The email of the user
+      - description: A realm identifier (a guid or handle)
         explode: true
         in: query
-        name: userEmail
-        required: false
-        schema:
-          example: john@doe.com
-          format: email
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
           type: string
@@ -833,19 +776,13 @@ paths:
     get:
       operationId: usersGet
       parameters:
-      - explode: true
+      - description: A realm identifier (a guid or a handle)
+        explode: true
         in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
-          example: xjkkLmi
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
+          example: rea-xjkkLmi
           type: string
         style: form
       responses:
@@ -952,18 +889,10 @@ paths:
         schema:
           type: string
         style: form
-      - description: The realm Guid
+      - description: A realm identifier (a guid or handle)
         explode: true
         in: query
-        name: realmGuid
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: The realm Handle
-        explode: true
-        in: query
-        name: realmHandle
+        name: realmIdentifier
         required: false
         schema:
           type: string
@@ -987,7 +916,7 @@ paths:
 
         The app should be given via:
           - the appGuid
-          - or the appUri along with the realmGuid or realmHandle
+          - or the appUri along with a realm identifier (guid or handle)
       tags:
       - list
       x-accepts: application/json
@@ -995,21 +924,13 @@ paths:
     get:
       operationId: listsSummaryGet
       parameters:
-      - description: The realm guid
+      - description: A realm identifier (guid or realm)
         explode: true
         in: query
-        name: realmGuid
+        name: realmIdentifier
         required: false
         schema:
-          example: xjkkLmi
-          type: string
-        style: form
-      - description: The realm handle
-        explode: true
-        in: query
-        name: realmHandle
-        required: false
-        schema:
+          example: rea-xjkkLmi
           type: string
         style: form
       responses:
@@ -1926,7 +1847,7 @@ components:
           description: A name
           type: string
         handle:
-          description: A handle (only alphabetical characters)
+          description: A handle (follow the same constraint that domain name)
           example: example
           type: string
       required:
@@ -2102,7 +2023,6 @@ components:
         * For the service, for an upsert, you may give the service Guid or the service Uri
         * For the impersonated user, you may give an email or its guid
       example:
-        realmGuid: realmGuid
         impersonatedUserEmail: john@doe.com
         smtpHost: mail.example.com
         smtpStartTls: required
@@ -2112,7 +2032,7 @@ components:
         impersonatedUserGuid: xmllYYYY
         smtpPort: 587
         smtpPassword: secret
-        realmHandle: realmHandle
+        realmIdentifier: realmIdentifier
       properties:
         serviceGuid:
           description: "The service global id, if you want to update the identifier"
@@ -2122,11 +2042,8 @@ components:
           description: The service uri
           example: smtp://localhost
           type: string
-        realmGuid:
-          description: The realm guid
-          type: string
-        realmHandle:
-          description: The realm handle
+        realmIdentifier:
+          description: A realm identifier (Guid or handle)
           type: string
         impersonatedUserEmail:
           description: |
@@ -2170,17 +2087,16 @@ components:
         The realm (guid or handle) is also mandatory
       example:
         appPrimaryColor: '#3498db'
-        realmGuid: realmGuid
         appLogo: https://doe.com/_media/android-chrome-192x192.png
         appName: Doe
         appHome: https://doe.com
         userEmail: john@doe.com
-        realmHandle: realmHandle
         userGuid: xLOKKMmm
         appSlogan: "Doe, be you"
         appTerms: https://doe.com/terms
         appGuid: appGuid
         appUri: https://doe.com
+        realmIdentifier: realmIdentifier
       properties:
         appGuid:
           description: The guid of an existing app (to update the uri if necessary)
@@ -2190,11 +2106,8 @@ components:
           example: https://doe.com
           format: uri
           type: string
-        realmGuid:
-          description: the realm Guid
-          type: string
-        realmHandle:
-          description: the realm handle
+        realmIdentifier:
+          description: the realm identifier (Guid or handle)
           type: string
         userGuid:
           description: The guid of the public app user
@@ -2250,23 +2163,19 @@ components:
         otherwise, it's the email
       example:
         userTitle: Chief Officer
-        realmGuid: realmGuid
         userAvatar: https://en.gravatar.com/userimage/john.doe.png
         userFullname: John Doe
         userEmail: john@doe.com
-        realmHandle: realmHandle
         userGuid: xmmmN
         userName: John
+        realmIdentifier: realmIdentifier
       properties:
         userGuid:
           description: The global/string user id
           example: xmmmN
           type: string
-        realmGuid:
-          description: The realm Guid
-          type: string
-        realmHandle:
-          description: The realm Handle
+        realmIdentifier:
+          description: A realm identifier (Guid or handle)
           type: string
         userEmail:
           description: The email of the user
@@ -2459,16 +2368,15 @@ components:
         For modification, you need to give the list guid or the unique handle.
       example:
         listTitle: The top Newsletters
-        realmGuid: realmGuid
         ownerAppUri: https://doe.com
         listGuid: xmllKD23
         listHandle: Newsletter
         ownerUserGuid: xklls
         listName: Newsletters
-        realmHandle: realmHandle
         listDescription: The last news ....
         ownerAppGuid: doe.com
         ownerUserEmail: john@doe.com
+        realmIdentifier: realmIdentifier
       properties:
         listGuid:
           description: "The public list id, if you want to update the list handle"
@@ -2500,12 +2408,9 @@ components:
           example: https://doe.com
           format: uri
           type: string
-        realmGuid:
-          description: "the realm guid (needed if the handle are used, ie user email\
-            \ or app uri)"
-          type: string
-        realmHandle:
-          description: the realm handle (needed if the app uri)
+        realmIdentifier:
+          description: "the realm identifier (guid or handle), needed if the handle\
+            \ are used, ie user email or app uri"
           type: string
         ownerUserEmail:
           description: "if the communication channel is personal and not transactional,\

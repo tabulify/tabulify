@@ -379,25 +379,22 @@ paths:
   # with the same credential
   # We don't use domain because it has strong web connotation
   # (note there is 197,046,670 domain active, 1,139,467,659 registered)
-  /realm:
+  /realm/{realmIdentifier}:
     get:
       operationId: "realmGet"
       summary: "Return the asked realm"
       tags:
         - realm
       parameters:
-        - name: realmGuid
-          description: "The guid of the realm"
-          in: query
+        - name: realmIdentifier
+          description: "The guid or handle of the realm"
+          in: path
+          required: true
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: realmHandle
-          description: "The handle of the realm"
-          in: query
-          schema:
-            type: string
-            example: "xjkkLmi"
+            example:
+              - "rea-xjkkLmi"
+              - "realm-handle"
       responses:
         '200':
           description: Ok
@@ -405,6 +402,7 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
+  /realm:
     post:
       operationId: "realmPost"
       summary: "Create a realm"
@@ -456,7 +454,9 @@ paths:
           in: path
           schema:
             type: string
-            example: "usr-xjkkLmi"
+            example:
+              - "usr-xjkkLmi"
+              - "usr@example.com"
       responses:
         '200':
           description: "Return the list of realms owned by the user"
@@ -487,22 +487,24 @@ paths:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
         '403':
           description: "Not authenticated"
-  /realm/{realmGuid}/users/new:
+  /realm/{realmIdentifier}/activity/users/new:
     get:
       operationId: "realmUsersNewGet"
       summary: "Return the list of recent new users for the realm"
       tags:
         - realm
       parameters:
-        - name: realmGuid
-          description: "The guid of the realm"
+        - name: realmIdentifier
+          description: "The guid or handle of the realm"
           # Path parameters are mandatory
           # https://github.com/OAI/OpenAPI-Specification/issues/622
           required: true
           in: path
           schema:
             type: string
-            example: "rea-xjkkLmi"
+            example:
+              - "rea-xjkkLmi"
+              - "realmhandlename"
       security:
         - apiKeyAuth: [ 'read:realm' ]
       responses:
@@ -525,17 +527,12 @@ paths:
       security:
         - apiKeyAuth: [ 'read:service' ]
       parameters:
-        - name: realmGuid
-          description: "The realm guid of the service"
+        - name: realmIdentifier
+          description: "A realm identifier (guid or handle)"
           in: query
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: realmHandle
-          description: "The realm handle of the service"
-          in: query
-          schema:
-            type: string
+            example: "rea-xjkkLmi"
       responses:
         '200':
           description: Ok
@@ -582,13 +579,8 @@ paths:
           in: query
           schema:
             type: string
-        - name: realmHandle
-          description: "The realm handle of the service (the realm is needed when only the uri is given)"
-          in: query
-          schema:
-            type: string
-        - name: realmGuid
-          description: "The realm guid of the service (the realm is needed when only the uri is given)"
+        - name: realmIdentifier
+          description: "The realm identifier (guid or handle) of the service (the realm is needed when only the uri is given)"
           in: query
           schema:
             type: string
@@ -655,13 +647,8 @@ paths:
           in: query
           schema:
             type: string
-        - name: realmHandle
-          description: "The realm handle"
-          in: query
-          schema:
-            type: string
-        - name: realmGuid
-          description: "The realm guid"
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or handle)"
           in: query
           schema:
             type: string
@@ -681,17 +668,12 @@ paths:
       security:
         - apiKeyAuth: [ 'read:app' ]
       parameters:
-        - name: realmGuid
-          description: "The realm guid"
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or handle)"
           in: query
           schema:
             type: string
             example: "rea-xjkkLmi"
-        - name: realmHandle
-          description: "The realm Handle"
-          in: query
-          schema:
-            type: string
       responses:
         '200':
           description: Ok
@@ -726,24 +708,17 @@ paths:
       security:
         - apiKeyAuth: [ 'read:user' ]
       parameters:
-        - name: userGuid
-          description: "The guid of the user"
+        - name: userIdentifier
+          description: "A user identifier (A guid or an email)"
           in: query
+          required: true
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: userEmail
-          description: "The email of the user"
-          in: query
-          schema:
-            type: string
-            format: email
-            example: "john@doe.com"
-        - name: realmHandle
-          in: query
-          schema:
-            type: string
-        - name: realmGuid
+            example:
+              - "usr-xjkkLmi"
+              - "john@doe.com"
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or handle) if the user identifier is an email"
           in: query
           schema:
             type: string
@@ -824,15 +799,12 @@ paths:
       tags:
         - user
       parameters:
-        - name: realmGuid
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or a handle)"
           in: query
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: realmHandle
-          in: query
-          schema:
-            type: string
+            example: "rea-xjkkLmi"
       security:
         - apiKeyAuth: [ 'read:user' ]
       responses:
@@ -905,7 +877,7 @@ paths:
 
         The app should be given via:
           - the appGuid
-          - or the appUri along with the realmGuid or realmHandle
+          - or the appUri along with a realm identifier (guid or handle)
       tags:
         - list
       security:
@@ -923,13 +895,8 @@ paths:
           schema:
             type: string
 #            format: uri - format is not supported for parameters
-        - name: realmGuid
-          description: "The realm Guid"
-          in: query
-          schema:
-            type: string
-        - name: realmHandle
-          description: "The realm Handle"
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or handle)"
           in: query
           schema:
             type: string
@@ -953,17 +920,12 @@ paths:
       security:
         - apiKeyAuth: [ 'read:list' ]
       parameters:
-        - name: realmGuid
-          description: "The realm guid"
+        - name: realmIdentifier
+          description: "A realm identifier (guid or realm)"
           in: query
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: realmHandle
-          description: "The realm handle"
-          in: query
-          schema:
-            type: string
+            example: "rea-xjkkLmi"
       responses:
         '200':
           description: "Return a list"

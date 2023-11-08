@@ -16,9 +16,7 @@ public class ServiceSmtpPostBody   {
 
   protected String serviceUri;
 
-  protected String realmGuid;
-
-  protected String realmHandle;
+  protected String realmIdentifier;
 
   protected String impersonatedUserEmail;
 
@@ -76,35 +74,19 @@ public class ServiceSmtpPostBody   {
   }
 
   /**
-  * @return realmGuid The realm guid
+  * @return realmIdentifier A realm identifier (Guid or handle)
   */
-  @JsonProperty("realmGuid")
-  public String getRealmGuid() {
-    return realmGuid;
+  @JsonProperty("realmIdentifier")
+  public String getRealmIdentifier() {
+    return realmIdentifier;
   }
 
   /**
-  * @param realmGuid The realm guid
+  * @param realmIdentifier A realm identifier (Guid or handle)
   */
   @SuppressWarnings("unused")
-  public void setRealmGuid(String realmGuid) {
-    this.realmGuid = realmGuid;
-  }
-
-  /**
-  * @return realmHandle The realm handle
-  */
-  @JsonProperty("realmHandle")
-  public String getRealmHandle() {
-    return realmHandle;
-  }
-
-  /**
-  * @param realmHandle The realm handle
-  */
-  @SuppressWarnings("unused")
-  public void setRealmHandle(String realmHandle) {
-    this.realmHandle = realmHandle;
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.realmIdentifier = realmIdentifier;
   }
 
   /**
@@ -231,8 +213,7 @@ public class ServiceSmtpPostBody   {
     ServiceSmtpPostBody serviceSmtpPostBody = (ServiceSmtpPostBody) o;
     return Objects.equals(serviceGuid, serviceSmtpPostBody.serviceGuid) &&
         Objects.equals(serviceUri, serviceSmtpPostBody.serviceUri) &&
-        Objects.equals(realmGuid, serviceSmtpPostBody.realmGuid) &&
-        Objects.equals(realmHandle, serviceSmtpPostBody.realmHandle) &&
+        Objects.equals(realmIdentifier, serviceSmtpPostBody.realmIdentifier) &&
         Objects.equals(impersonatedUserEmail, serviceSmtpPostBody.impersonatedUserEmail) &&
         Objects.equals(impersonatedUserGuid, serviceSmtpPostBody.impersonatedUserGuid) &&
         Objects.equals(smtpHost, serviceSmtpPostBody.smtpHost) &&
@@ -244,7 +225,7 @@ public class ServiceSmtpPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(serviceGuid, serviceUri, realmGuid, realmHandle, impersonatedUserEmail, impersonatedUserGuid, smtpHost, smtpPort, smtpStartTls, smtpUserName, smtpPassword);
+    return Objects.hash(serviceGuid, serviceUri, realmIdentifier, impersonatedUserEmail, impersonatedUserGuid, smtpHost, smtpPort, smtpStartTls, smtpUserName, smtpPassword);
   }
 
   @Override

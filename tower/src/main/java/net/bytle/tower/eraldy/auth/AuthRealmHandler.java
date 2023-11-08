@@ -30,7 +30,7 @@ import java.net.URI;
 public class AuthRealmHandler implements Handler<RoutingContext> {
 
   /**
-   * The realm key in the context
+   * The realm key in the vertx routing context
    */
   private static final String AUTH_REALM_CONTEXT_KEY = "auth-realm-context-key";
   private static final String X_AUTH_REALM_HEADER_HANDLE = "X-AUTH-REALM-HANDLE";

@@ -51,18 +51,14 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String userGuid = requestParameters.queryParameter("userGuid") != null ? requestParameters.queryParameter("userGuid").getString() : null;
-        String userEmail = requestParameters.queryParameter("userEmail") != null ? requestParameters.queryParameter("userEmail").getString() : null;
-        String realmHandle = requestParameters.queryParameter("realmHandle") != null ? requestParameters.queryParameter("realmHandle").getString() : null;
-        String realmGuid = requestParameters.queryParameter("realmGuid") != null ? requestParameters.queryParameter("realmGuid").getString() : null;
+            String userIdentifier = requestParameters.queryParameter("userIdentifier") != null ? requestParameters.queryParameter("userIdentifier").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
 
-      logger.debug("Parameter userGuid is {}", userGuid);
-      logger.debug("Parameter userEmail is {}", userEmail);
-      logger.debug("Parameter realmHandle is {}", realmHandle);
-      logger.debug("Parameter realmGuid is {}", realmGuid);
+      logger.debug("Parameter userIdentifier is {}", userIdentifier);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.userGet(routingContext, userGuid, userEmail, realmHandle, realmGuid)
+    api.userGet(routingContext, userIdentifier, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
@@ -120,14 +116,12 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String realmGuid = requestParameters.queryParameter("realmGuid") != null ? requestParameters.queryParameter("realmGuid").getString() : null;
-        String realmHandle = requestParameters.queryParameter("realmHandle") != null ? requestParameters.queryParameter("realmHandle").getString() : null;
+            String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
 
-      logger.debug("Parameter realmGuid is {}", realmGuid);
-      logger.debug("Parameter realmHandle is {}", realmHandle);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.usersGet(routingContext, realmGuid, realmHandle)
+    api.usersGet(routingContext, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

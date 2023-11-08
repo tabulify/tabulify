@@ -55,12 +55,12 @@ public interface ListApi  {
     Future<ApiResponse<List<RegistrationShort>>> listRegistrationsGet(RoutingContext routingContext, String listGuid);
 
     /**
-     * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with the realmGuid or realmHandle
+     * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)
     */
-    Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmGuid, String realmHandle);
+    Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
 
     /**
      * Get a list of list in a summary format
     */
-    Future<ApiResponse<List<ListSummary>>> listsSummaryGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+    Future<ApiResponse<List<ListSummary>>> listsSummaryGet(RoutingContext routingContext, String realmIdentifier);
 }

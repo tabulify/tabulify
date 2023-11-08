@@ -17,9 +17,7 @@ public class AppPostBody   {
 
   protected URI appUri;
 
-  protected String realmGuid;
-
-  protected String realmHandle;
+  protected String realmIdentifier;
 
   protected String userGuid;
 
@@ -79,35 +77,19 @@ public class AppPostBody   {
   }
 
   /**
-  * @return realmGuid the realm Guid
+  * @return realmIdentifier the realm identifier (Guid or handle)
   */
-  @JsonProperty("realmGuid")
-  public String getRealmGuid() {
-    return realmGuid;
+  @JsonProperty("realmIdentifier")
+  public String getRealmIdentifier() {
+    return realmIdentifier;
   }
 
   /**
-  * @param realmGuid the realm Guid
+  * @param realmIdentifier the realm identifier (Guid or handle)
   */
   @SuppressWarnings("unused")
-  public void setRealmGuid(String realmGuid) {
-    this.realmGuid = realmGuid;
-  }
-
-  /**
-  * @return realmHandle the realm handle
-  */
-  @JsonProperty("realmHandle")
-  public String getRealmHandle() {
-    return realmHandle;
-  }
-
-  /**
-  * @param realmHandle the realm handle
-  */
-  @SuppressWarnings("unused")
-  public void setRealmHandle(String realmHandle) {
-    this.realmHandle = realmHandle;
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.realmIdentifier = realmIdentifier;
   }
 
   /**
@@ -250,8 +232,7 @@ public class AppPostBody   {
     AppPostBody appPostBody = (AppPostBody) o;
     return Objects.equals(appGuid, appPostBody.appGuid) &&
         Objects.equals(appUri, appPostBody.appUri) &&
-        Objects.equals(realmGuid, appPostBody.realmGuid) &&
-        Objects.equals(realmHandle, appPostBody.realmHandle) &&
+        Objects.equals(realmIdentifier, appPostBody.realmIdentifier) &&
         Objects.equals(userGuid, appPostBody.userGuid) &&
         Objects.equals(userEmail, appPostBody.userEmail) &&
         Objects.equals(appName, appPostBody.appName) &&
@@ -264,7 +245,7 @@ public class AppPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(appGuid, appUri, realmGuid, realmHandle, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
+    return Objects.hash(appGuid, appUri, realmIdentifier, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
   }
 
   @Override

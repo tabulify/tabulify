@@ -15,9 +15,7 @@ public class UserPostBody   {
 
   protected String userGuid;
 
-  protected String realmGuid;
-
-  protected String realmHandle;
+  protected String realmIdentifier;
 
   protected String userEmail;
 
@@ -55,35 +53,19 @@ public class UserPostBody   {
   }
 
   /**
-  * @return realmGuid The realm Guid
+  * @return realmIdentifier A realm identifier (Guid or handle)
   */
-  @JsonProperty("realmGuid")
-  public String getRealmGuid() {
-    return realmGuid;
+  @JsonProperty("realmIdentifier")
+  public String getRealmIdentifier() {
+    return realmIdentifier;
   }
 
   /**
-  * @param realmGuid The realm Guid
+  * @param realmIdentifier A realm identifier (Guid or handle)
   */
   @SuppressWarnings("unused")
-  public void setRealmGuid(String realmGuid) {
-    this.realmGuid = realmGuid;
-  }
-
-  /**
-  * @return realmHandle The realm Handle
-  */
-  @JsonProperty("realmHandle")
-  public String getRealmHandle() {
-    return realmHandle;
-  }
-
-  /**
-  * @param realmHandle The realm Handle
-  */
-  @SuppressWarnings("unused")
-  public void setRealmHandle(String realmHandle) {
-    this.realmHandle = realmHandle;
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.realmIdentifier = realmIdentifier;
   }
 
   /**
@@ -177,8 +159,7 @@ public class UserPostBody   {
     }
     UserPostBody userPostBody = (UserPostBody) o;
     return Objects.equals(userGuid, userPostBody.userGuid) &&
-        Objects.equals(realmGuid, userPostBody.realmGuid) &&
-        Objects.equals(realmHandle, userPostBody.realmHandle) &&
+        Objects.equals(realmIdentifier, userPostBody.realmIdentifier) &&
         Objects.equals(userEmail, userPostBody.userEmail) &&
         Objects.equals(userName, userPostBody.userName) &&
         Objects.equals(userFullname, userPostBody.userFullname) &&
@@ -188,7 +169,7 @@ public class UserPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(userGuid, realmGuid, realmHandle, userEmail, userName, userFullname, userTitle, userAvatar);
+    return Objects.hash(userGuid, realmIdentifier, userEmail, userName, userFullname, userTitle, userAvatar);
   }
 
   @Override

@@ -12,7 +12,7 @@ public interface RealmApi  {
     /**
      * Return the asked realm
     */
-    Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+    Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmIdentifier);
 
     /**
      * Create a realm
@@ -22,7 +22,7 @@ public interface RealmApi  {
     /**
      * Return the list of recent new users for the realm
     */
-    Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmGuid);
+    Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmIdentifier);
 
     /**
      * Return the list of realms

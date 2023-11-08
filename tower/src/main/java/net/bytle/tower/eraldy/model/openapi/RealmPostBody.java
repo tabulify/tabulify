@@ -42,7 +42,7 @@ public class RealmPostBody   {
   }
 
   /**
-  * @return handle A handle (only alphabetical characters)
+  * @return handle A handle (follow the same constraint that domain name)
   */
   @JsonProperty("handle")
   public String getHandle() {
@@ -50,7 +50,7 @@ public class RealmPostBody   {
   }
 
   /**
-  * @param handle A handle (only alphabetical characters)
+  * @param handle A handle (follow the same constraint that domain name)
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {

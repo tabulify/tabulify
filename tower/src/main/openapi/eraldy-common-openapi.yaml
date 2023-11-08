@@ -498,12 +498,9 @@ components:
           type: string
           description: The global/string user id
           example: "xmmmN"
-        realmGuid:
+        realmIdentifier:
           type: string
-          description: The realm Guid
-        realmHandle:
-          type: string
-          description: The realm Handle
+          description: A realm identifier (Guid or handle)
         userEmail:
           type: string
           format: email
@@ -631,12 +628,9 @@ components:
           type: string
           description: The service uri
           example: "smtp://localhost"
-        realmGuid:
+        realmIdentifier:
           type: string
-          description: The realm guid
-        realmHandle:
-          type: string
-          description: The realm handle
+          description: A realm identifier (Guid or handle)
         impersonatedUserEmail:
           type: string
           description: >
@@ -732,11 +726,8 @@ components:
           type: string
           format: uri
           example: "https://doe.com"
-        realmGuid:
-          description: the realm guid (needed if the handle are used, ie user email or app uri)
-          type: string
-        realmHandle:
-          description: the realm handle (needed if the app uri)
+        realmIdentifier:
+          description: the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
           type: string
         ownerUserEmail:
           description: if the communication channel is personal and not transactional, the email of the publisher
@@ -877,12 +868,9 @@ components:
           format: uri
           description: The unique uri of the app
           example: "https://doe.com"
-        realmGuid:
+        realmIdentifier:
           type: string
-          description: the realm Guid
-        realmHandle:
-          type: string
-          description: the realm handle
+          description: the realm identifier (Guid or handle)
         userGuid:
           type: string
           description: The guid of the public app user

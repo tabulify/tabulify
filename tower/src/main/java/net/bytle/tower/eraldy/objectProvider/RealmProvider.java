@@ -78,7 +78,6 @@ public class RealmProvider {
   }
 
 
-
   public <T extends Realm> T toPublicClone(T realm) {
     // uses unchecked or unsafe operations.
     //noinspection unchecked
@@ -274,7 +273,7 @@ public class RealmProvider {
   private Future<RowSet<Row>> updateRealmByHandleAndGetRowSet(Realm realm) {
 
     Organization organization = realm.getOrganization();
-    if(organization==null){
+    if (organization == null) {
       throw new IllegalArgumentException("The organization of realm can not be null");
     }
 
@@ -532,24 +531,22 @@ public class RealmProvider {
   }
 
   @SuppressWarnings("unused")
-  public Future<Realm> getRealmFromGuidOrHandle(String realmGuid, String realmHandle) {
-    return getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class);
+  public Future<Realm> getRealmFromIdentifier(String realmIdentifier) {
+    return getRealmFromIdentifier(realmIdentifier, Realm.class);
   }
 
-  public <T extends Realm> Future<T> getRealmFromGuidOrHandle(String realmGuid, String realmHandle, Class<T> clazz) {
+  public <T extends Realm> Future<T> getRealmFromIdentifier(String realmIdentifier, Class<T> clazz) {
 
-    if (realmGuid != null) {
-      return getRealmFromGuid(realmGuid, clazz);
+    if (realmIdentifier.startsWith(REALM_GUID_PREFIX + Guid.GUID_SEPARATOR)) {
+      return getRealmFromGuid(realmIdentifier, clazz);
     }
-    if (realmHandle != null) {
-      return getRealmFromHandle(realmHandle, clazz);
-    }
-    throw new InternalException("getRealmFromGuidOrHandle: The realmGuid or realmHandle should be given");
+    return getRealmFromHandle(realmIdentifier, clazz);
+
   }
 
 
-  public Future<RealmAnalytics> getRealmAnalyticsFromGuidOrHandle(String realmGuid, String realmHandle) {
-    return getRealmFromGuidOrHandle(realmGuid, realmHandle, RealmAnalytics.class);
+  public Future<RealmAnalytics> getRealmAnalyticsFromIdentifier(String realmIdentifier) {
+    return getRealmFromIdentifier(realmIdentifier, RealmAnalytics.class);
   }
 
 

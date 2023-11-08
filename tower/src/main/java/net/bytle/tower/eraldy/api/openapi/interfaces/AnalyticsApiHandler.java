@@ -25,8 +25,7 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("analyticsEventPost")
-      .handler(this::analyticsEventPost);
+    builder.operation("analyticsEventPost").handler(this::analyticsEventPost);
 }
 
     private void analyticsEventPost(RoutingContext routingContext) {
@@ -36,8 +35,7 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
       RequestParameter requestParameterBody = requestParameters.body();
-  Map<String, Object> requestBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<>() {
-  }) : null;
+  Map<String, Object> requestBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<Map<String, Object>>(){}) : null;
 
       logger.debug("Parameter requestBody is {}", requestBody);
 

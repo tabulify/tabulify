@@ -443,9 +443,9 @@ public class ListProvider {
      * Realm
      */
     Future<Realm> realmFuture = null;
-    if (listPostBody.getRealmGuid() != null || listPostBody.getRealmHandle() != null) {
+    if (listPostBody.getRealmIdentifier() != null) {
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromGuidOrHandle(listPostBody.getRealmGuid(), listPostBody.getRealmHandle());
+        .getRealmFromIdentifier(listPostBody.getRealmIdentifier());
     }
 
     /**

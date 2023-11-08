@@ -37,14 +37,12 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String realmGuid = requestParameters.queryParameter("realmGuid") != null ? requestParameters.queryParameter("realmGuid").getString() : null;
-        String realmHandle = requestParameters.queryParameter("realmHandle") != null ? requestParameters.queryParameter("realmHandle").getString() : null;
+            String realmIdentifier = requestParameters.pathParameter("realmIdentifier") != null ? requestParameters.pathParameter("realmIdentifier").getString() : null;
 
-      logger.debug("Parameter realmGuid is {}", realmGuid);
-      logger.debug("Parameter realmHandle is {}", realmHandle);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.realmGet(routingContext, realmGuid, realmHandle)
+    api.realmGet(routingContext, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
@@ -72,12 +70,12 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String realmGuid = requestParameters.pathParameter("realmGuid") != null ? requestParameters.pathParameter("realmGuid").getString() : null;
+            String realmIdentifier = requestParameters.pathParameter("realmIdentifier") != null ? requestParameters.pathParameter("realmIdentifier").getString() : null;
 
-      logger.debug("Parameter realmGuid is {}", realmGuid);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.realmUsersNewGet(routingContext, realmGuid)
+    api.realmUsersNewGet(routingContext, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

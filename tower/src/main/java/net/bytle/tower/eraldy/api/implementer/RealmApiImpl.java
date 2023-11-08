@@ -85,11 +85,11 @@ public class RealmApiImpl implements RealmApi {
 
 
   @Override
-  public Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmGuid, String realmHandle) {
+  public Future<ApiResponse<RealmAnalytics>> realmGet(RoutingContext routingContext, String realmIdentifier) {
 
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     return realmProvider
-      .getRealmAnalyticsFromGuidOrHandle(realmGuid, realmHandle)
+      .getRealmAnalyticsFromIdentifier(realmIdentifier)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realm -> {
         if (realm == null) {

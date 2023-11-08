@@ -1,7 +1,6 @@
-package net.bytle.tower.eraldy.auth;
+package net.bytle.vertx.auth;
 
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 
 /**
  * A username credential that adds the realm
@@ -14,15 +13,15 @@ public class ApiUsernamePasswordRealmCredentials extends UsernamePasswordCredent
    * Note that for the superuser, supertoken, the realm may be null
    * (when we create a realm or an app)
    */
-  private Realm realm;
+  private String realm;
 
-  public ApiUsernamePasswordRealmCredentials(String username, String password, Realm realm) {
+  public ApiUsernamePasswordRealmCredentials(String username, String password, String realm) {
     setUsername(username);
     setPassword(password);
     setRealm(realm);
   }
 
-  private ApiUsernamePasswordRealmCredentials setRealm(Realm realm) {
+  private ApiUsernamePasswordRealmCredentials setRealm(String realm) {
     this.realm = realm;
     return this;
   }

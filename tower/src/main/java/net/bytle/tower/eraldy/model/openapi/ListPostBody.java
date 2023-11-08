@@ -27,9 +27,7 @@ public class ListPostBody   {
 
   protected URI ownerAppUri;
 
-  protected String realmGuid;
-
-  protected String realmHandle;
+  protected String realmIdentifier;
 
   protected String ownerUserEmail;
 
@@ -157,35 +155,19 @@ public class ListPostBody   {
   }
 
   /**
-  * @return realmGuid the realm guid (needed if the handle are used, ie user email or app uri)
+  * @return realmIdentifier the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
   */
-  @JsonProperty("realmGuid")
-  public String getRealmGuid() {
-    return realmGuid;
+  @JsonProperty("realmIdentifier")
+  public String getRealmIdentifier() {
+    return realmIdentifier;
   }
 
   /**
-  * @param realmGuid the realm guid (needed if the handle are used, ie user email or app uri)
+  * @param realmIdentifier the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
   */
   @SuppressWarnings("unused")
-  public void setRealmGuid(String realmGuid) {
-    this.realmGuid = realmGuid;
-  }
-
-  /**
-  * @return realmHandle the realm handle (needed if the app uri)
-  */
-  @JsonProperty("realmHandle")
-  public String getRealmHandle() {
-    return realmHandle;
-  }
-
-  /**
-  * @param realmHandle the realm handle (needed if the app uri)
-  */
-  @SuppressWarnings("unused")
-  public void setRealmHandle(String realmHandle) {
-    this.realmHandle = realmHandle;
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.realmIdentifier = realmIdentifier;
   }
 
   /**
@@ -237,15 +219,14 @@ public class ListPostBody   {
         Objects.equals(listDescription, listPostBody.listDescription) &&
         Objects.equals(ownerAppGuid, listPostBody.ownerAppGuid) &&
         Objects.equals(ownerAppUri, listPostBody.ownerAppUri) &&
-        Objects.equals(realmGuid, listPostBody.realmGuid) &&
-        Objects.equals(realmHandle, listPostBody.realmHandle) &&
+        Objects.equals(realmIdentifier, listPostBody.realmIdentifier) &&
         Objects.equals(ownerUserEmail, listPostBody.ownerUserEmail) &&
         Objects.equals(ownerUserGuid, listPostBody.ownerUserGuid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(listGuid, listHandle, listName, listTitle, listDescription, ownerAppGuid, ownerAppUri, realmGuid, realmHandle, ownerUserEmail, ownerUserGuid);
+    return Objects.hash(listGuid, listHandle, listName, listTitle, listDescription, ownerAppGuid, ownerAppUri, realmIdentifier, ownerUserEmail, ownerUserGuid);
   }
 
   @Override

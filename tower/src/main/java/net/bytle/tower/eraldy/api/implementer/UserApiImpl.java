@@ -8,7 +8,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
@@ -41,32 +40,27 @@ public class UserApiImpl implements UserApi {
   }
 
   @Override
-  public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userGuid, String userEmail, String realmHandle, String realmGuid) {
+  public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier) {
 
     Future<User> userFuture;
     UserProvider userProvider = apiApp.getUserProvider();
-    if (userGuid != null) {
+
+    if (userIdentifier.startsWith(UserProvider.USR_GUID_PREFIX)) {
       userFuture = userProvider
-        .getUserByGuid(userGuid);
+        .getUserByGuid(userIdentifier);
     } else {
-      if (userEmail == null) {
-        throw ValidationException.create("A userGuid or an userEmail should be given", "userEmail", null);
-      }
-      if (realmHandle == null && realmGuid == null) {
-        throw ValidationException.create("With a userEmail, a realm identifiant (realmGuid or realmHandle) should be given", "realmHandle", null);
+      if (realmIdentifier == null) {
+        throw ValidationException.create("With a userEmail, a realm identifier (guid or handle) should be given", "realmIdentifier", null);
       }
       userFuture = this.apiApp.getRealmProvider()
-        .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+        .getRealmFromIdentifier(realmIdentifier)
         .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
         .compose(realm -> {
           if (realm == null) {
-            if (realmGuid != null) {
-              throw ValidationException.create("The realmGuid does not exist", "realmGuid", realmGuid);
-            }
-            throw ValidationException.create("The realmHandle does not exist", "realmHandle", realmHandle);
+            throw ValidationException.create("The realm does not exist", "realmIdentifier", realmIdentifier);
           }
           return userProvider
-            .getUserByEmail(userEmail, realm);
+            .getUserByEmail(userIdentifier, realm);
         });
     }
     return userFuture
@@ -117,9 +111,6 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userPost(RoutingContext routingContext, UserPostBody userPostBody) {
 
-    Realm userRealmRequested = new Realm();
-    userRealmRequested.setHandle(userPostBody.getRealmHandle());
-    userRealmRequested.setGuid(userPostBody.getRealmGuid());
 
     User userRequested = new User();
     userRequested.setGuid(userPostBody.getUserGuid());
@@ -130,7 +121,7 @@ public class UserApiImpl implements UserApi {
     userRequested.setAvatar(userPostBody.getUserAvatar());
 
     UserProvider userProvider = apiApp.getUserProvider();
-    return userProvider.getUserRealmAndUpdateUserIdEventuallyFromRequestData(userRealmRequested, userRequested)
+    return userProvider.getUserRealmAndUpdateUserIdEventuallyFromRequestData(userPostBody.getRealmIdentifier(), userRequested)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
         userRequested.setRealm(realm);
@@ -146,12 +137,11 @@ public class UserApiImpl implements UserApi {
 
 
   @Override
-  public Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmGuid, String
-    realmHandle) {
+  public Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmIdentifier) {
 
     UserProvider userProvider = apiApp.getUserProvider();
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+      .getRealmFromIdentifier(realmIdentifier)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(userProvider::getUsers)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))

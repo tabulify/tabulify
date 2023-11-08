@@ -77,7 +77,6 @@ public class UserProvider {
   }
 
 
-
   public User toPublicCloneWithoutRealm(User user) {
     return toPublicClone(user, false);
   }
@@ -540,25 +539,24 @@ public class UserProvider {
 
   /**
    * @param userRequested  - the user requested
-   * @param realmRequested - the realm requested (without id)
+   * @param realmIdentifier - the realm requested
    * @return the realm future
    */
-  public Future<Realm> getUserRealmAndUpdateUserIdEventuallyFromRequestData(Realm realmRequested, User userRequested) {
+  public Future<Realm> getUserRealmAndUpdateUserIdEventuallyFromRequestData(String realmIdentifier, User userRequested) {
 
     String userGuid = userRequested.getGuid();
     String userEmail = userRequested.getEmail();
-    String realmHandle = realmRequested.getHandle();
-    String realmGuid = realmRequested.getGuid();
+
     Future<Realm> realmFuture;
     if (userGuid == null) {
       if (userEmail == null) {
         throw ValidationException.create("The userEmail and the userGuid cannot be both null", "userEmail", null);
       }
-      if (realmHandle == null && realmGuid == null) {
+      if (realmIdentifier == null) {
         throw ValidationException.create("With the userEmail, a realm Handle or Guid should be given", "realmHandle", null);
       }
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class);
+        .getRealmFromIdentifier(realmIdentifier, Realm.class);
     } else {
 
       Guid guid;
@@ -570,7 +568,8 @@ public class UserProvider {
 
       long realmId = guid.getRealmOrOrganizationId();
 
-      realmFuture = this.apiApp.getRealmProvider()
+      realmFuture = this.apiApp
+        .getRealmProvider()
         .getRealmFromId(realmId);
 
       long userIdFromGuid = guid.validateRealmAndGetFirstObjectId(realmId);

@@ -13,7 +13,7 @@ public interface AppApi  {
     /**
      * Retrieve an app by: * id with the appGuid * or by name with the appUri and realm (Handle or Guid)
     */
-    Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appGuid, String appUri, String realmHandle, String realmGuid);
+    Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
 
     /**
      * Create or modify an app (ie design, ...)
@@ -23,5 +23,5 @@ public interface AppApi  {
     /**
      * List apps for a realm
     */
-    Future<ApiResponse<List<App>>> appsGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+    Future<ApiResponse<List<App>>> appsGet(RoutingContext routingContext, String realmIdentifier);
 }

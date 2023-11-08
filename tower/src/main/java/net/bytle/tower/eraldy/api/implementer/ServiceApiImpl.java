@@ -29,11 +29,11 @@ public class ServiceApiImpl implements ServiceApi {
   }
 
   @Override
-  public Future<ApiResponse<Service>> serviceGet(RoutingContext routingContext, String serviceGuid, String serviceUri, String realmHandle, String realmGuid) {
+  public Future<ApiResponse<Service>> serviceGet(RoutingContext routingContext, String serviceGuid, String serviceUri, String realmIdentifier) {
 
     ServiceProvider serviceProvider = apiApp.getServiceProvider();
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+      .getRealmFromIdentifier(realmIdentifier)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> serviceProvider
         .getServiceByGuidOrUri(serviceGuid, serviceUri, realm))
@@ -82,7 +82,7 @@ public class ServiceApiImpl implements ServiceApi {
     ServiceProvider serviceProvider = apiApp.getServiceProvider();
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuidOrHandle(serviceSmtpPostBody.getRealmGuid(), serviceSmtpPostBody.getRealmHandle())
+      .getRealmFromIdentifier(serviceSmtpPostBody.getRealmIdentifier())
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
 
@@ -130,11 +130,11 @@ public class ServiceApiImpl implements ServiceApi {
 
 
   @Override
-  public Future<ApiResponse<List<Service>>> servicesGet(RoutingContext routingContext, String realmGuid, String realmHandle) {
-    Vertx vertx = routingContext.vertx();
+  public Future<ApiResponse<List<Service>>> servicesGet(RoutingContext routingContext, String realmIdentifier) {
+
     ServiceProvider serviceProvider = apiApp.getServiceProvider();
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+      .getRealmFromIdentifier(realmIdentifier)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(serviceProvider::getServices)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))

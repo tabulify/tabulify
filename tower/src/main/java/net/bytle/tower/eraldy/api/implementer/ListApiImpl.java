@@ -49,14 +49,11 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmGuid, String realmHandle) {
+  public Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier) {
 
-    if (appGuid == null && appUri == null && realmGuid == null && realmHandle == null) {
+    if (appGuid == null && appUri == null && realmIdentifier == null) {
       throw ValidationException.create("A app or realm definition should be given to get a list of lists.", "any", null);
     }
-
-    Vertx vertx = routingContext.vertx();
-
 
     Future<List<RegistrationList>> futureLists;
     ListProvider listProvider = apiApp.getListProvider();
@@ -66,7 +63,7 @@ public class ListApiImpl implements ListApi {
        * Realms selection
        */
       futureLists = this.apiApp.getRealmProvider()
-        .getRealmFromGuidOrHandle(realmGuid, realmHandle, Realm.class)
+        .getRealmFromIdentifier(realmIdentifier, Realm.class)
         .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
         .compose(listProvider::getListsForRealm);
 
@@ -80,11 +77,11 @@ public class ListApiImpl implements ListApi {
         futureApp = apiApp.getAppProvider()
           .getAppByGuid(appGuid);
       } else {
-        if (realmGuid == null && realmHandle == null) {
-          throw ValidationException.create("The realm guid or handle should be given for an appUri", "realmGuid", null);
+        if (realmIdentifier == null ) {
+          throw ValidationException.create("The realm identifier (guid or handle) should be given for an appUri", "realmIdentifier", null);
         }
         futureApp = this.apiApp.getRealmProvider()
-          .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+          .getRealmFromIdentifier(realmIdentifier)
           .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
           .compose(realm -> apiApp.getAppProvider().getAppByUri(URI.create(appUri), realm));
       }
@@ -115,14 +112,14 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<java.util.List<ListSummary>>> listsSummaryGet(RoutingContext routingContext, String realmGuid, String realmHandle) {
+  public Future<ApiResponse<java.util.List<ListSummary>>> listsSummaryGet(RoutingContext routingContext, String realmIdentifier) {
 
-    if (realmGuid == null && realmHandle == null) {
-      throw ValidationException.create("The realm handle or guid should be given", "realmGuid", null);
+    if (realmIdentifier == null) {
+      throw ValidationException.create("The realm identifier should be given", "realmIdentifier", null);
     }
-    Vertx vertx = routingContext.vertx();
+
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuidOrHandle(realmGuid, realmHandle)
+      .getRealmFromIdentifier(realmIdentifier)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realm -> {
         if (realm == null) {
@@ -139,7 +136,6 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<RegistrationList>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle) {
 
-    Vertx vertx = routingContext.vertx();
     Future<RegistrationList> listFuture;
     ListProvider listProvider = apiApp.getListProvider();
     if (listGuid != null) {
@@ -170,14 +166,11 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<RegistrationList>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
-    Vertx vertx = routingContext.vertx();
-
-    ListProvider listProvider = apiApp.getListProvider();
-    return listProvider
+    return apiApp.getListProvider()
       .postPublication(publicationPost)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(publication -> {
-        listProvider.toPublicClone(publication);
+        apiApp.getListProvider().toPublicClone(publication);
         return Future.succeededFuture(new ApiResponse<>(publication));
       });
 

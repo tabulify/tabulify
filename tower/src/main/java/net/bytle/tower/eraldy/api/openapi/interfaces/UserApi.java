@@ -19,7 +19,7 @@ public interface UserApi  {
     /**
      * Get a user by guid or email
     */
-    Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userGuid, String userEmail, String realmHandle, String realmGuid);
+    Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier);
 
     /**
      * Get a user by guid  If you want to use the email has identifier, you should use the `userGet` operation passing the email as query parameter
@@ -39,5 +39,5 @@ public interface UserApi  {
     /**
      * List users
     */
-    Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+    Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmIdentifier);
 }

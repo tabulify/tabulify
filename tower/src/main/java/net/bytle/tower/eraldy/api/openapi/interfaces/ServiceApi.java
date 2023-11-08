@@ -13,7 +13,7 @@ public interface ServiceApi  {
     /**
      * Retrieve a service by guid or uri
     */
-    Future<ApiResponse<Service>> serviceGet(RoutingContext routingContext, String serviceGuid, String serviceUri, String realmHandle, String realmGuid);
+    Future<ApiResponse<Service>> serviceGet(RoutingContext routingContext, String serviceGuid, String serviceUri, String realmIdentifier);
 
     /**
      * Create a SMTP mail service for a app or a user
@@ -23,5 +23,5 @@ public interface ServiceApi  {
     /**
      * Get all services
     */
-    Future<ApiResponse<List<Service>>> servicesGet(RoutingContext routingContext, String realmGuid, String realmHandle);
+    Future<ApiResponse<List<Service>>> servicesGet(RoutingContext routingContext, String realmIdentifier);
 }
