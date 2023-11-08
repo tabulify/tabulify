@@ -86,8 +86,10 @@ public class RealmProvider {
     clone.setLocalId(null);
     clone.setOrganization(apiApp.getOrganizationProvider().toPublicClone(realm.getOrganization()));
     clone.setOwnerUser(this.apiApp.getUserProvider().toPublicCloneWithoutRealm(realm.getOwnerUser()));
-    return clone;
+    return  clone;
   }
+
+
 
   /**
    * Compute the guid. This is another function

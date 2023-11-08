@@ -76,9 +76,6 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     INIT_LOGGER.info("Start instantiation of the password Hash manager");
     PasswordHashManager.init(configAccessor);
 
-    INIT_LOGGER.info("Enable date time in JSON jackson");
-    JacksonMapperManager.initVertxJacksonMapper();
-
     INIT_LOGGER.info("Build Analytics tracker");
     AnalyticsTracker.createFromJsonObject(configAccessor);
 

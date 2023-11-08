@@ -5,6 +5,7 @@ val vertxVersion = rootProject.ext.get("vertxVersion").toString()
 val scramClientVersion = rootProject.ext.get("scramClientVersion").toString()
 val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
+val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 
 dependencies {
 
@@ -66,6 +67,13 @@ dependencies {
    * Auth
    */
   implementation("io.vertx:vertx-auth-jwt:$vertxVersion") // Jwt
+
+  // Serialization of LocalDateTime
+  // Java 8 date/time type `java.time.LocalDateTime` not supported by default:
+  // add Module "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+  // to enable handling
+  // https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
   // Vertx service
   //  implementation("io.vertx:vertx-service-proxy:$projectVertxVersion")

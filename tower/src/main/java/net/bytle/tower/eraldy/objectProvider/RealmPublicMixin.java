@@ -16,7 +16,11 @@ import net.bytle.tower.eraldy.model.openapi.App;
  * <a href="https://github.com/FasterXML/jackson-docs/wiki/JacksonMixInAnnotations">...</a>
  *
  */
-abstract class RealmMixinIgnoreDefaultApp {
+@SuppressWarnings("unused")
+public abstract class RealmPublicMixin {
+
+  @JsonIgnore
+  Long localId;
 
   @JsonIgnore
   App defaultApp;

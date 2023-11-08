@@ -68,7 +68,6 @@ public class Server {
   }
 
   /**
-   *
    * @return a test server conf with port randomly picked.
    */
   public static JsonObject getTestServerConf(String serverName) throws IOException {
@@ -158,6 +157,7 @@ public class Server {
     private boolean addJwt = false;
     private boolean addApiKeyAuth = false;
     private boolean enableHashId = false;
+    private boolean enableJacksonTime = true;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -225,6 +225,8 @@ public class Server {
         } catch (DbMigrationException e) {
           throw new IllegalConfiguration("Ip geolocation bad schema migration", e);
         }
+      } else {
+        LOGGER.info("IP Geo-location not enabled");
       }
       if (this.addJwt) {
         try {
@@ -232,12 +234,19 @@ public class Server {
         } catch (NoSecretException e) {
           throw new IllegalConfiguration("Unable to init JWT", e);
         }
+      } else {
+        LOGGER.info("Jwt not enabled");
       }
       if (this.addApiKeyAuth) {
         server.apiKeyAuth = new ApiKeyAuthenticationProvider(server.getConfigAccessor());
       }
-      if(this.enableHashId){
+      if (this.enableHashId) {
         server.hashId = new HashId(server.getConfigAccessor());
+      }
+      if (this.enableJacksonTime) {
+        JacksonMapperManager.initVertxJacksonMapper();
+      } else {
+        LOGGER.info("Jackson time not enabled");
       }
       return server;
     }
@@ -274,6 +283,15 @@ public class Server {
      */
     public Server.builder enableApiKeyAuth() {
       this.addApiKeyAuth = true;
+      return this;
+    }
+
+    /**
+     * Disable jackson time handling
+     */
+    @SuppressWarnings("unused")
+    public Server.builder disableJacksonTime() {
+      this.enableJacksonTime = false;
       return this;
     }
 

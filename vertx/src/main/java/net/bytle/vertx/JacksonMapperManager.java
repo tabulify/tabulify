@@ -1,11 +1,12 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.json.jackson.DatabindCodec;
 import net.bytle.java.JavaEnvs;
-import net.bytle.vertx.DateTimeUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -23,25 +24,24 @@ import java.util.Arrays;
  */
 public class JacksonMapperManager {
 
+  static Logger LOGGER  = LogManager.getLogger(JacksonMapperManager.class);
   /**
    * Jackson
    * Add support for local date time serialization
    * Behind the scene Vertx uses Jackson's ObjectMapper inside encode() and encodePrettily() methods.
    * <p>
    * We use it to support LocalDateTime as we store all date time in UTC format
-   * FI: This code should have been added when vertx starts (ie {@link net.bytle.tower.MainVerticle}
    * <p>
    * Ref: <a href="https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping">Ref</a>
    */
   public static void initVertxJacksonMapper() {
-
 
     Arrays.asList(
         DatabindCodec.mapper(),
         DatabindCodec.prettyMapper()
       )
       .forEach(JacksonMapperManager::initModule);
-
+    LOGGER.info("Date time in JSON jackson enabled");
 
   }
 

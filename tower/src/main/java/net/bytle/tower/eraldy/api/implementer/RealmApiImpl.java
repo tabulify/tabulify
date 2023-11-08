@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.auth.Authorization;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.eraldy.objectProvider.RealmPublicMixin;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.*;
 
@@ -100,8 +101,9 @@ public class RealmApiImpl implements RealmApi {
               .getFailedException()
           );
         }
-        RealmAnalytics publicRealm = realmProvider.toPublicClone(realm);
-        return Future.succeededFuture(new ApiResponse<>(publicRealm));
+        ApiResponse<RealmAnalytics> result = new ApiResponse<>(realm);
+        result.addMixin(Realm.class, RealmPublicMixin.class);
+        return Future.succeededFuture(result);
       });
   }
 
