@@ -7,6 +7,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.InputSource;
 import org.w3c.dom.css.CSSRule;
 import org.w3c.dom.css.CSSRuleList;
@@ -39,10 +41,10 @@ import java.util.Map;
  */
 public class CssInliner {
 
+  static Logger LOGGER = LoggerFactory.getLogger(CssInliner.class);
   private static final String STYLE_NODE_NAME = "style";
   private static final String STYLE_ATTR_NAME = STYLE_NODE_NAME;
   private static final String CLASS_ATTR = "class";
-  private static final String DELIMS = "{}";
 
   CSSOMParser parser = new CSSOMParser(new SACParserCSS3());
 
@@ -138,7 +140,8 @@ public class CssInliner {
           elements = document.select(cssSelector);
         } catch (Exception e) {
           // :after css expression are not implemented
-          System.out.println("Css query error " + e.getMessage());
+          // not an info level, not an error, ...
+          LOGGER.debug("Css query error " + e.getMessage());
           continue;
         }
         for (Element element : elements) {
@@ -223,19 +226,12 @@ public class CssInliner {
   }
 
 
-  private static String concatenateProperties(String oldProp, String newProp) {
-    oldProp = oldProp.trim();
-    if (!newProp.endsWith(";"))
-      newProp += ";";
-    // The existing (old) properties should take precedence.
-    return newProp + oldProp;
-  }
-
   public static CssInliner createFromStringDocument(String html) {
     Document doc = Jsoup.parse(html);
     return new CssInliner(doc);
   }
 
+  @SuppressWarnings("unused")
   CssInliner setRemoveClasses(boolean b) {
     this.removeClasses = b;
     return this;
@@ -247,9 +243,9 @@ public class CssInliner {
   }
 
 
+  @SuppressWarnings("unused")
   public CssInliner useBootstrapEmail(boolean b) {
     this.useBootstrapEmail = b;
     return this;
   }
 }
-
