@@ -12,7 +12,6 @@ import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.*;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.JsonToken;
 import net.bytle.tower.util.SysAdmin;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
@@ -30,9 +29,11 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
    * If the Get link has a debug parameter, all template variables/data are printed
    */
   private static final String URI_DEBUG_PARAMETER = "debug";
+  private final JsonToken jsonToken;
 
   public FlowCallbackAbs(TowerApp app) {
     this.app = app;
+    this.jsonToken = app.getApexDomain().getHttpServer().getServer().getJsonToken();
   }
 
   /**
@@ -53,7 +54,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
   @Override
   public <T> T getCallbackData(RoutingContext ctx, Class<T> clazz) {
     String dataParameter = ctx.request().getParam(URI_DATA_PARAMETER);
-    return JsonToken.get(ctx.vertx())
+    return this.jsonToken
       .decrypt(dataParameter, DATA_CIPHER)
       .mapTo(clazz);
   }
@@ -68,7 +69,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
 
 
     JsonObject jwtClaims = jwtClaimsObject.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
-    String accessToken = JsonToken.get(routingContext.vertx()).encrypt(jwtClaims, DATA_CIPHER);
+    String accessToken = jsonToken.encrypt(jwtClaims, DATA_CIPHER);
     OAuthAccessTokenResponse oAuthAccessTokenResponse = new OAuthAccessTokenResponse();
     oAuthAccessTokenResponse.setAccessToken(accessToken);
     String validationUrl = getCallbackUri(oAuthAccessTokenResponse).toUri().toString();
@@ -153,7 +154,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
    */
   protected JwtClaimsObject getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure {
     OAuthAccessTokenResponse accessTokenResponse = getCallbackData(ctx, OAuthAccessTokenResponse.class);
-    JsonObject jwtClaims = JsonToken.get(ctx.vertx()).decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
+    JsonObject jwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
     JwtClaimsObject jwtClaimsObject = JwtClaimsObject.createFromClaims(jwtClaims);
     try {
       jwtClaimsObject.checkValidityAndExpiration();
@@ -185,7 +186,7 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     } else {
       validationJson = JsonObject.mapFrom(validationObject);
     }
-    String encryptedData = JsonToken.get(app.getApexDomain().getHttpServer().getServer().getVertx()).encrypt(validationJson, DATA_CIPHER);
+    String encryptedData = jsonToken.encrypt(validationJson, DATA_CIPHER);
 
     return app
       .getOperationUriForPublicHost(this.getCallbackOperationPath())

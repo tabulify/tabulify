@@ -43,7 +43,7 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
 
 
   /**
-   * Handle the clink on the login link
+   * Handle the clink on the reset link
    */
   public void handle(RoutingContext ctx) {
 

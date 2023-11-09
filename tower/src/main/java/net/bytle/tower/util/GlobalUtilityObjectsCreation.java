@@ -53,11 +53,6 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
     Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);
 
-    INIT_LOGGER.info("Start Instantiation of URL Data Encryption");
-    JsonToken
-      .config(vertx, configAccessor)
-      .create();
-
     INIT_LOGGER.info("Start Instantiation of Symmetric Secret Data Encryption");
     CryptoSymmetricUtil
       .config(vertx, configAccessor)

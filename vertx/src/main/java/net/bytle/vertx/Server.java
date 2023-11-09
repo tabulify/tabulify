@@ -54,6 +54,7 @@ public class Server {
   private ApiKeyAuthenticationProvider apiKeyAuth;
   private HashId hashId;
   private JacksonMapperManager jacksonMapperManager;
+  private JsonToken jsonToken;
 
   Server(builder builder) {
 
@@ -148,6 +149,13 @@ public class Server {
     return this.jacksonMapperManager;
   }
 
+  public JsonToken getJsonToken() {
+    if (jsonToken == null) {
+      throw new InternalException("The Json Token utility was not enabled for this server.");
+    }
+    return this.jsonToken;
+  }
+
 
   public static class builder {
     private final String name;
@@ -163,6 +171,7 @@ public class Server {
     private boolean addApiKeyAuth = false;
     private boolean enableHashId = false;
     private boolean enableJacksonTime = true;
+    private boolean enableJsonToken = false;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -249,11 +258,14 @@ public class Server {
         server.hashId = new HashId(server.getConfigAccessor());
       }
 
-        server.jacksonMapperManager = JacksonMapperManager.create();
+      server.jacksonMapperManager = JacksonMapperManager.create();
       if (this.enableJacksonTime) {
         server.jacksonMapperManager.enableTimeModuleForVertx();
       } else {
         LOGGER.info("Jackson time not enabled for vertx");
+      }
+      if (this.enableJsonToken) {
+        server.jsonToken = new JsonToken.config(configAccessor).create();
       }
       return server;
     }
@@ -307,6 +319,17 @@ public class Server {
      */
     public Server.builder enableHashId() {
       this.enableHashId = true;
+      return this;
+    }
+
+    /**
+     * Enable the Json Token utility
+     * and allow to pass encrypted data
+     * that allow to authenticate the data when
+     * received back.
+     */
+    public Server.builder enableJsonToken() {
+      this.enableJsonToken = true;
       return this;
     }
   }

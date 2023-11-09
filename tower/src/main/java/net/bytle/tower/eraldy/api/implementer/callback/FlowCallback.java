@@ -2,8 +2,8 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.tower.util.JsonTokenCipher;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.JsonTokenCipher;
 
 /**
  * An interface to create all validation callback

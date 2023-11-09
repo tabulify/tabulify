@@ -70,6 +70,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableJwt()
               .enableHashId()
               .enableJdbcPool("jdbc")
+              .enableJsonToken()
               .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise,e);

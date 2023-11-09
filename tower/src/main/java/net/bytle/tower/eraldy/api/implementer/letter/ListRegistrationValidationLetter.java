@@ -16,13 +16,9 @@ import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
 import net.bytle.tower.eraldy.model.openapi.RegistrationList;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.JsonToken;
-import net.bytle.tower.util.JsonTokenCipher;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.HttpRequestUtil;
-import net.bytle.vertx.TemplateEngine;
-import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.*;
 
 /**
  * The letter (in HTML format)
@@ -50,10 +46,9 @@ public class ListRegistrationValidationLetter {
   }
 
 
-  public static String getEncryptedData(ListRegistrationValidationToken validationToken, Vertx vertx) {
+  public static String getEncryptedData(ListRegistrationValidationToken validationToken, JsonToken jsonToken) {
     JsonObject validationJson = JsonObject.mapFrom(validationToken);
-    return JsonToken.get(vertx)
-      .encrypt(validationJson, REGISTRATION_VALIDATION_CIPHER);
+    return jsonToken.encrypt(validationJson, REGISTRATION_VALIDATION_CIPHER);
   }
 
 
@@ -98,8 +93,8 @@ public class ListRegistrationValidationLetter {
       return this;
     }
 
-    public UriEnhanced getValidationUri(RoutingContext routingContext, ListRegistrationValidationToken validationToken) {
-      String encryptedData = getEncryptedData(validationToken, routingContext.vertx());
+    public UriEnhanced getValidationUri(ListRegistrationValidationToken validationToken, JsonToken jsonToken) {
+      String encryptedData = getEncryptedData(validationToken, jsonToken);
       return this.towerApp
         .getOperationUriForPublicHost(URI_PATH)
         .addQueryProperty(URI_DATA_PARAMETER, encryptedData);
@@ -116,7 +111,8 @@ public class ListRegistrationValidationLetter {
         .addOptInContext(routingContext)
         .setFromListObject(subscriptionPostObject)
         .build();
-      UriEnhanced validationUri = getValidationUri(routingContext, publicationSubscriptionConfirmationToken);
+      JsonToken jsonToken = this.towerApp.getApexDomain().getHttpServer().getServer().getJsonToken();
+      UriEnhanced validationUri = getValidationUri(publicationSubscriptionConfirmationToken, jsonToken);
       if (HttpRequestUtil.isLocalhostRequest(routingContext)) {
         // only in a test environment, to not modify the host file when testing with an external http client such as postman
         validationUri.addQueryProperty(RealmProvider.REALM_HANDLE_URL_PARAMETER, registrationList.getRealm().getHandle());

@@ -25,7 +25,6 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
-import net.bytle.tower.util.JsonToken;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
@@ -77,7 +76,7 @@ public class ListApiImpl implements ListApi {
         futureApp = apiApp.getAppProvider()
           .getAppByGuid(appGuid);
       } else {
-        if (realmIdentifier == null ) {
+        if (realmIdentifier == null) {
           throw ValidationException.create("The realm identifier (guid or handle) should be given for an appUri", "realmIdentifier", null);
         }
         futureApp = this.apiApp.getRealmProvider()
@@ -198,7 +197,6 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<Registration>> listRegistrationGet(RoutingContext routingContext, String guid, String
     listGuid, String subscriberEmail) {
 
-    Vertx vertx = routingContext.vertx();
     Future<Registration> futureRegistration;
     ListRegistrationProvider registrationProvider = apiApp.getListRegistrationProvider();
     if (guid != null) {
@@ -235,8 +233,8 @@ public class ListApiImpl implements ListApi {
 
 
     Vertx vertx = routingContext.vertx();
-    JsonObject jsonData = JsonToken.get(vertx)
-      .decrypt(data, ListRegistrationValidationLetter.REGISTRATION_VALIDATION_CIPHER);
+    JsonToken jsonToken = this.apiApp.getApexDomain().getHttpServer().getServer().getJsonToken();
+    JsonObject jsonData = jsonToken.decrypt(data, ListRegistrationValidationLetter.REGISTRATION_VALIDATION_CIPHER);
 
     ListRegistrationValidationToken token = BodyCodecImpl.jsonDecoder(ListRegistrationValidationToken.class)
       .apply(jsonData.toBuffer());

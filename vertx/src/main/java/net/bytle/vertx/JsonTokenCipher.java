@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 public enum JsonTokenCipher {
 

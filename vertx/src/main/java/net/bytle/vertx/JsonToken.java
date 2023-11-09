@@ -1,6 +1,5 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.JWTOptions;
@@ -8,18 +7,14 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.impl.jose.JWK;
 import io.vertx.ext.auth.impl.jose.JWT;
 import net.bytle.crypto.CryptoHmac;
-import net.bytle.exception.NoSecretException;
+import net.bytle.exception.IllegalConfiguration;
 import net.bytle.type.Strings;
-import net.bytle.vertx.ConfigAccessor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static net.bytle.tower.util.JsonTokenCipher.JWS_BASE64;
-import static net.bytle.tower.util.JsonTokenCipher.JWS_CLEAR;
 
 /**
  * A json token class that ciphers Json data with two tokens implementation:
@@ -34,8 +29,7 @@ import static net.bytle.tower.util.JsonTokenCipher.JWS_CLEAR;
  */
 public class JsonToken {
 
-
-  private static final Map<Vertx, JsonToken> urlDataEncryptionMap = new HashMap<>();
+  static Logger LOGGER = LogManager.getLogger(JsonToken.class);
 
   /**
    * The version (ie secret, algo and cipher)
@@ -73,25 +67,17 @@ public class JsonToken {
     hmac = CryptoHmac.create(secret)
       .useSha256();
 
+    LOGGER.info("The Json Token utility was initialized.");
+
   }
 
-
-  public static config config(Vertx vertx, ConfigAccessor configAccessor) {
-    return new config(vertx)
-      .setSecret((String) configAccessor.getValue(SECRET_URL_DATA_ENCRYPTION_CONF));
-  }
-
-
-  public static JsonToken get(Vertx vertx) {
-    return urlDataEncryptionMap.get(vertx);
-  }
 
   public String encrypt(JsonObject jsonObject, JsonTokenCipher cipher) {
     switch (cipher) {
       case JWS_BASE64:
       case JWS_CLEAR:
         String jwtToken = this.jwt.sign(jsonObject, this.jwtOptions);
-        if (cipher.equals(JWS_CLEAR)) {
+        if (cipher.equals(JsonTokenCipher.JWS_CLEAR)) {
           return jwtToken;
         }
         /**
@@ -118,7 +104,7 @@ public class JsonToken {
     switch (cipher) {
       case JWS_BASE64:
       case JWS_CLEAR:
-        if (cipher == JWS_BASE64) {
+        if (cipher == JsonTokenCipher.JWS_BASE64) {
           token = new String(urlBase64Decoder.decode(token));
         }
         return this.jwt.decode(token);
@@ -143,12 +129,12 @@ public class JsonToken {
 
   public static class config {
 
-    private final Vertx vertx;
     private String secret;
 
 
-    public config(Vertx vertx) {
-      this.vertx = vertx;
+    public config(ConfigAccessor configAccessor) {
+
+      this.secret = configAccessor.getString(SECRET_URL_DATA_ENCRYPTION_CONF);
     }
 
     public config setSecret(String secret) {
@@ -157,17 +143,13 @@ public class JsonToken {
     }
 
 
-    public JsonToken create() throws NoSecretException {
+    public JsonToken create() throws IllegalConfiguration {
 
       if (this.secret == null) {
-        throw new NoSecretException("A secret is mandatory. You can set set in the conf with the attribute (" + SECRET_URL_DATA_ENCRYPTION_CONF + ")");
+        throw new IllegalConfiguration("A secret is mandatory. You can set set in the conf with the attribute (" + SECRET_URL_DATA_ENCRYPTION_CONF + ")");
       }
-      JsonToken jsonToken = new JsonToken(this.secret);
 
-      urlDataEncryptionMap.put(vertx, jsonToken);
-
-
-      return jsonToken;
+      return new JsonToken(this.secret);
 
     }
   }

@@ -21,7 +21,7 @@ import net.bytle.vertx.VertxRoutingFailureData;
 
 /**
  * A central entry point to authenticate
- * in the whole member application
+ * in the whole application
  * <p>
  * It will authenticate the session
  * and redirect the user
