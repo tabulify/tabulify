@@ -9,6 +9,7 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.Authorization;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
@@ -46,7 +47,9 @@ public class RealmApiImpl implements RealmApi {
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(RealmAnalytics.class, RealmPublicMixin.class)
       .addMixIn(Organization.class, OrganizationPublicMixin.class)
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class);
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
+    ;
   }
 
   @Override
