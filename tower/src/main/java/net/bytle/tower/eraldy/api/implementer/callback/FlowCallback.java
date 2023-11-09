@@ -45,7 +45,8 @@ public interface FlowCallback {
 
   /**
    *
-   * @return the operation path that is the origin of the email, it's the base to create the {@link #getCallbackOperationPath() callback operation path}
+   * @return the operation path that is the origin, the start of the email flow that needs the callback.
+   * It is used as the base operation to create a unique {@link #getCallbackOperationPath() callback operation path}
    */
   String getOriginOperationPath();
 

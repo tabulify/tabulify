@@ -37,7 +37,7 @@ public class UserLoginEmailCallback extends FlowCallbackAbs {
    */
   @Override
   public String getOriginOperationPath() {
-    return "/login/email";
+    return "/auth/login/email";
   }
 
 

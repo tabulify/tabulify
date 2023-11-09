@@ -38,7 +38,7 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
    */
   @Override
   public String getOriginOperationPath() {
-    return "/login/password/reset";
+    return "/auth/login/password/reset";
   }
 
 

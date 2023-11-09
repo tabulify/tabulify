@@ -35,7 +35,7 @@ public class UserRegisterEmailCallback extends FlowCallbackAbs {
    * @return the origin operation path
    */
   public String getOriginOperationPath() {
-    return "/register/user";
+    return "/auth/register/user";
   }
 
 
