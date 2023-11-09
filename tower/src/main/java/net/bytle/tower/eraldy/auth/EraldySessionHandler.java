@@ -91,6 +91,7 @@ public class EraldySessionHandler implements SessionHandler {
    * The amount of time in ms, after which the session will expire, if not accessed.
    * The timeout delete the user on the session if it's not accessed within this time
    * See {@link Session#timeout()}
+   *
    * @param timeout the timeout, in ms.
    */
   @Override
@@ -180,13 +181,9 @@ public class EraldySessionHandler implements SessionHandler {
     cookie.setSameSite(crossCookie);
 
     /**
-     * If the realm of the request is Eraldy,
-     * we create a cross domain cookie
+     * Create a cross domain cookie
      */
-    String realmHandle = AuthRealmHandler.getFromRoutingContextKeyStore(context).getHandle();
-    if (realmHandle.equals(eraldyDomain.getRealmHandle())) {
-      cookie.setDomain(eraldyDomain.getApexNameWithoutPort());
-    }
+    cookie.setDomain(eraldyDomain.getApexNameWithoutPort());
 
     /**
      * Over Https
@@ -289,7 +286,7 @@ public class EraldySessionHandler implements SessionHandler {
      * Destroyed Session
      */
     // invalidate the cookie as the session has been destroyed
-    final Cookie expiredCookie = context.response().removeCookie(this.getSessionCookieName(context));
+    final Cookie expiredCookie = context.response().removeCookie(this.getSessionCookieName());
     if (expiredCookie != null) {
       setCookieProperties(expiredCookie, true, context);
     }
@@ -312,11 +309,9 @@ public class EraldySessionHandler implements SessionHandler {
 
   }
 
-  private String getSessionCookieName(RoutingContext context) {
+  private String getSessionCookieName() {
 
-
-    String realmHandle = AuthRealmHandler.getFromRoutingContextKeyStore(context).getHandle();
-    return eraldyDomain.getPrefixName() + "-session-id" + "-" + realmHandle;
+    return eraldyDomain.getPrefixName() + "-session-id";
 
   }
 
@@ -401,7 +396,7 @@ public class EraldySessionHandler implements SessionHandler {
   public Session newSession(RoutingContext context) {
     Session session = sessionStore.createSession(sessionTimeout, minLength);
     ((RoutingContextInternal) context).setSession(session);
-    context.response().removeCookie(this.getSessionCookieName(context), false);
+    context.response().removeCookie(this.getSessionCookieName(), false);
     // it's a new session we must store the user too otherwise it won't be linked
     context.put(SESSION_STORE_USER_KEY, true);
 
@@ -412,7 +407,7 @@ public class EraldySessionHandler implements SessionHandler {
   }
 
   public Future<Void> setUser(RoutingContext context, User user) {
-    context.response().removeCookie(this.getSessionCookieName(context), false);
+    context.response().removeCookie(this.getSessionCookieName(), false);
     context.setUser(user);
     // signal we must store the user to link it to the session
     context.put(SESSION_STORE_USER_KEY, true);
@@ -425,7 +420,7 @@ public class EraldySessionHandler implements SessionHandler {
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.4
     // The user agent SHOULD sort the cookie-list in the following order:
     // Cookies with longer paths are listed before cookies with shorter paths.
-    Cookie cookie = context.request().getCookie(this.getSessionCookieName(context));
+    Cookie cookie = context.request().getCookie(this.getSessionCookieName());
     if (cookie != null) {
       // Look up sessionId
       return cookie.getValue();
@@ -492,7 +487,7 @@ public class EraldySessionHandler implements SessionHandler {
   private void createNewSession(RoutingContext context) {
     Session session = sessionStore.createSession(sessionTimeout, minLength);
     ((RoutingContextInternal) context).setSession(session);
-    context.response().removeCookie(this.getSessionCookieName(context), false);
+    context.response().removeCookie(this.getSessionCookieName(), false);
     // it's a new session we must store the user too otherwise it won't be linked
     context.put(SESSION_STORE_USER_KEY, true);
     addStoreSessionHandler(context);
@@ -503,7 +498,7 @@ public class EraldySessionHandler implements SessionHandler {
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.4
     // The user agent SHOULD sort the cookie-list in the following order:
     // Cookies with longer paths are listed before cookies with shorter paths.
-    String sessionCookieName = getSessionCookieName(context);
+    String sessionCookieName = getSessionCookieName();
     Cookie cookie = context.request().getCookie(sessionCookieName);
     if (cookie != null) {
       return cookie;

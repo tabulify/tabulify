@@ -2,7 +2,8 @@
 
 
 In dev, https is required for local development
-for cross-site cookie with `sameSite=none`.
+  * for cross-site cookie with `sameSite=none`
+  * by oauth provider such as Google
 
 In prod, the nginx proxy takes care of it.
 
@@ -30,7 +31,7 @@ mkcert "*.combostrap.dev" "*.eraldy.dev" datacadamia.dev localhost 127.0.0.1 ::1
 * Modify the names to [cert.pem](../cert/cert.pem) and [key.pem](../cert/key.pem)
 * Move them to the cert directory
 * The certificates and CA are used in Dev environment taken by:
-  * [VerticleHttpServer](../src/main/java/net/bytle/tower/VerticleHttpServer.java)
+  * [VerticleHttpServer](../src/main/java/net/bytle/tower/VerticleApi.java)
   * and node apps
 
 

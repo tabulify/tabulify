@@ -8,7 +8,6 @@ import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.BrowserSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
@@ -96,7 +95,16 @@ public class VerticleApi extends AbstractVerticle {
             return;
           }
 
+          /**
+           * Domain/Session Handler
+           */
           EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
+          Router router = httpServer.getRouter();
+          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
+          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
+
+          // Deprecated ?
+          // AuthRealmHandler.createFrom(router, apiApp);
 
           /**
            * Add the apps
@@ -109,13 +117,7 @@ public class VerticleApi extends AbstractVerticle {
           }
           Future<Void> publicApiFuture = apiApp.mount();
 
-          /**
-           * Domain Handler
-           */
-          Router router = httpServer.getRouter();
-          AuthRealmHandler.createFrom(router, apiApp);
-          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
-          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
+
 
 
           Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm();

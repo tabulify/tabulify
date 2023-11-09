@@ -61,8 +61,8 @@ public class BrowserSessionHandler {
       .setSessionTimeout(idleSessionTimeoutMs)
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
 
-    String routePath = apexDomain.getAbsoluteLocalPath() + "/*";
-    rootRouter.route(routePath).handler(requestHandler);
+    //String routePath = apexDomain.getAbsoluteLocalPath() + "/*";
+    rootRouter.route().handler(requestHandler);
 
   }
 

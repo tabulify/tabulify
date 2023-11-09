@@ -191,10 +191,18 @@ public abstract class TowerApp {
    * (ie it contains the port part)
    */
   public String getPublicDomainHost() {
+    String apexName = getApexDomain().getApexNameWithPort();
+    String apexNameWithoutPort = getApexDomain().getApexNameWithoutPort();
+    if (apexNameWithoutPort.equals("localhost")) {
+      /**
+       * Localhost does not have subdomain
+       */
+      return apexName;
+    }
     try {
-      return this.getPublicSubdomainName() + "." + getApexDomain().getApexName();
+      return this.getPublicSubdomainName() + "." + apexName;
     } catch (NotFoundException e) {
-      return getApexDomain().getApexName();
+      return apexName;
     }
   }
 

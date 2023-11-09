@@ -54,7 +54,7 @@ public abstract class TowerApexDomain {
    * We follow most of the web server out there, where
    * the apex name contains the port, if not 80
    */
-  public String getApexName() {
+  public String getApexNameWithPort() {
     return apexName;
   }
 

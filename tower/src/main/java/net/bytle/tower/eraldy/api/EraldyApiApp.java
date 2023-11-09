@@ -55,7 +55,7 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
-    String memberUri = topLevelDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + topLevelDomain.getApexName());
+    String memberUri = topLevelDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + topLevelDomain.getApexNameWithPort());
     try {
       this.memberApp = UriEnhanced.createFromString(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);

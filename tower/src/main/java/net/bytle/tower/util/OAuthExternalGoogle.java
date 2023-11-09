@@ -18,9 +18,6 @@ import java.util.List;
  * The Google Oauth
  * <a href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid">Setup</a>
  * <p>
- * They require a public TLD and redirect to <a href="https://github.com/google/guava/wiki/InternetDomainNameExplained#public-suffixes-and-private-domains">this page</a>
- * That's why we have chosen the `dev` TLD for local development.
- * <p>
  * Oauth credentials can be managed here: <a href="https://console.cloud.google.com/apis/credentials/oauthclient/">...</a>
  * <p>
  * Playground

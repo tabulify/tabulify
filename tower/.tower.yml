@@ -55,24 +55,27 @@ sys.on.error.send.email: false
 # default to 8083 if not defined
 http.port: 8083
 # The public port, the port in the browser, default to 80 as combo is behind a proxy
-# (This may be needed in dev)
+# In prod, this is 80
 http.port.public: 8083
-http.ssl: false
+# With Oauth, ssl is mandatory for provider such as Google
+# False in prod because it's behind a proxy
+http.ssl: true
 
-# Define the virtual host of the combo components to allow rerouting on the path
-# used only in test or dev mode
-# for the member component,
-# ie      http://member.nico.lan:8083/combo/member/register/list/lis-yLMzijN
-# same as http://member.nico.lan:8083/register/list/lis-yLMzijN
-# the name has been chosen and is also saved in oauth callback
-# the TLD `dev` was chosen as local TLD to comply with Google Oauth that does not allow
-# internal TLD such as local, ...
-eraldy.apex.domain: 'eraldy.dev'
 
+# The apex domain name of the API (in prod, eraldy.com)
+# Historically, it was `eraldy.dev` because Google made it mandatory to have a TLD but not anymore
+eraldy.apex.domain: 'localhost'
+
+
+# Deprecated: 2023-11-09
 # Where to forward the request
 # for the frontend apps (member and app)
-eraldy.member.forward.proxy.port: 5175
-eraldy.combo.forward.proxy.port: 5176
+# eraldy.member.forward.proxy.port: 5175
+# eraldy.combo.forward.proxy.port: 5176
+# Proxy all request through fiddler for debugging purpose
+# By default off, set this to true and starts fiddler to see the internal
+# forward proxy request
+# forward.proxy.fiddler: false
 
 # OAuth: These secrets should be copied into the file .tower.secret.yml
 # eraldy.member.oauth.github.client.id: 'xxxxxxxxxxxx'
@@ -87,14 +90,10 @@ jwt.auth.secret: 'welcome'
 # if this value change all users need to change their password
 password.hash.salt: 'welcome'
 
+# Deprecated: API does not have any CSRF
 # The secret that sign the CSRF token
 # Higher than 8 bytes
-csrf.secret: 'welcome123'
-
-# Proxy all request through fiddler for debugging purpose
-# By default off, set this to true and starts fiddler to see the internal
-# forward proxy request
-forward.proxy.fiddler: false
+# csrf.secret: 'welcome123'
 
 # MixPanel > Organisation Settings > Projects > Access Keys
 # These secrets should be copied into the file .tower.secret.yml
