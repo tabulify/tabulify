@@ -233,7 +233,7 @@ public class AuthInternalAuthenticator {
                 throw new InternalException("The app operation path for redirection should not be null");
               }
 
-              //UriEnhanced redirectToHtmlApp =  .getPublicRequestUriForOperationPath(this.appOperationPath);
+//              UriEnhanced redirectToHtmlApp = MemberApp .getPublicRequestUriForOperationPath(this.appOperationPath);
 //              if (finalRedirectUri != null) {
 //                redirectToHtmlApp.addQueryProperty(OAuthQueryProperty.REDIRECT_URI.toString(), finalRedirectUri.toUrl().toString());
 //              }

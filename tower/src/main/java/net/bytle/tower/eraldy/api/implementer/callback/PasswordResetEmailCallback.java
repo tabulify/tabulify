@@ -8,6 +8,7 @@ import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.flow.FlowCallbackAbs;
 
 /**
  * Handle the password reset

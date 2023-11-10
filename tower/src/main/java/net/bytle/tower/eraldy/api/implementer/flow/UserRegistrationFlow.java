@@ -4,7 +4,10 @@ import io.vertx.core.Future;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
@@ -13,10 +16,9 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.JwtClaimsObject;
-import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.VertxRoutingFailureHandler;
+import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.flow.FlowSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,17 +47,32 @@ public class UserRegistrationFlow {
       .onFailure(routingContext::fail)
       .compose(realm -> {
 
-        User userRegister = new User();
-        userRegister.setEmail(emailIdentifier.getUserEmail());
-        userRegister.setRealm(realm);
-        AuthUserClaims authUserClaimsToRegister = UsersUtil.toAuthUser(userRegister);
+        User newUser = new User();
+        newUser.setEmail(emailIdentifier.getUserEmail());
+        newUser.setRealm(realm);
+        AuthUserClaims authUserClaimsToRegister = UsersUtil.toAuthUser(newUser);
 
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsToRegister,  routingContext);
+        FlowSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
+        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsToRegister, routingContext);
+        String newUserName;
+        try {
+          newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
+        } catch (NotFoundException | AddressException e) {
+          return Future.failedFuture(
+            VertxRoutingFailureData
+              .create()
+              .setStatus(HttpStatus.BAD_REQUEST)
+              .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setException(e)
+              .failContext(routingContext)
+              .getFailedException()
+          );
+        }
         BMailTransactionalTemplate letter = apiApp
           .getUserRegistrationValidation()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, userRegister, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, realmOwnerSender, newUserName, jwtClaims)
           .setPreview("Validate your registration to `" + realmNameOrHandle + "`")
           .addIntroParagraph(
             "I just got a subscription request to <mark>" + realmNameOrHandle + "</mark> with your email." +
@@ -73,23 +90,45 @@ public class UserRegistrationFlow {
         String html = letter.generateHTMLForEmail();
         String text = letter.generatePlainText();
 
-
         String mailSubject = "Registration to " + realmNameOrHandle;
         MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
 
-
-        String senderEmailAddressInRfcFormat = UsersUtil.getEmailAddressWithName(userRegister);
-
-        User sender = new User();
-        sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getVertxMailClientForSenderWithSigning(sender.getEmail());
-        String senderEmail = UsersUtil.getEmailAddressWithName(sender);
+          .getVertxMailClientForSenderWithSigning(realmOwnerSender.getEmail());
+
+        String newUserAddressInRfcFormat;
+        try {
+          newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmail(), newUserName).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            VertxRoutingFailureData
+              .create()
+              .setStatus(HttpStatus.BAD_REQUEST)
+              .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setException(e)
+              .failContext(routingContext)
+              .getFailedException()
+          );
+        }
+        String senderEmailInRfc;
+        try {
+          senderEmailInRfc = BMailInternetAddress.of(realmOwnerSender.getEmail(), realmOwnerSender.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            VertxRoutingFailureData
+              .create()
+              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setDescription("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setException(e)
+              .failContext(routingContext)
+              .getFailedException()
+          );
+        }
 
         MailMessage registrationEmail = mailServiceSmtpProvider
           .createVertxMailMessage()
-          .setTo(senderEmailAddressInRfcFormat)
-          .setFrom(senderEmail)
+          .setTo(newUserAddressInRfcFormat)
+          .setFrom(senderEmailInRfc)
           .setSubject(mailSubject)
           .setText(text)
           .setHtml(html);
@@ -100,11 +139,11 @@ public class UserRegistrationFlow {
           .compose(mailResult -> {
 
             // Send feedback to the list owner
-            String title = "The user (" + userRegister.getEmail() + ") received a registration email for the realm (" + realm.getHandle() + ").";
+            String title = "The user (" + newUser.getEmail() + ") received a registration email for the realm (" + realm.getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
               .createVertxMailMessage()
-              .setTo(senderEmail)
-              .setFrom(senderEmail)
+              .setTo(senderEmailInRfc)
+              .setFrom(senderEmailInRfc)
               .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)
               .setText(text)
               .setHtml(html);
@@ -118,7 +157,8 @@ public class UserRegistrationFlow {
 
   /**
    * Second steps:
-   * @param ctx - the context
+   *
+   * @param ctx             - the context
    * @param jwtClaimsObject - the claims
    */
   public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {

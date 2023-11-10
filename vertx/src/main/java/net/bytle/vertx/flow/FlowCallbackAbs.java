@@ -1,18 +1,14 @@
-package net.bytle.tower.eraldy.api.implementer.callback;
+package net.bytle.vertx.flow;
 
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
-import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailTransactionalTemplate;
-import net.bytle.exception.*;
-import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.SysAdmin;
+import net.bytle.exception.ExpiredException;
+import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.NullValueException;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -20,7 +16,7 @@ import net.bytle.vertx.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 
-public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingContext> {
+public abstract class FlowCallbackAbs implements FlowCallback {
 
   private static final int EXPIRATION_IN_MINUTES = 5;
   protected final TowerApp app;
@@ -60,12 +56,13 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
   }
 
   /**
-   * @param routingContext - the routing context
-   * @param user - the user for which the callback is
-   * @param jwtClaimsObject - the claims
+   * @param routingContext  - the routing context
+   * @param flowSender     - the email sender
+   * @param recipientName - the name of the recipient
+   * @param jwtClaimsObject - the claims (ie the user to authenticate and the state)
    * @return the email template to send for validation
    */
-  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, User user, JwtClaimsObject jwtClaimsObject) {
+  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, FlowSender flowSender, String recipientName, JwtClaimsObject jwtClaimsObject) {
 
 
     JsonObject jwtClaims = jwtClaimsObject.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
@@ -74,30 +71,6 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     oAuthAccessTokenResponse.setAccessToken(accessToken);
     String validationUrl = getCallbackUri(oAuthAccessTokenResponse).toUri().toString();
 
-    /**
-     * Recipient
-     */
-    String recipientName;
-    try {
-      recipientName = UsersUtil.getNameOrNameFromEmail(user);
-    } catch (NotFoundException e) {
-      throw ValidationException.create("A user name could not be found", "userToRegister", user.getEmail());
-    } catch (AddressException e) {
-      throw ValidationException.create("The provided email is not valid", "email", user.getEmail());
-    }
-
-    /**
-     * Sender
-     * TODO: Add a realm user or an app?
-     */
-    User publisher = SysAdmin.ADMIN_USER;
-    String publisherName;
-    try {
-      publisherName = UsersUtil.getNameOrNameFromEmail(publisher);
-    } catch (NotFoundException | AddressException e) {
-      // should not happen
-      throw new InternalException(e);
-    }
 
     /**
      * Template
@@ -132,11 +105,11 @@ public abstract class FlowCallbackAbs implements FlowCallback, Handler<RoutingCo
     // .setPrimaryColor(publisherApp.getPrimaryColor());
 
     return template
-      .setSenderName(publisherName)
-      .setSenderFullName(publisher.getFullname())
-      .setSenderAvatar(publisher.getAvatar() != null ? publisher.getAvatar().toString() : null)
-      .setSenderEmail(publisher.getEmail())
-      .setSenderTitle(publisher.getTitle())
+      .setSenderName(flowSender.getName())
+      .setSenderFullName(flowSender.getFullname())
+      .setSenderAvatar(flowSender.getAvatar() != null ? flowSender.getAvatar().toString() : null)
+      .setSenderEmail(flowSender.getEmail())
+      .setSenderTitle(flowSender.getTitle())
       .setBrandLogoWidth("25px")
       .setActionIsGo(true)
       .setActionUrl(validationUrl)

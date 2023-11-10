@@ -1,5 +1,6 @@
-package net.bytle.tower.eraldy.api.implementer.callback;
+package net.bytle.vertx.flow;
 
+import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.type.UriEnhanced;
@@ -12,7 +13,7 @@ import net.bytle.vertx.JsonTokenCipher;
  * ie we send a link that the user should click
  * to validate the action (ie registration, login, ...)
  */
-public interface FlowCallback {
+public interface FlowCallback extends Handler<RoutingContext> {
 
   /**
    * The parameter where the data is stored in the callback link

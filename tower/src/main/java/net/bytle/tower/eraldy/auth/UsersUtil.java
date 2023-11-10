@@ -9,14 +9,17 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.flow.FlowSender;
 
 public class UsersUtil {
 
   /**
+   * @deprecated use {@link BMailInternetAddress} instead
    * @param user - the user
    * @return the address email in rfc format as accepted by the email client
    * See <a href="https://vertx.io/docs/vertx-mail-client/java/#_sending_mails">...</a>
    */
+  @Deprecated
   public static String getEmailAddressWithName(User user) {
     String address = user.getEmail();
     if (address == null) {
@@ -47,6 +50,7 @@ public class UsersUtil {
     }
     String email = user.getEmail();
     if (email == null) {
+      // should not happen as an email is mandatory
       throw new NotFoundException("No name could be found for this user");
     }
     return BMailInternetAddress.of(email)
@@ -103,10 +107,6 @@ public class UsersUtil {
     return outputUser;
   }
 
-  public static String toHandleRealmIdentifier(User owner) {
-    return owner.getHandle() + "@" + owner.getRealm().getHandle() + ".realm";
-  }
-
   public static boolean isEraldyUser(User user) {
     return EraldyDomain.get().isEraldyId(user.getRealm().getLocalId());
   }
@@ -124,5 +124,19 @@ public class UsersUtil {
     authUserClaims.setAudienceHandle(appUser.getRealm().getHandle());
     authUserClaims.setEmail(appUser.getEmail());
     return authUserClaims;
+  }
+
+  public static FlowSender toSenderUser(User user) {
+    FlowSender flowSender = new FlowSender();
+    try {
+      flowSender.setName(UsersUtil.getNameOrNameFromEmail(user) );
+    } catch (NotFoundException | AddressException e) {
+      throw new InternalException(e);
+    }
+    flowSender.setEmail(user.getEmail());
+    flowSender.setFullName(user.getFullname());
+    flowSender.setAvatar(user.getAvatar());
+    flowSender.setTitle(user.getTitle());
+    return flowSender;
   }
 }

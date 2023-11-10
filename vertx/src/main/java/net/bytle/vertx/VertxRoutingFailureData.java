@@ -13,6 +13,8 @@ import net.bytle.exception.NotLoggedInException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.MediaTypes;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -32,6 +34,10 @@ public class VertxRoutingFailureData {
 
 
   private MediaTypes mime = MediaTypes.TEXT_HTML;
+  /**
+   * The exception that has occurred
+   */
+  private Exception exception;
 
   public VertxRoutingFailureData() {
 
@@ -66,9 +72,10 @@ public class VertxRoutingFailureData {
 
   }
 
-  public void failContext(RoutingContext routingContext) {
+  public VertxRoutingFailureData failContext(RoutingContext routingContext) {
 
     routingContext.fail(this.status.httpStatusCode(), (new VertxRoutingFailureException(this)));
+    return this;
 
   }
 
@@ -231,12 +238,21 @@ public class VertxRoutingFailureData {
 
   /**
    * Return the error in an HTML format
+   * It's used when there is problem in a redirect link
+   * (ie the user clicks on a confirmation link, if the link is expired
+   * it gets a meaningful informational page and not a json)
    */
   public String toHtml(RoutingContext context) {
 
     Map<String, Object> variables = new HashMap<>();
     variables.put("title", this.getName());
     variables.put("message", this.getDescription());
+    if (JavaEnvs.IS_DEV) {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      exception.printStackTrace(printWriter);
+      variables.put("stacktrace", stringWriter.toString());
+    }
     return TemplateEngine.getLocalHtmlEngine(context.vertx())
       .compile("Error.html")
       .applyVariables(variables)
@@ -256,4 +272,8 @@ public class VertxRoutingFailureData {
   }
 
 
+  public VertxRoutingFailureData setException(Exception e) {
+    this.exception = e;
+    return this;
+  }
 }

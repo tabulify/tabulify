@@ -6,6 +6,9 @@ import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import io.vertx.json.schema.ValidationException;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
@@ -24,6 +27,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.flow.FlowSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,9 +146,22 @@ public class AuthApiImpl implements AuthApi {
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
 
         JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(UsersUtil.toAuthUser(userToLogin), routingContext);
+
+        /**
+         * Recipient
+         */
+        String recipientName;
+        try {
+          recipientName = UsersUtil.getNameOrNameFromEmail(userToLogin);
+        } catch (NotFoundException e) {
+          throw ValidationException.create("A user name could not be found", "userToRegister", userToLogin.getEmail());
+        } catch (AddressException e) {
+          throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
+        }
+        FlowSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
         BMailTransactionalTemplate letter = this.apiApp
           .getUserEmailLoginCallback()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, userToLogin, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
           .addIntroParagraph(
             "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
           .setActionName("Click on this link to login automatically.")
@@ -161,18 +178,40 @@ public class AuthApiImpl implements AuthApi {
         String mailSubject = "Login to " + realmNameOrHandle;
         MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
 
-        String senderEmailAddressInRfcFormat = UsersUtil.getEmailAddressWithName(userToLogin);
+        String recipientEmailAddressInRfcFormat;
+        try {
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            VertxRoutingFailureData.create()
+              .setStatus(HttpStatus.BAD_REQUEST)
+              .setDescription("The recipient email (" + userToLogin.getEmail() + ") is not valid")
+              .setException(e)
+              .failContext(routingContext)
+              .getFailedException()
+          );
+        }
+        String senderEmailAddressInRfcFormat;
+        try {
+          senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(
+            VertxRoutingFailureData.create()
+              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setDescription("The sender email (" + sender.getEmail() + ") is not valid")
+              .setException(e)
+              .failContext(routingContext)
+              .getFailedException()
+          );
+        }
 
-        User sender = new User();
-        sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
           .getVertxMailClientForSenderWithSigning(sender.getEmail());
-        String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
           .createVertxMailMessage()
-          .setTo(senderEmailAddressInRfcFormat)
-          .setFrom(senderEmail)
+          .setTo(recipientEmailAddressInRfcFormat)
+          .setFrom(senderEmailAddressInRfcFormat)
           .setSubject(mailSubject)
           .setText(text)
           .setHtml(html);
@@ -186,8 +225,8 @@ public class AuthApiImpl implements AuthApi {
             String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
             MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
               .createVertxMailMessage()
-              .setTo(senderEmail)
-              .setFrom(senderEmail)
+              .setTo(senderEmailAddressInRfcFormat)
+              .setFrom(senderEmailAddressInRfcFormat)
               .setSubject("User Login: " + title)
               .setText(text)
               .setHtml(html);
@@ -218,7 +257,6 @@ public class AuthApiImpl implements AuthApi {
     if (!redirectUri.equals(authorization.getRedirectUri())) {
       return Future.failedFuture(new NotFoundException("The redirect_uri is not the valid callback"));
     }
-
 
     OAuthAccessTokenResponse oAuthAccessTokenResponse = apiApp
       .getApexDomain()
@@ -292,10 +330,23 @@ public class AuthApiImpl implements AuthApi {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToResetPassword.getRealm());
 
+        FlowSender sender = UsersUtil.toSenderUser(userToResetPassword.getRealm().getOwnerUser());
+        String recipientName;
+        try {
+          recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
+        } catch (NotFoundException | AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData.create()
+            .setStatus(HttpStatus.BAD_REQUEST)
+            .setDescription("A name for the user to reset could not be found (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
         JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(UsersUtil.toAuthUser(userToResetPassword), routingContext);
         BMailTransactionalTemplate letter = this.apiApp
           .getPasswordResetCallback()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, userToResetPassword, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
           .addIntroParagraph(
             "I just got a password reset request on <mark>" + realmNameOrHandle + "</mark> with your email.")
           .setActionName("Click on this link to reset your password.")
@@ -312,17 +363,37 @@ public class AuthApiImpl implements AuthApi {
         String mailSubject = "Password reset on " + realmNameOrHandle;
         MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
 
-        String senderEmailAddressInRfcFormat = UsersUtil.getEmailAddressWithName(userToResetPassword);
+        String recipientEmailAddressInRfcFormat;
+        try {
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData.create()
+            .setStatus(HttpStatus.BAD_REQUEST)
+            .setDescription("The email for the user to reset ("+userToResetPassword.getEmail()+") is not valid (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
+        String senderEmail;
+        try {
+          senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData.create()
+            .setStatus(HttpStatus.INTERNAL_ERROR)
+            .setDescription("The sneder email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
 
-        User sender = new User();
-        sender.setEmail("nico@eraldy.com");
         MailClient mailClientForListOwner = mailServiceSmtpProvider
           .getVertxMailClientForSenderWithSigning(sender.getEmail());
-        String senderEmail = UsersUtil.getEmailAddressWithName(sender);
 
         MailMessage registrationEmail = mailServiceSmtpProvider
           .createVertxMailMessage()
-          .setTo(senderEmailAddressInRfcFormat)
+          .setTo(recipientEmailAddressInRfcFormat)
           .setFrom(senderEmail)
           .setSubject(mailSubject)
           .setText(text)

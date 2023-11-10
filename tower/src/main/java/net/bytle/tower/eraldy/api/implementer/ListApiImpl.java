@@ -10,6 +10,8 @@ import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import io.vertx.json.schema.ValidationException;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
@@ -21,7 +23,6 @@ import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationL
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
@@ -288,7 +289,12 @@ public class ListApiImpl implements ListApi {
         // Send feedback to the list owner
         String title = "The user (" + registrationResult.getSubscriber().getEmail() + ") validated its subscription to the list (" + registrationResult.getList().getHandle() + ").";
         User listOwnerUser = ListProvider.getOwnerUser(registrationResult.getList());
-        String listOwnerEmailRfc = UsersUtil.getEmailAddressWithName(listOwnerUser);
+        String listOwnerEmailRfc;
+        try {
+          listOwnerEmailRfc = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getName()).toString();
+        } catch (AddressException e) {
+          throw new InternalException("The list owner email is not valid", e);
+        }
         MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(vertx);
         MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
           .createVertxMailMessage()

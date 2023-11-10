@@ -6,6 +6,8 @@ import io.vertx.core.http.Cookie;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
@@ -27,6 +29,7 @@ import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.flow.FlowSender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -145,18 +148,32 @@ public class ListRegistrationFlow {
       .getListByGuid(publicationGuid)
       .compose(registrationList -> {
 
-        User userRegister = new User();
-        userRegister.setEmail(publicationSubscriptionPost.getSubscriberEmail());
+        User subscriber = new User();
+        subscriber.setEmail(publicationSubscriptionPost.getSubscriberEmail());
         Realm listRealm = registrationList.getRealm();
-        userRegister.setRealm(listRealm);
-        AuthUserClaims authUserClaimsRegister = UsersUtil.toAuthUser(userRegister);
+        subscriber.setRealm(listRealm);
+        AuthUserClaims authUserClaimsRegister = UsersUtil.toAuthUser(subscriber);
 
         JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsRegister, routingContext)
           .setListGuidClaim(publicationGuid);
 
+        FlowSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
+        String subscriberRecipientName;
+        try {
+          subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
+        } catch (NotFoundException | AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData
+            .create()
+            .setStatus(HttpStatus.BAD_REQUEST)
+            .setDescription("The name of the subscriber could not be determined (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
         BMailTransactionalTemplate publicationValidationLetter = apiApp
           .getUserListRegistrationCallback()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, userRegister, jwtClaims)
+          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims)
           .setPreview("Validate your registration to the list `" + registrationList.getName() + "`")
           .addIntroParagraph(
             "I just got a subscription request to the list <mark>" + registrationList.getName() + "</mark> with your email." +
@@ -179,11 +196,31 @@ public class ListRegistrationFlow {
 
 
         User listOwnerUser = ListProvider.getOwnerUser(registrationList);
-        String ownerEmailAddressInRfcFormat = UsersUtil.getEmailAddressWithName(listOwnerUser);
+        String ownerEmailAddressInRfcFormat;
+        try {
+          ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getName()).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData.create().setStatus(HttpStatus.INTERNAL_ERROR)
+            .setDescription("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
 
-        User subscriber = new User();
-        subscriber.setEmail(publicationSubscriptionPost.getSubscriberEmail());
-        String subscriberAddressWithName = UsersUtil.getEmailAddressWithName(subscriber);
+        String subscriberAddressWithName;
+        try {
+          subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
+        } catch (AddressException e) {
+          return Future.failedFuture(VertxRoutingFailureData
+            .create()
+            .setStatus(HttpStatus.BAD_REQUEST)
+            .setDescription("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
+            .setException(e)
+            .failContext(routingContext)
+            .getFailedException()
+          );
+        }
 
         MailClient mailClientForListOwner = mailServiceSmtpProvider
           .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());

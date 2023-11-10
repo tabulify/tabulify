@@ -979,12 +979,12 @@ components:
         * In a web/dns level, it would be a domain name (and apps would be subdomain)
         * In a security level, this is the authentication realm.
         * In an infrastructure level, this is called a tenant.
-
+      # Identity for Jackson
       x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
         generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
         property = "guid",
         scope = Realm.class)'
-      required: # much more a or
+      required: # much more a or (one of the two)
         - guid
         - handle
       properties:
@@ -1000,22 +1000,25 @@ components:
             (derived from the database id)
         name:
           type: string
-          description: The name of the realm
-          # The name is generally not modfiable as it's used for hosting.
+          description: A shor description of the realm
         organization:
           $ref: '#/components/schemas/Organization'
           description: The organization owner
         ownerUser:
           $ref: '#/components/schemas/User'
           description: |
-            The owner user
-            Shown as support on the identity page (login, reset, ...)
+            The owner user owns and supports the realm.
+            It's advertised on the auth pages (login, reset, ...)
         handle:
           type: string
+          # a name identifier is known in prod and in dev
+          # whereas a primary key is not
+          # we can then develop and deploy with them
           description: |
-            A handle, the name used as:
+            The handle is a name unique identifier.
+            It's used as:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
-              - database schema
+              - database schema, dns name
         defaultApp:
           description: The default application of the realm
           allOf:

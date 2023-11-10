@@ -5,9 +5,11 @@ import com.sanctionco.jmail.JMail;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -16,8 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * A class to handle mail box format
- * ie the email RFC 822
+ * A class to handle mailbox address format ie the email RFC 822
  * where an email address can be specified in a mailbox format
  * `<yolo yol@email.com>`
  * It wraps a {@link jakarta.mail.internet.MimeMessage}
@@ -35,6 +36,18 @@ public class BMailInternetAddress {
   private final String domain;
   private final String localPart;
   private final InternetAddress internetAddress;
+
+  public static BMailInternetAddress of(String email, String name) throws AddressException {
+    InternetAddress internetAddress = new InternetAddress(email);
+    if (name != null) {
+      try {
+        internetAddress.setPersonal(name);
+      } catch (UnsupportedEncodingException e) {
+        throw new InternalException(e);
+      }
+    }
+    return new BMailInternetAddress(internetAddress);
+  }
 
   @Override
   public String toString() {
@@ -63,6 +76,16 @@ public class BMailInternetAddress {
       this.localPart = "";
     }
 
+    /**
+     * Set by default the personal to the local part of the email
+     */
+    if (this.internetAddress.getPersonal() == null) {
+      try {
+        this.internetAddress.setPersonal(this.localPart);
+      } catch (UnsupportedEncodingException e) {
+        throw new InternalException("We were unable to set the personal to the email local part", e);
+      }
+    }
 
   }
 
@@ -96,9 +119,9 @@ public class BMailInternetAddress {
   }
 
   public static BMailInternetAddress of(String email) throws AddressException {
-    InternetAddress internetAddress = new InternetAddress(email);
 
-    return new BMailInternetAddress(internetAddress);
+
+    return of(email, null);
   }
 
   public static BMailInternetAddress of(InternetAddress internetAddress) {

@@ -6,6 +6,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.flow.FlowCallbackAbs;
 
 /**
  * List registration callback
