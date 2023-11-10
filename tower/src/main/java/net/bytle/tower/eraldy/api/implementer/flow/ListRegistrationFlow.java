@@ -28,7 +28,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowSender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,10 +101,6 @@ public class ListRegistrationFlow {
       });
   }
 
-  public static String getRegistrationOperationPath(RegistrationList registrationList) {
-    return "/register/list/" + registrationList.getGuid();
-  }
-
   public static String getRegistrationConfirmationOperationPath(Registration registration) {
     return FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, registration.getGuid());
   }
@@ -152,9 +148,11 @@ public class ListRegistrationFlow {
         subscriber.setEmail(publicationSubscriptionPost.getSubscriberEmail());
         Realm listRealm = registrationList.getRealm();
         subscriber.setRealm(listRealm);
-        AuthUserClaims authUserClaimsRegister = UsersUtil.toAuthUser(subscriber);
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsRegister, routingContext)
+
+        AuthUser jwtClaims = UsersUtil
+          .toAuthUserClaims(subscriber)
+          .addRoutingClaims(routingContext)
           .setListGuidClaim(publicationGuid);
 
         FlowSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
@@ -259,20 +257,20 @@ public class ListRegistrationFlow {
       });
   }
 
-  public static void handleStep2EmailValidationLinkClick(EraldyApiApp apiApp, RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
-    String realmHandleClaims = jwtClaimsObject.getRealmHandle();
-    String emailClaims = jwtClaimsObject.getEmail();
+  public static void handleStep2EmailValidationLinkClick(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
+    String realmHandleClaims = authUser.getRealmIdentifier();
+    String emailClaims = authUser.getEmail();
     String listGuid;
     try {
-      listGuid = jwtClaimsObject.getListGuid();
+      listGuid = authUser.getListGuid();
     } catch (NullValueException e) {
       ctx.fail(new InternalException("No guid was in the claims for a user list registration"));
       return;
     }
-    Date optInTime = jwtClaimsObject.getIssuedAt();
+    Date optInTime = authUser.getIssuedAt();
     String optInIp;
     try {
-      optInIp = jwtClaimsObject.getOriginClientIp();
+      optInIp = authUser.getOriginClientIp();
     } catch (NullValueException e) {
       LOGGER.error("The opt-in ip of the Jwt Claims is null");
       optInIp = "";

@@ -247,7 +247,7 @@ public class VertxRoutingFailureData {
     Map<String, Object> variables = new HashMap<>();
     variables.put("title", this.getName());
     variables.put("message", this.getDescription());
-    if (JavaEnvs.IS_DEV) {
+    if (JavaEnvs.IS_DEV && exception != null) {
       StringWriter stringWriter = new StringWriter();
       PrintWriter printWriter = new PrintWriter(stringWriter);
       exception.printStackTrace(printWriter);

@@ -6,8 +6,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowCallbackAbs;
 
 /**
@@ -48,23 +48,23 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
    */
   public void handle(RoutingContext ctx) {
 
-    JwtClaimsObject jwtClaimsObject;
+    AuthUser authUser;
     try {
-      jwtClaimsObject = getAndValidateJwtClaims(ctx, "password reset");
+      authUser = getAndValidateJwtClaims(ctx, "password reset");
     } catch (IllegalStructure e) {
       return;
     }
 
-    String email = jwtClaimsObject.getEmail();
-    String realmHandle = jwtClaimsObject.getRealmHandle();
+    String email = authUser.getEmail();
+    String realmIdentifier = authUser.getRealmIdentifier();
     EraldyApiApp apiApp = (EraldyApiApp) this.getApp();
     apiApp
       .getUserProvider()
-      .getUserByEmail(email, realmHandle)
+      .getUserByEmail(email, realmIdentifier)
       .onFailure(ctx::fail)
       .onSuccess(userInDb -> {
         if (userInDb == null) {
-          ctx.fail(HttpStatus.INTERNAL_ERROR.httpStatusCode(), new InternalException("The user (" + email + "," + realmHandle + ")  send by mail, does not exist"));
+          ctx.fail(HttpStatus.INTERNAL_ERROR.httpStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
           return;
         }
         AuthInternalAuthenticator

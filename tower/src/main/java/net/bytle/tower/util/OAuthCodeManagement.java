@@ -46,7 +46,7 @@ public class OAuthCodeManagement {
     String authCode = prng.nextString(10);
     OAuthAuthorization OAuthAuthorization = new OAuthAuthorization();
     OAuthAuthorization.setRedirectUri(redirectUri);
-    OAuthAuthorization.setUser(UsersUtil.toAuthUser(contextUser));
+    OAuthAuthorization.setUser(UsersUtil.toAuthUserClaims(contextUser));
     cache.put(authCode, OAuthAuthorization);
     return authCode;
   }

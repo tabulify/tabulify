@@ -67,7 +67,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
 
     if (superToken.equals(token)) {
-      AuthUserClaims authUserClaims = new AuthUserClaims();
+      AuthUser authUserClaims = new AuthUser();
       authUserClaims.setSubjectHandle("root");
       User user = authUserClaims.toVertxUser();
       RoleBasedAuthorization root = RoleBasedAuthorization.create("root");

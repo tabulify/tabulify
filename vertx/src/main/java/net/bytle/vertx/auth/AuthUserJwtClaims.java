@@ -1,9 +1,9 @@
-package net.bytle.vertx;
+package net.bytle.vertx.auth;
 
 /**
  * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4">...JWT Claims</a>
  */
-public enum JwtClaims {
+public enum AuthUserJwtClaims {
 
   /**
    * The principal that issued the JWT
@@ -52,6 +52,7 @@ public enum JwtClaims {
    * The interpretation of audience values is application specific and optional
    * <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3">Aud Claim</a>
    * For some application, it's the client ID of the application that should consume the token.
+   * For us, this is the realm
    */
   AUDIENCE("aud"),
 
@@ -69,11 +70,9 @@ public enum JwtClaims {
   JWT_ID("jti"),
 
   /**
-   * Extra claims
-   * We follow the naming convention of webauthn
+   * A subject handle is a unique descriptif name for the subject
    */
-  CUSTOM_SUBJECT_HANDLE("userHandle"),
-  CUSTOM_AUDIENCE_HANDLE("audienceHandle"),
+  CUSTOM_SUBJECT_HANDLE("subHandle"),
 
   /**
    * The client IP of the request
@@ -85,7 +84,7 @@ public enum JwtClaims {
    * `email` as property is used broadly.
    * Example at <a href="https://auth0.com/docs/get-started/apis/scopes/sample-use-cases-scopes-and-claims#add-custom-claims-to-a-token">OAuth</a>
    */
-  CUSTOM_EMAIL("email"),
+  CUSTOM_SUBJECT_EMAIL("subEmail"),
 
   /**
    * The URI referer for the request
@@ -95,12 +94,17 @@ public enum JwtClaims {
   /**
    * The list guid for a list registration
    */
-  CUSTOM_LIST_GUID("listGuid")
-  ;
+  CUSTOM_LIST_GUID("listGuid"),
+
+  /**
+   * A audience handle is a unique descriptif name for the audience
+   */
+  CUSTOM_AUDIENCE_HANDLE("audienceHandle");
+
 
   private final String jwtKey;
 
-  JwtClaims(String jwtKey) {
+  AuthUserJwtClaims(String jwtKey) {
     this.jwtKey = jwtKey;
   }
 

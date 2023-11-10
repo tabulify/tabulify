@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
@@ -25,7 +24,6 @@ import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +60,6 @@ public class UserProvider {
 
   public static final String USR_GUID_PREFIX = "usr";
 
-  private final Vertx vertx;
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
@@ -71,7 +68,6 @@ public class UserProvider {
   public UserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
     this.jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
 
   }
@@ -165,7 +161,7 @@ public class UserProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5)\n";
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm().getLocalId())
         .onFailure(error -> LOGGER.error("UserProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(userId -> {
@@ -197,7 +193,7 @@ public class UserProvider {
         " where " +
         ID_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = JdbcPostgresPool.getJdbcPool()
+      futureResponse = jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
           user.getLocalId(),
@@ -215,7 +211,7 @@ public class UserProvider {
         " where " +
         EMAIL_COLUMN + " = $1 " +
         "AND " + REALM_COLUMN + " = $2 ";
-      futureResponse = JdbcPostgresPool.getJdbcPool()
+      futureResponse = jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
           email,
@@ -254,7 +250,7 @@ public class UserProvider {
         "AND " + REALM_COLUMN + " = $5 ";
 
       JsonObject pgJsonObject = this.toDatabaseJsonObject(user);
-      return JdbcPostgresPool.getJdbcPool()
+      return jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
           user.getEmail().toLowerCase(),
@@ -299,7 +295,7 @@ public class UserProvider {
       "AND " + REALM_COLUMN + " = $4\n" +
       "RETURNING " + ID_COLUMN;
     JsonObject dataJsonObject = this.toDatabaseJsonObject(user);
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(updateSql)
       .execute(Tuple.of(
         dataJsonObject,
@@ -328,7 +324,6 @@ public class UserProvider {
    */
   public Future<List<User>> getUsers(Realm realm) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
           " where " + REALM_COLUMN + " = $1"
@@ -426,9 +421,9 @@ public class UserProvider {
   }
 
 
-  public Future<User> getUserByEmail(String userEmail, String realmHandle) {
+  public Future<User> getUserByEmail(String userEmail, String realmIdentifier) {
     return this.apiApp.getRealmProvider()
-      .getRealmFromHandle(realmHandle)
+      .getRealmFromIdentifier(realmIdentifier)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
       .compose(realm -> getUserByEmail(userEmail, realm));
   }

@@ -1,7 +1,7 @@
 package net.bytle.vertx;
 
 
-import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.auth.AuthUser;
 
 /**
  * Pojo that contains the OAuth authorization
@@ -11,9 +11,8 @@ import net.bytle.vertx.auth.AuthUserClaims;
  */
 public class OAuthAuthorization {
 
-
   private String redirectUri;
-  private AuthUserClaims user;
+  private AuthUser user;
 
   public void setRedirectUri(String redirectUri) {
     this.redirectUri = redirectUri;
@@ -23,11 +22,11 @@ public class OAuthAuthorization {
     return redirectUri;
   }
 
-  public AuthUserClaims getUser() {
+  public AuthUser getUser() {
     return user;
   }
 
-  public void setUser(AuthUserClaims contextUser) {
+  public void setUser(AuthUser contextUser) {
     this.user = contextUser;
   }
 

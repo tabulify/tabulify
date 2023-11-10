@@ -12,6 +12,7 @@ import net.bytle.exception.NullValueException;
 import net.bytle.type.Booleans;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthUser;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -59,13 +60,13 @@ public abstract class FlowCallbackAbs implements FlowCallback {
    * @param routingContext  - the routing context
    * @param flowSender     - the email sender
    * @param recipientName - the name of the recipient
-   * @param jwtClaimsObject - the claims (ie the user to authenticate and the state)
+   * @param authUser - the claims (ie the user to authenticate and the state)
    * @return the email template to send for validation
    */
-  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, FlowSender flowSender, String recipientName, JwtClaimsObject jwtClaimsObject) {
+  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, FlowSender flowSender, String recipientName, AuthUser authUser) {
 
 
-    JsonObject jwtClaims = jwtClaimsObject.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
+    JsonObject jwtClaims = authUser.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
     String accessToken = jsonToken.encrypt(jwtClaims, DATA_CIPHER);
     OAuthAccessTokenResponse oAuthAccessTokenResponse = new OAuthAccessTokenResponse();
     oAuthAccessTokenResponse.setAccessToken(accessToken);
@@ -125,19 +126,19 @@ public abstract class FlowCallbackAbs implements FlowCallback {
    * @return the claims
    * @throws IllegalStructure if the claims object is not valid
    */
-  protected JwtClaimsObject getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure {
+  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure {
     OAuthAccessTokenResponse accessTokenResponse = getCallbackData(ctx, OAuthAccessTokenResponse.class);
     JsonObject jwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
-    JwtClaimsObject jwtClaimsObject = JwtClaimsObject.createFromClaims(jwtClaims);
+    AuthUser authUser = AuthUser.createFromClaims(jwtClaims);
     try {
-      jwtClaimsObject.checkValidityAndExpiration();
+      authUser.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
       ctx.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), e);
       throw new IllegalStructure();
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";
       try {
-        URI originReferer = jwtClaimsObject.getOriginReferer();
+        URI originReferer = authUser.getOriginReferer();
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
@@ -147,7 +148,7 @@ public abstract class FlowCallbackAbs implements FlowCallback {
         .failContextAsHtml(ctx);
       throw new IllegalStructure();
     }
-    return jwtClaimsObject;
+    return authUser;
   }
 
   @Override

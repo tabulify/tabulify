@@ -14,7 +14,7 @@ public class EmailIdentifier   {
 
   protected String userEmail;
 
-  protected String realmHandle;
+  protected String realmIdentifier;
 
   /**
   * The empty constructor is
@@ -45,16 +45,16 @@ public class EmailIdentifier   {
   * @return realmHandle The realm handle
   */
   @JsonProperty("realmHandle")
-  public String getRealmHandle() {
-    return realmHandle;
+  public String getRealmIdentifier() {
+    return realmIdentifier;
   }
 
   /**
-  * @param realmHandle The realm handle
+  * @param realmIdentifier The realm handle
   */
   @SuppressWarnings("unused")
-  public void setRealmHandle(String realmHandle) {
-    this.realmHandle = realmHandle;
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.realmIdentifier = realmIdentifier;
   }
 
 
@@ -68,12 +68,12 @@ public class EmailIdentifier   {
     }
     EmailIdentifier emailIdentifier = (EmailIdentifier) o;
     return Objects.equals(userEmail, emailIdentifier.userEmail) &&
-        Objects.equals(realmHandle, emailIdentifier.realmHandle);
+        Objects.equals(realmIdentifier, emailIdentifier.realmIdentifier);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userEmail, realmHandle);
+    return Objects.hash(userEmail, realmIdentifier);
   }
 
   @Override
@@ -82,7 +82,7 @@ public class EmailIdentifier   {
 
     "    userEmail: " + toIndentedString(userEmail) + "\n" +
 
-    "    realmHandle: " + toIndentedString(realmHandle) + "\n" +
+    "    realmHandle: " + toIndentedString(realmIdentifier) + "\n" +
     "}";
   }
 

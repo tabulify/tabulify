@@ -16,8 +16,11 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.VertxRoutingFailureHandler;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,19 +46,19 @@ public class UserRegistrationFlow {
   public static Future<ApiResponse<Void>> handleStep1SendEmail(EraldyApiApp apiApp, RoutingContext routingContext, EmailIdentifier emailIdentifier) {
 
     return apiApp.getRealmProvider()
-      .getRealmFromHandle(emailIdentifier.getRealmHandle())
+      .getRealmFromHandle(emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(realm -> {
 
         User newUser = new User();
         newUser.setEmail(emailIdentifier.getUserEmail());
         newUser.setRealm(realm);
-        AuthUserClaims authUserClaimsToRegister = UsersUtil.toAuthUser(newUser);
+
 
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
         FlowSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(authUserClaimsToRegister, routingContext);
+        AuthUser jwtClaims = UsersUtil.toAuthUserClaims(newUser).addRoutingClaims(routingContext);
         String newUserName;
         try {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
@@ -159,19 +162,19 @@ public class UserRegistrationFlow {
    * Second steps:
    *
    * @param ctx             - the context
-   * @param jwtClaimsObject - the claims
+   * @param authUser - the claims
    */
-  public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, JwtClaimsObject jwtClaimsObject) {
+  public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
 
 
     apiApp.getRealmProvider()
-      .getRealmFromHandle(jwtClaimsObject.getRealmHandle())
+      .getRealmFromHandle(authUser.getRealmIdentifier())
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
 
         User user = new User();
         user.setRealm(realm);
-        user.setEmail(jwtClaimsObject.getEmail());
+        user.setEmail(authUser.getEmail());
         UserProvider userProvider = apiApp.getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())

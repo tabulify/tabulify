@@ -10,9 +10,9 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
-import net.bytle.tower.eraldy.api.implementer.callback.PasswordResetEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
+import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
@@ -148,7 +148,8 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Add the password reset callback
      */
-    getPasswordResetCallback()
+    getPasswordResetFlow()
+      .getPasswordResetCallback()
       .addCallback(router);
 
     /**
@@ -175,9 +176,6 @@ public class EraldyApiApp extends TowerApp {
     return UserRegisterEmailCallback.getOrCreate(this);
   }
 
-  public PasswordResetEmailCallback getPasswordResetCallback() {
-    return PasswordResetEmailCallback.getOrCreate(this);
-  }
 
   @Override
   public boolean hasOpenApiSpec() {
@@ -301,4 +299,7 @@ public class EraldyApiApp extends TowerApp {
   }
 
 
+  public PasswordResetFlow getPasswordResetFlow() {
+    return new PasswordResetFlow(this);
+  }
 }

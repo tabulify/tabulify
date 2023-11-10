@@ -4,8 +4,8 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
-import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowCallbackAbs;
 
 /**
@@ -44,13 +44,13 @@ public class ListRegistrationEmailCallback extends FlowCallbackAbs {
   @Override
   public void handle(RoutingContext ctx) {
 
-    JwtClaimsObject jwtClaimsObject;
+    AuthUser authUser;
     try {
-      jwtClaimsObject = getAndValidateJwtClaims(ctx, "list registration");
+      authUser = getAndValidateJwtClaims(ctx, "list registration");
     } catch (IllegalStructure e) {
       return;
     }
-    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getApp(), ctx, jwtClaimsObject);
+    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getApp(), ctx, authUser);
 
   }
 

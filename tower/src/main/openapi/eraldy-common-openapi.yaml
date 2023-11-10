@@ -951,7 +951,7 @@ components:
       description: An object that identifies an user by its email and realm
       required:
         - userEmail
-        - realmHandle
+        - realmIdentifier
       properties:
         userEmail:
           type: string
@@ -959,9 +959,9 @@ components:
           # we do the validation ourselves
           # format: email
           description: An email
-        realmHandle:
+        realmIdentifier:
           type: string
-          description: The realm handle
+          description: The realm identifier (guid or handle)
     Realm:
       type: object
       # A realm is a container/scope for a user login

@@ -8,7 +8,7 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
 import net.bytle.vertx.EraldyDomain;
-import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowSender;
 
 public class UsersUtil {
@@ -116,13 +116,13 @@ public class UsersUtil {
   }
 
 
-  public static AuthUserClaims toAuthUser(User appUser) {
-    AuthUserClaims authUserClaims = new AuthUserClaims();
+  public static AuthUser toAuthUserClaims(User appUser) {
+    AuthUser authUserClaims = new AuthUser();
     authUserClaims.setSubject(appUser.getGuid());
     authUserClaims.setSubjectHandle(appUser.getHandle());
+    authUserClaims.setSubjectEmail(appUser.getEmail());
     authUserClaims.setAudience(appUser.getRealm().getGuid());
     authUserClaims.setAudienceHandle(appUser.getRealm().getHandle());
-    authUserClaims.setEmail(appUser.getEmail());
     return authUserClaims;
   }
 

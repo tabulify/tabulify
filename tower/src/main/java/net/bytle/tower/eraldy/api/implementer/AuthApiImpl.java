@@ -27,6 +27,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +132,7 @@ public class AuthApiImpl implements AuthApi {
     validateEmailIdentifierDataUtil(emailIdentifier);
 
     return apiApp.getUserProvider()
-      .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmHandle())
+      .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(userToLogin -> {
 
@@ -145,7 +146,7 @@ public class AuthApiImpl implements AuthApi {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
 
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(UsersUtil.toAuthUser(userToLogin), routingContext);
+        AuthUser jwtClaims = UsersUtil.toAuthUserClaims(userToLogin).addRoutingClaims(routingContext);
 
         /**
          * Recipient
@@ -314,111 +315,10 @@ public class AuthApiImpl implements AuthApi {
   public Future<ApiResponse<Void>> authLoginPasswordResetPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
 
     validateEmailIdentifierDataUtil(emailIdentifier);
+    return this.apiApp.getPasswordResetFlow()
+      .step1SendEmail(routingContext, emailIdentifier);
 
-    return apiApp.getUserProvider()
-      .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmHandle())
-      .onFailure(routingContext::fail)
-      .compose(userToResetPassword -> {
 
-        /**
-         * Email was not found
-         * We return a success as we don't want
-         * to expose our user
-         */
-        if (userToResetPassword == null) {
-          return Future.succeededFuture();
-        }
-        String realmNameOrHandle = RealmProvider.getNameOrHandle(userToResetPassword.getRealm());
-
-        FlowSender sender = UsersUtil.toSenderUser(userToResetPassword.getRealm().getOwnerUser());
-        String recipientName;
-        try {
-          recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
-        } catch (NotFoundException | AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.BAD_REQUEST)
-            .setDescription("A name for the user to reset could not be found (" + e.getMessage() + ")")
-            .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
-          );
-        }
-        JwtClaimsObject jwtClaims = JwtClaimsObject.createFromUser(UsersUtil.toAuthUser(userToResetPassword), routingContext);
-        BMailTransactionalTemplate letter = this.apiApp
-          .getPasswordResetCallback()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
-          .addIntroParagraph(
-            "I just got a password reset request on <mark>" + realmNameOrHandle + "</mark> with your email.")
-          .setActionName("Click on this link to reset your password.")
-          .setActionDescription("Click on this link to to reset your password.")
-          .addOutroParagraph(
-            "<br>" +
-              "<br>Need help, or have any questions? " +
-              "<br>Just reply to this email, I ❤ to help."
-          );
-
-        String html = letter.generateHTMLForEmail();
-        String text = letter.generatePlainText();
-
-        String mailSubject = "Password reset on " + realmNameOrHandle;
-        MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
-
-        String recipientEmailAddressInRfcFormat;
-        try {
-          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.BAD_REQUEST)
-            .setDescription("The email for the user to reset ("+userToResetPassword.getEmail()+") is not valid (" + e.getMessage() + ")")
-            .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
-          );
-        }
-        String senderEmail;
-        try {
-          senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.INTERNAL_ERROR)
-            .setDescription("The sneder email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
-            .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
-          );
-        }
-
-        MailClient mailClientForListOwner = mailServiceSmtpProvider
-          .getVertxMailClientForSenderWithSigning(sender.getEmail());
-
-        MailMessage registrationEmail = mailServiceSmtpProvider
-          .createVertxMailMessage()
-          .setTo(recipientEmailAddressInRfcFormat)
-          .setFrom(senderEmail)
-          .setSubject(mailSubject)
-          .setText(text)
-          .setHtml(html);
-
-        return mailClientForListOwner
-          .sendMail(registrationEmail)
-          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
-          .compose(mailResult -> {
-
-            // Send feedback to the list owner
-            String title = "The user (" + userToResetPassword.getEmail() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
-            MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
-              .createVertxMailMessage()
-              .setTo(senderEmail)
-              .setFrom(senderEmail)
-              .setSubject("Password reset: " + title)
-              .setText(text)
-              .setHtml(html);
-            mailClientForListOwner
-              .sendMail(ownerFeedbackEmail)
-              .onFailure(t -> LOGGER.error("Error while sending the realm owner feedback email", t));
-            return Future.succeededFuture();
-          });
-      });
   }
 
   @Override
@@ -521,9 +421,9 @@ public class AuthApiImpl implements AuthApi {
 
   private void validateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
     ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");
-    String realmHandle = emailIdentifier.getRealmHandle();
-    if (realmHandle == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm cannot be null.", "realmHandle", null);
+    String realmIdentifier = emailIdentifier.getRealmIdentifier();
+    if (realmIdentifier == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm identifier cannot be null.", "realmIdentifier", null);
     }
   }
 

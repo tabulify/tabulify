@@ -5,8 +5,8 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.JwtClaimsObject;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.FlowCallbackAbs;
 
 /**
@@ -47,15 +47,15 @@ public class UserLoginEmailCallback extends FlowCallbackAbs {
    */
   public void handle(RoutingContext ctx) {
 
-    JwtClaimsObject jwtClaimsObject;
+    AuthUser authUser;
     try {
-      jwtClaimsObject = getAndValidateJwtClaims(ctx,"login");
+      authUser = getAndValidateJwtClaims(ctx,"login");
     } catch (IllegalStructure e) {
       return;
     }
 
-    String email = jwtClaimsObject.getEmail();
-    String realmHandle = jwtClaimsObject.getRealmHandle();
+    String email = authUser.getEmail();
+    String realmHandle = authUser.getRealmIdentifier();
     EraldyApiApp apiApp = (EraldyApiApp) this.getApp();
     apiApp
       .getUserProvider()

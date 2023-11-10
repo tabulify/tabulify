@@ -8,7 +8,7 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NoSecretException;
-import net.bytle.vertx.auth.AuthUserClaims;
+import net.bytle.vertx.auth.AuthUser;
 
 /**
  * Jwt Authentication class
@@ -67,20 +67,21 @@ public class JwtAuthManager {
   }
 
   private String generateTokenFromAuthorization(OAuthAuthorization authorization, RoutingContext routingContext) {
-    AuthUserClaims user = authorization.getUser();
+    AuthUser user = authorization.getUser();
     int delay60daysInMinutes = 60 * 60 * 24;
     return generateTokenFromUser(user, delay60daysInMinutes, routingContext);
   }
 
-  public String generateTokenFromUser(AuthUserClaims user, Integer expirationMinutes, RoutingContext routingContext) {
-    JsonObject claims = JwtClaimsObject.createFromUser(user, routingContext)
+  public String generateTokenFromUser(AuthUser user, Integer expirationMinutes, RoutingContext routingContext) {
+    JsonObject claims = user
+      .addRoutingClaims( routingContext)
       .toClaimsWithExpiration(expirationMinutes);
     JWTOptions jwtOptions = new JWTOptions();
     return provider.generateToken(claims, jwtOptions);
   }
 
 
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUserClaims user, RoutingContext routingContext) {
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUser user, RoutingContext routingContext) {
     OAuthAuthorization authorization = new OAuthAuthorization();
     authorization.setUser(user);
     return generateOAuthAccessTokenResponseFromAuthorization(authorization, routingContext);
@@ -91,7 +92,7 @@ public class JwtAuthManager {
   }
 
   @SuppressWarnings("unused")
-  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUserClaims authUserClaims) {
+  public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUser authUserClaims) {
     return generateOAuthAccessTokenResponseFromUser(authUserClaims, null);
   }
 
