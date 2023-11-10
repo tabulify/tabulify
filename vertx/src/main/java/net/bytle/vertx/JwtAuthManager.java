@@ -83,7 +83,7 @@ public class JwtAuthManager {
 
   public OAuthAccessTokenResponse generateOAuthAccessTokenResponseFromUser(AuthUser user, RoutingContext routingContext) {
     OAuthAuthorization authorization = new OAuthAuthorization();
-    authorization.setUser(user);
+    authorization.setAuthUser(user);
     return generateOAuthAccessTokenResponseFromAuthorization(authorization, routingContext);
   }
 

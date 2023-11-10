@@ -5,7 +5,7 @@ import java.net.URI;
 /**
  * A pojo that defines the SMTP sender
  */
-public class FlowSender {
+public class SmtpSender {
   private String name;
   private String email;
   private String fullName;

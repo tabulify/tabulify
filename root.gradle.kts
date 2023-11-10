@@ -33,6 +33,8 @@ val flywayVersion = "9.7.0"
 val postgresVersion = "42.2.16"
 // https://mvnrepository.com/artifact/org.hashids/hashids
 val hashIdVersion = "1.0.3"
+// In-memory Cache (2.9.3 because version 3 was only Java 11 compatible and not 8)
+val caffeineVersion = "2.9.3"
 
 ext {
   set("vertxVersion", vertxVersion)
@@ -46,6 +48,7 @@ ext {
   set("flywayVersion", flywayVersion)
   set("postgresVersion", postgresVersion)
   set("hashIdVersion", hashIdVersion)
+  set("caffeineVersion", caffeineVersion)
 }
 
 /**

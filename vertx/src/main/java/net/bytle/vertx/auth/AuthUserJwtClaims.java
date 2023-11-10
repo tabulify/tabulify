@@ -97,11 +97,33 @@ public enum AuthUserJwtClaims {
   CUSTOM_LIST_GUID("listGuid"),
 
   /**
-   * A audience handle is a unique descriptif name for the audience
+   * An audience handle is a unique descriptif name for the audience
    */
-  CUSTOM_AUDIENCE_HANDLE("audienceHandle");
+  CUSTOM_AUDIENCE_HANDLE("audienceHandle"),
 
 
+  /**
+   * The name of the subject
+   */
+  CUSTOM_SUBJECT_GIVEN_NAME("subGivenName"),
+
+  /**
+   * The subject bio
+   */
+  CUSTOM_SUBJECT_BIO("subBio"),
+  /**
+   * The subject blog
+   */
+  CUSTOM_SUBJECT_BLOG("subBlog"),
+  /**
+   * The subject location
+   */
+  CUSTOM_SUBJECT_LOCATION("subLocation"),
+  /**
+   * The subject avatar
+   */
+  CUSTOM_SUBJECT_AVATAR("subAvatar"),
+  CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName");
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {

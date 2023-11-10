@@ -26,7 +26,7 @@ public class OAuthAuthorization {
     return user;
   }
 
-  public void setUser(AuthUser contextUser) {
+  public void setAuthUser(AuthUser contextUser) {
     this.user = contextUser;
   }
 

@@ -14,35 +14,36 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.VertxRoutingFailureData;
-import net.bytle.vertx.VertxRoutingFailureHandler;
+import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowCallback;
-import net.bytle.vertx.flow.FlowSender;
+import net.bytle.vertx.flow.SmtpSender;
+import net.bytle.vertx.flow.WebFlowAbs;
+import net.bytle.vertx.flow.WebFlowCallback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class PasswordResetFlow {
+public class PasswordResetFlow extends WebFlowAbs {
 
   static Logger LOGGER = LogManager.getLogger(PasswordResetFlow.class);
 
-  private final EraldyApiApp apiApp;
   private final PasswordResetEmailCallback step2Callback;
 
-  public PasswordResetFlow(EraldyApiApp eraldyApiApp) {
-    this.apiApp = eraldyApiApp;
-    this.step2Callback = PasswordResetEmailCallback.getOrCreate(eraldyApiApp);
+  public PasswordResetFlow(TowerApp towerApp) {
+    super(towerApp);
+    this.step2Callback = new PasswordResetEmailCallback(this);
   }
 
-  public FlowCallback getPasswordResetCallback() {
+  public WebFlowCallback getPasswordResetCallback() {
     return this.step2Callback;
   }
 
+  @Override
+  public EraldyApiApp getApp() {
+    return (EraldyApiApp) super.getApp();
+  }
 
   public Future<ApiResponse<Void>> step1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
-    return apiApp
+    return getApp()
       .getUserProvider()
       .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
@@ -58,7 +59,7 @@ public class PasswordResetFlow {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToResetPassword.getRealm());
 
-        FlowSender sender = UsersUtil.toSenderUser(userToResetPassword.getRealm().getOwnerUser());
+        SmtpSender sender = UsersUtil.toSenderUser(userToResetPassword.getRealm().getOwnerUser());
         String recipientName;
         try {
           recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
@@ -109,7 +110,7 @@ public class PasswordResetFlow {
         } catch (AddressException e) {
           return Future.failedFuture(VertxRoutingFailureData.create()
             .setStatus(HttpStatus.INTERNAL_ERROR)
-            .setDescription("The sneder email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
+            .setDescription("The sender email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
             .setException(e)
             .failContext(routingContext)
             .getFailedException()

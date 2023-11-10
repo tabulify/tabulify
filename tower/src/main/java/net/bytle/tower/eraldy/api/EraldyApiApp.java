@@ -9,18 +9,21 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
-import net.bytle.tower.eraldy.api.implementer.callback.UserLoginEmailCallback;
-import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
+import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
+import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
+import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
-import net.bytle.tower.util.OAuthExternal;
-import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.auth.OAuthExternal;
+import net.bytle.vertx.auth.OAuthQueryProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,6 +47,9 @@ public class EraldyApiApp extends TowerApp {
   private final ServiceProvider serviceProvider;
   private final OrganizationUserProvider organizationUserProvider;
   private final UriEnhanced memberApp;
+  private final UserRegistrationFlow userRegistrationFlow;
+  private final ListRegistrationFlow userListRegistrationFlow;
+  private EmailLoginFlow emailLoginFlow;
 
   public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
     super(topLevelDomain);
@@ -62,6 +68,9 @@ public class EraldyApiApp extends TowerApp {
     } catch (IllegalStructure e) {
       throw new IllegalConfiguration("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
+    this.userRegistrationFlow = new UserRegistrationFlow(this);
+    this.userListRegistrationFlow = new ListRegistrationFlow(this);
+    this.emailLoginFlow = new EmailLoginFlow(this);
   }
 
 
@@ -112,7 +121,7 @@ public class EraldyApiApp extends TowerApp {
       .bindBlocking(config -> cookieAuthHandler);
 
     Handler<RoutingContext> authorizationHandler = this.getOpenApi().authorizationCheckHandler();
-    for (Operation operation: routerBuilder.operations()){
+    for (Operation operation : routerBuilder.operations()) {
       routerBuilder.operation(operation.getOperationId())
         .handler(authorizationHandler);
     }
@@ -136,13 +145,15 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Add the registration validation callback
      */
-    getUserRegistrationValidation()
+    getUserRegistrationFlow()
+      .getCallback()
       .addCallback(router);
 
     /**
      * Add the email login validation callback
      */
-    getUserEmailLoginCallback()
+    getUserEmailLoginFlow()
+      .getCallback()
       .addCallback(router);
 
     /**
@@ -155,25 +166,26 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Add the user list registration callback
      */
-    getUserListRegistrationCallback()
+    getUserListRegistrationFlow()
+      .getCallback()
       .addCallback(router);
 
     return this;
   }
 
-  public UserLoginEmailCallback getUserEmailLoginCallback() {
-    return UserLoginEmailCallback.getOrCreate(this);
+  public EmailLoginFlow getUserEmailLoginFlow() {
+    return this.emailLoginFlow;
   }
 
-  public ListRegistrationEmailCallback getUserListRegistrationCallback() {
-    return ListRegistrationEmailCallback.getOrCreate(this);
+  public ListRegistrationFlow getUserListRegistrationFlow() {
+    return this.userListRegistrationFlow;
   }
 
   /**
    * @return the registration validation manager
    */
-  public UserRegisterEmailCallback getUserRegistrationValidation() {
-    return UserRegisterEmailCallback.getOrCreate(this);
+  public UserRegistrationFlow getUserRegistrationFlow() {
+    return this.userRegistrationFlow;
   }
 
 
@@ -301,5 +313,61 @@ public class EraldyApiApp extends TowerApp {
 
   public PasswordResetFlow getPasswordResetFlow() {
     return new PasswordResetFlow(this);
+  }
+
+
+  /**
+   * @param ctx - the context
+   * @return the authenticated user (only auth information ie id, guid, email, ...)
+   * @throws NotFoundException - not authenticated
+   */
+  public User getSignedInUser(RoutingContext ctx) throws NotFoundException {
+    io.vertx.ext.auth.User user = ctx.user();
+    if (user == null) {
+      throw new NotFoundException();
+    }
+    AuthUser authUser = user.principal().mapTo(AuthUser.class);
+    Realm realm = new Realm();
+    realm.setGuid(authUser.getAudience());
+    try {
+      Guid realmGuid =  this.getRealmProvider().getGuidFromHash(authUser.getAudience());
+      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      throw new RuntimeException(e);
+    }
+    User userEraldy = new User();
+    userEraldy.setRealm(realm);
+    userEraldy.setName(authUser.getSubjectGivenName());
+    userEraldy.setEmail(authUser.getSubjectEmail());
+    try {
+      String subject = authUser.getSubject();
+      userEraldy.setGuid(subject);
+      Guid guid = this.getUserProvider().getGuid(subject);
+      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
+    } catch (CastException e) {
+      throw new RuntimeException(e);
+    }
+    return userEraldy;
+
+    /**
+     * For OpenID Connect/OAuth2 Access Tokens,
+     * there is a rootClaim
+     */
+//    String rootClaim = user.attributes().getString("rootClaim");
+//    if (rootClaim != null && rootClaim.equals("accessToken")) {
+//      // JWT
+//      String userGuid = user.principal().getString("sub");
+//      if (userGuid == null) {
+//        return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
+//      }
+//      if(clazz.equals(OrganizationUser.class)) {
+//        //noinspection unchecked
+//        return (Future<T>) this
+//          .getOrganizationUserProvider()
+//          .getOrganizationUserByGuid(userGuid);
+//      }
+//    }
+
+
   }
 }

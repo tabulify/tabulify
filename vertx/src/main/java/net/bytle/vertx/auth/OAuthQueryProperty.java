@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 /**
  * The query properties used in a OAuth request or response

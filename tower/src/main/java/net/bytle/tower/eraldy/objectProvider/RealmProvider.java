@@ -479,7 +479,7 @@ public class RealmProvider {
     return getRealmFromId(realmId, clazz);
   }
 
-  private Guid getGuidFromHash(String guid) throws CastException {
+  public Guid getGuidFromHash(String guid) throws CastException {
     return apiApp.createGuidFromHashWithOneId(REALM_GUID_PREFIX, guid);
   }
 
@@ -562,5 +562,6 @@ public class RealmProvider {
     frontEndRealm.setName(getNameOrHandle(frontEndRealm));
     return frontEndRealm;
   }
+
 
 }

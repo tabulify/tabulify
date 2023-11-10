@@ -1,11 +1,10 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.ext.auth.VertxContextPRNG;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.OAuthAuthorization;
 
 import java.util.concurrent.TimeUnit;
@@ -24,7 +23,7 @@ public class OAuthCodeManagement {
   public OAuthCodeManagement() {
     this.prng = VertxContextPRNG.current();
     TimeUnit timeUnit;
-    if (!Env.IS_DEV) {
+    if (!JavaEnvs.IS_DEV) {
       timeUnit = TimeUnit.MINUTES;
     } else {
       timeUnit = TimeUnit.HOURS;
@@ -42,11 +41,11 @@ public class OAuthCodeManagement {
     return OAuthCodeManagement;
   }
 
-  public String createAuthorizationAndGetCode(String redirectUri, User contextUser) {
+  public String createAuthorizationAndGetCode(String redirectUri, AuthUser authUser) {
     String authCode = prng.nextString(10);
     OAuthAuthorization OAuthAuthorization = new OAuthAuthorization();
     OAuthAuthorization.setRedirectUri(redirectUri);
-    OAuthAuthorization.setUser(UsersUtil.toAuthUserClaims(contextUser));
+    OAuthAuthorization.setAuthUser(authUser);
     cache.put(authCode, OAuthAuthorization);
     return authCode;
   }

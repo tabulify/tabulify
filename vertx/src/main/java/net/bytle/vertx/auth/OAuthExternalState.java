@@ -1,13 +1,12 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
-import net.bytle.tower.eraldy.model.openapi.RegistrationList;
 import net.bytle.type.Base64Utility;
 
 /**
- * A pojo to encode the state
+ * A pojo to encode the oauth state
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OAuthExternalState {
@@ -31,7 +30,7 @@ public class OAuthExternalState {
   /**
    * If the registration occurs for a list
    *
-   * @param listGuid - the {@link RegistrationList#getGuid()}
+   * @param listGuid - the list id
    */
   public void setListGuid(String listGuid) {
     this.listGuid = listGuid;

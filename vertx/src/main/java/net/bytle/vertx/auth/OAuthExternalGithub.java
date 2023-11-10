@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientOptions;
@@ -12,6 +12,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import net.bytle.exception.InternalException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
@@ -58,7 +59,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
   }
 
   @Override
-  public Future<net.bytle.tower.eraldy.model.openapi.User> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken) {
+  public Future<AuthUser> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken) {
 
     String type = userInfo.getString("type");
     if (!type.equals("User")) {
@@ -70,7 +71,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
     try {
       githubUserAvatarUri = new URI(githubUserAvatarUrl);
     } catch (URISyntaxException e) {
-      if (Env.IS_DEV) {
+      if (JavaEnvs.IS_DEV) {
         throw new InternalException("GitHub Avatar URL (" + githubUserAvatarUrl + ") is not valid", e);
       }
       String githubUserGravatarId = userInfo.getString("gravatar_id");
@@ -93,7 +94,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       try {
         githubUserWebsite = new URI(githubBlogAsString);
       } catch (URISyntaxException e) {
-        if (Env.IS_DEV) {
+        if (JavaEnvs.IS_DEV) {
           throw new InternalException("GitHub Blog URL (" + githubBlogAsString + ") is not valid", e);
         }
       }
@@ -107,7 +108,7 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
       try {
         githubUserWebsite = new URI(twitterUrl);
       } catch (URISyntaxException e) {
-        if (Env.IS_DEV) {
+        if (JavaEnvs.IS_DEV) {
           throw new InternalException("GitHub Twitter URL (" + twitterUrl + ") is not valid", e);
         }
       }
@@ -152,13 +153,13 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
           return Future.failedFuture("Your primary email is not verified on GitHub, authenticate via another method or verify the primary email (" + email + ")");
         }
 
-        net.bytle.tower.eraldy.model.openapi.User user = new net.bytle.tower.eraldy.model.openapi.User();
-        user.setEmail(email);
-        user.setName(githubUserName);
-        user.setBio(githubBio);
-        user.setWebsite(finalGithubUserBlog);
-        user.setLocation(githubUserLocation);
-        user.setAvatar(finalGithubUserAvatarUri);
+        AuthUser user = new AuthUser();
+        user.setSubjectEmail(email);
+        user.setSubjectGivenName(githubUserName);
+        user.setSubjectBio(githubBio);
+        user.setSubjectBlog(finalGithubUserBlog);
+        user.setSubjectLocation(githubUserLocation);
+        user.setSubjectAvatar(finalGithubUserAvatarUri);
         return Future.succeededFuture(user);
 
       });

@@ -17,10 +17,10 @@ import net.bytle.vertx.auth.AuthUser;
 import java.net.MalformedURLException;
 import java.net.URI;
 
-public abstract class FlowCallbackAbs implements FlowCallback {
+public abstract class WebFlowCallbackAbs implements WebFlowCallback {
 
   private static final int EXPIRATION_IN_MINUTES = 5;
-  protected final TowerApp app;
+  protected final WebFlow webFlow;
 
   /**
    * If the Get link has a debug parameter, all template variables/data are printed
@@ -28,9 +28,9 @@ public abstract class FlowCallbackAbs implements FlowCallback {
   private static final String URI_DEBUG_PARAMETER = "debug";
   private final JsonToken jsonToken;
 
-  public FlowCallbackAbs(TowerApp app) {
-    this.app = app;
-    this.jsonToken = app.getApexDomain().getHttpServer().getServer().getJsonToken();
+  public WebFlowCallbackAbs(WebFlow webFlow) {
+    this.webFlow = webFlow;
+    this.jsonToken = webFlow.getApp().getApexDomain().getHttpServer().getServer().getJsonToken();
   }
 
   /**
@@ -42,7 +42,7 @@ public abstract class FlowCallbackAbs implements FlowCallback {
    */
   @Override
   public void addCallback(Router router) {
-    String callbackLocalRouterPath = app.getPathMount() + this.getCallbackOperationPath();
+    String callbackLocalRouterPath = webFlow.getApp().getPathMount() + this.getCallbackOperationPath();
     router.route(callbackLocalRouterPath)
       .method(HttpMethod.GET)
       .handler(this);
@@ -58,12 +58,12 @@ public abstract class FlowCallbackAbs implements FlowCallback {
 
   /**
    * @param routingContext  - the routing context
-   * @param flowSender     - the email sender
+   * @param smtpSender     - the email sender
    * @param recipientName - the name of the recipient
    * @param authUser - the claims (ie the user to authenticate and the state)
    * @return the email template to send for validation
    */
-  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, FlowSender flowSender, String recipientName, AuthUser authUser) {
+  public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthUser authUser) {
 
 
     JsonObject jwtClaims = authUser.toClaimsWithExpiration(EXPIRATION_IN_MINUTES);
@@ -76,7 +76,7 @@ public abstract class FlowCallbackAbs implements FlowCallback {
     /**
      * Template
      */
-    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(app.getApexDomain().getHttpServer().getServer().getVertx());
+    net.bytle.template.api.TemplateEngine templateEngine = TemplateEngine.getEmailEngine(webFlow.getApp().getApexDomain().getHttpServer().getServer().getVertx());
     BMailTransactionalTemplate template = BMailTransactionalTemplate
       .createFromName(BMailTransactionalTemplate.DEFAULT_TEMPLATE_NAME, templateEngine);
 
@@ -106,11 +106,11 @@ public abstract class FlowCallbackAbs implements FlowCallback {
     // .setPrimaryColor(publisherApp.getPrimaryColor());
 
     return template
-      .setSenderName(flowSender.getName())
-      .setSenderFullName(flowSender.getFullname())
-      .setSenderAvatar(flowSender.getAvatar() != null ? flowSender.getAvatar().toString() : null)
-      .setSenderEmail(flowSender.getEmail())
-      .setSenderTitle(flowSender.getTitle())
+      .setSenderName(smtpSender.getName())
+      .setSenderFullName(smtpSender.getFullname())
+      .setSenderAvatar(smtpSender.getAvatar() != null ? smtpSender.getAvatar().toString() : null)
+      .setSenderEmail(smtpSender.getEmail())
+      .setSenderTitle(smtpSender.getTitle())
       .setBrandLogoWidth("25px")
       .setActionIsGo(true)
       .setActionUrl(validationUrl)
@@ -162,7 +162,8 @@ public abstract class FlowCallbackAbs implements FlowCallback {
     }
     String encryptedData = jsonToken.encrypt(validationJson, DATA_CIPHER);
 
-    return app
+    return webFlow
+      .getApp()
       .getOperationUriForPublicHost(this.getCallbackOperationPath())
       .addQueryProperty(URI_DATA_PARAMETER, encryptedData);
 
@@ -173,7 +174,8 @@ public abstract class FlowCallbackAbs implements FlowCallback {
     return this.getOriginOperationPath()+"/"+ LAST_URL_OPERATION_CALLBACK_PART;
   }
 
-  public TowerApp getApp() {
-    return app;
+  public WebFlow getWebFlow() {
+    return webFlow;
   }
+
 }

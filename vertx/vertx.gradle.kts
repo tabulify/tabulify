@@ -6,6 +6,7 @@ val scramClientVersion = rootProject.ext.get("scramClientVersion").toString()
 val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
+val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 
 dependencies {
 
@@ -60,13 +61,19 @@ dependencies {
   /**
    * IpGeolocation CSV loading
    */
-  implementation(project(":bytle-db-jdbc")) // posgtres driver
+  implementation(project(":bytle-db-jdbc")) // postgres driver
   implementation(project(":bytle-db-csv")) // csv loading
 
   /**
    * Auth
    */
   implementation("io.vertx:vertx-auth-jwt:$vertxVersion") // Jwt
+  implementation("io.vertx:vertx-auth-oauth2:$vertxVersion") // Oauth
+
+  /**
+   * Cache (used in Auth to purge entry after 1 minutes)
+   */
+  implementation("com.github.ben-manes.caffeine:caffeine:$caffeineVersion")
 
   // Serialization of LocalDateTime
   // Java 8 date/time type `java.time.LocalDateTime` not supported by default:

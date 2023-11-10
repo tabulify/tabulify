@@ -680,21 +680,6 @@ paths:
                 type: array
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
-  /user/auth:
-    get:
-      operationId: userAuthGet
-      summary: Return the authenticated user
-      tags:
-        - user
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
-        '404':
-          description: Not found, not logged in
   /user:
     get:
       operationId: userGet

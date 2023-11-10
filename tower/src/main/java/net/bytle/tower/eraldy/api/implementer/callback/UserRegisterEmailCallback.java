@@ -4,36 +4,25 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
-import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowCallbackAbs;
 
 /**
  * The letter (in HTML format)
  * that is sent by email to validate a user registration
  * by clicking on the validation link
  */
-public class UserRegisterEmailCallback extends FlowCallbackAbs {
+public class UserRegisterEmailCallback extends WebFlowCallbackAbs {
 
 
-  private static UserRegisterEmailCallback userRegistration;
 
-  public UserRegisterEmailCallback(TowerApp eraldyMemberApp) {
-    super(eraldyMemberApp);
-  }
-
-
-  public static UserRegisterEmailCallback getOrCreate(TowerApp eraldyMemberApp) {
-    if (userRegistration != null) {
-      return userRegistration;
-    }
-    userRegistration = new UserRegisterEmailCallback(eraldyMemberApp);
-    return userRegistration;
+  public UserRegisterEmailCallback(UserRegistrationFlow userRegistrationFlow) {
+    super(userRegistrationFlow);
   }
 
 
   /**
-   * @return the origin operation path
+   * @return the origin operation path that needs this callback
    */
   public String getOriginOperationPath() {
     return "/auth/register/user";
@@ -52,7 +41,7 @@ public class UserRegisterEmailCallback extends FlowCallbackAbs {
     } catch (IllegalStructure e) {
       return;
     }
-    UserRegistrationFlow.handleStep2ClickOnEmailValidationLink((EraldyApiApp) this.getApp(), ctx, authUser);
+    UserRegistrationFlow.handleStep2ClickOnEmailValidationLink((EraldyApiApp) this.getWebFlow(), ctx, authUser);
 
 
   }

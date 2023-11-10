@@ -14,7 +14,6 @@ import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
@@ -24,11 +23,11 @@ import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
 import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.*;
+import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowSender;
+import net.bytle.vertx.auth.*;
+import net.bytle.vertx.flow.SmtpSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,9 +158,10 @@ public class AuthApiImpl implements AuthApi {
         } catch (AddressException e) {
           throw ValidationException.create("The provided email is not valid", "email", userToLogin.getEmail());
         }
-        FlowSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
+        SmtpSender sender = UsersUtil.toSenderUser(userToLogin.getRealm().getOwnerUser());
         BMailTransactionalTemplate letter = this.apiApp
-          .getUserEmailLoginCallback()
+          .getUserEmailLoginFlow()
+          .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)
           .addIntroParagraph(
             "I just got a login request to <mark>" + realmNameOrHandle + "</mark> with your email.")
@@ -301,9 +301,9 @@ public class AuthApiImpl implements AuthApi {
                 .getFailedException()
             );
           }
-
+          AuthUser authUser = UsersUtil.toAuthUserClaims(user);
           AuthInternalAuthenticator
-            .createWith(apiApp, routingContext, user)
+            .createWith(apiApp, routingContext, authUser)
             .redirectViaClient()
             .authenticate();
           return Future.succeededFuture(new ApiResponse<>());
@@ -323,8 +323,11 @@ public class AuthApiImpl implements AuthApi {
 
   @Override
   public Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly) {
-    io.vertx.ext.auth.User vertxUser = routingContext.user();
-    if (vertxUser == null) {
+
+    User user;
+    try {
+      user = apiApp.getSignedInUser(routingContext);
+    } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData
           .create()
@@ -332,8 +335,6 @@ public class AuthApiImpl implements AuthApi {
           .getFailedException()
       );
     }
-
-    User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
 
     return apiApp.getUserProvider()
       .updatePassword(user, passwordOnly.getPassword())
@@ -415,7 +416,7 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authUserRegisterPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
     validateEmailIdentifierDataUtil(emailIdentifier);
-    return UserRegistrationFlow.handleStep1SendEmail(this.apiApp, routingContext, emailIdentifier);
+    return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, emailIdentifier);
   }
 
 

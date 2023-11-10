@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -21,6 +21,6 @@ public interface OAuthExternalProvider {
 
   List<String> getRequestedScopes();
 
-  Future<net.bytle.tower.eraldy.model.openapi.User> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken);
+  Future<AuthUser> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken);
 
 }

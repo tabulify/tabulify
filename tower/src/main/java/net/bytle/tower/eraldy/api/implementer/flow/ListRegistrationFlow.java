@@ -23,13 +23,14 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowSender;
+import net.bytle.vertx.flow.SmtpSender;
+import net.bytle.vertx.flow.WebFlowAbs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +42,7 @@ import static net.bytle.tower.eraldy.api.implementer.ListApiImpl.REGISTRATION_EM
 /**
  * Utility class to register a user to a list
  */
-public class ListRegistrationFlow {
+public class ListRegistrationFlow extends WebFlowAbs {
 
   private static final Logger LOGGER = LogManager.getLogger(ListRegistrationFlow.class);
 
@@ -53,6 +54,12 @@ public class ListRegistrationFlow {
    * TODO: Add dynamically as a callback the same that it's done for email, See {@link ListRegistrationEmailCallback}
    */
   private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
+  private final ListRegistrationEmailCallback callback;
+
+  public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
+    super(eraldyApiApp);
+    this.callback = new ListRegistrationEmailCallback(this);
+  }
 
 
   /**
@@ -67,7 +74,6 @@ public class ListRegistrationFlow {
    * @param registrationFlow - the flow used to register the user to the list
    */
   public static void authenticateAndRegisterUserToList(EraldyApiApp apiApp, RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
-
 
     apiApp.getListProvider()
       .getListByGuid(listGuid)
@@ -93,7 +99,7 @@ public class ListRegistrationFlow {
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(apiApp, ctx, registration);
             AuthInternalAuthenticator
-              .createWith(apiApp, ctx, user)
+              .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(user))
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .setMandatoryRedirectUri(false)
               .authenticate();
@@ -155,7 +161,7 @@ public class ListRegistrationFlow {
           .addRoutingClaims(routingContext)
           .setListGuidClaim(publicationGuid);
 
-        FlowSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
+        SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
         String subscriberRecipientName;
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
@@ -170,7 +176,8 @@ public class ListRegistrationFlow {
           );
         }
         BMailTransactionalTemplate publicationValidationLetter = apiApp
-          .getUserListRegistrationCallback()
+          .getUserListRegistrationFlow()
+          .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims)
           .setPreview("Validate your registration to the list `" + registrationList.getName() + "`")
           .addIntroParagraph(
@@ -259,7 +266,7 @@ public class ListRegistrationFlow {
 
   public static void handleStep2EmailValidationLinkClick(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
     String realmHandleClaims = authUser.getRealmIdentifier();
-    String emailClaims = authUser.getEmail();
+    String emailClaims = authUser.getSubjectEmail();
     String listGuid;
     try {
       listGuid = authUser.getListGuid();
@@ -380,4 +387,9 @@ public class ListRegistrationFlow {
         return FrontEndRouter.toPrivatePage(apiApp, routingContext, false);
       });
   }
+
+  public ListRegistrationEmailCallback getCallback() {
+    return this.callback;
+  }
+
 }

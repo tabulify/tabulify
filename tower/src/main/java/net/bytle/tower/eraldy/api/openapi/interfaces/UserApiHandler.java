@@ -23,27 +23,12 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("userAuthGet").handler(this::userAuthGet);
     builder.operation("userGet").handler(this::userGet);
     builder.operation("userGuidGet").handler(this::userGuidGet);
     builder.operation("userMeGet").handler(this::userMeGet);
     builder.operation("userPost").handler(this::userPost);
     builder.operation("usersGet").handler(this::usersGet);
 }
-
-    private void userAuthGet(RoutingContext routingContext) {
-    logger.info("userAuthGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-
-
-    // Based on Route#respond
-    api.userAuthGet(routingContext)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
 
     private void userGet(RoutingContext routingContext) {
     logger.info("userGet()");

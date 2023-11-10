@@ -69,7 +69,7 @@ public class Realm   {
   }
 
   /**
-  * @return name The name of the realm
+  * @return name A shor description of the realm
   */
   @JsonProperty("name")
   public String getName() {
@@ -77,7 +77,7 @@ public class Realm   {
   }
 
   /**
-  * @param name The name of the realm
+  * @param name A shor description of the realm
   */
   @SuppressWarnings("unused")
   public void setName(String name) {
@@ -117,7 +117,7 @@ public class Realm   {
   }
 
   /**
-  * @return handle A handle, the name used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema
+  * @return handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @JsonProperty("handle")
   public String getHandle() {
@@ -125,7 +125,7 @@ public class Realm   {
   }
 
   /**
-  * @param handle A handle, the name used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema
+  * @param handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {

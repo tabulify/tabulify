@@ -4,12 +4,11 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.type.Strings;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowSender;
+import net.bytle.vertx.flow.SmtpSender;
 
 public class UsersUtil {
 
@@ -73,19 +72,6 @@ public class UsersUtil {
     return firstName;
   }
 
-  public static User vertxUserToEraldyUser(io.vertx.ext.auth.User user) {
-    if (user == null) {
-      return null;
-    }
-    return user.principal().mapTo(User.class);
-  }
-
-  public static OrganizationUser vertxUserToEraldyOrganizationUser(io.vertx.ext.auth.User user) {
-    if (user == null) {
-      return null;
-    }
-    return user.principal().mapTo(OrganizationUser.class);
-  }
 
   /**
    * @param user - the user
@@ -126,17 +112,20 @@ public class UsersUtil {
     return authUserClaims;
   }
 
-  public static FlowSender toSenderUser(User user) {
-    FlowSender flowSender = new FlowSender();
+
+  public static SmtpSender toSenderUser(User user) {
+    SmtpSender smtpSender = new SmtpSender();
     try {
-      flowSender.setName(UsersUtil.getNameOrNameFromEmail(user) );
+      smtpSender.setName(UsersUtil.getNameOrNameFromEmail(user) );
     } catch (NotFoundException | AddressException e) {
       throw new InternalException(e);
     }
-    flowSender.setEmail(user.getEmail());
-    flowSender.setFullName(user.getFullname());
-    flowSender.setAvatar(user.getAvatar());
-    flowSender.setTitle(user.getTitle());
-    return flowSender;
+    smtpSender.setEmail(user.getEmail());
+    smtpSender.setFullName(user.getFullname());
+    smtpSender.setAvatar(user.getAvatar());
+    smtpSender.setTitle(user.getTitle());
+    return smtpSender;
   }
+
+
 }

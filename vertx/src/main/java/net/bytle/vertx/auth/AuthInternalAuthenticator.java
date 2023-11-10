@@ -1,22 +1,17 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
-import io.vertx.core.Future;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.EraldySessionHandler;
-import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.VertxRoutingFailureData;
 
 /**
@@ -29,38 +24,13 @@ import net.bytle.vertx.VertxRoutingFailureData;
 public class AuthInternalAuthenticator {
 
 
-  public static Config createWith(EraldyApiApp apiApp, RoutingContext ctx, User user) {
-    if (user.getLocalId() == null) {
-      throw new InternalException("The authenticated user has no database id");
+  public static Config createWith(TowerApp apiApp, RoutingContext ctx, AuthUser user) {
+    if (user.getSubject() == null) {
+      throw new InternalException("The authenticated user has no subject");
     }
     return new Config(apiApp, ctx, user);
   }
 
-
-  public static Future<OrganizationUser> getAuthUserFromContext(EraldyApiApp apiApp, RoutingContext ctx) throws NotFoundException {
-    io.vertx.ext.auth.User user = ctx.user();
-    if (user == null) {
-      throw new NotFoundException();
-    }
-    JsonObject principal = user.principal();
-
-    /**
-     * For OpenID Connect/OAuth2 Access Tokens,
-     * there is a rootClaim
-     */
-    String rootClaim = user.attributes().getString("rootClaim");
-    if (rootClaim != null && rootClaim.equals("accessToken")) {
-      // JWT
-      String userGuid = user.principal().getString("sub");
-      if (userGuid == null) {
-        return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
-      }
-      return apiApp.getOrganizationUserProvider()
-        .getOrganizationUserByGuid(userGuid);
-    }
-    OrganizationUser organizationUser = principal.mapTo(OrganizationUser.class);
-    return Future.succeededFuture(organizationUser);
-  }
 
   public enum RedirectionMethod {
     HTTP, // via HTTP
@@ -70,8 +40,8 @@ public class AuthInternalAuthenticator {
 
   public static class Config {
     private final RoutingContext ctx;
-    private final User user;
-    private final EraldyApiApp apiApp;
+    private final AuthUser authUser;
+    private final TowerApp towerApp;
     private RedirectionMethod redirectVia = RedirectionMethod.HTTP;
     private String appOperationPath;
     /**
@@ -81,10 +51,10 @@ public class AuthInternalAuthenticator {
      */
     private boolean redirectUriIsMandatory = true;
 
-    public Config(EraldyApiApp apiApp, RoutingContext ctx, User user) {
-      this.apiApp = apiApp;
+    public Config(TowerApp towerApp, RoutingContext ctx, AuthUser authUser) {
+      this.towerApp = towerApp;
       this.ctx = ctx;
-      this.user = user;
+      this.authUser = authUser;
     }
 
     /**
@@ -132,7 +102,7 @@ public class AuthInternalAuthenticator {
       } catch (IllegalStructure e) {
 
         String message = "An error prevents us to redirect you where you come from. The redirect uri was not valid.";
-        if (Env.IS_DEV) {
+        if (JavaEnvs.IS_DEV) {
           message += e.getMessage();
         }
         VertxRoutingFailureData.create()
@@ -153,103 +123,85 @@ public class AuthInternalAuthenticator {
         }
       }
 
-      OrganizationUser sessionUser = UsersUtil.vertxUserToEraldyOrganizationUser(ctx.user());
+      AuthUser sessionUser = ctx.user().principal().mapTo(AuthUser.class);
 
-      Future<OrganizationUser> futureOrganizationUser;
       boolean sameUser;
       /**
        * If no user or not the same authenticated user
        */
-      if (sessionUser != null && sessionUser.getGuid().equals(user.getGuid())) {
+      if (sessionUser != null && sessionUser.getSubject().equals(authUser.getSubject())) {
 
         sameUser = true;
-        futureOrganizationUser = Future.succeededFuture(sessionUser);
 
       } else {
 
         sameUser = false;
 
-        /**
-         * If Eraldy user realm, add the organization if any
-         */
-        if (UsersUtil.isEraldyUser(user)) {
-
-          futureOrganizationUser = apiApp.getOrganizationUserProvider()
-            .getOrganizationUserById(user.getLocalId(), user);
-
-        } else {
-
-          OrganizationUser organizationUser = JsonObject.mapFrom(user).mapTo(OrganizationUser.class);
-          futureOrganizationUser = Future.succeededFuture(organizationUser);
-
-        }
-
       }
 
+
+      if (!sameUser) {
+
+        JsonObject principal = JsonObject.mapFrom(authUser);
+        io.vertx.ext.auth.User contextUser = io.vertx.ext.auth.User.create(principal);
+        ctx.setUser(contextUser);
+
+        // the user has upgraded from unauthenticated to authenticated
+        // session should be upgraded as recommended by owasp
+        Session session = ctx.session();
+        session.regenerateId();
+      }
+
+      /**
+       * We don't upgrade the session to allow cross cookie session
+       * even on trusted third party
+       * (ie {@link EraldySessionHandler#upgradeSessionCookieToCrossCookie(RoutingContext)}
+       * Why?
+       * It's not done because it is client wise implemented.
+       * The cookie is available on the Browser and is sent by this browser
+       * every time a request is done where it comes from.
+       * And there is no CSRF token to prevent CSRF.
+       * <p>
+       * A code authorization flows send a JWT
+       */
+
       UriEnhanced finalRedirectUri = redirectUri;
-      futureOrganizationUser
-        .onSuccess(authenticationUser -> {
-          if (!sameUser) {
-            JsonObject principal = JsonObject.mapFrom(authenticationUser);
-            io.vertx.ext.auth.User contextUser = io.vertx.ext.auth.User.create(principal);
-            ctx.setUser(contextUser);
 
-            // the user has upgraded from unauthenticated to authenticated
-            // session should be upgraded as recommended by owasp
-            Session session = ctx.session();
-            session.regenerateId();
+
+      /**
+       * Redirect
+       */
+      switch (this.redirectVia) {
+        case HTTP:
+          if (finalRedirectUri == null) {
+            VertxRoutingFailureData.create()
+              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setName("URL redirect is mandatory for HTTP redirect")
+              .setDescription("For an http redirect, the redirect uri is mandatory and was not found")
+              .failContextAsHtml(ctx);
+            return;
           }
-
-          /**
-           * We don't upgrade the session to allow cross cookie session
-           * even on trusted third party
-           * (ie {@link EraldySessionHandler#upgradeSessionCookieToCrossCookie(RoutingContext)}
-           * Why?
-           * It's not done because it is client wise implemented.
-           * The cookie is available on the Browser and is sent by this browser
-           * every time a request is done where it comes from.
-           * And there is no CSRF token to prevent CSRF.
-           * <p>
-           * A code authorization flows send a JWT
-           */
-
-          /**
-           * Redirect
-           */
-          switch (this.redirectVia) {
-            case HTTP:
-              if (finalRedirectUri == null) {
-                VertxRoutingFailureData.create()
-                  .setStatus(HttpStatus.INTERNAL_ERROR)
-                  .setName("URL redirect is mandatory for HTTP redirect")
-                  .setDescription("For an http redirect, the redirect uri is mandatory and was not found")
-                  .failContextAsHtml(ctx);
-                return;
-              }
-              authenticationRedirect(finalRedirectUri);
-              break;
-            case FRONTEND:
-              if (this.appOperationPath == null) {
-                throw new InternalException("The app operation path for redirection should not be null");
-              }
+          authenticationRedirect(finalRedirectUri);
+          break;
+        case FRONTEND:
+          if (this.appOperationPath == null) {
+            throw new InternalException("The app operation path for redirection should not be null");
+          }
 
 //              UriEnhanced redirectToHtmlApp = MemberApp .getPublicRequestUriForOperationPath(this.appOperationPath);
 //              if (finalRedirectUri != null) {
 //                redirectToHtmlApp.addQueryProperty(OAuthQueryProperty.REDIRECT_URI.toString(), finalRedirectUri.toUrl().toString());
 //              }
 //              authenticationRedirect(redirectToHtmlApp);
-              throw new InternalException("No idea what to do");
-            case NONE:
-              /**
-               * The client does the redirect (Javascript)
-               */
-              break;
-            default:
-              throw new InternalException("The redirection method (" + this.redirectVia + ") is unknown");
-          }
-
-        });
-
+          throw new InternalException("No idea what to do");
+        case NONE:
+          /**
+           * The client does the redirect (Javascript)
+           */
+          break;
+        default:
+          throw new InternalException("The redirection method (" + this.redirectVia + ") is unknown");
+      }
 
     }
 
@@ -301,7 +253,7 @@ public class AuthInternalAuthenticator {
           throw new NotFoundException("The session state is null");
         }
         redirection.addQueryProperty(OAuthQueryProperty.STATE.toString(), inState);
-        String authCode = OAuthCodeManagement.createOrGet().createAuthorizationAndGetCode(sessionRedirectionUrl, user);
+        String authCode = OAuthCodeManagement.createOrGet().createAuthorizationAndGetCode(sessionRedirectionUrl, authUser);
         redirection.addQueryProperty(OAuthQueryProperty.CODE.toString(), authCode);
       }
       return redirection;

@@ -12,13 +12,13 @@ import net.bytle.vertx.VertxRoutingFailureData;
 public class Authorization {
   public static Future<Boolean> checkForRealm(EraldyApiApp apiApp, RoutingContextWrapper routingContext, Realm requestedRealm) {
 
-    io.vertx.ext.auth.User vertxUser;
+    User signedInUser;
     try {
-      vertxUser = routingContext.getSignedInUser();
+      signedInUser = apiApp.getSignedInUser(routingContext.getRoutingContext());
     } catch (NotFoundException e) {
       return notAuthorized(routingContext);
     }
-    User signedInUser = UsersUtil.vertxUserToEraldyUser(vertxUser);
+
     return apiApp
       .getRealmProvider()
       .getRealmsForOwner(signedInUser, Realm.class)

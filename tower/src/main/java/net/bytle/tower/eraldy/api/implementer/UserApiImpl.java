@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
@@ -7,11 +8,10 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.AuthInternalAuthenticator;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApp;
@@ -23,21 +23,14 @@ import java.util.stream.Collectors;
 public class UserApiImpl implements UserApi {
 
   private final EraldyApiApp apiApp;
+  private final ObjectMapper userMapper;
 
   public UserApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
+    this.userMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().createNewJsonMapper()
+      .addMixIn(User.class, UserPublicMixinWithRealm.class);
   }
 
-  @Override
-  public Future<ApiResponse<OrganizationUser>> userAuthGet(RoutingContext routingContext) {
-    try {
-      return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
-        .onFailure(routingContext::fail)
-        .compose(comboUser -> Future.succeededFuture(new ApiResponse<>(comboUser)));
-    } catch (NotFoundException e) {
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_FOUND.httpStatusCode()));
-    }
-  }
 
   @Override
   public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier) {
@@ -87,15 +80,9 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userMeGet(RoutingContext routingContext) {
 
+    User signedInUser;
     try {
-      return AuthInternalAuthenticator.getAuthUserFromContext(apiApp, routingContext)
-        .onFailure(routingContext::fail)
-        .compose(organizationUser -> {
-          organizationUser.setOrganization(null);
-          User publicUser = apiApp.getUserProvider()
-            .toPublicCloneWithRealm(organizationUser);
-          return Future.succeededFuture((new ApiResponse<>(publicUser)));
-        });
+      signedInUser = apiApp.getSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
@@ -104,6 +91,14 @@ public class UserApiImpl implements UserApi {
           .getFailedException()
       );
     }
+
+    return apiApp.getUserProvider()
+      .getUserByGuid(signedInUser.getGuid())
+      .compose(user -> {
+        ApiResponse<User> userApiResponse = new ApiResponse<>(user)
+          .setMapper(this.userMapper);
+        return Future.succeededFuture(userApiResponse);
+      });
 
 
   }

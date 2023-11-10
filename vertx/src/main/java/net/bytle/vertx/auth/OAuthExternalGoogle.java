@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientOptions;
@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.providers.GoogleAuth;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
-import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
@@ -48,7 +48,7 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
 
 
   @Override
-  public Future<net.bytle.tower.eraldy.model.openapi.User> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken) {
+  public Future<AuthUser> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken) {
 
     /**
      *
@@ -86,20 +86,15 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
     try {
       googleUserAvatarUri = new URI(pictureUrl);
     } catch (URISyntaxException e) {
-      if (Env.IS_DEV) {
+      if (JavaEnvs.IS_DEV) {
         throw new InternalException("Google Picture URL (" + pictureUrl + ") is not valid", e);
       }
     }
-    net.bytle.tower.eraldy.model.openapi.User user = new net.bytle.tower.eraldy.model.openapi.User();
-    user.setEmail(email);
-    user.setAvatar(googleUserAvatarUri);
-    String firstName = UsersUtil.getFirstNameFromCase(givenName, familyName);
-    if (firstName != null) {
-      user.setName(firstName);
-    }
-    if (name != null) {
-      user.setFullname(name);
-    }
+    AuthUser user = new AuthUser();
+    user.setSubjectEmail(email);
+    user.setSubjectAvatar(googleUserAvatarUri);
+    user.setSubjectGivenName(givenName);
+    user.setSubjectFamilyName(givenName);
     return Future.succeededFuture(user);
 
   }

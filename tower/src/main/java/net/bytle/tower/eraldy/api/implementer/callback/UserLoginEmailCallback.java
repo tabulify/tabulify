@@ -4,32 +4,23 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.TowerApp;
+import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlow;
+import net.bytle.vertx.flow.WebFlowCallbackAbs;
 
 /**
  * The letter (in HTML format)
  * that is sent by email to log a user
  * by clicking on a login link
  */
-public class UserLoginEmailCallback extends FlowCallbackAbs {
+public class UserLoginEmailCallback extends WebFlowCallbackAbs {
 
 
-  private static UserLoginEmailCallback userRegistration;
 
-
-  public static UserLoginEmailCallback getOrCreate(TowerApp eraldyMemberApp) {
-    if (UserLoginEmailCallback.userRegistration != null) {
-      return UserLoginEmailCallback.userRegistration;
-    }
-    UserLoginEmailCallback.userRegistration = new UserLoginEmailCallback(eraldyMemberApp);
-    return UserLoginEmailCallback.userRegistration;
-  }
-
-  public UserLoginEmailCallback(TowerApp eraldyApiApp) {
-    super(eraldyApiApp);
+  public UserLoginEmailCallback(WebFlow webFlow) {
+    super(webFlow);
   }
 
 
@@ -54,9 +45,9 @@ public class UserLoginEmailCallback extends FlowCallbackAbs {
       return;
     }
 
-    String email = authUser.getEmail();
+    String email = authUser.getSubjectEmail();
     String realmHandle = authUser.getRealmIdentifier();
-    EraldyApiApp apiApp = (EraldyApiApp) this.getApp();
+    EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow();
     apiApp
       .getUserProvider()
       .getUserByEmail(email, realmHandle)
@@ -67,7 +58,7 @@ public class UserLoginEmailCallback extends FlowCallbackAbs {
           return;
         }
         AuthInternalAuthenticator
-          .createWith(apiApp, ctx, userInDb)
+          .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInDb))
           .redirectViaHttp()
           .authenticate();
       });

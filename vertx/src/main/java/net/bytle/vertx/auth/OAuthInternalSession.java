@@ -1,4 +1,4 @@
-package net.bytle.tower.util;
+package net.bytle.vertx.auth;
 
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.type.UriEnhanced;

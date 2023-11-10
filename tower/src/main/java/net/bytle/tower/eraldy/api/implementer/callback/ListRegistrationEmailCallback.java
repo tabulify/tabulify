@@ -4,31 +4,17 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
-import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowCallbackAbs;
 
 /**
  * List registration callback
  */
-public class ListRegistrationEmailCallback extends FlowCallbackAbs {
+public class ListRegistrationEmailCallback extends WebFlowCallbackAbs {
 
-
-  private static ListRegistrationEmailCallback listRegistrationEmailCallback;
-
-  public ListRegistrationEmailCallback(TowerApp eraldyMemberApp) {
-    super(eraldyMemberApp);
+  public ListRegistrationEmailCallback(ListRegistrationFlow listRegistrationFlow) {
+    super(listRegistrationFlow);
   }
-
-
-  public static ListRegistrationEmailCallback getOrCreate(TowerApp eraldyMemberApp) {
-    if (listRegistrationEmailCallback != null) {
-      return listRegistrationEmailCallback;
-    }
-    listRegistrationEmailCallback = new ListRegistrationEmailCallback(eraldyMemberApp);
-    return listRegistrationEmailCallback;
-  }
-
 
   /**
    * @return the operation path that is the origin
@@ -50,7 +36,7 @@ public class ListRegistrationEmailCallback extends FlowCallbackAbs {
     } catch (IllegalStructure e) {
       return;
     }
-    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getApp(), ctx, authUser);
+    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getWebFlow(), ctx, authUser);
 
   }
 

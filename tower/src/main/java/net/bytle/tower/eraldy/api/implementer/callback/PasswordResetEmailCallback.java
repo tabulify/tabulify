@@ -4,33 +4,24 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.util.AuthInternalAuthenticator;
+import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowCallbackAbs;
 
 /**
- * Handle the password reset
+ * Handle the password reset callback
  */
-public class PasswordResetEmailCallback extends FlowCallbackAbs {
+public class PasswordResetEmailCallback extends WebFlowCallbackAbs {
 
 
   private static final String FRONT_END_UPDATE_OPERATION_PATH = "/login/password/update";
 
-  private static PasswordResetEmailCallback passwordResetEmailCallback;
 
-
-  public static PasswordResetEmailCallback getOrCreate(TowerApp towerApp) {
-    if (PasswordResetEmailCallback.passwordResetEmailCallback != null) {
-      return PasswordResetEmailCallback.passwordResetEmailCallback;
-    }
-    PasswordResetEmailCallback.passwordResetEmailCallback = new PasswordResetEmailCallback(towerApp);
-    return PasswordResetEmailCallback.passwordResetEmailCallback;
-  }
-
-  public PasswordResetEmailCallback(TowerApp towerApp) {
-    super(towerApp);
+  public PasswordResetEmailCallback(PasswordResetFlow webFlow) {
+    super(webFlow);
   }
 
 
@@ -55,9 +46,9 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
       return;
     }
 
-    String email = authUser.getEmail();
+    String email = authUser.getSubjectEmail();
     String realmIdentifier = authUser.getRealmIdentifier();
-    EraldyApiApp apiApp = (EraldyApiApp) this.getApp();
+    EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
       .getUserProvider()
       .getUserByEmail(email, realmIdentifier)
@@ -68,7 +59,7 @@ public class PasswordResetEmailCallback extends FlowCallbackAbs {
           return;
         }
         AuthInternalAuthenticator
-          .createWith(apiApp, ctx, userInDb)
+          .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInDb))
           .redirectViaFrontEnd(FRONT_END_UPDATE_OPERATION_PATH)
           .authenticate();
       });

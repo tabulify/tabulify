@@ -13,8 +13,6 @@ import net.bytle.tower.eraldy.api.implementer.AuthApiImpl;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.util.Env;
-import net.bytle.tower.util.OAuthInternalSession;
-import net.bytle.tower.util.OAuthQueryProperty;
 import net.bytle.tower.util.OAuthResponseType;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
@@ -23,6 +21,8 @@ import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.VertxCsrf;
 import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.auth.OAuthInternalSession;
+import net.bytle.vertx.auth.OAuthQueryProperty;
 
 import java.util.HashMap;
 import java.util.Map;

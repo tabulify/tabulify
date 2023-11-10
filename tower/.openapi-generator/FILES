@@ -34,7 +34,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistrationPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Organization.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/PasswordCredentials.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/PasswordOnly.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Realm.java

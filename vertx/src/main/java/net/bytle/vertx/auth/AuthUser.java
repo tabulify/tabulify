@@ -97,20 +97,20 @@ public class AuthUser {
   }
 
 
-  public String getUserGuid() {
+  public String getSubject() {
     return claims.getString(AuthUserJwtClaims.SUBJECT.toString());
   }
 
   @SuppressWarnings("unused")
-  public String getUserHandle() throws NullValueException {
+  public String getSubjectHandle() throws NullValueException {
     String userHandle = claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_HANDLE.toString());
     if (userHandle == null) {
-      throw new NullValueException("No user handle");
+      throw new NullValueException("No subject handle");
     }
     return userHandle;
   }
 
-  public String getEmail() {
+  public String getSubjectEmail() {
     return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_EMAIL.getJwtKey());
   }
 
@@ -207,6 +207,34 @@ public class AuthUser {
      */
     return User.create(claims);
 
+  }
+
+  public void setSubjectGivenName(String subjectGivenName) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_GIVEN_NAME.toString(), subjectGivenName);
+  }
+
+  public void setSubjectBio(String bio) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_BIO.toString(), bio);
+  }
+
+  public void setSubjectBlog(URI blogUri) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_BLOG.toString(), blogUri);
+  }
+
+  public void setSubjectLocation(String location) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_LOCATION.toString(), location);
+  }
+
+  public void setSubjectAvatar(URI avatarUri) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_AVATAR.toString(), avatarUri);
+  }
+
+  public void setSubjectFamilyName(String familyName) {
+    claims.put(AuthUserJwtClaims.CUSTOM_SUBJECT_FAMILY_NAME.toString(), familyName);
+  }
+
+  public String getSubjectGivenName() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_GIVEN_NAME.toString());
   }
 
 }

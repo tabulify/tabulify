@@ -656,22 +656,6 @@ paths:
       tags:
       - app
       x-accepts: application/json
-  /user/auth:
-    get:
-      operationId: userAuthGet
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-          description: Ok
-        "404":
-          description: "Not found, not logged in"
-      summary: Return the authenticated user
-      tags:
-      - user
-      x-accepts: application/json
   /user:
     get:
       operationId: userGet
@@ -1448,16 +1432,16 @@ components:
       description: An object that identifies an user by its email and realm
       example:
         userEmail: userEmail
-        realmHandle: realmHandle
+        realmIdentifier: realmIdentifier
       properties:
         userEmail:
           description: An email
           type: string
-        realmHandle:
-          description: The realm handle
+        realmIdentifier:
+          description: The realm identifier (guid or handle)
           type: string
       required:
-      - realmHandle
+      - realmIdentifier
       - userEmail
       type: object
     AnalyticsEventPost:
@@ -1568,7 +1552,7 @@ components:
           format: int64
           type: string
         name:
-          description: The name of the realm
+          description: A shor description of the realm
           type: string
         organization:
           $ref: '#/components/schemas/Organization'
@@ -1576,9 +1560,10 @@ components:
           $ref: '#/components/schemas/User'
         handle:
           description: |
-            A handle, the name used as:
+            The handle is a name unique identifier.
+            It's used as:
               - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
-              - database schema
+              - database schema, dns name
           type: string
         defaultApp:
           allOf:
@@ -1724,7 +1709,6 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = User.class)"
-      x-parent: true
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
@@ -2149,16 +2133,6 @@ components:
           example: https://doe.com/terms
           format: uri
           type: string
-      type: object
-    OrganizationUser:
-      allOf:
-      - $ref: '#/components/schemas/User'
-      - properties:
-          organization:
-            $ref: '#/components/schemas/Organization'
-        type: object
-      description: |
-        A user in the organization
       type: object
     UserPostBody:
       description: |

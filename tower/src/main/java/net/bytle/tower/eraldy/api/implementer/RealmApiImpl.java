@@ -8,7 +8,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.Authorization;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -149,9 +148,9 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext) {
 
-    io.vertx.ext.auth.User vertxUser;
+    User signedInUser;
     try {
-      vertxUser = RoutingContextWrapper.createFrom(routingContext).getSignedInUser();
+       signedInUser = this.apiApp.getSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
@@ -160,10 +159,10 @@ public class RealmApiImpl implements RealmApi {
           .getFailedException()
       );
     }
-    User user = UsersUtil.vertxUserToEraldyUser(vertxUser);
+
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
     return realmProvider
-      .getRealmsForOwner(user, RealmAnalytics.class)
+      .getRealmsForOwner(signedInUser, RealmAnalytics.class)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(realms -> {
         List<RealmAnalytics> realmPublics = realms.stream()

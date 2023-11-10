@@ -9,19 +9,18 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.tower.util.AuthInternalAuthenticator;
-import net.bytle.vertx.HttpStatus;
-import net.bytle.vertx.MailServiceSmtpProvider;
-import net.bytle.vertx.VertxRoutingFailureData;
-import net.bytle.vertx.VertxRoutingFailureHandler;
+import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.FlowSender;
+import net.bytle.vertx.flow.SmtpSender;
+import net.bytle.vertx.flow.WebFlowAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +29,23 @@ import static net.bytle.tower.eraldy.api.implementer.ListApiImpl.REGISTRATION_EM
 /**
  * Centralize the request handler for a user registration
  */
-public class UserRegistrationFlow {
+public class UserRegistrationFlow extends WebFlowAbs {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UserRegistrationFlow.class);
 
   private static final String USER_GUID_PARAM = ":userGuid";
   private static final String FRONTEND_REGISTER_CONFIRMATION_PATH = "/register/user/confirmation/" + USER_GUID_PARAM;
+  private final UserRegisterEmailCallback userCallback;
+
+  public UserRegistrationFlow(TowerApp towerApp) {
+    super(towerApp);
+    this.userCallback = new UserRegisterEmailCallback(this);
+  }
+
+  @Override
+  public EraldyApiApp getApp() {
+    return (EraldyApiApp) super.getApp();
+  }
 
   /**
    * Handle the registration post
@@ -43,9 +53,10 @@ public class UserRegistrationFlow {
    * @param routingContext  - the routing context
    * @param emailIdentifier - the body post information
    */
-  public static Future<ApiResponse<Void>> handleStep1SendEmail(EraldyApiApp apiApp, RoutingContext routingContext, EmailIdentifier emailIdentifier) {
+  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
 
-    return apiApp.getRealmProvider()
+    return getApp()
+      .getRealmProvider()
       .getRealmFromHandle(emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(realm -> {
@@ -57,7 +68,7 @@ public class UserRegistrationFlow {
 
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
-        FlowSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
+        SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
         AuthUser jwtClaims = UsersUtil.toAuthUserClaims(newUser).addRoutingClaims(routingContext);
         String newUserName;
         try {
@@ -73,21 +84,23 @@ public class UserRegistrationFlow {
               .getFailedException()
           );
         }
-        BMailTransactionalTemplate letter = apiApp
-          .getUserRegistrationValidation()
-          .getCallbackTransactionalEmailTemplateForClaims(routingContext, realmOwnerSender, newUserName, jwtClaims)
-          .setPreview("Validate your registration to `" + realmNameOrHandle + "`")
-          .addIntroParagraph(
-            "I just got a subscription request to <mark>" + realmNameOrHandle + "</mark> with your email." +
-              "<br>For bot and consent protections, we check that it was really you asking.")
+        BMailTransactionalTemplate letter =
+          getApp()
+            .getUserRegistrationFlow()
+            .getCallback()
+            .getCallbackTransactionalEmailTemplateForClaims(routingContext, realmOwnerSender, newUserName, jwtClaims)
+            .setPreview("Validate your registration to `" + realmNameOrHandle + "`")
+            .addIntroParagraph(
+              "I just got a subscription request to <mark>" + realmNameOrHandle + "</mark> with your email." +
+                "<br>For bot and consent protections, we check that it was really you asking.")
 
-          .setActionName("Click on this link to validate your registration.")
-          .setActionDescription("Click on this link to validate your registration.")
-          .addOutroParagraph(
-            "Welcome on board. " +
-              "<br>Need help, or have any questions? " +
-              "<br>Just reply to this email, I ❤ to help."
-          );
+            .setActionName("Click on this link to validate your registration.")
+            .setActionDescription("Click on this link to validate your registration.")
+            .addOutroParagraph(
+              "Welcome on board. " +
+                "<br>Need help, or have any questions? " +
+                "<br>Just reply to this email, I ❤ to help."
+            );
 
 
         String html = letter.generateHTMLForEmail();
@@ -161,7 +174,7 @@ public class UserRegistrationFlow {
   /**
    * Second steps:
    *
-   * @param ctx             - the context
+   * @param ctx      - the context
    * @param authUser - the claims
    */
   public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
@@ -174,7 +187,7 @@ public class UserRegistrationFlow {
 
         User user = new User();
         user.setRealm(realm);
-        user.setEmail(authUser.getEmail());
+        user.setEmail(authUser.getSubjectEmail());
         UserProvider userProvider = apiApp.getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())
@@ -186,7 +199,7 @@ public class UserRegistrationFlow {
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
               AuthInternalAuthenticator
-                .createWith(apiApp, ctx, userInDb)
+                .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInDb))
                 .redirectViaHttp()
                 .authenticate();
               return;
@@ -194,10 +207,14 @@ public class UserRegistrationFlow {
             userProvider.insertUser(user)
               .onFailure(ctx::fail)
               .onSuccess(userInserted -> AuthInternalAuthenticator
-                .createWith(apiApp, ctx, userInserted)
+                .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInserted))
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
                 .authenticate());
           });
       });
+  }
+
+  public UserRegisterEmailCallback getCallback() {
+    return this.userCallback;
   }
 }

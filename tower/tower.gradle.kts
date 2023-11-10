@@ -7,6 +7,7 @@ val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val antJschVersion = rootProject.ext.get("antJschVersion").toString()
 val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
+val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 
 val sshAntTask = configurations.create("sshAntTask")
 
@@ -118,8 +119,8 @@ dependencies {
   // https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
-  // In-memory Cache (2.9.3 because version 3 is only Java 11 compatible and not 8)
-  implementation("com.github.ben-manes.caffeine:caffeine:2.9.3")
+  // Cache
+  implementation("com.github.ben-manes.caffeine:caffeine:$caffeineVersion")
 
 
   // WebDriver

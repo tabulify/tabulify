@@ -42,15 +42,15 @@ public class EmailIdentifier   {
   }
 
   /**
-  * @return realmHandle The realm handle
+  * @return realmIdentifier The realm identifier (guid or handle)
   */
-  @JsonProperty("realmHandle")
+  @JsonProperty("realmIdentifier")
   public String getRealmIdentifier() {
     return realmIdentifier;
   }
 
   /**
-  * @param realmIdentifier The realm handle
+  * @param realmIdentifier The realm identifier (guid or handle)
   */
   @SuppressWarnings("unused")
   public void setRealmIdentifier(String realmIdentifier) {
@@ -82,7 +82,7 @@ public class EmailIdentifier   {
 
     "    userEmail: " + toIndentedString(userEmail) + "\n" +
 
-    "    realmHandle: " + toIndentedString(realmIdentifier) + "\n" +
+    "    realmIdentifier: " + toIndentedString(realmIdentifier) + "\n" +
     "}";
   }
 
