@@ -55,12 +55,18 @@ public class ListRegistrationFlow extends WebFlowAbs {
    */
   private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
   private final ListRegistrationEmailCallback callback;
+  private final FrontEndCookie<Registration> cookieData;
 
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
+    this.cookieData = FrontEndCookie.createCookieData( Registration.class);
   }
 
+  @Override
+  public EraldyApiApp getApp() {
+    return (EraldyApiApp) super.getApp();
+  }
 
   /**
    * Endpoint to register an unauthenticated user to a list
@@ -73,9 +79,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public static void authenticateAndRegisterUserToList(EraldyApiApp apiApp, RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public void authenticateAndRegisterUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
 
-    apiApp.getListProvider()
+    this.getApp()
+      .getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
       .compose(list -> {
@@ -93,13 +100,15 @@ public class ListRegistrationFlow extends WebFlowAbs {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
         inputRegistration.setFlow(registrationFlow);
-        return apiApp.getListRegistrationProvider()
+        return this
+          .getApp()
+          .getListRegistrationProvider()
           .upsertRegistration(inputRegistration)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
-            addRegistrationConfirmationCookieData(apiApp, ctx, registration);
+            addRegistrationConfirmationCookieData(ctx, registration);
             AuthInternalAuthenticator
-              .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(user))
+              .createWith(this.getApp(), ctx, UsersUtil.toAuthUserClaims(user))
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .setMandatoryRedirectUri(false)
               .authenticate();
@@ -117,11 +126,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param routingContext - the context
    * @param registration   - the registration
    */
-  public static void addRegistrationConfirmationCookieData(EraldyApiApp apiApp, RoutingContext routingContext, Registration registration) {
-    Registration templateClone = apiApp.getListRegistrationProvider()
+  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, Registration registration) {
+    Registration templateClone = this.getApp().getListRegistrationProvider()
       .toTemplateClone(registration);
-    FrontEndCookie.createCookieData(routingContext, Registration.class)
-      .setValue(templateClone);
+      this.cookieData.setValue(templateClone,routingContext);
   }
 
   /**
@@ -264,7 +272,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
-  public static void handleStep2EmailValidationLinkClick(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
+  public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthUser authUser) {
     String realmHandleClaims = authUser.getRealmIdentifier();
     String emailClaims = authUser.getSubjectEmail();
     String listGuid;
@@ -284,7 +292,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
     }
 
     String finalOptInIp = optInIp;
-    apiApp.getRealmProvider()
+    this.getApp().getRealmProvider()
       .getRealmFromHandle(realmHandleClaims)
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
@@ -292,7 +300,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         User user = new User();
         user.setRealm(realm);
         user.setEmail(emailClaims);
-        UserProvider userProvider = apiApp.getUserProvider();
+        UserProvider userProvider = this.getApp().getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())
           .onFailure(ctx::fail)
@@ -306,7 +314,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             }
             futureUser
               .onFailure(ctx::fail)
-              .onSuccess(userToRegister -> authenticateAndRegisterUserToList(apiApp, ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL));
+              .onSuccess(userToRegister -> authenticateAndRegisterUserToList(ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL));
 
           });
       });
@@ -378,13 +386,13 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @return Note that the redirection uri is not mandatory
    * and is used by the front end to redirect if present
    */
-  public static Future<ApiResponse<String>> handleStep3Confirmation(EraldyApiApp apiApp, RoutingContext routingContext, String registrationGuid) {
-    return apiApp.getListRegistrationProvider()
+  public Future<ApiResponse<String>> handleStep3Confirmation(RoutingContext routingContext, String registrationGuid) {
+    return this.getApp().getListRegistrationProvider()
       .getRegistrationByGuid(registrationGuid)
       .onFailure(routingContext::fail)
       .compose(registration -> {
-        ListRegistrationFlow.addRegistrationConfirmationCookieData(apiApp, routingContext, registration);
-        return FrontEndRouter.toPrivatePage(apiApp, routingContext, false);
+        addRegistrationConfirmationCookieData(routingContext, registration);
+        return FrontEndRouter.toPrivatePage(this.getApp(), routingContext, false);
       });
   }
 

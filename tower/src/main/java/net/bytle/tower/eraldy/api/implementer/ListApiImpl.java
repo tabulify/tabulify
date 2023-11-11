@@ -189,7 +189,7 @@ public class ListApiImpl implements ListApi {
      * Note that the redirection uri is not mandatory
      * and is used by the front end to redirect if present
      */
-    return ListRegistrationFlow.handleStep3Confirmation(this.apiApp, routingContext, registrationGuid);
+    return this.apiApp.getUserListRegistrationFlow().handleStep3Confirmation(routingContext, registrationGuid);
   }
 
   public static final String REGISTRATION_EMAIL_SUBJECT_PREFIX = "User Registration: ";
@@ -309,7 +309,7 @@ public class ListApiImpl implements ListApi {
           .onFailure(t -> LOGGER.error("Error while sending the list owner registration feedback email", t));
 
         /**
-         * Confirmation Letter (ie HTML page)
+         * Confirmation Letter (c.-à-d. HTML page)
          */
         ListRegistrationConfirmationLetter.Config letter = ListRegistrationConfirmationLetter
           .config(this.apiApp)

@@ -21,13 +21,11 @@ public class FrontEndCookie<T> {
   private static final Logger LOGGER = LogManager.getLogger(FrontEndCookie.class);
 
   private static final String COOKIE_DATA_NAME = "data";
-  private final RoutingContext routingContext;
   private final String cookieName;
   private String cookiePath;
   private final Class<? extends T> aClass;
 
-  public FrontEndCookie(RoutingContext routingContext, String cookieName, Class<T> aClass) {
-    this.routingContext = routingContext;
+  public FrontEndCookie(String cookieName, Class<T> aClass) {
     this.cookieName = cookieName;
     this.aClass = aClass;
   }
@@ -43,20 +41,20 @@ public class FrontEndCookie<T> {
   }
 
 
-  public static <T> FrontEndCookie<T> createCookieData(RoutingContext routingContext, Class<T> aClass) {
-    return new Conf<>(routingContext, COOKIE_DATA_NAME, aClass)
+  public static <T> FrontEndCookie<T> createCookieData(Class<T> aClass) {
+    return new Conf<>(COOKIE_DATA_NAME, aClass)
       .build();
   }
 
 
-  public static <T> Conf<T> conf(RoutingContext routingContext, String cookieName, Class<T> aClass) {
-    return new Conf<>(routingContext, cookieName, aClass);
+  public static <T> Conf<T> conf(String cookieName, Class<T> aClass) {
+    return new Conf<>(cookieName, aClass);
   }
 
   /**
    * @param value - the value should be serializable to Json (ie Map<String, Object> or a pojo)
    */
-  public void setValue(T value) {
+  public void setValue(T value, RoutingContext routingContext) {
     JsonObject json = JsonObject.mapFrom(value);
     Cookie cookie = Cookie.cookie(this.cookieName, Base64Utility.stringToBase64UrlString(json.toString()))
       .setHttpOnly(false)
@@ -64,11 +62,11 @@ public class FrontEndCookie<T> {
     if (this.cookiePath != null) {
       cookie.setPath(this.cookiePath);
     }
-    this.routingContext.response().addCookie(cookie);
+    routingContext.response().addCookie(cookie);
   }
 
-  public T getValue() throws NullValueException {
-    Cookie value = this.routingContext.request().getCookie(this.cookieName);
+  public T getValue(RoutingContext routingContext) throws NullValueException {
+    Cookie value = routingContext.request().getCookie(this.cookieName);
     if (value == null) {
       throw new NullValueException();
     }
@@ -84,13 +82,11 @@ public class FrontEndCookie<T> {
   }
 
   public static class Conf<T> {
-    private final RoutingContext routingContext;
     private final String cookieName;
     private final Class<T> aClass;
     private String cookiePath;
 
-    public Conf(RoutingContext routingContext, String cookieName, Class<T> aClass) {
-      this.routingContext = routingContext;
+    public Conf(String cookieName, Class<T> aClass) {
       this.cookieName = cookieName;
       this.aClass = aClass;
     }
@@ -101,7 +97,7 @@ public class FrontEndCookie<T> {
     }
 
     public FrontEndCookie<T> build() {
-      FrontEndCookie<T> frontendCookie = new FrontEndCookie<>(routingContext, cookieName, this.aClass);
+      FrontEndCookie<T> frontendCookie = new FrontEndCookie<>(cookieName, this.aClass);
       frontendCookie.cookiePath = cookiePath;
       return frontendCookie;
     }

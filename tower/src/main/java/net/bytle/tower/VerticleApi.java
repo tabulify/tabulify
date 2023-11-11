@@ -8,7 +8,7 @@ import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.BrowserSessionHandler;
+import net.bytle.tower.eraldy.auth.AuthSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.DatacadamiaDomain;
@@ -97,31 +97,29 @@ public class VerticleApi extends AbstractVerticle {
           }
 
           /**
-           * Domain/Session Handler
+           * App
            */
           EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-          Router router = httpServer.getRouter();
-          BrowserSessionHandler.addBrowserSessionHandler(router, eraldyDomain); // Add the session handler cross domain, cross realm
-          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
-
-          // Deprecated ?
-          // AuthRealmHandler.createFrom(router, apiApp);
-
-          /**
-           * Add the apps
-           */
           try {
             apiApp = EraldyApiApp.create(eraldyDomain);
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise, e);
             return;
           }
+
+          /**
+           * Building Router
+           */
+          Router router = httpServer.getRouter();
+          AuthSessionHandler.addAuthCookieSessionHandler(router, apiApp); // Add the session handler cross domain, cross realm
+          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
+
+          /**
+           * Future
+           */
           Future<Void> publicApiFuture = apiApp.mount();
+          Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm(); // Eraldy creation
 
-
-
-
-          Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm();
           /**
            * Add the scheduled task
            */

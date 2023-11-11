@@ -43,12 +43,13 @@ public class EraldyApiApp extends TowerApp {
   private final OrganizationProvider organizationProvider;
   private final ListRegistrationProvider listRegistrationProvider;
   private final ServiceProvider serviceProvider;
+  @SuppressWarnings("FieldCanBeLocal")
   private final OrganizationUserProvider organizationUserProvider;
   private final UriEnhanced memberApp;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
   private final OAuthExternal oauthExternal;
-  private EmailLoginFlow emailLoginFlow;
+  private final EmailLoginFlow emailLoginFlow;
 
   public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
     super(topLevelDomain);
@@ -71,6 +72,7 @@ public class EraldyApiApp extends TowerApp {
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
     this.oauthExternal = new OAuthExternal(this, "/auth/oauth");
+
   }
 
 
@@ -306,10 +308,6 @@ public class EraldyApiApp extends TowerApp {
 
   public ServiceProvider getServiceProvider() {
     return this.serviceProvider;
-  }
-
-  public OrganizationUserProvider getOrganizationUserProvider() {
-    return this.organizationUserProvider;
   }
 
 

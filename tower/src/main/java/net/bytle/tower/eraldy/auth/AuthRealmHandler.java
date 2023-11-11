@@ -5,27 +5,31 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.pgclient.PgPool;
-import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
+import net.bytle.exception.NullValueException;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.objectProvider.AppProvider;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApexDomain;
-
-import java.net.URI;
+import net.bytle.vertx.auth.AuthQueryProperty;
 
 
 /**
- * Determine the authentication realm of the request
+ * The cookie session is at the realm level.
+ * <p>
+ * This handler determines the authentication realm of the request.
+ * If none can be determined, the realm is the Eraldy realm.
+ * <p>
  * After the handler has been executed,
- * code can retrieve the realm with the function {@link #getFromRoutingContextKeyStore(RoutingContext)}
+ * next handlers can retrieve the realm with the function {@link #getFromRoutingContextKeyStore(RoutingContext)}
  */
 public class AuthRealmHandler implements Handler<RoutingContext> {
 
@@ -33,94 +37,106 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
    * The realm key in the vertx routing context
    */
   private static final String AUTH_REALM_CONTEXT_KEY = "auth-realm-context-key";
-  private static final String X_AUTH_REALM_HEADER_HANDLE = "X-AUTH-REALM-HANDLE";
-  private static final String X_AUTH_REALM_HEADER_GUID = "X-AUTH-REALM-GUID";
+  private static final String X_AUTH_REALM_IDENTIFIER = "X-AUTH-REALM-IDENTIFIER";
 
   private final EraldyApiApp apiApp;
+  private final FrontEndCookie<Realm> authRealmCookie;
 
   private AuthRealmHandler(EraldyApiApp apiApp) {
+
     this.apiApp = apiApp;
+    /**
+     * The cookie that stores the realm information (when the front end is loaded)
+     */
+    String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
+    this.authRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
+      .setPath("/") // send back from all pages
+      .build();
+
   }
 
 
   public static AuthRealmHandler createFrom(Router rootRouter, EraldyApiApp apiApp) {
     AuthRealmHandler authHandler = new AuthRealmHandler(apiApp);
-    String routePath = apiApp.getApexDomain().getAbsoluteLocalPath() + "/*";
-    rootRouter.route(routePath).handler(authHandler);
+    rootRouter.route().handler(authHandler);
     return authHandler;
   }
 
 
   private Future<Realm> getAuthRealm(RoutingContext routingContext) {
 
-    /**
-     * Eraldy domain except Member App ? If yes, we know the realm
-     * without accessing the database
-     */
+
     HttpServerRequest request = routingContext.request();
 
     RealmProvider realmProvider = apiApp.getRealmProvider();
 
 
     /**
+     * From Query String
+     */
+    String realmIdentifier = request.getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
+    if (realmIdentifier != null) {
+      return this.getAuthRealmFromDatabaseOrCookie(realmIdentifier, routingContext);
+    }
+
+    /**
      * From header
      */
-    String realmHandle = request.getHeader(X_AUTH_REALM_HEADER_HANDLE);
-    if (realmHandle != null) {
-      return realmProvider.getRealmFromHandle(realmHandle);
-    }
-    String realmGuid = request.getHeader(X_AUTH_REALM_HEADER_GUID);
-    if (realmGuid != null) {
-      return realmProvider.getRealmFromGuid(realmGuid);
+    realmIdentifier = request.getHeader(X_AUTH_REALM_IDENTIFIER);
+    if (realmIdentifier != null) {
+      return getAuthRealmFromDatabaseOrCookie(realmIdentifier, routingContext);
     }
 
     /**
-     * Determine with the database
+     * From the signed-in user
      */
-    return this.getAuthRealmFromHttpHost(routingContext);
+    try {
+      User user = this.apiApp.getAuthSignedInUser(routingContext);
+      return realmProvider.getRealmFromIdentifier(user.getRealm().getGuid());
+    } catch (NotFoundException e) {
+      // not signed in
+    }
+
+    /**
+     * From the cookie
+     */
+    try {
+      return Future.succeededFuture(this.getAuthRealmFromCookie(routingContext));
+    } catch (NullValueException e) {
+      //
+    }
+
+    return Future.succeededFuture(EraldyRealm.get().getRealm());
+
   }
 
+  private Realm getAuthRealmFromCookie(RoutingContext routingContext) throws NullValueException {
+    Realm realm = authRealmCookie.getValue(routingContext);
+    try {
+      Guid realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(realm.getGuid());
+      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      throw new RuntimeException(e);
+    }
+    return realm;
+  }
 
   /**
-   * @param routingContext - the request context
-   * @return the realm if found
+   *
+   * @param realmIdentifier - the realm identifier
+   * @param routingContext - the routing context
+   * @return the realm from the cookie if the identifier match otherwise from the database
    */
-  private Future<Realm> getAuthRealmFromHttpHost(RoutingContext routingContext) {
-    HttpServerRequest request = routingContext.request();
-
-    String authenticationScope = request.authority().host();
-    /**
-     * The scheme is mandatory
-     * Otherwise the host is seen as path
-     */
-    URI uri = URI.create(request.scheme() + "://" + authenticationScope);
+  private Future<Realm> getAuthRealmFromDatabaseOrCookie(String realmIdentifier, RoutingContext routingContext) {
     try {
-      AppProvider.validateDomainUri(uri);
-    } catch (IllegalStructure e) {
-      throw new InternalException("The URI (" + uri + ") is not valid." + e.getMessage(), e);
+      Realm realm = this.getAuthRealmFromCookie(routingContext);
+      if (this.apiApp.getRealmProvider().isIdentifierForRealm(realmIdentifier, realm)) {
+        return Future.succeededFuture(realm);
+      }
+    } catch (NullValueException e) {
+      // no realm cookie
     }
-
-    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
-    String sql = "SELECT realm.*, app_uri FROM cs_realms.realm INNER JOIN cs_realms.realm_app ON cs_realms.realm.realm_id = cs_realms.realm_app.app_realm_id and app_uri = $1 order by app_uri limit 1";
-    String likeScopeValue = uri.toString();
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(likeScopeValue))
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(realmRows -> {
-
-        if (realmRows.size() == 0) {
-          return Future.succeededFuture(null);
-        }
-
-        if (realmRows.size() != 1) {
-          return Future.failedFuture(new InternalException("The scope (" + authenticationScope + ") returns  more than one realm (" + realmRows.size() + ")"));
-        }
-
-        Row row = realmRows.iterator().next();
-
-        return apiApp.getRealmProvider().getRealmFromDatabaseRow(row, Realm.class);
-
-      });
+    return this.apiApp.getRealmProvider().getRealmFromIdentifier(realmIdentifier);
   }
 
 
@@ -150,9 +166,8 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
            * Because the realm is mandatory as the state is stored in the session
            * and that the session is realm dependent
            */
-          FrontEndCookie<Realm> authRealmCookie = getAuthRealmCookie(context);
           Realm frontEndRealm = apiApp.getRealmProvider().toEraldyFrontEnd(currentAuthRealm);
-          authRealmCookie.setValue(frontEndRealm);
+          authRealmCookie.setValue(frontEndRealm, context);
 
 
           /**
@@ -174,21 +189,10 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   public static Realm getFromRoutingContextKeyStore(RoutingContext routingContext) {
     Realm realm = routingContext.get(AuthRealmHandler.AUTH_REALM_CONTEXT_KEY);
     if (realm == null) {
-      throw new InternalException("The realm was not found, does the auth realm handler was executed before in the route hierarchy");
+      throw new InternalException("The authentication realm was not found, does the auth realm handler was executed before in the route hierarchy");
     }
     return realm;
   }
 
-  /**
-   * The cookie that stores the realm information when the front end is loaded
-   */
-  private FrontEndCookie<Realm> getAuthRealmCookie(RoutingContext routingContext) {
-
-    String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
-    return FrontEndCookie.conf(routingContext, cookieName, Realm.class)
-      .setPath("/") // send back from all pages
-      .build();
-
-  }
 
 }

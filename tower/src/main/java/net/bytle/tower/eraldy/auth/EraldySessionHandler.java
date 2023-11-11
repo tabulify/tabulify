@@ -286,7 +286,7 @@ public class EraldySessionHandler implements SessionHandler {
      * Destroyed Session
      */
     // invalidate the cookie as the session has been destroyed
-    final Cookie expiredCookie = context.response().removeCookie(this.getSessionCookieName());
+    final Cookie expiredCookie = context.response().removeCookie(this.getSessionCookieName(context));
     if (expiredCookie != null) {
       setCookieProperties(expiredCookie, true, context);
     }
@@ -309,9 +309,15 @@ public class EraldySessionHandler implements SessionHandler {
 
   }
 
-  private String getSessionCookieName() {
+  private String getSessionCookieName(RoutingContext routingContext) {
 
-    return eraldyDomain.getPrefixName() + "-session-id";
+    /**
+     * Session is at the realm level
+     * Meaning that a user can be logged in on 2 differents realms
+     * with the same browser
+     */
+    String realmHandle = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext).getHandle();
+    return eraldyDomain.getPrefixName() + "-session-id-"+realmHandle;
 
   }
 
@@ -396,7 +402,7 @@ public class EraldySessionHandler implements SessionHandler {
   public Session newSession(RoutingContext context) {
     Session session = sessionStore.createSession(sessionTimeout, minLength);
     ((RoutingContextInternal) context).setSession(session);
-    context.response().removeCookie(this.getSessionCookieName(), false);
+    context.response().removeCookie(this.getSessionCookieName(context), false);
     // it's a new session we must store the user too otherwise it won't be linked
     context.put(SESSION_STORE_USER_KEY, true);
 
@@ -407,7 +413,7 @@ public class EraldySessionHandler implements SessionHandler {
   }
 
   public Future<Void> setUser(RoutingContext context, User user) {
-    context.response().removeCookie(this.getSessionCookieName(), false);
+    context.response().removeCookie(this.getSessionCookieName(context), false);
     context.setUser(user);
     // signal we must store the user to link it to the session
     context.put(SESSION_STORE_USER_KEY, true);
@@ -420,7 +426,7 @@ public class EraldySessionHandler implements SessionHandler {
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.4
     // The user agent SHOULD sort the cookie-list in the following order:
     // Cookies with longer paths are listed before cookies with shorter paths.
-    Cookie cookie = context.request().getCookie(this.getSessionCookieName());
+    Cookie cookie = context.request().getCookie(this.getSessionCookieName(context));
     if (cookie != null) {
       // Look up sessionId
       return cookie.getValue();
@@ -487,7 +493,7 @@ public class EraldySessionHandler implements SessionHandler {
   private void createNewSession(RoutingContext context) {
     Session session = sessionStore.createSession(sessionTimeout, minLength);
     ((RoutingContextInternal) context).setSession(session);
-    context.response().removeCookie(this.getSessionCookieName(), false);
+    context.response().removeCookie(this.getSessionCookieName(context), false);
     // it's a new session we must store the user too otherwise it won't be linked
     context.put(SESSION_STORE_USER_KEY, true);
     addStoreSessionHandler(context);
@@ -498,7 +504,7 @@ public class EraldySessionHandler implements SessionHandler {
     // https://www.rfc-editor.org/rfc/rfc6265#section-5.4
     // The user agent SHOULD sort the cookie-list in the following order:
     // Cookies with longer paths are listed before cookies with shorter paths.
-    String sessionCookieName = getSessionCookieName();
+    String sessionCookieName = getSessionCookieName(context);
     Cookie cookie = context.request().getCookie(sessionCookieName);
     if (cookie != null) {
       return cookie;
@@ -516,6 +522,7 @@ public class EraldySessionHandler implements SessionHandler {
    * @param ctx the context
    * @return the domain session handler
    */
+  @SuppressWarnings("unused")
   public EraldySessionHandler upgradeSessionCookieToCrossCookie(RoutingContext ctx) {
     ctx.put(SESSION_COOKIE_SAME_SITE_KEY, CookieSameSite.NONE);
     return this;

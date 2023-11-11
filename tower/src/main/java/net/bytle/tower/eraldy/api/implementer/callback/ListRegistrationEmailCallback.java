@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowCallbackAbs;
@@ -17,7 +16,7 @@ public class ListRegistrationEmailCallback extends WebFlowCallbackAbs {
   }
 
   /**
-   * @return the operation path that is the origin
+   * @return the operation path that is the start point of the flow
    */
   public String getOriginOperationPath() {
     return "/auth/register/list";
@@ -36,9 +35,13 @@ public class ListRegistrationEmailCallback extends WebFlowCallbackAbs {
     } catch (IllegalStructure e) {
       return;
     }
-    ListRegistrationFlow.handleStep2EmailValidationLinkClick((EraldyApiApp) this.getWebFlow(), ctx, authUser);
+    getWebFlow().handleStep2EmailValidationLinkClick(ctx, authUser);
 
   }
 
+  @Override
+  public ListRegistrationFlow getWebFlow() {
+    return (ListRegistrationFlow) super.getWebFlow();
+  }
 
 }

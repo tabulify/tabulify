@@ -1092,6 +1092,20 @@ paths:
             text/html:
               schema:
                 type: string
+  /list/register/{listGuid}:
+    get:
+      operationId: listRegisterGet
+      summary: |
+        Register a user to a list
+        If the user is:
+          * not signed in, a redirection occurs to the page with the register form
+          * signed in, a redirection occurs to the confirmation page
+      tags:
+        - list
+      security: [ ]
+      responses:
+        '302':
+          description: "Redirect to the form or confirmation page"
   /list/register:
     post:
       operationId: listRegisterPost

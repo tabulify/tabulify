@@ -4,10 +4,11 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.SessionHandler;
 import net.bytle.java.JavaEnvs;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.PersistentLocalSessionStore;
 import net.bytle.vertx.TowerApexDomain;
 
-public class BrowserSessionHandler {
+public class AuthSessionHandler {
 
   /**
    * A handler that maintains a {@link io.vertx.ext.web.Session} for each browser session
@@ -29,8 +30,15 @@ public class BrowserSessionHandler {
    * <p>
    * Sessions can’t work if browser doesn’t support cookies.
    */
-  public static void addBrowserSessionHandler(Router rootRouter, TowerApexDomain apexDomain) {
+  public static void addAuthCookieSessionHandler(Router rootRouter, EraldyApiApp apiApp) {
 
+    /**
+     * Determine the auth realm and put it on the routingContext
+     * As a user can log in to only on realm, the session cookie has the name
+     * of the realm in its name
+     * This handler should then be before the session handler
+     */
+    AuthRealmHandler.createFrom(rootRouter, apiApp);
 
     /**
      * This is not a cookie store. Cookie store does not work well with CSRF
@@ -46,6 +54,7 @@ public class BrowserSessionHandler {
     if (JavaEnvs.IS_DEV) {
       syncInterval = PersistentLocalSessionStore.INTERVAL_5_SEC;
     }
+    TowerApexDomain apexDomain = apiApp.getApexDomain();
     PersistentLocalSessionStore sessionStore = PersistentLocalSessionStore
       .create(apexDomain.getHttpServer().getServer().getVertx(), syncInterval);
     /**
@@ -61,7 +70,6 @@ public class BrowserSessionHandler {
       .setSessionTimeout(idleSessionTimeoutMs)
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
 
-    //String routePath = apexDomain.getAbsoluteLocalPath() + "/*";
     rootRouter.route().handler(requestHandler);
 
   }

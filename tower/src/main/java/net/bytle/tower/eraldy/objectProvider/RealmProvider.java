@@ -564,4 +564,11 @@ public class RealmProvider {
   }
 
 
+  public boolean isIdentifierForRealm(String realmIdentifier, Realm realm) {
+    if(realm.getGuid().equals(realmIdentifier)){
+      return true;
+    }
+    return realm.getHandle().equals(realmIdentifier);
+  }
+
 }

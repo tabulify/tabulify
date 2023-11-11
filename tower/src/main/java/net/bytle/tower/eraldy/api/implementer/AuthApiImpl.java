@@ -19,13 +19,11 @@ import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
-import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
-import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.OAuthAccessTokenResponse;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.*;
 import net.bytle.vertx.flow.SmtpSender;
@@ -153,9 +151,8 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Realm is only eraldy for now
      */
-    String realmIdentifier;
     try {
-      realmIdentifier = this.utilGetRealmHandleFromRedirectUri(redirectUriEnhanced);
+      this.utilValidateRealmFromRedirectUri(redirectUriEnhanced);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
@@ -167,25 +164,36 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
+    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
+
+    /**
+     * Signed-in
+     */
     try {
-      this.apiApp.getAuthSignedInUser(routingContext);
-      routingContext.redirect(redirectUriEnhanced.toString());
-      return Future.succeededFuture();
+      User user = this.apiApp.getAuthSignedInUser(routingContext);
+      if (user.getRealm().getGuid().equals(authRealm.getGuid())) {
+        routingContext.redirect(redirectUriEnhanced.toString());
+        return Future.succeededFuture();
+      }
     } catch (NotFoundException e) {
-      UriEnhanced url = this.apiApp.getLoginUri(redirectUri, realmIdentifier);
-      routingContext.redirect(url.toString());
-      return Future.succeededFuture();
+      // Not signed in
     }
+
+    /**
+     * Not signed-in or realm different
+     */
+    UriEnhanced url = this.apiApp.getLoginUri(redirectUri, authRealm.getHandle());
+    routingContext.redirect(url.toString());
+    return Future.succeededFuture();
 
 
   }
 
-  private String utilGetRealmHandleFromRedirectUri(UriEnhanced redirectUriEnhanced) throws NotAuthorizedException {
+  private void utilValidateRealmFromRedirectUri(UriEnhanced redirectUriEnhanced) throws NotAuthorizedException {
     TowerApexDomain eraldyApexDomain = this.apiApp.getApexDomain();
     if (!(redirectUriEnhanced.getApexWithoutPort().equals("localhost") || redirectUriEnhanced.getApexWithoutPort().equals(eraldyApexDomain.getApexNameWithoutPort()))) {
       throw new NotAuthorizedException();
     }
-    return eraldyApexDomain.getRealmHandle();
   }
 
 
@@ -446,22 +454,10 @@ public class AuthApiImpl implements AuthApi {
       );
     }
 
-    String realmIdentifier;
-    try {
-      realmIdentifier = this.utilGetRealmHandleFromRedirectUri(redirectUriEnhanced);
-    } catch (NotAuthorizedException e) {
-      return Future.failedFuture(
-        VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.NOT_AUTHORIZED)
-          .setDescription("The redirect uri (" + redirectUri + ") is unknown")
-          .failContext(routingContext)
-          .setMimeToHtml()
-          .getFailedException()
-      );
-    }
+    Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
 
     String redirect = this.apiApp
-      .getLoginUri(redirectUriEnhanced.toString(), realmIdentifier)
+      .getLoginUri(redirectUriEnhanced.toString(), authRealm.getHandle())
       .toUrl()
       .toString();
 
