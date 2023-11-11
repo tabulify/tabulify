@@ -34,11 +34,9 @@ public enum OAuthQueryProperty {
    */
 
   /**
-   * The realm handle
+   * The realm identifier (guid or handle)
    */
-  REALM_HANDLE("realm_handle"),
-
-  REALM_GUID("realm_guid"),
+  REALM_IDENTIFIER("realm_identifier"),
 
   /**
    * The list guid

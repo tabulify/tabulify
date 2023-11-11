@@ -13,7 +13,6 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
-import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,14 +30,16 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
    * If the user login is known, we can add the `login` parameter
    */
   public static final String USER_EMAIL_SCOPE = "user:email";
+  public static final String GITHUB_TENANT = "github";
 
-  public OAuthExternalGithub(TowerApp towerApp, String clientId, String clientSecret) {
+  public OAuthExternalGithub(OAuthExternal oAuthExternal, String clientId, String clientSecret) {
 
     super(
+      oAuthExternal,
       /**
        * same as GithubAuth.create(verticle.getVertx(), this.clientId, this.clientSecret);
        */
-      OAuth2Auth.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), new OAuth2Options()
+      OAuth2Auth.create(oAuthExternal.getTowerApp().getApexDomain().getHttpServer().getServer().getVertx(), new OAuth2Options()
         .setHttpClientOptions(new HttpClientOptions())
         .setFlow(OAuth2FlowType.AUTH_CODE)
         .setClientId(clientId)
@@ -164,4 +165,10 @@ public class OAuthExternalGithub extends OAuthExternalProviderAbs {
 
       });
   }
+
+  @Override
+  public String getName() {
+    return GITHUB_TENANT;
+  }
+
 }

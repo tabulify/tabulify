@@ -11,19 +11,24 @@ import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
 public interface AuthApi  {
 
     /**
+     * Authorize is the main entrypoint for the login flow. If the user is already logged, the user is redirected to the redirect uri. If the user is not logged in, the user is redirected to the front end app.  It's an adaptation of the [OAuth authorization endpoint](https://datacadamia.com/iam/oauth/authorization_endpoint)
+    */
+    Future<ApiResponse<Void>> authLoginAuthorizeGet(RoutingContext routingContext, String redirectUri, String realmIdentifier);
+
+    /**
      * Login by sending an email with a login link
     */
     Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
 
     /**
-     * Exchange a code for an access token
+     * Exchange a oauth code for an access token
     */
     Future<ApiResponse<OAuthAccessTokenResponse>> authLoginOauthAccessTokenGet(RoutingContext routingContext, String code, String clientId, String clientSecret, String redirectUri);
 
     /**
      * Redirect to the external oauth authorization end point
     */
-    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String listGuid, String redirectUri, String realmHandle, String realmGuid);
+    Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String realmIdentifier, String listGuid);
 
     /**
      * The login form end point for password credentials

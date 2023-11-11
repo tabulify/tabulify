@@ -28,7 +28,7 @@ yarn dev
 ## Definition / Component
 
 It's defined by:
-* the [combo member app](../src/main/openapi/eraldy-member-openapi.yaml)
+* the [auth component of the api openapi](../src/main/openapi/eraldy-api-openapi.yaml)
 * the [Frontend Javascript app](../../../js-mono/apps/member)
 
 ## Name

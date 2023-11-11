@@ -50,6 +50,41 @@ paths:
       tags:
       - auth
       x-accepts: application/json
+  /auth/login/authorize:
+    get:
+      operationId: authLoginAuthorizeGet
+      parameters:
+      - description: The redirect uri (known also as callback endpoint)
+        explode: true
+        in: query
+        name: redirect_uri
+        required: true
+        schema:
+          example: https://client.example.com/callback
+          type: string
+        style: form
+      - description: |
+          The realm identifier (a realm guid or handle)
+        explode: true
+        in: query
+        name: realm_identifier
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "302":
+          description: The OAuth redirection URL to the authorization end point for
+            the provider
+      summary: |
+        Authorize is the main entrypoint for the login flow.
+        If the user is already logged, the user is redirected to the redirect uri.
+        If the user is not logged in, the user is redirected to the front end app.
+
+        It's an adaptation of the [OAuth authorization endpoint](https://datacadamia.com/iam/oauth/authorization_endpoint)
+      tags:
+      - auth
+      x-accepts: application/json
   /auth/login/oauth/{provider}:
     get:
       operationId: authLoginOauthProviderGet
@@ -79,26 +114,17 @@ paths:
         explode: true
         in: query
         name: redirect_uri
-        required: false
+        required: true
         schema:
           example: https://client.example.com/callback
           type: string
         style: form
       - description: |
-          The realm handle
+          The realm identifier (a realm guid or handle)
         explode: true
         in: query
-        name: realm_handle
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: |
-          The realm guid
-        explode: true
-        in: query
-        name: realm_guid
-        required: false
+        name: realm_identifier
+        required: true
         schema:
           type: string
         style: form
@@ -168,7 +194,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OAuthAccessTokenResponse'
           description: The Access token
-      summary: Exchange a code for an access token
+      summary: Exchange a oauth code for an access token
       tags:
       - auth
       x-accepts: text/json
@@ -1182,7 +1208,7 @@ paths:
         explode: true
         in: query
         name: redirect_uri
-        required: false
+        required: true
         schema:
           example: https://client.example.com/callback
           type: string
@@ -1260,23 +1286,13 @@ components:
       schema:
         type: string
       style: form
-    realm_handle:
+    realm_identifier:
       description: |
-        The realm handle
+        The realm identifier (a realm guid or handle)
       explode: true
       in: query
-      name: realm_handle
-      required: false
-      schema:
-        type: string
-      style: form
-    realm_guid:
-      description: |
-        The realm guid
-      explode: true
-      in: query
-      name: realm_guid
-      required: false
+      name: realm_identifier
+      required: true
       schema:
         type: string
       style: form
@@ -1285,7 +1301,7 @@ components:
       explode: true
       in: query
       name: redirect_uri
-      required: false
+      required: true
       schema:
         example: https://client.example.com/callback
         type: string

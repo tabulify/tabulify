@@ -63,7 +63,7 @@ public class AuthApiImpl implements AuthApi {
    * @param listGuid       - the list guid where to register the user (maybe null)
    */
   @Override
-  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String realmHandle, String realmGuid) {
+  public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String realmIdentifier) {
 
     /**
      * We don't rely on the argument because they can change of positions on the signature unfortunately
@@ -97,11 +97,15 @@ public class AuthApiImpl implements AuthApi {
      * The `get` request may come from another website
      * and the {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)} should not be used
      */
-    realmGuid = routingContext.request().getParam(OAuthQueryProperty.REALM_GUID.toString());
-    realmHandle = routingContext.request().getParam(OAuthQueryProperty.REALM_HANDLE.toString());
-    if (realmGuid == null && realmHandle == null) {
-      routingContext.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), new IllegalArgumentException("A realm query property (" + OAuthQueryProperty.REALM_HANDLE + " or " + OAuthQueryProperty.REALM_GUID + ") is madnatory."));
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
+    realmIdentifier = routingContext.request().getParam(OAuthQueryProperty.REALM_IDENTIFIER.toString());
+    if (realmIdentifier == null) {
+      return Future.failedFuture(
+        VertxRoutingFailureData.create()
+          .setStatus(HttpStatus.BAD_REQUEST)
+          .setDescription("A realm query property identifier (" + OAuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
+          .failContext(routingContext)
+          .getFailedException()
+      );
     }
 
 
@@ -109,21 +113,27 @@ public class AuthApiImpl implements AuthApi {
      * Create the Oauth URL of the provider
      * and redirect to it
      */
-    OAuthExternal oAuthExternal;
+    ;
+    OAuthExternalProvider oAuthExternalProvider;
     try {
-      oAuthExternal = OAuthExternal.get(provider);
+      oAuthExternalProvider = this.apiApp.getOAuthExternal().getProvider(provider);
     } catch (NotFoundException e) {
       return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The OAuth provider (" + provider + ") is unknown", "provider", provider));
     }
-    return oAuthExternal
-      .getAuthorizeUrl(routingContext, listGuid)
-      .compose(url -> {
-        routingContext.redirect(url);
-        return Future.succeededFuture();
-      });
+    String url = oAuthExternalProvider
+      .getAuthorizeUrl(routingContext, listGuid);
+    routingContext.redirect(url);
+
+    return Future.succeededFuture();
+
 
   }
 
+
+  @Override
+  public Future<ApiResponse<Void>> authLoginAuthorizeGet(RoutingContext routingContext, String redirectUri, String realmIdentifier) {
+    return null;
+  }
 
   @Override
   public Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {

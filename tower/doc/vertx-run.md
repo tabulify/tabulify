@@ -1,7 +1,7 @@
-# How to start the Vertx Web server?
+# How to start the Vertx API server?
 
 ## About
-This page shows you how you can start the vertx Webserver (ie backend)
+This page shows you how you can start the vertx API Webserver (ie backend)
 
 ## Principles: Two ways
 
@@ -30,7 +30,7 @@ works only with a fatjar.
 
 ### Main Class
 
-Via the [main class net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java),
+Via the [main method](../src/main/java/net/bytle/tower/VerticleApi.java),
 you can start it easily from the idea. Locate the `main` function, right click and start with or without debug.
 
 ## How to run
@@ -38,26 +38,19 @@ you can start it easily from the idea. Locate the `main` function, right click a
 
 * Databases: A [postgres instance](postgres.md) should be started.
 
-* Host file (on Windows: `C:\WINDOWS\system32\drivers\etc\hosts`)
-```
-127.0.0.1 member.eraldy.local
-127.0.0.1 api.eraldy.local
-127.0.0.1 combo.eraldy.local
-127.0.0.1 datacadamia.local
-```
 
 ### How to run it locally Without debug
 
 To run your application:
 
 From Idea:
-* Main Class: [net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java)
+* Main Class: [verticleAPI](../src/main/java/net/bytle/tower/VerticleApi.java)
 * Working Dir: `D:\code\bytle-mono\tower`
 
 From Idea with the main launcher
 * Main Class: [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)
 * VMOption: `-Denv=development`
-* Program Arguments: `run net.bytle.tower.MainVerticle` [net.bytle.tower.MainVerticle](../src/main/java/net/bytle/tower/MainVerticle.java)
+* Program Arguments: `run net.bytle.tower.VerticleApi` [net.bytle.tower.VerticleApi](../src/main/java/net/bytle/tower/VerticleApi.java)
 * Working Dir: `D:\code\bytle-mono\tower` (at the start, it will create a db and download the Ip data)
 
 From Gradle:
@@ -86,7 +79,7 @@ Otherwise, you can start with automatic reload
 ### With Debug
 
 From a HTTP request:
-* Start a Main Class ([net.bytle.tower.Main](../src/main/java/net/bytle/tower/Main.java) or [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)) in debug mode
+* Start a Main Class ([net.bytle.tower.Main](../src/main/java/net/bytle/tower/VerticleApi.java) or [net.bytle.vertx.MainLauncher](../../vertx/src/main/java/net/bytle/vertx/MainLauncher.java)) in debug mode
 * Put your break point
 * Create a request with the browser
 * Idea should stop on the break point

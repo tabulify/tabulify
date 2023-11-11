@@ -21,9 +21,7 @@ import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.auth.OAuthExternal;
-import net.bytle.vertx.auth.OAuthQueryProperty;
+import net.bytle.vertx.auth.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,6 +47,7 @@ public class EraldyApiApp extends TowerApp {
   private final UriEnhanced memberApp;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
+  private final OAuthExternal oauthExternal;
   private EmailLoginFlow emailLoginFlow;
 
   public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
@@ -71,6 +70,7 @@ public class EraldyApiApp extends TowerApp {
     this.userRegistrationFlow = new UserRegistrationFlow(this);
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
+    this.oauthExternal = new OAuthExternal(this, "/auth/oauth");
   }
 
 
@@ -140,7 +140,9 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Add the external OAuths
      */
-    OAuthExternal.build(this, router);
+    this.oauthExternal
+      .addExternal(OAuthExternalGithub.GITHUB_TENANT, router)
+      .addExternal(OAuthExternalGoogle.GOOGLE_TENANT, router);
 
     /**
      * Add the registration validation callback
@@ -222,7 +224,7 @@ public class EraldyApiApp extends TowerApp {
 
     return this.memberApp.setPath("/login")
       .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
-      .addQueryProperty(OAuthQueryProperty.REALM_HANDLE, this.getApexDomain().getRealmHandle());
+      .addQueryProperty(OAuthQueryProperty.REALM_IDENTIFIER, this.getApexDomain().getRealmHandle());
   }
 
 
@@ -330,7 +332,7 @@ public class EraldyApiApp extends TowerApp {
     Realm realm = new Realm();
     realm.setGuid(authUser.getAudience());
     try {
-      Guid realmGuid =  this.getRealmProvider().getGuidFromHash(authUser.getAudience());
+      Guid realmGuid = this.getRealmProvider().getGuidFromHash(authUser.getAudience());
       realm.setLocalId(realmGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
       throw new RuntimeException(e);
@@ -370,4 +372,9 @@ public class EraldyApiApp extends TowerApp {
 
 
   }
+
+  public OAuthExternal getOAuthExternal() {
+    return this.oauthExternal;
+  }
+
 }

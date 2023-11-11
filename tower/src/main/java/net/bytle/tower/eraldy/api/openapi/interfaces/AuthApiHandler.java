@@ -25,6 +25,7 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
+    builder.operation("authLoginAuthorizeGet").handler(this::authLoginAuthorizeGet);
     builder.operation("authLoginEmailPost").handler(this::authLoginEmailPost);
     builder.operation("authLoginOauthAccessTokenGet").handler(this::authLoginOauthAccessTokenGet);
     builder.operation("authLoginOauthProviderGet").handler(this::authLoginOauthProviderGet);
@@ -34,6 +35,24 @@ public void mount(RouterBuilder builder) {
     builder.operation("authLogoutGet").handler(this::authLogoutGet);
     builder.operation("authUserRegisterPost").handler(this::authUserRegisterPost);
 }
+
+    private void authLoginAuthorizeGet(RoutingContext routingContext) {
+    logger.info("authLoginAuthorizeGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realm_identifier") != null ? requestParameters.queryParameter("realm_identifier").getString() : null;
+
+      logger.debug("Parameter redirectUri is {}", redirectUri);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.authLoginAuthorizeGet(routingContext, redirectUri, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
 
     private void authLoginEmailPost(RoutingContext routingContext) {
     logger.info("authLoginEmailPost()");
@@ -81,19 +100,17 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
             String provider = requestParameters.pathParameter("provider") != null ? requestParameters.pathParameter("provider").getString() : null;
-        String listGuid = requestParameters.queryParameter("list_guid") != null ? requestParameters.queryParameter("list_guid").getString() : null;
         String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
-        String realmHandle = requestParameters.queryParameter("realm_handle") != null ? requestParameters.queryParameter("realm_handle").getString() : null;
-        String realmGuid = requestParameters.queryParameter("realm_guid") != null ? requestParameters.queryParameter("realm_guid").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realm_identifier") != null ? requestParameters.queryParameter("realm_identifier").getString() : null;
+        String listGuid = requestParameters.queryParameter("list_guid") != null ? requestParameters.queryParameter("list_guid").getString() : null;
 
       logger.debug("Parameter provider is {}", provider);
-      logger.debug("Parameter listGuid is {}", listGuid);
       logger.debug("Parameter redirectUri is {}", redirectUri);
-      logger.debug("Parameter realmHandle is {}", realmHandle);
-      logger.debug("Parameter realmGuid is {}", realmGuid);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+      logger.debug("Parameter listGuid is {}", listGuid);
 
     // Based on Route#respond
-    api.authLoginOauthProviderGet(routingContext, provider, listGuid, redirectUri, realmHandle, realmGuid)
+    api.authLoginOauthProviderGet(routingContext, provider, redirectUri, realmIdentifier, listGuid)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

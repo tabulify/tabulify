@@ -7,7 +7,6 @@ import io.vertx.ext.auth.oauth2.providers.GoogleAuth;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
-import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,9 +25,18 @@ import java.util.List;
 public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
 
 
-  public OAuthExternalGoogle(TowerApp towerApp, String clientId, String clientSecret) {
+  public static final String GOOGLE_TENANT = "google";
 
-    super(GoogleAuth.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), clientId, clientSecret, new HttpClientOptions()));
+  public OAuthExternalGoogle(OAuthExternal oAuthExternal, String clientId, String clientSecret) {
+
+    super(
+      oAuthExternal,
+      GoogleAuth.create(
+        oAuthExternal.getTowerApp().getApexDomain().getHttpServer().getServer().getVertx(),
+        clientId,
+        clientSecret,
+        new HttpClientOptions())
+    );
 
   }
 
@@ -97,6 +105,11 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
     user.setSubjectFamilyName(givenName);
     return Future.succeededFuture(user);
 
+  }
+
+  @Override
+  public String getName() {
+    return GOOGLE_TENANT;
   }
 
 }

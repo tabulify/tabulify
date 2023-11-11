@@ -117,14 +117,14 @@ components:
       name: response_type
       description: "The response type"
       in: query
-      required: false # not mandatory for first party redirect
+      required: false # by default, session cookie for first party
       schema:
         type: string
     client_id:
       name: client_id
       description: "The client id (the app guid)"
       in: query
-      required: false # not mandatory for first party redirect
+      required: false # not mandatory for session cookie response type
       schema:
         type: string
     state:
@@ -133,23 +133,15 @@ components:
         The [state](https://datacadamia.com/iam/oauth/state) is a opaque value with the initial navigational state of the user.
         The state is mandatory because its encoded value permits to validate the callback
         and therefore to avoid a CSRF.
-      required: false # not mandatory for first party redirect
+      required: false # not mandatory for session cookie response type
       in: query
       schema:
         type: string
-    realm_handle:
-      name: realm_handle
+    realm_identifier:
+      name: realm_identifier
       description: |
-        The realm handle
-      required: false # not mandatory (maybe given via realm handle)
-      in: query
-      schema:
-        type: string
-    realm_guid:
-      name: realm_guid
-      description: |
-        The realm guid
-      required: false # not mandatory (maybe given via realm handle)
+        The realm identifier (a realm guid or handle)
+      required: true
       in: query
       schema:
         type: string
@@ -157,7 +149,7 @@ components:
       name: redirect_uri
       description: "The redirect uri (known also as callback endpoint)"
       in: query
-      required: false # not always required (for instance, for list registration)
+      required: true
       schema:
         type: string
         # format: uri (uri is not supported as url parameter format)
@@ -183,6 +175,23 @@ paths:
       responses:
         default:
           description: successful operation
+  /auth/login/authorize:
+    get:
+      operationId: "authLoginAuthorizeGet"
+      summary: |
+        Authorize is the main entrypoint for the login flow.
+        If the user is already logged, the user is redirected to the redirect uri.
+        If the user is not logged in, the user is redirected to the front end app.
+
+        It's an adaptation of the [OAuth authorization endpoint](https://datacadamia.com/iam/oauth/authorization_endpoint)
+      tags:
+        - auth
+      parameters:
+        - $ref: "#/components/parameters/redirect_uri"
+        - $ref: "#/components/parameters/realm_identifier"
+      responses:
+        '302':
+          description: "The OAuth redirection URL to the authorization end point for the provider"
   /auth/login/oauth/{provider}:
     get:
       operationId: "authLoginOauthProviderGet"
@@ -206,8 +215,7 @@ paths:
             type: string
           example: 'lis-xxxx'
         - $ref: "#/components/parameters/redirect_uri"
-        - $ref: "#/components/parameters/realm_handle"
-        - $ref: "#/components/parameters/realm_guid"
+        - $ref: "#/components/parameters/realm_identifier"
       responses:
         '302':
           description: "The OAuth redirection URL to the authorization end point for the provider"
@@ -226,7 +234,7 @@ paths:
   /auth/login/oauth/access_token:
     get:
       operationId: "authLoginOauthAccessTokenGet"
-      summary: Exchange a code for an access token
+      summary: Exchange a oauth code for an access token
       tags:
         - auth
       parameters:
