@@ -21,8 +21,8 @@ import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.VertxCsrf;
 import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthInternalSession;
-import net.bytle.vertx.auth.OAuthQueryProperty;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,7 +84,7 @@ public class FrontEndRouter {
 
     if (routingContext.user() == null) {
       String message = "You should be logged in.";
-      String redirectUri = routingContext.request().getParam(OAuthQueryProperty.REDIRECT_URI.toString());
+      String redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
       if (redirectUri != null) {
         message += " Click <a href=\"" + redirectUri + "\">here</a> to log in.";
       }
@@ -101,7 +101,7 @@ public class FrontEndRouter {
        * Redirect URI is mandatory
        */
       try {
-        AuthApiImpl.getRedirectUri(routingContext);
+        AuthApiImpl.utilGetRedirectUri(routingContext);
       } catch (NotFoundException e) {
         VertxRoutingFailureData.create()
           .setName("Redirect Uri is mandatory")
@@ -146,9 +146,9 @@ public class FrontEndRouter {
      * is not the good one
      */
     HttpServerRequest request = routingContext.request();
-    String inTypeRequest = request.getParam(OAuthQueryProperty.RESPONSE_TYPE.toString());
-    String inClientId = request.getParam(OAuthQueryProperty.CLIENT_ID.toString());
-    String inState = request.getParam(OAuthQueryProperty.STATE.toString());
+    String inTypeRequest = request.getParam(AuthQueryProperty.RESPONSE_TYPE.toString());
+    String inClientId = request.getParam(AuthQueryProperty.CLIENT_ID.toString());
+    String inState = request.getParam(AuthQueryProperty.STATE.toString());
 
     /**
      * Session is mandatory
@@ -160,11 +160,11 @@ public class FrontEndRouter {
 
     UriEnhanced redirectUriAsUri;
     try {
-      redirectUriAsUri = AuthApiImpl.getRedirectUri(routingContext);
+      redirectUriAsUri = AuthApiImpl.utilGetRedirectUri(routingContext);
     } catch (ValidationException e) {
       return Future.failedFuture(e);
     } catch (NotFoundException e) {
-      return Future.failedFuture(ValidationException.create("The redirect uri was not found", OAuthQueryProperty.REDIRECT_URI.toString(), null));
+      return Future.failedFuture(ValidationException.create("The redirect uri was not found", AuthQueryProperty.REDIRECT_URI.toString(), null));
     }
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
 
@@ -180,7 +180,7 @@ public class FrontEndRouter {
      */
     String outClientId;
     if (!isFirstPartyRequest && inClientId == null) {
-      throw ValidationException.create("The client id cannot be null for a third party domain", OAuthQueryProperty.CLIENT_ID.toString(), null);
+      throw ValidationException.create("The client id cannot be null for a third party domain", AuthQueryProperty.CLIENT_ID.toString(), null);
     } else {
       outClientId = redirectUriAsUri.getSubDomain();
     }
@@ -196,7 +196,7 @@ public class FrontEndRouter {
     String outResponseType;
     if (!isFirstPartyRequest) {
       if (inTypeRequest == null) {
-        throw ValidationException.create("The response type cannot be null for a third party domain", OAuthQueryProperty.RESPONSE_TYPE.toString(), null);
+        throw ValidationException.create("The response type cannot be null for a third party domain", AuthQueryProperty.RESPONSE_TYPE.toString(), null);
       }
       OAuthResponseType oAuthResponseType;
       try {

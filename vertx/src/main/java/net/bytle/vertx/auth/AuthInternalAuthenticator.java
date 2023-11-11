@@ -252,9 +252,9 @@ public class AuthInternalAuthenticator {
         if (inState == null) {
           throw new NotFoundException("The session state is null");
         }
-        redirection.addQueryProperty(OAuthQueryProperty.STATE.toString(), inState);
+        redirection.addQueryProperty(AuthQueryProperty.STATE.toString(), inState);
         String authCode = OAuthCodeManagement.createOrGet().createAuthorizationAndGetCode(sessionRedirectionUrl, authUser);
-        redirection.addQueryProperty(OAuthQueryProperty.CODE.toString(), authCode);
+        redirection.addQueryProperty(AuthQueryProperty.CODE.toString(), authCode);
       }
       return redirection;
     }

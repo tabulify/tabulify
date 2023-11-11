@@ -14,7 +14,7 @@ public class Authorization {
 
     User signedInUser;
     try {
-      signedInUser = apiApp.getSignedInUser(routingContext.getRoutingContext());
+      signedInUser = apiApp.getAuthSignedInUser(routingContext.getRoutingContext());
     } catch (NotFoundException e) {
       return notAuthorized(routingContext);
     }

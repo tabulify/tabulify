@@ -162,16 +162,12 @@ paths:
       tags:
         - auth
       parameters:
-        - name: redirect_uri
+        - $ref: "#/components/parameters/redirect_uri"
           description: |
             After a logout, the user is redirect to the login page
             redirect_uri is the redirection URL after a successful login
             If the value is not set, the referer is used instead if found
             or an error is returned
-          in: query
-          schema:
-            type: string
-            # format: uri - not supported by OpenApi generator
       responses:
         default:
           description: successful operation
@@ -180,18 +176,22 @@ paths:
       operationId: "authLoginAuthorizeGet"
       summary: |
         Authorize is the main entrypoint for the login flow.
+
         If the user is already logged, the user is redirected to the redirect uri.
         If the user is not logged in, the user is redirected to the front end app.
 
         It's an adaptation of the [OAuth authorization endpoint](https://datacadamia.com/iam/oauth/authorization_endpoint)
       tags:
         - auth
+      security: [ ] # open
       parameters:
         - $ref: "#/components/parameters/redirect_uri"
-        - $ref: "#/components/parameters/realm_identifier"
       responses:
         '302':
-          description: "The OAuth redirection URL to the authorization end point for the provider"
+          description: |
+            Redirect:
+              * to the redirect_uri if the user is already logged in
+              * to the login page if the user is not logged in
   /auth/login/oauth/{provider}:
     get:
       operationId: "authLoginOauthProviderGet"

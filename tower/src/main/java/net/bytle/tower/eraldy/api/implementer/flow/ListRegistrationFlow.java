@@ -355,7 +355,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
          */
         UriEnhanced redirectUri = null;
         try {
-          redirectUri = AuthApiImpl.getRedirectUri(routingContext);
+          redirectUri = AuthApiImpl.utilGetRedirectUri(routingContext);
         } catch (IllegalArgumentException e) {
           return Future.failedFuture(e);
         } catch (NotFoundException e) {

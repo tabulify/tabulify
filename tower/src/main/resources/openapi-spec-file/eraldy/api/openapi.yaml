@@ -31,16 +31,13 @@ paths:
     get:
       operationId: authLogoutGet
       parameters:
-      - description: |
-          After a logout, the user is redirect to the login page
-          redirect_uri is the redirection URL after a successful login
-          If the value is not set, the referer is used instead if found
-          or an error is returned
+      - description: The redirect uri (known also as callback endpoint)
         explode: true
         in: query
         name: redirect_uri
-        required: false
+        required: true
         schema:
+          example: https://client.example.com/callback
           type: string
         style: form
       responses:
@@ -63,21 +60,16 @@ paths:
           example: https://client.example.com/callback
           type: string
         style: form
-      - description: |
-          The realm identifier (a realm guid or handle)
-        explode: true
-        in: query
-        name: realm_identifier
-        required: true
-        schema:
-          type: string
-        style: form
       responses:
         "302":
-          description: The OAuth redirection URL to the authorization end point for
-            the provider
+          description: |
+            Redirect:
+              * to the redirect_uri if the user is already logged in
+              * to the login page if the user is not logged in
+      security: []
       summary: |
         Authorize is the main entrypoint for the login flow.
+
         If the user is already logged, the user is redirected to the redirect uri.
         If the user is not logged in, the user is redirected to the front end app.
 

@@ -150,7 +150,7 @@ public class RealmApiImpl implements RealmApi {
 
     User signedInUser;
     try {
-       signedInUser = this.apiApp.getSignedInUser(routingContext);
+       signedInUser = this.apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()

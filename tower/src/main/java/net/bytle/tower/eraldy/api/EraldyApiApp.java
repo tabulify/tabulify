@@ -220,11 +220,11 @@ public class EraldyApiApp extends TowerApp {
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
    */
-  public UriEnhanced getLoginUriForEraldyRealm(String redirectUri) {
+  public UriEnhanced getLoginUri(String redirectUri, String realmIdentifier) {
 
     return this.memberApp.setPath("/login")
-      .addQueryProperty(OAuthQueryProperty.REDIRECT_URI, redirectUri)
-      .addQueryProperty(OAuthQueryProperty.REALM_IDENTIFIER, this.getApexDomain().getRealmHandle());
+      .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri)
+      .addQueryProperty(AuthQueryProperty.REALM_IDENTIFIER, realmIdentifier);
   }
 
 
@@ -323,7 +323,7 @@ public class EraldyApiApp extends TowerApp {
    * @return the authenticated user (only auth information ie id, guid, email, ...)
    * @throws NotFoundException - not authenticated
    */
-  public User getSignedInUser(RoutingContext ctx) throws NotFoundException {
+  public User getAuthSignedInUser(RoutingContext ctx) throws NotFoundException {
     io.vertx.ext.auth.User user = ctx.user();
     if (user == null) {
       throw new NotFoundException();

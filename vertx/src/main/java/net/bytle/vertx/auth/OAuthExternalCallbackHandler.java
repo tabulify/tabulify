@@ -84,7 +84,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     }
 
     // Handle the callback of the flow
-    final String code = ctx.request().getParam(OAuthQueryProperty.CODE.toString());
+    final String code = ctx.request().getParam(AuthQueryProperty.CODE.toString());
 
     // code is a require value
     if (code == null) {
@@ -100,7 +100,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     // an opaque random string (to protect against replay attacks)
     // or if there was no session available the target resource to
     // server after validation
-    final String state = ctx.request().getParam(OAuthQueryProperty.STATE.toString());
+    final String state = ctx.request().getParam(AuthQueryProperty.STATE.toString());
     if (state == null) {
       ctx.fail(400, new IllegalStateException("Missing IdP state parameter to the callback endpoint"));
       return;

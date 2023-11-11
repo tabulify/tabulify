@@ -66,12 +66,10 @@ http.ssl: true
 # Historically, it was `eraldy.dev` because Google made it mandatory to have a TLD but not anymore
 eraldy.apex.domain: 'localhost'
 
+## The member frontend (in prod: https://member.eraldy.com)
+member.app.uri: 'https://localhost:5175'
+# the combo app is at 5176
 
-# Deprecated: 2023-11-09
-# Where to forward the request
-# for the frontend apps (member and app)
-# eraldy.member.forward.proxy.port: 5175
-# eraldy.combo.forward.proxy.port: 5176
 # Proxy all request through fiddler for debugging purpose
 # By default off, set this to true and starts fiddler to see the internal
 # forward proxy request

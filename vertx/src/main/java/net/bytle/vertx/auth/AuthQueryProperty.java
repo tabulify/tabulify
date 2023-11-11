@@ -1,9 +1,9 @@
 package net.bytle.vertx.auth;
 
 /**
- * The query properties used in a OAuth request or response
+ * The query properties used in a auth request or response
  */
-public enum OAuthQueryProperty {
+public enum AuthQueryProperty {
 
   /**
    * Where to redirect when the auth is successful or not
@@ -45,7 +45,7 @@ public enum OAuthQueryProperty {
 
   private final String key;
 
-  OAuthQueryProperty(String redirectUri) {
+  AuthQueryProperty(String redirectUri) {
     this.key = redirectUri;
   }
 

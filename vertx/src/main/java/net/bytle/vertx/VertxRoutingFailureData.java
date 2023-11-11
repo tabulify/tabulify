@@ -224,6 +224,10 @@ public class VertxRoutingFailureData {
     return this;
   }
 
+  public VertxRoutingFailureData setMimeToHtml() {
+    this.mime = MediaTypes.TEXT_HTML;
+    return this;
+  }
   public MediaTypes getMime() {
     return this.mime;
   }

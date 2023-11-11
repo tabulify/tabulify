@@ -43,13 +43,11 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
             String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
-        String realmIdentifier = requestParameters.queryParameter("realm_identifier") != null ? requestParameters.queryParameter("realm_identifier").getString() : null;
 
       logger.debug("Parameter redirectUri is {}", redirectUri);
-      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.authLoginAuthorizeGet(routingContext, redirectUri, realmIdentifier)
+    api.authLoginAuthorizeGet(routingContext, redirectUri)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

@@ -82,7 +82,7 @@ public class UserApiImpl implements UserApi {
 
     User signedInUser;
     try {
-      signedInUser = apiApp.getSignedInUser(routingContext);
+      signedInUser = apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
