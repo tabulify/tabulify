@@ -89,16 +89,35 @@ public class ApiVertxSupport {
     * Json
     */
     ObjectMapper jsonMapper = apiResponse.getJsonMapper();
-    if (jsonMapper!=null) {
+    if (jsonMapper != null) {
       ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-      String json;
-      try {
-        json = jsonMapper.writeValueAsString(data);
-      } catch (JsonProcessingException e) {
-        ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
-        return;
+      StringBuilder json = new StringBuilder();
+      if (data instanceof Collection) {
+        Collection<Object> datas;
+        json.append("[");
+        datas = Casts.castToCollection(data, Object.class);
+        for (Object object : datas) {
+          try {
+            json.append(jsonMapper.writeValueAsString(object));
+          } catch (JsonProcessingException e) {
+            ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
+            return;
+          }
+        }
+        json.append("]");
+      } else {
+        /**
+         * Single value
+         */
+        try {
+          json.append(jsonMapper.writeValueAsString(data));
+        } catch (JsonProcessingException e) {
+          ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
+          return;
+        }
       }
-      ctx.response().end(json);
+
+      ctx.response().end(json.toString());
       return;
     }
     ctx.json(data);

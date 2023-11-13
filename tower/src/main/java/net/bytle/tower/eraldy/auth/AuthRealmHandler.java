@@ -20,6 +20,8 @@ import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.auth.AuthQueryProperty;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -33,6 +35,7 @@ import net.bytle.vertx.auth.AuthQueryProperty;
  */
 public class AuthRealmHandler implements Handler<RoutingContext> {
 
+  static Logger LOGGER = LogManager.getLogger(AuthRealmHandler.class);
   /**
    * The realm key in the vertx routing context
    */
@@ -51,6 +54,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     String cookieName = this.apiApp.getApexDomain().getPrefixName() + "-auth-realm";
     this.authRealmCookie = FrontEndCookie.conf(cookieName, Realm.class)
       .setPath("/") // send back from all pages
+      .setJsonMapper(this.apiApp.getRealmProvider().getPublicJsonMapper())
       .build();
 
   }
@@ -111,20 +115,26 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
   }
 
   private Realm getAuthRealmFromCookie(RoutingContext routingContext) throws NullValueException {
-    Realm realm = authRealmCookie.getValue(routingContext);
+    Realm realm;
+    try {
+      realm = authRealmCookie.getValue(routingContext);
+    } catch (CastException e) {
+      LOGGER.error("Error while reading the auth realm cookie", e);
+      throw new NullValueException();
+    }
     try {
       Guid realmGuid = this.apiApp.getRealmProvider().getGuidFromHash(realm.getGuid());
       realm.setLocalId(realmGuid.getRealmOrOrganizationId());
     } catch (CastException e) {
-      throw new RuntimeException(e);
+      LOGGER.error("Error while reading the auth realm guid", e);
+      throw new NullValueException();
     }
     return realm;
   }
 
   /**
-   *
    * @param realmIdentifier - the realm identifier
-   * @param routingContext - the routing context
+   * @param routingContext  - the routing context
    * @return the realm from the cookie if the identifier match otherwise from the database
    */
   private Future<Realm> getAuthRealmFromDatabaseOrCookie(String realmIdentifier, RoutingContext routingContext) {
@@ -161,13 +171,13 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
 
 
           /**
-           * We need to set the realm in a cookie for OAuth callback
-           * Why?
+           * We need to set the realm in a cookie
+           * * for the frontend. They read and get the realm this way.
+           * * for OAuth callback. Why?
            * Because the realm is mandatory as the state is stored in the session
-           * and that the session is realm dependent
+           * and that the session is realm dependent.
            */
-          Realm frontEndRealm = apiApp.getRealmProvider().toEraldyFrontEnd(currentAuthRealm);
-          authRealmCookie.setValue(frontEndRealm, context);
+          authRealmCookie.setValue(currentAuthRealm, context);
 
 
           /**

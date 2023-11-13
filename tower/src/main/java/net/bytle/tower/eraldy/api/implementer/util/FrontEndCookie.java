@@ -1,13 +1,15 @@
 package net.bytle.tower.eraldy.api.implementer.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.type.Base64Utility;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * We pass data to the frontend via cookie
@@ -18,12 +20,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class FrontEndCookie<T> {
 
-  private static final Logger LOGGER = LogManager.getLogger(FrontEndCookie.class);
-
   private static final String COOKIE_DATA_NAME = "data";
   private final String cookieName;
   private String cookiePath;
   private final Class<? extends T> aClass;
+  private ObjectMapper jsonMapper;
 
   public FrontEndCookie(String cookieName, Class<T> aClass) {
     this.cookieName = cookieName;
@@ -55,8 +56,20 @@ public class FrontEndCookie<T> {
    * @param value - the value should be serializable to Json (ie Map<String, Object> or a pojo)
    */
   public void setValue(T value, RoutingContext routingContext) {
-    JsonObject json = JsonObject.mapFrom(value);
-    Cookie cookie = Cookie.cookie(this.cookieName, Base64Utility.stringToBase64UrlString(json.toString()))
+
+    String stringValue;
+    if (jsonMapper == null) {
+      JsonObject json = JsonObject.mapFrom(value);
+      stringValue = json.toString();
+    } else {
+      try {
+        stringValue = jsonMapper.writeValueAsString(value);
+      } catch (JsonProcessingException e) {
+        throw new InternalException(e);
+      }
+    }
+
+    Cookie cookie = Cookie.cookie(this.cookieName, Base64Utility.stringToBase64UrlString(stringValue))
       .setHttpOnly(false)
       .setSameSite(CookieSameSite.STRICT);
     if (this.cookiePath != null) {
@@ -65,19 +78,29 @@ public class FrontEndCookie<T> {
     routingContext.response().addCookie(cookie);
   }
 
-  public T getValue(RoutingContext routingContext) throws NullValueException {
+  public T getValue(RoutingContext routingContext) throws NullValueException, CastException {
     Cookie value = routingContext.request().getCookie(this.cookieName);
     if (value == null) {
       throw new NullValueException();
     }
     String rawValue = value.getValue();
+    /**
+     * Decode from base64
+     */
+    String json;
     try {
-      String json = Base64Utility.base64UrlStringToString(rawValue);
+      json = Base64Utility.base64UrlStringToString(rawValue);
+    } catch (Exception e) {
+      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") from base64 with the value: (" + rawValue + ")");
+    }
+    /**
+     * Decode Json to Object
+     */
+    try {
       return (new JsonObject(json)).mapTo(this.aClass);
     } catch (Exception e) {
       // should not occur but in dev, it may
-      LOGGER.error("We were unable to decode the frontend cookie (cookieName: " + this.cookieName + ", value: " + rawValue + ")");
-      throw new NullValueException();
+      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") to the class (" + this.aClass + ") with the value: " + json + ")");
     }
   }
 
@@ -85,6 +108,7 @@ public class FrontEndCookie<T> {
     private final String cookieName;
     private final Class<T> aClass;
     private String cookiePath;
+    private ObjectMapper jsonMapper;
 
     public Conf(String cookieName, Class<T> aClass) {
       this.cookieName = cookieName;
@@ -99,7 +123,13 @@ public class FrontEndCookie<T> {
     public FrontEndCookie<T> build() {
       FrontEndCookie<T> frontendCookie = new FrontEndCookie<>(cookieName, this.aClass);
       frontendCookie.cookiePath = cookiePath;
+      frontendCookie.jsonMapper = jsonMapper;
       return frontendCookie;
+    }
+
+    public Conf<T> setJsonMapper(ObjectMapper jsonMapper) {
+      this.jsonMapper = jsonMapper;
+      return this;
     }
   }
 }

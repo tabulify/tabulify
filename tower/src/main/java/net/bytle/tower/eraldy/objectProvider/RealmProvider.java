@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -15,6 +16,10 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
+import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
@@ -60,9 +65,23 @@ public class RealmProvider {
   private final PgPool jdbcPool;
   private final EraldyApiApp apiApp;
 
+  /**
+   * The json mapper for public realm
+   * to create json without any localId and
+   * double realm information
+   */
+  private final ObjectMapper publicRealmJsonMapper;
+
   public RealmProvider(EraldyApiApp apiApp) {
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
     this.apiApp = apiApp;
+    this.publicRealmJsonMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+      .createNewJsonMapper()
+      .addMixIn(Realm.class, RealmPublicMixin.class)
+      .addMixIn(RealmAnalytics.class, RealmPublicMixin.class)
+      .addMixIn(Organization.class, OrganizationPublicMixin.class)
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .addMixIn(App.class, AppPublicMixinWithoutRealm.class);
   }
 
 
@@ -86,9 +105,8 @@ public class RealmProvider {
     clone.setLocalId(null);
     clone.setOrganization(apiApp.getOrganizationProvider().toPublicClone(realm.getOrganization()));
     clone.setOwnerUser(this.apiApp.getUserProvider().toPublicCloneWithoutRealm(realm.getOwnerUser()));
-    return  clone;
+    return clone;
   }
-
 
 
   /**
@@ -552,23 +570,15 @@ public class RealmProvider {
   }
 
 
-  /**
-   * @param realm - a realm
-   * @return a realm for the frontend (ie name is not null, guid is computed and id is null)
-   */
-  public Realm toEraldyFrontEnd(Realm realm) {
-    Realm frontEndRealm = JsonObject.mapFrom(realm).mapTo(Realm.class);
-    frontEndRealm.setLocalId(null);
-    frontEndRealm.setName(getNameOrHandle(frontEndRealm));
-    return frontEndRealm;
-  }
-
 
   public boolean isIdentifierForRealm(String realmIdentifier, Realm realm) {
-    if(realm.getGuid().equals(realmIdentifier)){
+    if (realm.getGuid().equals(realmIdentifier)) {
       return true;
     }
     return realm.getHandle().equals(realmIdentifier);
   }
 
+  public ObjectMapper getPublicJsonMapper() {
+    return this.publicRealmJsonMapper;
+  }
 }

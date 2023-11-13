@@ -52,8 +52,8 @@ public class Casts {
 
       if (sourceObjectClass.isArray()) {
         if (!targetClass.isArray()) {
-          if(targetClass.equals(String.class)){
-             String[] values = castToArray(sourceObject, String.class);
+          if (targetClass.equals(String.class)) {
+            String[] values = castToArray(sourceObject, String.class);
             //noinspection unchecked
             return (T) String.join(", ", values);
           }
@@ -461,5 +461,24 @@ public class Casts {
     } catch (CastException e) {
       throw new ClassCastException(e.getMessage());
     }
+  }
+
+  public static <T> Collection<T> castToCollection(Object o, Class<T> tClass) {
+    if (o == null) {
+      return null;
+    }
+    if (o instanceof Collection) {
+      Collection<?> array = ((Collection<?>) o);
+      for (Object object : array) {
+        Class<?> elementClass = object.getClass();
+        if (!elementClass.equals(tClass)) {
+          throw new ClassCastException("The class of an element is " + elementClass + " and should be " + tClass);
+        }
+      }
+      //noinspection unchecked
+      return (Collection<T>) array;
+    }
+    throw new ClassCastException("The object (" + o + ") is not a collection but a " + o.getClass().getSimpleName());
+
   }
 }

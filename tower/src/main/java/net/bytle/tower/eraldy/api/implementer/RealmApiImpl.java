@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.api.implementer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.NotFoundException;
@@ -8,10 +7,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.Authorization;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
@@ -19,7 +14,6 @@ import net.bytle.vertx.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A protection/user space
@@ -32,23 +26,11 @@ public class RealmApiImpl implements RealmApi {
 
 
   private final EraldyApiApp apiApp;
-  /**
-   * The json mapper for public realm
-   * to create json without any localId and
-   * double realm information
-   */
-  private final ObjectMapper publicRealmJsonMapper;
+
 
   public RealmApiImpl(@SuppressWarnings("unused") TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.publicRealmJsonMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
-      .createNewJsonMapper()
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(RealmAnalytics.class, RealmPublicMixin.class)
-      .addMixIn(Organization.class, OrganizationPublicMixin.class)
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-    ;
+
   }
 
   @Override
@@ -64,8 +46,9 @@ public class RealmApiImpl implements RealmApi {
       .upsertRealm(realm)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(newRealm -> {
-          Realm newRealmPublic = realmProvider.toPublicClone(newRealm);
-          return Future.succeededFuture(new ApiResponse<>(newRealmPublic));
+          ApiResponse<Realm> response = new ApiResponse<>(newRealm)
+            .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
+          return Future.succeededFuture(response);
         }
       );
 
@@ -119,7 +102,7 @@ public class RealmApiImpl implements RealmApi {
           );
         }
         ApiResponse<RealmAnalytics> result = new ApiResponse<>(realm)
-          .setMapper(this.publicRealmJsonMapper);
+          .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
 
         return Future.succeededFuture(result);
       });
@@ -150,7 +133,7 @@ public class RealmApiImpl implements RealmApi {
 
     User signedInUser;
     try {
-       signedInUser = this.apiApp.getAuthSignedInUser(routingContext);
+      signedInUser = this.apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
@@ -164,12 +147,10 @@ public class RealmApiImpl implements RealmApi {
     return realmProvider
       .getRealmsForOwner(signedInUser, RealmAnalytics.class)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(realms -> {
-        List<RealmAnalytics> realmPublics = realms.stream()
-          .map(realmProvider::toPublicClone)
-          .collect(Collectors.toList());
-        return Future.succeededFuture(new ApiResponse<>(realmPublics));
-      });
+      .compose(realms -> Future.succeededFuture(
+        new ApiResponse<>(realms)
+          .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
+      );
   }
 
 }
