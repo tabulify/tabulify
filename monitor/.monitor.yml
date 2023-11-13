@@ -10,7 +10,7 @@ api.token.days.before.expiration.failure: 30
 # smtp
 mail.smtp.default.hostname: localhost
 mail.smtp.default.port: 25
-mail.smtp.default.sender: nico@bytle.net
+mail.smtp.default.sender: nico@eraldy.com
 # mail.smtp.default.username: 'nico@bytle.net'
 # see also in secret
 # mail.smtp.default.password

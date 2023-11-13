@@ -14,7 +14,10 @@ It will check:
 The machine should be created first. See [](./doc/monitor-fly-machine-init.md)
 
 Then deploy by updating the image.
-
+* new secret? (Return an error but secret where imported)
+```bash
+fly secrets import < .monitor.secret.env
+```
 * with gradle
 ```bash
 ..\gradlew deploy

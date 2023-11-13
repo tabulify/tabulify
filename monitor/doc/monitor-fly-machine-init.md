@@ -25,11 +25,15 @@ fly ips allocate-v6
 Then secret
 * Secret
 ```bash
-fly secrets set monitor_api_token_cloudflare=xxxx
+fly secrets import < .monitor.secret.env
 fly secrets set monitor_mail_smtp_default_password=xxxx
 ```
 
 Then create the image with the run command
 ```bash
 fly machine run . --schedule daily --restart no --name eraldy-monitor
+```
+or change
+```bash
+fly machine update 683d920b195638 --schedule daily --restart no
 ```
