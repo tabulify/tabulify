@@ -4,9 +4,11 @@ import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
 import net.bytle.email.BMailSmtpConnectionParameters;
+import net.bytle.ovh.OvhApiClient;
 import net.bytle.vertx.ConfigMailSmtpParameters;
 import net.bytle.vertx.ConfigManager;
 import net.bytle.vertx.MailServiceSmtpProvider;
@@ -33,6 +35,11 @@ public class MonitorMain extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) {
 
+    vertx.exceptionHandler(throwable -> {
+      this.handleGeneralFailure(throwable);
+      vertx.close();
+    });
+
     LOGGER.info("Monitor promise starting");
     ConfigManager.config("monitor", vertx, JsonObject.of())
       .build()
@@ -41,13 +48,19 @@ public class MonitorMain extends AbstractVerticle {
       .onSuccess(configAccessor -> {
         try {
 
+          LOGGER.info("Api client wrapper");
+          WebClient webClient = WebClient.create(vertx);
+          CloudflareApi cloudflareApi = CloudflareApi.create(webClient, configAccessor);
+          OvhApiClient ovhApi = OvhApiClient.builder("ovh", webClient)
+            .withConfigAccessor(configAccessor)
+            .build();
+
           LOGGER.info("Monitor Config");
           BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
           MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
-          CloudflareApi cloudflareApi = CloudflareApi.create(vertx, configAccessor);
+
 
           List<MonitorReport> monitorReports = new ArrayList<>();
-
           LOGGER.info("Monitor Starting the API Token check");
           MonitorReport apiTokenReport = MonitorApiToken.create(cloudflareApi, configAccessor).check();
           monitorReports.add(apiTokenReport);
@@ -60,12 +73,19 @@ public class MonitorMain extends AbstractVerticle {
           MonitorServices monitorServices = MonitorServices.create(cloudflareDns, sslNetClient, configAccessor);
           monitorReports.addAll(monitorServices.checkAll());
 
-          LOGGER.info("Monitor Mailing");
+          LOGGER.info("Monitor Backup");
+          String ovhVpsServiceName = "vps-427a1b7c.vps.ovh.ca";
+          MonitorBackup monitorBackup = MonitorBackup.create();
+          monitorReports.add(monitorBackup.check(ovhApi, ovhVpsServiceName));
+
+
+          LOGGER.info("Resolving and Mailing the result");
           List<Future<MonitorReport>> futureMonitorReportResolved = new ArrayList<>();
           for (MonitorReport monitorReport : monitorReports) {
             futureMonitorReportResolved.add(monitorReport.resolve());
           }
           Future.join(futureMonitorReportResolved)
+            .onFailure(this::handleGeneralFailure)
             .onSuccess(res -> {
               StringBuilder emailText = new StringBuilder();
               int failures = 0;

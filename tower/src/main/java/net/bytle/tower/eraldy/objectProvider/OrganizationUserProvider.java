@@ -17,7 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
-
+/**
+ * Organization User are the real customers
+ */
 public class OrganizationUserProvider {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(OrganizationUserProvider.class);

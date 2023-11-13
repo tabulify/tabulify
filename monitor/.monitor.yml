@@ -14,3 +14,11 @@ mail.smtp.default.sender: nico@bytle.net
 # mail.smtp.default.username: 'nico@bytle.net'
 # see also in secret
 # mail.smtp.default.password
+
+# Monitor key created
+# thanks to https://help.ovhcloud.com/csm/en-gb-api-getting-started-ovhcloud-api
+ovh.monitoring.endpoint: ovh-eu
+# as env in the secret file
+#ovh.application.key: my_app_key
+#ovh.application.secret: my_application_secret
+#ovh.consumer.key: my_consumer_key

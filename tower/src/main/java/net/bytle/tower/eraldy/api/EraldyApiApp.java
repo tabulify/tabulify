@@ -43,7 +43,7 @@ public class EraldyApiApp extends TowerApp {
   private final OrganizationProvider organizationProvider;
   private final ListRegistrationProvider listRegistrationProvider;
   private final ServiceProvider serviceProvider;
-  @SuppressWarnings("FieldCanBeLocal")
+  @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private final OrganizationUserProvider organizationUserProvider;
   private final UriEnhanced memberApp;
   private final UserRegistrationFlow userRegistrationFlow;

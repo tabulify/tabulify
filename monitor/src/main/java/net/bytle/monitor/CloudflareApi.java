@@ -1,6 +1,5 @@
 package net.bytle.monitor;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
@@ -27,17 +26,17 @@ public class CloudflareApi {
   private final String cloudflareApiBearer;
   private final WebClient webClient;
 
-  public CloudflareApi(Vertx vertx, ConfigAccessor configAccessor) throws ConfigIllegalException {
+  public CloudflareApi(WebClient webClient, ConfigAccessor configAccessor) throws ConfigIllegalException {
     this.cloudflareApiBearer = configAccessor.getString(API_TOKEN_CLOUDFLARE);
     if (this.cloudflareApiBearer == null) {
       throw new ConfigIllegalException("The config variable " + configAccessor.getPossibleVariableNames(API_TOKEN_CLOUDFLARE) + " was not found");
     }
     LOGGER.info("API token cloudflare found");
-    this.webClient = WebClient.create(vertx);
+    this.webClient = webClient;
   }
 
-  public static CloudflareApi create(Vertx vertx, ConfigAccessor configAccessor) throws ConfigIllegalException {
-    return new CloudflareApi(vertx, configAccessor);
+  public static CloudflareApi create(WebClient webClient, ConfigAccessor configAccessor) throws ConfigIllegalException {
+    return new CloudflareApi(webClient, configAccessor);
   }
 
   public HttpRequest<Buffer> getRequest(String absoluteUri) {
