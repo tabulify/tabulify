@@ -44,6 +44,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     towerApp = oAuthExternal.getTowerApp();
     this.oAuthExternal = oAuthExternal;
     this.prng = VertxContextPRNG.current(towerApp.getApexDomain().getHttpServer().getServer().getVertx());
+    LOGGER.info("The OAuth provider (" + this + ") was added with the callback URL: " + this.getCallbackOperationPath());
 
   }
 
@@ -125,12 +126,9 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     /**
      * We follow the same path as in the openApi file
      * The callback is saved hard core in the setting of GitHub
-     * It should be in dev `member.combostrap.local:8083`
      */
     String providerCallbackOperationPath = this.getCallbackOperationPath();
-    String callbackPublicURL = towerApp.getOperationUriForPublicHost(providerCallbackOperationPath).toUri().toString();
-    LOGGER.info("The calculated callback URL for the provider (" + this + ") is " + callbackPublicURL);
-    return callbackPublicURL;
+    return towerApp.getOperationUriForPublicHost(providerCallbackOperationPath).toUri().toString();
   }
 
   private String getCallbackOperationPath() {
