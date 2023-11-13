@@ -124,6 +124,7 @@ paths:
         "302":
           description: The OAuth redirection URL to the authorization end point for
             the provider
+      security: []
       summary: |
         Redirect to the external oauth authorization end point
       tags:
@@ -240,9 +241,9 @@ paths:
       - auth
       x-content-type: application/json
       x-accepts: application/json
-  /auth/user/register:
+  /auth/register/user:
     post:
-      operationId: authUserRegisterPost
+      operationId: authRegisterUserPost
       requestBody:
         $ref: '#/components/requestBodies/EmailPostBody'
       responses:
@@ -255,6 +256,47 @@ paths:
       tags:
       - auth
       x-content-type: application/json
+      x-accepts: application/json
+  /auth/register/list:
+    post:
+      operationId: authRegisterListPost
+      requestBody:
+        $ref: '#/components/requestBodies/ListRegistrationPostBody'
+      responses:
+        "200":
+          description: Email was send for validation
+        "204":
+          description: Email was send for validation
+      security: []
+      summary: Register a user to a list by sending an email for validation
+      tags:
+      - auth
+      x-content-type: application/json
+      x-accepts: application/json
+  /auth/register/list/{listGuid}:
+    get:
+      operationId: authRegisterListListGuidGet
+      parameters:
+      - description: The list guid
+        explode: false
+        in: path
+        name: listGuid
+        required: true
+        schema:
+          example: xklm
+          type: string
+        style: simple
+      responses:
+        "302":
+          description: Redirect to the form or confirmation page
+      security: []
+      summary: |
+        Register a user to a list
+        If the user is:
+          * not signed in, a redirection occurs to the page with the register form
+          * signed in, a redirection occurs to the confirmation page
+      tags:
+      - auth
       x-accepts: application/json
   /analytics/event:
     post:
@@ -1168,22 +1210,6 @@ paths:
       tags:
       - list
       x-accepts: text/html
-  /list/register:
-    post:
-      operationId: listRegisterPost
-      requestBody:
-        $ref: '#/components/requestBodies/ListRegistrationPostBody'
-      responses:
-        "200":
-          description: Email was send for validation
-        "204":
-          description: Email was send for validation
-      security: []
-      summary: Register a user to a list by sending an email for validation
-      tags:
-      - list
-      x-content-type: application/json
-      x-accepts: application/json
   /list/register/confirmation/{registration_guid}:
     get:
       operationId: listRegisterConfirmationRegistrationGet
@@ -1336,6 +1362,16 @@ components:
             $ref: '#/components/schemas/EmailIdentifier'
       description: A json object with only a email
       required: true
+    ListRegistrationPostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListRegistrationPostBody'
+      description: The data needed to register a user to a list
+      required: true
     CspViolationReportBody:
       content:
         application/json:
@@ -1384,16 +1420,6 @@ components:
           schema:
             $ref: '#/components/schemas/ListPostBody'
       description: The data needed to create a list
-      required: true
-    ListRegistrationPostBody:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
-      description: The data needed to register a user to a list
       required: true
   schemas:
     PasswordOnly:
@@ -1451,6 +1477,37 @@ components:
       required:
       - realmIdentifier
       - userEmail
+      type: object
+    ListRegistrationPostBody:
+      description: |
+        The data needed to register a user to a list
+        Note that a user email or a user id is required
+        (OpenAPI cannot describe that in a elegant way)
+        a user email or id is mandatory
+        a list id or guid is mandatory
+      example:
+        redirectUri: https://example.com/page
+        listGuid: listGuid
+        subscriberEmail: john@doe.com
+      properties:
+        subscriberEmail:
+          description: The email of the user that want to subscribe
+          example: john@doe.com
+          format: email
+          type: string
+        listGuid:
+          description: The public list id where the user should be registered
+          type: string
+        redirectUri:
+          description: where to redirect the user
+          example: https://example.com/page
+          format: uri
+          type: string
+      required:
+      - listGuid
+      - redirectUri
+      - subscriberEmail
+      title: Registration Request to a list
       type: object
     AnalyticsEventPost:
       additionalProperties: true
@@ -2606,37 +2663,6 @@ components:
       - oauth
       - email
       type: string
-    ListRegistrationPostBody:
-      description: |
-        The data needed to register a user to a list
-        Note that a user email or a user id is required
-        (OpenAPI cannot describe that in a elegant way)
-        a user email or id is mandatory
-        a list id or guid is mandatory
-      example:
-        redirectUri: https://example.com/page
-        listGuid: listGuid
-        subscriberEmail: john@doe.com
-      properties:
-        subscriberEmail:
-          description: The email of the user that want to subscribe
-          example: john@doe.com
-          format: email
-          type: string
-        listGuid:
-          description: The public list id where the user should be registered
-          type: string
-        redirectUri:
-          description: where to redirect the user
-          example: https://example.com/page
-          format: uri
-          type: string
-      required:
-      - listGuid
-      - redirectUri
-      - subscriberEmail
-      title: Registration Request to a list
-      type: object
     RegistrationShort:
       example:
         guid: xmmmN

@@ -3,10 +3,7 @@ package net.bytle.tower.eraldy.api.openapi.interfaces;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
-import net.bytle.tower.eraldy.model.openapi.OAuthAccessTokenResponse;
-import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
-import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
+import net.bytle.tower.eraldy.model.openapi.*;
 
 public interface AuthApi  {
 
@@ -51,7 +48,17 @@ public interface AuthApi  {
     Future<ApiResponse<Void>> authLogoutGet(RoutingContext routingContext, String redirectUri);
 
     /**
+     * Register a user to a list If the user is:   * not signed in, a redirection occurs to the page with the register form   * signed in, a redirection occurs to the confirmation page
+    */
+    Future<ApiResponse<Void>> authRegisterListListGuidGet(RoutingContext routingContext, String listGuid);
+
+    /**
+     * Register a user to a list by sending an email for validation
+    */
+    Future<ApiResponse<Void>> authRegisterListPost(RoutingContext routingContext, ListRegistrationPostBody listRegistrationPostBody);
+
+    /**
      * Register a user
     */
-    Future<ApiResponse<Void>> authUserRegisterPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
+    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
 }

@@ -26,6 +26,7 @@ public class AuthInternalAuthenticator {
 
   public static Config createWith(TowerApp apiApp, RoutingContext ctx, AuthUser user) {
     if (user.getSubject() == null) {
+      // The subject is the user id (for us, the user guid) and should be not null
       throw new InternalException("The authenticated user has no subject");
     }
     return new Config(apiApp, ctx, user);

@@ -25,11 +25,6 @@ public interface ListApi  {
     Future<ApiResponse<String>> listRegisterConfirmationRegistrationGet(RoutingContext routingContext, String registrationGuid, String redirectUri);
 
     /**
-     * Register a user to a list by sending an email for validation
-    */
-    Future<ApiResponse<Void>> listRegisterPost(RoutingContext routingContext, ListRegistrationPostBody listRegistrationPostBody);
-
-    /**
      * Get a registration object
     */
     Future<ApiResponse<Registration>> listRegistrationGet(RoutingContext routingContext, String guid, String listGuid, String subscriberEmail);

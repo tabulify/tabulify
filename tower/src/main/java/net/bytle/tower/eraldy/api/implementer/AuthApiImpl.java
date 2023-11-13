@@ -10,11 +10,9 @@ import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
-import net.bytle.exception.IllegalArgumentExceptions;
-import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.NotAuthorizedException;
-import net.bytle.exception.NotFoundException;
+import net.bytle.exception.*;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
@@ -467,6 +465,11 @@ public class AuthApiImpl implements AuthApi {
 
   }
 
+  @Override
+  public Future<ApiResponse<Void>> authRegisterListListGuidGet(RoutingContext routingContext, String listGuid) {
+    throw new InternalException("Not yet implemented");
+  }
+
 
   /**
    * Because of a bug on the order in parameters signature, we get the value
@@ -480,7 +483,7 @@ public class AuthApiImpl implements AuthApi {
    * @param routingContext - the routing context
    * @return the redirect Uri
    * @throws NotFoundException        - if not found
-   * @throws IllegalArgumentException - if it's not an URL string
+   * @throws IllegalArgumentException - if it's not a URL string
    */
   public static UriEnhanced utilGetRedirectUri(RoutingContext routingContext) throws NotFoundException {
     String redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
@@ -495,11 +498,16 @@ public class AuthApiImpl implements AuthApi {
   }
 
   @Override
-  public Future<ApiResponse<Void>> authUserRegisterPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
+  public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
     utilValidateEmailIdentifierDataUtil(emailIdentifier);
     return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, emailIdentifier);
   }
 
+  @Override
+  public Future<ApiResponse<Void>> authRegisterListPost(RoutingContext routingContext, ListRegistrationPostBody listRegistrationPostBody) {
+    return ListRegistrationFlow.handleStep1SendingValidationEmail(this.apiApp, routingContext, listRegistrationPostBody)
+      .compose(response -> Future.succeededFuture(new ApiResponse<>()));
+  }
 
   private void utilValidateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
     ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");

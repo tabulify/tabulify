@@ -9,7 +9,6 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.ListPostBody;
-import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("listGet").handler(this::listGet);
     builder.operation("listPost").handler(this::listPost);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
-    builder.operation("listRegisterPost").handler(this::listRegisterPost);
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
     builder.operation("listRegistrationLetterConfirmationGet").handler(this::listRegistrationLetterConfirmationGet);
     builder.operation("listRegistrationLetterValidationGet").handler(this::listRegistrationLetterValidationGet);
@@ -88,23 +86,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listRegisterConfirmationRegistrationGet(routingContext, registrationGuid, redirectUri)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listRegisterPost(RoutingContext routingContext) {
-    logger.info("listRegisterPost()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-      RequestParameter requestParameterBody = requestParameters.body();
-  ListRegistrationPostBody listRegistrationPostBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListRegistrationPostBody>(){}) : null;
-
-      logger.debug("Parameter listRegistrationPostBody is {}", listRegistrationPostBody);
-
-    // Based on Route#respond
-    api.listRegisterPost(routingContext, listRegistrationPostBody)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

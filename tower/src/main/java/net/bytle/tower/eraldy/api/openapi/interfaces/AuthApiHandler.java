@@ -9,6 +9,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
+import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
 import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
 import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
 import org.slf4j.Logger;
@@ -33,7 +34,9 @@ public void mount(RouterBuilder builder) {
     builder.operation("authLoginPasswordResetPost").handler(this::authLoginPasswordResetPost);
     builder.operation("authLoginPasswordUpdatePost").handler(this::authLoginPasswordUpdatePost);
     builder.operation("authLogoutGet").handler(this::authLogoutGet);
-    builder.operation("authUserRegisterPost").handler(this::authUserRegisterPost);
+    builder.operation("authRegisterListListGuidGet").handler(this::authRegisterListListGuidGet);
+    builder.operation("authRegisterListPost").handler(this::authRegisterListPost);
+    builder.operation("authRegisterUserPost").handler(this::authRegisterUserPost);
 }
 
     private void authLoginAuthorizeGet(RoutingContext routingContext) {
@@ -180,8 +183,41 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-    private void authUserRegisterPost(RoutingContext routingContext) {
-    logger.info("authUserRegisterPost()");
+    private void authRegisterListListGuidGet(RoutingContext routingContext) {
+    logger.info("authRegisterListListGuidGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listGuid = requestParameters.pathParameter("listGuid") != null ? requestParameters.pathParameter("listGuid").getString() : null;
+
+      logger.debug("Parameter listGuid is {}", listGuid);
+
+    // Based on Route#respond
+    api.authRegisterListListGuidGet(routingContext, listGuid)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void authRegisterListPost(RoutingContext routingContext) {
+    logger.info("authRegisterListPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+      RequestParameter requestParameterBody = requestParameters.body();
+  ListRegistrationPostBody listRegistrationPostBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListRegistrationPostBody>(){}) : null;
+
+      logger.debug("Parameter listRegistrationPostBody is {}", listRegistrationPostBody);
+
+    // Based on Route#respond
+    api.authRegisterListPost(routingContext, listRegistrationPostBody)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void authRegisterUserPost(RoutingContext routingContext) {
+    logger.info("authRegisterUserPost()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -192,7 +228,7 @@ public void mount(RouterBuilder builder) {
       logger.debug("Parameter emailIdentifier is {}", emailIdentifier);
 
     // Based on Route#respond
-    api.authUserRegisterPost(routingContext, emailIdentifier)
+    api.authRegisterUserPost(routingContext, emailIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

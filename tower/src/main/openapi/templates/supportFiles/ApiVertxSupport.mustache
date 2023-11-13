@@ -10,6 +10,8 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.vertx.HttpStatus;
 import net.bytle.vertx.TowerApp;
 import java.util.function.Function;
+import net.bytle.type.Casts;
+import java.util.Collection;
 
 {{#apiInfo}}{{#apis}}
 import {{apiPackage}}.{{classname}}Handler;

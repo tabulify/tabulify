@@ -17,7 +17,6 @@ import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
@@ -177,11 +176,6 @@ public class ListApiImpl implements ListApi {
 
   }
 
-  @Override
-  public Future<ApiResponse<Void>> listRegisterPost(RoutingContext routingContext, ListRegistrationPostBody listRegistrationPostBody) {
-    return ListRegistrationFlow.handleStep1SendingValidationEmail(this.apiApp, routingContext, listRegistrationPostBody)
-      .compose(response -> Future.succeededFuture(new ApiResponse<>()));
-  }
 
   @Override
   public Future<ApiResponse<String>> listRegisterConfirmationRegistrationGet(RoutingContext routingContext, String registrationGuid, String redirectUri) {

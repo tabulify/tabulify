@@ -199,6 +199,7 @@ paths:
         Redirect to the external oauth authorization end point
       tags:
         - auth
+      security: [ ] # open
       parameters:
         - name: provider
           description: "The OAuth provider"
@@ -313,9 +314,9 @@ paths:
           description: "Processed. An email was send for password resetting if it was found."
         '400':
           description: "The email provided is not valid"
-  /auth/user/register:
+  /auth/register/user:
     post:
-      operationId: "authUserRegisterPost"
+      operationId: "authRegisterUserPost"
       summary: "Register a user"
       tags:
         - auth
@@ -328,6 +329,43 @@ paths:
           description: "An email was send for validation"
         '400':
           description: "The email is not valid"
+  /auth/register/list:
+    post:
+      operationId: authRegisterListPost
+      summary: "Register a user to a list by sending an email for validation"
+      tags:
+        - auth
+      security: [ ]
+      requestBody:
+        required: true
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
+      responses:
+        '200':
+          description: "Email was send for validation"
+        '204':
+          description: "Email was send for validation"
+  /auth/register/list/{listGuid}:
+    get:
+      operationId: authRegisterListListGuidGet
+      summary: |
+        Register a user to a list
+        If the user is:
+          * not signed in, a redirection occurs to the page with the register form
+          * signed in, a redirection occurs to the confirmation page
+      tags:
+        - auth
+      security: [ ] # open
+      parameters:
+        - name: listGuid
+          description: "The list guid"
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "xklm"
+      responses:
+        '302':
+          description: "Redirect to the form or confirmation page"
   /analytics/event:
     post:
       operationId: analyticsEventPost
@@ -1092,35 +1130,6 @@ paths:
             text/html:
               schema:
                 type: string
-  /list/register/{listGuid}:
-    get:
-      operationId: listRegisterGet
-      summary: |
-        Register a user to a list
-        If the user is:
-          * not signed in, a redirection occurs to the page with the register form
-          * signed in, a redirection occurs to the confirmation page
-      tags:
-        - list
-      security: [ ]
-      responses:
-        '302':
-          description: "Redirect to the form or confirmation page"
-  /list/register:
-    post:
-      operationId: listRegisterPost
-      summary: "Register a user to a list by sending an email for validation"
-      tags:
-        - list
-      security: [ ]
-      requestBody:
-        required: true
-        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
-      responses:
-        '200':
-          description: "Email was send for validation"
-        '204':
-          description: "Email was send for validation"
   # callback
   /list/register/confirmation/{registration_guid}:
     get:
