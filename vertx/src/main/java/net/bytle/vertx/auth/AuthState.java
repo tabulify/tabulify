@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vertx.core.json.JsonObject;
 import net.bytle.type.Base64Utility;
 
+import static net.bytle.vertx.auth.AuthQueryProperty.REALM_IDENTIFIER;
+
 /**
  * A pojo to:
  * * define authentication state
@@ -40,7 +42,7 @@ public class AuthState {
    * @param listGuid - the list id
    */
   public void setListGuid(String listGuid) {
-    this.jsonObject.put(LIST_GUID,listGuid);
+    this.jsonObject.put(LIST_GUID, listGuid);
   }
 
   public String getListGuid() {
@@ -48,18 +50,24 @@ public class AuthState {
   }
 
 
-  public String getRandomValue() {
-    return this.jsonObject.getString(RANDOM_VALUE);
-  }
-
+  /**
+   * @param randomValue - a random value can be injected to mitigate replay attack
+   */
   public void setRandomValue(String randomValue) {
 
-    this.jsonObject.put(RANDOM_VALUE,randomValue);
+    this.jsonObject.put(RANDOM_VALUE, randomValue);
   }
 
   public String toUrlValue() {
-    String jsonString = JsonObject.mapFrom(this).toString();
-    return Base64Utility.stringToBase64UrlString(jsonString);
+    return Base64Utility.stringToBase64UrlString(this.jsonObject.toString());
+  }
+
+  public void setRealmIdentifier(String realmIdentifier) {
+    this.jsonObject.put(REALM_IDENTIFIER.toString(), realmIdentifier);
+  }
+
+  public String getRealmIdentifier() {
+    return this.jsonObject.getString(REALM_IDENTIFIER.toString());
   }
 
 }

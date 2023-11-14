@@ -1,5 +1,6 @@
 package net.bytle.vertx.auth;
 
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -13,22 +14,27 @@ import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.VertxRoutingFailureData;
 
+import java.util.List;
+
 /**
  * This class
  * * represents an authentication and can be passed around as event in a handler
  * * is a central entry point to authenticate the session in the whole application
  * * is a routing context extended with an auth user.
+ * * implements a handler manager with {@link #next()}
  * <p>
  * It will authenticate the session
- * and redirect the user
+ * and redirect the user when all handlers have been called
  */
-public class AuthSessionAuthenticator {
+public class AuthContext {
 
   private final RoutingContext ctx;
   private final AuthUser authUser;
   private final AuthState authState;
+  private List<Handler<AuthContext>> handlers;
+  private int handlerIndex = -1;
 
-  public AuthSessionAuthenticator(RoutingContext ctx, AuthUser user, AuthState authState) {
+  public AuthContext(RoutingContext ctx, AuthUser user, AuthState authState) {
     this.ctx = ctx;
     this.authUser = user;
     this.authState = authState;
@@ -39,12 +45,31 @@ public class AuthSessionAuthenticator {
     return this.authUser;
   }
 
-  public RoutingContext getContext() {
+  public RoutingContext getRoutingContext() {
     return this.ctx;
   }
 
   public AuthState getAuthState() {
     return this.authState;
+  }
+
+  /**
+   * Call the next handler
+   */
+  public void next() {
+
+    if (this.handlerIndex < this.handlers.size() - 1) {
+      handlerIndex++;
+      this.handlers.get(handlerIndex).handle(this);
+    } else {
+      this.authenticateLastHandler();
+    }
+
+  }
+
+  public AuthContext setHandlers(List<Handler<AuthContext>> oAuthSessionAuthenticationHandlers) {
+    this.handlers = oAuthSessionAuthenticationHandlers;
+    return this;
   }
 
 
@@ -64,7 +89,7 @@ public class AuthSessionAuthenticator {
    * We redirect to the frontend app to have a consistent design.
    * We don't validate the operation path for now other than with a visual / integration test.
    */
-  public AuthSessionAuthenticator redirectViaFrontEnd(String frontEndOperationPath) {
+  public AuthContext redirectViaFrontEnd(String frontEndOperationPath) {
     /**
      * We don't return an HTML template for consistency in the HTML app design
      * The user registers and gets the confirmation in the same design
@@ -74,18 +99,23 @@ public class AuthSessionAuthenticator {
     return this;
   }
 
-  public AuthSessionAuthenticator redirectViaHttp() {
+  public AuthContext redirectViaHttp() {
     this.redirectVia = RedirectionMethod.HTTP;
     return this;
   }
 
-  public AuthSessionAuthenticator redirectViaClient() {
+  public AuthContext redirectViaClient() {
     this.redirectVia = RedirectionMethod.NONE;
     return this;
   }
 
   public void authenticateSession() {
 
+    this.next();
+
+  }
+
+  private void authenticateLastHandler() {
     /**
      * Try to redirect
      * <p>
@@ -190,7 +220,6 @@ public class AuthSessionAuthenticator {
       default:
         throw new InternalException("The redirection method (" + this.redirectVia + ") is unknown");
     }
-
   }
 
   /**

@@ -1,7 +1,6 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -201,17 +200,9 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           ctx.session().destroy();
           ctx.fail(err);
         })
-        .onSuccess(authUser -> {
-
-          AuthSessionAuthenticator authSessionAuthenticator = new AuthSessionAuthenticator(ctx, authUser, authState);
-
-          for (Handler<AuthSessionAuthenticator> authHandler : oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers()) {
-            authHandler.handle(authSessionAuthenticator);
-          }
-
-          authSessionAuthenticator.authenticateSession();
-
-        });
+        .onSuccess(authUser -> new AuthContext(ctx, authUser, authState)
+          .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
+          .authenticateSession());
     });
   }
 

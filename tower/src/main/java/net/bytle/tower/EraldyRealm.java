@@ -48,7 +48,7 @@ public class EraldyRealm {
     realm.setOrganization(organization);
     // TODO: create the user and role on organization level
     User ownerUser = new User();
-    ownerUser.setName(apexDomain.getOwnerName());
+    ownerUser.setGivenName(apexDomain.getOwnerName());
     ownerUser.setEmail(apexDomain.getOwnerEmail());
     Realm clone = JsonObject.mapFrom(realm).mapTo(Realm.class);
     ownerUser.setRealm(clone); // to avoid recursion on com.fasterxml.jackson.databind

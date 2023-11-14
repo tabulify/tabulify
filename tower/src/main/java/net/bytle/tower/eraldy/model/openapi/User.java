@@ -132,7 +132,7 @@ public class User   {
   * @param name The short and informal name of the user (used in signature, known also as the given, calling or first name)
   */
   @SuppressWarnings("unused")
-  public void setName(String name) {
+  public void setGivenName(String name) {
     this.name = name;
   }
 

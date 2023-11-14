@@ -110,7 +110,7 @@ public class UserApiImpl implements UserApi {
     User userRequested = new User();
     userRequested.setGuid(userPostBody.getUserGuid());
     userRequested.setEmail(userPostBody.getUserEmail());
-    userRequested.setName(userPostBody.getUserName());
+    userRequested.setGivenName(userPostBody.getUserName());
     userRequested.setFullname(userPostBody.getUserFullname());
     userRequested.setTitle(userPostBody.getUserTitle());
     userRequested.setAvatar(userPostBody.getUserAvatar());

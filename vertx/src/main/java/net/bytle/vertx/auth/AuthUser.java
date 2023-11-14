@@ -237,4 +237,44 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_GIVEN_NAME.toString());
   }
 
+  public String getSubjectBio() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_BIO.toString());
+  }
+
+  public String getSubjectFamilyName() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_FAMILY_NAME.toString());
+  }
+
+  public String getSubjectLocation() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_LOCATION.toString());
+  }
+
+  public URI getSubjectBlog() {
+    try {
+      String blogUrl = claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_BLOG.toString());
+      if (blogUrl == null) {
+        return null;
+      }
+      return new URI(blogUrl);
+    } catch (URISyntaxException e) {
+      throw new InternalException("Should not happen because the setter is an URI", e);
+    }
+  }
+
+  public URI getSubjectAvatar() {
+    try {
+      String avatarUrl = claims.getString(AuthUserJwtClaims.CUSTOM_SUBJECT_AVATAR.toString());
+      if (avatarUrl == null) {
+        return null;
+      }
+      return new URI(avatarUrl);
+    } catch (URISyntaxException e) {
+      throw new InternalException("Avatar should be an URI because the setter is an URI", e);
+    }
+  }
+
+  public String getAudienceHandle() {
+    return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
+  }
+
 }

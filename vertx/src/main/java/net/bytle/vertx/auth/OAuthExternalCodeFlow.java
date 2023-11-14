@@ -25,7 +25,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   private final OAuthExternal oauthExternal;
 
 
-  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthSessionAuthenticator>> authHandlers) throws ConfigIllegalException {
+  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
     super(towerApp);
     this.oauthExternal = new OAuthExternal(towerApp, pathMount, authHandlers);
   }
@@ -64,15 +64,11 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   /**
    * @param routingContext - the context
    * @param provider       - the provider string
+   * @param authState - the auth state
    * @return redirect to the Oauth provider
    */
-  public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider) {
+  public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider, AuthState authState) {
 
-    /**
-     * We don't rely on the argument because they can change of positions on the signature unfortunately
-     * or in the openapi definition
-     */
-    String listGuid = routingContext.request().getParam(AuthQueryProperty.LIST_GUID.toString());
 
     /**
      * CallBack is mandatory
@@ -99,21 +95,6 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
 
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
 
-    /**
-     * Auth Realm is mandatory
-     * To be sure that we have the good realm
-     * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
-     */
-    String realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
-    if (realmIdentifier == null) {
-      return Future.failedFuture(
-        VertxRoutingFailureData.create()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-          .setDescription("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
-          .failContext(routingContext)
-          .getFailedException()
-      );
-    }
 
 
     /**
@@ -127,7 +108,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
       return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The OAuth provider (" + provider + ") is unknown", "provider", provider));
     }
     String redirectUrl = oAuthExternalProvider
-      .getAuthorizeUrl(routingContext, listGuid);
+      .getAuthorizeUrl(routingContext, authState);
     routingContext.redirect(redirectUrl);
     return Future.succeededFuture();
 

@@ -5,7 +5,7 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
@@ -58,7 +58,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
           ctx.fail(500, new InternalException("The user send by mail, does not exist"));
           return;
         }
-        new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+        new AuthContext(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
           .redirectViaHttp()
           .authenticateSession();
       });

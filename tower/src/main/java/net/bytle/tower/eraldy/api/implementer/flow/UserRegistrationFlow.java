@@ -18,7 +18,7 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
@@ -200,14 +200,14 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // Possible causes:
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
-              new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+              new AuthContext(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
                 .redirectViaHttp()
                 .authenticateSession();
               return;
             }
             userProvider.insertUser(user)
               .onFailure(ctx::fail)
-              .onSuccess(userInserted -> new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
+              .onSuccess(userInserted -> new AuthContext(ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
                 .authenticateSession()
               );
@@ -222,28 +222,50 @@ public class UserRegistrationFlow extends WebFlowAbs {
   /**
    * Handle when a user is authenticated via OAuth
    */
-  public Handler<AuthSessionAuthenticator> handleOAuthAuthentication() {
-    return authSessionAuthenticator -> {
-      //        /**
-//         * Retrieve the internal user from the realm and oauth user
-//         */
-//        Future<net.bytle.tower.eraldy.model.openapi.User> userFuture = oauthUserFuture
-//          .onFailure(err -> {
-//            ctx.session().destroy();
-//            ctx.fail(err);
-//          })
-//          .compose(oauthUser -> {
-//            Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(ctx);
-//
-//            oauthUser.setRealm(authRealm);
-//            /**
-//             * Create our principal
-//             */
-//            return oAuthExternal.apiApp.getUserProvider()
-//              .createOrPatchIfNull(oauthUser);
-//
-//          });
-      LOGGER.info(authSessionAuthenticator.getAuthUser().getSubject() + " authenticated");
+  public Handler<AuthContext> handleOAuthAuthentication() {
+    return authContext -> {
+
+      AuthUser authUser = authContext.getAuthUser();
+      if (authUser.getSubject() != null) {
+        authContext.next();
+        return;
+      }
+
+      String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
+      if (realmIdentifier == null) {
+        VertxRoutingFailureData.create()
+          .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+          .setDescription("For a user registration flow, the realm should have been set in the authentication state")
+          .failContext(authContext.getRoutingContext()
+          );
+        authContext.next();
+        return;
+      }
+
+      if (
+        this.getApp()
+          .getRealmProvider()
+          .isRealmGuidIdentifier(realmIdentifier)
+      ) {
+        authUser.setAudience(realmIdentifier);
+      } else {
+        authUser.setAudienceHandle(realmIdentifier);
+      }
+
+      /**
+       * Create our principal
+       */
+      User user = UsersUtil.toEraldyUser(authUser, this.getApp());
+      this.getApp()
+        .getUserProvider()
+        .createOrPatchIfNull(user)
+        .onSuccess(dbUser -> {
+          authUser.setSubject(dbUser.getGuid());
+          authUser.setAudience(dbUser.getRealm().getGuid());
+          authUser.setAudienceHandle(dbUser.getRealm().getHandle());
+          authContext.next();
+        });
+
     };
   }
 }

@@ -16,10 +16,10 @@ import net.bytle.vertx.flow.SmtpSender;
 public class UsersUtil {
 
   /**
-   * @deprecated use {@link BMailInternetAddress} instead
    * @param user - the user
    * @return the address email in rfc format as accepted by the email client
    * See <a href="https://vertx.io/docs/vertx-mail-client/java/#_sending_mails">...</a>
+   * @deprecated use {@link BMailInternetAddress} instead
    */
   @Deprecated
   public static String getEmailAddressWithName(User user) {
@@ -61,7 +61,6 @@ public class UsersUtil {
   }
 
 
-
   /**
    * @param user - the user
    * @return a user with default value that can be used for templating
@@ -72,7 +71,7 @@ public class UsersUtil {
     String defaultName;
     try {
       defaultName = UsersUtil.getNameOrNameFromEmail(user);
-      outputUser.setName(defaultName);
+      outputUser.setGivenName(defaultName);
     } catch (NotFoundException | AddressException e) {
       throw new InternalException("Should not occurs, a database user should have a valid email at least", e);
     }
@@ -105,7 +104,7 @@ public class UsersUtil {
   public static SmtpSender toSenderUser(User user) {
     SmtpSender smtpSender = new SmtpSender();
     try {
-      smtpSender.setName(UsersUtil.getNameOrNameFromEmail(user) );
+      smtpSender.setName(UsersUtil.getNameOrNameFromEmail(user));
     } catch (NotFoundException | AddressException e) {
       throw new InternalException(e);
     }
@@ -118,17 +117,30 @@ public class UsersUtil {
 
 
   public static User toEraldyUser(AuthUser authUser, EraldyApiApp eraldyApiApp) {
+
     Realm realm = new Realm();
-    realm.setGuid(authUser.getAudience());
-    try {
-      Guid realmGuid = eraldyApiApp.getRealmProvider().getGuidFromHash(authUser.getAudience());
-      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
-    } catch (CastException e) {
-      throw new RuntimeException(e);
+    /**
+     * Audience guid may be null when we get an Oauth user
+     */
+    String audience = authUser.getAudience();
+    if (audience != null) {
+      try {
+        realm.setGuid(audience);
+        Guid realmGuid = eraldyApiApp.getRealmProvider().getGuidFromHash(audience);
+        realm.setLocalId(realmGuid.getRealmOrOrganizationId());
+      } catch (CastException e) {
+        throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
+      }
     }
+    String audienceHandle = authUser.getAudienceHandle();
+    if (audienceHandle == null && audience ==null) {
+      throw new InternalException("The audience and the audience handle values should not be together null");
+    }
+    realm.setHandle(audienceHandle);
+
     User userEraldy = new User();
     userEraldy.setRealm(realm);
-    userEraldy.setName(authUser.getSubjectGivenName());
+    userEraldy.setGivenName(authUser.getSubjectGivenName());
     userEraldy.setEmail(authUser.getSubjectEmail());
     try {
       String subject = authUser.getSubject();
@@ -139,25 +151,12 @@ public class UsersUtil {
       throw new RuntimeException(e);
     }
 
+    userEraldy.setFullname(authUser.getSubjectGivenName() + " " + authUser.getSubjectFamilyName());
+    userEraldy.setBio(authUser.getSubjectBio());
+    userEraldy.setLocation(authUser.getSubjectLocation());
+    userEraldy.setWebsite(authUser.getSubjectBlog());
+    userEraldy.setAvatar(authUser.getSubjectAvatar());
     return userEraldy;
 
-    /**
-     * For OpenID Connect/OAuth2 Access Tokens,
-     * there is a rootClaim
-     */
-//    String rootClaim = user.attributes().getString("rootClaim");
-//    if (rootClaim != null && rootClaim.equals("accessToken")) {
-//      // JWT
-//      String userGuid = user.principal().getString("sub");
-//      if (userGuid == null) {
-//        return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
-//      }
-//      if(clazz.equals(OrganizationUser.class)) {
-//        //noinspection unchecked
-//        return (Future<T>) this
-//          .getOrganizationUserProvider()
-//          .getOrganizationUserByGuid(userGuid);
-//      }
-//    }
   }
 }

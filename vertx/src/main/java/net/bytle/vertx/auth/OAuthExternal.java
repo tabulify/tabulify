@@ -48,9 +48,9 @@ public class OAuthExternal {
   private final TowerApp towerApp;
   private final String pathMount;
 
-  private final List<Handler<AuthSessionAuthenticator>> authHandlers;
+  private final List<Handler<AuthContext>> authHandlers;
 
-  public OAuthExternal(TowerApp towerApp, String pathMount, List<Handler<AuthSessionAuthenticator>> authHandlers) throws ConfigIllegalException {
+  public OAuthExternal(TowerApp towerApp, String pathMount, List<Handler<AuthContext>> authHandlers) throws ConfigIllegalException {
     this.towerApp = towerApp;
     this.pathMount = pathMount;
     addExternalProvider(OAuthExternalGithub.GITHUB_TENANT);
@@ -134,7 +134,7 @@ public class OAuthExternal {
   }
 
 
-  public List<Handler<AuthSessionAuthenticator>> getOAuthSessionAuthenticationHandlers() {
+  public List<Handler<AuthContext>> getOAuthSessionAuthenticationHandlers() {
     return this.authHandlers;
   }
 }

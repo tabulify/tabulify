@@ -65,12 +65,38 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String realmIdentifier) {
 
+    /**
+     * We don't rely on the argument because they can change of positions on the signature unfortunately
+     * or in the openapi definition
+     */
+    listGuid = routingContext.request().getParam(AuthQueryProperty.LIST_GUID.toString());
+
+    /**
+     * Auth Realm is mandatory
+     * To be sure that we have the good realm
+     * in {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)}
+     */
+    realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
+    if (realmIdentifier == null) {
+      return Future.failedFuture(
+        VertxRoutingFailureData.create()
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setDescription("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
+          .failContext(routingContext)
+          .getFailedException()
+      );
+    }
+
+    AuthState authState = AuthState.createEmpty();
+    authState.setListGuid(listGuid);
+    authState.setRealmIdentifier(realmIdentifier);
 
     return this.apiApp
       .getOauthFlow()
       .step1RedirectToExternalIdentityProvider(
         routingContext,
-        provider
+        provider,
+        authState
       )
       .compose(
         v -> Future.succeededFuture(new ApiResponse<>()),
@@ -327,7 +353,7 @@ public class AuthApiImpl implements AuthApi {
             );
           }
           AuthUser authUser = UsersUtil.toAuthUserClaims(user);
-          new AuthSessionAuthenticator(routingContext, authUser, AuthState.createEmpty())
+          new AuthContext(routingContext, authUser, AuthState.createEmpty())
             .redirectViaClient()
             .authenticateSession();
           return Future.succeededFuture(new ApiResponse<>());

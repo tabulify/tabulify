@@ -77,10 +77,6 @@ public class UserProvider {
     return toPublicClone(user, false);
   }
 
-  public User toPublicCloneWithRealm(User user) {
-    return toPublicClone(user, true);
-  }
-
   private User toPublicClone(User user, Boolean withRealm) {
     User userClone = JsonObject.mapFrom(user).mapTo(User.class);
     if (withRealm) {
@@ -585,7 +581,7 @@ public class UserProvider {
         if (dbUser != null) {
           boolean patched = false;
           if (dbUser.getName() == null && user.getName() != null) {
-            dbUser.setName(user.getName());
+            dbUser.setGivenName(user.getName());
             patched = true;
           }
           if (dbUser.getFullname() == null && user.getFullname() != null) {
@@ -690,7 +686,7 @@ public class UserProvider {
   public User toTemplateCloneWithoutRealm(User user) {
     User templateClone = toPublicCloneWithoutRealm(user);
     try {
-      templateClone.setName(UsersUtil.getNameOrNameFromEmail(user));
+      templateClone.setGivenName(UsersUtil.getNameOrNameFromEmail(user));
     } catch (NotFoundException | AddressException e) {
       // should not happen
       throw new InternalException(e);

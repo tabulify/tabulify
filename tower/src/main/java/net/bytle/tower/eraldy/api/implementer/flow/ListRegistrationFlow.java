@@ -27,7 +27,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
@@ -62,7 +62,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
-    this.cookieData = FrontEndCookie.createCookieData( Registration.class);
+    this.cookieData = FrontEndCookie.createCookieData(Registration.class);
   }
 
   @Override
@@ -109,7 +109,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(ctx, registration);
-            new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
+            new AuthContext(ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .authenticateSession();
           });
@@ -129,7 +129,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
   public void addRegistrationConfirmationCookieData(RoutingContext routingContext, Registration registration) {
     Registration templateClone = this.getApp().getListRegistrationProvider()
       .toTemplateClone(registration);
-      this.cookieData.setValue(templateClone,routingContext);
+    this.cookieData.setValue(templateClone, routingContext);
   }
 
   /**
@@ -405,16 +405,17 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * If the user authenticate via a list, we register
    * the user to the list
    */
-  public Handler<AuthSessionAuthenticator> handleStepOAuthAuthentication() {
-    return authAuthenticator -> {
+  public Handler<AuthContext> handleStepOAuthAuthentication() {
+    return authContext -> {
 
-      String listGuid = authAuthenticator.getAuthState().getListGuid();
-      if(listGuid==null){
+      String listGuid = authContext.getAuthState().getListGuid();
+      if (listGuid == null) {
+        authContext.next();
         return;
       }
 
-      AuthUser authUser = authAuthenticator.getAuthUser();
-      RoutingContext ctx = authAuthenticator.getContext();
+      AuthUser authUser = authContext.getAuthUser();
+      RoutingContext ctx = authContext.getRoutingContext();
 
       /**
        * A list registration
@@ -431,6 +432,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
       User user = UsersUtil.toEraldyUser(authUser, this.getApp());
       this.authenticateAndRegisterUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH);
+      authContext.next();
 
     };
   }

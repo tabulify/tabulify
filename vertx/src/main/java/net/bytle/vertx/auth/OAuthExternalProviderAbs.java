@@ -11,6 +11,7 @@ import io.vertx.ext.auth.oauth2.OAuth2AuthorizationURL;
 import io.vertx.ext.auth.oauth2.Oauth2Credentials;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import net.bytle.exception.InternalException;
 import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,17 +70,20 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
   }
 
   @Override
-  public String getAuthorizeUrl(RoutingContext context, String listGuid) {
+  public String getAuthorizeUrl(RoutingContext context, AuthState authState) {
 
     final Session session = context.session();
-
     if (session == null) {
-      throw new IllegalStateException("A session is required");
+      throw new InternalException("A session is required");
     }
 
-    // Store the state in the session
-    String state = createState(listGuid).toUrlValue();
-    session.put(STATE_SESSION_KEY, state);
+    /**
+     * Add a random value to mitigate replay attacks
+     */
+    String random = prng.nextString(6);
+    authState.setRandomValue(random);
+    String stateUrlValue = authState.toUrlValue();
+    session.put(STATE_SESSION_KEY, stateUrlValue);
 
     // Pkce
     if (pkce > 0) {
@@ -91,31 +95,12 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     OAuth2AuthorizationURL authorizationURL = new
       OAuth2AuthorizationURL()
       .setRedirectUri(this.getCallbackPublicUri())
-      .setState(state)
+      .setState(stateUrlValue)
       .setScopes(getRequestedScopes());
 
     return this.authProvider.authorizeURL(authorizationURL);
   }
 
-  /**
-   * Create a state to mitigate replay attacks and add state
-   *
-   * @param listGuid - the list guid where to register
-   * @return the state with a random number
-   */
-  private AuthState createState(String listGuid) {
-
-
-    String random = prng.nextString(6);
-    AuthState authState = new AuthState(new JsonObject());
-    authState.setRandomValue(random);
-    if (listGuid != null) {
-      authState.setListGuid(listGuid);
-    }
-    return authState;
-
-
-  }
 
   public String getCallbackPublicUri() {
     /**

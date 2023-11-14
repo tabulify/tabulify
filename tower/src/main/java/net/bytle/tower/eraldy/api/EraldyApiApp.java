@@ -22,8 +22,8 @@ import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
+import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthQueryProperty;
-import net.bytle.vertx.auth.AuthSessionAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import org.apache.logging.log4j.LogManager;
@@ -81,7 +81,7 @@ public class EraldyApiApp extends TowerApp {
     this.userRegistrationFlow = new UserRegistrationFlow(this);
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
-    List<Handler<AuthSessionAuthenticator>> authHandlers = new ArrayList<>();
+    List<Handler<AuthContext>> authHandlers = new ArrayList<>();
     authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this,"/auth/oauth", authHandlers);

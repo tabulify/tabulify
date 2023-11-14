@@ -41,7 +41,7 @@ public interface OAuthExternalProvider {
    * we should call with a GET
    */
 
-  String getAuthorizeUrl(RoutingContext context, String listGuid);
+  String getAuthorizeUrl(RoutingContext context, AuthState authState);
 
   /**
    *

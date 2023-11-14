@@ -245,7 +245,7 @@ public class ListApiImpl implements ListApi {
 
         User registrationUser = new User();
         registrationUser.setRealm(listResult.getRealm());
-        registrationUser.setName(token.getUserName());
+        registrationUser.setGivenName(token.getUserName());
         registrationUser.setEmail(token.getUserEmail());
         Future<RegistrationList> listFuture = Future.succeededFuture(listResult);
         Future<User> user = apiApp.getUserProvider()

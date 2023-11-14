@@ -99,7 +99,6 @@ public class RealmProvider {
 
   public <T extends Realm> T toPublicClone(T realm) {
     // uses unchecked or unsafe operations.
-    //noinspection unchecked
     JsonObject entries = JsonObject.mapFrom(realm);
     T clone = (T) entries.mapTo(realm.getClass());
     clone.setLocalId(null);
@@ -557,11 +556,15 @@ public class RealmProvider {
 
   public <T extends Realm> Future<T> getRealmFromIdentifier(String realmIdentifier, Class<T> clazz) {
 
-    if (realmIdentifier.startsWith(REALM_GUID_PREFIX + Guid.GUID_SEPARATOR)) {
+    if (this.isRealmGuidIdentifier(realmIdentifier)) {
       return getRealmFromGuid(realmIdentifier, clazz);
     }
     return getRealmFromHandle(realmIdentifier, clazz);
 
+  }
+
+  public boolean isRealmGuidIdentifier(String realmIdentifier) {
+    return realmIdentifier.startsWith(REALM_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
 
