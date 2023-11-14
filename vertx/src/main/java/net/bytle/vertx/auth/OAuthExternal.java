@@ -80,7 +80,7 @@ public class OAuthExternal {
      * and the method is then shared in this object
      * {@link #getCallbackPublicRedirectUri()}
      */
-    oauthExternalProvider.addCallBackHandler(router);
+    oauthExternalProvider.addCallBackHandlers(router);
 
     /**
      * Add the provider

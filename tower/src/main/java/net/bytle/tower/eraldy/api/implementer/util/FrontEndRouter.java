@@ -17,11 +17,12 @@ import net.bytle.tower.util.OAuthResponseType;
 import net.bytle.type.Casts;
 import net.bytle.type.Enums;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApexDomain;
 import net.bytle.vertx.VertxCsrf;
 import net.bytle.vertx.VertxRoutingFailureData;
 import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.auth.OAuthInternalSession;
 
 import java.util.HashMap;
@@ -92,7 +93,7 @@ public class FrontEndRouter {
         .setDescription(message)
         .setName(message)
         .failContextAsHtml(routingContext);
-      return Future.succeededFuture(new ApiResponse<>(HttpStatus.NOT_AUTHORIZED.httpStatusCode()));
+      return Future.succeededFuture(new ApiResponse<>(HttpStatusEnum.NOT_AUTHORIZED_401.getStatusCode()));
     }
 
 
@@ -101,13 +102,13 @@ public class FrontEndRouter {
        * Redirect URI is mandatory
        */
       try {
-        AuthApiImpl.utilGetRedirectUri(routingContext);
+        OAuthExternalCodeFlow.getRedirectUri(routingContext);
       } catch (NotFoundException e) {
         VertxRoutingFailureData.create()
           .setName("Redirect Uri is mandatory")
           .setDescription("The redirect URI is mandatory and was not found")
           .failContextAsHtml(routingContext);
-        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
+        return Future.succeededFuture(new ApiResponse<>(HttpStatusEnum.BAD_REQUEST_400.getStatusCode()));
       }
     }
 
@@ -160,7 +161,7 @@ public class FrontEndRouter {
 
     UriEnhanced redirectUriAsUri;
     try {
-      redirectUriAsUri = AuthApiImpl.utilGetRedirectUri(routingContext);
+      redirectUriAsUri = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (ValidationException e) {
       return Future.failedFuture(e);
     } catch (NotFoundException e) {

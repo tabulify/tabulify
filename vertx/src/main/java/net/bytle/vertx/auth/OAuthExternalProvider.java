@@ -21,7 +21,7 @@ public interface OAuthExternalProvider {
 
   Future<AuthUser> getEnrichedUser(RoutingContext ctx, JsonObject userInfo, String accessToken);
 
-  void addCallBackHandler(Router router);
+  void addCallBackHandlers(Router router);
 
   /**
    * @return a unique name

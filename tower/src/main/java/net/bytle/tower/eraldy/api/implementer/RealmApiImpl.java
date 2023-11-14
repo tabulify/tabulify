@@ -63,7 +63,7 @@ public class RealmApiImpl implements RealmApi {
         if (realm == null) {
           return Future.failedFuture(
             VertxRoutingFailureData.create()
-              .setStatus(HttpStatus.NOT_FOUND)
+              .setStatus(HttpStatusEnum.NOT_FOUND_404)
               .setDescription("The realm was not found")
               .getFailedException()
           );
@@ -96,7 +96,7 @@ public class RealmApiImpl implements RealmApi {
         if (realm == null) {
           return Future.failedFuture(
             VertxRoutingFailureData.create()
-              .setStatus(HttpStatus.NOT_FOUND)
+              .setStatus(HttpStatusEnum.NOT_FOUND_404)
               .setDescription("The realm was not found")
               .getFailedException()
           );
@@ -137,7 +137,7 @@ public class RealmApiImpl implements RealmApi {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.NOT_FOUND)
+          .setStatus(HttpStatusEnum.NOT_FOUND_404)
           .setDescription("You should be logged in")
           .getFailedException()
       );

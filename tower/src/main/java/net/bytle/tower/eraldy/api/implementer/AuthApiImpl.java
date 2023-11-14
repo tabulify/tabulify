@@ -10,7 +10,10 @@ import io.vertx.json.schema.ValidationException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
-import net.bytle.exception.*;
+import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NotAuthorizedException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
@@ -62,65 +65,17 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginOauthProviderGet(RoutingContext routingContext, String provider, String redirectUri, String listGuid, String realmIdentifier) {
 
-    /**
-     * We don't rely on the argument because they can change of positions on the signature unfortunately
-     * or in the openapi definition
-     */
-    listGuid = routingContext.request().getParam(AuthQueryProperty.LIST_GUID.toString());
 
-    /**
-     * CallBack is mandatory
-     * We don't rely on the argument because they can change of positions on the signature unfortunately
-     */
-    UriEnhanced redirectUriAsUri;
-    try {
-      redirectUriAsUri = utilGetRedirectUri(routingContext);
-      OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
-    } catch (NotFoundException e) {
-      /**
-       * For a user registration, the redirect uri is mandatory
-       * For a list registration, it's not as the flow may end in the confirmation page
-       */
-      if (listGuid == null) {
-        routingContext.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), new IllegalArgumentException("Internal Error: the (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client could not be found. Was it passed or set on the login endpoint?"));
-        return Future.succeededFuture(new ApiResponse<>(HttpStatus.BAD_REQUEST.httpStatusCode()));
-      }
-    } catch (IllegalArgumentException e) {
-      return Future.failedFuture(e);
-    }
-
-    /**
-     * Auth Realm is mandatory
-     * The `get` request may come from another website
-     * and the {@link AuthRealmHandler#getAuthRealmCookie(RoutingContext)} should not be used
-     */
-    realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
-    if (realmIdentifier == null) {
-      return Future.failedFuture(
-        VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.BAD_REQUEST)
-          .setDescription("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
-          .failContext(routingContext)
-          .getFailedException()
+    return this.apiApp
+      .getOauthFlow()
+      .step1RedirectToExternalIdentityProvider(
+        routingContext,
+        provider
+      )
+      .compose(
+        v -> Future.succeededFuture(new ApiResponse<>()),
+        Future::failedFuture
       );
-    }
-
-
-    /**
-     * Create the Oauth URL of the provider
-     * and redirect to it
-     */
-    OAuthExternalProvider oAuthExternalProvider;
-    try {
-      oAuthExternalProvider = this.apiApp.getOAuthExternal().getProvider(provider);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(IllegalArgumentExceptions.createWithInputNameAndValue("The OAuth provider (" + provider + ") is unknown", "provider", provider));
-    }
-    String url = oAuthExternalProvider
-      .getAuthorizeUrl(routingContext, listGuid);
-    routingContext.redirect(url);
-
-    return Future.succeededFuture();
 
 
   }
@@ -134,11 +89,11 @@ public class AuthApiImpl implements AuthApi {
      */
     UriEnhanced redirectUriEnhanced;
     try {
-      redirectUriEnhanced = utilGetRedirectUri(routingContext);
+      redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.BAD_REQUEST)
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
           .failContext(routingContext)
           .setMimeToHtml()
@@ -154,7 +109,7 @@ public class AuthApiImpl implements AuthApi {
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.NOT_AUTHORIZED)
+          .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
           .setDescription("The redirect uri (" + redirectUri + ") is unknown")
           .failContext(routingContext)
           .setMimeToHtml()
@@ -255,7 +210,7 @@ public class AuthApiImpl implements AuthApi {
         } catch (AddressException e) {
           return Future.failedFuture(
             VertxRoutingFailureData.create()
-              .setStatus(HttpStatus.BAD_REQUEST)
+              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The recipient email (" + userToLogin.getEmail() + ") is not valid")
               .setException(e)
               .failContext(routingContext)
@@ -268,7 +223,7 @@ public class AuthApiImpl implements AuthApi {
         } catch (AddressException e) {
           return Future.failedFuture(
             VertxRoutingFailureData.create()
-              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
               .setDescription("The sender email (" + sender.getEmail() + ") is not valid")
               .setException(e)
               .failContext(routingContext)
@@ -367,7 +322,7 @@ public class AuthApiImpl implements AuthApi {
           if (user == null) {
             return Future.failedFuture(
               VertxRoutingFailureData.create()
-                .setStatus(HttpStatus.NOT_FOUND)
+                .setStatus(HttpStatusEnum.NOT_FOUND_404)
                 .getFailedException()
             );
           }
@@ -401,7 +356,7 @@ public class AuthApiImpl implements AuthApi {
       return Future.failedFuture(
         VertxRoutingFailureData
           .create()
-          .setStatus(HttpStatus.NOT_LOGGED_IN)
+          .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
           .getFailedException()
       );
     }
@@ -440,11 +395,11 @@ public class AuthApiImpl implements AuthApi {
      */
     UriEnhanced redirectUriEnhanced;
     try {
-      redirectUriEnhanced = utilGetRedirectUri(routingContext);
+      redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         VertxRoutingFailureData.create()
-          .setStatus(HttpStatus.BAD_REQUEST)
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
           .failContext(routingContext)
           .setMimeToHtml()
@@ -470,32 +425,6 @@ public class AuthApiImpl implements AuthApi {
     throw new InternalException("Not yet implemented");
   }
 
-
-  /**
-   * Because of a bug on the order in parameters signature, we get the value
-   * from the context
-   * <p>
-   * We take the value of the parameters from the context
-   * because if there is a switch on position in the open api specification,
-   * the data are still string and the api does not cry even if the data received
-   * is not the good one
-   *
-   * @param routingContext - the routing context
-   * @return the redirect Uri
-   * @throws NotFoundException        - if not found
-   * @throws IllegalArgumentException - if it's not a URL string
-   */
-  public static UriEnhanced utilGetRedirectUri(RoutingContext routingContext) throws NotFoundException {
-    String redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
-    if (redirectUri == null) {
-      throw new NotFoundException();
-    }
-    try {
-      return UriEnhanced.createFromString(redirectUri);
-    } catch (IllegalStructure e) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirect Uri is not a valid URI", AuthQueryProperty.REDIRECT_URI.toString(), redirectUri);
-    }
-  }
 
   @Override
   public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {

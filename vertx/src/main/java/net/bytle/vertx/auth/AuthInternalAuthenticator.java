@@ -10,7 +10,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.EraldyDomain;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.VertxRoutingFailureData;
 
@@ -108,7 +108,7 @@ public class AuthInternalAuthenticator {
         }
         VertxRoutingFailureData.create()
           .setDescription(message)
-          .setStatus(HttpStatus.INTERNAL_ERROR)
+          .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
           .setName("Bad URL redirect")
           .failContextAsHtml(ctx);
         return;
@@ -117,7 +117,7 @@ public class AuthInternalAuthenticator {
         if (this.redirectUriIsMandatory) {
           VertxRoutingFailureData.create()
             .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
-            .setStatus(HttpStatus.INTERNAL_ERROR)
+            .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
             .setName("URL redirect was not found")
             .failContextAsHtml(ctx);
           return;
@@ -176,7 +176,7 @@ public class AuthInternalAuthenticator {
         case HTTP:
           if (finalRedirectUri == null) {
             VertxRoutingFailureData.create()
-              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
               .setName("URL redirect is mandatory for HTTP redirect")
               .setDescription("For an http redirect, the redirect uri is mandatory and was not found")
               .failContextAsHtml(ctx);
@@ -219,7 +219,7 @@ public class AuthInternalAuthenticator {
         .putHeader(HttpHeaders.EXPIRES, "0")
         // redirect (when there is no state, redirect to home)
         .putHeader(HttpHeaders.LOCATION, redirectionUrl.toUrl().toString())
-        .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI.httpStatusCode())
+        .setStatusCode(HttpStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
         .end("Redirecting to " + redirectionUrl + ".");
     }
 

@@ -18,7 +18,7 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
-import net.bytle.vertx.flow.WebFlowCallback;
+import net.bytle.vertx.flow.WebFlowEmailCallback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +33,7 @@ public class PasswordResetFlow extends WebFlowAbs {
     this.step2Callback = new PasswordResetEmailCallback(this);
   }
 
-  public WebFlowCallback getPasswordResetCallback() {
+  public WebFlowEmailCallback getPasswordResetCallback() {
     return this.step2Callback;
   }
 
@@ -65,7 +65,7 @@ public class PasswordResetFlow extends WebFlowAbs {
           recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.BAD_REQUEST)
+            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("A name for the user to reset could not be found (" + e.getMessage() + ")")
             .setException(e)
             .failContext(routingContext)
@@ -97,7 +97,7 @@ public class PasswordResetFlow extends WebFlowAbs {
           recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
         } catch (AddressException e) {
           return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.BAD_REQUEST)
+            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("The email for the user to reset ("+userToResetPassword.getEmail()+") is not valid (" + e.getMessage() + ")")
             .setException(e)
             .failContext(routingContext)
@@ -109,7 +109,7 @@ public class PasswordResetFlow extends WebFlowAbs {
           senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.INTERNAL_ERROR)
+            .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
             .setDescription("The sender email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
             .setException(e)
             .failContext(routingContext)

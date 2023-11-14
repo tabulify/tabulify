@@ -13,7 +13,7 @@ import net.bytle.vertx.JsonTokenCipher;
  * ie we send a link that the user should click
  * to validate the action (ie registration, login, ...)
  */
-public interface WebFlowCallback extends Handler<RoutingContext> {
+public interface WebFlowEmailCallback extends Handler<RoutingContext> {
 
   /**
    * The parameter where the data is stored in the callback link

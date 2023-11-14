@@ -30,7 +30,7 @@ public class VertxRoutingFailureData {
 
   private String description;
   private String name;
-  private HttpStatus status = HttpStatus.INTERNAL_ERROR;
+  private HttpStatus status = HttpStatusEnum.INTERNAL_ERROR_500;
 
 
   private MediaTypes mime = MediaTypes.TEXT_HTML;
@@ -54,7 +54,7 @@ public class VertxRoutingFailureData {
     return this;
   }
 
-  public VertxRoutingFailureData setStatus(HttpStatus status) {
+  public VertxRoutingFailureData setStatus(HttpStatusEnum status) {
     this.status = status;
     return this;
   }
@@ -74,7 +74,7 @@ public class VertxRoutingFailureData {
 
   public VertxRoutingFailureData failContext(RoutingContext routingContext) {
 
-    routingContext.fail(this.status.httpStatusCode(), (new VertxRoutingFailureException(this)));
+    routingContext.fail(this.status.getStatusCode(), (new VertxRoutingFailureException(this)));
     return this;
 
   }
@@ -97,13 +97,13 @@ public class VertxRoutingFailureData {
    */
   private VertxRoutingFailureData setStatusCodeFromFailureContext(RoutingContext context) {
     int httpStatusCode = context.statusCode();
-    if (status.httpStatusCode() == -1) {
-      status = HttpStatus.INTERNAL_ERROR;
+    if (status.getStatusCode() == -1) {
+      status = HttpStatusEnum.INTERNAL_ERROR_500;
     } else {
       try {
-        status = HttpStatus.fromHttpStatusCode(httpStatusCode);
+        status = HttpStatusEnum.fromHttpStatusCode(httpStatusCode);
       } catch (NotFoundException e) {
-        status = HttpStatus.UNKNOWN_STATUS;
+        status = () -> httpStatusCode;
       }
     }
     return this;
@@ -115,7 +115,7 @@ public class VertxRoutingFailureData {
    * @param code - the code
    */
   private VertxRoutingFailureData setStatusCodeOnlyIfValueIsInternalError(HttpStatus code) {
-    if (status == HttpStatus.INTERNAL_ERROR) {
+    if (status == HttpStatusEnum.INTERNAL_ERROR_500) {
       this.status = code;
     }
     return this;
@@ -150,7 +150,7 @@ public class VertxRoutingFailureData {
     }
 
     if (thrown instanceof ValidationException) {
-      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.BAD_REQUEST);
+      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
       String keyWord = ((ValidationException) thrown).keyword();
       message += " (Keyword: " + keyWord + ", ";
 
@@ -170,9 +170,9 @@ public class VertxRoutingFailureData {
       }
       message += "InputScope: " + inputScope + ")";
     } else if (thrown instanceof NotFoundException) {
-      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.BAD_REQUEST);
+      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
     } else if (thrown instanceof ParameterProcessorException) {
-      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.BAD_REQUEST);
+      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
     } else if (thrown instanceof NotLoggedInException) {
       if (!context.request().path().contains("api")) {
         String redirectEndpoint = "/login";
@@ -187,15 +187,16 @@ public class VertxRoutingFailureData {
       }
       return this;
     } else if (thrown instanceof HttpException) {
+      int statusCode = ((HttpException) thrown).getStatusCode();
       try {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.fromHttpStatusCode(((HttpException) thrown).getStatusCode()));
+        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.fromHttpStatusCode(statusCode));
       } catch (NotFoundException e) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.UNKNOWN_STATUS);
+        this.setStatusCodeOnlyIfValueIsInternalError(()->statusCode);
       }
     } else if (thrown instanceof IllegalArgumentException) {
-      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.BAD_REQUEST);
+      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
     } else if (thrown instanceof NoSuchElementException) {
-      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatus.NOT_FOUND);
+      this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.NOT_FOUND_404);
     }
 
     this.setDescription(message);
@@ -206,7 +207,7 @@ public class VertxRoutingFailureData {
      * within 60 seconds (ie the new csrf token was not flushed on the disk)
      * We delete the cookie and ask the user to reload the page
      */
-    if (this.getStatus() == HttpStatus.FORBIDDEN && message.toLowerCase().contains("token")) {
+    if (this.getStatus() == HttpStatusEnum.FORBIDDEN_403 && message.toLowerCase().contains("token")) {
       context.session().remove(VertxCsrf.getCsrfName());
       context.response().removeCookie(VertxCsrf.getCsrfCookieName());
     }
@@ -266,7 +267,7 @@ public class VertxRoutingFailureData {
 
   public ExitStatusResponse toJsonObject() {
     ExitStatusResponse exitStatusResponse = new ExitStatusResponse();
-    exitStatusResponse.setCode(status.httpStatusCode());
+    exitStatusResponse.setCode(status.getStatusCode());
     exitStatusResponse.setMessage(this.getDescription());
     return exitStatusResponse;
   }

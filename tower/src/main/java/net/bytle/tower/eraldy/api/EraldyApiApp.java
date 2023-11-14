@@ -21,7 +21,9 @@ import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.*;
+import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,8 +50,8 @@ public class EraldyApiApp extends TowerApp {
   private final UriEnhanced memberApp;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
-  private final OAuthExternal oauthExternal;
   private final EmailLoginFlow emailLoginFlow;
+  private final OAuthExternalCodeFlow oauthExternalFlow;
 
   public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
     super(topLevelDomain);
@@ -68,10 +70,14 @@ public class EraldyApiApp extends TowerApp {
     } catch (IllegalStructure e) {
       throw new IllegalConfiguration("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
+    /**
+     * Flow management
+     */
     this.userRegistrationFlow = new UserRegistrationFlow(this);
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
-    this.oauthExternal = new OAuthExternal(this, "/auth/oauth");
+    this.oauthExternalFlow = new OAuthExternalCodeFlow(this,"/auth/oauth");
+
 
   }
 
@@ -142,9 +148,8 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Add the external OAuths
      */
-    this.oauthExternal
-      .addExternal(OAuthExternalGithub.GITHUB_TENANT, router)
-      .addExternal(OAuthExternalGoogle.GOOGLE_TENANT, router);
+    this.oauthExternalFlow.step2AddProviderAndCallbacks(router);
+
 
     /**
      * Add the registration validation callback
@@ -371,9 +376,9 @@ public class EraldyApiApp extends TowerApp {
 
   }
 
-  public OAuthExternal getOAuthExternal() {
-    return this.oauthExternal;
-  }
 
+  public OAuthExternalCodeFlow getOauthFlow() {
+    return this.oauthExternalFlow;
+  }
 
 }

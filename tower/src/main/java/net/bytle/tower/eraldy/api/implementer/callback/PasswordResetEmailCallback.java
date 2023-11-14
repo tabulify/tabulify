@@ -6,15 +6,15 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.WebFlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
  * Handle the password reset callback
  */
-public class PasswordResetEmailCallback extends WebFlowCallbackAbs {
+public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
 
 
   private static final String FRONT_END_UPDATE_OPERATION_PATH = "/login/password/update";
@@ -55,7 +55,7 @@ public class PasswordResetEmailCallback extends WebFlowCallbackAbs {
       .onFailure(ctx::fail)
       .onSuccess(userInDb -> {
         if (userInDb == null) {
-          ctx.fail(HttpStatus.INTERNAL_ERROR.httpStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
+          ctx.fail(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
           return;
         }
         AuthInternalAuthenticator

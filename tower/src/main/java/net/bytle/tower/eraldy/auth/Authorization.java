@@ -5,7 +5,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.RoutingContextWrapper;
 import net.bytle.vertx.VertxRoutingFailureData;
 
@@ -40,7 +40,7 @@ public class Authorization {
 
   private static Future<Boolean> notAuthorized(RoutingContextWrapper routingContext) {
     VertxRoutingFailureData.create()
-      .setStatus(HttpStatus.NOT_AUTHORIZED)
+      .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
       .failContext(routingContext.getRoutingContext());
     return Future.succeededFuture(false);
   }

@@ -5,14 +5,14 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.WebFlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
  * The letter (in HTML format)
  * that is sent by email to validate a user registration
  * by clicking on the validation link
  */
-public class UserRegisterEmailCallback extends WebFlowCallbackAbs {
+public class UserRegisterEmailCallback extends WebFlowEmailCallbackAbs {
 
 
 

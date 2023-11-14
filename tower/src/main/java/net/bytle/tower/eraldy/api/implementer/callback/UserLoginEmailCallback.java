@@ -8,14 +8,14 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.vertx.auth.AuthInternalAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlow;
-import net.bytle.vertx.flow.WebFlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
  * The letter (in HTML format)
  * that is sent by email to log a user
  * by clicking on a login link
  */
-public class UserLoginEmailCallback extends WebFlowCallbackAbs {
+public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
 
 
 

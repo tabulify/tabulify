@@ -138,7 +138,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
   /**
    * Add dynamically the callback handler
    */
-  public void addCallBackHandler(Router router) {
+  public void addCallBackHandlers(Router router) {
 
     String callbackLocalRouterPath = getCallbackOperationPath();
     router.route(callbackLocalRouterPath)

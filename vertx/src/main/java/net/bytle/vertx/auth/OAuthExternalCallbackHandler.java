@@ -14,7 +14,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.time.Date;
 import net.bytle.vertx.HttpRequestUtil;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -96,13 +96,13 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
       .setFlow(OAuth2FlowType.AUTH_CODE)
       .setCode(code);
 
-    // the state that was passed to the IdP server. The state can be
+    // the state that was passed to the Identity Provider server. The state can be
     // an opaque random string (to protect against replay attacks)
     // or if there was no session available the target resource to
     // server after validation
     final String state = ctx.request().getParam(AuthQueryProperty.STATE.toString());
     if (state == null) {
-      ctx.fail(400, new IllegalStateException("Missing IdP state parameter to the callback endpoint"));
+      ctx.fail(HttpStatusEnum.BAD_REQUEST_400.getStatusCode(), new IllegalStateException("Missing state parameter"));
       return;
     }
 
@@ -110,8 +110,11 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     final Session session = ctx.session();
     String ctxState = session.remove(OAuthExternal.STATE_SESSION_KEY);
     if (!state.equals(ctxState)) {
-      // forbidden, the state is not valid (replay attack?)
-      ctx.fail(401, new IllegalStateException("Invalid oauth2 state"));
+      /**
+       * state has a random value, against replay attack.
+       * forbidden if not the same.
+       */
+      ctx.fail(HttpStatusEnum.NOT_AUTHORIZED_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
       return;
     }
     OAuthExternalState oAuthExternalState = OAuthExternalState.createFromStateString(ctxState);
@@ -168,7 +171,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
         if (!responsesScopes.contains(requestedScope)) {
           response
             .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
-            .setStatusCode(HttpStatus.NOT_AUTHORIZED.httpStatusCode())
+            .setStatusCode(HttpStatusEnum.NOT_AUTHORIZED_401.getStatusCode())
             .end("The requested scope (" + requestedScope + ") was not granted.");
           return;
         }

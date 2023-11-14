@@ -10,7 +10,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.tower.eraldy.api.implementer.*;
 import net.bytle.tower.eraldy.api.openapi.interfaces.*;
 import net.bytle.type.Casts;
-import net.bytle.vertx.HttpStatus;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
 
 import java.util.Collection;
@@ -111,7 +111,7 @@ public class ApiVertxSupport {
           try {
             json.append(jsonMapper.writeValueAsString(object));
           } catch (JsonProcessingException e) {
-            ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
+            ctx.fail(new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
             return;
           }
         }
@@ -123,7 +123,7 @@ public class ApiVertxSupport {
         try {
           json.append(jsonMapper.writeValueAsString(data));
         } catch (JsonProcessingException e) {
-          ctx.fail(new HttpException(HttpStatus.INTERNAL_ERROR.httpStatusCode(), e));
+          ctx.fail(new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
           return;
         }
       }

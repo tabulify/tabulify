@@ -186,7 +186,7 @@ public class OpenApiManager {
         User user = routingContext.user();
         if (!RoleBasedAuthorization.create(scope).match(user)) {
           VertxRoutingFailureData.create()
-            .setStatus(HttpStatus.NOT_AUTHORIZED)
+            .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
             .setDescription("The scope (" + scope + ") is not granted to the user (" + user.subject() + ")")
             .setMimeToJson()
             .failContext(routingContext);

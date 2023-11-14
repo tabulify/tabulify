@@ -3,7 +3,6 @@ package net.bytle.vertx;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.json.schema.ValidationException;
@@ -72,7 +71,7 @@ public class RoutingContextWrapper {
   }
 
   /**
-   * A {@link HttpStatus#REDIRECT 302} redirects the POST
+   * A {@link HttpStatusEnum#REDIRECT_302 302} redirects the POST
    * The browser tries to perform the post on the redirected URI.
    * <p>
    * When you want to redirect to a GET page after a successful POST,
@@ -85,7 +84,7 @@ public class RoutingContextWrapper {
   @SuppressWarnings("unused")
   public void seeOtherUriRedirect(String redirectUri) {
     this.ctx.response()
-      .setStatusCode(HttpStatus.REDIRECT_SEE_OTHER_URI.httpStatusCode())
+      .setStatusCode(HttpStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
       .putHeader(HttpHeaders.LOCATION, redirectUri)
       .putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8")
       .end("Redirecting to " + redirectUri + ".");
@@ -94,6 +93,7 @@ public class RoutingContextWrapper {
   /**
    * @return the original request before {@link #reroute(String) rerouting} if any
    */
+  @SuppressWarnings("unused")
   public UriEnhanced getOriginalRequestAsUri() {
     if (this.requestUri != null) {
       return this.requestUri;
@@ -138,14 +138,6 @@ public class RoutingContextWrapper {
     ctx
       .put(RoutingContextWrapper.CONTEXT_REROUTED_PATH, oldPath)
       .reroute(reRouteString);
-  }
-
-  public User getSignedInUser() throws NotFoundException {
-    io.vertx.ext.auth.User user = this.ctx.user();
-    if (user == null) {
-      throw new NotFoundException();
-    }
-    return user;
   }
 
 

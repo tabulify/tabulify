@@ -17,7 +17,7 @@ import net.bytle.vertx.auth.AuthUser;
 import java.net.MalformedURLException;
 import java.net.URI;
 
-public abstract class WebFlowCallbackAbs implements WebFlowCallback {
+public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
 
   private static final int EXPIRATION_IN_MINUTES = 5;
   protected final WebFlow webFlow;
@@ -28,7 +28,7 @@ public abstract class WebFlowCallbackAbs implements WebFlowCallback {
   private static final String URI_DEBUG_PARAMETER = "debug";
   private final JsonToken jsonToken;
 
-  public WebFlowCallbackAbs(WebFlow webFlow) {
+  public WebFlowEmailCallbackAbs(WebFlow webFlow) {
     this.webFlow = webFlow;
     this.jsonToken = webFlow.getApp().getApexDomain().getHttpServer().getServer().getJsonToken();
   }
@@ -133,7 +133,7 @@ public abstract class WebFlowCallbackAbs implements WebFlowCallback {
     try {
       authUser.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
-      ctx.fail(HttpStatus.BAD_REQUEST.httpStatusCode(), e);
+      ctx.fail(HttpStatusEnum.BAD_REQUEST_400.getStatusCode(), e);
       throw new IllegalStructure();
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";

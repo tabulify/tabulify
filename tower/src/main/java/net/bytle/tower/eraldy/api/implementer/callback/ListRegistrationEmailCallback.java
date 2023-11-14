@@ -4,12 +4,12 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.flow.WebFlowCallbackAbs;
+import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
 /**
  * List registration callback
  */
-public class ListRegistrationEmailCallback extends WebFlowCallbackAbs {
+public class ListRegistrationEmailCallback extends WebFlowEmailCallbackAbs {
 
   public ListRegistrationEmailCallback(ListRegistrationFlow listRegistrationFlow) {
     super(listRegistrationFlow);

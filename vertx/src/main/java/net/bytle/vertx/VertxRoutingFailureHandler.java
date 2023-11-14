@@ -89,7 +89,7 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
     /**
      * Internal error or forbidden request ({@link io.vertx.ext.web.handler.CSRFHandler problem})
      */
-    if (statusCode == HttpStatus.INTERNAL_ERROR || statusCode == HttpStatus.FORBIDDEN) {
+    if (statusCode == HttpStatusEnum.INTERNAL_ERROR_500 || statusCode == HttpStatusEnum.FORBIDDEN_403) {
       this.logUnExpectedError(context);
     }
 
@@ -101,13 +101,13 @@ public class VertxRoutingFailureHandler implements Handler<RoutingContext> {
         String html = vertxRoutingFailureData.toHtml(context);
         context
           .response()
-          .setStatusCode(statusCode.httpStatusCode())
+          .setStatusCode(statusCode.getStatusCode())
           .putHeader(HttpHeaders.CONTENT_TYPE, MediaTypes.TEXT_HTML.toString())
           .send(html);
       case TEXT_JSON:
         context
           .response()
-          .setStatusCode(statusCode.httpStatusCode());
+          .setStatusCode(statusCode.getStatusCode());
         ExitStatusResponse exitStatusResponse = vertxRoutingFailureData.toJsonObject();
         context.json(exitStatusResponse);
     }

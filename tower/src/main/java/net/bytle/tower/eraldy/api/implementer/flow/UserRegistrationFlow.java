@@ -77,7 +77,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           return Future.failedFuture(
             VertxRoutingFailureData
               .create()
-              .setStatus(HttpStatus.BAD_REQUEST)
+              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .failContext(routingContext)
@@ -119,7 +119,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           return Future.failedFuture(
             VertxRoutingFailureData
               .create()
-              .setStatus(HttpStatus.BAD_REQUEST)
+              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .failContext(routingContext)
@@ -133,7 +133,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           return Future.failedFuture(
             VertxRoutingFailureData
               .create()
-              .setStatus(HttpStatus.INTERNAL_ERROR)
+              .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
               .setDescription("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .failContext(routingContext)
