@@ -7,7 +7,8 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.auth.AuthInternalAuthenticator;
+import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
@@ -58,10 +59,9 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
           ctx.fail(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
           return;
         }
-        AuthInternalAuthenticator
-          .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInDb))
+        new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
           .redirectViaFrontEnd(FRONT_END_UPDATE_OPERATION_PATH)
-          .authenticate();
+          .authenticateSession();
       });
 
   }

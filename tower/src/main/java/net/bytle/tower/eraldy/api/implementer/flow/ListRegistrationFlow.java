@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
 import io.vertx.ext.mail.MailClient;
@@ -26,7 +27,8 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthInternalAuthenticator;
+import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.flow.SmtpSender;
@@ -107,11 +109,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(ctx, registration);
-            AuthInternalAuthenticator
-              .createWith(this.getApp(), ctx, UsersUtil.toAuthUserClaims(user))
+            new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
-              .setMandatoryRedirectUri(false)
-              .authenticate();
+              .authenticateSession();
           });
       });
   }
@@ -398,6 +398,41 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
   public ListRegistrationEmailCallback getCallback() {
     return this.callback;
+  }
+
+  /**
+   * Handle when a user is authenticated via OAuth
+   * If the user authenticate via a list, we register
+   * the user to the list
+   */
+  public Handler<AuthSessionAuthenticator> handleStepOAuthAuthentication() {
+    return authAuthenticator -> {
+
+      String listGuid = authAuthenticator.getAuthState().getListGuid();
+      if(listGuid==null){
+        return;
+      }
+
+      AuthUser authUser = authAuthenticator.getAuthUser();
+      RoutingContext ctx = authAuthenticator.getContext();
+
+      /**
+       * A list registration
+       */
+      Date optInTime = Date.createFromNow();
+      String optInIp;
+      try {
+
+        optInIp = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
+      } catch (NotFoundException e) {
+        LOGGER.warn("Oauth List registration: The remote ip client could not be found. Error: " + e.getMessage());
+        optInIp = "";
+      }
+
+      User user = UsersUtil.toEraldyUser(authUser, this.getApp());
+      this.authenticateAndRegisterUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH);
+
+    };
   }
 
 }

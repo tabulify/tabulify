@@ -3,19 +3,14 @@ package net.bytle.vertx.auth;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.VertxContextPRNG;
-import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
 import io.vertx.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.ext.auth.oauth2.OAuth2AuthorizationURL;
 import io.vertx.ext.auth.oauth2.Oauth2Credentials;
-import io.vertx.ext.auth.oauth2.authorization.ScopeAuthorization;
-import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import io.vertx.ext.web.handler.AuthorizationHandler;
 import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,7 +78,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     }
 
     // Store the state in the session
-    String state = createState(listGuid).toStateString();
+    String state = createState(listGuid).toUrlValue();
     session.put(STATE_SESSION_KEY, state);
 
     // Pkce
@@ -95,7 +90,7 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
 
     OAuth2AuthorizationURL authorizationURL = new
       OAuth2AuthorizationURL()
-      .setRedirectUri(this.getCallbackPublicRedirectUri())
+      .setRedirectUri(this.getCallbackPublicUri())
       .setState(state)
       .setScopes(getRequestedScopes());
 
@@ -108,21 +103,21 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
    * @param listGuid - the list guid where to register
    * @return the state with a random number
    */
-  private OAuthExternalState createState(String listGuid) {
+  private AuthState createState(String listGuid) {
 
 
     String random = prng.nextString(6);
-    OAuthExternalState oAuthExternalState = new OAuthExternalState();
-    oAuthExternalState.setRandomValue(random);
+    AuthState authState = new AuthState(new JsonObject());
+    authState.setRandomValue(random);
     if (listGuid != null) {
-      oAuthExternalState.setListGuid(listGuid);
+      authState.setListGuid(listGuid);
     }
-    return oAuthExternalState;
+    return authState;
 
 
   }
 
-  String getCallbackPublicRedirectUri() {
+  public String getCallbackPublicUri() {
     /**
      * We follow the same path as in the openApi file
      * The callback is saved hard core in the setting of GitHub
@@ -131,31 +126,14 @@ public abstract class OAuthExternalProviderAbs implements OAuthExternalProvider 
     return towerApp.getOperationUriForPublicHost(providerCallbackOperationPath).toUri().toString();
   }
 
-  private String getCallbackOperationPath() {
+  @Override
+  public String getCallbackOperationPath() {
     return towerApp.getPathMount() + oAuthExternal.getPathMount() + "/" + this.getName() + "/callback";
   }
 
-  /**
-   * Add dynamically the callback handler
-   */
-  public void addCallBackHandlers(Router router) {
-
-    String callbackLocalRouterPath = getCallbackOperationPath();
-    router.route(callbackLocalRouterPath)
-      .method(HttpMethod.GET)
-      .handler(new OAuthExternalCallbackHandler(this))
-      .handler(
-        // Check authorization
-        AuthorizationHandler
-          .create(PermissionBasedAuthorization.create(OAuthExternalGithub.USER_EMAIL_SCOPE))
-          .addAuthorizationProvider(ScopeAuthorization.create(" "))
-      );
-    LOGGER.info("Oauth Callback for provider (" + this + ") added at (" + towerApp.getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + towerApp.getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
-
-  }
-
-  public TowerApp getApp() {
-    return this.towerApp;
+  @Override
+  public OAuthExternal getOAuthExternal() {
+    return this.oAuthExternal;
   }
 
   @Override

@@ -2,10 +2,13 @@ package net.bytle.tower.eraldy.auth;
 
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.type.Strings;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
@@ -57,20 +60,6 @@ public class UsersUtil {
 
   }
 
-  /**
-   * @param firstName         - the default first name
-   * @param possibleFirstName - the other first name candidate
-   * @return the first name based on the case. If otherName is lowercase and defaultName is uppercase, otherName is returned)
-   */
-  public static String getFirstNameFromCase(String firstName, String possibleFirstName) {
-    if (possibleFirstName == null) {
-      return firstName;
-    }
-    if (Strings.isUpperCase(firstName) && !Strings.isUpperCase(possibleFirstName)) {
-      return possibleFirstName;
-    }
-    return firstName;
-  }
 
 
   /**
@@ -128,4 +117,47 @@ public class UsersUtil {
   }
 
 
+  public static User toEraldyUser(AuthUser authUser, EraldyApiApp eraldyApiApp) {
+    Realm realm = new Realm();
+    realm.setGuid(authUser.getAudience());
+    try {
+      Guid realmGuid = eraldyApiApp.getRealmProvider().getGuidFromHash(authUser.getAudience());
+      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      throw new RuntimeException(e);
+    }
+    User userEraldy = new User();
+    userEraldy.setRealm(realm);
+    userEraldy.setName(authUser.getSubjectGivenName());
+    userEraldy.setEmail(authUser.getSubjectEmail());
+    try {
+      String subject = authUser.getSubject();
+      userEraldy.setGuid(subject);
+      Guid guid = eraldyApiApp.getUserProvider().getGuid(subject);
+      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
+    } catch (CastException e) {
+      throw new RuntimeException(e);
+    }
+
+    return userEraldy;
+
+    /**
+     * For OpenID Connect/OAuth2 Access Tokens,
+     * there is a rootClaim
+     */
+//    String rootClaim = user.attributes().getString("rootClaim");
+//    if (rootClaim != null && rootClaim.equals("accessToken")) {
+//      // JWT
+//      String userGuid = user.principal().getString("sub");
+//      if (userGuid == null) {
+//        return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
+//      }
+//      if(clazz.equals(OrganizationUser.class)) {
+//        //noinspection unchecked
+//        return (Future<T>) this
+//          .getOrganizationUserProvider()
+//          .getOrganizationUserByGuid(userGuid);
+//      }
+//    }
+  }
 }

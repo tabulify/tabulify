@@ -7,6 +7,7 @@ import io.vertx.ext.auth.oauth2.providers.GoogleAuth;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.type.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -77,7 +78,7 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
      */
     // String id = userInfo.getString("id");
     // Name: The user's full name, in a displayable form (might be null)
-    String name = userInfo.getString("name"); // FOO bar
+    // String name = userInfo.getString("name"); // FOO bar
     // GivenName: The user's given name(s) or first name(s). Might be provided when a name claim is present.
     String givenName = userInfo.getString("given_name"); // FOO
     // FamilyName: The user's surname(s) or last name(s). Might be provided when a name claim is present.
@@ -101,8 +102,8 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
     AuthUser user = new AuthUser();
     user.setSubjectEmail(email);
     user.setSubjectAvatar(googleUserAvatarUri);
-    user.setSubjectGivenName(givenName);
-    user.setSubjectFamilyName(givenName);
+    user.setSubjectGivenName(getGivenNameFromCase(givenName,familyName));
+    user.setSubjectFamilyName(familyName);
     return Future.succeededFuture(user);
 
   }
@@ -110,6 +111,21 @@ public class OAuthExternalGoogle extends OAuthExternalProviderAbs {
   @Override
   public String getName() {
     return GOOGLE_TENANT;
+  }
+
+  /**
+   * @param firstName         - the default first name
+   * @param possibleFirstName - the other first name candidate
+   * @return the first name based on the case. If otherName is lowercase and defaultName is uppercase, otherName is returned)
+   */
+  public static String getGivenNameFromCase(String firstName, String possibleFirstName) {
+    if (possibleFirstName == null) {
+      return firstName;
+    }
+    if (Strings.isUpperCase(firstName) && !Strings.isUpperCase(possibleFirstName)) {
+      return possibleFirstName;
+    }
+    return firstName;
   }
 
 }

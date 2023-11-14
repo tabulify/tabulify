@@ -102,7 +102,7 @@ public class VerticleApi extends AbstractVerticle {
           EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
           try {
             apiApp = EraldyApiApp.create(eraldyDomain);
-          } catch (IllegalConfiguration e) {
+          } catch (ConfigIllegalException e) {
             this.handlePromiseFailure(verticlePromise, e);
             return;
           }

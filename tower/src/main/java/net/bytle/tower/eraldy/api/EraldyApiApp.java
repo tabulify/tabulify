@@ -15,6 +15,7 @@ import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.*;
@@ -22,10 +23,14 @@ import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.AuthSessionAuthenticator;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static net.bytle.tower.util.Guid.*;
 
@@ -53,8 +58,8 @@ public class EraldyApiApp extends TowerApp {
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
 
-  public EraldyApiApp(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
-    super(topLevelDomain);
+  public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
+    super(apexDomain);
     this.realmProvider = new RealmProvider(this);
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
@@ -63,12 +68,12 @@ public class EraldyApiApp extends TowerApp {
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
-    String memberUri = topLevelDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + topLevelDomain.getApexNameWithPort());
+    String memberUri = apexDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
     try {
       this.memberApp = UriEnhanced.createFromString(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
     } catch (IllegalStructure e) {
-      throw new IllegalConfiguration("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
+      throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
     /**
      * Flow management
@@ -76,13 +81,15 @@ public class EraldyApiApp extends TowerApp {
     this.userRegistrationFlow = new UserRegistrationFlow(this);
     this.userListRegistrationFlow = new ListRegistrationFlow(this);
     this.emailLoginFlow = new EmailLoginFlow(this);
-    this.oauthExternalFlow = new OAuthExternalCodeFlow(this,"/auth/oauth");
-
+    List<Handler<AuthSessionAuthenticator>> authHandlers = new ArrayList<>();
+    authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
+    authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
+    this.oauthExternalFlow = new OAuthExternalCodeFlow(this,"/auth/oauth", authHandlers);
 
   }
 
 
-  public static EraldyApiApp create(TowerApexDomain topLevelDomain) throws IllegalConfiguration {
+  public static EraldyApiApp create(TowerApexDomain topLevelDomain) throws ConfigIllegalException {
 
     return new EraldyApiApp(topLevelDomain);
 
@@ -332,47 +339,7 @@ public class EraldyApiApp extends TowerApp {
       throw new NotFoundException();
     }
     AuthUser authUser = user.principal().mapTo(AuthUser.class);
-    Realm realm = new Realm();
-    realm.setGuid(authUser.getAudience());
-    try {
-      Guid realmGuid = this.getRealmProvider().getGuidFromHash(authUser.getAudience());
-      realm.setLocalId(realmGuid.getRealmOrOrganizationId());
-    } catch (CastException e) {
-      throw new RuntimeException(e);
-    }
-    User userEraldy = new User();
-    userEraldy.setRealm(realm);
-    userEraldy.setName(authUser.getSubjectGivenName());
-    userEraldy.setEmail(authUser.getSubjectEmail());
-    try {
-      String subject = authUser.getSubject();
-      userEraldy.setGuid(subject);
-      Guid guid = this.getUserProvider().getGuid(subject);
-      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-    } catch (CastException e) {
-      throw new RuntimeException(e);
-    }
-    return userEraldy;
-
-    /**
-     * For OpenID Connect/OAuth2 Access Tokens,
-     * there is a rootClaim
-     */
-//    String rootClaim = user.attributes().getString("rootClaim");
-//    if (rootClaim != null && rootClaim.equals("accessToken")) {
-//      // JWT
-//      String userGuid = user.principal().getString("sub");
-//      if (userGuid == null) {
-//        return Future.failedFuture(ValidationException.create("The sub is empty", "sub", null));
-//      }
-//      if(clazz.equals(OrganizationUser.class)) {
-//        //noinspection unchecked
-//        return (Future<T>) this
-//          .getOrganizationUserProvider()
-//          .getOrganizationUserByGuid(userGuid);
-//      }
-//    }
-
+    return UsersUtil.toEraldyUser(authUser, this) ;
 
   }
 

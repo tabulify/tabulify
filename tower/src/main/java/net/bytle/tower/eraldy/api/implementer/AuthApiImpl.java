@@ -327,10 +327,9 @@ public class AuthApiImpl implements AuthApi {
             );
           }
           AuthUser authUser = UsersUtil.toAuthUserClaims(user);
-          AuthInternalAuthenticator
-            .createWith(apiApp, routingContext, authUser)
+          new AuthSessionAuthenticator(routingContext, authUser, AuthState.createEmpty())
             .redirectViaClient()
-            .authenticate();
+            .authenticateSession();
           return Future.succeededFuture(new ApiResponse<>());
         }));
 

@@ -1,6 +1,7 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -11,12 +12,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
-import net.bytle.type.time.Date;
-import net.bytle.vertx.HttpRequestUtil;
 import net.bytle.vertx.HttpStatusEnum;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,11 +29,9 @@ import java.util.stream.Collectors;
 class OAuthExternalCallbackHandler implements AuthenticationHandler {
 
 
-  static Logger LOGGER = LogManager.getLogger(OAuthExternalCallbackHandler.class);
+  private final OAuthExternalProvider oAuthExternalProvider;
 
-  private final OAuthExternalProviderAbs oAuthExternalProvider;
-
-  public OAuthExternalCallbackHandler(OAuthExternalProviderAbs oAuthExternalProvider) {
+  public OAuthExternalCallbackHandler(OAuthExternalProvider oAuthExternalProvider) {
     this.oAuthExternalProvider = oAuthExternalProvider;
   }
 
@@ -117,8 +111,8 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
       ctx.fail(HttpStatusEnum.NOT_AUTHORIZED_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
       return;
     }
-    OAuthExternalState oAuthExternalState = OAuthExternalState.createFromStateString(ctxState);
-    String listGuid = oAuthExternalState.getListGuid();
+    AuthState authState = AuthState.createFromStateString(ctxState);
+
 
     // remove the code verifier, from the session as it will be trade for the
     // token during the final leg of the oauth2 handshake
@@ -128,7 +122,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
 
     // The valid callback URL set in your IdP application settings.
     // This must exactly match the redirect_uri passed to the authorization URL in the previous step.
-    oAuthCodeCredentials.setRedirectUri(oAuthExternalProvider.getCallbackPublicRedirectUri());
+    oAuthCodeCredentials.setRedirectUri(oAuthExternalProvider.getCallbackPublicUri());
 
     /**
      * Get the access token with the code
@@ -199,26 +193,6 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
         })
         .compose(userInfo -> oAuthExternalProvider.getEnrichedUser(ctx, userInfo, accessToken));
 
-//        /**
-//         * Retrieve the internal user from the realm and oauth user
-//         */
-//        Future<net.bytle.tower.eraldy.model.openapi.User> userFuture = oauthUserFuture
-//          .onFailure(err -> {
-//            ctx.session().destroy();
-//            ctx.fail(err);
-//          })
-//          .compose(oauthUser -> {
-//            Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(ctx);
-//
-//            oauthUser.setRealm(authRealm);
-//            /**
-//             * Create our principal
-//             */
-//            return oAuthExternal.apiApp.getUserProvider()
-//              .createOrPatchIfNull(oauthUser);
-//
-//          });
-
       /**
        * Authenticate and redirect
        */
@@ -229,28 +203,13 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
         })
         .onSuccess(authUser -> {
 
-          /**
-           * A user registration: redirects to the redirect uri
-           */
-          if (listGuid == null) {
-            AuthInternalAuthenticator.createWith(oAuthExternalProvider.getApp(), ctx, authUser)
-              .redirectViaHttp()
-              .authenticate();
-            return;
+          AuthSessionAuthenticator authSessionAuthenticator = new AuthSessionAuthenticator(ctx, authUser, authState);
+
+          for (Handler<AuthSessionAuthenticator> authHandler : oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers()) {
+            authHandler.handle(authSessionAuthenticator);
           }
 
-          /**
-           * A list registration
-           */
-          Date optInTime = Date.createFromNow();
-          String optInIp;
-          try {
-            optInIp = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          } catch (NotFoundException e) {
-            LOGGER.warn("Oauth List registration: The remote ip client could not be found. Error: " + e.getMessage());
-            optInIp = "";
-          }
-          //ListRegistrationFlow.authenticateAndRegisterUserToList(oAuthExternal.apiApp, ctx, listGuid, authUser, optInTime, optInIp, RegistrationFlow.OAUTH);
+          authSessionAuthenticator.authenticateSession();
 
         });
     });

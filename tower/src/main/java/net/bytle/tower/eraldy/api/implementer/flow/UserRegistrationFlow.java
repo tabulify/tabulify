@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
@@ -17,7 +18,8 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthInternalAuthenticator;
+import net.bytle.vertx.auth.AuthSessionAuthenticator;
+import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
@@ -198,23 +200,50 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // Possible causes:
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
-              AuthInternalAuthenticator
-                .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInDb))
+              new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
                 .redirectViaHttp()
-                .authenticate();
+                .authenticateSession();
               return;
             }
             userProvider.insertUser(user)
               .onFailure(ctx::fail)
-              .onSuccess(userInserted -> AuthInternalAuthenticator
-                .createWith(apiApp, ctx, UsersUtil.toAuthUserClaims(userInserted))
+              .onSuccess(userInserted -> new AuthSessionAuthenticator(ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
-                .authenticate());
+                .authenticateSession()
+              );
           });
       });
   }
 
   public UserRegisterEmailCallback getCallback() {
     return this.userCallback;
+  }
+
+  /**
+   * Handle when a user is authenticated via OAuth
+   */
+  public Handler<AuthSessionAuthenticator> handleOAuthAuthentication() {
+    return authSessionAuthenticator -> {
+      //        /**
+//         * Retrieve the internal user from the realm and oauth user
+//         */
+//        Future<net.bytle.tower.eraldy.model.openapi.User> userFuture = oauthUserFuture
+//          .onFailure(err -> {
+//            ctx.session().destroy();
+//            ctx.fail(err);
+//          })
+//          .compose(oauthUser -> {
+//            Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(ctx);
+//
+//            oauthUser.setRealm(authRealm);
+//            /**
+//             * Create our principal
+//             */
+//            return oAuthExternal.apiApp.getUserProvider()
+//              .createOrPatchIfNull(oauthUser);
+//
+//          });
+      LOGGER.info(authSessionAuthenticator.getAuthUser().getSubject() + " authenticated");
+    };
   }
 }

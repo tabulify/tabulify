@@ -1,13 +1,21 @@
 package net.bytle.vertx.auth;
 
+import io.vertx.core.Handler;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
+import io.vertx.ext.auth.oauth2.authorization.ScopeAuthorization;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.AuthorizationHandler;
 import io.vertx.ext.web.handler.OAuth2AuthHandler;
-import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.TowerApp;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +30,7 @@ import java.util.Map;
  */
 public class OAuthExternal {
 
+  static Logger LOGGER = LogManager.getLogger(OAuthExternal.class);
 
   private final Map<String, OAuthExternalProvider> OAUTH_PROVIDERS = new HashMap<>();
   /**
@@ -39,13 +48,17 @@ public class OAuthExternal {
   private final TowerApp towerApp;
   private final String pathMount;
 
+  private final List<Handler<AuthSessionAuthenticator>> authHandlers;
 
-  public OAuthExternal(TowerApp towerApp, String pathMount) {
+  public OAuthExternal(TowerApp towerApp, String pathMount, List<Handler<AuthSessionAuthenticator>> authHandlers) throws ConfigIllegalException {
     this.towerApp = towerApp;
     this.pathMount = pathMount;
+    addExternalProvider(OAuthExternalGithub.GITHUB_TENANT);
+    addExternalProvider(OAuthExternalGoogle.GOOGLE_TENANT);
+    this.authHandlers = authHandlers;
   }
 
-  public OAuthExternal addExternal(String provider, Router router) {
+  private OAuthExternal addExternalProvider(String provider) throws ConfigIllegalException {
 
     /**
      * Auth Provider
@@ -54,12 +67,12 @@ public class OAuthExternal {
     ConfigAccessor configAccessor = towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
     String clientId = configAccessor.getString(clientIdConf);
     if (clientId == null) {
-      throw new InternalException("The client id configuration (" + clientIdConf + ") was not found");
+      throw new ConfigIllegalException("The client id configuration (" + clientIdConf + ") was not found");
     }
     String clientSecretKey = towerApp.getAppConfName() + ".oauth." + provider + ".client.secret";
     String clientSecret = configAccessor.getString(clientSecretKey);
     if (clientSecret == null) {
-      throw new InternalException("The client secret configuration (" + clientSecretKey + ") was not found");
+      throw new ConfigIllegalException("The client secret configuration (" + clientSecretKey + ") was not found");
     }
     OAuthExternalProvider oauthExternalProvider;
     switch (provider) {
@@ -70,17 +83,9 @@ public class OAuthExternal {
         oauthExternalProvider = new OAuthExternalGoogle(this, clientId, clientSecret);
         break;
       default:
-        throw new IllegalArgumentException("The OAuth provider (" + provider + ") is unknown.");
+        throw new ConfigIllegalException("The OAuth provider (" + provider + ") is unknown.");
     }
 
-    /**
-     * Callback route handler
-     * We add it here because
-     * the callback public url method is a shared data between callback and authorization
-     * and the method is then shared in this object
-     * {@link #getCallbackPublicRedirectUri()}
-     */
-    oauthExternalProvider.addCallBackHandlers(router);
 
     /**
      * Add the provider
@@ -91,7 +96,25 @@ public class OAuthExternal {
 
   }
 
+  /**
+   * Add dynamically the callback handler
+   */
+  public void addCallBackHandlers(Router router) {
 
+    for (OAuthExternalProvider authExternalProvider : this.OAUTH_PROVIDERS.values()) {
+      String callbackLocalRouterPath = authExternalProvider.getCallbackOperationPath();
+      router.route(callbackLocalRouterPath)
+        .method(HttpMethod.GET)
+        .handler(new OAuthExternalCallbackHandler(authExternalProvider))
+        .handler(
+          // Check authorization
+          AuthorizationHandler
+            .create(PermissionBasedAuthorization.create(OAuthExternalGithub.USER_EMAIL_SCOPE))
+            .addAuthorizationProvider(ScopeAuthorization.create(" "))
+        );
+      LOGGER.info("Oauth Callback for provider (" + this + ") added at (" + towerApp.getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + towerApp.getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
+    }
+  }
 
 
   public OAuthExternalProvider getProvider(String oauthProvider) throws NotFoundException {
@@ -111,4 +134,7 @@ public class OAuthExternal {
   }
 
 
+  public List<Handler<AuthSessionAuthenticator>> getOAuthSessionAuthenticationHandlers() {
+    return this.authHandlers;
+  }
 }

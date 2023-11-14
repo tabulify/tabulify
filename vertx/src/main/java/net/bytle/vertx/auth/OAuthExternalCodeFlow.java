@@ -1,16 +1,20 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.UriEnhanced;
+import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.VertxRoutingFailureData;
 import net.bytle.vertx.flow.WebFlowAbs;
+
+import java.util.List;
 
 /**
  * A flow with external IDP (identity provider)
@@ -20,9 +24,10 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
 
   private final OAuthExternal oauthExternal;
 
-  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount) {
+
+  public OAuthExternalCodeFlow(TowerApp towerApp, String pathMount, List<Handler<AuthSessionAuthenticator>> authHandlers) throws ConfigIllegalException {
     super(towerApp);
-    this.oauthExternal = new OAuthExternal(towerApp, pathMount);
+    this.oauthExternal = new OAuthExternal(towerApp, pathMount, authHandlers);
   }
 
   /**
@@ -51,10 +56,9 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
     }
   }
 
+
   public void step2AddProviderAndCallbacks(Router router) {
-    oauthExternal
-      .addExternal(OAuthExternalGithub.GITHUB_TENANT, router)
-      .addExternal(OAuthExternalGoogle.GOOGLE_TENANT, router);
+    oauthExternal.addCallBackHandlers(router);
   }
 
   /**
