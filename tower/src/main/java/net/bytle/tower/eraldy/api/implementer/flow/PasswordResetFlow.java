@@ -64,7 +64,7 @@ public class PasswordResetFlow extends WebFlowAbs {
         try {
           recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
         } catch (NotFoundException | AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
+          return Future.failedFuture(VertxFailureHttp.create()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("A name for the user to reset could not be found (" + e.getMessage() + ")")
             .setException(e)
@@ -96,7 +96,7 @@ public class PasswordResetFlow extends WebFlowAbs {
         try {
           recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
+          return Future.failedFuture(VertxFailureHttp.create()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("The email for the user to reset ("+userToResetPassword.getEmail()+") is not valid (" + e.getMessage() + ")")
             .setException(e)
@@ -108,7 +108,7 @@ public class PasswordResetFlow extends WebFlowAbs {
         try {
           senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create()
+          return Future.failedFuture(VertxFailureHttp.create()
             .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
             .setDescription("The sender email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
             .setException(e)
@@ -130,7 +130,7 @@ public class PasswordResetFlow extends WebFlowAbs {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner

@@ -18,6 +18,7 @@ import io.vertx.micrometer.PrometheusScrapingHandler;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
 import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,14 +49,14 @@ public class VertxPrometheusMetrics {
   /**
    * Get the registry
    */
-  public static PrometheusMeterRegistry getRegistry() throws IllegalConfiguration {
+  public static PrometheusMeterRegistry getRegistry() {
     /**
      * By default, a unique registry is used and is shared across the Vert.x instances of the JVM.
      * We just show how to get another registry
      */
     MeterRegistry registry = BackendRegistries.getNow(REGISTRY_NAME);
     if (registry == null) {
-      throw new IllegalConfiguration("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher or the test Vertx?");
+      throw new InternalException("The registry (" + REGISTRY_NAME + ") was not found. Did you start with the MainLauncher or the test Vertx?");
     }
     return (PrometheusMeterRegistry) registry;
   }
@@ -63,7 +64,7 @@ public class VertxPrometheusMetrics {
   /**
    * Expose the metrics
    */
-  public static void mountOnRouter(Router router, String path) throws IllegalConfiguration {
+  public static void mountOnRouter(Router router, String path) {
 
     if (path == null) {
       // the default prometheus

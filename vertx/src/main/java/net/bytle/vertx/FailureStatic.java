@@ -17,7 +17,7 @@ public class FailureStatic {
 
   /**
    * When the handler has a non-recoverable problem,
-   * the best is to throw an exception that is caught {@link VertxRoutingFailureHandler}
+   * the best is to throw an exception that is caught {@link VertxFailureHttpHandler}
    * <p>
    * This approach works well when it's your code but
    * when it's a library code, we lose the position in the stack trace
@@ -49,6 +49,6 @@ public class FailureStatic {
    * @param routingContext - the routing context
    */
   public static void failRoutingContextWithTrace(Throwable throwable, RoutingContext routingContext) {
-    VertxRoutingFailureHandler.failRoutingContextWithTrace(throwable, routingContext, null);
+    VertxFailureHttpHandler.failRoutingContextWithTrace(throwable, routingContext, null);
   }
 }

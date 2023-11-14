@@ -12,7 +12,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.VertxFailureHttp;
 
 import java.util.List;
 
@@ -136,7 +136,7 @@ public class AuthContext {
       if (JavaEnvs.IS_DEV) {
         message += e.getMessage();
       }
-      VertxRoutingFailureData.create()
+      VertxFailureHttp.create()
         .setDescription(message)
         .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
         .setName("Bad URL redirect")
@@ -145,7 +145,7 @@ public class AuthContext {
 
     } catch (NotFoundException e) {
 
-      VertxRoutingFailureData.create()
+      VertxFailureHttp.create()
         .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
         .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
         .setName("URL redirect was not found")

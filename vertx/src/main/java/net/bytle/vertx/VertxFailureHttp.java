@@ -21,11 +21,11 @@ import java.util.NoSuchElementException;
 
 /**
  * A failure utility data class to:
- * * create the failure data, and fail the context with {@link VertxRoutingFailureData#failContextAsHtml(RoutingContext)} that send it to {@link VertxRoutingFailureHandler}
- * * be used in {@link VertxRoutingFailureHandler} to create an adequate response
+ * * create the failure data, and fail the context with {@link VertxFailureHttp#failContextAsHtml(RoutingContext)} that send it to {@link VertxFailureHttpHandler}
+ * * be used in {@link VertxFailureHttpHandler} to create an adequate response
  * <p>
  */
-public class VertxRoutingFailureData {
+public class VertxFailureHttp {
 
 
   private String description;
@@ -39,22 +39,22 @@ public class VertxRoutingFailureData {
    */
   private Exception exception;
 
-  public VertxRoutingFailureData() {
+  public VertxFailureHttp() {
 
   }
 
 
-  public static VertxRoutingFailureData create() {
-    return new VertxRoutingFailureData();
+  public static VertxFailureHttp create() {
+    return new VertxFailureHttp();
   }
 
 
-  public VertxRoutingFailureData setDescription(String message) {
+  public VertxFailureHttp setDescription(String message) {
     this.description = message;
     return this;
   }
 
-  public VertxRoutingFailureData setStatus(HttpStatusEnum status) {
+  public VertxFailureHttp setStatus(HttpStatusEnum status) {
     this.status = status;
     return this;
   }
@@ -62,8 +62,8 @@ public class VertxRoutingFailureData {
   /**
    * Failing the context returning an HTML page
    * <p>
-   * Note: it will send the {@link VertxRoutingFailureException}
-   * to the {@link VertxRoutingFailureHandler}
+   * Note: it will send the {@link VertxFailureHttpException}
+   * to the {@link VertxFailureHttpHandler}
    */
   public void failContextAsHtml(RoutingContext routingContext) {
 
@@ -72,9 +72,9 @@ public class VertxRoutingFailureData {
 
   }
 
-  public VertxRoutingFailureData failContext(RoutingContext routingContext) {
+  public VertxFailureHttp failContext(RoutingContext routingContext) {
 
-    routingContext.fail(this.status.getStatusCode(), (new VertxRoutingFailureException(this)));
+    routingContext.fail(this.status.getStatusCode(), (new VertxFailureHttpException(this)));
     return this;
 
   }
@@ -82,7 +82,7 @@ public class VertxRoutingFailureData {
   /**
    * @param name - the name of the error (used as title in a HTML page)
    */
-  public VertxRoutingFailureData setName(String name) {
+  public VertxFailureHttp setName(String name) {
     this.name = name;
     return this;
   }
@@ -93,9 +93,9 @@ public class VertxRoutingFailureData {
   }
 
   /**
-   * @param context - the context in the {@link VertxRoutingFailureHandler}
+   * @param context - the context in the {@link VertxFailureHttpHandler}
    */
-  private VertxRoutingFailureData setStatusCodeFromFailureContext(RoutingContext context) {
+  private VertxFailureHttp setStatusCodeFromFailureContext(RoutingContext context) {
     int httpStatusCode = context.statusCode();
     if (status.getStatusCode() == -1) {
       status = HttpStatusEnum.INTERNAL_ERROR_500;
@@ -114,14 +114,14 @@ public class VertxRoutingFailureData {
    *
    * @param code - the code
    */
-  private VertxRoutingFailureData setStatusCodeOnlyIfValueIsInternalError(HttpStatus code) {
+  private VertxFailureHttp setStatusCodeOnlyIfValueIsInternalError(HttpStatus code) {
     if (status == HttpStatusEnum.INTERNAL_ERROR_500) {
       this.status = code;
     }
     return this;
   }
 
-  public VertxRoutingFailureData buildFromFailureContext(RoutingContext context) {
+  public VertxFailureHttp buildFromFailureContext(RoutingContext context) {
 
     this.setStatusCodeFromFailureContext(context);
 
@@ -220,12 +220,12 @@ public class VertxRoutingFailureData {
   }
 
 
-  public VertxRoutingFailureData setMimeToJson() {
+  public VertxFailureHttp setMimeToJson() {
     this.mime = MediaTypes.TEXT_JSON;
     return this;
   }
 
-  public VertxRoutingFailureData setMimeToHtml() {
+  public VertxFailureHttp setMimeToHtml() {
     this.mime = MediaTypes.TEXT_HTML;
     return this;
   }
@@ -272,12 +272,12 @@ public class VertxRoutingFailureData {
     return exitStatusResponse;
   }
 
-  public VertxRoutingFailureException getFailedException() {
-    return new VertxRoutingFailureException(this);
+  public VertxFailureHttpException getFailedException() {
+    return new VertxFailureHttpException(this);
   }
 
 
-  public VertxRoutingFailureData setException(Exception e) {
+  public VertxFailureHttp setException(Exception e) {
     this.exception = e;
     return this;
   }

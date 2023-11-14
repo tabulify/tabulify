@@ -174,7 +174,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
         } catch (NotFoundException | AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData
+          return Future.failedFuture(VertxFailureHttp
             .create()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("The name of the subscriber could not be determined (" + e.getMessage() + ")")
@@ -213,7 +213,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getName()).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData.create().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+          return Future.failedFuture(VertxFailureHttp.create().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
             .setDescription("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
             .setException(e)
             .failContext(routingContext)
@@ -225,7 +225,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxRoutingFailureData
+          return Future.failedFuture(VertxFailureHttp
             .create()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
             .setDescription("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
@@ -249,7 +249,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner
@@ -342,7 +342,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(list -> {
 
         if (list == null) {
-          VertxRoutingFailureData
+          VertxFailureHttp
             .create()
             .setName("The list was not found")
             .setDescription("The list <mark>" + listGuid + "</mark> was not found.")

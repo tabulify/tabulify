@@ -202,6 +202,7 @@ public class HttpServer {
     }
 
     private Router buildRouter() throws IllegalConfiguration {
+
       Vertx vertx = this.server.getVertx();
       Router router = Router.router(vertx);
       if (this.addBodyHandler) {
@@ -219,7 +220,7 @@ public class HttpServer {
          * Failure Handler / Route match failures
          * https://vertx.io/docs/vertx-web/java/#_route_match_failures
          */
-        VertxRoutingFailureHandler errorHandlerXXX = VertxRoutingFailureHandler.createOrGet(vertx, this.server.getConfigAccessor());
+        VertxFailureHttpHandler errorHandlerXXX = VertxFailureHttpHandler.createOrGet(server);
         router.errorHandler(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), errorHandlerXXX);
 
         /**

@@ -77,7 +77,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(
-            VertxRoutingFailureData
+            VertxFailureHttp
               .create()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
@@ -119,7 +119,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmail(), newUserName).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxRoutingFailureData
+            VertxFailureHttp
               .create()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
@@ -133,7 +133,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           senderEmailInRfc = BMailInternetAddress.of(realmOwnerSender.getEmail(), realmOwnerSender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxRoutingFailureData
+            VertxFailureHttp
               .create()
               .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
               .setDescription("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
@@ -153,7 +153,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner
@@ -233,7 +233,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
       String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
       if (realmIdentifier == null) {
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
           .setDescription("For a user registration flow, the realm should have been set in the authentication state")
           .failContext(authContext.getRoutingContext()

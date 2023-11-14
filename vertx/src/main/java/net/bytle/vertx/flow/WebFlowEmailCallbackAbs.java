@@ -142,7 +142,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
-      VertxRoutingFailureData.create()
+      VertxFailureHttp.create()
         .setDescription(message)
         .setName("Link expired")
         .failContextAsHtml(ctx);

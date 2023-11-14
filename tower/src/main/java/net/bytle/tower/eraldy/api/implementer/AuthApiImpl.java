@@ -31,9 +31,6 @@ import net.bytle.vertx.flow.SmtpSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class AuthApiImpl implements AuthApi {
 
   private final EraldyApiApp apiApp;
@@ -46,13 +43,6 @@ public class AuthApiImpl implements AuthApi {
 
 
   public static final String DATACADAMIA_CLIENT_ID = DatacadamiaDomain.REALM_HANDLE;
-  /**
-   * We support for now two client id
-   */
-  public static final List<String> SUPPORTED_CLIENT_IDS = Arrays.asList(
-    "combo",
-    DATACADAMIA_CLIENT_ID
-  );
 
 
   /**
@@ -79,7 +69,7 @@ public class AuthApiImpl implements AuthApi {
     realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
     if (realmIdentifier == null) {
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
           .failContext(routingContext)
@@ -118,7 +108,7 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
           .failContext(routingContext)
@@ -134,7 +124,7 @@ public class AuthApiImpl implements AuthApi {
       this.utilValidateRealmFromRedirectUri(redirectUriEnhanced);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
           .setDescription("The redirect uri (" + redirectUri + ") is unknown")
           .failContext(routingContext)
@@ -235,7 +225,7 @@ public class AuthApiImpl implements AuthApi {
           recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxRoutingFailureData.create()
+            VertxFailureHttp.create()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
               .setDescription("The recipient email (" + userToLogin.getEmail() + ") is not valid")
               .setException(e)
@@ -248,7 +238,7 @@ public class AuthApiImpl implements AuthApi {
           senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxRoutingFailureData.create()
+            VertxFailureHttp.create()
               .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
               .setDescription("The sender email (" + sender.getEmail() + ") is not valid")
               .setException(e)
@@ -270,7 +260,7 @@ public class AuthApiImpl implements AuthApi {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxRoutingFailureHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner
@@ -347,7 +337,7 @@ public class AuthApiImpl implements AuthApi {
         .compose(user -> {
           if (user == null) {
             return Future.failedFuture(
-              VertxRoutingFailureData.create()
+              VertxFailureHttp.create()
                 .setStatus(HttpStatusEnum.NOT_FOUND_404)
                 .getFailedException()
             );
@@ -379,7 +369,7 @@ public class AuthApiImpl implements AuthApi {
       user = apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxRoutingFailureData
+        VertxFailureHttp
           .create()
           .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
           .getFailedException()
@@ -423,7 +413,7 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
           .failContext(routingContext)

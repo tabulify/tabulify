@@ -11,7 +11,7 @@ import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.VertxFailureHttp;
 import net.bytle.vertx.flow.WebFlowAbs;
 
 import java.util.List;
@@ -84,7 +84,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
        * For a list registration, it should be the confirmation page
        */
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
           .setDescription("The (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client cannot be null for a user registration.")
           .failContext(routingContext)

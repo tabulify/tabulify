@@ -1,32 +1,20 @@
 package net.bytle.tower.eraldy.api.implementer.util;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
-import io.vertx.json.schema.ValidationException;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.AuthApiImpl;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.util.Env;
-import net.bytle.tower.util.OAuthResponseType;
-import net.bytle.type.Casts;
-import net.bytle.type.Enums;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.TowerApexDomain;
-import net.bytle.vertx.VertxCsrf;
-import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.VertxFailureHttp;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.auth.OAuthInternalSession;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Utility Static function that redirects the request
@@ -89,7 +77,7 @@ public class FrontEndRouter {
       if (redirectUri != null) {
         message += " Click <a href=\"" + redirectUri + "\">here</a> to log in.";
       }
-      VertxRoutingFailureData.create()
+      VertxFailureHttp.create()
         .setDescription(message)
         .setName(message)
         .failContextAsHtml(routingContext);
@@ -104,7 +92,7 @@ public class FrontEndRouter {
       try {
         OAuthExternalCodeFlow.getRedirectUri(routingContext);
       } catch (NotFoundException e) {
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setName("Redirect Uri is mandatory")
           .setDescription("The redirect URI is mandatory and was not found")
           .failContextAsHtml(routingContext);
@@ -132,130 +120,4 @@ public class FrontEndRouter {
 
   }
 
-  /**
-   * Reroute all OAuth public page
-   * This utility checks that all parameters are set
-   *
-   * @return the response
-   */
-  public static Future<ApiResponse<String>> toPublicOAuthPage(EraldyApiApp apiApp, RoutingContext routingContext) {
-
-    /**
-     * We take the value of the parameters here
-     * because if there is a switch on position in the open api specification,
-     * the data are still string and the api does not cry even if the data received
-     * is not the good one
-     */
-    HttpServerRequest request = routingContext.request();
-    String inTypeRequest = request.getParam(AuthQueryProperty.RESPONSE_TYPE.toString());
-    String inClientId = request.getParam(AuthQueryProperty.CLIENT_ID.toString());
-    String inState = request.getParam(AuthQueryProperty.STATE.toString());
-
-    /**
-     * Session is mandatory
-     */
-    final Session session = routingContext.session();
-    if (session == null) {
-      throw new InternalException("A session is required. Did you place a session handler before the API builder?");
-    }
-
-    UriEnhanced redirectUriAsUri;
-    try {
-      redirectUriAsUri = OAuthExternalCodeFlow.getRedirectUri(routingContext);
-    } catch (ValidationException e) {
-      return Future.failedFuture(e);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(ValidationException.create("The redirect uri was not found", AuthQueryProperty.REDIRECT_URI.toString(), null));
-    }
-    OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
-
-    /**
-     * First party redirect?
-     */
-    TowerApexDomain firstPartyDomain = apiApp.getApexDomain();
-    boolean isFirstPartyRequest = redirectUriAsUri.getApexWithoutPort().equals(firstPartyDomain.getApexNameWithoutPort());
-
-
-    /**
-     * Client Id
-     */
-    String outClientId;
-    if (!isFirstPartyRequest && inClientId == null) {
-      throw ValidationException.create("The client id cannot be null for a third party domain", AuthQueryProperty.CLIENT_ID.toString(), null);
-    } else {
-      outClientId = redirectUriAsUri.getSubDomain();
-    }
-    if (!AuthApiImpl.SUPPORTED_CLIENT_IDS.contains(outClientId)) {
-      throw ValidationException.create("The client id is not valid", "client_id", outClientId);
-    }
-    session.put(OAuthInternalSession.CLIENT_ID_KEY, outClientId);
-
-
-    /**
-     * Response Type
-     */
-    String outResponseType;
-    if (!isFirstPartyRequest) {
-      if (inTypeRequest == null) {
-        throw ValidationException.create("The response type cannot be null for a third party domain", AuthQueryProperty.RESPONSE_TYPE.toString(), null);
-      }
-      OAuthResponseType oAuthResponseType;
-      try {
-        oAuthResponseType = Casts.cast(inTypeRequest, OAuthResponseType.class);
-      } catch (CastException e) {
-        throw ValidationException.create("The responseType is not valid. It must be one of " + Enums.toConstantAsStringOfUriAttributeCommaSeparated(OAuthResponseType.class), "response_type", inTypeRequest);
-      }
-      outResponseType = oAuthResponseType.toString();
-    } else {
-      outResponseType = OAuthResponseType.SESSION_COOKIE.toString();
-    }
-    session.put(OAuthInternalSession.RESPONSE_TYPE_KEY, outResponseType);
-
-    /**
-     * State validation
-     */
-    String outState = inState;
-    if (inState == null) {
-      if (!isFirstPartyRequest) {
-        throw ValidationException.create("The state was not found and is mandatory for a third party redirection.", "state", null);
-      }
-      outState = "foobar";
-    }
-    session.put(OAuthInternalSession.STATE_KEY, outState);
-
-
-    /**
-     * Dev Proxy request
-     */
-    if (Env.IS_DEV) {
-      return proxyGetRequest(apiApp, routingContext);
-    }
-
-
-    Map<String, Object> variables = new HashMap<>();
-    variables.put("title", "The page title");
-    variables.put("h1", "The h1 title");
-    variables.put("description", "A login text");
-    variables.put("action", "/login");
-
-
-    try {
-      String csrf = VertxCsrf.getCsrfToken(routingContext);
-      variables.put("csrf", csrf);
-    } catch (NotFoundException e) {
-      throw new RuntimeException(e);
-    }
-
-    variables.put("termsurl", "");
-
-    String formHtml = apiApp
-      .getTemplate("login.html")
-      .applyVariables(variables)
-      .getResult();
-    routingContext
-      .response()
-      .putHeader("Content-Type", "text/html")
-      .end(formHtml);
-    return Future.succeededFuture(new ApiResponse<>());
-  }
 }

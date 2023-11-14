@@ -25,7 +25,7 @@ public class Log4jRootLogger {
 
     /**
      * We catch the error that are not catched by
-     * {@link VertxRoutingFailureHandler}
+     * {@link VertxFailureHttpHandler}
      */
     PatternLayout defaultLayout = PatternLayout.createDefaultLayout();
     FileAppender fileAppender = FileAppender.newBuilder()

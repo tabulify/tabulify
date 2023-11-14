@@ -1,5 +1,6 @@
 package net.bytle.vertx;
 
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
@@ -55,6 +56,7 @@ public class Server {
   private HashId hashId;
   private JacksonMapperManager jacksonMapperManager;
   private JsonToken jsonToken;
+  private VertxFailureHandler failureHandler;
 
   Server(builder builder) {
 
@@ -154,6 +156,18 @@ public class Server {
       throw new InternalException("The Json Token utility was not enabled for this server.");
     }
     return this.jsonToken;
+  }
+
+  public PrometheusMeterRegistry getMetricsRegistry() {
+    return VertxPrometheusMetrics.getRegistry();
+  }
+
+  public MailServiceSmtpProvider getMailProvider() {
+    return MailServiceSmtpProvider.get(getVertx());
+  }
+
+  public VertxFailureHandler getFailureHandler() {
+    return this.failureHandler;
   }
 
 
@@ -267,6 +281,14 @@ public class Server {
       if (this.enableJsonToken) {
         server.jsonToken = new JsonToken.config(configAccessor).create();
       }
+
+      /**
+       * Failure Handler (Always on)
+       */
+      server.failureHandler = new VertxFailureHandler(server);
+      vertx.exceptionHandler(server.failureHandler);
+      LOGGER.info("Vertx Failure Handler started");
+
       return server;
     }
 
@@ -278,6 +300,7 @@ public class Server {
       return this;
     }
 
+
     public Server.builder addIpGeolocation() {
       if (this.poolName == null) {
         throw new InternalException("To enable Ip Geolocation, the jdbc pool service should be enabled first");
@@ -287,7 +310,7 @@ public class Server {
     }
 
     /**
-     * Add a JWT manager to create JWT token and authentice
+     * Add a JWT manager to create JWT token and authenticate
      */
     @SuppressWarnings("unused")
     public Server.builder enableJwt() {

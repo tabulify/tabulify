@@ -1,0 +1,75 @@
+package net.bytle.vertx;
+
+import io.micrometer.core.instrument.Counter;
+import io.vertx.core.Handler;
+import io.vertx.ext.mail.MailMessage;
+import net.bytle.exception.Exceptions;
+
+public class VertxFailureHandler implements Handler<Throwable> {
+
+  private final Counter failureCounter;
+
+  private final MailServiceSmtpProvider mailProvider;
+
+  public VertxFailureHandler(Server server) {
+
+
+    failureCounter = server
+      .getMetricsRegistry()
+      .counter("router_failure");
+    this.mailProvider = server.getMailProvider();
+
+
+    Boolean sendEmailOnErrorConfig = server.getConfigAccessor().getBoolean(SYS_ERROR_EMAIL_CONF, false);
+    this.setSendMailOnError(sendEmailOnErrorConfig);
+
+  }
+
+  @Override
+  public void handle(Throwable thrown) {
+
+    this.failureCounter.increment();
+
+    /**
+     * <p>
+     * For info, note that Log4j may also send email
+     * <a href="https://logging.apache.org/log4j/log4j-2.7/manual/appenders.html#SMTPAppender">...</a>
+     */
+
+
+    /**
+     * Log
+     */
+    String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
+    ContextFailureLogger.CONTEXT_FAILURE_LOGGER.error(stackTraceAsString);
+
+    /**
+     * Send the email
+     */
+    if (this.sendEmailOnError) {
+
+      MailMessage mailMessage = mailProvider
+        .createVertxMailMessage()
+        .setFrom(SysAdmin.getEmail())
+        .setTo(SysAdmin.getEmail())
+        .setSubject("Tower: An error has occurred. " + thrown.getMessage())
+        .setText(stackTraceAsString);
+
+      mailProvider
+        .getVertxMailClientForSenderWithSigning(SysAdmin.getEmail())
+        .sendMail(mailMessage)
+        .onFailure(t -> ContextFailureLogger.CONTEXT_FAILURE_LOGGER.error("Error while sending the error email. Message:" + t.getMessage(), t));
+
+    }
+
+  }
+
+  static final String SYS_ERROR_EMAIL_CONF = "sys.on.error.send.email";
+
+  private Boolean sendEmailOnError;
+
+  public VertxFailureHandler setSendMailOnError(boolean b) {
+    this.sendEmailOnError = b;
+    return this;
+  }
+}

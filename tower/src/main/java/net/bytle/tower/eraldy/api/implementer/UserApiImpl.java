@@ -15,7 +15,7 @@ import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.VertxRoutingFailureData;
+import net.bytle.vertx.VertxFailureHttp;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -85,7 +85,7 @@ public class UserApiImpl implements UserApi {
       signedInUser = apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxRoutingFailureData.create()
+        VertxFailureHttp.create()
           .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
           .setDescription("The authenticated user was not found")
           .getFailedException()
