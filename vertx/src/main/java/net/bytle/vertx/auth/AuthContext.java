@@ -3,6 +3,7 @@ package net.bytle.vertx.auth;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalStructure;
@@ -154,7 +155,14 @@ public class AuthContext {
 
     }
 
-    AuthUser sessionUser = ctx.user().principal().mapTo(AuthUser.class);
+    AuthUser sessionUser = null;
+    User contextUser = ctx.user();
+    if (contextUser != null) {
+
+      JsonObject principal = contextUser.principal();
+      sessionUser = AuthUser.createFromClaims(principal);
+
+    }
 
 
     /**
@@ -163,13 +171,23 @@ public class AuthContext {
     boolean sameUser = sessionUser != null && sessionUser.getSubject().equals(authUser.getSubject());
     if (!sameUser) {
 
+      /**
+       * Auth user check
+       */
       if (authUser.getSubject() == null) {
         // The subject is the user id (for us, the user guid) and should be not null
         throw new InternalException("The authenticated user has no subject");
       }
+      // not really needed to look up the user but nice to have
+      if (authUser.getSubjectEmail() == null) {
+        throw new InternalException("The authenticated user has no email");
+      }
+      // not really needed to look up the user but nice to have
+      if (authUser.getAudience() == null) {
+        throw new InternalException("The authenticated user has no audience");
+      }
 
-      JsonObject principal = JsonObject.mapFrom(authUser);
-      io.vertx.ext.auth.User contextUser = io.vertx.ext.auth.User.create(principal);
+      contextUser = authUser.toVertxUser();
       ctx.setUser(contextUser);
 
       // the user has upgraded from unauthenticated to authenticated

@@ -133,25 +133,40 @@ public class UsersUtil {
       }
     }
     String audienceHandle = authUser.getAudienceHandle();
-    if (audienceHandle == null && audience ==null) {
+    if (audienceHandle == null && audience == null) {
       throw new InternalException("The audience and the audience handle values should not be together null");
     }
     realm.setHandle(audienceHandle);
 
     User userEraldy = new User();
     userEraldy.setRealm(realm);
-    userEraldy.setGivenName(authUser.getSubjectGivenName());
-    userEraldy.setEmail(authUser.getSubjectEmail());
-    try {
-      String subject = authUser.getSubject();
-      userEraldy.setGuid(subject);
-      Guid guid = eraldyApiApp.getUserProvider().getGuid(subject);
-      userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-    } catch (CastException e) {
-      throw new RuntimeException(e);
+    String subjectGivenName = authUser.getSubjectGivenName();
+    userEraldy.setGivenName(subjectGivenName);
+    String subject = authUser.getSubject();
+    String subjectEmail = authUser.getSubjectEmail();
+    if (subject == null && subjectEmail == null) {
+      throw new InternalException("The subject and the subject email values should not be together null");
     }
-
-    userEraldy.setFullname(authUser.getSubjectGivenName() + " " + authUser.getSubjectFamilyName());
+    userEraldy.setEmail(subjectEmail);
+    if (subject != null) {
+      /**
+       * when retrieving an external Auth User from a social provider,
+       * we don't have any subject
+       */
+      userEraldy.setGuid(subject);
+      try {
+        Guid guid = eraldyApiApp.getUserProvider().getGuidFromHash(subject);
+        userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
+      } catch (CastException e) {
+        throw new InternalException(e);
+      }
+    }
+    String subjectFamilyName = authUser.getSubjectFamilyName();
+    String subjectFullName = subjectGivenName;
+    if (subjectFullName != null && subjectFamilyName != null) {
+      subjectFullName += " " + subjectFamilyName;
+    }
+    userEraldy.setFullname(subjectFullName);
     userEraldy.setBio(authUser.getSubjectBio());
     userEraldy.setLocation(authUser.getSubjectLocation());
     userEraldy.setWebsite(authUser.getSubjectBlog());

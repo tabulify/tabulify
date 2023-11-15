@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
@@ -259,6 +260,10 @@ public class UserRegistrationFlow extends WebFlowAbs {
       this.getApp()
         .getUserProvider()
         .createOrPatchIfNull(user)
+        .onFailure(err -> {
+          HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in user registration when patching the auth user", err);
+          authContext.getRoutingContext().fail(throwable);
+        })
         .onSuccess(dbUser -> {
           authUser.setSubject(dbUser.getGuid());
           authUser.setAudience(dbUser.getRealm().getGuid());

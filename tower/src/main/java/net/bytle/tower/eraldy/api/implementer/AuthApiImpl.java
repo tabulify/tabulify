@@ -22,7 +22,6 @@ import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
 import net.bytle.vertx.*;
@@ -40,9 +39,6 @@ public class AuthApiImpl implements AuthApi {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AuthApiImpl.class);
-
-
-  public static final String DATACADAMIA_CLIENT_ID = DatacadamiaDomain.REALM_HANDLE;
 
 
   /**

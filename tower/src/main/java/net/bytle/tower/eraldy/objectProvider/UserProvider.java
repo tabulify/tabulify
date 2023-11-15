@@ -74,17 +74,12 @@ public class UserProvider {
 
 
   public User toPublicCloneWithoutRealm(User user) {
-    return toPublicClone(user, false);
+    return toPublicClone(user);
   }
 
-  private User toPublicClone(User user, Boolean withRealm) {
+  private User toPublicClone(User user) {
     User userClone = JsonObject.mapFrom(user).mapTo(User.class);
-    if (withRealm) {
-      Realm publicRealm = this.apiApp.getRealmProvider().toPublicClone(user.getRealm());
-      userClone.setRealm(publicRealm);
-    } else {
-      userClone.setRealm(null);
-    }
+    userClone.setRealm(null);
     userClone.setLocalId(null);
     return userClone;
   }
@@ -508,10 +503,6 @@ public class UserProvider {
     return getUserFromIdOrEmail(userId, userEmail, realm);
   }
 
-  private Guid getGuidFromHash(String userGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
-  }
-
   public Future<User> getUserByGuid(String guid) {
 
     Guid guidObject;
@@ -529,7 +520,7 @@ public class UserProvider {
   }
 
   /**
-   * @param userRequested  - the user requested
+   * @param userRequested   - the user requested
    * @param realmIdentifier - the realm requested
    * @return the realm future
    */
@@ -733,7 +724,7 @@ public class UserProvider {
       });
   }
 
-  public Guid getGuid(String userGuid) throws CastException {
+  public Guid getGuidFromHash(String userGuid) throws CastException {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
   }
 }
