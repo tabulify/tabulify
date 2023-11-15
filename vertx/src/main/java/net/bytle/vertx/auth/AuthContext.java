@@ -204,7 +204,7 @@ public class AuthContext {
         .eventBuilder(AnalyticsEventName.SIGN_UP)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
-        .buildAndAddEventToQueue();
+        .sendEventAsync();
 
     }
 

@@ -5,11 +5,18 @@ import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.auth.AuthUser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.mapdb.HTreeMap;
+import org.mapdb.Serializer;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Managed the tracking with:
@@ -20,10 +27,13 @@ import java.util.*;
  */
 public class AnalyticsTracker {
 
+  static Logger LOGGER = LogManager.getLogger(AnalyticsTracker.class);
 
   private static final String PROJECT_TOKEN = "eraldy.mixpanel.project.token";
   private final MessageBuilder messageBuilder;
-  private final Map<String, AnalyticsEvent> eventsQueue = new HashMap<>();
+  private final HTreeMap<String, AnalyticsEvent> eventsQueue;
+  private final MixpanelAPI mixpanel;
+  private boolean logEventDelivery = false;
 
   public AnalyticsTracker(Server server) throws ConfigIllegalException {
 
@@ -32,6 +42,22 @@ public class AnalyticsTracker {
       throw new ConfigIllegalException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + PROJECT_TOKEN + ")");
     }
     this.messageBuilder = new MessageBuilder(projectToken);
+
+    this.eventsQueue = server
+      .getMapDb()
+      .hashMap("event_queue", Serializer.STRING, AnalyticsEvent.class)
+      .createOrOpen();
+
+    int sec10 = 10000;
+    server.getVertx().setPeriodic(sec10, sec10, jobId -> processEventQueue());
+
+    // Use an instance of MixpanelAPI to send the messages
+    // to Mixpanel's servers.
+    this.mixpanel = new MixpanelAPI();
+
+    if(JavaEnvs.IS_DEV){
+      this.logEventDelivery = true;
+    }
 
   }
 
@@ -70,7 +96,7 @@ public class AnalyticsTracker {
   }
 
 
-  public AnalyticsTracker deliverEvent() {
+  public AnalyticsTracker processEventQueue() {
 
     // Gather together a bunch of messages into a single
     // ClientDelivery. This can happen in a separate thread
@@ -103,13 +129,13 @@ public class AnalyticsTracker {
         continue;
       }
       delivery.addMessage(mixpanelEvent);
+      if (this.logEventDelivery) {
+        LOGGER.info("The event " + event + " was added for delivery");
+      }
       eventInBatch.add(event);
     }
 
 
-    // Use an instance of MixpanelAPI to send the messages
-    // to Mixpanel's servers.
-    MixpanelAPI mixpanel = new MixpanelAPI();
     try {
       // https://developer.mixpanel.com/reference/import-events
       mixpanel.deliver(delivery);
@@ -128,7 +154,6 @@ public class AnalyticsTracker {
 
   public ServerEventBuilder eventBuilder(AnalyticsEventName eventName) {
 
-
     return new ServerEventBuilder(eventName);
 
   }
@@ -142,9 +167,13 @@ public class AnalyticsTracker {
       this.eventName = eventName;
     }
 
-    public void buildAndAddEventToQueue() {
+    /**
+     * Send the event to the queue
+     * (the event is processed async)
+     */
+    public void sendEventAsync() {
 
-      addEventToQueue(buildEvent());
+      AnalyticsTracker.this.addEventToQueue(buildEvent());
 
     }
 
@@ -191,4 +220,5 @@ public class AnalyticsTracker {
       return analyticsEvent;
     }
   }
+
 }

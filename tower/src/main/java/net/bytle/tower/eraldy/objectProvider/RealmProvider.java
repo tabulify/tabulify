@@ -76,12 +76,14 @@ public class RealmProvider {
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
     this.apiApp = apiApp;
     this.publicRealmJsonMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
-      .createNewJsonMapper()
+      .jsonMapperBuilder()
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(RealmAnalytics.class, RealmPublicMixin.class)
       .addMixIn(Organization.class, OrganizationPublicMixin.class)
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class);
+      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
+      .build()
+      ;
   }
 
 

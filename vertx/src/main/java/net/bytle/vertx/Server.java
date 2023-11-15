@@ -14,12 +14,14 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Properties, configuration and capabilities for a server (net/http)
  * <p>
  */
-public class Server {
+public class Server implements AutoCloseable {
 
   static Logger LOGGER = LogManager.getLogger(Server.class);
 
@@ -59,6 +61,8 @@ public class Server {
   private VertxFailureHandler failureHandler;
   private AnalyticsTracker analyticsTracker;
   private TowerSmtpClient smtpClient;
+  private MapDb mapDb;
+  private final List<AutoCloseable> closeableServices = new ArrayList<>();
 
   Server(builder builder) {
 
@@ -169,15 +173,34 @@ public class Server {
     return this.failureHandler;
   }
 
-  public AnalyticsTracker getTrackerAnalytics()  {
-    if(this.analyticsTracker==null){
+  public AnalyticsTracker getTrackerAnalytics() {
+    if (this.analyticsTracker == null) {
       throw new InternalException("Analytics Tracker is not enabled");
     }
     return this.analyticsTracker;
   }
 
   public TowerSmtpClient getSmtpClient() {
+    if (this.smtpClient == null) {
+      throw new InternalException("Smtp Client is not enabled");
+    }
     return this.smtpClient;
+  }
+
+  public MapDb getMapDb() {
+    if (this.mapDb == null) {
+      throw new InternalException("Map Db is not enabled");
+    }
+    return this.mapDb;
+
+  }
+
+  @Override
+  public void close() throws Exception {
+    for (AutoCloseable closable : this.closeableServices) {
+      LOGGER.info("Closing " + closable.getClass().getSimpleName());
+      closable.close();
+    }
   }
 
 
@@ -199,6 +222,8 @@ public class Server {
     private boolean enableAnalytics = false;
 
     private String smtpClientUserAgentName = null;
+    private boolean enableMapdb = false;
+
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -296,19 +321,8 @@ public class Server {
       }
 
       /**
-       * Failure Handler (Always on)
+       * Before Failure Handler as this service uses SMTP
        */
-      server.failureHandler = new VertxFailureHandler(server);
-      vertx.exceptionHandler(server.failureHandler);
-      LOGGER.info("Vertx Failure Handler started");
-
-      if (this.enableAnalytics) {
-        LOGGER.info("Analytics tracker enabled");
-        server.analyticsTracker = AnalyticsTracker.createFromJsonObject(server);
-      } else {
-        LOGGER.info("Analytics tracker disabled");
-      }
-
       if (this.smtpClientUserAgentName != null) {
         LOGGER.info("Smtp Client Enabled: Start Instantiation of Email Engine");
         BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
@@ -319,6 +333,33 @@ public class Server {
       } else {
         LOGGER.info("Smtp Client disabled");
       }
+
+      /**
+       * Failure Handler (Always on)
+       */
+      server.failureHandler = new VertxFailureHandler(server);
+      vertx.exceptionHandler(server.failureHandler);
+      LOGGER.info("Vertx Failure Handler started");
+
+      /**
+       * Before Analytics service as this service uses MapDb
+       */
+      if (this.enableMapdb) {
+        LOGGER.info("MapDb enabled");
+        server.mapDb = new MapDb(server);
+        server.closeableServices.add(server.mapDb);
+      } else {
+        LOGGER.info("MapDb disabled");
+      }
+
+      if (this.enableAnalytics) {
+        LOGGER.info("Analytics tracker enabled");
+        server.analyticsTracker = AnalyticsTracker.createFromJsonObject(server);
+      } else {
+        LOGGER.info("Analytics tracker disabled");
+      }
+
+
       return server;
     }
 
@@ -387,7 +428,13 @@ public class Server {
     }
 
     public Server.builder enableTrackerAnalytics() {
+      this.enableMapdb = true;
       this.enableAnalytics = true;
+      return this;
+    }
+
+    public Server.builder enableMapDb() {
+      this.enableMapdb = true;
       return this;
     }
 

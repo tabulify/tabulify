@@ -200,7 +200,12 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
           ctx.session().destroy();
           ctx.fail(err);
         })
-        .onSuccess(authUser -> new AuthContext(ctx, authUser, authState)
+        .onSuccess(authUser -> new AuthContext(
+          this.oAuthExternalProvider.getOAuthExternal().getTowerApp(),
+          ctx,
+          authUser,
+          authState
+        )
           .setHandlers(oAuthExternalProvider.getOAuthExternal().getOAuthSessionAuthenticationHandlers())
           .authenticateSession());
     });

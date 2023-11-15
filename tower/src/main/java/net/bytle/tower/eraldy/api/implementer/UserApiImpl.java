@@ -27,8 +27,9 @@ public class UserApiImpl implements UserApi {
 
   public UserApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.userMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().createNewJsonMapper()
-      .addMixIn(User.class, UserPublicMixinWithRealm.class);
+    this.userMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+      .addMixIn(User.class, UserPublicMixinWithRealm.class)
+      .build();
   }
 
 

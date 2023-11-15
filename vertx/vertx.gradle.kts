@@ -7,6 +7,7 @@ val flywayVersion = rootProject.ext.get("flywayVersion").toString()
 val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
+val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
 
 dependencies {
 
@@ -32,6 +33,10 @@ dependencies {
 
   // other health check
   implementation("io.vertx:vertx-health-check:$vertxVersion")
+
+  // mapdb
+  implementation("org.mapdb:mapdb:$mapdbVersion")
+
 
   // Resilience (Rate limiting, ...)
   // https://how-to.vertx.io/resilience4j-howto/ (9k)

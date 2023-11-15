@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Manage the separate ObjectMapper instances
@@ -49,19 +51,6 @@ public class JacksonMapperManager {
 
   }
 
-  public void initMapper(ObjectMapper mapper) {
-
-    if (JavaEnvs.IS_DEV) {
-      /**
-       * To avoid unrecognizable field when we develop if we have stored a json
-       * field that was deleted later
-       * Unrecognized field \"owner\" (class net.bytle.tower.eraldy.model.openapi.Realm), not marked as ignorable
-       */
-      mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-    mapper.registerModule(getJavaTimeModule());
-
-  }
 
   public JavaTimeModule getJavaTimeModule() {
 
@@ -73,7 +62,7 @@ public class JacksonMapperManager {
         DatabindCodec.mapper(),
         DatabindCodec.prettyMapper()
       )
-      .forEach(this::initMapper);
+      .forEach(mapper -> mapper.registerModule(getJavaTimeModule()));
     LOGGER.info("Date time in JSON jackson enabled");
   }
 
@@ -84,11 +73,50 @@ public class JacksonMapperManager {
    * after the first used of a mapper, we create
    * therefore the mappers in the start phase of the server
    */
-  public JsonMapper createNewJsonMapper() {
-    JsonMapper mapper = JsonMapper
-      .builder()
-      .build();
-    this.initMapper(mapper);
-    return mapper;
+  public JsonMapperBuilder jsonMapperBuilder() {
+
+    return new JsonMapperBuilder();
+  }
+
+  public class JsonMapperBuilder {
+
+    private boolean disableFailOnUnknownProperties = false;
+    private final HashMap<Class<?>, Class<?>> mixins = new HashMap<>();
+
+    public JsonMapperBuilder setDisableFailOnUnknownProperties() {
+      this.disableFailOnUnknownProperties = true;
+      return this;
+    }
+
+    public JsonMapper build() {
+      JsonMapper mapper = JsonMapper
+        .builder()
+        .build();
+      mapper.registerModule(getJavaTimeModule());
+      if (disableFailOnUnknownProperties || JavaEnvs.IS_DEV) {
+        /**
+         * To avoid unrecognizable field when we develop if we have stored a json
+         * field that was deleted later
+         * Unrecognized field \"owner\" (class net.bytle.tower.eraldy.model.openapi.Realm), not marked as ignorable
+         */
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      }
+      if (this.mixins.size() != 0) {
+        for (Map.Entry<Class<?>, Class<?>> entry : this.mixins.entrySet()) {
+          mapper.addMixIn(entry.getKey(), entry.getValue());
+        }
+      }
+      return mapper;
+    }
+
+    /**
+     *
+     * Mixins permits to change the Jackson Metadata on the fly
+     * by overwriting the properties
+     */
+    public JsonMapperBuilder addMixIn(Class<?> originalClass, Class<?> mixinClass) {
+      this.mixins.put(originalClass, mixinClass);
+      return this;
+    }
   }
 }

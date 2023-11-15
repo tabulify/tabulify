@@ -72,6 +72,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableJdbcPool("jdbc")
               .enableJsonToken()
               .enableSmtpClient("Eraldy.com")
+              .enableMapDb()
               .enableTrackerAnalytics()
               .build();
           } catch (ConfigIllegalException e) {
@@ -198,7 +199,10 @@ public class VerticleApi extends AbstractVerticle {
 
     vertx.executeBlocking(() -> {
 
-      System.out.println("Flushing Session Data");
+      LOGGER.info("Closing Server services");
+      this.getApp().getApexDomain().getHttpServer().getServer().close();
+
+      LOGGER.info("Flushing Session Data");
       PersistentLocalSessionStore.get()
         .flush()
         .close();

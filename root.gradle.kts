@@ -35,6 +35,9 @@ val postgresVersion = "42.2.16"
 val hashIdVersion = "1.0.3"
 // In-memory Cache (2.9.3 because version 3 was only Java 11 compatible and not 8)
 val caffeineVersion = "2.9.3"
+// Embdedded Map database
+// https://mvnrepository.com/artifact/org.mapdb/mapdb
+val mapdbVersion = "3.0.10"
 
 ext {
   set("vertxVersion", vertxVersion)
@@ -49,6 +52,7 @@ ext {
   set("postgresVersion", postgresVersion)
   set("hashIdVersion", hashIdVersion)
   set("caffeineVersion", caffeineVersion)
+  set("mapdbVersion", mapdbVersion)
 }
 
 /**
