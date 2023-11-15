@@ -4,8 +4,8 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
+import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
@@ -57,6 +57,8 @@ public class Server {
   private JacksonMapperManager jacksonMapperManager;
   private JsonToken jsonToken;
   private VertxFailureHandler failureHandler;
+  private AnalyticsTracker analyticsTracker;
+  private TowerSmtpClient smtpClient;
 
   Server(builder builder) {
 
@@ -162,12 +164,20 @@ public class Server {
     return VertxPrometheusMetrics.getRegistry();
   }
 
-  public MailServiceSmtpProvider getMailProvider() {
-    return MailServiceSmtpProvider.get(getVertx());
-  }
 
   public VertxFailureHandler getFailureHandler() {
     return this.failureHandler;
+  }
+
+  public AnalyticsTracker getTrackerAnalytics()  {
+    if(this.analyticsTracker==null){
+      throw new InternalException("Analytics Tracker is not enabled");
+    }
+    return this.analyticsTracker;
+  }
+
+  public TowerSmtpClient getSmtpClient() {
+    return this.smtpClient;
   }
 
 
@@ -186,6 +196,9 @@ public class Server {
     private boolean enableHashId = false;
     private boolean enableJacksonTime = true;
     private boolean enableJsonToken = false;
+    private boolean enableAnalytics = false;
+
+    private String smtpClientUserAgentName = null;
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
       this.name = name;
@@ -239,7 +252,7 @@ public class Server {
       return this;
     }
 
-    public Server build() throws IllegalConfiguration {
+    public Server build() throws ConfigIllegalException {
       Server server = new Server(this);
       if (this.poolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
@@ -251,7 +264,7 @@ public class Server {
         try {
           server.ipGeolocation = IpGeolocation.create(server.jdbcPool, server.jdbcManager);
         } catch (DbMigrationException e) {
-          throw new IllegalConfiguration("Ip geolocation bad schema migration", e);
+          throw new ConfigIllegalException("Ip geolocation bad schema migration", e);
         }
       } else {
         LOGGER.info("IP Geo-location not enabled");
@@ -260,7 +273,7 @@ public class Server {
         try {
           server.jwtAuthManager = JwtAuthManager.create(server);
         } catch (NoSecretException e) {
-          throw new IllegalConfiguration("Unable to init JWT", e);
+          throw new ConfigIllegalException("Unable to init JWT", e);
         }
       } else {
         LOGGER.info("Jwt not enabled");
@@ -289,6 +302,23 @@ public class Server {
       vertx.exceptionHandler(server.failureHandler);
       LOGGER.info("Vertx Failure Handler started");
 
+      if (this.enableAnalytics) {
+        LOGGER.info("Analytics tracker enabled");
+        server.analyticsTracker = AnalyticsTracker.createFromJsonObject(server);
+      } else {
+        LOGGER.info("Analytics tracker disabled");
+      }
+
+      if (this.smtpClientUserAgentName != null) {
+        LOGGER.info("Smtp Client Enabled: Start Instantiation of Email Engine");
+        BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
+        server.smtpClient = TowerSmtpClient
+          .config(this.smtpClientUserAgentName, server, mailSmtpParameterFromConfig)
+          .create();
+        Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);
+      } else {
+        LOGGER.info("Smtp Client disabled");
+      }
       return server;
     }
 
@@ -353,6 +383,16 @@ public class Server {
      */
     public Server.builder enableJsonToken() {
       this.enableJsonToken = true;
+      return this;
+    }
+
+    public Server.builder enableTrackerAnalytics() {
+      this.enableAnalytics = true;
+      return this;
+    }
+
+    public Server.builder enableSmtpClient(String userAgentName) {
+      this.smtpClientUserAgentName = userAgentName;
       return this;
     }
   }

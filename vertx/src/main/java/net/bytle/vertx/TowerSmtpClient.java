@@ -1,6 +1,5 @@
 package net.bytle.vertx;
 
-import io.vertx.core.Vertx;
 import io.vertx.ext.mail.*;
 import net.bytle.email.*;
 import net.bytle.exception.InternalException;
@@ -38,17 +37,16 @@ import static net.bytle.email.BMailMimeMessageHeader.X_REPORT_ABUSE_TO;
  * // List-Unsubscribe: <https://yj227.infusionsoft.com/app/optOut/noConfirm/123594159/cc0796985bd11722>, <mailto:unsubscribe-yj227-1867071-129101-123594159-value@infusionmail.com>
  * </code>
  */
-public class MailServiceSmtpProvider {
+public class TowerSmtpClient {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MailServiceSmtpProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TowerSmtpClient.class);
 
   /**
    * example of generated message id: combostrap_70165127_1668601688544_0
    */
-  public static final String MAIL_AGENT_NAME = "combostrap";
+
   public static final String MAIL_DKIM_SELECTOR = "mail.dkim.selector";
 
-  static private final Map<Vertx, MailServiceSmtpProvider> smtpPoolMap = new HashMap<>();
   /**
    * PKCS8 Private Key Base64 String
    */
@@ -73,21 +71,16 @@ public class MailServiceSmtpProvider {
   private MailClient wiserMailClient;
 
 
-  public MailServiceSmtpProvider(MailServiceSmtpProviderConfig providerConfig) {
+  public TowerSmtpClient(MailServiceSmtpProviderConfig providerConfig) {
     this.providerConfig = providerConfig;
   }
 
-  public static MailServiceSmtpProvider get(Vertx vertx) {
-    MailServiceSmtpProvider mailPool = smtpPoolMap.get(vertx);
-    if (mailPool == null) {
-      throw new InternalException("The smtp service should exist");
-    }
-    return mailPool;
-  }
 
-  public static MailServiceSmtpProviderConfig config(Vertx vertx, ConfigAccessor jsonConfig, BMailSmtpConnectionParameters mailSmtpConfig) {
+  public static MailServiceSmtpProviderConfig config(String userAgentName, Server server, BMailSmtpConnectionParameters mailSmtpConfig) {
 
-    MailServiceSmtpProviderConfig mailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(vertx);
+    MailServiceSmtpProviderConfig mailServiceSmtpProviderConfig = new MailServiceSmtpProviderConfig(server, userAgentName);
+
+    ConfigAccessor jsonConfig = server.getConfigAccessor();
 
     /**
      * Data from conf file
@@ -156,7 +149,7 @@ public class MailServiceSmtpProvider {
        * Same as {@link WiserConfiguration#WISER_PORT}
        */
       mailConfig.setPort(1081);
-      this.wiserMailClient = MailClient.create(this.providerConfig.vertx, mailConfig);
+      this.wiserMailClient = MailClient.create(this.providerConfig.server.getVertx(), mailConfig);
       return this.wiserMailClient;
     }
 
@@ -166,7 +159,7 @@ public class MailServiceSmtpProvider {
     }
 
     MailConfig config = getMailConfigWithDkim(senderDomain);
-    mailClient = MailClient.create(this.providerConfig.vertx, config);
+    mailClient = MailClient.create(this.providerConfig.server.getVertx(), config);
     transactionalMailClientsMap.put(senderDomain, mailClient);
     return mailClient;
 
@@ -182,7 +175,7 @@ public class MailServiceSmtpProvider {
       .setSdid(senderDomain);
 
     MailConfig vertxMailConfig = new MailConfig()
-      .setUserAgent(MAIL_AGENT_NAME)
+      .setUserAgent(this.providerConfig.userAgentName)
       .setMaxPoolSize(1)
       .setEnableDKIM(true)
       .setDKIMSignOption(dkimSignOptions);
@@ -228,7 +221,7 @@ public class MailServiceSmtpProvider {
     return vertxMailConfig;
   }
 
-  public MailServiceSmtpProvider useWiserSmtpServerAsSmtpDestination(Boolean b) {
+  public TowerSmtpClient useWiserSmtpServerAsSmtpDestination(Boolean b) {
     this.useWiserAsTransactionalClient = b;
     return this;
   }
@@ -266,20 +259,20 @@ public class MailServiceSmtpProvider {
 
 
   public static class MailServiceSmtpProviderConfig {
-    private final Vertx vertx;
+    private final Server server;
     public BMailSmtpConnectionParameters smtpConnectionParameters;
+    public final String userAgentName;
     String dkimSelector = DEFAULT_DKIM_SELECTOR;
     String dkimPrivateKey;
 
-    public MailServiceSmtpProviderConfig(Vertx vertx) {
-      this.vertx = vertx;
+    public MailServiceSmtpProviderConfig(Server server, String userAgentName) {
+      this.server = server;
+      this.userAgentName = userAgentName;
     }
 
-    public MailServiceSmtpProvider create() {
+    public TowerSmtpClient create() {
 
-      MailServiceSmtpProvider mailPoolService = new MailServiceSmtpProvider(this);
-      smtpPoolMap.put(vertx, mailPoolService);
-      return mailPoolService;
+      return new TowerSmtpClient(this);
 
     }
 

@@ -7,11 +7,10 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.MessagingException;
 import net.bytle.email.BMailMimeMessage;
-import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.ovh.OvhApiClient;
-import net.bytle.vertx.ConfigMailSmtpParameters;
 import net.bytle.vertx.ConfigManager;
-import net.bytle.vertx.MailServiceSmtpProvider;
+import net.bytle.vertx.Server;
+import net.bytle.vertx.TowerSmtpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,6 +47,10 @@ public class MonitorMain extends AbstractVerticle {
       .onSuccess(configAccessor -> {
         try {
 
+          Server server = Server.create("monitor", vertx, configAccessor)
+            .enableSmtpClient("eraldy.com")
+            .build();
+
           LOGGER.info("Api client wrapper");
           WebClient webClient = WebClient.create(vertx);
           CloudflareApi cloudflareApi = CloudflareApi.create(webClient, configAccessor);
@@ -56,9 +59,7 @@ public class MonitorMain extends AbstractVerticle {
             .build();
 
           LOGGER.info("Monitor Config");
-          BMailSmtpConnectionParameters smtpInfo = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
-          MailServiceSmtpProvider smtpMailProvider = MailServiceSmtpProvider.config(vertx, configAccessor, smtpInfo).create();
-
+          TowerSmtpClient smtpMailProvider = server.getSmtpClient();
 
           List<MonitorReport> monitorReports = new ArrayList<>();
           LOGGER.info("Monitor Starting the API Token check");

@@ -110,9 +110,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String text = letter.generatePlainText();
 
         String mailSubject = "Registration to " + realmNameOrHandle;
-        MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
+        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
-        MailClient mailClientForListOwner = mailServiceSmtpProvider
+        MailClient mailClientForListOwner = towerSmtpClient
           .getVertxMailClientForSenderWithSigning(realmOwnerSender.getEmail());
 
         String newUserAddressInRfcFormat;
@@ -144,7 +144,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           );
         }
 
-        MailMessage registrationEmail = mailServiceSmtpProvider
+        MailMessage registrationEmail = towerSmtpClient
           .createVertxMailMessage()
           .setTo(newUserAddressInRfcFormat)
           .setFrom(senderEmailInRfc)
@@ -159,7 +159,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
             // Send feedback to the list owner
             String title = "The user (" + newUser.getEmail() + ") received a registration email for the realm (" + realm.getHandle() + ").";
-            MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
+            MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(senderEmailInRfc)
               .setFrom(senderEmailInRfc)
@@ -180,10 +180,11 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * @param ctx      - the context
    * @param authUser - the claims
    */
-  public static void handleStep2ClickOnEmailValidationLink(EraldyApiApp apiApp, RoutingContext ctx, AuthUser authUser) {
+  public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthUser authUser) {
 
 
-    apiApp.getRealmProvider()
+    getApp()
+      .getRealmProvider()
       .getRealmFromHandle(authUser.getRealmIdentifier())
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
@@ -191,7 +192,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         User user = new User();
         user.setRealm(realm);
         user.setEmail(authUser.getSubjectEmail());
-        UserProvider userProvider = apiApp.getUserProvider();
+        UserProvider userProvider = getApp().getUserProvider();
         userProvider
           .getUserByEmail(user.getEmail(), user.getRealm())
           .onFailure(ctx::fail)
@@ -201,14 +202,14 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // Possible causes:
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
-              new AuthContext(ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+              new AuthContext(getApp(),ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
                 .redirectViaHttp()
                 .authenticateSession();
               return;
             }
             userProvider.insertUser(user)
               .onFailure(ctx::fail)
-              .onSuccess(userInserted -> new AuthContext(ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
+              .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
                 .authenticateSession()
               );

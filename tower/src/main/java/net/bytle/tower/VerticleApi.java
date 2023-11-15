@@ -71,8 +71,10 @@ public class VerticleApi extends AbstractVerticle {
               .enableHashId()
               .enableJdbcPool("jdbc")
               .enableJsonToken()
+              .enableSmtpClient("Eraldy.com")
+              .enableTrackerAnalytics()
               .build();
-          } catch (IllegalConfiguration e) {
+          } catch (ConfigIllegalException e) {
             this.handlePromiseFailure(verticlePromise,e);
             return;
           }

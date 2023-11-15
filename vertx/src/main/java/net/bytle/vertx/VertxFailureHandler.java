@@ -9,7 +9,7 @@ public class VertxFailureHandler implements Handler<Throwable> {
 
   private final Counter failureCounter;
 
-  private final MailServiceSmtpProvider mailProvider;
+  private final TowerSmtpClient mailProvider;
 
   public VertxFailureHandler(Server server) {
 
@@ -17,7 +17,7 @@ public class VertxFailureHandler implements Handler<Throwable> {
     failureCounter = server
       .getMetricsRegistry()
       .counter("router_failure");
-    this.mailProvider = server.getMailProvider();
+    this.mailProvider = server.getSmtpClient();
 
 
     Boolean sendEmailOnErrorConfig = server.getConfigAccessor().getBoolean(SYS_ERROR_EMAIL_CONF, false);

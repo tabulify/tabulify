@@ -96,7 +96,6 @@ public class AnalyticsEvent   {
   /**
   * @param deviceId The device id (a uuid4 or a fingerprint for instance)  It's also known as the user anonymous id because this is the user identifier when the user is unknown.  When you send a message, a userId or a deviceId is required in order to identify a user.  We prefer the term device id (mixpanel) over anonymous id (segment) because it's more meaningful. We track the device.  It's created on the client side and stored by the client more permanently (via a cookie for the browser and stored in local storage for durability).  It's not the same as a session id because: * a session id may be regenerated (when the user sign in for instance). * the device id does not have any security feature. You can't login
   */
-  @SuppressWarnings("unused")
   public void setDeviceId(String deviceId) {
     this.deviceId = deviceId;
   }
@@ -223,4 +222,6 @@ public class AnalyticsEvent   {
     }
     return o.toString().replace("\n", "\n    ");
   }
+
+
 }

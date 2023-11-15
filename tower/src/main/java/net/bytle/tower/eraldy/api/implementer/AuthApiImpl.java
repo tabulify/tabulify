@@ -15,7 +15,6 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotAuthorizedException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
@@ -214,7 +213,7 @@ public class AuthApiImpl implements AuthApi {
         String text = letter.generatePlainText();
 
         String mailSubject = "Login to " + realmNameOrHandle;
-        MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(routingContext.vertx());
+        TowerSmtpClient towerSmtpClient = this.apiApp.getApexDomain().getHttpServer().getServer().getSmtpClient();
 
         String recipientEmailAddressInRfcFormat;
         try {
@@ -243,10 +242,10 @@ public class AuthApiImpl implements AuthApi {
           );
         }
 
-        MailClient mailClientForListOwner = mailServiceSmtpProvider
+        MailClient mailClientForListOwner = towerSmtpClient
           .getVertxMailClientForSenderWithSigning(sender.getEmail());
 
-        MailMessage registrationEmail = mailServiceSmtpProvider
+        MailMessage registrationEmail = towerSmtpClient
           .createVertxMailMessage()
           .setTo(recipientEmailAddressInRfcFormat)
           .setFrom(senderEmailAddressInRfcFormat)
@@ -261,7 +260,7 @@ public class AuthApiImpl implements AuthApi {
 
             // Send feedback to the list owner
             String title = "The user (" + userToLogin.getEmail() + ") received a login email for the realm (" + userToLogin.getRealm().getHandle() + ").";
-            MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
+            MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(senderEmailAddressInRfcFormat)
               .setFrom(senderEmailAddressInRfcFormat)
@@ -339,7 +338,7 @@ public class AuthApiImpl implements AuthApi {
             );
           }
           AuthUser authUser = UsersUtil.toAuthUserClaims(user);
-          new AuthContext(routingContext, authUser, AuthState.createEmpty())
+          new AuthContext(this.apiApp, routingContext, authUser, AuthState.createEmpty())
             .redirectViaClient()
             .authenticateSession();
           return Future.succeededFuture(new ApiResponse<>());
@@ -445,7 +444,7 @@ public class AuthApiImpl implements AuthApi {
 
   @Override
   public Future<ApiResponse<Void>> authRegisterListPost(RoutingContext routingContext, ListRegistrationPostBody listRegistrationPostBody) {
-    return ListRegistrationFlow.handleStep1SendingValidationEmail(this.apiApp, routingContext, listRegistrationPostBody)
+    return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listRegistrationPostBody)
       .compose(response -> Future.succeededFuture(new ApiResponse<>()));
   }
 

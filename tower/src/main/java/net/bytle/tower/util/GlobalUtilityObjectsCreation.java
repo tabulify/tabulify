@@ -3,7 +3,6 @@ package net.bytle.tower.util;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.*;
@@ -50,8 +49,8 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
     jdbcSchemaManager.migrate(realmSchema);
 
     INIT_LOGGER.info("Add the SMTP Logger");
-    BMailSmtpConnectionParameters mailSmtpParameterFromConfig = ConfigMailSmtpParameters.createFromConfigAccessor(configAccessor);
-    Log4jConfigure.configureOnVertxInit(mailSmtpParameterFromConfig);
+
+
 
     INIT_LOGGER.info("Start Instantiation of Symmetric Secret Data Encryption");
     CryptoSymmetricUtil
@@ -63,16 +62,8 @@ public class GlobalUtilityObjectsCreation implements Handler<Promise<Void>> {
       .config(vertx, configAccessor)
       .create();
 
-    INIT_LOGGER.info("Start Instantiation of Email Engine");
-    MailServiceSmtpProvider
-      .config(vertx, configAccessor, mailSmtpParameterFromConfig)
-      .create();
-
     INIT_LOGGER.info("Start instantiation of the password Hash manager");
     PasswordHashManager.init(configAccessor);
-
-    INIT_LOGGER.info("Build Analytics tracker");
-    AnalyticsTracker.createFromJsonObject(configAccessor);
 
   }
 

@@ -19,6 +19,10 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Oauth GitHub app settings can be seen at <a href="https://github.com/settings/developers">Settings developers</a>
+ * as told here: <a href="https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app">Creating an OAuth App</a>
+ */
 public class OAuthExternalGithub extends OAuthExternalProviderAbs {
 
 

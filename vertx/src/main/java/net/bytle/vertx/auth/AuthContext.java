@@ -11,9 +11,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.EraldyDomain;
-import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.VertxFailureHttp;
+import net.bytle.vertx.*;
 
 import java.util.List;
 
@@ -32,13 +30,15 @@ public class AuthContext {
   private final RoutingContext ctx;
   private final AuthUser authUser;
   private final AuthState authState;
+  private final TowerApp towerApp;
   private List<Handler<AuthContext>> handlers;
   private int handlerIndex = -1;
 
-  public AuthContext(RoutingContext ctx, AuthUser user, AuthState authState) {
+  public AuthContext(TowerApp towerApp, RoutingContext ctx, AuthUser user, AuthState authState) {
     this.ctx = ctx;
     this.authUser = user;
     this.authState = authState;
+    this.towerApp = towerApp;
   }
 
 
@@ -63,7 +63,7 @@ public class AuthContext {
       handlerIndex++;
       this.handlers.get(handlerIndex).handle(this);
     } else {
-      this.authenticateLastHandler();
+      this.nextLastHandlerSessionUpgrade();
     }
 
   }
@@ -116,7 +116,8 @@ public class AuthContext {
 
   }
 
-  private void authenticateLastHandler() {
+  private void nextLastHandlerSessionUpgrade() {
+
     /**
      * Try to redirect
      * <p>
@@ -194,6 +195,17 @@ public class AuthContext {
       // session should be upgraded as recommended by owasp
       Session session = ctx.session();
       session.regenerateId();
+
+      this.towerApp
+        .getApexDomain()
+        .getHttpServer()
+        .getServer()
+        .getTrackerAnalytics()
+        .eventBuilder(AnalyticsEventName.SIGN_UP)
+        .setUser(authUser)
+        .setRoutingContext(this.getRoutingContext())
+        .buildAndAddEventToQueue();
+
     }
 
     /**
@@ -292,6 +304,7 @@ public class AuthContext {
       redirection.addQueryProperty(AuthQueryProperty.CODE.toString(), authCode);
     }
     return redirection;
+
   }
 
 

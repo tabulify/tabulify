@@ -7,7 +7,6 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.impl.jose.JWK;
 import io.vertx.ext.auth.impl.jose.JWT;
 import net.bytle.crypto.CryptoHmac;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.type.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -143,10 +142,10 @@ public class JsonToken {
     }
 
 
-    public JsonToken create() throws IllegalConfiguration {
+    public JsonToken create() throws ConfigIllegalException {
 
       if (this.secret == null) {
-        throw new IllegalConfiguration("A secret is mandatory. You can set set in the conf with the attribute (" + SECRET_URL_DATA_ENCRYPTION_CONF + ")");
+        throw new ConfigIllegalException("A secret is mandatory. You can set set in the conf with the attribute (" + SECRET_URL_DATA_ENCRYPTION_CONF + ")");
       }
 
       return new JsonToken(this.secret);

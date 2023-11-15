@@ -4,7 +4,8 @@ import com.mixpanel.mixpanelapi.ClientDelivery;
 import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
-import net.bytle.exception.NoSecretException;
+import io.vertx.ext.web.RoutingContext;
+import net.bytle.vertx.auth.AuthUser;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -21,29 +22,27 @@ public class AnalyticsTracker {
 
 
   private static final String PROJECT_TOKEN = "eraldy.mixpanel.project.token";
-  private static AnalyticsTracker analyticsTracker;
   private final MessageBuilder messageBuilder;
-  private final Map<String, AnalyticsEvent> events = new HashMap<>();
+  private final Map<String, AnalyticsEvent> eventsQueue = new HashMap<>();
 
-  public AnalyticsTracker(String projectToken) {
+  public AnalyticsTracker(Server server) throws ConfigIllegalException {
 
-    this.messageBuilder = new MessageBuilder(projectToken);
-  }
-
-  public static AnalyticsTracker createFromJsonObject(ConfigAccessor jsonConfig) throws NoSecretException {
-
-    String projectToken = jsonConfig.getString(PROJECT_TOKEN);
+    String projectToken = server.getConfigAccessor().getString(PROJECT_TOKEN);
     if (projectToken == null) {
-      throw new NoSecretException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + PROJECT_TOKEN + ")");
+      throw new ConfigIllegalException("MixPanelTracker: A project token is mandatory to send the event. Add one in the conf file with the attribute (" + PROJECT_TOKEN + ")");
     }
-
-    analyticsTracker = new AnalyticsTracker(projectToken);
-    return analyticsTracker;
+    this.messageBuilder = new MessageBuilder(projectToken);
 
   }
 
-  public AnalyticsTracker addEvent(AnalyticsEvent analyticsEvent) {
-    this.events.put(analyticsEvent.getId(), analyticsEvent);
+  public static AnalyticsTracker createFromJsonObject(Server server) throws ConfigIllegalException {
+
+    return new AnalyticsTracker(server);
+
+  }
+
+  public AnalyticsTracker addEventToQueue(AnalyticsEvent analyticsEvent) {
+    this.eventsQueue.put(analyticsEvent.getId(), analyticsEvent);
     return this;
   }
 
@@ -63,7 +62,6 @@ public class AnalyticsTracker {
   }
 
   /**
-   *
    * GROUP_ID = Organisation
    * <a href="https://www.june.so/docs/quickstart/identify#companies">Company</a>
    */
@@ -86,7 +84,7 @@ public class AnalyticsTracker {
      * Therefore, we create a list
      */
     List<AnalyticsEvent> eventInBatch = new ArrayList<>();
-    for (AnalyticsEvent event : this.events.values()) {
+    for (AnalyticsEvent event : this.eventsQueue.values()) {
 
       event.setSendingTime(DateTimeUtil.getNowUtc());
       JsonObject props = AnalyticsMixPanel.toMixpanelPropsWithoutUserId(event);
@@ -123,33 +121,74 @@ public class AnalyticsTracker {
       throw new RuntimeException(e);
     }
     for (AnalyticsEvent event : eventInBatch) {
-      this.events.remove(event.getId());
+      this.eventsQueue.remove(event.getId());
     }
     return this;
   }
 
-  public AnalyticsEvent createServerEvent(AnalyticsEventName eventName) {
+  public ServerEventBuilder eventBuilder(AnalyticsEventName eventName) {
 
-    AnalyticsEvent analyticsEvent = new AnalyticsEvent();
-    // Should be the device id
-    analyticsEvent.setDeviceId("foobar");
-    analyticsEvent.setId(UUID.randomUUID().toString());
-    analyticsEvent.setName(eventName.toCamelCase());
-    analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
-    AnalyticsEventContext analyticsEventContext = new AnalyticsEventContext();
-    analyticsEventContext.setChannel(AnalyticsEventChannel.SERVER);
-    analyticsEvent.setContext(analyticsEventContext);
 
-    /**
-     * OS
-     */
-    AnalyticsOperatingSystem analyticsOperatingSystem = new AnalyticsOperatingSystem();
-    analyticsOperatingSystem.setName(System.getProperty("os.name"));
-    analyticsOperatingSystem.setVersion(System.getProperty("os.version"));
-    analyticsOperatingSystem.setArch(System.getProperty("os.arch"));
-    analyticsEventContext.setOs(analyticsOperatingSystem);
+    return new ServerEventBuilder(eventName);
 
-    return analyticsEvent;
+  }
 
+  public class ServerEventBuilder {
+    private final AnalyticsEventName eventName;
+    private AuthUser authUser;
+    private RoutingContext routingContext;
+
+    public ServerEventBuilder(AnalyticsEventName eventName) {
+      this.eventName = eventName;
+    }
+
+    public void buildAndAddEventToQueue() {
+
+      addEventToQueue(buildEvent());
+
+    }
+
+    public ServerEventBuilder setUser(AuthUser authUser) {
+      this.authUser = authUser;
+      return this;
+    }
+
+    public ServerEventBuilder setRoutingContext(RoutingContext routingContext) {
+      this.routingContext = routingContext;
+      return this;
+    }
+
+    public AnalyticsEvent buildEvent() {
+      AnalyticsEvent analyticsEvent = new AnalyticsEvent();
+      analyticsEvent.setId(UUID.randomUUID().toString());
+      analyticsEvent.setName(this.eventName.toCamelCase());
+      analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
+
+      if (this.authUser != null) {
+        AnalyticsUser analyticsUser = new AnalyticsUser();
+        analyticsUser.setId(authUser.getSubject());
+        analyticsUser.setEmail(authUser.getSubjectEmail());
+        analyticsUser.setGivenName(authUser.getSubjectGivenName());
+        analyticsUser.setAvatar(authUser.getSubjectAvatar());
+        analyticsEvent.setUser(analyticsUser);
+      }
+
+      /**
+       * Context
+       */
+      AnalyticsEventContext analyticsEventContext = new AnalyticsEventContext();
+      analyticsEventContext.setChannel(AnalyticsEventChannel.SERVER);
+      analyticsEvent.setContext(analyticsEventContext);
+
+      /**
+       * OS
+       */
+      AnalyticsOperatingSystem analyticsOperatingSystem = new AnalyticsOperatingSystem();
+      analyticsOperatingSystem.setName(System.getProperty("os.name"));
+      analyticsOperatingSystem.setVersion(System.getProperty("os.version"));
+      analyticsOperatingSystem.setArch(System.getProperty("os.arch"));
+      analyticsEventContext.setOs(analyticsOperatingSystem);
+      return analyticsEvent;
+    }
   }
 }

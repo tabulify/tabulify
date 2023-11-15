@@ -227,7 +227,6 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<String>> listRegistrationValidationGet(RoutingContext routingContext, String data) {
 
 
-    Vertx vertx = routingContext.vertx();
     JsonToken jsonToken = this.apiApp.getApexDomain().getHttpServer().getServer().getJsonToken();
     JsonObject jsonData = jsonToken.decrypt(data, ListRegistrationValidationLetter.REGISTRATION_VALIDATION_CIPHER);
 
@@ -289,15 +288,15 @@ public class ListApiImpl implements ListApi {
         } catch (AddressException e) {
           throw new InternalException("The list owner email is not valid", e);
         }
-        MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(vertx);
-        MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
+        TowerSmtpClient towerSmtpClient = this.apiApp.getApexDomain().getHttpServer().getServer().getSmtpClient();
+        MailMessage ownerFeedbackEmail = towerSmtpClient
           .createVertxMailMessage()
           .setTo(listOwnerEmailRfc)
           .setFrom(listOwnerEmailRfc)
           .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)
           .setText(title)
           .setHtml("<html><body>" + title + "</body></html>");
-        mailServiceSmtpProvider
+        towerSmtpClient
           .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail())
           .sendMail(ownerFeedbackEmail)
           .onFailure(t -> LOGGER.error("Error while sending the list owner registration feedback email", t));

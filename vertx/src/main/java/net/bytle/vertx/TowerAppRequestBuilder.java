@@ -7,6 +7,9 @@ import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class TowerAppRequestBuilder {
 
@@ -19,6 +22,7 @@ public class TowerAppRequestBuilder {
   private HttpMethod method = HttpMethod.GET;
   private String bearerToken;
   private boolean withPublicUri = false;
+  private final Map<String, String> queryParams = new HashMap<>();
 
   public TowerAppRequestBuilder(TowerApp towerApp, WebClient webClient, String path) {
     this.towerApp = towerApp;
@@ -54,6 +58,11 @@ public class TowerAppRequestBuilder {
         break;
       default:
         throw new RuntimeException("The method " + this.method.name() + " is unknown");
+    }
+    if(this.queryParams.size()!=0){
+      for(Map.Entry<String, String> queryParam : this.queryParams.entrySet()){
+        httpRequest.addQueryParam(queryParam.getKey(), queryParam.getValue());
+      }
     }
 
     if (this.withForwardProxyHostHeader) {
@@ -119,4 +128,8 @@ public class TowerAppRequestBuilder {
     return this;
   }
 
+  public TowerAppRequestBuilder addQueryParam(String name, String value) {
+    this.queryParams.put(name, value);
+    return this;
+  }
 }

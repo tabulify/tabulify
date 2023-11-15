@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
@@ -41,12 +40,13 @@ public class UserRegisterEmailCallback extends WebFlowEmailCallbackAbs {
     } catch (IllegalStructure e) {
       return;
     }
-    UserRegistrationFlow.handleStep2ClickOnEmailValidationLink((EraldyApiApp) this.getWebFlow(), ctx, authUser);
+    this.getWebFlow().handleStep2ClickOnEmailValidationLink(ctx, authUser);
 
 
   }
 
-
-
-
+  @Override
+  public UserRegistrationFlow getWebFlow() {
+    return (UserRegistrationFlow) super.getWebFlow();
+  }
 }

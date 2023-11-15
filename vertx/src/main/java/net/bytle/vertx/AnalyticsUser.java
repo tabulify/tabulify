@@ -44,4 +44,21 @@ public class AnalyticsUser {
     return BMailInternetAddress.of(email)
       .getLocalPart();
   }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public void setGivenName(String name) {
+    this.name = name;
+  }
+
+  public void setAvatar(URI avatar) {
+    this.avatar = avatar;
+  }
+
 }

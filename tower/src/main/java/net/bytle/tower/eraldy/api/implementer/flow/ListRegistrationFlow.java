@@ -109,7 +109,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(ctx, registration);
-            new AuthContext(ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
+            new AuthContext(this.getApp(), ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .authenticateSession();
           });
@@ -138,7 +138,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param routingContext              - the routing context
    * @param publicationSubscriptionPost - the post data
    */
-  public static Future<Void> handleStep1SendingValidationEmail(EraldyApiApp apiApp, RoutingContext routingContext, ListRegistrationPostBody publicationSubscriptionPost) {
+  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListRegistrationPostBody publicationSubscriptionPost) {
 
     /**
      * Email validation
@@ -153,8 +153,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
     if (publicationGuid == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("Publication guid should not be null", "publicationGuid", null);
     }
-    Vertx vertx = routingContext.vertx();
-    return apiApp.getListProvider()
+
+    return getApp().getListProvider()
       .getListByGuid(publicationGuid)
       .compose(registrationList -> {
 
@@ -183,7 +183,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             .getFailedException()
           );
         }
-        BMailTransactionalTemplate publicationValidationLetter = apiApp
+        BMailTransactionalTemplate publicationValidationLetter = getApp()
           .getUserListRegistrationFlow()
           .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims)
@@ -205,7 +205,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         String text = publicationValidationLetter.generatePlainText();
 
         String mailSubject = "Registration validation to the list `" + registrationList.getName() + "`";
-        MailServiceSmtpProvider mailServiceSmtpProvider = MailServiceSmtpProvider.get(vertx);
+        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
 
         User listOwnerUser = ListProvider.getOwnerUser(registrationList);
@@ -235,10 +235,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
           );
         }
 
-        MailClient mailClientForListOwner = mailServiceSmtpProvider
+        MailClient mailClientForListOwner = towerSmtpClient
           .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());
 
-        MailMessage registrationEmail = mailServiceSmtpProvider
+        MailMessage registrationEmail = towerSmtpClient
           .createVertxMailMessage()
           .setTo(subscriberAddressWithName)
           .setFrom(ownerEmailAddressInRfcFormat)
@@ -254,7 +254,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
             // Send feedback to the list owner
             String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + registrationList.getHandle() + ").";
-            MailMessage ownerFeedbackEmail = mailServiceSmtpProvider
+            MailMessage ownerFeedbackEmail = towerSmtpClient
               .createVertxMailMessage()
               .setTo(ownerEmailAddressInRfcFormat)
               .setFrom(ownerEmailAddressInRfcFormat)
