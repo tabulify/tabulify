@@ -430,6 +430,7 @@ components:
             as this is the id inside the realm, there is other id
             with the same value in another realm.
           example: 1
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
         handle:
           type: string
           description: The handle of the user

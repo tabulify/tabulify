@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.vertx.core.json.jackson.DatabindCodec;
-import net.bytle.java.JavaEnvs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -63,7 +62,7 @@ public class JacksonMapperManager {
         DatabindCodec.prettyMapper()
       )
       .forEach(mapper -> mapper.registerModule(getJavaTimeModule()));
-    LOGGER.info("Date time in JSON jackson enabled");
+    LOGGER.info("Date time in JSON jackson enabled for Vertx Codec");
   }
 
   /**
@@ -93,7 +92,7 @@ public class JacksonMapperManager {
         .builder()
         .build();
       mapper.registerModule(getJavaTimeModule());
-      if (disableFailOnUnknownProperties || JavaEnvs.IS_DEV) {
+      if (disableFailOnUnknownProperties) {
         /**
          * To avoid unrecognizable field when we develop if we have stored a json
          * field that was deleted later

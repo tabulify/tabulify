@@ -33,3 +33,11 @@ property = "guid",
 scope = Realm.class
 )
 ```
+
+## Alias
+
+If a field name changes, use the alias Annotation
+
+```yaml
+x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
+```

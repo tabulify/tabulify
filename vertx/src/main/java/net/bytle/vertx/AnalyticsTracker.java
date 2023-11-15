@@ -33,6 +33,7 @@ public class AnalyticsTracker {
   private final MessageBuilder messageBuilder;
   private final HTreeMap<String, AnalyticsEvent> eventsQueue;
   private final MixpanelAPI mixpanel;
+  private final MapDb mapDb;
   private boolean logEventDelivery = false;
 
   public AnalyticsTracker(Server server) throws ConfigIllegalException {
@@ -43,19 +44,19 @@ public class AnalyticsTracker {
     }
     this.messageBuilder = new MessageBuilder(projectToken);
 
-    this.eventsQueue = server
-      .getMapDb()
+    this.mapDb = server.getMapDb();
+    this.eventsQueue = mapDb
       .hashMap("event_queue", Serializer.STRING, AnalyticsEvent.class)
       .createOrOpen();
 
     int sec10 = 10000;
-    server.getVertx().setPeriodic(sec10, sec10, jobId -> processEventQueue());
+    server.getVertx().setPeriodic(sec10, sec10, jobId -> sendEventsInQueue());
 
     // Use an instance of MixpanelAPI to send the messages
     // to Mixpanel's servers.
     this.mixpanel = new MixpanelAPI();
 
-    if(JavaEnvs.IS_DEV){
+    if (JavaEnvs.IS_DEV) {
       this.logEventDelivery = true;
     }
 
@@ -69,6 +70,7 @@ public class AnalyticsTracker {
 
   public AnalyticsTracker addEventToQueue(AnalyticsEvent analyticsEvent) {
     this.eventsQueue.put(analyticsEvent.getId(), analyticsEvent);
+    this.mapDb.commit();
     return this;
   }
 
@@ -96,7 +98,11 @@ public class AnalyticsTracker {
   }
 
 
-  public AnalyticsTracker processEventQueue() {
+  public AnalyticsTracker sendEventsInQueue() {
+
+    if (this.eventsQueue.size() == 0) {
+      return this;
+    }
 
     // Gather together a bunch of messages into a single
     // ClientDelivery. This can happen in a separate thread
@@ -149,6 +155,7 @@ public class AnalyticsTracker {
     for (AnalyticsEvent event : eventInBatch) {
       this.eventsQueue.remove(event.getId());
     }
+    this.mapDb.commit();
     return this;
   }
 

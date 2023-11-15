@@ -22,6 +22,7 @@ public class MapDb implements AutoCloseable {
 
 
   public MapDb(Server server) {
+    DB mapDbTemp;
 
     String defaultHome = "mapdb/";
     if (JavaEnvs.IS_DEV) {
@@ -39,8 +40,34 @@ public class MapDb implements AutoCloseable {
     Path dbPath = Paths.get(homeString + "mapdb");
     LOGGER.info("Map db database located at: " + dbPath.toAbsolutePath());
     Fs.createDirectoryIfNotExists(dbPath.getParent());
-    mapDb = DBMaker.fileDB(dbPath.toFile()).make();
 
+    DBMaker.Maker maker = DBMaker.fileDB(dbPath.toFile())
+      .closeOnJvmShutdown()
+      .transactionEnable();
+    try {
+      mapDbTemp = maker
+        .make();
+    } catch (org.mapdb.DBException e) {
+      if (JavaEnvs.IS_DEV) {
+        mapDbTemp = maker
+          /**
+           * org.mapdb.DBException$DataCorruption: Header checksum broken.
+           *  Store was not closed correctly and might be corrupted. Use `DBMaker.checksumHeaderBypass()`
+           *  to recover your data
+           *  Use clean shutdown or enable transactions to protect the store in the future.
+           */
+          .checksumHeaderBypass()
+          /**
+           * org.mapdb.DBException$FileLocked: File is already opened and is locked: build\mapdb\mapdb
+           * Locking happens with FileChannel.tryLock
+           */
+          .fileLockDisable()
+          .make();
+      } else {
+        throw e;
+      }
+    }
+    mapDb = mapDbTemp;
     mapper = server.getJacksonMapperManager().jsonMapperBuilder()
       .setDisableFailOnUnknownProperties()
       .build();
@@ -53,8 +80,12 @@ public class MapDb implements AutoCloseable {
 
   public <K, V> DB.HashMapMaker<K, V> hashMap(String name, Serializer<K> keySerializer, Class<V> valueClass) {
 
-    MapDbJacksonSerializer<V> valueSerializer = new MapDbJacksonSerializer<>(valueClass,mapper);
+    MapDbJacksonSerializer<V> valueSerializer = new MapDbJacksonSerializer<>(valueClass, mapper);
     return mapDb.hashMap(name, keySerializer, valueSerializer);
+  }
+
+  public void commit() {
+    this.mapDb.commit();
   }
 
 }

@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -75,6 +76,7 @@ public class User   {
   /**
   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
   */
+  @JsonAlias({"id"})
   @JsonProperty("localId")
   public Long getLocalId() {
     return localId;

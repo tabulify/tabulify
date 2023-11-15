@@ -100,7 +100,7 @@ public class FrontEndCookie<T> {
       return (new JsonObject(json)).mapTo(this.aClass);
     } catch (Exception e) {
       // should not occur but in dev, it may
-      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") to the class (" + this.aClass + ") with the value: " + json + ")");
+      throw new CastException("We were unable to decode the cookie (cookieName: " + this.cookieName + ") to the class (" + this.aClass + ") with the value: " + json + ")", e);
     }
   }
 
