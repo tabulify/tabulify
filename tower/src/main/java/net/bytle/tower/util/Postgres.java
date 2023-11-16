@@ -13,6 +13,10 @@ public class Postgres {
      * The Native Postgres driver return a PGObject
      * but with the Native Pg Client, we can return a JsonObject directly
      */
+    Object value = row.getValue(columnName);
+    if(value instanceof String){
+      return new JsonObject((String) value);
+    }
     return row.getJsonObject(columnName);
   }
 

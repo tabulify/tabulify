@@ -13,6 +13,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ public class AuthContext {
   private final AuthUser authUser;
   private final AuthState authState;
   private final TowerApp towerApp;
-  private List<Handler<AuthContext>> handlers;
+  private List<Handler<AuthContext>> handlers = new ArrayList<>();
   private int handlerIndex = -1;
 
   public AuthContext(TowerApp towerApp, RoutingContext ctx, AuthUser user, AuthState authState) {
@@ -151,6 +152,7 @@ public class AuthContext {
         .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
         .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
         .setName("URL redirect was not found")
+        .setMimeToHtml()
         .failContextAsHtml(ctx);
       return;
 

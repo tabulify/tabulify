@@ -83,7 +83,7 @@ public class RealmProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build()
-      ;
+    ;
   }
 
 
@@ -375,19 +375,13 @@ public class RealmProvider {
       });
   }
 
-  public Future<Realm> getRealmFromHandle(String realmHandle) {
-    return getRealmFromHandle(realmHandle, Realm.class);
-  }
-
   private <T extends Realm> Future<T> getRealmFromHandle(String realmHandle, Class<T> clazz) {
 
 
+    String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " WHERE realm_handle = $1";
     return this.jdbcPool
-      .preparedQuery("SELECT * FROM cs_realms.realm WHERE realm_handle = $1")
+      .preparedQuery(sql)
       .execute(Tuple.of(realmHandle))
-      .onFailure(e -> {
-        throw new InternalException(e);
-      })
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
@@ -395,12 +389,12 @@ public class RealmProvider {
         }
 
         if (userRows.size() != 1) {
-          return Future.failedFuture(new InternalException("the realm id (" + realmHandle + ") returns  more than one application"));
+          return Future.failedFuture(new InternalException("the realm handle (" + realmHandle + ") returns more than one application"));
         }
         Row row = userRows.iterator().next();
         return this.getRealmFromDatabaseRow(row, clazz);
 
-      });
+      }, err -> Future.failedFuture(new InternalException("The Realm by handle SQL returns an error (" + sql + ")", err)));
   }
 
 
@@ -552,7 +546,6 @@ public class RealmProvider {
     return apiApp.createGuidFromObjectId(REALM_GUID_PREFIX, realmId);
   }
 
-  @SuppressWarnings("unused")
   public Future<Realm> getRealmFromIdentifier(String realmIdentifier) {
     return getRealmFromIdentifier(realmIdentifier, Realm.class);
   }
@@ -574,7 +567,6 @@ public class RealmProvider {
   public Future<RealmAnalytics> getRealmAnalyticsFromIdentifier(String realmIdentifier) {
     return getRealmFromIdentifier(realmIdentifier, RealmAnalytics.class);
   }
-
 
 
   public boolean isIdentifierForRealm(String realmIdentifier, Realm realm) {

@@ -293,7 +293,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
     String finalOptInIp = optInIp;
     this.getApp().getRealmProvider()
-      .getRealmFromHandle(realmHandleClaims)
+      .getRealmFromIdentifier(realmHandleClaims)
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
 

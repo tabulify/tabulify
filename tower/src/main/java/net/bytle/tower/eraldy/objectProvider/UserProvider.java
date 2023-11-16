@@ -1,6 +1,8 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
@@ -18,15 +20,13 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
-import net.bytle.vertx.AnalyticsEventName;
-import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,12 +66,17 @@ public class UserProvider {
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
+  private final JsonMapper databaseMapper;
 
 
   public UserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
-    this.jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+    Server server = this.apiApp.getApexDomain().getHttpServer().getServer();
+    this.jdbcPool = server.getJdbcPool();
+    this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .build();
 
   }
 
@@ -166,14 +171,15 @@ public class UserProvider {
         .onFailure(error -> LOGGER.error("UserProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(userId -> {
           user.setLocalId(userId);
-          JsonObject databaseJsonObject = this.toDatabaseJsonObject(user);
+          this.computeGuid(user);
+          String databaseJsonString = this.toDatabaseJsonString(user);
           return sqlConnection
             .preparedQuery(sql)
             .execute(Tuple.of(
                 user.getRealm().getLocalId(),
                 user.getLocalId(),
                 user.getEmail().toLowerCase(),
-                databaseJsonObject,
+                databaseJsonString,
                 DateTimeUtil.getNowUtc()
               )
             );
@@ -263,12 +269,12 @@ public class UserProvider {
         "  " + ID_COLUMN + "= $4\n" +
         "AND " + REALM_COLUMN + " = $5 ";
 
-      JsonObject pgJsonObject = this.toDatabaseJsonObject(user);
+      String pgJsonString = this.toDatabaseJsonString(user);
       return jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
           user.getEmail().toLowerCase(),
-          pgJsonObject,
+          pgJsonString,
           DateTimeUtil.getNowUtc(),
           user.getLocalId(),
           user.getRealm().getLocalId()
@@ -308,11 +314,11 @@ public class UserProvider {
       "  " + EMAIL_COLUMN + "= $3\n" +
       "AND " + REALM_COLUMN + " = $4\n" +
       "RETURNING " + ID_COLUMN;
-    JsonObject dataJsonObject = this.toDatabaseJsonObject(user);
+    String dataJsonString = this.toDatabaseJsonString(user);
     return jdbcPool
       .preparedQuery(updateSql)
       .execute(Tuple.of(
-        dataJsonObject,
+        dataJsonString,
         DateTimeUtil.getNowUtc(),
         user.getEmail().toLowerCase(),
         user.getRealm().getLocalId()
@@ -320,16 +326,12 @@ public class UserProvider {
       .onFailure(error -> LOGGER.error("User Update by handle error: Error:" + error.getMessage() + ", Sql: " + updateSql, error));
   }
 
-  private JsonObject toDatabaseJsonObject(User user) {
-    User userClone = JsonObject.mapFrom(user).mapTo(User.class);
-    /**
-     * Remove the data that are already in the row
-     * We keep the guid for backup :)
-     */
-    userClone.setRealm(null);
-    userClone.setModificationTime(null);
-    userClone.setCreationTime(null);
-    return JsonObject.mapFrom(userClone);
+  private String toDatabaseJsonString(User user) {
+    try {
+      return this.databaseMapper.writeValueAsString(user);
+    } catch (JsonProcessingException e) {
+      throw new InternalException("Could not transform user as json string for database",e);
+    }
   }
 
   /**

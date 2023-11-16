@@ -60,7 +60,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
     return getApp()
       .getRealmProvider()
-      .getRealmFromHandle(emailIdentifier.getRealmIdentifier())
+      .getRealmFromIdentifier(emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(realm -> {
 
@@ -185,7 +185,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
     getApp()
       .getRealmProvider()
-      .getRealmFromHandle(authUser.getRealmIdentifier())
+      .getRealmFromIdentifier(authUser.getRealmIdentifier())
       .onFailure(ctx::fail)
       .onSuccess(realm -> {
 
@@ -207,7 +207,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
                 .authenticateSession();
               return;
             }
-            userProvider.insertUser(user, ctx)
+            userProvider
+              .insertUser(user, ctx)
               .onFailure(ctx::fail)
               .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInserted), AuthState.createEmpty())
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))

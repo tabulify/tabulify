@@ -147,7 +147,7 @@ public class ListApiImpl implements ListApi {
         throw ValidationException.create("A realm Handle is mandatory to retrieve a list with a listHandle", "realmHandle", null);
       }
       listFuture = this.apiApp.getRealmProvider()
-        .getRealmFromHandle(realmHandle)
+        .getRealmFromIdentifier(realmHandle)
         .compose(realm -> listProvider.getListByHandle(listHandle, realm));
     }
     return listFuture

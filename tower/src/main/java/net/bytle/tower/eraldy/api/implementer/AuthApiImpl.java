@@ -324,7 +324,7 @@ public class AuthApiImpl implements AuthApi {
     }
     return this.apiApp
       .getRealmProvider()
-      .getRealmFromHandle(passwordCredentials.getLoginRealm())
+      .getRealmFromIdentifier(passwordCredentials.getLoginRealm())
       .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
       .compose(realm -> apiApp.getUserProvider()
         .getUserByPassword(handle, password, realm)
