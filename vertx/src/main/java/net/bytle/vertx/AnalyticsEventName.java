@@ -8,6 +8,7 @@ import net.bytle.type.Strings;
 public class AnalyticsEventName {
 
 
+  public static final AnalyticsEventName SIGN_IN = new AnalyticsEventName("Sign In");
   public static AnalyticsEventName SIGN_UP = new AnalyticsEventName("Sign Up");
 
   private final String name;
@@ -15,7 +16,6 @@ public class AnalyticsEventName {
   AnalyticsEventName(String name) {
 
     this.name = Strings.createFromString(name).toCapitalize().toString();
-
 
   }
 

@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
@@ -21,15 +20,12 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Manage the get/upsert of a Service object asynchronously
@@ -41,8 +37,6 @@ public class ServiceProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ServiceProvider.class);
 
   protected static final String TABLE_NAME = "realm_service";
-
-  private static final Map<Vertx, ServiceProvider> mapServiceProviderByVertx = new HashMap<>();
 
   private static final String COL_PREFIX = "service";
 
@@ -173,7 +167,7 @@ public class ServiceProvider {
         service.getRealm().getLocalId(),
         service.getId()
       );
-      return JdbcPostgresPool.getJdbcPool()
+      return jdbcPool
         .preparedQuery(insertSql)
         .execute(parameters)
         .onFailure(e -> LOGGER.error("Service Insertion Error:" + e.getMessage() + ". Sql: " + insertSql, e))
@@ -228,7 +222,7 @@ public class ServiceProvider {
       service.getRealm().getLocalId(),
       service.getUri()
     );
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(updateSql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Service Update Error:" + e.getMessage() + ". Sql: " + updateSql, e));
@@ -252,7 +246,7 @@ public class ServiceProvider {
       "  )\n" +
       " values ($1, $2, $3, $4, $5, $6, $7)\n";
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, service.getRealm().getLocalId())
         .onFailure(error -> LOGGER.error("ServiceProvider: Error on next sequence id" + error.getMessage(), error))
         .compose(serviceId -> {
@@ -280,8 +274,7 @@ public class ServiceProvider {
   public Future<List<Service>> getServices(Realm realm) {
 
 
-    return JdbcPostgresPool
-      .getJdbcPool()
+    return jdbcPool
       .preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
           " WHERE \n" +
@@ -319,7 +312,7 @@ public class ServiceProvider {
     Future<User> futureImpersonatedUser = Future.succeededFuture();
     if (impersonatedUserId != null) {
       futureImpersonatedUser = apiApp.getUserProvider()
-        .getUserById(impersonatedUserId, realm);
+        .getUserById(impersonatedUserId, realm.getLocalId(), realm);
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {

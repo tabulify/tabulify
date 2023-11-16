@@ -72,7 +72,7 @@ public class PasswordResetFlow extends WebFlowAbs {
             .getFailedException()
           );
         }
-        AuthUser jwtClaims = UsersUtil.toAuthUserClaims(userToResetPassword).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = UsersUtil.toAuthUser(userToResetPassword).addRoutingClaims(routingContext);
 
         BMailTransactionalTemplate letter = this.step2Callback
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, recipientName, jwtClaims)

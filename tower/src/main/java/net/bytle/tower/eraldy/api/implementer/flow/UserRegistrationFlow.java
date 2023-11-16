@@ -72,7 +72,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
         SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-        AuthUser jwtClaims = UsersUtil.toAuthUserClaims(newUser).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = UsersUtil.toAuthUser(newUser).addRoutingClaims(routingContext);
         String newUserName;
         try {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
@@ -194,7 +194,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         user.setEmail(authUser.getSubjectEmail());
         UserProvider userProvider = getApp().getUserProvider();
         userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm())
+          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), user.getRealm())
           .onFailure(ctx::fail)
           .onSuccess(userInDb -> {
             if (userInDb != null) {
@@ -202,14 +202,14 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // Possible causes:
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
-              new AuthContext(getApp(),ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+              new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
                 .redirectViaHttp()
                 .authenticateSession();
               return;
             }
-            userProvider.insertUser(user)
+            userProvider.insertUser(user, ctx)
               .onFailure(ctx::fail)
-              .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUserClaims(userInserted), AuthState.createEmpty())
+              .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInserted), AuthState.createEmpty())
                 .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
                 .authenticateSession()
               );
@@ -257,19 +257,36 @@ public class UserRegistrationFlow extends WebFlowAbs {
       /**
        * Create our principal
        */
-      User user = UsersUtil.toEraldyUser(authUser, this.getApp());
       this.getApp()
         .getUserProvider()
-        .createOrPatchIfNull(user)
+        .getUserFromAuthUser(authUser)
         .onFailure(err -> {
-          HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in user registration when patching the auth user", err);
+          HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in oauth user get for registration", err);
           authContext.getRoutingContext().fail(throwable);
         })
         .onSuccess(dbUser -> {
-          authUser.setSubject(dbUser.getGuid());
-          authUser.setAudience(dbUser.getRealm().getGuid());
-          authUser.setAudienceHandle(dbUser.getRealm().getHandle());
-          authContext.next();
+          Future<User> finalFutureUser;
+          User authUserAsDbUser = UsersUtil.toEraldyUser(authUser, this.getApp());
+          if (dbUser == null) {
+            finalFutureUser = this.getApp()
+              .getUserProvider()
+              .insertUser(authUserAsDbUser, authContext.getRoutingContext());
+          } else {
+            finalFutureUser = this.getApp()
+              .getUserProvider()
+              .patchUserIfPropertyValueIsNull(dbUser, authUserAsDbUser);
+          }
+          finalFutureUser
+            .onFailure(err -> {
+              HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in final oauth user registration", err);
+              authContext.getRoutingContext().fail(throwable);
+            })
+            .onSuccess(finalUser -> {
+              authUser.setSubject(finalUser.getGuid());
+              authUser.setAudience(finalUser.getRealm().getGuid());
+              authUser.setAudienceHandle(finalUser.getRealm().getHandle());
+              authContext.next();
+            });
         });
 
     };

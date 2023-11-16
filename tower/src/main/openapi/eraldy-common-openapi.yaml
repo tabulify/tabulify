@@ -440,14 +440,16 @@ components:
           format: email
           description: The email of the user
           example: 'john@doe.com'
-        name:
+        givenName:
           type: string
           description: The short and informal name of the user (used in signature, known also as the given, calling or first name)
           example: 'John'
-        fullname:
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"name"})'
+        fullName:
           type: string
           description: The long and formal name of the user (used in address)
           example: 'John Doe'
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"fullname"})'
         title:
           type: string
           description: The title of the user (a short user description such as a role used in signature)

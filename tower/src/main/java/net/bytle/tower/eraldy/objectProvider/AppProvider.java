@@ -5,6 +5,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -377,7 +378,7 @@ public class AppProvider {
   private Future<App> getFromRow(Row row, Realm realm) {
     Long userId = row.getLong(USER_COLUMN);
     Future<User> userFuture = apiApp.getUserProvider()
-      .getUserById(userId, realm);
+      .getUserById(userId, realm.getLocalId(), realm);
     Future<Realm> realmFuture;
     Long realmId = row.getLong(REALM_ID_COLUMN);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();
@@ -445,7 +446,7 @@ public class AppProvider {
    * @param appPostBody - the post object
    * @return the app in a future
    */
-  public Future<App> postApp(AppPostBody appPostBody) {
+  public Future<App> postApp(AppPostBody appPostBody, RoutingContext routingContext) {
 
 
     App requestedApp = new App();
@@ -501,7 +502,7 @@ public class AppProvider {
         userToGetOrCreate.setEmail(userEmail);
         userToGetOrCreate.setRealm(realm);
         return apiApp.getUserProvider()
-          .getOrCreateUserFromEmail(userToGetOrCreate)
+          .getOrCreateUserFromEmail(userToGetOrCreate, routingContext)
           .onFailure(t -> LOGGER.error("Error on app upsert", t))
           .compose(user -> {
             app.setUser(user);

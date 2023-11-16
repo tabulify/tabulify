@@ -27,7 +27,7 @@ public class UsersUtil {
     if (address == null) {
       throw new InternalException("The user email should not be null");
     }
-    String name = user.getName();
+    String name = user.getGivenName();
     if (name != null) {
       /**
        * We don't use the format `email (name)`
@@ -46,7 +46,7 @@ public class UsersUtil {
    * @throws AddressException  - bad email address
    */
   public static String getNameOrNameFromEmail(User user) throws NotFoundException, AddressException {
-    String name = user.getName();
+    String name = user.getGivenName();
     if (name != null) {
       return name;
     }
@@ -75,7 +75,7 @@ public class UsersUtil {
     } catch (NotFoundException | AddressException e) {
       throw new InternalException("Should not occurs, a database user should have a valid email at least", e);
     }
-    outputUser.setFullname(user.getFullname() != null ? user.getFullname() : defaultName);
+    outputUser.setFullname(user.getFullName() != null ? user.getFullName() : defaultName);
     outputUser.setAvatar(user.getAvatar());
     outputUser.setTitle(user.getTitle());
     return outputUser;
@@ -90,7 +90,7 @@ public class UsersUtil {
   }
 
 
-  public static AuthUser toAuthUserClaims(User appUser) {
+  public static AuthUser toAuthUser(User appUser) {
     AuthUser authUserClaims = new AuthUser();
     authUserClaims.setSubject(appUser.getGuid());
     authUserClaims.setSubjectHandle(appUser.getHandle());
@@ -109,7 +109,7 @@ public class UsersUtil {
       throw new InternalException(e);
     }
     smtpSender.setEmail(user.getEmail());
-    smtpSender.setFullName(user.getFullname());
+    smtpSender.setFullName(user.getFullName());
     smtpSender.setAvatar(user.getAvatar());
     smtpSender.setTitle(user.getTitle());
     return smtpSender;

@@ -201,7 +201,7 @@ public class AuthContext {
         .getHttpServer()
         .getServer()
         .getTrackerAnalytics()
-        .eventBuilder(AnalyticsEventName.SIGN_UP)
+        .eventBuilder(AnalyticsEventName.SIGN_IN)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
         .sendEventAsync();

@@ -181,7 +181,7 @@ public class AuthApiImpl implements AuthApi {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
 
-        AuthUser jwtClaims = UsersUtil.toAuthUserClaims(userToLogin).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = UsersUtil.toAuthUser(userToLogin).addRoutingClaims(routingContext);
 
         /**
          * Recipient
@@ -217,7 +217,7 @@ public class AuthApiImpl implements AuthApi {
 
         String recipientEmailAddressInRfcFormat;
         try {
-          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getName()).toString();
+          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
             VertxFailureHttp.create()
@@ -337,7 +337,7 @@ public class AuthApiImpl implements AuthApi {
                 .getFailedException()
             );
           }
-          AuthUser authUser = UsersUtil.toAuthUserClaims(user);
+          AuthUser authUser = UsersUtil.toAuthUser(user);
           new AuthContext(this.apiApp, routingContext, authUser, AuthState.createEmpty())
             .redirectViaClient()
             .authenticateSession();

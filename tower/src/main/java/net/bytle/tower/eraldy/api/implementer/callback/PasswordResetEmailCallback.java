@@ -59,7 +59,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
           ctx.fail(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
           return;
         }
-        new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+        new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
           .redirectViaFrontEnd(FRONT_END_UPDATE_OPERATION_PATH)
           .authenticateSession();
       });

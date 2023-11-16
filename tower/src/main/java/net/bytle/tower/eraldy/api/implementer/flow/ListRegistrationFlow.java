@@ -109,7 +109,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(ctx, registration);
-            new AuthContext(this.getApp(), ctx, UsersUtil.toAuthUserClaims(user), AuthState.createEmpty())
+            new AuthContext(this.getApp(), ctx, UsersUtil.toAuthUser(user), AuthState.createEmpty())
               .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
               .authenticateSession();
           });
@@ -165,7 +165,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
 
         AuthUser jwtClaims = UsersUtil
-          .toAuthUserClaims(subscriber)
+          .toAuthUser(subscriber)
           .addRoutingClaims(routingContext)
           .setListGuidClaim(publicationGuid);
 
@@ -211,7 +211,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         User listOwnerUser = ListProvider.getOwnerUser(registrationList);
         String ownerEmailAddressInRfcFormat;
         try {
-          ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getName()).toString();
+          ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(VertxFailureHttp.create().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
             .setDescription("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
@@ -302,7 +302,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         user.setEmail(emailClaims);
         UserProvider userProvider = this.getApp().getUserProvider();
         userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm())
+          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), user.getRealm())
           .onFailure(ctx::fail)
           .onSuccess(userInDb -> {
 
@@ -310,7 +310,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             if (userInDb != null) {
               futureUser = Future.succeededFuture(userInDb);
             } else {
-              futureUser = userProvider.insertUser(user);
+              futureUser = userProvider.insertUser(user, ctx);
             }
             futureUser
               .onFailure(ctx::fail)

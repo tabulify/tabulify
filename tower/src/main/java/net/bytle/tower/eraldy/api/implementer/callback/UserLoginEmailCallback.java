@@ -58,7 +58,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
           ctx.fail(500, new InternalException("The user send by mail, does not exist"));
           return;
         }
-        new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUserClaims(userInDb), AuthState.createEmpty())
+        new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
           .redirectViaHttp()
           .authenticateSession();
       });

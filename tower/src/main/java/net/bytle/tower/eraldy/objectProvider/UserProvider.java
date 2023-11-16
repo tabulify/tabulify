@@ -5,6 +5,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -22,9 +23,11 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
+import net.bytle.vertx.AnalyticsEventName;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,12 +91,13 @@ public class UserProvider {
   /**
    * This function will update the user of the userId is known
    * Otherwise, it will try to update it by email.
-   * If the update is not successful, the user is {@link #insertUser(User)  inserted}.
+   * If the update is not successful, the user is {@link #insertUser(User, RoutingContext)  inserted}.
    *
-   * @param user the publication to upsert
+   * @param user           the publication to upsert
+   * @param routingContext - for analytics
    * @return the user
    */
-  public Future<User> upsertUser(User user) {
+  public Future<User> upsertUser(User user, RoutingContext routingContext) {
 
     Realm userRealm = user.getRealm();
     Long userId = user.getLocalId();
@@ -126,7 +130,7 @@ public class UserProvider {
     return updateUserByEmailAndReturnRowSet(user)
       .compose(rows -> {
         if (rows.size() == 0) {
-          return insertUser(user);
+          return insertUser(user, routingContext);
         }
         /**
          * The row has only the id updated
@@ -139,7 +143,12 @@ public class UserProvider {
 
   }
 
-  public Future<User> insertUser(User user) {
+  /**
+   * @param user           - the user to insert (sign-up)
+   * @param routingContext - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test)
+   * @return a user
+   */
+  public Future<User> insertUser(User user, RoutingContext routingContext) {
 
 
     String sql = "INSERT INTO\n" +
@@ -170,7 +179,20 @@ public class UserProvider {
             );
         }))
       .onFailure(error -> LOGGER.error("Insert User Error:" + error.getMessage() + ". Sql: " + sql, error))
-      .compose(rows -> Future.succeededFuture(user));
+      .compose(rows -> {
+
+        this.apiApp
+          .getApexDomain()
+          .getHttpServer()
+          .getServer()
+          .getTrackerAnalytics()
+          .eventBuilder(AnalyticsEventName.SIGN_UP)
+          .setUser(UsersUtil.toAuthUser(user))
+          .setRoutingContext(routingContext)
+          .sendEventAsync();
+
+        return Future.succeededFuture(user);
+      });
   }
 
   @SuppressWarnings("unused")
@@ -222,6 +244,7 @@ public class UserProvider {
 
   /**
    * Replace the database user with the new user object
+   * You use {@link #patchUserIfPropertyValueIsNull(User, User)}
    *
    * @param user - the new user data
    * @return the user
@@ -347,11 +370,15 @@ public class UserProvider {
    */
   private Future<User> getUserFromRow(Row row, Realm knownRealm) {
 
-    Future<Realm> realmFuture = Future.succeededFuture(knownRealm);
-    if (knownRealm == null) {
-      Long realmId = row.getLong(REALM_COLUMN);
+
+    Long userRealmId = row.getLong(REALM_COLUMN);
+    boolean validRealm = knownRealm != null && knownRealm.getLocalId().equals(userRealmId);
+    Future<Realm> realmFuture;
+    if (validRealm) {
+      realmFuture = Future.succeededFuture(knownRealm);
+    } else {
       realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromId(realmId);
+        .getRealmFromId(userRealmId);
     }
     return realmFuture
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -389,7 +416,16 @@ public class UserProvider {
     return apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, user.getRealm(), user.getLocalId());
   }
 
-  public Future<User> getUserById(Long userId, Realm realm) {
+  /**
+   * @param userId  - the user id
+   * @param realmId - the realm id
+   * @param realm   - an optional realm to use when building the user (Maybe null)
+   * @return the user or null if not found
+   */
+  public Future<User> getUserById(Long userId, Long realmId, Realm realm) {
+
+    assert userId != null;
+    assert realmId != null;
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE \n" +
@@ -397,7 +433,7 @@ public class UserProvider {
       " AND " + REALM_COLUMN + " = $2";
     return jdbcPool.preparedQuery(
         sql)
-      .execute(Tuple.of(userId, realm.getLocalId()))
+      .execute(Tuple.of(userId, realmId))
       .onFailure(t -> LOGGER.error("Error while retrieving the user by id. Sql: " + sql, t))
       .compose(userRows -> {
 
@@ -416,22 +452,26 @@ public class UserProvider {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
-      .compose(realm -> getUserByEmail(userEmail, realm));
+      .compose(realm -> getUserByEmail(userEmail, realm.getLocalId(), realm));
   }
 
   /**
-   * @param userEmail - the email
-   * @param realm     - the realm
-   * @return the user or null
+   * @param userEmail    - the email
+   * @param realmLocalId - the realm local id
+   * @param realm        - the realm to use to build the user (maybe null)
+   * @return the user or null if not found
    */
-  public Future<User> getUserByEmail(String userEmail, Realm realm) {
+  public Future<User> getUserByEmail(String userEmail, Long realmLocalId, Realm realm) {
+
+    assert userEmail != null;
+    assert realmLocalId != null;
 
     String sql = "SELECT * FROM  " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
       EMAIL_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(userEmail.toLowerCase(), realm.getLocalId()))
+      .execute(Tuple.of(userEmail.toLowerCase(), realmLocalId))
       .onFailure(t -> LOGGER.error("Error while retrieving the user by email and realm. Sql: \n" + sql, t))
       .compose(userRows -> {
 
@@ -447,12 +487,13 @@ public class UserProvider {
   }
 
   /**
-   * @param user the user to retrieve or to insert with at minimal:
-   *             * id or email
-   *             * and the realm
+   * @param user           the user to retrieve or to insert with at minimal:
+   *                       * id or email
+   *                       * and the realm
+   * @param routingContext - the http context
    * @return the user by id if given or by email, create the user if it does not exist with the provided email
    */
-  public Future<User> getOrCreateUserFromEmail(User user) {
+  public Future<User> getOrCreateUserFromEmail(User user, RoutingContext routingContext) {
 
     Long userId = user.getLocalId();
     String userEmail = user.getEmail();
@@ -467,26 +508,30 @@ public class UserProvider {
           throw ValidationException.create("The user with the id was not found", "id", userId);
         }
 
-        return this.upsertUser(user);
+        return this.upsertUser(user, routingContext);
 
       });
   }
 
   public Future<User> getUserFromIdOrEmail(Long userId, String userEmail, Realm realm) {
     if (userId == null && userEmail == null) {
-      throw ValidationException.create("The user email and id cannot be both null", "userEmail", null);
+      throw new IllegalArgumentException("The user email and id cannot be both null");
+    }
+    if (realm == null || realm.getLocalId() == null) {
+      throw new IllegalArgumentException("The realm local id cannot be null");
     }
 
     Future<User> userFuture;
     if (userId != null) {
-      userFuture = this.getUserById(userId, realm);
+      userFuture = this.getUserById(userId, realm.getLocalId(), realm);
     } else {
-      userFuture = this.getUserByEmail(userEmail, realm);
+      userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), realm);
     }
     return userFuture;
   }
 
   public Future<User> getUserFromGuidOrEmail(String userGuid, String userEmail, Realm realm) {
+
     if (userGuid == null && userEmail == null) {
       throw ValidationException.create("The user email and id cannot be both null", "userEmail", null);
     }
@@ -514,7 +559,7 @@ public class UserProvider {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromId(guidObject.getRealmOrOrganizationId())
-      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
+      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId(), realm));
 
 
   }
@@ -562,46 +607,47 @@ public class UserProvider {
   }
 
   /**
-   * @param user - the user to create or the user data to patch
-   * @return the user
+   * This function will set property to the user only
+   * if there is none (ie if the value is null).
+   * It's used to enhance the actual user profile from Oauth data.
+   * @param dbUser - the actual db user
+   * @param patchUser - the user with the patch data
+   * @return the database user patched
    */
-  public Future<User> createOrPatchIfNull(User user) {
-    return this.getUserFromIdOrEmail(null, user.getEmail(), user.getRealm())
-      .onFailure(error -> LOGGER.error("patchOrCreate: Error on getUserFromIdOrEmail sequence id" + error.getMessage(), error))
-      .compose(dbUser -> {
-        if (dbUser != null) {
-          boolean patched = false;
-          if (dbUser.getName() == null && user.getName() != null) {
-            dbUser.setGivenName(user.getName());
-            patched = true;
-          }
-          if (dbUser.getFullname() == null && user.getFullname() != null) {
-            dbUser.setFullname(user.getFullname());
-            patched = true;
-          }
-          if (dbUser.getBio() == null && user.getBio() != null) {
-            dbUser.setBio(user.getBio());
-            patched = true;
-          }
-          if (dbUser.getLocation() == null && user.getLocation() != null) {
-            dbUser.setLocation(user.getLocation());
-            patched = true;
-          }
-          if (dbUser.getWebsite() == null && user.getWebsite() != null) {
-            dbUser.setWebsite(user.getWebsite());
-            patched = true;
-          }
-          if (dbUser.getAvatar() == null && user.getAvatar() != null) {
-            dbUser.setAvatar(user.getAvatar());
-            patched = true;
-          }
-          if (patched) {
-            return this.updateUser(dbUser);
-          }
-          return Future.succeededFuture(dbUser);
-        }
-        return insertUser(user);
-      });
+  public Future<User> patchUserIfPropertyValueIsNull(User dbUser, User patchUser) {
+
+    assert dbUser !=null;
+    assert patchUser !=null;
+
+    boolean patched = false;
+    if (dbUser.getGivenName() == null && patchUser.getGivenName() != null) {
+      dbUser.setGivenName(patchUser.getGivenName());
+      patched = true;
+    }
+    if (dbUser.getFullName() == null && patchUser.getFullName() != null) {
+      dbUser.setFullname(patchUser.getFullName());
+      patched = true;
+    }
+    if (dbUser.getBio() == null && patchUser.getBio() != null) {
+      dbUser.setBio(patchUser.getBio());
+      patched = true;
+    }
+    if (dbUser.getLocation() == null && patchUser.getLocation() != null) {
+      dbUser.setLocation(patchUser.getLocation());
+      patched = true;
+    }
+    if (dbUser.getWebsite() == null && patchUser.getWebsite() != null) {
+      dbUser.setWebsite(patchUser.getWebsite());
+      patched = true;
+    }
+    if (dbUser.getAvatar() == null && patchUser.getAvatar() != null) {
+      dbUser.setAvatar(patchUser.getAvatar());
+      patched = true;
+    }
+    if (patched) {
+      return this.updateUser(dbUser);
+    }
+    return Future.succeededFuture(dbUser);
   }
 
   public Future<User> updatePassword(User user, String password) {
@@ -686,7 +732,8 @@ public class UserProvider {
   }
 
   public Future<User> getEraldyUserById(Long ownerId) {
-    return getUserById(ownerId, EraldyRealm.get().getRealm());
+    Realm eraldyRealm = EraldyRealm.get().getRealm();
+    return getUserById(ownerId, eraldyRealm.getLocalId(), eraldyRealm);
   }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
@@ -726,5 +773,38 @@ public class UserProvider {
 
   public Guid getGuidFromHash(String userGuid) throws CastException {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
+  }
+
+  /**
+   * @param authUser - an auth user that has user identifiers (from an auth token Oauth Json token)
+   * @return the user or null
+   */
+  public Future<User> getUserFromAuthUser(AuthUser authUser) {
+
+    User user = UsersUtil.toEraldyUser(authUser, this.apiApp);
+    /**
+     * Guid
+     */
+    String userGuid = user.getGuid();
+    if (userGuid != null) {
+      return this.getUserByGuid(userGuid);
+    }
+    /**
+     * By local id
+     */
+    Long realmLocalId = user.getRealm() == null ? null : user.getRealm().getLocalId();
+    Long localId = user.getLocalId();
+    if (localId != null && realmLocalId != null) {
+      return this.getUserById(localId, realmLocalId, null);
+    }
+    /**
+     * By Email
+     */
+    String email = user.getEmail();
+    if (email != null && realmLocalId != null) {
+      return this.getUserByEmail(email, realmLocalId, null);
+    }
+
+    return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the database user"));
   }
 }

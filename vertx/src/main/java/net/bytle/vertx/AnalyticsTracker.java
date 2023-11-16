@@ -168,6 +168,12 @@ public class AnalyticsTracker {
   public class ServerEventBuilder {
     private final AnalyticsEventName eventName;
     private AuthUser authUser;
+
+    /**
+     * The http routing context
+     * Event may be inserted outside an HTTP call
+     * The context may be therefore null
+     */
     private RoutingContext routingContext;
 
     public ServerEventBuilder(AnalyticsEventName eventName) {

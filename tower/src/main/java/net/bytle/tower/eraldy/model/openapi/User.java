@@ -126,7 +126,7 @@ public class User   {
   * @return name The short and informal name of the user (used in signature, known also as the given, calling or first name)
   */
   @JsonProperty("name")
-  public String getName() {
+  public String getGivenName() {
     return name;
   }
 
@@ -142,7 +142,7 @@ public class User   {
   * @return fullname The long and formal name of the user (used in address)
   */
   @JsonProperty("fullname")
-  public String getFullname() {
+  public String getFullName() {
     return fullname;
   }
 

@@ -166,7 +166,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<RegistrationList>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
     return apiApp.getListProvider()
-      .postPublication(publicationPost)
+      .postPublication(publicationPost, routingContext)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(publication -> {
         apiApp.getListProvider().toPublicClone(publication);
@@ -248,7 +248,7 @@ public class ListApiImpl implements ListApi {
         registrationUser.setEmail(token.getUserEmail());
         Future<RegistrationList> listFuture = Future.succeededFuture(listResult);
         Future<User> user = apiApp.getUserProvider()
-          .getOrCreateUserFromEmail(registrationUser);
+          .getOrCreateUserFromEmail(registrationUser, null);
 
         return Future.all(listFuture, user);
       })
@@ -284,7 +284,7 @@ public class ListApiImpl implements ListApi {
         User listOwnerUser = ListProvider.getOwnerUser(registrationResult.getList());
         String listOwnerEmailRfc;
         try {
-          listOwnerEmailRfc = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getName()).toString();
+          listOwnerEmailRfc = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
         } catch (AddressException e) {
           throw new InternalException("The list owner email is not valid", e);
         }
@@ -313,12 +313,12 @@ public class ListApiImpl implements ListApi {
         letter.setPublicationName(registrationList.getName());
         // Subscriber
         User subscriberUser = registrationResult.getSubscriber();
-        letter.setSubscriberName(subscriberUser.getName());
+        letter.setSubscriberName(subscriberUser.getGivenName());
         // Publisher
         User publisherUser = ListProvider.getOwnerUser(registrationList);
         letter
-          .setPublisherName(publisherUser.getName())
-          .setPublisherFullname(publisherUser.getFullname())
+          .setPublisherName(publisherUser.getGivenName())
+          .setPublisherFullname(publisherUser.getFullName())
           .setPublisherEmail(publisherUser.getEmail())
           .setPublisherTitle(publisherUser.getTitle())
           .setPublisherAvatar(publisherUser.getAvatar())

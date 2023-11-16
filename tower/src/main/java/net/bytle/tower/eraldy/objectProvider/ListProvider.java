@@ -3,9 +3,9 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -21,13 +21,14 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Manage the get/upsert of a {@link RegistrationList} object asynchronously
@@ -39,7 +40,6 @@ public class ListProvider {
 
   protected static final String TABLE_NAME = "realm_list";
 
-  private static final Map<Vertx, ListProvider> mapPublicationByVertx = new HashMap<>();
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String OWNER_PREFIX = "owner";
   private static final String LIST_PREFIX = "list";
@@ -162,7 +162,7 @@ public class ListProvider {
       " values ($1, $2, $3, $4, $5, $6, $7)";
 
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .withTransaction(sqlConnection ->
         SequenceProvider
           .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, registrationList.getRealm().getLocalId())
@@ -223,7 +223,7 @@ public class ListProvider {
         "  " + ID_COLUMN + "= $6\n" +
         "AND  " + REALM_COLUMN + "= $7 ";
 
-      return JdbcPostgresPool.getJdbcPool()
+      return jdbcPool
         .preparedQuery(updateByIdSql)
         .execute(Tuple.of(
           registrationList.getHandle(),
@@ -269,7 +269,7 @@ public class ListProvider {
       "AND  " + REALM_COLUMN + "= $6\n" +
       "RETURNING " + ID_COLUMN;
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(updateByHandleSql)
       .execute(Tuple.of(
         this.getDatabaseJsonObject(registrationList),
@@ -307,7 +307,7 @@ public class ListProvider {
       " where \n" +
       REALM_COLUMN + " = $1";
     Tuple parameters = Tuple.of(realm.getLocalId());
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(selectListsForRealmSql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get lists by realms error with the sql \n " + selectListsForRealmSql, e))
@@ -369,7 +369,7 @@ public class ListProvider {
         Future<User> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
           ownerFuture = apiApp.getUserProvider()
-            .getUserById(ownerId, realmResult);
+            .getUserById(ownerId, realmResult.getLocalId(), realmResult);
         }
 
         return Future
@@ -415,7 +415,7 @@ public class ListProvider {
       " " + ID_COLUMN + " = $1 " +
       " AND " + REALM_COLUMN + " = $2";
     Tuple parameters = Tuple.of(listId, realm.getLocalId());
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(parameters)
       .onFailure(e -> LOGGER.error("Get list by Id error with the sql.\n" + sql, e))
@@ -437,7 +437,7 @@ public class ListProvider {
    * @return the publication created
    */
 
-  public Future<RegistrationList> postPublication(ListPostBody listPostBody) {
+  public Future<RegistrationList> postPublication(ListPostBody listPostBody, RoutingContext routingContext) {
 
     /**
      * Realm
@@ -510,7 +510,7 @@ public class ListProvider {
             userToGetOrCreate.setEmail(ownerEmail);
             userToGetOrCreate.setRealm(realm);
             return userProvider
-              .getOrCreateUserFromEmail(userToGetOrCreate);
+              .getOrCreateUserFromEmail(userToGetOrCreate, routingContext);
           });
       }
     }
@@ -600,7 +600,6 @@ public class ListProvider {
   }
 
   public Future<java.util.List<RegistrationList>> getListsForApp(App app) {
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " where \n" +

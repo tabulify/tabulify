@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -75,7 +74,7 @@ public class AppApiImpl implements AppApi {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(appPostBody.getRealmIdentifier(), Realm.class)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(realm -> appProvider.postApp(appPostBody))
+      .compose(realm -> appProvider.postApp(appPostBody, routingContext))
       .compose(app -> {
         appProvider.toPublicClone(app);
         return Future.succeededFuture(new ApiResponse<>(app));
@@ -89,7 +88,6 @@ public class AppApiImpl implements AppApi {
     if (realmIdentifier == null) {
       throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
     }
-    Vertx vertx = routingContext.vertx();
     AppProvider appProvider = apiApp.getAppProvider();
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier, Realm.class)

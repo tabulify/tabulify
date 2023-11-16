@@ -17,7 +17,6 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,7 +170,7 @@ public class ListRegistrationProvider {
       "AND  " + ID_COLUMN + " = $5\n" +
       "AND  " + USER_COLUMN + " = $6\n";
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
         REGISTERED_STATUS,
@@ -198,7 +197,7 @@ public class ListRegistrationProvider {
       " values ($1, $2, $3, $4, $5, $6)";
 
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
         registration.getList().getRealm().getLocalId(),
@@ -239,7 +238,7 @@ public class ListRegistrationProvider {
 
         Long subscriberId = row.getLong(USER_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserById(subscriberId, realm);
+          .getUserById(subscriberId, realm.getLocalId(), realm);
 
         return Future
           .all(publicationFuture, publisherFuture)

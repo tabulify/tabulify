@@ -54,7 +54,7 @@ public class UserApiImpl implements UserApi {
             throw ValidationException.create("The realm does not exist", "realmIdentifier", realmIdentifier);
           }
           return userProvider
-            .getUserByEmail(userIdentifier, realm);
+            .getUserByEmail(userIdentifier, realm.getLocalId(), realm);
         });
     }
     return userFuture
@@ -121,7 +121,7 @@ public class UserApiImpl implements UserApi {
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
         userRequested.setRealm(realm);
-        return userProvider.upsertUser(userRequested);
+        return userProvider.upsertUser(userRequested, routingContext);
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(userUpserted -> {
