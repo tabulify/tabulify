@@ -185,11 +185,11 @@ public class OpenApiManager {
       for (String scope : scopes) {
         User user = routingContext.user();
         if (!RoleBasedAuthorization.create(scope).match(user)) {
-          VertxFailureHttp.create()
+          VertxFailureHttpException.builder()
             .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
-            .setDescription("The scope (" + scope + ") is not granted to the user (" + user.subject() + ")")
+            .setMessage("The scope (" + scope + ") is not granted to the user (" + user.subject() + ")")
             .setMimeToJson()
-            .failContext(routingContext);
+            .buildWithContextFailingTerminal(routingContext);
           return;
         }
       }

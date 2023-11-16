@@ -174,13 +174,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
         } catch (NotFoundException | AddressException e) {
-          return Future.failedFuture(VertxFailureHttp
-            .create()
+          return Future.failedFuture(VertxFailureHttpException
+            .builder()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-            .setDescription("The name of the subscriber could not be determined (" + e.getMessage() + ")")
+            .setMessage("The name of the subscriber could not be determined (" + e.getMessage() + ")")
             .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
+            .buildWithContextFailing(routingContext)
           );
         }
         BMailTransactionalTemplate publicationValidationLetter = getApp()
@@ -213,11 +212,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxFailureHttp.create().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-            .setDescription("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+          return Future.failedFuture(VertxFailureHttpException.builder().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+            .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
             .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
+            .buildWithContextFailing(routingContext)
           );
         }
 
@@ -225,13 +223,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxFailureHttp
-            .create()
+          return Future.failedFuture(VertxFailureHttpException
+            .builder()
             .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-            .setDescription("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
+            .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
             .setException(e)
-            .failContext(routingContext)
-            .getFailedException()
+            .buildWithContextFailing(routingContext)
           );
         }
 
@@ -342,12 +339,14 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(list -> {
 
         if (list == null) {
-          VertxFailureHttp
-            .create()
-            .setName("The list was not found")
-            .setDescription("The list <mark>" + listGuid + "</mark> was not found.")
-            .failContextAsHtml(routingContext);
-          return Future.succeededFuture(new ApiResponse<>(HttpStatusEnum.NOT_FOUND_404.getStatusCode()));
+          return Future.failedFuture(
+            VertxFailureHttpException
+              .builder()
+              .setStatus(HttpStatusEnum.NOT_FOUND_404)
+              .setName("The list was not found")
+              .setMessage("The list <mark>" + listGuid + "</mark> was not found.")
+              .buildWithContextFailingAsHtml(routingContext)
+          );
         }
         Map<String, Object> variables = new HashMap<>();
         list.setGuid(listGuid); // all object does not have any guid by default when retrieved

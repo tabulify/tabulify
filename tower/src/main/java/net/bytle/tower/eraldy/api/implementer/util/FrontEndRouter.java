@@ -11,7 +11,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.VertxFailureHttp;
+import net.bytle.vertx.VertxFailureHttpException;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.auth.OAuthInternalSession;
@@ -77,11 +77,13 @@ public class FrontEndRouter {
       if (redirectUri != null) {
         message += " Click <a href=\"" + redirectUri + "\">here</a> to log in.";
       }
-      VertxFailureHttp.create()
-        .setDescription(message)
+      return Future.failedFuture(
+        VertxFailureHttpException.builder()
+        .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
+        .setMessage(message)
         .setName(message)
-        .failContextAsHtml(routingContext);
-      return Future.succeededFuture(new ApiResponse<>(HttpStatusEnum.NOT_AUTHORIZED_401.getStatusCode()));
+        .buildWithContextFailingAsHtml(routingContext)
+      );
     }
 
 
@@ -92,11 +94,16 @@ public class FrontEndRouter {
       try {
         OAuthExternalCodeFlow.getRedirectUri(routingContext);
       } catch (NotFoundException e) {
-        VertxFailureHttp.create()
-          .setName("Redirect Uri is mandatory")
-          .setDescription("The redirect URI is mandatory and was not found")
-          .failContextAsHtml(routingContext);
-        return Future.succeededFuture(new ApiResponse<>(HttpStatusEnum.BAD_REQUEST_400.getStatusCode()));
+
+        return Future.failedFuture(
+          VertxFailureHttpException
+            .builder()
+            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setName("Redirect Uri is mandatory")
+            .setMessage("The redirect URI is mandatory and was not found")
+            .buildWithContextFailingAsHtml(routingContext)
+        );
+
       }
     }
 

@@ -126,7 +126,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
    * @return the claims
    * @throws IllegalStructure if the claims object is not valid
    */
-  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure {
+  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure, VertxFailureHttpException {
     OAuthAccessTokenResponse accessTokenResponse = getCallbackData(ctx, OAuthAccessTokenResponse.class);
     JsonObject jwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
     AuthUser authUser = AuthUser.createFromClaims(jwtClaims);
@@ -142,11 +142,13 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
-      VertxFailureHttp.create()
-        .setDescription(message)
+
+      throw VertxFailureHttpException
+        .builder()
+        .setStatus(HttpStatusEnum.LINK_EXPIRED)
+        .setMessage(message)
         .setName("Link expired")
-        .failContextAsHtml(ctx);
-      throw new IllegalStructure();
+        .buildWithContextFailingAsHtml(ctx);
     }
     return authUser;
   }

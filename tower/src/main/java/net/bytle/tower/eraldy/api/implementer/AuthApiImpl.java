@@ -64,11 +64,10 @@ public class AuthApiImpl implements AuthApi {
     realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
     if (realmIdentifier == null) {
       return Future.failedFuture(
-        VertxFailureHttp.create()
+        VertxFailureHttpException.builder()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-          .setDescription("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
-          .failContext(routingContext)
-          .getFailedException()
+          .setMessage("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
+          .buildWithContextFailing(routingContext)
       );
     }
 
@@ -103,12 +102,11 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxFailureHttp.create()
+        VertxFailureHttpException.builder()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-          .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
-          .failContext(routingContext)
+          .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
           .setMimeToHtml()
-          .getFailedException()
+          .buildWithContextFailing(routingContext)
       );
     }
 
@@ -119,12 +117,11 @@ public class AuthApiImpl implements AuthApi {
       this.utilValidateRealmFromRedirectUri(redirectUriEnhanced);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
-        VertxFailureHttp.create()
+        VertxFailureHttpException.builder()
           .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
-          .setDescription("The redirect uri (" + redirectUri + ") is unknown")
-          .failContext(routingContext)
+          .setMessage("The redirect uri (" + redirectUri + ") is unknown")
           .setMimeToHtml()
-          .getFailedException()
+          .buildWithContextFailing(routingContext)
       );
     }
 
@@ -220,12 +217,11 @@ public class AuthApiImpl implements AuthApi {
           recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttp.create()
+            VertxFailureHttpException.builder()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-              .setDescription("The recipient email (" + userToLogin.getEmail() + ") is not valid")
+              .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
               .setException(e)
-              .failContext(routingContext)
-              .getFailedException()
+              .buildWithContextFailing(routingContext)
           );
         }
         String senderEmailAddressInRfcFormat;
@@ -233,12 +229,11 @@ public class AuthApiImpl implements AuthApi {
           senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttp.create()
+            VertxFailureHttpException.builder()
               .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-              .setDescription("The sender email (" + sender.getEmail() + ") is not valid")
+              .setMessage("The sender email (" + sender.getEmail() + ") is not valid")
               .setException(e)
-              .failContext(routingContext)
-              .getFailedException()
+              .buildWithContextFailing(routingContext)
           );
         }
 
@@ -332,9 +327,9 @@ public class AuthApiImpl implements AuthApi {
         .compose(user -> {
           if (user == null) {
             return Future.failedFuture(
-              VertxFailureHttp.create()
+              VertxFailureHttpException.builder()
                 .setStatus(HttpStatusEnum.NOT_FOUND_404)
-                .getFailedException()
+                .build()
             );
           }
           AuthUser authUser = UsersUtil.toAuthUser(user);
@@ -364,10 +359,10 @@ public class AuthApiImpl implements AuthApi {
       user = apiApp.getAuthSignedInUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxFailureHttp
-          .create()
+        VertxFailureHttpException
+          .builder()
           .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
-          .getFailedException()
+          .build()
       );
     }
 
@@ -408,12 +403,11 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxFailureHttp.create()
+        VertxFailureHttpException.builder()
           .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-          .setDescription("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
-          .failContext(routingContext)
+          .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
           .setMimeToHtml()
-          .getFailedException()
+          .buildWithContextFailing(routingContext)
       );
     }
 

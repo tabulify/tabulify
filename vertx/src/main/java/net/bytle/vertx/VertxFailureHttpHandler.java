@@ -46,8 +46,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
      */
     if (thrown instanceof VertxFailureHttpException) {
       VertxFailureHttpException contextFailureException = (VertxFailureHttpException) thrown;
-      VertxFailureHttp vertxFailureHttp = contextFailureException.getFailureContext();
-      this.sendResponse(context, vertxFailureHttp);
+      this.sendResponse(context, contextFailureException);
       return;
     }
 
@@ -55,15 +54,16 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
      * Other type of exception
      */
     this.sendResponse(context,
-      VertxFailureHttp.create()
-        .buildFromFailureContext(context)
+      VertxFailureHttpException.builder()
+        .setPropertiesFromFailureContext(context)
         .setMimeToJson()
+        .build()
     );
 
 
   }
 
-  private void sendResponse(RoutingContext context, VertxFailureHttp vertxFailureHttp) {
+  private void sendResponse(RoutingContext context, VertxFailureHttpException vertxFailureHttpException) {
 
     HttpServerResponse response = context.response();
     if (response.headWritten()) {
@@ -72,7 +72,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
       return;
     }
 
-    HttpStatus statusCode = vertxFailureHttp.getStatus();
+    HttpStatus statusCode = vertxFailureHttpException.getStatus();
     /**
      * Internal error or forbidden request ({@link io.vertx.ext.web.handler.CSRFHandler problem})
      */
@@ -81,11 +81,11 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
     }
 
 
-    MediaTypes format = vertxFailureHttp.getMime();
+    MediaTypes format = vertxFailureHttpException.getMime();
     switch (format) {
       case TEXT_HTML:
       default:
-        String html = vertxFailureHttp.toHtml(context);
+        String html = vertxFailureHttpException.toHtml(context);
         context
           .response()
           .setStatusCode(statusCode.getStatusCode())
@@ -95,7 +95,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
         context
           .response()
           .setStatusCode(statusCode.getStatusCode());
-        ExitStatusResponse exitStatusResponse = vertxFailureHttp.toJsonObject();
+        ExitStatusResponse exitStatusResponse = vertxFailureHttpException.toJsonObject();
         context.json(exitStatusResponse);
     }
   }

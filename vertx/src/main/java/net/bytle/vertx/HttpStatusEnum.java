@@ -42,7 +42,11 @@ public enum HttpStatusEnum implements HttpStatus {
    * Tracking redirect
    * (Does not work in Chrome for a POST as it does not perform a GET)
    */
-  REDIRECT_SEE_OTHER_URI_303(303);
+  REDIRECT_SEE_OTHER_URI_303(303),
+  /**
+   * When the user click on a expired link
+   */
+  LINK_EXPIRED(400);
 
   private final int httpStatusCode;
 

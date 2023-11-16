@@ -78,13 +78,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttp
-              .create()
+            VertxFailureHttpException
+              .builder()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-              .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
-              .failContext(routingContext)
-              .getFailedException()
+              .buildWithContextFailing(routingContext)
           );
         }
         BMailTransactionalTemplate letter =
@@ -120,13 +119,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmail(), newUserName).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttp
-              .create()
+            VertxFailureHttpException
+              .builder()
               .setStatus(HttpStatusEnum.BAD_REQUEST_400)
-              .setDescription("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
-              .failContext(routingContext)
-              .getFailedException()
+              .buildWithContextFailing(routingContext)
           );
         }
         String senderEmailInRfc;
@@ -134,13 +132,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
           senderEmailInRfc = BMailInternetAddress.of(realmOwnerSender.getEmail(), realmOwnerSender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttp
-              .create()
+            VertxFailureHttpException
+              .builder()
               .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-              .setDescription("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
+              .setMessage("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
-              .failContext(routingContext)
-              .getFailedException()
+              .buildWithContextFailing(routingContext)
           );
         }
 
@@ -236,11 +233,10 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
       String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
       if (realmIdentifier == null) {
-        VertxFailureHttp.create()
+        VertxFailureHttpException.builder()
           .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-          .setDescription("For a user registration flow, the realm should have been set in the authentication state")
-          .failContext(authContext.getRoutingContext()
-          );
+          .setMessage("For a user registration flow, the realm should have been set in the authentication state")
+          .buildWithContextFailingTerminal(authContext.getRoutingContext());
         authContext.next();
         return;
       }

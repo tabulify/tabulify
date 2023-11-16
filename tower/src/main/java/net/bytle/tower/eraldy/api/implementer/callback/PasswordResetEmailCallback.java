@@ -7,6 +7,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.vertx.HttpStatusEnum;
+import net.bytle.vertx.VertxFailureHttpException;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
@@ -43,7 +44,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
     AuthUser authUser;
     try {
       authUser = getAndValidateJwtClaims(ctx, "password reset");
-    } catch (IllegalStructure e) {
+    } catch (IllegalStructure | VertxFailureHttpException e) {
       return;
     }
 

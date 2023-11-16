@@ -139,21 +139,22 @@ public class AuthContext {
       if (JavaEnvs.IS_DEV) {
         message += e.getMessage();
       }
-      VertxFailureHttp.create()
-        .setDescription(message)
+      VertxFailureHttpException.builder()
+        .setMessage(message)
         .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
         .setName("Bad URL redirect")
-        .failContextAsHtml(ctx);
+        .setMimeToHtml()
+        .buildWithContextFailingTerminal(ctx);
       return;
 
     } catch (NotFoundException e) {
 
-      VertxFailureHttp.create()
-        .setDescription("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
+      VertxFailureHttpException.builder()
+        .setMessage("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
         .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
         .setName("URL redirect was not found")
         .setMimeToHtml()
-        .failContextAsHtml(ctx);
+        .buildWithContextFailingTerminal(ctx);
       return;
 
     }

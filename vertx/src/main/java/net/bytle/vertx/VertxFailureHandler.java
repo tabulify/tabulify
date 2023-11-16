@@ -5,6 +5,10 @@ import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailMessage;
 import net.bytle.exception.Exceptions;
 
+/**
+ * Handler for the failures
+ * that happen on the Vertx threads
+ */
 public class VertxFailureHandler implements Handler<Throwable> {
 
   private final Counter failureCounter;
@@ -16,7 +20,7 @@ public class VertxFailureHandler implements Handler<Throwable> {
 
     failureCounter = server
       .getMetricsRegistry()
-      .counter("router_failure");
+      .counter("vertx_failure");
     this.mailProvider = server.getSmtpClient();
 
 
@@ -38,16 +42,16 @@ public class VertxFailureHandler implements Handler<Throwable> {
 
 
     /**
-     * Log
+     * Log - the stack trace should be logged
      */
-    String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
-    ContextFailureLogger.CONTEXT_FAILURE_LOGGER.error(stackTraceAsString);
+    ContextFailureLogger.CONTEXT_FAILURE_LOGGER.error(thrown.getMessage(), thrown);
 
     /**
      * Send the email
      */
     if (this.sendEmailOnError) {
 
+      String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
       MailMessage mailMessage = mailProvider
         .createVertxMailMessage()
         .setFrom(SysAdmin.getEmail())
