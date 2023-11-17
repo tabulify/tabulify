@@ -1,11 +1,12 @@
 package net.bytle.vertx.auth;
 
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.type.UriEnhanced;
 
 /**
  * The class that contains the keys
- * for data stored in a session
+ * for auth data stored in a session
  */
 public class OAuthInternalSession {
 
@@ -24,6 +25,7 @@ public class OAuthInternalSession {
   /**
    * The client id received is stored in a session with this key
    */
+  @SuppressWarnings("unused")
   public static final String CLIENT_ID_KEY = PREFIX + "client-id";
   /**
    * The state received is stored in a session with this key
@@ -32,10 +34,15 @@ public class OAuthInternalSession {
   /**
    * The response type received is stored in a session with this key
    */
+  @SuppressWarnings("unused")
   public static final String RESPONSE_TYPE_KEY = PREFIX + "response-type";
 
-  public static void addRedirectUri(RoutingContext context, UriEnhanced uriEnhanced) {
-    context.session().put(OAuthInternalSession.REDIRECT_URI_KEY, uriEnhanced.toUrl().toString());
+  public static void addRedirectUri(RoutingContext routingContext, String uri) throws IllegalStructure {
+    UriEnhanced redirectUri = UriEnhanced.createFromString(uri);
+    addRedirectUri(routingContext, redirectUri);
   }
 
+  public static void addRedirectUri(RoutingContext routingContext, UriEnhanced redirectUri) {
+    routingContext.session().put(OAuthInternalSession.REDIRECT_URI_KEY, redirectUri.toString());
+  }
 }

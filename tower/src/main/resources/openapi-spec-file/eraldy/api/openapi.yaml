@@ -245,12 +245,12 @@ paths:
     post:
       operationId: authRegisterUserPost
       requestBody:
-        $ref: '#/components/requestBodies/EmailPostBody'
+        $ref: '#/components/requestBodies/UserRegisterPostBody'
       responses:
         "200":
           description: An email was send for validation
         "400":
-          description: The email is not valid
+          description: A parameter is not valid
       security: []
       summary: Register a user
       tags:
@@ -1345,6 +1345,16 @@ components:
             $ref: '#/components/schemas/EmailIdentifier'
       description: The data needed to log a user in by email
       required: true
+    UserRegisterPostBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserRegisterPost'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/UserRegisterPost'
+      description: The data needed to register a user
+      required: true
     PasswordOnlyPostBody:
       content:
         application/json:
@@ -1422,6 +1432,27 @@ components:
       description: The data needed to create a list
       required: true
   schemas:
+    UserRegisterPost:
+      description: A post object to register
+      example:
+        redirectUri: redirectUri
+        userEmail: userEmail
+        realmIdentifier: realmIdentifier
+      properties:
+        userEmail:
+          description: An email
+          type: string
+        realmIdentifier:
+          description: The realm identifier (guid or handle)
+          type: string
+        redirectUri:
+          description: The uri where to redirect the user after successful registration
+          type: string
+      required:
+      - realmIdentifier
+      - redirectUri
+      - userEmail
+      type: object
     PasswordOnly:
       description: To update a password
       example:
@@ -1584,18 +1615,18 @@ components:
           disabledReason: disabledReason
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
-          name: John
           guid: xmmmN
           disabled: true
           location: The world
           realm: null
-          fullname: John Doe
           email: john@doe.com
         organization:
           name: name
@@ -1670,18 +1701,18 @@ components:
         disabledReason: disabledReason
         website: https://mywebsite
         creationTime: 2000-01-23T04:56:07.000+00:00
+        givenName: John
+        fullName: John Doe
         bio: bio
         handle: foo
         avatar: https://en.gravatar.com/userimage/john.doe.png
         title: Chief Executive Officer
         localId: 1
         modificationTime: 2000-01-23T04:56:07.000+00:00
-        name: John
         guid: xmmmN
         disabled: true
         location: The world
         realm: null
-        fullname: John Doe
         email: john@doe.com
       properties:
         guid:
@@ -1709,6 +1740,8 @@ components:
           example: 1
           format: int64
           type: integer
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            id\"})"
         handle:
           description: The handle of the user
           example: foo
@@ -1718,15 +1751,19 @@ components:
           example: john@doe.com
           format: email
           type: string
-        name:
+        givenName:
           description: "The short and informal name of the user (used in signature,\
             \ known also as the given, calling or first name)"
           example: John
           type: string
-        fullname:
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            name\"})"
+        fullName:
           description: The long and formal name of the user (used in address)
           example: John Doe
           type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            fullname\"})"
         title:
           description: The title of the user (a short user description such as a role
             used in signature)
@@ -1789,18 +1826,18 @@ components:
             disabledReason: disabledReason
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: John
             guid: xmmmN
             disabled: true
             location: The world
             realm: null
-            fullname: John Doe
             email: john@doe.com
           organization:
             name: name
@@ -1817,18 +1854,18 @@ components:
           disabledReason: disabledReason
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
-          name: John
           guid: xmmmN
           disabled: true
           location: The world
           realm: null
-          fullname: John Doe
           email: john@doe.com
         home: https://doe.com
       properties:
@@ -1946,18 +1983,18 @@ components:
             disabledReason: disabledReason
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: John
             guid: xmmmN
             disabled: true
             location: The world
             realm: null
-            fullname: John Doe
             email: john@doe.com
           organization:
             name: name
@@ -1974,18 +2011,18 @@ components:
           disabledReason: disabledReason
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
-          name: John
           guid: xmmmN
           disabled: true
           location: The world
           realm: null
-          fullname: John Doe
           email: john@doe.com
       properties:
         id:
@@ -2254,18 +2291,18 @@ components:
           disabledReason: disabledReason
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
-          name: John
           guid: xmmmN
           disabled: true
           location: The world
           realm: null
-          fullname: John Doe
           email: john@doe.com
         name: Mailing list
         guid: xmmmN
@@ -2277,18 +2314,18 @@ components:
             disabledReason: disabledReason
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: John
             guid: xmmmN
             disabled: true
             location: The world
             realm: null
-            fullname: John Doe
             email: john@doe.com
           organization:
             name: name
@@ -2314,18 +2351,18 @@ components:
               disabledReason: disabledReason
               website: https://mywebsite
               creationTime: 2000-01-23T04:56:07.000+00:00
+              givenName: John
+              fullName: John Doe
               bio: bio
               handle: foo
               avatar: https://en.gravatar.com/userimage/john.doe.png
               title: Chief Executive Officer
               localId: 1
               modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: John
               guid: xmmmN
               disabled: true
               location: The world
               realm: null
-              fullname: John Doe
               email: john@doe.com
             organization:
               name: name
@@ -2342,18 +2379,18 @@ components:
             disabledReason: disabledReason
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: John
             guid: xmmmN
             disabled: true
             location: The world
             realm: null
-            fullname: John Doe
             email: john@doe.com
           home: https://doe.com
       properties:
@@ -2499,18 +2536,18 @@ components:
           disabledReason: disabledReason
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
-          name: John
           guid: xmmmN
           disabled: true
           location: The world
           realm: null
-          fullname: John Doe
           email: john@doe.com
         optInIp: optInIp
         guid: xmmmN
@@ -2520,18 +2557,18 @@ components:
             disabledReason: disabledReason
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
+            givenName: John
+            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
-            name: John
             guid: xmmmN
             disabled: true
             location: The world
             realm: null
-            fullname: John Doe
             email: john@doe.com
           name: Mailing list
           guid: xmmmN
@@ -2543,18 +2580,18 @@ components:
               disabledReason: disabledReason
               website: https://mywebsite
               creationTime: 2000-01-23T04:56:07.000+00:00
+              givenName: John
+              fullName: John Doe
               bio: bio
               handle: foo
               avatar: https://en.gravatar.com/userimage/john.doe.png
               title: Chief Executive Officer
               localId: 1
               modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: John
               guid: xmmmN
               disabled: true
               location: The world
               realm: null
-              fullname: John Doe
               email: john@doe.com
             organization:
               name: name
@@ -2580,18 +2617,18 @@ components:
                 disabledReason: disabledReason
                 website: https://mywebsite
                 creationTime: 2000-01-23T04:56:07.000+00:00
+                givenName: John
+                fullName: John Doe
                 bio: bio
                 handle: foo
                 avatar: https://en.gravatar.com/userimage/john.doe.png
                 title: Chief Executive Officer
                 localId: 1
                 modificationTime: 2000-01-23T04:56:07.000+00:00
-                name: John
                 guid: xmmmN
                 disabled: true
                 location: The world
                 realm: null
-                fullname: John Doe
                 email: john@doe.com
               organization:
                 name: name
@@ -2608,18 +2645,18 @@ components:
               disabledReason: disabledReason
               website: https://mywebsite
               creationTime: 2000-01-23T04:56:07.000+00:00
+              givenName: John
+              fullName: John Doe
               bio: bio
               handle: foo
               avatar: https://en.gravatar.com/userimage/john.doe.png
               title: Chief Executive Officer
               localId: 1
               modificationTime: 2000-01-23T04:56:07.000+00:00
-              name: John
               guid: xmmmN
               disabled: true
               location: The world
               realm: null
-              fullname: John Doe
               email: john@doe.com
             home: https://doe.com
         flow: null

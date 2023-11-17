@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -24,9 +23,9 @@ public class User   {
 
   protected String email;
 
-  protected String name;
+  protected String givenName;
 
-  protected String fullname;
+  protected String fullName;
 
   protected String title;
 
@@ -76,7 +75,7 @@ public class User   {
   /**
   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
   */
-  @JsonAlias({"id"})
+  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
   @JsonProperty("localId")
   public Long getLocalId() {
     return localId;
@@ -123,35 +122,37 @@ public class User   {
   }
 
   /**
-  * @return name The short and informal name of the user (used in signature, known also as the given, calling or first name)
+  * @return givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
   */
-  @JsonProperty("name")
+  @com.fasterxml.jackson.annotation.JsonAlias({"name"})
+  @JsonProperty("givenName")
   public String getGivenName() {
-    return name;
+    return givenName;
   }
 
   /**
-  * @param name The short and informal name of the user (used in signature, known also as the given, calling or first name)
+  * @param givenName The short and informal name of the user (used in signature, known also as the given, calling or first name)
   */
   @SuppressWarnings("unused")
-  public void setGivenName(String name) {
-    this.name = name;
+  public void setGivenName(String givenName) {
+    this.givenName = givenName;
   }
 
   /**
-  * @return fullname The long and formal name of the user (used in address)
+  * @return fullName The long and formal name of the user (used in address)
   */
-  @JsonProperty("fullname")
+  @com.fasterxml.jackson.annotation.JsonAlias({"fullname"})
+  @JsonProperty("fullName")
   public String getFullName() {
-    return fullname;
+    return fullName;
   }
 
   /**
-  * @param fullname The long and formal name of the user (used in address)
+  * @param fullName The long and formal name of the user (used in address)
   */
   @SuppressWarnings("unused")
-  public void setFullname(String fullname) {
-    this.fullname = fullname;
+  public void setFullName(String fullName) {
+    this.fullName = fullName;
   }
 
   /**
@@ -328,8 +329,8 @@ public class User   {
         Objects.equals(localId, user.localId) &&
         Objects.equals(handle, user.handle) &&
         Objects.equals(email, user.email) &&
-        Objects.equals(name, user.name) &&
-        Objects.equals(fullname, user.fullname) &&
+        Objects.equals(givenName, user.givenName) &&
+        Objects.equals(fullName, user.fullName) &&
         Objects.equals(title, user.title) &&
         Objects.equals(disabled, user.disabled) &&
         Objects.equals(disabledReason, user.disabledReason) &&
@@ -344,7 +345,7 @@ public class User   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, localId, handle, email, name, fullname, title, disabled, disabledReason, avatar, bio, website, location, creationTime, modificationTime, realm);
+    return Objects.hash(guid, localId, handle, email, givenName, fullName, title, disabled, disabledReason, avatar, bio, website, location, creationTime, modificationTime, realm);
   }
 
   @Override

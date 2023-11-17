@@ -48,4 +48,5 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/Service.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ServiceSmtpPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/User.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/UserPostBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/UserRegisterPost.java
 src/main/resources/openapi.yaml

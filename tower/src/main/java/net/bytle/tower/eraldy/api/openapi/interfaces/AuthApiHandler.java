@@ -8,10 +8,7 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
-import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
-import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
-import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
+import net.bytle.tower.eraldy.model.openapi.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,12 +220,12 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
       RequestParameter requestParameterBody = requestParameters.body();
-  EmailIdentifier emailIdentifier = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<EmailIdentifier>(){}) : null;
+  UserRegisterPost userRegisterPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<UserRegisterPost>(){}) : null;
 
-      logger.debug("Parameter emailIdentifier is {}", emailIdentifier);
+      logger.debug("Parameter userRegisterPost is {}", userRegisterPost);
 
     // Based on Route#respond
-    api.authRegisterUserPost(routingContext, emailIdentifier)
+    api.authRegisterUserPost(routingContext, userRegisterPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

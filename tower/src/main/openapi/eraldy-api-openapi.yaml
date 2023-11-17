@@ -65,6 +65,17 @@ components:
         multipart/form-data:
           schema:
             $ref: './eraldy-common-openapi.yaml#/components/schemas/EmailIdentifier'
+    UserRegisterPostBody:
+      description: The data needed to register a user
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserRegisterPost'
+        #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/UserRegisterPost'
     PasswordOnlyPostBody:
       description: Password update body
       required: true
@@ -76,7 +87,28 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/PasswordOnly'
+
   schemas:
+    UserRegisterPost:
+      type: object
+      description: A post object to register
+      required:
+        - userEmail
+        - realmIdentifier
+        - redirectUri
+      properties:
+        userEmail:
+          type: string
+          # we don't set the format because the openapi validation is not really helpful for the end client
+          # we do the validation ourselves
+          # format: email
+          description: An email
+        realmIdentifier:
+          type: string
+          description: The realm identifier (guid or handle)
+        redirectUri:
+          type: string
+          description: The uri where to redirect the user after successful registration
     PasswordOnly:
       title: To update a password
       description: To update a password
@@ -322,13 +354,13 @@ paths:
         - auth
       security: [ ]
       requestBody:
-        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/EmailPostBody'
+        $ref: '#/components/requestBodies/UserRegisterPostBody'
       responses:
         '200':
           # even if the email exists, we don't want to leak info
           description: "An email was send for validation"
         '400':
-          description: "The email is not valid"
+          description: "A parameter is not valid"
   /auth/register/list:
     post:
       operationId: authRegisterListPost

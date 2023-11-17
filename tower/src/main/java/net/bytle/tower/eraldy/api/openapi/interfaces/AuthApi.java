@@ -60,5 +60,5 @@ public interface AuthApi  {
     /**
      * Register a user
     */
-    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
+    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, UserRegisterPost userRegisterPost);
 }

@@ -9,13 +9,15 @@ import io.vertx.ext.web.handler.HttpException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
+import net.bytle.exception.IllegalArgumentExceptions;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.UserRegisterPost;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
@@ -23,6 +25,7 @@ import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
+import net.bytle.vertx.auth.OAuthInternalSession;
 import net.bytle.vertx.flow.SmtpSender;
 import net.bytle.vertx.flow.WebFlowAbs;
 import org.slf4j.Logger;
@@ -55,18 +58,35 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * Handle the registration post
    *
    * @param routingContext  - the routing context
-   * @param emailIdentifier - the body post information
+   * @param userRegisterPost - the body post information
    */
-  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
+  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, UserRegisterPost userRegisterPost) {
+
+    ValidationUtil.validateEmail(userRegisterPost.getUserEmail(), "userEmail");
+    String realmIdentifier = userRegisterPost.getRealmIdentifier();
+    if (realmIdentifier == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm identifier cannot be null.", "realmIdentifier", null);
+    }
+
+    String redirectUri = userRegisterPost.getRedirectUri();
+    if (redirectUri == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirectUri cannot be null.", "redirectUri", null);
+    }
+    try {
+      OAuthInternalSession.addRedirectUri(routingContext, redirectUri);
+    } catch (IllegalStructure e) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirectUri value is not valid", "redirectUri", redirectUri);
+    }
+
 
     return getApp()
       .getRealmProvider()
-      .getRealmFromIdentifier(emailIdentifier.getRealmIdentifier())
+      .getRealmFromIdentifier(userRegisterPost.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(realm -> {
 
         User newUser = new User();
-        newUser.setEmail(emailIdentifier.getUserEmail());
+        newUser.setEmail(userRegisterPost.getUserEmail());
         newUser.setRealm(realm);
 
 

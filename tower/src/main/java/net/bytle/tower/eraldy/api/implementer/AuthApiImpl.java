@@ -431,9 +431,9 @@ public class AuthApiImpl implements AuthApi {
 
 
   @Override
-  public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
-    utilValidateEmailIdentifierDataUtil(emailIdentifier);
-    return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, emailIdentifier);
+  public Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, UserRegisterPost userRegisterPost) {
+
+    return this.apiApp.getUserRegistrationFlow().handleStep1SendEmail(routingContext, userRegisterPost);
   }
 
   @Override
@@ -441,6 +441,8 @@ public class AuthApiImpl implements AuthApi {
     return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listRegistrationPostBody)
       .compose(response -> Future.succeededFuture(new ApiResponse<>()));
   }
+
+
 
   private void utilValidateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {
     ValidationUtil.validateEmail(emailIdentifier.getUserEmail(), "userEmail");

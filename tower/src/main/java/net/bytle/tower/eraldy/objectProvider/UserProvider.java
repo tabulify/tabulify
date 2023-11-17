@@ -627,7 +627,7 @@ public class UserProvider {
       patched = true;
     }
     if (dbUser.getFullName() == null && patchUser.getFullName() != null) {
-      dbUser.setFullname(patchUser.getFullName());
+      dbUser.setFullName(patchUser.getFullName());
       patched = true;
     }
     if (dbUser.getBio() == null && patchUser.getBio() != null) {

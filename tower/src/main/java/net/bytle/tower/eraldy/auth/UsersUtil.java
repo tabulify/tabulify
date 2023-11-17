@@ -75,7 +75,7 @@ public class UsersUtil {
     } catch (NotFoundException | AddressException e) {
       throw new InternalException("Should not occurs, a database user should have a valid email at least", e);
     }
-    outputUser.setFullname(user.getFullName() != null ? user.getFullName() : defaultName);
+    outputUser.setFullName(user.getFullName() != null ? user.getFullName() : defaultName);
     outputUser.setAvatar(user.getAvatar());
     outputUser.setTitle(user.getTitle());
     return outputUser;
@@ -166,7 +166,7 @@ public class UsersUtil {
     if (subjectFullName != null && subjectFamilyName != null) {
       subjectFullName += " " + subjectFamilyName;
     }
-    userEraldy.setFullname(subjectFullName);
+    userEraldy.setFullName(subjectFullName);
     userEraldy.setBio(authUser.getSubjectBio());
     userEraldy.setLocation(authUser.getSubjectLocation());
     userEraldy.setWebsite(authUser.getSubjectBlog());
