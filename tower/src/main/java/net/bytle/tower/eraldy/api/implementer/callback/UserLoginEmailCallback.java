@@ -60,7 +60,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
           return;
         }
         new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-          .redirectViaHttpWithRedirectUriParameter()
+          .redirectViaHttpWithAuthRedirectUriAsUri()
           .authenticateSession();
       });
 

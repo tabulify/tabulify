@@ -8,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -74,6 +73,24 @@ public class AuthContext {
     return this;
   }
 
+  /**
+   * @param redirectUri - the uri where to redirect. It will get the auth redirect uri as parameter.
+   *                    This is used with for instance a confirmation page that shows a message and then redirect the user
+   */
+  public AuthContext redirectViaHttpWithAuthRedirectUriAsParameter(UriEnhanced redirectUri) {
+    this.redirectVia = RedirectionMethod.HTTP;
+    UriEnhanced redirectUriParameter;
+    try {
+      redirectUriParameter = this.getAndRemoveRedirectUri();
+    } catch (VertxFailureHttpException e) {
+      // the exception thrown fails already the context
+      // nothing to do more
+      return this;
+    }
+    this.redirectUri = redirectUri.addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUriParameter.toUrl().toString());
+    return this;
+  }
+
 
   public enum RedirectionMethod {
     HTTP, // via HTTP where the uri is a defined uri or the redirect uri metadata
@@ -104,7 +121,7 @@ public class AuthContext {
    * Redirect via the {@link AuthQueryProperty#REDIRECT_URI redirect uri parameter}
    * that is stored in the session (or in the auth state)
    */
-  public AuthContext redirectViaHttpWithRedirectUriParameter() {
+  public AuthContext redirectViaHttpWithAuthRedirectUriAsUri() {
     this.redirectVia = RedirectionMethod.HTTP;
     /**
      * Try to get the original redirect uri parameters
@@ -119,34 +136,10 @@ public class AuthContext {
      */
     try {
       redirectUri = this.getAndRemoveRedirectUri();
-    } catch (IllegalStructure e) {
-
-      String message = "An error prevents us to redirect you where you come from. The redirect uri was not valid.";
-      if (JavaEnvs.IS_DEV) {
-        message += e.getMessage();
-      }
-      // internal error, we don't throw
-      VertxFailureHttpException.builder()
-        .setMessage(message)
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-        .setName("Bad URL redirect")
-        .setMimeToHtml()
-        .setException(e)
-        .buildWithContextFailingTerminal(ctx);
+    } catch (VertxFailureHttpException e) {
+      // the exception thrown fails already the context
+      // nothing to do more
       return this;
-
-    } catch (NotFoundException e) {
-
-      // internal error, we don't throw
-      VertxFailureHttpException.builder()
-        .setMessage("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-        .setName("URL redirect was not found")
-        .setMimeToHtml()
-        .setException(e)
-        .buildWithContextFailingTerminal(ctx);
-      return this;
-
     }
     return this;
   }
@@ -276,11 +269,10 @@ public class AuthContext {
   }
 
   /**
-   * @return the redirect uri
-   * @throws IllegalStructure  - the URI is not valid
-   * @throws NotFoundException - the URI was not found (case when the user flow stops on the member website (ie list registration)
+   * @return the redirect uri where to redirect the user after identification ore registration.
+   * @throws VertxFailureHttpException - This exception already fails the context if any error. We throw if any error, so that the code can stop its processing.
    */
-  private UriEnhanced getAndRemoveRedirectUri() throws IllegalStructure, NotFoundException {
+  private UriEnhanced getAndRemoveRedirectUri() throws VertxFailureHttpException {
 
     Session session = ctx.session();
 
@@ -291,9 +283,29 @@ public class AuthContext {
     final UriEnhanced redirection;
     String sessionRedirectionUrl = session.remove(OAuthInternalSession.REDIRECT_URI_KEY);
     if (sessionRedirectionUrl == null) {
-      throw new NotFoundException();
+      throw VertxFailureHttpException.builder()
+        .setMessage("Redirect URI not found")
+        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setName("Redirect Uri not ")
+        .setMimeToHtml()
+        .buildWithContextFailing(ctx);
     }
-    redirection = UriEnhanced.createFromString(sessionRedirectionUrl);
+    try {
+      redirection = UriEnhanced.createFromString(sessionRedirectionUrl);
+    } catch (IllegalStructure e) {
+      String message = "An error prevents us to redirect you where you come from. The redirect uri (" + sessionRedirectionUrl + ") is not valid.";
+      if (JavaEnvs.IS_DEV) {
+        message += e.getMessage();
+      }
+      // internal error, we don't throw
+      throw VertxFailureHttpException.builder()
+        .setMessage(message)
+        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setName("Bad URL redirect")
+        .setMimeToHtml()
+        .setException(e)
+        .buildWithContextFailing(ctx);
+    }
 
 
     /**
@@ -303,7 +315,11 @@ public class AuthContext {
     if (!redirection.getApexWithoutPort().equals(EraldyDomain.get().getApexNameWithoutPort())) {
       String inState = session.get(OAuthInternalSession.STATE_KEY);
       if (inState == null) {
-        throw new NotFoundException("The session state is null");
+        throw VertxFailureHttpException.builder()
+          .setMessage("The session state is null")
+          .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+          .setMimeToHtml()
+          .buildWithContextFailing(ctx);
       }
       redirection.addQueryProperty(AuthQueryProperty.STATE.toString(), inState);
       String authCode = OAuthCodeManagement.createOrGet().createAuthorizationAndGetCode(sessionRedirectionUrl, authUser);

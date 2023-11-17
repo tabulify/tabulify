@@ -201,7 +201,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
               new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-                .redirectViaHttp(getUriToUserRegistrationConfirmation(userInDb.getGuid()))
+                .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(userInDb.getGuid()))
                 .authenticateSession();
               return;
             }
@@ -209,7 +209,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               .insertUser(user, ctx)
               .onFailure(ctx::fail)
               .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInserted), AuthState.createEmpty())
-                .redirectViaHttp(getUriToUserRegistrationConfirmation(userInserted.getGuid()))
+                .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(userInserted.getGuid()))
                 .authenticateSession()
               );
           });
