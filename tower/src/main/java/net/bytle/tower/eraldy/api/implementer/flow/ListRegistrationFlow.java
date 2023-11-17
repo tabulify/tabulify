@@ -109,15 +109,17 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(registration -> {
             addRegistrationConfirmationCookieData(ctx, registration);
+            UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
             new AuthContext(this.getApp(), ctx, UsersUtil.toAuthUser(user), AuthState.createEmpty())
-              .redirectViaFrontEnd(getRegistrationConfirmationOperationPath(registration))
+              .redirectViaHttp(redirectUri)
               .authenticateSession();
           });
       });
   }
 
-  public static String getRegistrationConfirmationOperationPath(Registration registration) {
-    return FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, registration.getGuid());
+  public  UriEnhanced getRegistrationConfirmationOperationPath(Registration registration) {
+    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, registration.getGuid());
+    return this.getApp().getMemberAppUri().setPath(registrationConfirmationOperationPath);
   }
 
   /**

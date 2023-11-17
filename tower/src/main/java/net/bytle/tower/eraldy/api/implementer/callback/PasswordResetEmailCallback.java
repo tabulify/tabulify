@@ -61,7 +61,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
           return;
         }
         new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-          .redirectViaFrontEnd(FRONT_END_UPDATE_OPERATION_PATH)
+          .redirectViaHttp(apiApp.getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
           .authenticateSession();
       });
 

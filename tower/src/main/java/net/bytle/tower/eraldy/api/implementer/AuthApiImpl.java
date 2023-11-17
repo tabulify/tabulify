@@ -143,7 +143,7 @@ public class AuthApiImpl implements AuthApi {
     /**
      * Not signed-in or realm different
      */
-    UriEnhanced url = this.apiApp.getLoginUri(redirectUri, authRealm.getHandle());
+    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUri, authRealm.getHandle());
     routingContext.redirect(url.toString());
     return Future.succeededFuture();
 
@@ -414,7 +414,7 @@ public class AuthApiImpl implements AuthApi {
     Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
 
     String redirect = this.apiApp
-      .getLoginUri(redirectUriEnhanced.toString(), authRealm.getHandle())
+      .getMemberLoginUri(redirectUriEnhanced.toString(), authRealm.getHandle())
       .toUrl()
       .toString();
 

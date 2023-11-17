@@ -18,6 +18,7 @@ import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
@@ -200,7 +201,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               // * The user has clicked two times on the validation link received by email
               // * The user tries to register again
               new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-                .redirectViaHttp()
+                .redirectViaHttp(getUriToUserRegistrationConfirmation(userInDb.getGuid()))
                 .authenticateSession();
               return;
             }
@@ -208,11 +209,15 @@ public class UserRegistrationFlow extends WebFlowAbs {
               .insertUser(user, ctx)
               .onFailure(ctx::fail)
               .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInserted), AuthState.createEmpty())
-                .redirectViaFrontEnd(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, userInserted.getGuid()))
+                .redirectViaHttp(getUriToUserRegistrationConfirmation(userInserted.getGuid()))
                 .authenticateSession()
               );
           });
       });
+  }
+
+  private UriEnhanced getUriToUserRegistrationConfirmation(String guid) {
+    return this.getApp().getMemberAppUri().setPath(FRONTEND_REGISTER_CONFIRMATION_PATH.replace(USER_GUID_PARAM, guid));
   }
 
   public UserRegisterEmailCallback getCallback() {

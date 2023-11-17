@@ -76,33 +76,78 @@ public class AuthContext {
 
 
   public enum RedirectionMethod {
-    HTTP, // via HTTP
-    FRONTEND, // via a HTML confirmation page
+    HTTP, // via HTTP where the uri is a defined uri or the redirect uri metadata
     NONE, // the client do a post request and navigate via Javascript to the origin page
   }
 
   private RedirectionMethod redirectVia = RedirectionMethod.HTTP;
-  private String appOperationPath;
+  private UriEnhanced redirectUri;
 
 
   /**
-   * @param frontEndOperationPath - the React html front end app operation path to redirect
+   * @param uriToRedirect - the Uri to redirect
    * @return the object for chaining
    * We redirect to the frontend app to have a consistent design.
    * We don't validate the operation path for now other than with a visual / integration test.
    */
-  public AuthContext redirectViaFrontEnd(String frontEndOperationPath) {
+  public AuthContext redirectViaHttp(UriEnhanced uriToRedirect) {
     /**
      * We don't return an HTML template for consistency in the HTML app design
      * The user registers and gets the confirmation in the same design
      */
-    this.redirectVia = RedirectionMethod.FRONTEND;
-    this.appOperationPath = frontEndOperationPath;
+    this.redirectVia = RedirectionMethod.HTTP;
+    this.redirectUri = uriToRedirect;
     return this;
   }
 
-  public AuthContext redirectViaHttp() {
+  /**
+   * Redirect via the {@link AuthQueryProperty#REDIRECT_URI redirect uri parameter}
+   * that is stored in the session (or in the auth state)
+   */
+  public AuthContext redirectViaHttpWithRedirectUriParameter() {
     this.redirectVia = RedirectionMethod.HTTP;
+    /**
+     * Try to get the original redirect uri parameters
+     * <p>
+     * The URI should be before authentication because the session may
+     * be regenerated when the user is not the same
+     * <p>
+     * It can happen if the user is from another realm,
+     * Say I log in to the combo portal as user of the realm Eraldy,
+     * then I want to subscribe to a list from another realm,
+     * I click on Oauth and a new user is created
+     */
+    try {
+      redirectUri = this.getAndRemoveRedirectUri();
+    } catch (IllegalStructure e) {
+
+      String message = "An error prevents us to redirect you where you come from. The redirect uri was not valid.";
+      if (JavaEnvs.IS_DEV) {
+        message += e.getMessage();
+      }
+      // internal error, we don't throw
+      VertxFailureHttpException.builder()
+        .setMessage(message)
+        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setName("Bad URL redirect")
+        .setMimeToHtml()
+        .setException(e)
+        .buildWithContextFailingTerminal(ctx);
+      return this;
+
+    } catch (NotFoundException e) {
+
+      // internal error, we don't throw
+      VertxFailureHttpException.builder()
+        .setMessage("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
+        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setName("URL redirect was not found")
+        .setMimeToHtml()
+        .setException(e)
+        .buildWithContextFailingTerminal(ctx);
+      return this;
+
+    }
     return this;
   }
 
@@ -117,47 +162,11 @@ public class AuthContext {
 
   }
 
+  /**
+   * Sign-in
+   */
   private void nextLastHandlerSessionUpgrade() {
 
-    /**
-     * Try to redirect
-     * <p>
-     * The URI should be before authentication because the session may
-     * be regenerated when the user is not the same
-     * <p>
-     * It can happen if the user is from another realm,
-     * Say I log in to the combo portal as user of the realm Eraldy,
-     * then I want to subscribe to a list from another realm,
-     * I click on Oauth and a new user is created
-     */
-    UriEnhanced redirectUri;
-    try {
-      redirectUri = this.getAndRemoveRedirectUri();
-    } catch (IllegalStructure e) {
-
-      String message = "An error prevents us to redirect you where you come from. The redirect uri was not valid.";
-      if (JavaEnvs.IS_DEV) {
-        message += e.getMessage();
-      }
-      VertxFailureHttpException.builder()
-        .setMessage(message)
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-        .setName("Bad URL redirect")
-        .setMimeToHtml()
-        .buildWithContextFailingTerminal(ctx);
-      return;
-
-    } catch (NotFoundException e) {
-
-      VertxFailureHttpException.builder()
-        .setMessage("An error prevents us to redirect you where you come from. We can't find where you come from (the redirect uri).")
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-        .setName("URL redirect was not found")
-        .setMimeToHtml()
-        .buildWithContextFailingTerminal(ctx);
-      return;
-
-    }
 
     AuthUser sessionUser = null;
     User contextUser = ctx.user();
@@ -224,27 +233,14 @@ public class AuthContext {
      * A code authorization flows send a JWT
      */
 
-    UriEnhanced finalRedirectUri = redirectUri;
-
 
     /**
      * Redirect
      */
     switch (this.redirectVia) {
       case HTTP:
-        authenticationRedirect(finalRedirectUri);
+        authenticationRedirect(this.redirectUri);
         break;
-      case FRONTEND:
-        if (this.appOperationPath == null) {
-          throw new InternalException("The app operation path for redirection should not be null");
-        }
-
-//              UriEnhanced redirectToHtmlApp = MemberApp .getPublicRequestUriForOperationPath(this.appOperationPath);
-//              if (finalRedirectUri != null) {
-//                redirectToHtmlApp.addQueryProperty(OAuthQueryProperty.REDIRECT_URI.toString(), finalRedirectUri.toUrl().toString());
-//              }
-//              authenticationRedirect(redirectToHtmlApp);
-        throw new InternalException("No idea what to do");
       case NONE:
         /**
          * The client does the redirect (Javascript)
@@ -261,6 +257,13 @@ public class AuthContext {
    * @param redirectionUrl - the redirection URI
    */
   private void authenticationRedirect(UriEnhanced redirectionUrl) {
+    if (this.redirectUri == null) {
+      VertxFailureHttpException.builder()
+        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setMessage("The redirect uri was not set with a redirect method")
+        .buildWithContextFailingTerminal(ctx);
+      return;
+    }
     ctx.response()
       // disable all caching
       .putHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")

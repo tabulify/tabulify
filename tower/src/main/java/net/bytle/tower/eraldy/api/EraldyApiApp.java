@@ -8,7 +8,6 @@ import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
@@ -29,6 +28,7 @@ import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +52,7 @@ public class EraldyApiApp extends TowerApp {
   private final ServiceProvider serviceProvider;
   @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private final OrganizationUserProvider organizationUserProvider;
-  private final UriEnhanced memberApp;
+  private final URI memberApp;
   private final UserRegistrationFlow userRegistrationFlow;
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
@@ -70,9 +70,9 @@ public class EraldyApiApp extends TowerApp {
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
     String memberUri = apexDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
     try {
-      this.memberApp = UriEnhanced.createFromString(memberUri);
+      this.memberApp = URI.create(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
-    } catch (IllegalStructure e) {
+    } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
     /**
@@ -84,7 +84,7 @@ public class EraldyApiApp extends TowerApp {
     List<Handler<AuthContext>> authHandlers = new ArrayList<>();
     authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
-    this.oauthExternalFlow = new OAuthExternalCodeFlow(this,"/auth/oauth", authHandlers);
+    this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authHandlers);
 
   }
 
@@ -234,13 +234,18 @@ public class EraldyApiApp extends TowerApp {
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
    */
-  public UriEnhanced getLoginUri(String redirectUri, String realmIdentifier) {
+  public UriEnhanced getMemberLoginUri(String redirectUri, String realmIdentifier) {
 
-    return this.memberApp.setPath("/login")
+    return this.getMemberAppUri()
+      .setPath("/login")
       .addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUri)
       .addQueryProperty(AuthQueryProperty.REALM_IDENTIFIER, realmIdentifier);
   }
 
+  public UriEnhanced getMemberAppUri() {
+
+    return UriEnhanced.createFromUri(this.memberApp);
+  }
 
   public RealmProvider getRealmProvider() {
     return this.realmProvider;
@@ -339,7 +344,7 @@ public class EraldyApiApp extends TowerApp {
       throw new NotFoundException();
     }
     AuthUser authUser = user.principal().mapTo(AuthUser.class);
-    return UsersUtil.toEraldyUser(authUser, this) ;
+    return UsersUtil.toEraldyUser(authUser, this);
 
   }
 

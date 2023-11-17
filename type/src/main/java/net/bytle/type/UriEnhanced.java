@@ -3,7 +3,6 @@ package net.bytle.type;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalStructure;
 
-import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -36,15 +35,25 @@ public class UriEnhanced {
     if (url == null) {
       throw new IllegalStructure("The url cannot be null");
     }
-    UriEnhanced uriEnhanced = UriEnhanced.create();
     URI uri = URI.create(url);
-    return uriEnhanced
-      .setScheme(uri.getScheme())
-      .setHost(uri.getHost())
-      .setPort(uri.getPort())
-      .setPath(uri.getPath())
-      .setQueryString(uri.getQuery())
-      .setFragment(uri.getFragment());
+    return createFromUri(uri);
+
+  }
+
+  public static UriEnhanced createFromUri(URI uri) {
+    UriEnhanced uriEnhanced = new UriEnhanced();
+    try {
+      return uriEnhanced
+        .setScheme(uri.getScheme())
+        .setHost(uri.getHost())
+        .setPort(uri.getPort())
+        .setPath(uri.getPath())
+        .setQueryString(uri.getQuery())
+        .setFragment(uri.getFragment());
+    } catch (IllegalStructure e) {
+      throw new RuntimeException("Should not have a problem with the host as the input is an uri", e);
+    }
+
   }
 
   public UriEnhanced setFragment(String fragment) {
@@ -169,26 +178,22 @@ public class UriEnhanced {
     StringBuilder query = new StringBuilder();
     boolean firstIsPassed = false;
     for (Map.Entry<String, String> queryProperty : this.queryProperties.entrySet()) {
-      try {
-        if (firstIsPassed) {
-          query.append(AMPERSAND_CHARACTER);
-        } else {
-          firstIsPassed = true;
-        }
-        String key = queryProperty.getKey();
+      if (firstIsPassed) {
+        query.append(AMPERSAND_CHARACTER);
+      } else {
+        firstIsPassed = true;
+      }
+      String key = queryProperty.getKey();
+      if (withEncoding) {
+        key = URLEncoder.encode(key, StandardCharsets.UTF_8);
+      }
+      query.append(key);
+      String value = queryProperty.getValue();
+      if (value != null) {
         if (withEncoding) {
-          key = URLEncoder.encode(key, StandardCharsets.UTF_8.name());
+          value = URLEncoder.encode(value, StandardCharsets.UTF_8);
         }
-        query.append(key);
-        String value = queryProperty.getValue();
-        if (value != null) {
-          if (withEncoding) {
-            value = URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-          }
-          query.append(EQUAL_CHARACTER).append(value);
-        }
-      } catch (UnsupportedEncodingException e) {
-        throw new RuntimeException(e);
+        query.append(EQUAL_CHARACTER).append(value);
       }
     }
     return query.toString();
@@ -224,13 +229,9 @@ public class UriEnhanced {
         key = queryPart.substring(0, characterIndex);
         value = queryPart.substring(characterIndex + 1);
       }
-      try {
-        key = URLDecoder.decode(key, StandardCharsets.UTF_8.name());
-        if (value != null) {
-          value = URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-        }
-      } catch (UnsupportedEncodingException e) {
-        throw new RuntimeException(e);
+      key = URLDecoder.decode(key, StandardCharsets.UTF_8);
+      if (value != null) {
+        value = URLDecoder.decode(value, StandardCharsets.UTF_8);
       }
 
       parameters.put(key, value);
@@ -257,6 +258,7 @@ public class UriEnhanced {
     return this.getQueryString(false);
   }
 
+  @SuppressWarnings("unused")
   public String getFragment() {
     return this.fragment;
   }
@@ -294,6 +296,7 @@ public class UriEnhanced {
   /**
    * @return the subdomain (ie on `foo.bar.example.com` returns `foo.bar`) or empty string
    */
+  @SuppressWarnings("unused")
   public String getSubDomain() {
     if (host == null || host.equals("")) {
       return "";
