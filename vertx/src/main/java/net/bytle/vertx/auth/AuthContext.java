@@ -196,10 +196,13 @@ public class AuthContext {
       contextUser = authUser.toVertxUser();
       ctx.setUser(contextUser);
 
+
       // the user has upgraded from unauthenticated to authenticated
       // session should be upgraded as recommended by owasp
       Session session = ctx.session();
-      session.regenerateId();
+      if (session != null) {
+        session.regenerateId();
+      }
 
       this.towerApp
         .getApexDomain()
@@ -232,7 +235,7 @@ public class AuthContext {
      */
     switch (this.redirectVia) {
       case HTTP:
-        authenticationRedirect(this.redirectUri);
+        authenticationRedirect();
         break;
       case NONE:
         /**
@@ -246,16 +249,20 @@ public class AuthContext {
 
   /**
    * Redirect without any cache
-   *
-   * @param redirectionUrl - the redirection URI
    */
-  private void authenticationRedirect(UriEnhanced redirectionUrl) {
+  private void authenticationRedirect() {
     if (this.redirectUri == null) {
-      VertxFailureHttpException.builder()
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
-        .setMessage("The redirect uri was not set with a redirect method")
-        .buildWithContextFailingTerminal(ctx);
-      return;
+      try {
+        /**
+         * The default
+         */
+        this.redirectUri = this.getAndRemoveRedirectUri();
+      } catch (VertxFailureHttpException e) {
+        // this exception is terminal
+        // and the context was failed in the function
+        // nothing to do
+        return;
+      }
     }
     ctx.response()
       // disable all caching
@@ -263,9 +270,9 @@ public class AuthContext {
       .putHeader("Pragma", "no-cache")
       .putHeader(HttpHeaders.EXPIRES, "0")
       // redirect (when there is no state, redirect to home)
-      .putHeader(HttpHeaders.LOCATION, redirectionUrl.toUrl().toString())
+      .putHeader(HttpHeaders.LOCATION, this.redirectUri.toUrl().toString())
       .setStatusCode(HttpStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
-      .end("Redirecting to " + redirectionUrl + ".");
+      .end("Redirecting to " + this.redirectUri + ".");
   }
 
   /**

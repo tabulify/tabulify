@@ -395,10 +395,13 @@ components:
       title: A user
       description: A user
       type: object
-      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
-              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
-              property = "guid",
-              scope = User.class)'
+      # We may have 2 users with the same guid (owner of the realm, owner of the app)
+      # We will get this error: java.lang.IllegalArgumentException: Already had POJO for id (java.lang.String) [[ObjectId: key=usr-yLMzijN]]
+      # Therefore we don't use this JsonIdentityInfo constraint
+      #      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+      #              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+      #              property = "guid",
+      #              scope = User.class)'
       required:
         - guid
         - email

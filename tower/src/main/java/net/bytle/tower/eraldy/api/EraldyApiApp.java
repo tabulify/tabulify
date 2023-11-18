@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.api;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.APIKeyHandler;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
@@ -21,10 +20,7 @@ import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.AuthContext;
-import net.bytle.vertx.auth.AuthQueryProperty;
-import net.bytle.vertx.auth.AuthUser;
-import net.bytle.vertx.auth.OAuthExternalCodeFlow;
+import net.bytle.vertx.auth.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -130,7 +126,7 @@ public class EraldyApiApp extends TowerApp {
     /**
      * Configuring the handler for cookie security scheme
      */
-    APIKeyHandler cookieAuthHandler = httpServer.getCookieAuthHandler();
+    ApiSessionAuthenticationHandler cookieAuthHandler = new ApiSessionAuthenticationHandler();
     routerBuilder
       .securityHandler(OpenApiSecurityNames.COOKIE_SECURITY_SCHEME)
       .bindBlocking(config -> cookieAuthHandler);
@@ -343,7 +339,7 @@ public class EraldyApiApp extends TowerApp {
     if (user == null) {
       throw new NotFoundException();
     }
-    AuthUser authUser = user.principal().mapTo(AuthUser.class);
+    AuthUser authUser = AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
     return UsersUtil.toEraldyUser(authUser, this);
 
   }

@@ -10,7 +10,6 @@ import java.util.Objects;
 /**
  * A user
  **/
-@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class User   {
 

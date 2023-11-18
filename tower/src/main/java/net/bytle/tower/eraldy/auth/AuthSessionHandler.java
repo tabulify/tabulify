@@ -3,6 +3,8 @@ package net.bytle.tower.eraldy.auth;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.SessionHandler;
+import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.ext.web.sstore.SessionStore;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.util.PersistentLocalSessionStore;
@@ -55,8 +57,10 @@ public class AuthSessionHandler {
       syncInterval = PersistentLocalSessionStore.INTERVAL_5_SEC;
     }
     TowerApexDomain apexDomain = apiApp.getApexDomain();
-    PersistentLocalSessionStore sessionStore = PersistentLocalSessionStore
-      .create(apexDomain.getHttpServer().getServer().getVertx(), syncInterval);
+    // does not store the user
+//    PersistentLocalSessionStore sessionStore = PersistentLocalSessionStore
+//      .create(apexDomain.getHttpServer().getServer().getVertx(), syncInterval);
+     SessionStore sessionStore = LocalSessionStore.create(apiApp.getApexDomain().getHttpServer().getServer().getVertx());
     /**
      * Reconnect once every
      */

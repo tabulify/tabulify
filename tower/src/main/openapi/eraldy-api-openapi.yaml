@@ -191,12 +191,13 @@ paths:
     get:
       operationId: "authLogoutGet"
       summary: The logout endpoint
+      security: []
       tags:
         - auth
       parameters:
         - $ref: "#/components/parameters/redirect_uri"
           description: |
-            After a logout, the user is redirect to the login page
+            After a logout, the user is redirected to the login page
             redirect_uri is the redirection URL after a successful login
             If the value is not set, the referer is used instead if found
             or an error is returned
@@ -550,7 +551,8 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: [ 'read:realm' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       responses:
         '200':
           description: "Return the list of realms owned by the authenticated user"
@@ -811,7 +813,9 @@ paths:
       summary: "Get the authenticated user"
       tags:
         - user
-      security: [ ]
+      security:
+        - apiKeyAuth: []
+        - cookieAuth: []
       responses:
         '200':
           description: Ok

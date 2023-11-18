@@ -76,7 +76,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableTrackerAnalytics()
               .build();
           } catch (ConfigIllegalException e) {
-            this.handlePromiseFailure(verticlePromise,e);
+            this.handlePromiseFailure(verticlePromise, e);
             return;
           }
 

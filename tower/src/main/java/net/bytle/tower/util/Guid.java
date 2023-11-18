@@ -59,14 +59,14 @@ public class Guid {
   }
 
   public long validateRealmAndGetFirstObjectId(Long realmId) {
-    if (this.builder.organizationOrRealmId.equals(realmId)) {
+    if (!this.builder.organizationOrRealmId.equals(realmId)) {
       throw new InternalException("The expected realm id (" + realmId + ") is not the same than the actual (" + this.builder.organizationOrRealmId + ")");
     }
     return this.builder.firstId;
   }
 
   public long validateAndGetSecondObjectId(Long realmId) {
-    if (this.builder.organizationOrRealmId.equals(realmId)) {
+    if (!this.builder.organizationOrRealmId.equals(realmId)) {
       throw new InternalException("The expected realm id (" + realmId + ") is not the same than the actual (" + this.builder.organizationOrRealmId + ")");
     }
     return this.builder.secondId;

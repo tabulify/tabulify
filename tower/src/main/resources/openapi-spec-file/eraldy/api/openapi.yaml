@@ -43,6 +43,7 @@ paths:
       responses:
         default:
           description: successful operation
+      security: []
       summary: The logout endpoint
       tags:
       - auth
@@ -472,8 +473,8 @@ paths:
         "403":
           description: Not authenticated
       security:
-      - apiKeyAuth:
-        - read:realm
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Return the list of realms owned by the authenticated user
       tags:
       - realm
@@ -780,11 +781,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/OrganizationUser'
           description: Ok
         "401":
           description: Requires authentication if not authenticated
-      security: []
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Get the authenticated user
       tags:
       - user
@@ -1808,9 +1811,7 @@ components:
       - handle
       title: A user
       type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = User.class)"
+      x-parent: true
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
@@ -2280,6 +2281,16 @@ components:
           format: uri
           type: string
       title: A post to modify a user
+      type: object
+    OrganizationUser:
+      allOf:
+      - $ref: '#/components/schemas/User'
+      - properties:
+          organization:
+            $ref: '#/components/schemas/Organization'
+        type: object
+      description: |
+        A user in the organization
       type: object
     RegistrationList:
       description: |

@@ -48,7 +48,7 @@ public class EraldySessionHandler implements SessionHandler {
 
   /**
    * Cross Session Cookie
-   * (On heavy trusted domain, we allow cross-session cookie
+   * (On heavy trusted domain, we may allow cross-session cookie)
    */
   public static final String SESSION_COOKIE_SAME_SITE_KEY = "cs-session-cross-cookie";
 
