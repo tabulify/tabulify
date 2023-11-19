@@ -396,6 +396,7 @@ components:
       description: A user
       type: object
       # We may have 2 users with the same guid (owner of the realm, owner of the app)
+      # What strange is that we don't get this error for a realm.
       # We will get this error: java.lang.IllegalArgumentException: Already had POJO for id (java.lang.String) [[ObjectId: key=usr-yLMzijN]]
       # Therefore we don't use this JsonIdentityInfo constraint
       #      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(

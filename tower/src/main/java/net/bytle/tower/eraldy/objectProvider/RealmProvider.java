@@ -10,6 +10,7 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -24,7 +25,9 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.VertxFailureHttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -399,7 +402,19 @@ public class RealmProvider {
 
 
   public <T extends Realm> Future<List<T>> getRealmsForOwner(User user, Class<T> clazz) {
-    UsersUtil.assertEraldyUser(user);
+
+    try {
+      UsersUtil.assertEraldyUser(user);
+    } catch (AssertionException e) {
+      return Future.failedFuture(
+        VertxFailureHttpException
+          .builder()
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
+          .setException(e)
+          .build()
+      );
+    }
 
     return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
         "where\n" +

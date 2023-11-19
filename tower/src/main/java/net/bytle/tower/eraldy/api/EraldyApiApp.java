@@ -349,4 +349,7 @@ public class EraldyApiApp extends TowerApp {
     return this.oauthExternalFlow;
   }
 
+  public OrganizationUserProvider getOrganizationUserProvider() {
+    return this.organizationUserProvider;
+  }
 }

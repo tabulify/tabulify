@@ -14,6 +14,8 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApiHandler.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApi.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/RealmApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/RealmApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ServiceApi.java

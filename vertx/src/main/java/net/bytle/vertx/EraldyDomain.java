@@ -1,12 +1,12 @@
 package net.bytle.vertx;
 
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This class represents the eraldy domain
- *
  */
 public class EraldyDomain extends TowerApexDomain {
 
@@ -96,13 +96,15 @@ public class EraldyDomain extends TowerApexDomain {
     return getRealmLocalId().equals(realmId);
   }
 
-  public void assertIsEraldyUser(Long realmId) {
+  public void assertIsEraldyUser(Long realmId) throws AssertionException {
 
     boolean isEraldyUser = eraldyDomain.isEraldyId(realmId);
     if (!isEraldyUser) {
-      throw new IllegalArgumentException("This is not a " + eraldyDomain.getRealmHandle() + " user");
-    }
 
+      throw new AssertionException();
+
+    }
   }
+
 
 }

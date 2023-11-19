@@ -91,7 +91,7 @@ public class VertxFailureHttpException extends Exception {
     private String message;
     private String name;
 
-    private MediaTypes mime = MediaTypes.TEXT_HTML;
+    private MediaTypes mime = MediaTypes.TEXT_JSON;
 
     /**
      * The exception that has occurred

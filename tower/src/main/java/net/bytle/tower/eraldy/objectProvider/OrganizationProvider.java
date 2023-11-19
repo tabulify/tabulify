@@ -31,7 +31,6 @@ public class OrganizationProvider {
 
   public static final String ORGA_ID_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "id";
   private static final String GUID_PREFIX = "org";
-  private static OrganizationProvider organizationProvider;
   private final EraldyApiApp apiApp;
   public static final String ORGA_NAME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "name";
 

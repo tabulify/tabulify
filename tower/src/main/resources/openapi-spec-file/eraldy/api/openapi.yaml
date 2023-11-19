@@ -26,6 +26,8 @@ tags:
   name: analytics
 - description: Public API Token creation
   name: token
+- description: Organization management
+  name: organization
 paths:
   /auth/logout:
     get:
@@ -781,7 +783,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationUser'
+                $ref: '#/components/schemas/User'
           description: Ok
         "401":
           description: Requires authentication if not authenticated
@@ -851,6 +853,31 @@ paths:
       summary: List users
       tags:
       - user
+      x-accepts: application/json
+  /organization/user/me:
+    get:
+      operationId: organizationUserMeGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+          description: Ok
+        "401":
+          description: Requires authentication if not authenticated
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: The authenticated user is not a user of an organization
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Get the authenticated user and its organization
+      tags:
+      - organization
       x-accepts: application/json
   /list:
     get:

@@ -8,7 +8,11 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
@@ -29,6 +33,8 @@ public class UserApiImpl implements UserApi {
     this.apiApp = (EraldyApiApp) towerApp;
     this.userMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithRealm.class)
+      .addMixIn(Realm.class, RealmPublicMixin.class)
+      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
   }
 

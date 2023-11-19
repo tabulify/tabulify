@@ -5,13 +5,18 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.AssertionException;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.util.Guid;
+import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.VertxFailureHttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +56,21 @@ public class OrganizationUserProvider {
       });
   }
 
-  @SuppressWarnings("unused")
+
   public Future<OrganizationUser> getOrganizationUserByGuid(String guid) {
+    Guid userGuid;
+    try {
+      userGuid = apiApp.getUserProvider().getGuidFromHash(guid);
+    } catch (CastException e) {
+      return Future.failedFuture(
+        VertxFailureHttpException
+          .builder()
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setMessage("The user guid (" + guid + ") is not valid")
+          .setException(e)
+          .build()
+      );
+    }
     return apiApp.getUserProvider()
       .getUserByGuid(guid)
       .compose(user -> {
@@ -63,19 +81,38 @@ public class OrganizationUserProvider {
       });
   }
 
+  /**
+   *
+   * @param user - the user object used to build the organizational user
+   */
   public Future<OrganizationUser> getOrganizationUserByUser(User user) {
-    UsersUtil.assertEraldyUser(user);
+    try {
+      UsersUtil.assertEraldyUser(user);
+    } catch (AssertionException e) {
+      return Future.failedFuture(
+        VertxFailureHttpException
+          .builder()
+          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setMessage("The user (" + user + ") is not a member of the organizational realm. The user is not member of an organization.")
+          .setException(e)
+          .build()
+      );
+    }
     return getOrganizationUserById(user.getLocalId(), user);
   }
 
-  public Future<OrganizationUser> getOrganizationUserById(Long localId, User user) {
+  /**
+   * @param userLocalId - the user local id
+   * @param user        - the user to use to build the organization user
+   */
+  public Future<OrganizationUser> getOrganizationUserById(Long userLocalId, User user) {
 
 
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + ORGA_USER_USER_ID_COLUMN + " = $1";
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(localId))
+      .execute(Tuple.of(userLocalId))
       .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the orga user by user id with the sql\n" + sql, e))
       .compose(userRows -> {
 
@@ -96,7 +133,18 @@ public class OrganizationUserProvider {
     Future<User> futureUser;
     Long userId;
     if (user != null) {
-      UsersUtil.assertEraldyUser(user);
+      try {
+        UsersUtil.assertEraldyUser(user);
+      } catch (AssertionException e) {
+        return Future.failedFuture(
+          VertxFailureHttpException
+            .builder()
+            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
+            .setException(e)
+            .build()
+        );
+      }
       futureUser = Future.succeededFuture(user);
       userId = user.getLocalId();
     } else {
@@ -113,7 +161,8 @@ public class OrganizationUserProvider {
         }
         OrganizationUser organizationUser = JsonObject.mapFrom(userFromFuture).mapTo(OrganizationUser.class);
         Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
-        return apiApp.getOrganizationProvider()
+        return apiApp
+          .getOrganizationProvider()
           .getById(orgaId)
           .onFailure(t -> LOGGER.error("Error while getting the organization", t))
           .compose(organization -> {

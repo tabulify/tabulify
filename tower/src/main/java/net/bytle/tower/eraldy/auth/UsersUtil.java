@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.auth;
 
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
@@ -85,7 +86,7 @@ public class UsersUtil {
     return EraldyDomain.get().isEraldyId(user.getRealm().getLocalId());
   }
 
-  public static void assertEraldyUser(User user) {
+  public static void assertEraldyUser(User user) throws AssertionException {
     EraldyDomain.get().assertIsEraldyUser(user.getRealm().getLocalId());
   }
 

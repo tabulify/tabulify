@@ -14,19 +14,19 @@ tags:
   - name: env
     description: Env data
   - name: realm
-    description: Operations on realm
+    description: Realm module
+  - name: auth
+    description: Auth module
   - name: user
-    description: Operations about users
+    description: User module
   - name: list
-    description: Operations about list management (creation, registration)
+    description: List module (creation, registration)
   - name: app
-    description: Operations on app
-  - name: registration
-    description: Operations on list registration
+    description: App module
   - name: analytics
-    description: Analytics operation
-  - name: token
-    description: Public API Token creation
+    description: Analytics module
+  - name: organization
+    description: Organization module
 # Secure by default, if you want to make an operation public,
 # you need to set the security for an operation to the empty array
 # security: []
@@ -880,6 +880,30 @@ paths:
                 type: array
                 items:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+  /organization/user/me:
+    get:
+      operationId: "organizationUserMeGet"
+      summary: "Get the authenticated user and its organization"
+      tags:
+        - organization
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
+        '401':
+          description: Requires authentication if not authenticated
+        '404':
+          description: The authenticated user is not a user of an organization
+          content:
+            application/json:
+              schema:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
   /list:
     get:
       operationId: listGet
