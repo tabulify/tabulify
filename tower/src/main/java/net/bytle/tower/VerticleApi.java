@@ -8,13 +8,13 @@ import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.AuthSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
-import net.bytle.tower.util.PersistentLocalSessionStore;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,7 +92,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableFailureHandler() // enable failure handler
               .addFakeErrorHandler()
               .addHealthCheck()
-              .enableSessionCookieAuth("ey-session-id")
+              .enablePersistentSessionStore()
               .build();
           } catch (IllegalConfiguration e) {
             this.handlePromiseFailure(verticlePromise, e);
@@ -114,6 +114,7 @@ public class VerticleApi extends AbstractVerticle {
            * Building Router
            */
           Router router = httpServer.getRouter();
+          AuthRealmHandler.createFrom(router, apiApp);
           AuthSessionHandler.addAuthCookieSessionHandler(router, apiApp); // Add the session handler cross domain, cross realm
           BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
 
@@ -200,12 +201,7 @@ public class VerticleApi extends AbstractVerticle {
     vertx.executeBlocking(() -> {
 
       LOGGER.info("Closing Server services");
-      this.getApp().getApexDomain().getHttpServer().getServer().close();
-
-      LOGGER.info("Flushing Session Data");
-      PersistentLocalSessionStore.get()
-        .flush()
-        .close();
+      this.getApp().getApexDomain().getHttpServer().close(); // close also server
 
       stopPromise.complete();
       return null;

@@ -78,9 +78,13 @@ public class MapDb implements AutoCloseable {
     mapDb.close();
   }
 
-  public <K, V> DB.HashMapMaker<K, V> hashMap(String name, Serializer<K> keySerializer, Class<V> valueClass) {
+  public <K, V> DB.HashMapMaker<K, V> hashMapWithJsonValueObject(String name, Serializer<K> keySerializer, Class<V> valueClass) {
 
     MapDbJacksonSerializer<V> valueSerializer = new MapDbJacksonSerializer<>(valueClass, mapper);
+    return mapDb.hashMap(name, keySerializer, valueSerializer);
+  }
+
+  public <K, V> DB.HashMapMaker<K, V> hashMap(String name, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
     return mapDb.hashMap(name, keySerializer, valueSerializer);
   }
 

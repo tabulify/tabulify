@@ -71,14 +71,14 @@ public class EraldySessionHandler implements SessionHandler {
   private long cookieMaxAge = -1;
 
 
-  public EraldySessionHandler(SessionStore sessionStore, TowerApexDomain apexDomain) {
-    this.sessionStore = sessionStore;
+  public EraldySessionHandler(TowerApexDomain apexDomain) {
+    this.sessionStore = apexDomain.getHttpServer().getPersistentSessionStore();
     this.eraldyDomain = apexDomain;
   }
 
-  public static EraldySessionHandler createWithDomain(SessionStore sessionStore, TowerApexDomain eraldyDomain) {
+  public static EraldySessionHandler createWithDomain(TowerApexDomain eraldyDomain) {
     if (EraldySessionHandler.eraldySessionHandler == null) {
-      EraldySessionHandler.eraldySessionHandler = new EraldySessionHandler(sessionStore, eraldyDomain);
+      EraldySessionHandler.eraldySessionHandler = new EraldySessionHandler(eraldyDomain);
     }
     return EraldySessionHandler.eraldySessionHandler;
   }
@@ -227,7 +227,11 @@ public class EraldySessionHandler implements SessionHandler {
         if (storeUser != null && storeUser) {
           // during the request the user might have been removed
           if (context.user() != null) {
-            session.put(SESSION_USER_HOLDER_KEY, new UserHolder(context));
+            UserHolder userHolder = new UserHolder(context);
+            // set the user: bug, if the session is written before, the user holder may exist
+            // without any user
+            userHolder.refresh(context);
+            session.put(SESSION_USER_HOLDER_KEY, userHolder);
           }
         }
 

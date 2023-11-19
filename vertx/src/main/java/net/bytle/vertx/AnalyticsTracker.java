@@ -46,7 +46,7 @@ public class AnalyticsTracker {
 
     this.mapDb = server.getMapDb();
     this.eventsQueue = mapDb
-      .hashMap("event_queue", Serializer.STRING, AnalyticsEvent.class)
+      .hashMapWithJsonValueObject("event_queue", Serializer.STRING, AnalyticsEvent.class)
       .createOrOpen();
 
     int sec10 = 10000;

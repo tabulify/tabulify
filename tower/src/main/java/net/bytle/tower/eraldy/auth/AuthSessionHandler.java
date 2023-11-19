@@ -3,12 +3,7 @@ package net.bytle.tower.eraldy.auth;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.SessionHandler;
-import io.vertx.ext.web.sstore.LocalSessionStore;
-import io.vertx.ext.web.sstore.SessionStore;
-import net.bytle.java.JavaEnvs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.util.PersistentLocalSessionStore;
-import net.bytle.vertx.TowerApexDomain;
 
 public class AuthSessionHandler {
 
@@ -42,25 +37,7 @@ public class AuthSessionHandler {
      */
     AuthRealmHandler.createFrom(rootRouter, apiApp);
 
-    /**
-     * This is not a cookie store. Cookie store does not work well with CSRF
-     * because on post, the session cookie `cs-session-id` is not sent back with new value
-     * A lot of problem with this way of working because the data is the session id
-     * CookieSessionStore sessionStore = CookieSessionStore.create(towerDomain.getVertx(), secret);
-     */
-    /**
-     * This is a {@link io.vertx.ext.web.sstore.LocalSessionStore} that
-     * was adapted to persist the session
-     */
-    long syncInterval = PersistentLocalSessionStore.INTERVAL_60_SEC;
-    if (JavaEnvs.IS_DEV) {
-      syncInterval = PersistentLocalSessionStore.INTERVAL_5_SEC;
-    }
-    TowerApexDomain apexDomain = apiApp.getApexDomain();
-    // does not store the user
-//    PersistentLocalSessionStore sessionStore = PersistentLocalSessionStore
-//      .create(apexDomain.getHttpServer().getServer().getVertx(), syncInterval);
-     SessionStore sessionStore = LocalSessionStore.create(apiApp.getApexDomain().getHttpServer().getServer().getVertx());
+
     /**
      * Reconnect once every
      */
@@ -70,7 +47,7 @@ public class AuthSessionHandler {
      */
     int idleSessionTimeoutMs = cookieMaxAgeOneWeekInSec * 1000;
     SessionHandler requestHandler = EraldySessionHandler
-      .createWithDomain(sessionStore, apexDomain)
+      .createWithDomain(apiApp.getApexDomain())
       .setSessionTimeout(idleSessionTimeoutMs)
       .setCookieMaxAge(cookieMaxAgeOneWeekInSec);
 

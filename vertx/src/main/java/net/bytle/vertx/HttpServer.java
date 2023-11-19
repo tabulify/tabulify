@@ -6,6 +6,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.*;
+import io.vertx.ext.web.sstore.SessionStore;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 
@@ -13,7 +14,7 @@ import net.bytle.exception.InternalException;
  * This class represents an HTTP server:
  * with standard handlers
  */
-public class HttpServer {
+public class HttpServer implements AutoCloseable {
 
   private final HttpServer.builder builder;
   private Router router;
@@ -21,7 +22,7 @@ public class HttpServer {
   private APIKeyHandler apiKeyAuthenticator;
   private JWTAuthHandler bearerAuthenticationHandler;
   private BasicAuthHandler basicAuthenticator;
-  private APIKeyHandler cookieAuthenticator;
+  private PersistentLocalSessionStore persistentSessionStore;
 
 
   public HttpServer(builder builder) {
@@ -125,12 +126,20 @@ public class HttpServer {
     return this.basicAuthenticator;
   }
 
-  @SuppressWarnings("unused")
-  public APIKeyHandler getCookieAuthHandler() throws IllegalConfiguration {
-    if (this.cookieAuthenticator == null) {
-      throw new IllegalConfiguration("The cookie auth handler was not enabled");
+
+  @Override
+  public void close() throws Exception {
+    if(this.persistentSessionStore !=null){
+      this.persistentSessionStore.close();
     }
-    return this.cookieAuthenticator;
+    this.getServer().close();
+  }
+
+  public SessionStore getPersistentSessionStore() {
+    if(this.persistentSessionStore ==null){
+      throw new InternalException("Session store was not enabled");
+    }
+    return this.persistentSessionStore;
   }
 
 
@@ -144,7 +153,7 @@ public class HttpServer {
     private boolean fakeErrorHandler = false;
     private boolean healthCheck = false;
     final Server server;
-    private String sessionCookieAuthName;
+    private boolean enablePersistentSessionStore = false;
 
 
     public builder(Server server) {
@@ -251,23 +260,17 @@ public class HttpServer {
     public HttpServer build() throws IllegalConfiguration {
       HttpServer httpserver = new HttpServer(this);
       httpserver.router = this.buildRouter();
-      if (this.sessionCookieAuthName != null) {
-        httpserver.cookieAuthenticator = APIKeyHandler
-          .create(this.server.getApiKeyAuth())
-          .cookie(this.sessionCookieAuthName);
+
+      if(this.enablePersistentSessionStore){
+        httpserver.persistentSessionStore = PersistentLocalSessionStore.create(httpserver);
       }
       httpserver.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
       return httpserver;
     }
 
 
-    /**
-     * Enable cookie authentication
-     *
-     * @param cookieName - the name of the cookie where the token/session id is stored
-     */
-    public HttpServer.builder enableSessionCookieAuth(String cookieName) {
-      this.sessionCookieAuthName = cookieName;
+    public HttpServer.builder enablePersistentSessionStore() {
+      this.enablePersistentSessionStore = true;
       return this;
     }
 
