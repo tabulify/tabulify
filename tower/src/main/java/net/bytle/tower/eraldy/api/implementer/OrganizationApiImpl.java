@@ -48,7 +48,7 @@ public class OrganizationApiImpl implements OrganizationApi {
             if (orgUser == null) {
               return Future.failedFuture(
                 TowerFailureException.builder()
-                  .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+                  .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
                   .setMessage("The authenticated user (" + signedInUser.getGuid()+","+signedInUser.getEmail() + ") is not member of an organization")
                   .buildWithContextFailing(routingContext)
               );

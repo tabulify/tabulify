@@ -897,13 +897,9 @@ paths:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
         '401':
-          description: Requires authentication if not authenticated
-        '404':
-          description: The authenticated user is not a user of an organization
-          content:
-            application/json:
-              schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
+          description: Not logged in
+        '403':
+          description: Logged in but the authenticated user is not the member of an organization
   /list:
     get:
       operationId: listGet

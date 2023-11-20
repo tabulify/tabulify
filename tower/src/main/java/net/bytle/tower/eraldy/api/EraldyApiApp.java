@@ -7,7 +7,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
@@ -53,7 +52,6 @@ public class EraldyApiApp extends TowerApp {
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
-  private String AUTH_MODEL_USER_SESSION_KEY = "auth_eraldy_usr";
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -105,7 +103,7 @@ public class EraldyApiApp extends TowerApp {
   }
 
   @Override
-  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder routerBuilder, ConfigAccessor configAccessor) throws IllegalConfiguration {
+  public EraldyApiApp openApiBindSecurityScheme(RouterBuilder routerBuilder, ConfigAccessor configAccessor) {
 
     /**
      * Utility variables
@@ -335,53 +333,38 @@ public class EraldyApiApp extends TowerApp {
    * @return the authenticated user or null (only auth information ie id, guid, email, ...)
    */
   public <T extends User> Future<T> getAuthSignedInUser(RoutingContext ctx, Class<T> userType) {
-    Object authModelUser = ctx.session().get(AUTH_MODEL_USER_SESSION_KEY);
-    if (authModelUser != null) {
-      /**
-       * An app will use only a type of user
-       * Therefore a session should have only one type
-       */
-      if (authModelUser.getClass().equals(userType)) {
-        return Future.succeededFuture(userType.cast(authModelUser));
-      }
-      /**
-       * User is the base class, we should be able to cast.
-       */
-      if(userType.equals(User.class)){
-        return Future.succeededFuture(userType.cast(authModelUser));
-      }
-    }
+
+    /**
+     * To store the user in a session, it should be serializable
+     * (ie wrapped as in the {@link io.vertx.ext.web.handler.impl.UserHolder})
+     * As of today, only the {@link AuthUser} via the vertx {@link io.vertx.ext.auth.User}
+     * that is a Json serializable object
+     */
     io.vertx.ext.auth.User user = ctx.user();
     if (user == null) {
       return Future.succeededFuture();
     }
     AuthUser authUser = AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
-    Future<T> futureUser;
+
     if (userType.equals(User.class)) {
 
       //noinspection unchecked
-      futureUser = (Future<T>) this.getUserProvider()
+      return (Future<T>) this.getUserProvider()
         .getUserFromAuthUser(authUser);
 
-    } else if (userType.equals(OrganizationUser.class)) {
+    }
+    if (userType.equals(OrganizationUser.class)) {
 
       //noinspection unchecked
-      futureUser = (Future<T>) this.getOrganizationUserProvider()
+      return (Future<T>) this.getOrganizationUserProvider()
         .getUserFromAuthUser(authUser);
-    } else {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
-          .setMessage("The type (" + userType + ") is not a user")
-          .build()
-        );
     }
-
-    return futureUser
-      .compose(usr -> {
-        ctx.session().put(AUTH_MODEL_USER_SESSION_KEY, usr);
-        return Future.succeededFuture(usr);
-      });
+    return Future.failedFuture(
+      TowerFailureException.builder()
+        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+        .setMessage("The type (" + userType + ") is not a user")
+        .build()
+    );
 
 
   }
