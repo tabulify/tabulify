@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -62,8 +61,8 @@ public class RealmApiImpl implements RealmApi {
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(
-            VertxFailureHttpException.builder()
-              .setStatus(HttpStatusEnum.NOT_FOUND_404)
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
               .setMessage("The realm was not found")
               .build()
           );
@@ -95,8 +94,8 @@ public class RealmApiImpl implements RealmApi {
       .compose(realm -> {
         if (realm == null) {
           return Future.failedFuture(
-            VertxFailureHttpException.builder()
-              .setStatus(HttpStatusEnum.NOT_FOUND_404)
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
               .setMessage("The realm was not found")
               .build()
           );
@@ -131,26 +130,27 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext) {
 
-    User signedInUser;
-    try {
-      signedInUser = this.apiApp.getAuthSignedInUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.NOT_FOUND_404)
-          .setMessage("You should be logged in")
-          .build()
-      );
-    }
+    return this.apiApp.getAuthSignedInUser(routingContext, User.class)
+      .compose(signedInUser -> {
+        if (signedInUser == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+              .setMessage("You should be logged in")
+              .build()
+          );
+        }
+        RealmProvider realmProvider = this.apiApp.getRealmProvider();
+        return realmProvider
+          .getRealmsForOwner(signedInUser, RealmAnalytics.class)
+          .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
+          .compose(realms -> Future.succeededFuture(
+            new ApiResponse<>(realms)
+              .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
+          );
+      });
 
-    RealmProvider realmProvider = this.apiApp.getRealmProvider();
-    return realmProvider
-      .getRealmsForOwner(signedInUser, RealmAnalytics.class)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(realms -> Future.succeededFuture(
-        new ApiResponse<>(realms)
-          .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
-      );
+
   }
 
 }

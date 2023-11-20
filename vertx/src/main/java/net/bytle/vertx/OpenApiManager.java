@@ -185,8 +185,8 @@ public class OpenApiManager {
       for (String scope : scopes) {
         User user = routingContext.user();
         if (!RoleBasedAuthorization.create(scope).match(user)) {
-          VertxFailureHttpException.builder()
-            .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
+          TowerFailureException.builder()
+            .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
             .setMessage("The scope (" + scope + ") is not granted to the user (" + user.subject() + ")")
             .setMimeToJson()
             .buildWithContextFailingTerminal(routingContext);

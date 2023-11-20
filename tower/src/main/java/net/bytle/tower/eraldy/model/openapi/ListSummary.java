@@ -111,7 +111,7 @@ public class ListSummary   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, handle, appUri, subscriberCount);
+    return Objects.hash();
   }
 
   @Override

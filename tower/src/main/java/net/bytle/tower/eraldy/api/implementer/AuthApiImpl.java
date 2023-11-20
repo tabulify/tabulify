@@ -64,8 +64,8 @@ public class AuthApiImpl implements AuthApi {
     realmIdentifier = routingContext.request().getParam(AuthQueryProperty.REALM_IDENTIFIER.toString());
     if (realmIdentifier == null) {
       return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
           .buildWithContextFailing(routingContext)
       );
@@ -102,8 +102,8 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
@@ -117,8 +117,8 @@ public class AuthApiImpl implements AuthApi {
       this.utilValidateRealmFromRedirectUri(redirectUriEnhanced);
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
           .setMessage("The redirect uri (" + redirectUri + ") is unknown")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
@@ -127,25 +127,23 @@ public class AuthApiImpl implements AuthApi {
 
     Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
 
-    /**
-     * Signed-in
-     */
-    try {
-      User user = this.apiApp.getAuthSignedInUser(routingContext);
-      if (user.getRealm().getGuid().equals(authRealm.getGuid())) {
-        routingContext.redirect(redirectUriEnhanced.toString());
-        return Future.succeededFuture();
-      }
-    } catch (NotFoundException e) {
-      // Not signed in
-    }
 
-    /**
-     * Not signed-in or realm different
-     */
-    UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUri, authRealm.getHandle());
-    routingContext.redirect(url.toString());
-    return Future.succeededFuture();
+    return this.apiApp.getAuthSignedInUser(routingContext, User.class)
+      .compose(user -> {
+        /**
+         * Signed-in
+         */
+        if (user != null && user.getRealm().getGuid().equals(authRealm.getGuid())) {
+          routingContext.redirect(redirectUriEnhanced.toString());
+          return Future.succeededFuture();
+        }
+        /**
+         * Not signed-in or realm different
+         */
+        UriEnhanced url = this.apiApp.getMemberLoginUri(redirectUri, authRealm.getHandle());
+        routingContext.redirect(url.toString());
+        return Future.succeededFuture();
+      });
 
 
   }
@@ -217,8 +215,8 @@ public class AuthApiImpl implements AuthApi {
           recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToLogin.getEmail(), userToLogin.getGivenName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttpException.builder()
-              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
               .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
               .setException(e)
               .buildWithContextFailing(routingContext)
@@ -229,8 +227,8 @@ public class AuthApiImpl implements AuthApi {
           senderEmailAddressInRfcFormat = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttpException.builder()
-              .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
               .setMessage("The sender email (" + sender.getEmail() + ") is not valid")
               .setException(e)
               .buildWithContextFailing(routingContext)
@@ -327,8 +325,8 @@ public class AuthApiImpl implements AuthApi {
         .compose(user -> {
           if (user == null) {
             return Future.failedFuture(
-              VertxFailureHttpException.builder()
-                .setStatus(HttpStatusEnum.NOT_FOUND_404)
+              TowerFailureException.builder()
+                .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
                 .build()
             );
           }
@@ -354,26 +352,25 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly) {
 
-    User user;
-    try {
-      user = apiApp.getAuthSignedInUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        VertxFailureHttpException
-          .builder()
-          .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
-          .build()
-      );
-    }
-
-    return apiApp.getUserProvider()
-      .updatePassword(user, passwordOnly.getPassword())
-      .compose(futureUser -> {
-        /**
-         * Because this is a POST, we can't redirect via HTTP
-         * The javascript client is doing it.
-         */
-        return Future.succeededFuture();
+    return apiApp.getAuthSignedInUser(routingContext, User.class)
+      .compose(user -> {
+        if (user == null) {
+          return Future.failedFuture(
+            TowerFailureException
+              .builder()
+              .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+              .build()
+          );
+        }
+        return apiApp.getUserProvider()
+          .updatePassword(user, passwordOnly.getPassword())
+          .compose(futureUser -> {
+            /**
+             * Because this is a POST, we can't redirect via HTTP
+             * The javascript client is doing it.
+             */
+            return Future.succeededFuture();
+          });
       });
 
   }
@@ -403,8 +400,8 @@ public class AuthApiImpl implements AuthApi {
       redirectUriEnhanced = OAuthExternalCodeFlow.getRedirectUri(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
@@ -441,7 +438,6 @@ public class AuthApiImpl implements AuthApi {
     return this.apiApp.getUserListRegistrationFlow().handleStep1SendingValidationEmail(routingContext, listRegistrationPostBody)
       .compose(response -> Future.succeededFuture(new ApiResponse<>()));
   }
-
 
 
   private void utilValidateEmailIdentifierDataUtil(EmailIdentifier emailIdentifier) {

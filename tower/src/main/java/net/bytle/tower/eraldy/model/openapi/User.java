@@ -344,7 +344,7 @@ public class User   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, localId, handle, email, givenName, fullName, title, disabled, disabledReason, avatar, bio, website, location, creationTime, modificationTime, realm);
+    return Objects.hash(guid, handle, email);
   }
 
   @Override

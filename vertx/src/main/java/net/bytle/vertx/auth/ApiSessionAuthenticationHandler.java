@@ -8,7 +8,7 @@ import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
-import net.bytle.vertx.HttpStatusEnum;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
 /**
  * A class that permits to
@@ -27,7 +27,7 @@ public class ApiSessionAuthenticationHandler extends AuthenticationHandlerImpl<A
     if (user != null) {
       handler.handle(Future.succeededFuture(user));
     } else {
-      handler.handle(Future.failedFuture(new HttpException(HttpStatusEnum.NOT_LOGGED_IN_401.getStatusCode(), "The session has no authenticated user.")));
+      handler.handle(Future.failedFuture(new HttpException(TowerFailureStatusEnum.NOT_LOGGED_IN_401.getStatusCode(), "The session has no authenticated user.")));
     }
   }
 }

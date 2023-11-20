@@ -126,14 +126,14 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
    * @return the claims
    * @throws IllegalStructure if the claims object is not valid
    */
-  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure, VertxFailureHttpException {
+  protected AuthUser getAndValidateJwtClaims(RoutingContext ctx, String linkName) throws IllegalStructure, TowerFailureException {
     OAuthAccessTokenResponse accessTokenResponse = getCallbackData(ctx, OAuthAccessTokenResponse.class);
     JsonObject jwtClaims = jsonToken.decrypt(accessTokenResponse.getAccessToken(), DATA_CIPHER);
     AuthUser authUser = AuthUser.createFromClaims(jwtClaims);
     try {
       authUser.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
-      ctx.fail(HttpStatusEnum.BAD_REQUEST_400.getStatusCode(), e);
+      ctx.fail(TowerFailureStatusEnum.BAD_REQUEST_400.getStatusCode(), e);
       throw new IllegalStructure();
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";
@@ -143,9 +143,9 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
 
-      throw VertxFailureHttpException
+      throw TowerFailureException
         .builder()
-        .setStatus(HttpStatusEnum.LINK_EXPIRED)
+        .setStatus(TowerFailureStatusEnum.LINK_EXPIRED)
         .setMessage(message)
         .setName("Link expired")
         .buildWithContextFailingAsHtml(ctx);

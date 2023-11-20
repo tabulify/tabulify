@@ -71,7 +71,7 @@ public class RoutingContextWrapper {
   }
 
   /**
-   * A {@link HttpStatusEnum#REDIRECT_302 302} redirects the POST
+   * A {@link TowerFailureStatusEnum#REDIRECT_302 302} redirects the POST
    * The browser tries to perform the post on the redirected URI.
    * <p>
    * When you want to redirect to a GET page after a successful POST,
@@ -84,7 +84,7 @@ public class RoutingContextWrapper {
   @SuppressWarnings("unused")
   public void seeOtherUriRedirect(String redirectUri) {
     this.ctx.response()
-      .setStatusCode(HttpStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
+      .setStatusCode(TowerFailureStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
       .putHeader(HttpHeaders.LOCATION, redirectUri)
       .putHeader(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8")
       .end("Redirecting to " + redirectUri + ".");

@@ -92,7 +92,7 @@ public class Organization   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, localId, name);
+    return Objects.hash();
   }
 
   @Override

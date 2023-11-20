@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.api.implementer;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.OrganizationApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -12,9 +11,9 @@ import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
-import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
 public class OrganizationApiImpl implements OrganizationApi {
   private final EraldyApiApp apiApp;
@@ -32,31 +31,33 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @Override
   public Future<ApiResponse<OrganizationUser>> organizationUserMeGet(RoutingContext routingContext) {
-    User signedInUser;
-    try {
-      signedInUser = this.apiApp.getAuthSignedInUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
-          .buildWithContextFailing(routingContext)
-      );
-    }
-    return this.apiApp
-      .getOrganizationUserProvider()
-      .getOrganizationUserByGuid(signedInUser.getGuid())
-      .compose(orgUser -> {
-        if (orgUser == null) {
+
+    return this.apiApp.getAuthSignedInUser(routingContext,User.class)
+      .compose(signedInUser->{
+        if(signedInUser==null){
           return Future.failedFuture(
-            VertxFailureHttpException.builder()
-              .setStatus(HttpStatusEnum.NOT_FOUND_404)
-              .setMessage("The authenticated user (" + signedInUser.getGuid()+","+signedInUser.getEmail() + ") is not member of an organization")
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
               .buildWithContextFailing(routingContext)
           );
         }
-        ApiResponse<OrganizationUser> response = new ApiResponse<>(orgUser)
-          .setMapper(this.orgUserMapper);
-        return Future.succeededFuture(response);
+        return this.apiApp
+          .getOrganizationUserProvider()
+          .getOrganizationUserByGuid(signedInUser.getGuid())
+          .compose(orgUser -> {
+            if (orgUser == null) {
+              return Future.failedFuture(
+                TowerFailureException.builder()
+                  .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+                  .setMessage("The authenticated user (" + signedInUser.getGuid()+","+signedInUser.getEmail() + ") is not member of an organization")
+                  .buildWithContextFailing(routingContext)
+              );
+            }
+            ApiResponse<OrganizationUser> response = new ApiResponse<>(orgUser)
+              .setMapper(this.orgUserMapper);
+            return Future.succeededFuture(response);
+          });
       });
+
   }
 }

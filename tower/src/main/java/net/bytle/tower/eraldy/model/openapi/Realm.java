@@ -169,7 +169,7 @@ public class Realm   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, name, organization, ownerUser, handle, defaultApp);
+    return Objects.hash(guid, handle);
   }
 
   @Override

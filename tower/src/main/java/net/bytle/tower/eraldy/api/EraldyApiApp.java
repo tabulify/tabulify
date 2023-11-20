@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.api;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -7,13 +8,12 @@ import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.*;
@@ -53,6 +53,7 @@ public class EraldyApiApp extends TowerApp {
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
+  private String AUTH_MODEL_USER_SESSION_KEY = "auth_eraldy_usr";
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -331,16 +332,57 @@ public class EraldyApiApp extends TowerApp {
 
   /**
    * @param ctx - the context
-   * @return the authenticated user (only auth information ie id, guid, email, ...)
-   * @throws NotFoundException - not authenticated
+   * @return the authenticated user or null (only auth information ie id, guid, email, ...)
    */
-  public User getAuthSignedInUser(RoutingContext ctx) throws NotFoundException {
+  public <T extends User> Future<T> getAuthSignedInUser(RoutingContext ctx, Class<T> userType) {
+    Object authModelUser = ctx.session().get(AUTH_MODEL_USER_SESSION_KEY);
+    if (authModelUser != null) {
+      /**
+       * An app will use only a type of user
+       * Therefore a session should have only one type
+       */
+      if (authModelUser.getClass().equals(userType)) {
+        return Future.succeededFuture(userType.cast(authModelUser));
+      }
+      /**
+       * User is the base class, we should be able to cast.
+       */
+      if(userType.equals(User.class)){
+        return Future.succeededFuture(userType.cast(authModelUser));
+      }
+    }
     io.vertx.ext.auth.User user = ctx.user();
     if (user == null) {
-      throw new NotFoundException();
+      return Future.succeededFuture();
     }
     AuthUser authUser = AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
-    return UsersUtil.toEraldyUser(authUser, this);
+    Future<T> futureUser;
+    if (userType.equals(User.class)) {
+
+      //noinspection unchecked
+      futureUser = (Future<T>) this.getUserProvider()
+        .getUserFromAuthUser(authUser);
+
+    } else if (userType.equals(OrganizationUser.class)) {
+
+      //noinspection unchecked
+      futureUser = (Future<T>) this.getOrganizationUserProvider()
+        .getUserFromAuthUser(authUser);
+    } else {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setMessage("The type (" + userType + ") is not a user")
+          .build()
+        );
+    }
+
+    return futureUser
+      .compose(usr -> {
+        ctx.session().put(AUTH_MODEL_USER_SESSION_KEY, usr);
+        return Future.succeededFuture(usr);
+      });
+
 
   }
 

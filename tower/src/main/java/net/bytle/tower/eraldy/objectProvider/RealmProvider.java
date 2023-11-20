@@ -25,9 +25,9 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -407,9 +407,9 @@ public class RealmProvider {
       UsersUtil.assertEraldyUser(user);
     } catch (AssertionException e) {
       return Future.failedFuture(
-        VertxFailureHttpException
+        TowerFailureException
           .builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
           .setException(e)
           .build()

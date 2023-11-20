@@ -111,7 +111,7 @@ public class CampaignEmailPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(campaignGuid, campaignHandle, emailSubject, listGuid);
+    return Objects.hash();
   }
 
   @Override

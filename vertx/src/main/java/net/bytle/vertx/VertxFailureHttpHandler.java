@@ -44,8 +44,8 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
     /**
      * Own failure mechanism
      */
-    if (thrown instanceof VertxFailureHttpException) {
-      VertxFailureHttpException contextFailureException = (VertxFailureHttpException) thrown;
+    if (thrown instanceof TowerFailureException) {
+      TowerFailureException contextFailureException = (TowerFailureException) thrown;
       this.sendResponse(context, contextFailureException);
       return;
     }
@@ -54,7 +54,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
      * Other type of exception
      */
     this.sendResponse(context,
-      VertxFailureHttpException.builder()
+      TowerFailureException.builder()
         .setPropertiesFromFailureContext(context)
         .setMimeToJson()
         .build()
@@ -63,7 +63,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
 
   }
 
-  private void sendResponse(RoutingContext context, VertxFailureHttpException vertxFailureHttpException) {
+  private void sendResponse(RoutingContext context, TowerFailureException towerFailureException) {
 
     HttpServerResponse response = context.response();
     if (response.headWritten()) {
@@ -72,20 +72,20 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
       return;
     }
 
-    HttpStatus statusCode = vertxFailureHttpException.getStatus();
+    TowerFailureStatus statusCode = towerFailureException.getStatus();
     /**
      * Internal error or forbidden request ({@link io.vertx.ext.web.handler.CSRFHandler problem})
      */
-    if (statusCode == HttpStatusEnum.INTERNAL_ERROR_500 || statusCode == HttpStatusEnum.FORBIDDEN_403) {
+    if (statusCode == TowerFailureStatusEnum.INTERNAL_ERROR_500 || statusCode == TowerFailureStatusEnum.NOT_AUTHORIZED_403) {
       this.logUnExpectedFailure(context);
     }
 
 
-    MediaTypes format = vertxFailureHttpException.getMime();
+    MediaTypes format = towerFailureException.getMime();
     switch (format) {
       case TEXT_HTML:
       default:
-        String html = vertxFailureHttpException.toHtml(context);
+        String html = towerFailureException.toHtml(context);
         context
           .response()
           .setStatusCode(statusCode.getStatusCode())
@@ -95,7 +95,7 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
         context
           .response()
           .setStatusCode(statusCode.getStatusCode());
-        ExitStatusResponse exitStatusResponse = vertxFailureHttpException.toJsonObject();
+        ExitStatusResponse exitStatusResponse = towerFailureException.toJsonObject();
         context.json(exitStatusResponse);
     }
   }

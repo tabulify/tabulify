@@ -225,7 +225,7 @@ public class ServiceSmtpPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(serviceGuid, serviceUri, realmIdentifier, impersonatedUserEmail, impersonatedUserGuid, smtpHost, smtpPort, smtpStartTls, smtpUserName, smtpPassword);
+    return Objects.hash();
   }
 
   @Override

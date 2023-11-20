@@ -54,7 +54,7 @@ public class OrganizationUser extends User  {
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), organization);
+    return Objects.hash(super.hashCode(), guid, super.hashCode(), handle, super.hashCode(), email);
   }
 
   @Override

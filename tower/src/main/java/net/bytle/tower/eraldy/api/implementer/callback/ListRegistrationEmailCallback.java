@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.WebFlowEmailCallbackAbs;
 
@@ -33,7 +33,7 @@ public class ListRegistrationEmailCallback extends WebFlowEmailCallbackAbs {
     AuthUser authUser;
     try {
       authUser = getAndValidateJwtClaims(ctx, "list registration");
-    } catch (IllegalStructure | VertxFailureHttpException e) {
+    } catch (IllegalStructure | TowerFailureException e) {
       return;
     }
     getWebFlow().handleStep2EmailValidationLinkClick(ctx, authUser);

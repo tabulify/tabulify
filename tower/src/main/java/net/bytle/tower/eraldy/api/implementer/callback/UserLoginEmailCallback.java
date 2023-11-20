@@ -5,7 +5,7 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
@@ -43,7 +43,7 @@ public class UserLoginEmailCallback extends WebFlowEmailCallbackAbs {
     AuthUser authUser;
     try {
       authUser = getAndValidateJwtClaims(ctx,"login");
-    } catch (IllegalStructure | VertxFailureHttpException e) {
+    } catch (IllegalStructure | TowerFailureException e) {
       return;
     }
 

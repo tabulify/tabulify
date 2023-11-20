@@ -14,9 +14,10 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +64,9 @@ public class OrganizationUserProvider {
       userGuid = apiApp.getUserProvider().getGuidFromHash(guid);
     } catch (CastException e) {
       return Future.failedFuture(
-        VertxFailureHttpException
+        TowerFailureException
           .builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("The user guid (" + guid + ") is not valid")
           .setException(e)
           .build()
@@ -90,9 +91,9 @@ public class OrganizationUserProvider {
       UsersUtil.assertEraldyUser(user);
     } catch (AssertionException e) {
       return Future.failedFuture(
-        VertxFailureHttpException
+        TowerFailureException
           .builder()
-          .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
           .setMessage("The user (" + user + ") is not a member of the organizational realm. The user is not member of an organization.")
           .setException(e)
           .build()
@@ -137,9 +138,9 @@ public class OrganizationUserProvider {
         UsersUtil.assertEraldyUser(user);
       } catch (AssertionException e) {
         return Future.failedFuture(
-          VertxFailureHttpException
+          TowerFailureException
             .builder()
-            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
             .setException(e)
             .build()
@@ -179,4 +180,23 @@ public class OrganizationUserProvider {
 
   }
 
+  public Future<OrganizationUser> getUserFromAuthUser(AuthUser authUser) {
+
+    /**
+     * Guid
+     */
+    String userGuid = authUser.getSubject();
+    if (userGuid != null) {
+      return this.getOrganizationUserByGuid(userGuid);
+    }
+
+    /**
+     * We could retrieve by email and realm
+     * Check {@link UsersUtil#toEraldyUser(AuthUser, EraldyApiApp)}
+     * but this function is called after authentication/registration
+     * therefore the authUser has always a guid
+     */
+
+    return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the organizational database user"));
+  }
 }

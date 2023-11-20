@@ -130,7 +130,7 @@ public class Campaign   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, guid, name, type, data);
+    return Objects.hash();
   }
 
   @Override

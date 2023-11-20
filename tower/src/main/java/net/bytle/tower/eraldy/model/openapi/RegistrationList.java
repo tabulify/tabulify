@@ -226,7 +226,7 @@ public class RegistrationList   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, handle, name, title, description, ownerUser, ownerApp, realm, registrationUrl);
+    return Objects.hash(guid, handle);
   }
 
   @Override

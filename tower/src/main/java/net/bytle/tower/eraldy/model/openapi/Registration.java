@@ -226,7 +226,7 @@ public class Registration   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, status, list, subscriber, confirmationTime, confirmationIp, optInTime, optInIp, optInUri, flow);
+    return Objects.hash();
   }
 
   @Override

@@ -7,7 +7,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.vertx.HttpStatusEnum;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.TowerApp;
 import java.util.function.Function;
 import net.bytle.type.Casts;
@@ -102,7 +102,7 @@ public class ApiVertxSupport {
           try {
             json.append(jsonMapper.writeValueAsString(object));
           } catch (JsonProcessingException e) {
-            ctx.fail(new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
+            ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
             return;
           }
         }
@@ -114,7 +114,7 @@ public class ApiVertxSupport {
         try {
           json.append(jsonMapper.writeValueAsString(data));
         } catch (JsonProcessingException e) {
-          ctx.fail(new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
+          ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
           return;
         }
       }

@@ -113,7 +113,7 @@ public class RealmWithAppUris   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, name, handle, appUris);
+    return Objects.hash();
   }
 
   @Override

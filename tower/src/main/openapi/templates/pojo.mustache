@@ -87,8 +87,8 @@ public class {{classname}} {{#parent}}extends {{{.}}}{{/parent}} {{#vendorExtens
   }
 
   @Override
-  public int hashCode() {
-    return {{^hasVars}}{{#parent}}super.hashCode(){{/parent}}{{^parent}}1{{/parent}}{{/hasVars}}{{#hasVars}}Objects.hash({{#vars}}{{#parent}}super.hashCode(), {{/parent}}{{name}}{{^-last}}, {{/-last}}{{/vars}}){{/hasVars}};
+  public int hashCode() { {{! The hashCode may bring a circular reference, we show therefore only the required identifier fields if any (guid, ...)}}
+    return {{^hasVars}}{{#parent}}super.hashCode(){{/parent}}{{^parent}}1{{/parent}}{{/hasVars}}{{#hasVars}}Objects.hash({{#requiredVars}}{{#parent}}super.hashCode(), {{/parent}}{{name}}{{^-last}}, {{/-last}}{{/requiredVars}}){{/hasVars}};
   }
 
   @Override
@@ -97,7 +97,7 @@ public class {{classname}} {{#parent}}extends {{{.}}}{{/parent}} {{#vendorExtens
 {{#parent}}
     "    " + toIndentedString(super.toString()) + "\n" +
 {{/parent}}
-{{#requiredVars}}{{! The toString may bring a circular reference, we show therefore only the required fields if any (guid, ...)}}
+{{#requiredVars}}{{! The toString may bring a circular reference, we show therefore only the required identifier fields if any (guid, ...)}}
     "    {{name}}: " + toIndentedString({{name}}) + "\n" +
 {{/requiredVars}}
     "}";

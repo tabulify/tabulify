@@ -7,18 +7,16 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NullValueException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApexDomain;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,9 +70,6 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
 
     HttpServerRequest request = routingContext.request();
 
-    RealmProvider realmProvider = apiApp.getRealmProvider();
-
-
     /**
      * From Query String
      */
@@ -92,14 +87,10 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
     }
 
     /**
-     * From the signed-in user
+     * Note, from the signed-in user, it will not work
+     * because the session is not known as it depends on the realm
+     * , and therefore we don't know the logged-in user yet
      */
-    try {
-      User user = this.apiApp.getAuthSignedInUser(routingContext);
-      return realmProvider.getRealmFromIdentifier(user.getRealm().getGuid());
-    } catch (NotFoundException e) {
-      // not signed in
-    }
 
     /**
      * From the cookie
@@ -110,7 +101,11 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
       //
     }
 
+    /**
+     * Eraldy realm has default
+     */
     return Future.succeededFuture(EraldyRealm.get().getRealm());
+
 
   }
 
@@ -165,7 +160,7 @@ public class AuthRealmHandler implements Handler<RoutingContext> {
              * it's too difficult to manage the {@link EraldySessionHandler session}
              * at the api implementation (too late in the calls)
              */
-            context.fail(HttpStatusEnum.BAD_REQUEST_400.getStatusCode(), new IllegalArgumentException("The realm could not be determined."));
+            context.fail(TowerFailureStatusEnum.BAD_REQUEST_400.getStatusCode(), new IllegalArgumentException("The realm could not be determined."));
             return;
           }
 

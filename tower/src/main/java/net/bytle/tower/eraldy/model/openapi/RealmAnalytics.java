@@ -111,7 +111,7 @@ public class RealmAnalytics extends Realm  {
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), userCount, super.hashCode(), appCount, super.hashCode(), listCount, super.hashCode(), subscriberCount);
+    return Objects.hash(super.hashCode(), guid, super.hashCode(), handle);
   }
 
   @Override

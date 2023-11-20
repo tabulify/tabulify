@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -17,9 +16,9 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.HttpStatusEnum;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,25 +86,24 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userMeGet(RoutingContext routingContext) {
 
-    User signedInUser;
-    try {
-      signedInUser = apiApp.getAuthSignedInUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.NOT_LOGGED_IN_401)
-          .setMessage("The authenticated user was not found")
-          .setException(e)
-          .build()
-      );
-    }
+    return apiApp.getAuthSignedInUser(routingContext, User.class)
+      .compose(signedInUser -> {
 
-    return apiApp.getUserProvider()
-      .getUserByGuid(signedInUser.getGuid())
-      .compose(user -> {
-        ApiResponse<User> userApiResponse = new ApiResponse<>(user)
-          .setMapper(this.userMapper);
-        return Future.succeededFuture(userApiResponse);
+        if (signedInUser == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+              .setMessage("The authenticated user was not found")
+              .build()
+          );
+        }
+        return apiApp.getUserProvider()
+          .getUserByGuid(signedInUser.getGuid())
+          .compose(user -> {
+            ApiResponse<User> userApiResponse = new ApiResponse<>(user)
+              .setMapper(this.userMapper);
+            return Future.succeededFuture(userApiResponse);
+          });
       });
 
 

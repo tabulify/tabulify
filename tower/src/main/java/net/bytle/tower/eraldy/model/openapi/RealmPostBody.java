@@ -73,7 +73,7 @@ public class RealmPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, handle);
+    return Objects.hash(name);
   }
 
   @Override

@@ -70,7 +70,7 @@ public class RegistrationShort   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, subscriberEmail);
+    return Objects.hash();
   }
 
   @Override

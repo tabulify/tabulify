@@ -99,9 +99,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttpException
+            TowerFailureException
               .builder()
-              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+              .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
               .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .buildWithContextFailing(routingContext)
@@ -140,9 +140,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
           newUserAddressInRfcFormat = BMailInternetAddress.of(newUser.getEmail(), newUserName).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttpException
+            TowerFailureException
               .builder()
-              .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+              .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
               .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .buildWithContextFailing(routingContext)
@@ -153,9 +153,9 @@ public class UserRegistrationFlow extends WebFlowAbs {
           senderEmailInRfc = BMailInternetAddress.of(realmOwnerSender.getEmail(), realmOwnerSender.getName()).toString();
         } catch (AddressException e) {
           return Future.failedFuture(
-            VertxFailureHttpException
+            TowerFailureException
               .builder()
-              .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+              .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
               .setMessage("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setException(e)
               .buildWithContextFailing(routingContext)
@@ -258,8 +258,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
       String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
       if (realmIdentifier == null) {
-        VertxFailureHttpException.builder()
-          .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
           .setMessage("For a user registration flow, the realm should have been set in the authentication state")
           .buildWithContextFailingTerminal(authContext.getRoutingContext());
         authContext.next();
@@ -283,7 +283,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         .getUserProvider()
         .getUserFromAuthUser(authUser)
         .onFailure(err -> {
-          HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in oauth user get for registration", err);
+          HttpException throwable = new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in oauth user get for registration", err);
           authContext.getRoutingContext().fail(throwable);
         })
         .onSuccess(dbUser -> {
@@ -300,7 +300,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           }
           finalFutureUser
             .onFailure(err -> {
-              HttpException throwable = new HttpException(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in final oauth user registration", err);
+              HttpException throwable = new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in final oauth user registration", err);
               authContext.getRoutingContext().fail(throwable);
             })
             .onSuccess(finalUser -> {

@@ -176,9 +176,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
         } catch (NotFoundException | AddressException e) {
-          return Future.failedFuture(VertxFailureHttpException
+          return Future.failedFuture(TowerFailureException
             .builder()
-            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setMessage("The name of the subscriber could not be determined (" + e.getMessage() + ")")
             .setException(e)
             .buildWithContextFailing(routingContext)
@@ -214,7 +214,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxFailureHttpException.builder().setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+          return Future.failedFuture(TowerFailureException.builder().setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
             .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
             .setException(e)
             .buildWithContextFailing(routingContext)
@@ -225,9 +225,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
         try {
           subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
         } catch (AddressException e) {
-          return Future.failedFuture(VertxFailureHttpException
+          return Future.failedFuture(TowerFailureException
             .builder()
-            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
             .setException(e)
             .buildWithContextFailing(routingContext)
@@ -342,9 +342,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
         if (list == null) {
           return Future.failedFuture(
-            VertxFailureHttpException
+            TowerFailureException
               .builder()
-              .setStatus(HttpStatusEnum.NOT_FOUND_404)
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
               .setName("The list was not found")
               .setMessage("The list <mark>" + listGuid + "</mark> was not found.")
               .buildWithContextFailingAsHtml(routingContext)

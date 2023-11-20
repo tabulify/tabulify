@@ -245,7 +245,7 @@ public class AppPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(appGuid, appUri, realmIdentifier, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
+    return Objects.hash();
   }
 
   @Override

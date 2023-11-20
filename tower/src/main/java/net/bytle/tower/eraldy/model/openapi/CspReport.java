@@ -93,7 +93,7 @@ public class CspReport extends HashMap<String, String>  {
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), documentUri, super.hashCode(), referrer, super.hashCode(), blockedUri);
+    return Objects.hash();
   }
 
   @Override

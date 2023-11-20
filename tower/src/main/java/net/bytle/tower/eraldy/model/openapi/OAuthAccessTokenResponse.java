@@ -130,7 +130,7 @@ public class OAuthAccessTokenResponse   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, tokenType, scope, expiresIn, refreshToken);
+    return Objects.hash(accessToken, tokenType);
   }
 
   @Override

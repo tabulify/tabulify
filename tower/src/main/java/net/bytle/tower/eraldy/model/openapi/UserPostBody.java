@@ -169,7 +169,7 @@ public class UserPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(userGuid, realmIdentifier, userEmail, userName, userFullname, userTitle, userAvatar);
+    return Objects.hash();
   }
 
   @Override

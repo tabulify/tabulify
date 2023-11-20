@@ -265,7 +265,7 @@ public class App   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(localId, guid, uri, clientId, name, home, slogan, logo, primaryColor, user, realm, terms);
+    return Objects.hash(guid, uri);
   }
 
   @Override

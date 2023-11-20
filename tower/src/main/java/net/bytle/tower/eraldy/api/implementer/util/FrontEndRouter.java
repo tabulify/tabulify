@@ -10,8 +10,8 @@ import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.auth.OAuthInternalSession;
@@ -78,8 +78,8 @@ public class FrontEndRouter {
         message += " Click <a href=\"" + redirectUri + "\">here</a> to log in.";
       }
       return Future.failedFuture(
-        VertxFailureHttpException.builder()
-        .setStatus(HttpStatusEnum.NOT_AUTHORIZED_401)
+        TowerFailureException.builder()
+        .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
         .setMessage(message)
         .setName(message)
         .buildWithContextFailingAsHtml(routingContext)
@@ -96,9 +96,9 @@ public class FrontEndRouter {
       } catch (NotFoundException e) {
 
         return Future.failedFuture(
-          VertxFailureHttpException
+          TowerFailureException
             .builder()
-            .setStatus(HttpStatusEnum.BAD_REQUEST_400)
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setName("Redirect Uri is mandatory")
             .setMessage("The redirect URI is mandatory and was not found")
             .buildWithContextFailingAsHtml(routingContext)

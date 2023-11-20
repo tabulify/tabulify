@@ -10,6 +10,7 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.Exceptions;
 import net.bytle.exception.NotFoundException;
 import net.bytle.exception.NotLoggedInException;
+import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.MediaTypes;
 
@@ -24,12 +25,12 @@ import java.util.NoSuchElementException;
  * * create the failure data, and fail the context with {@link VertxFailureHttpExceptionBuilder#buildWithContextFailingAsHtml(RoutingContext)} that send it to {@link VertxFailureHttpHandler}
  * * be used in {@link VertxFailureHttpHandler} to create an adequate response
  */
-public class VertxFailureHttpException extends Exception {
+public class TowerFailureException extends Exception {
 
 
   private final VertxFailureHttpExceptionBuilder builder;
 
-  public VertxFailureHttpException(VertxFailureHttpExceptionBuilder vertxFailureHttpExceptionBuilder) {
+  public TowerFailureException(VertxFailureHttpExceptionBuilder vertxFailureHttpExceptionBuilder) {
     super(vertxFailureHttpExceptionBuilder.message, vertxFailureHttpExceptionBuilder.exception);
     this.builder = vertxFailureHttpExceptionBuilder;
   }
@@ -38,11 +39,6 @@ public class VertxFailureHttpException extends Exception {
   public static VertxFailureHttpExceptionBuilder builder() {
     return new VertxFailureHttpExceptionBuilder();
   }
-
-
-
-
-
 
 
   /**
@@ -76,7 +72,7 @@ public class VertxFailureHttpException extends Exception {
     return exitStatusResponse;
   }
 
-  public HttpStatus getStatus() {
+  public TowerFailureStatus getStatus() {
     return this.builder.status;
   }
 
@@ -87,7 +83,7 @@ public class VertxFailureHttpException extends Exception {
 
   public static class VertxFailureHttpExceptionBuilder {
 
-    private HttpStatus status = HttpStatusEnum.INTERNAL_ERROR_500;
+    private TowerFailureStatus status = TowerFailureStatusEnum.INTERNAL_ERROR_500;
     private String message;
     private String name;
 
@@ -104,7 +100,7 @@ public class VertxFailureHttpException extends Exception {
     }
 
     /**
-     * @param name - the name of the error (used as title in a HTML page)
+     * @param name - the name of the error (used as title in an HTML page)
      */
     public VertxFailureHttpExceptionBuilder setName(String name) {
       this.name = name;
@@ -121,8 +117,8 @@ public class VertxFailureHttpException extends Exception {
      *
      * @param code - the code
      */
-    private VertxFailureHttpExceptionBuilder setStatusCodeOnlyIfValueIsInternalError(HttpStatus code) {
-      if (status == HttpStatusEnum.INTERNAL_ERROR_500) {
+    private VertxFailureHttpExceptionBuilder setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatus code) {
+      if (status == TowerFailureStatusEnum.INTERNAL_ERROR_500) {
         this.status = code;
       }
       return this;
@@ -137,13 +133,21 @@ public class VertxFailureHttpException extends Exception {
       this.mime = MediaTypes.TEXT_HTML;
       return this;
     }
-    public VertxFailureHttpExceptionBuilder setStatus(HttpStatusEnum status) {
+
+    public VertxFailureHttpExceptionBuilder setStatus(TowerFailureStatusEnum status) {
       this.status = status;
       return this;
     }
 
-    public VertxFailureHttpException build(){
-      return new VertxFailureHttpException(this);
+    public TowerFailureException build() {
+      if (message == null && status != null) {
+        try {
+          message = status.getMessage();
+        } catch (NullValueException e) {
+          //
+        }
+      }
+      return new TowerFailureException(this);
     }
 
     /**
@@ -152,12 +156,23 @@ public class VertxFailureHttpException extends Exception {
     private VertxFailureHttpExceptionBuilder setStatusCodeFromFailureContext(RoutingContext context) {
       int httpStatusCode = context.statusCode();
       if (status.getStatusCode() == -1) {
-        status = HttpStatusEnum.INTERNAL_ERROR_500;
+        status = TowerFailureStatusEnum.INTERNAL_ERROR_500;
       } else {
         try {
-          status = HttpStatusEnum.fromHttpStatusCode(httpStatusCode);
+          status = TowerFailureStatusEnum.fromHttpStatusCode(httpStatusCode);
         } catch (NotFoundException e) {
-          status = () -> httpStatusCode;
+          status = new TowerFailureStatus() {
+            @Override
+            public int getStatusCode() {
+              return httpStatusCode;
+            }
+
+            @Override
+            public String getMessage() throws NullValueException {
+              throw new NullValueException();
+            }
+
+          };
         }
       }
       return this;
@@ -192,7 +207,7 @@ public class VertxFailureHttpException extends Exception {
       }
 
       if (thrown instanceof ValidationException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
         String keyWord = ((ValidationException) thrown).keyword();
         message += " (Keyword: " + keyWord + ", ";
 
@@ -212,9 +227,9 @@ public class VertxFailureHttpException extends Exception {
         }
         message += "InputScope: " + inputScope + ")";
       } else if (thrown instanceof NotFoundException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
       } else if (thrown instanceof ParameterProcessorException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
       } else if (thrown instanceof NotLoggedInException) {
         if (!context.request().path().contains("api")) {
           String redirectEndpoint = "/login";
@@ -231,14 +246,26 @@ public class VertxFailureHttpException extends Exception {
       } else if (thrown instanceof HttpException) {
         int statusCode = ((HttpException) thrown).getStatusCode();
         try {
-          this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.fromHttpStatusCode(statusCode));
+          this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.fromHttpStatusCode(statusCode));
         } catch (NotFoundException e) {
-          this.setStatusCodeOnlyIfValueIsInternalError(()->statusCode);
+          this.setStatusCodeOnlyIfValueIsInternalError(
+            new TowerFailureStatus() {
+              @Override
+              public int getStatusCode() {
+                return statusCode;
+              }
+
+              @Override
+              public String getMessage() throws NullValueException {
+                throw new NullValueException();
+              }
+            }
+          );
         }
       } else if (thrown instanceof IllegalArgumentException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
       } else if (thrown instanceof NoSuchElementException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(HttpStatusEnum.NOT_FOUND_404);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.NOT_FOUND_404);
       }
 
       this.message = message;
@@ -249,7 +276,7 @@ public class VertxFailureHttpException extends Exception {
        * within 60 seconds (ie the new csrf token was not flushed on the disk)
        * We delete the cookie and ask the user to reload the page
        */
-      if (this.status == HttpStatusEnum.FORBIDDEN_403 && message.toLowerCase().contains("token")) {
+      if (this.status == TowerFailureStatusEnum.NOT_AUTHORIZED_403 && message.toLowerCase().contains("token")) {
         context.session().remove(VertxCsrf.getCsrfName());
         context.response().removeCookie(VertxCsrf.getCsrfCookieName());
       }
@@ -261,21 +288,21 @@ public class VertxFailureHttpException extends Exception {
 
     }
 
-    public VertxFailureHttpException buildWithContextFailing(RoutingContext routingContext) {
+    public TowerFailureException buildWithContextFailing(RoutingContext routingContext) {
 
-      VertxFailureHttpException httpException = build();
+      TowerFailureException httpException = build();
       routingContext.fail(this.status.getStatusCode(), httpException);
       return httpException;
 
     }
+
     /**
      * Failing the context returning an HTML page
      * <p>
-     * Note: it will send the {@link VertxFailureHttpException}
+     * Note: it will send the {@link TowerFailureException}
      * to the {@link VertxFailureHttpHandler}
-     *
      */
-    public VertxFailureHttpException buildWithContextFailingAsHtml(RoutingContext routingContext) {
+    public TowerFailureException buildWithContextFailingAsHtml(RoutingContext routingContext) {
 
       this.mime = MediaTypes.TEXT_HTML;
       return this.buildWithContextFailing(routingContext);
@@ -285,10 +312,11 @@ public class VertxFailureHttpException extends Exception {
     /**
      * This function fail without returning the exception
      * to not get a warning from the IDE
+     *
      * @param ctx - the context
      */
     public void buildWithContextFailingTerminal(RoutingContext ctx) {
-      VertxFailureHttpException httpException = build();
+      TowerFailureException httpException = build();
       ctx.fail(this.status.getStatusCode(), httpException);
     }
 

@@ -226,7 +226,7 @@ public class ListPostBody   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(listGuid, listHandle, listName, listTitle, listDescription, ownerAppGuid, ownerAppUri, realmIdentifier, ownerUserEmail, ownerUserGuid);
+    return Objects.hash();
   }
 
   @Override

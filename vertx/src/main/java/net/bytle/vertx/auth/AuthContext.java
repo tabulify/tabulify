@@ -82,7 +82,7 @@ public class AuthContext {
     UriEnhanced redirectUriParameter;
     try {
       redirectUriParameter = this.getAndRemoveRedirectUri();
-    } catch (VertxFailureHttpException e) {
+    } catch (TowerFailureException e) {
       // the exception thrown fails already the context
       // nothing to do more
       return this;
@@ -136,7 +136,7 @@ public class AuthContext {
      */
     try {
       redirectUri = this.getAndRemoveRedirectUri();
-    } catch (VertxFailureHttpException e) {
+    } catch (TowerFailureException e) {
       // the exception thrown fails already the context
       // nothing to do more
       return this;
@@ -257,7 +257,7 @@ public class AuthContext {
          * The default
          */
         this.redirectUri = this.getAndRemoveRedirectUri();
-      } catch (VertxFailureHttpException e) {
+      } catch (TowerFailureException e) {
         // this exception is terminal
         // and the context was failed in the function
         // nothing to do
@@ -271,15 +271,15 @@ public class AuthContext {
       .putHeader(HttpHeaders.EXPIRES, "0")
       // redirect (when there is no state, redirect to home)
       .putHeader(HttpHeaders.LOCATION, this.redirectUri.toUrl().toString())
-      .setStatusCode(HttpStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
+      .setStatusCode(TowerFailureStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
       .end("Redirecting to " + this.redirectUri + ".");
   }
 
   /**
    * @return the redirect uri where to redirect the user after identification ore registration.
-   * @throws VertxFailureHttpException - This exception already fails the context if any error. We throw if any error, so that the code can stop its processing.
+   * @throws TowerFailureException - This exception already fails the context if any error. We throw if any error, so that the code can stop its processing.
    */
-  private UriEnhanced getAndRemoveRedirectUri() throws VertxFailureHttpException {
+  private UriEnhanced getAndRemoveRedirectUri() throws TowerFailureException {
 
     Session session = ctx.session();
 
@@ -290,9 +290,9 @@ public class AuthContext {
     final UriEnhanced redirection;
     String sessionRedirectionUrl = session.remove(OAuthInternalSession.REDIRECT_URI_KEY);
     if (sessionRedirectionUrl == null) {
-      throw VertxFailureHttpException.builder()
+      throw TowerFailureException.builder()
         .setMessage("Redirect URI not found")
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
         .setName("Redirect Uri not ")
         .setMimeToHtml()
         .buildWithContextFailing(ctx);
@@ -305,9 +305,9 @@ public class AuthContext {
         message += e.getMessage();
       }
       // internal error, we don't throw
-      throw VertxFailureHttpException.builder()
+      throw TowerFailureException.builder()
         .setMessage(message)
-        .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
         .setName("Bad URL redirect")
         .setMimeToHtml()
         .setException(e)
@@ -322,9 +322,9 @@ public class AuthContext {
     if (!redirection.getApexWithoutPort().equals(EraldyDomain.get().getApexNameWithoutPort())) {
       String inState = session.get(OAuthInternalSession.STATE_KEY);
       if (inState == null) {
-        throw VertxFailureHttpException.builder()
+        throw TowerFailureException.builder()
           .setMessage("The session state is null")
-          .setStatus(HttpStatusEnum.INTERNAL_ERROR_500)
+          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
           .setMimeToHtml()
           .buildWithContextFailing(ctx);
       }

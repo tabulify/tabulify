@@ -12,21 +12,19 @@ security:
 tags:
 - description: Env data
   name: env
-- description: Operations on realm
+- description: Realm module
   name: realm
-- description: Operations about users
+- description: Auth module
+  name: auth
+- description: User module
   name: user
-- description: "Operations about list management (creation, registration)"
+- description: "List module (creation, registration)"
   name: list
-- description: Operations on app
+- description: App module
   name: app
-- description: Operations on list registration
-  name: registration
-- description: Analytics operation
+- description: Analytics module
   name: analytics
-- description: Public API Token creation
-  name: token
-- description: Organization management
+- description: Organization module
   name: organization
 paths:
   /auth/logout:

@@ -6,8 +6,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.auth.UsersUtil;
-import net.bytle.vertx.HttpStatusEnum;
-import net.bytle.vertx.VertxFailureHttpException;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
@@ -44,7 +44,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
     AuthUser authUser;
     try {
       authUser = getAndValidateJwtClaims(ctx, "password reset");
-    } catch (IllegalStructure | VertxFailureHttpException e) {
+    } catch (IllegalStructure | TowerFailureException e) {
       return;
     }
 
@@ -57,7 +57,7 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
       .onFailure(ctx::fail)
       .onSuccess(userInDb -> {
         if (userInDb == null) {
-          ctx.fail(HttpStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
+          ctx.fail(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
           return;
         }
         new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())

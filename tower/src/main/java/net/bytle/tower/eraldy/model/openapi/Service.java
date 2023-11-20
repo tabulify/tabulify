@@ -168,7 +168,7 @@ public class Service   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, guid, uri, type, data, impersonatedUser, realm);
+    return Objects.hash();
   }
 
   @Override
