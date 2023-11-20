@@ -59,12 +59,12 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
       RequestParameter requestParameterBody = requestParameters.body();
-  EmailIdentifier emailIdentifier = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<EmailIdentifier>(){}) : null;
+  AuthEmailPost authEmailPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<AuthEmailPost>(){}) : null;
 
-      logger.debug("Parameter emailIdentifier is {}", emailIdentifier);
+      logger.debug("Parameter authEmailPost is {}", authEmailPost);
 
     // Based on Route#respond
-    api.authLoginEmailPost(routingContext, emailIdentifier)
+    api.authLoginEmailPost(routingContext, authEmailPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
@@ -220,12 +220,12 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
       RequestParameter requestParameterBody = requestParameters.body();
-  UserRegisterPost userRegisterPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<UserRegisterPost>(){}) : null;
+  AuthEmailPost authEmailPost = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<AuthEmailPost>(){}) : null;
 
-      logger.debug("Parameter userRegisterPost is {}", userRegisterPost);
+      logger.debug("Parameter authEmailPost is {}", authEmailPost);
 
     // Based on Route#respond
-    api.authRegisterUserPost(routingContext, userRegisterPost)
+    api.authRegisterUserPost(routingContext, authEmailPost)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

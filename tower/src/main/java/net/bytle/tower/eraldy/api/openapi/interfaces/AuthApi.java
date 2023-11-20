@@ -15,7 +15,7 @@ public interface AuthApi  {
     /**
      * Login by sending an email with a login link
     */
-    Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, EmailIdentifier emailIdentifier);
+    Future<ApiResponse<Void>> authLoginEmailPost(RoutingContext routingContext, AuthEmailPost authEmailPost);
 
     /**
      * Exchange a oauth code for an access token
@@ -60,5 +60,5 @@ public interface AuthApi  {
     /**
      * Register a user
     */
-    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, UserRegisterPost userRegisterPost);
+    Future<ApiResponse<Void>> authRegisterUserPost(RoutingContext routingContext, AuthEmailPost authEmailPost);
 }

@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * A post object to register
+ * A auth post object based on email to register, get a magic link, ...
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserRegisterPost   {
+public class AuthEmailPost   {
 
 
   protected String userEmail;
@@ -24,7 +24,7 @@ public class UserRegisterPost   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public UserRegisterPost () {
+  public AuthEmailPost () {
   }
 
   /**
@@ -84,10 +84,10 @@ public class UserRegisterPost   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    UserRegisterPost userRegisterPost = (UserRegisterPost) o;
-    return Objects.equals(userEmail, userRegisterPost.userEmail) &&
-        Objects.equals(realmIdentifier, userRegisterPost.realmIdentifier) &&
-        Objects.equals(redirectUri, userRegisterPost.redirectUri);
+    AuthEmailPost authEmailPost = (AuthEmailPost) o;
+    return Objects.equals(userEmail, authEmailPost.userEmail) &&
+        Objects.equals(realmIdentifier, authEmailPost.realmIdentifier) &&
+        Objects.equals(redirectUri, authEmailPost.redirectUri);
   }
 
   @Override
@@ -97,7 +97,7 @@ public class UserRegisterPost   {
 
   @Override
   public String toString() {
-    return "class UserRegisterPost {\n" +
+    return "class AuthEmailPost {\n" +
 
     "    userEmail: " + toIndentedString(userEmail) + "\n" +
 

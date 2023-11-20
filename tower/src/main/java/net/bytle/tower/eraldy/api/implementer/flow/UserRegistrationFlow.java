@@ -16,8 +16,8 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.UserRegisterEmailCallback;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.model.openapi.UserRegisterPost;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
@@ -58,17 +58,17 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * Handle the registration post
    *
    * @param routingContext  - the routing context
-   * @param userRegisterPost - the body post information
+   * @param authEmailPost - the body post information
    */
-  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, UserRegisterPost userRegisterPost) {
+  public Future<ApiResponse<Void>> handleStep1SendEmail(RoutingContext routingContext, AuthEmailPost authEmailPost) {
 
-    ValidationUtil.validateEmail(userRegisterPost.getUserEmail(), "userEmail");
-    String realmIdentifier = userRegisterPost.getRealmIdentifier();
+    ValidationUtil.validateEmail(authEmailPost.getUserEmail(), "userEmail");
+    String realmIdentifier = authEmailPost.getRealmIdentifier();
     if (realmIdentifier == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The realm identifier cannot be null.", "realmIdentifier", null);
     }
 
-    String redirectUri = userRegisterPost.getRedirectUri();
+    String redirectUri = authEmailPost.getRedirectUri();
     if (redirectUri == null) {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirectUri cannot be null.", "redirectUri", null);
     }
@@ -81,12 +81,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
     return getApp()
       .getRealmProvider()
-      .getRealmFromIdentifier(userRegisterPost.getRealmIdentifier())
+      .getRealmFromIdentifier(authEmailPost.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(realm -> {
 
         User newUser = new User();
-        newUser.setEmail(userRegisterPost.getUserEmail());
+        newUser.setEmail(authEmailPost.getUserEmail());
         newUser.setRealm(realm);
 
 
@@ -172,7 +172,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner

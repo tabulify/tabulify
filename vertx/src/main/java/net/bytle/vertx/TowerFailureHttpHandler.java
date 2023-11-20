@@ -17,22 +17,22 @@ import java.util.NoSuchElementException;
  * ctx.fail(403, new IllegalArgumentException("Token has been used or is outdated"));
  * ```
  */
-public class VertxFailureHttpHandler implements Handler<RoutingContext> {
+public class TowerFailureHttpHandler implements Handler<RoutingContext> {
 
 
   public static final String ERROR_NAME = "error";
   private final VertxFailureHandler failureHandler;
 
 
-  public VertxFailureHttpHandler(Server server) throws IllegalConfiguration {
-      this.failureHandler = server.getFailureHandler();
+  public TowerFailureHttpHandler(Server server) throws IllegalConfiguration {
+    this.failureHandler = server.getFailureHandler();
 
   }
 
-  public static VertxFailureHttpHandler createOrGet(Server server) throws IllegalConfiguration {
+  public static TowerFailureHttpHandler createOrGet(Server server) throws IllegalConfiguration {
 
 
-    return new VertxFailureHttpHandler(server);
+    return new TowerFailureHttpHandler(server);
 
   }
 
@@ -73,10 +73,14 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
     }
 
     TowerFailureStatus statusCode = towerFailureException.getStatus();
+
     /**
-     * Internal error or forbidden request ({@link io.vertx.ext.web.handler.CSRFHandler problem})
+     * Internal error
+     * <p>
+     * We don't log forbidden request (ie {@link TowerFailureStatusEnum.NOT_AUTHORIZED_403})
+     * Note that a {@link io.vertx.ext.web.handler.CSRFHandler problem} will log a 403 ...
      */
-    if (statusCode == TowerFailureStatusEnum.INTERNAL_ERROR_500 || statusCode == TowerFailureStatusEnum.NOT_AUTHORIZED_403) {
+    if (statusCode == TowerFailureStatusEnum.INTERNAL_ERROR_500) {
       this.logUnExpectedFailure(context);
     }
 
@@ -115,8 +119,6 @@ public class VertxFailureHttpHandler implements Handler<RoutingContext> {
     }
     routingContext.fail(l);
   }
-
-
 
 
   /**

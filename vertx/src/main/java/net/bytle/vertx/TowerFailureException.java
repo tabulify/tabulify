@@ -22,8 +22,8 @@ import java.util.NoSuchElementException;
 
 /**
  * A failure exception and utility data class to:
- * * create the failure data, and fail the context with {@link VertxFailureHttpExceptionBuilder#buildWithContextFailingAsHtml(RoutingContext)} that send it to {@link VertxFailureHttpHandler}
- * * be used in {@link VertxFailureHttpHandler} to create an adequate response
+ * * create the failure data, and fail the context with {@link VertxFailureHttpExceptionBuilder#buildWithContextFailingAsHtml(RoutingContext)} that send it to {@link TowerFailureHttpHandler}
+ * * be used in {@link TowerFailureHttpHandler} to create an adequate response
  */
 public class TowerFailureException extends Exception {
 
@@ -151,7 +151,7 @@ public class TowerFailureException extends Exception {
     }
 
     /**
-     * @param context - the context in the {@link VertxFailureHttpHandler}
+     * @param context - the context in the {@link TowerFailureHttpHandler}
      */
     private VertxFailureHttpExceptionBuilder setStatusCodeFromFailureContext(RoutingContext context) {
       int httpStatusCode = context.statusCode();
@@ -300,7 +300,7 @@ public class TowerFailureException extends Exception {
      * Failing the context returning an HTML page
      * <p>
      * Note: it will send the {@link TowerFailureException}
-     * to the {@link VertxFailureHttpHandler}
+     * to the {@link TowerFailureHttpHandler}
      */
     public TowerFailureException buildWithContextFailingAsHtml(RoutingContext routingContext) {
 

@@ -26,6 +26,7 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/invoker/ApiResponse.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/invoker/ApiVertxSupport.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/App.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/AppPostBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/AuthEmailPost.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Campaign.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CampaignEmailPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspObject.java
@@ -51,5 +52,4 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/Service.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ServiceSmtpPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/User.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/UserPostBody.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/UserRegisterPost.java
 src/main/resources/openapi.yaml

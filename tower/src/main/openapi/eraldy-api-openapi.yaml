@@ -65,17 +65,17 @@ components:
         multipart/form-data:
           schema:
             $ref: './eraldy-common-openapi.yaml#/components/schemas/EmailIdentifier'
-    UserRegisterPostBody:
+    AuthEmailPostBody:
       description: The data needed to register a user
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserRegisterPost'
+            $ref: '#/components/schemas/AuthEmailPost'
         #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/UserRegisterPost'
+            $ref: '#/components/schemas/AuthEmailPost'
     PasswordOnlyPostBody:
       description: Password update body
       required: true
@@ -89,9 +89,9 @@ components:
             $ref: '#/components/schemas/PasswordOnly'
 
   schemas:
-    UserRegisterPost:
+    AuthEmailPost:
       type: object
-      description: A post object to register
+      description: A auth post object based on email to register, get a magic link, ...
       required:
         - userEmail
         - realmIdentifier
@@ -261,7 +261,7 @@ paths:
         - auth
       security: [ ]
       requestBody:
-        $ref: '#/components/requestBodies/LoginEmailPostBody'
+        $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         204:
           description: "Successful. An email was sent or not if not known"
@@ -355,7 +355,7 @@ paths:
         - auth
       security: [ ]
       requestBody:
-        $ref: '#/components/requestBodies/UserRegisterPostBody'
+        $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         '200':
           # even if the email exists, we don't want to leak info

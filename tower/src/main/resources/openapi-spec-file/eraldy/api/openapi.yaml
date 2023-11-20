@@ -135,7 +135,7 @@ paths:
     post:
       operationId: authLoginEmailPost
       requestBody:
-        $ref: '#/components/requestBodies/LoginEmailPostBody'
+        $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         "204":
           description: Successful. An email was sent or not if not known
@@ -246,7 +246,7 @@ paths:
     post:
       operationId: authRegisterUserPost
       requestBody:
-        $ref: '#/components/requestBodies/UserRegisterPostBody'
+        $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
         "200":
           description: An email was send for validation
@@ -863,13 +863,10 @@ paths:
                 $ref: '#/components/schemas/OrganizationUser'
           description: Ok
         "401":
-          description: Requires authentication if not authenticated
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: The authenticated user is not a user of an organization
+          description: Not logged in
+        "403":
+          description: Logged in but the authenticated user is not the member of an
+            organization
       security:
       - apiKeyAuth: []
       - cookieAuth: []
@@ -1373,14 +1370,14 @@ components:
             $ref: '#/components/schemas/EmailIdentifier'
       description: The data needed to log a user in by email
       required: true
-    UserRegisterPostBody:
+    AuthEmailPostBody:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserRegisterPost'
+            $ref: '#/components/schemas/AuthEmailPost'
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/UserRegisterPost'
+            $ref: '#/components/schemas/AuthEmailPost'
       description: The data needed to register a user
       required: true
     PasswordOnlyPostBody:
@@ -1460,8 +1457,9 @@ components:
       description: The data needed to create a list
       required: true
   schemas:
-    UserRegisterPost:
-      description: A post object to register
+    AuthEmailPost:
+      description: "A auth post object based on email to register, get a magic link,\
+        \ ..."
       example:
         redirectUri: redirectUri
         userEmail: userEmail

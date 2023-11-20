@@ -248,7 +248,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
         return mailClientForListOwner
           .sendMail(registrationEmail)
-          .onFailure(t -> VertxFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+          .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
           .compose(mailResult -> {
 
             // Send feedback to the list owner
