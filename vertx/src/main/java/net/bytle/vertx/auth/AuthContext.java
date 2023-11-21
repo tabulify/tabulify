@@ -10,7 +10,10 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.*;
+import net.bytle.vertx.AnalyticsEventName;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -318,8 +321,11 @@ public class AuthContext {
     /**
      * If the client is a third-party client,
      * we had the code and the state
+     * Note: the full client Oauth code type flow is not yet implemented
+     * this code is therefore here for documentation purpose
      */
-    if (!redirection.getApexWithoutPort().equals(EraldyDomain.get().getApexNameWithoutPort())) {
+    String clientId = session.get(OAuthInternalSession.CLIENT_ID_KEY);
+    if (clientId != null) {
       String inState = session.get(OAuthInternalSession.STATE_KEY);
       if (inState == null) {
         throw TowerFailureException.builder()

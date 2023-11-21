@@ -46,7 +46,7 @@ public class UserApiImpl implements UserApi {
 
     if (userIdentifier.startsWith(UserProvider.USR_GUID_PREFIX)) {
       userFuture = userProvider
-        .getUserByGuid(userIdentifier);
+        .getUserByGuid(userIdentifier, User.class);
     } else {
       if (realmIdentifier == null) {
         throw ValidationException.create("With a userEmail, a realm identifier (guid or handle) should be given", "realmIdentifier", null);
@@ -75,7 +75,7 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userGuidGet(RoutingContext routingContext, String guid) {
     return apiApp.getUserProvider()
-      .getUserByGuid(guid)
+      .getUserByGuid(guid, User.class)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(user -> {
         ApiResponse<User> apiResponse = new ApiResponse<>(user);
@@ -98,7 +98,7 @@ public class UserApiImpl implements UserApi {
           );
         }
         return apiApp.getUserProvider()
-          .getUserByGuid(signedInUser.getGuid())
+          .getUserByGuid(signedInUser.getGuid(), User.class)
           .compose(user -> {
             ApiResponse<User> userApiResponse = new ApiResponse<>(user)
               .setMapper(this.userMapper);

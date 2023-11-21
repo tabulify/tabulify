@@ -85,64 +85,67 @@ public class PasswordResetFlow extends WebFlowAbs {
               "<br>Just reply to this email, I ❤ to help."
           );
 
-        String html = letter.generateHTMLForEmail();
-        String text = letter.generatePlainText();
+        return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
+          .executeBlocking(letter::generateHTMLForEmail)
+          .compose(html -> {
+            String text = letter.generatePlainText();
 
-        String mailSubject = "Password reset on " + realmNameOrHandle;
-        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
+            String mailSubject = "Password reset on " + realmNameOrHandle;
+            TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
-        String recipientEmailAddressInRfcFormat;
-        try {
-          recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-            .setMessage("The email for the user to reset ("+userToResetPassword.getEmail()+") is not valid (" + e.getMessage() + ")")
-            .setException(e)
-            .buildWithContextFailing(routingContext)
-          );
-        }
-        String senderEmail;
-        try {
-          senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
-            .setMessage("The sender email ("+sender.getEmail()+") is not valid (" + e.getMessage() + ")")
-            .setException(e)
-            .buildWithContextFailing(routingContext)
-          );
-        }
+            String recipientEmailAddressInRfcFormat;
+            try {
+              recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
+            } catch (AddressException e) {
+              return Future.failedFuture(TowerFailureException.builder()
+                .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+                .setMessage("The email for the user to reset (" + userToResetPassword.getEmail() + ") is not valid (" + e.getMessage() + ")")
+                .setException(e)
+                .buildWithContextFailing(routingContext)
+              );
+            }
+            String senderEmail;
+            try {
+              senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
+            } catch (AddressException e) {
+              return Future.failedFuture(TowerFailureException.builder()
+                .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+                .setMessage("The sender email (" + sender.getEmail() + ") is not valid (" + e.getMessage() + ")")
+                .setException(e)
+                .buildWithContextFailing(routingContext)
+              );
+            }
 
-        MailClient mailClientForListOwner = towerSmtpClient
-          .getVertxMailClientForSenderWithSigning(sender.getEmail());
+            MailClient mailClientForListOwner = towerSmtpClient
+              .getVertxMailClientForSenderWithSigning(sender.getEmail());
 
-        MailMessage registrationEmail = towerSmtpClient
-          .createVertxMailMessage()
-          .setTo(recipientEmailAddressInRfcFormat)
-          .setFrom(senderEmail)
-          .setSubject(mailSubject)
-          .setText(text)
-          .setHtml(html);
-
-        return mailClientForListOwner
-          .sendMail(registrationEmail)
-          .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
-          .compose(mailResult -> {
-
-            // Send feedback to the list owner
-            String title = "The user (" + userToResetPassword.getEmail() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
-            MailMessage ownerFeedbackEmail = towerSmtpClient
+            MailMessage registrationEmail = towerSmtpClient
               .createVertxMailMessage()
-              .setTo(senderEmail)
+              .setTo(recipientEmailAddressInRfcFormat)
               .setFrom(senderEmail)
-              .setSubject("Password reset: " + title)
+              .setSubject(mailSubject)
               .setText(text)
               .setHtml(html);
-            mailClientForListOwner
-              .sendMail(ownerFeedbackEmail)
-              .onFailure(t -> LOGGER.error("Error while sending the realm owner feedback email", t));
-            return Future.succeededFuture();
+
+            return mailClientForListOwner
+              .sendMail(registrationEmail)
+              .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+              .compose(mailResult -> {
+
+                // Send feedback to the list owner
+                String title = "The user (" + userToResetPassword.getEmail() + ") received a password reset email for the realm (" + userToResetPassword.getRealm().getHandle() + ").";
+                MailMessage ownerFeedbackEmail = towerSmtpClient
+                  .createVertxMailMessage()
+                  .setTo(senderEmail)
+                  .setFrom(senderEmail)
+                  .setSubject("Password reset: " + title)
+                  .setText(text)
+                  .setHtml(html);
+                mailClientForListOwner
+                  .sendMail(ownerFeedbackEmail)
+                  .onFailure(t -> LOGGER.error("Error while sending the realm owner feedback email", t));
+                return Future.succeededFuture();
+              });
           });
       });
   }

@@ -9,6 +9,7 @@ import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -123,7 +124,7 @@ public class RealmManagerProvider {
     Long realmId = row.getLong(REALM_MANAGER_REALM_ID_COLUMN);
     Long managerId = row.getLong(REALM_MANAGER_EMAIL_COLUMN);
     Future<Realm> futureRealm = this.apiApp.getRealmProvider().getRealmFromId(realmId);
-    Future<User> futureUser = this.apiApp.getUserProvider().getEraldyUserById(managerId);
+    Future<OrganizationUser> futureUser = this.apiApp.getUserProvider().getEraldyUserById(managerId);
     return Future.all(futureRealm, futureUser)
       .onFailure(t -> LOGGER.error("Error while building the realm manager"))
       .compose(result -> {

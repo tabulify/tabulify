@@ -1054,6 +1054,7 @@ components:
           format: int64
           description: The organization id in the database
           example: 1
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
         name:
           type: string
           description: Organization name

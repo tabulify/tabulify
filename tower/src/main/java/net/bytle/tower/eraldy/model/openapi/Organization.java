@@ -46,6 +46,7 @@ public class Organization   {
   /**
   * @return localId The organization id in the database
   */
+  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
   @JsonProperty("localId")
   public Long getLocalId() {
     return localId;

@@ -369,7 +369,7 @@ public class ListProvider {
         Future<User> ownerFuture = Future.succeededFuture();
         if (ownerId != null) {
           ownerFuture = apiApp.getUserProvider()
-            .getUserById(ownerId, realmResult.getLocalId(), realmResult);
+            .getUserById(ownerId, realmResult.getLocalId(), User.class, realmResult);
         }
 
         return Future
@@ -497,7 +497,7 @@ public class ListProvider {
       UserProvider userProvider = apiApp.getUserProvider();
       Long userId = null;
       if (ownerGuid != null) {
-        futureUser = userProvider.getUserByGuid(ownerGuid);
+        futureUser = userProvider.getUserByGuid(ownerGuid, User.class);
       } else {
         if (realmFuture == null) {
           throw ValidationException.create("The realm handle or guid should be given with an app uri", "realmGuid", null);

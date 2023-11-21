@@ -312,7 +312,7 @@ public class ServiceProvider {
     Future<User> futureImpersonatedUser = Future.succeededFuture();
     if (impersonatedUserId != null) {
       futureImpersonatedUser = apiApp.getUserProvider()
-        .getUserById(impersonatedUserId, realm.getLocalId(), realm);
+        .getUserById(impersonatedUserId, realm.getLocalId(), User.class, realm);
     }
     Future<Realm> realmFuture = Future.succeededFuture(realm);
     if (realm == null) {

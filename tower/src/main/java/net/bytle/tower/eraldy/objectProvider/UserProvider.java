@@ -21,6 +21,7 @@ import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
@@ -351,7 +352,7 @@ public class UserProvider {
 
         List<Future<?>> futureUsers = new ArrayList<>();
         for (Row row : userRows) {
-          Future<User> user = getUserFromRow(row, realm);
+          Future<User> user = getUserFromRow(row, User.class, realm);
           futureUsers.add(user);
         }
         /**
@@ -368,9 +369,10 @@ public class UserProvider {
 
   /**
    * @param row        - the resulting row
+   * @param userClass - the user class to return
    * @param knownRealm - the realm that was part of the query or null if unknown
    */
-  private Future<User> getUserFromRow(Row row, Realm knownRealm) {
+  private <T extends User> Future<T> getUserFromRow(Row row, Class<T> userClass, Realm knownRealm) {
 
 
     Long userRealmId = row.getLong(REALM_COLUMN);
@@ -387,7 +389,7 @@ public class UserProvider {
       .compose(realm -> {
 
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-        User user = Json.decodeValue(jsonAppData.toBuffer(), User.class);
+        T user = Json.decodeValue(jsonAppData.toBuffer(), userClass);
 
         Long id = row.getLong(ID_COLUMN);
         user.setLocalId(id);
@@ -419,12 +421,13 @@ public class UserProvider {
   }
 
   /**
-   * @param userId  - the user id
-   * @param realmId - the realm id
-   * @param realm   - an optional realm to use when building the user (Maybe null)
+   * @param userId    - the user id
+   * @param realmId   - the realm id
+   * @param userClass - the user class to return
+   * @param realm     - an optional realm to use when building the user (Maybe null)
    * @return the user or null if not found
    */
-  public Future<User> getUserById(Long userId, Long realmId, Realm realm) {
+  public <T extends User> Future<T> getUserById(Long userId, Long realmId, Class<T> userClass, Realm realm) {
 
     assert userId != null;
     assert realmId != null;
@@ -444,7 +447,7 @@ public class UserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getUserFromRow(row, realm);
+        return getUserFromRow(row, userClass, realm);
 
       });
   }
@@ -483,7 +486,7 @@ public class UserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getUserFromRow(row, realm);
+        return getUserFromRow(row, User.class, realm);
       });
 
   }
@@ -525,7 +528,7 @@ public class UserProvider {
 
     Future<User> userFuture;
     if (userId != null) {
-      userFuture = this.getUserById(userId, realm.getLocalId(), realm);
+      userFuture = this.getUserById(userId, realm.getLocalId(), User.class, realm);
     } else {
       userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), realm);
     }
@@ -550,7 +553,7 @@ public class UserProvider {
     return getUserFromIdOrEmail(userId, userEmail, realm);
   }
 
-  public Future<User> getUserByGuid(String guid) {
+  public <T extends User> Future<T> getUserByGuid(String guid, Class<T> userClass) {
 
     Guid guidObject;
     try {
@@ -561,7 +564,7 @@ public class UserProvider {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromId(guidObject.getRealmOrOrganizationId())
-      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId(), realm));
+      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId(), userClass, realm));
 
 
   }
@@ -717,7 +720,7 @@ public class UserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getUserFromRow(row, realm);
+        return getUserFromRow(row, User.class, realm);
       });
 
   }
@@ -733,9 +736,9 @@ public class UserProvider {
     return templateClone;
   }
 
-  public Future<User> getEraldyUserById(Long ownerId) {
+  public Future<OrganizationUser> getEraldyUserById(Long ownerId) {
     Realm eraldyRealm = EraldyRealm.get().getRealm();
-    return getUserById(ownerId, eraldyRealm.getLocalId(), eraldyRealm);
+    return getUserById(ownerId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
   }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
@@ -764,7 +767,7 @@ public class UserProvider {
   private Future<List<User>> getUsersFromRows(RowSet<Row> userRows, Realm knowRealm) {
     List<Future<User>> users = new ArrayList<>();
     for (Row row : userRows) {
-      users.add(getUserFromRow(row, knowRealm));
+      users.add(getUserFromRow(row, User.class, knowRealm));
     }
     return Future.all(users)
       .compose(results -> {
@@ -789,7 +792,7 @@ public class UserProvider {
      */
     String userGuid = user.getGuid();
     if (userGuid != null) {
-      return this.getUserByGuid(userGuid);
+      return this.getUserByGuid(userGuid, User.class);
     }
     /**
      * By local id
@@ -797,7 +800,7 @@ public class UserProvider {
     Long realmLocalId = user.getRealm() == null ? null : user.getRealm().getLocalId();
     Long localId = user.getLocalId();
     if (localId != null && realmLocalId != null) {
-      return this.getUserById(localId, realmLocalId, null);
+      return this.getUserById(localId, realmLocalId, User.class, null);
     }
     /**
      * By Email

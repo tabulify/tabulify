@@ -1717,6 +1717,8 @@ components:
           example: 1
           format: int64
           type: integer
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            id\"})"
         name:
           description: Organization name
           type: string

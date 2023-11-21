@@ -117,7 +117,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
-  public  UriEnhanced getRegistrationConfirmationOperationPath(Registration registration) {
+  public UriEnhanced getRegistrationConfirmationOperationPath(Registration registration) {
     String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, registration.getGuid());
     return this.getApp().getMemberAppUri().setPath(registrationConfirmationOperationPath);
   }
@@ -184,7 +184,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             .buildWithContextFailing(routingContext)
           );
         }
-        BMailTransactionalTemplate publicationValidationLetter = getApp()
+        BMailTransactionalTemplate letter = getApp()
           .getUserListRegistrationFlow()
           .getCallback()
           .getCallbackTransactionalEmailTemplateForClaims(routingContext, sender, subscriberRecipientName, jwtClaims)
@@ -201,72 +201,75 @@ public class ListRegistrationFlow extends WebFlowAbs {
               "<br>Just reply to this email, I ❤ to help."
           );
 
+        return this.getApp().getApexDomain().getHttpServer().getServer().getVertx()
+          .executeBlocking(letter::generateHTMLForEmail)
+          .compose(html -> {
+            String text = letter.generatePlainText();
 
-        String html = publicationValidationLetter.generateHTMLForEmail();
-        String text = publicationValidationLetter.generatePlainText();
-
-        String mailSubject = "Registration validation to the list `" + registrationList.getName() + "`";
-        TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
-
-
-        User listOwnerUser = ListProvider.getOwnerUser(registrationList);
-        String ownerEmailAddressInRfcFormat;
-        try {
-          ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(TowerFailureException.builder().setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
-            .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
-            .setException(e)
-            .buildWithContextFailing(routingContext)
-          );
-        }
-
-        String subscriberAddressWithName;
-        try {
-          subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
-        } catch (AddressException e) {
-          return Future.failedFuture(TowerFailureException
-            .builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-            .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
-            .setException(e)
-            .buildWithContextFailing(routingContext)
-          );
-        }
-
-        MailClient mailClientForListOwner = towerSmtpClient
-          .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());
-
-        MailMessage registrationEmail = towerSmtpClient
-          .createVertxMailMessage()
-          .setTo(subscriberAddressWithName)
-          .setFrom(ownerEmailAddressInRfcFormat)
-          .setSubject(mailSubject)
-          .setText(text)
-          .setHtml(html);
+            String mailSubject = "Registration validation to the list `" + registrationList.getName() + "`";
+            TowerSmtpClient towerSmtpClient = this.getApp().getApexDomain().getHttpServer().getServer().getSmtpClient();
 
 
-        return mailClientForListOwner
-          .sendMail(registrationEmail)
-          .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
-          .compose(mailResult -> {
+            User listOwnerUser = ListProvider.getOwnerUser(registrationList);
+            String ownerEmailAddressInRfcFormat;
+            try {
+              ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
+            } catch (AddressException e) {
+              return Future.failedFuture(TowerFailureException.builder().setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+                .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
+                .setException(e)
+                .buildWithContextFailing(routingContext)
+              );
+            }
 
-            // Send feedback to the list owner
-            String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + registrationList.getHandle() + ").";
-            MailMessage ownerFeedbackEmail = towerSmtpClient
+            String subscriberAddressWithName;
+            try {
+              subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
+            } catch (AddressException e) {
+              return Future.failedFuture(TowerFailureException
+                .builder()
+                .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+                .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
+                .setException(e)
+                .buildWithContextFailing(routingContext)
+              );
+            }
+
+            MailClient mailClientForListOwner = towerSmtpClient
+              .getVertxMailClientForSenderWithSigning(listOwnerUser.getEmail());
+
+            MailMessage registrationEmail = towerSmtpClient
               .createVertxMailMessage()
-              .setTo(ownerEmailAddressInRfcFormat)
+              .setTo(subscriberAddressWithName)
               .setFrom(ownerEmailAddressInRfcFormat)
-              .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)
-              .setText(title)
-              .setHtml("<html><body>" + title + "</body></html>");
-            mailClientForListOwner
-              .sendMail(ownerFeedbackEmail)
-              .onFailure(t -> LOGGER.error("Error while sending the list owner feedback email", t));
+              .setSubject(mailSubject)
+              .setText(text)
+              .setHtml(html);
 
-            // Return the response
-            return Future.succeededFuture();
+
+            return mailClientForListOwner
+              .sendMail(registrationEmail)
+              .onFailure(t -> TowerFailureHttpHandler.failRoutingContextWithTrace(t, routingContext, "Error while sending the registration email. Message: " + t.getMessage()))
+              .compose(mailResult -> {
+
+                // Send feedback to the list owner
+                String title = "The user (" + subscriberAddressWithName + ") received a validation email for the list (" + registrationList.getHandle() + ").";
+                MailMessage ownerFeedbackEmail = towerSmtpClient
+                  .createVertxMailMessage()
+                  .setTo(ownerEmailAddressInRfcFormat)
+                  .setFrom(ownerEmailAddressInRfcFormat)
+                  .setSubject(REGISTRATION_EMAIL_SUBJECT_PREFIX + title)
+                  .setText(title)
+                  .setHtml("<html><body>" + title + "</body></html>");
+                mailClientForListOwner
+                  .sendMail(ownerFeedbackEmail)
+                  .onFailure(t -> LOGGER.error("Error while sending the list owner feedback email", t));
+
+                // Return the response
+                return Future.succeededFuture();
+              });
           });
+
 
       });
   }

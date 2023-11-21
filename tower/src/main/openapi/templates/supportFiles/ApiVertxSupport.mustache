@@ -93,33 +93,11 @@ public class ApiVertxSupport {
     ObjectMapper jsonMapper = apiResponse.getJsonMapper();
     if (jsonMapper != null) {
       ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-      StringBuilder json = new StringBuilder();
-      if (data instanceof Collection) {
-        Collection<Object> datas;
-        json.append("[");
-        datas = Casts.castToCollection(data, Object.class);
-        for (Object object : datas) {
-          try {
-            json.append(jsonMapper.writeValueAsString(object));
-          } catch (JsonProcessingException e) {
-            ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
-            return;
-          }
-        }
-        json.append("]");
-      } else {
-        /**
-         * Single value
-         */
-        try {
-          json.append(jsonMapper.writeValueAsString(data));
-        } catch (JsonProcessingException e) {
-          ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), e));
-          return;
-        }
+      try {
+        ctx.response().end(jsonMapper.writeValueAsString(data));
+      } catch (JsonProcessingException e) {
+        ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Unable to map the data to json", e));
       }
-
-      ctx.response().end(json.toString());
       return;
     }
     ctx.json(data);

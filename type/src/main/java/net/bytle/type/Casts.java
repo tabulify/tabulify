@@ -463,16 +463,17 @@ public class Casts {
     }
   }
 
-  public static <T> Collection<T> castToCollection(Object o, Class<T> tClass) {
+  public static <T> Collection<T> castToCollection(Object o, Class<T> clazzV) {
     if (o == null) {
       return null;
     }
     if (o instanceof Collection) {
       Collection<?> array = ((Collection<?>) o);
       for (Object object : array) {
-        Class<?> elementClass = object.getClass();
-        if (!elementClass.equals(tClass)) {
-          throw new ClassCastException("The class of an element is " + elementClass + " and should be " + tClass);
+        if (!clazzV.equals(Object.class)) {
+          if (!clazzV.isAssignableFrom(object.getClass())) {
+            throw new ClassCastException("The value (" + object + ") is not a " + clazzV.getSimpleName() + ".");
+          }
         }
       }
       //noinspection unchecked

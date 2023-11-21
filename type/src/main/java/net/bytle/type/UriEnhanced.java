@@ -32,6 +32,7 @@ public class UriEnhanced {
   }
 
   public static UriEnhanced createFromString(String url) throws IllegalStructure {
+
     if (url == null) {
       throw new IllegalStructure("The url cannot be null");
     }
@@ -126,13 +127,16 @@ public class UriEnhanced {
   }
 
   public URL toUrl() {
+    URI uri = this.toUri();
     try {
-      return this.toUri().toURL();
+      return uri.toURL();
     } catch (MalformedURLException e) {
       if (this.scheme == null) {
-        throw new RuntimeException("The scheme is mandatory for a URL");
+        throw new RuntimeException("The scheme is mandatory for a URL (uri: " + uri + ")");
       }
       throw new RuntimeException(e);
+    } catch (Exception e) {
+      throw new RuntimeException("Bad uri to url with the uri (" + uri + "): " + e.getMessage(), e);
     }
   }
 

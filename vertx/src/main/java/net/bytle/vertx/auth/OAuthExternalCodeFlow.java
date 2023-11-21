@@ -5,13 +5,9 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalArgumentExceptions;
-import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.ConfigIllegalException;
-import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.*;
 import net.bytle.vertx.flow.WebFlowAbs;
 
 import java.util.List;
@@ -46,14 +42,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
    */
   public static UriEnhanced getRedirectUri(RoutingContext routingContext) throws NotFoundException {
     String redirectUri = routingContext.request().getParam(AuthQueryProperty.REDIRECT_URI.toString());
-    if (redirectUri == null) {
-      throw new NotFoundException();
-    }
-    try {
-      return UriEnhanced.createFromString(redirectUri);
-    } catch (IllegalStructure e) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("The redirect Uri is not a valid URI", AuthQueryProperty.REDIRECT_URI.toString(), redirectUri);
-    }
+    return ValidationUtil.validateAndGetRedirectUriAsUri(redirectUri);
   }
 
 
@@ -64,7 +53,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
   /**
    * @param routingContext - the context
    * @param provider       - the provider string
-   * @param authState - the auth state
+   * @param authState      - the auth state
    * @return redirect to the Oauth provider
    */
   public Future<Void> step1RedirectToExternalIdentityProvider(RoutingContext routingContext, String provider, AuthState authState) {
@@ -93,7 +82,6 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
     }
 
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriAsUri);
-
 
 
     /**

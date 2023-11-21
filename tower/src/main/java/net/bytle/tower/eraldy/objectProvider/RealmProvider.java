@@ -474,7 +474,7 @@ public class RealmProvider {
     Future<Organization> futureOrganization = apiApp.getOrganizationProvider().getById(orgaId);
     Long realmIdContactColumn = row.getLong(REALM_OWNER_ID_COLUMN);
     Realm eraldyRealm = EraldyRealm.get().getRealm();
-    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserById(realmIdContactColumn, eraldyRealm.getLocalId(), eraldyRealm);
+    Future<User> futureOwnerUser = apiApp.getUserProvider().getUserById(realmIdContactColumn, eraldyRealm.getLocalId(), User.class, eraldyRealm);
     Long defaultAppId = row.getLong(REALM_DEFAULT_APP_ID);
     Future<App> futureApp;
     if (defaultAppId == null) {

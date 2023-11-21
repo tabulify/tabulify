@@ -378,7 +378,7 @@ public class AppProvider {
   private Future<App> getFromRow(Row row, Realm realm) {
     Long userId = row.getLong(USER_COLUMN);
     Future<User> userFuture = apiApp.getUserProvider()
-      .getUserById(userId, realm.getLocalId(), realm);
+      .getUserById(userId, realm.getLocalId(), User.class, realm);
     Future<Realm> realmFuture;
     Long realmId = row.getLong(REALM_ID_COLUMN);
     RealmProvider realmProvider = this.apiApp.getRealmProvider();

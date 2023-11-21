@@ -238,7 +238,7 @@ public class ListRegistrationProvider {
 
         Long subscriberId = row.getLong(USER_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserById(subscriberId, realm.getLocalId(), realm);
+          .getUserById(subscriberId, realm.getLocalId(), User.class, realm);
 
         return Future
           .all(publicationFuture, publisherFuture)

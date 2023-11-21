@@ -1,19 +1,15 @@
 package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
@@ -45,35 +41,11 @@ public class OrganizationUserProvider {
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
   }
 
-  @SuppressWarnings("unused")
-  public Future<Boolean> isOrganizationUser(User user) {
-    return getOrganizationUserById(user.getLocalId(), user)
-      .compose(organizationUser -> {
-        if (organizationUser != null) {
-          return Future.succeededFuture(true);
-        } else {
-          return Future.succeededFuture(false);
-        }
-      });
-  }
-
 
   public Future<OrganizationUser> getOrganizationUserByGuid(String guid) {
-    Guid userGuid;
-    try {
-      userGuid = apiApp.getUserProvider().getGuidFromHash(guid);
-    } catch (CastException e) {
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-          .setMessage("The user guid (" + guid + ") is not valid")
-          .setException(e)
-          .build()
-      );
-    }
+
     return apiApp.getUserProvider()
-      .getUserByGuid(guid)
+      .getUserByGuid(guid, OrganizationUser.class)
       .compose(user -> {
         if (user == null) {
           return Future.succeededFuture();
@@ -83,10 +55,9 @@ public class OrganizationUserProvider {
   }
 
   /**
-   *
    * @param user - the user object used to build the organizational user
    */
-  public Future<OrganizationUser> getOrganizationUserByUser(User user) {
+  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser user) {
     try {
       UsersUtil.assertEraldyUser(user);
     } catch (AssertionException e) {
@@ -106,7 +77,7 @@ public class OrganizationUserProvider {
    * @param userLocalId - the user local id
    * @param user        - the user to use to build the organization user
    */
-  public Future<OrganizationUser> getOrganizationUserById(Long userLocalId, User user) {
+  public Future<OrganizationUser> getOrganizationUserById(Long userLocalId, OrganizationUser user) {
 
 
     String sql = "SELECT * FROM " +
@@ -129,9 +100,9 @@ public class OrganizationUserProvider {
       });
   }
 
-  private Future<OrganizationUser> getOrgaUserFromDatabaseRow(Row row, User user) {
+  private Future<OrganizationUser> getOrgaUserFromDatabaseRow(Row row, OrganizationUser user) {
 
-    Future<User> futureUser;
+    Future<OrganizationUser> futureUser;
     Long userId;
     if (user != null) {
       try {
@@ -160,7 +131,7 @@ public class OrganizationUserProvider {
         if (userFromFuture == null) {
           return Future.failedFuture(new NotFoundException("The eraldy user with the id (" + userId + ") was not found"));
         }
-        OrganizationUser organizationUser = JsonObject.mapFrom(userFromFuture).mapTo(OrganizationUser.class);
+        OrganizationUser finalOrganizationUser = (OrganizationUser) userFromFuture;
         Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
         return apiApp
           .getOrganizationProvider()
@@ -170,10 +141,10 @@ public class OrganizationUserProvider {
             if (organization == null) {
               return Future.failedFuture(new NotFoundException("The organization with the id (" + orgaId + ") was not found"));
             }
-            organizationUser.setOrganization(organization);
-            organizationUser.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
-            organizationUser.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
-            return Future.succeededFuture(organizationUser);
+            finalOrganizationUser.setOrganization(organization);
+            finalOrganizationUser.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
+            finalOrganizationUser.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
+            return Future.succeededFuture(finalOrganizationUser);
 
           });
       });
