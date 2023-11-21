@@ -743,7 +743,8 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: [ 'read:app' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (a guid or handle)"

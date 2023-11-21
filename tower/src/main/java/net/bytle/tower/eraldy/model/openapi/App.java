@@ -18,9 +18,7 @@ public class App   {
 
   protected String guid;
 
-  protected URI uri;
-
-  protected String clientId;
+  protected String uri;
 
   protected String name;
 
@@ -64,7 +62,7 @@ public class App   {
   }
 
   /**
-  * @return guid The global publisher id (realm id + publisher id)
+  * @return guid The global app id (realm id + local app id)
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -72,7 +70,7 @@ public class App   {
   }
 
   /**
-  * @param guid The global publisher id (realm id + publisher id)
+  * @param guid The global app id (realm id + local app id)
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -80,35 +78,19 @@ public class App   {
   }
 
   /**
-  * @return uri The uri of the app (unique for all apps on the realm, this is equivalent to the authentication scope)
+  * @return uri The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
   */
   @JsonProperty("uri")
-  public URI getUri() {
+  public String getUri() {
     return uri;
   }
 
   /**
-  * @param uri The uri of the app (unique for all apps on the realm, this is equivalent to the authentication scope)
+  * @param uri The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
   */
   @SuppressWarnings("unused")
-  public void setUri(URI uri) {
+  public void setUri(String uri) {
     this.uri = uri;
-  }
-
-  /**
-  * @return clientId The client id used to connect
-  */
-  @JsonProperty("clientId")
-  public String getClientId() {
-    return clientId;
-  }
-
-  /**
-  * @param clientId The client id used to connect
-  */
-  @SuppressWarnings("unused")
-  public void setClientId(String clientId) {
-    this.clientId = clientId;
   }
 
   /**
@@ -249,19 +231,17 @@ public class App   {
       return false;
     }
     App app = (App) o;
-    return
-            Objects.equals(guid, app.guid) && Objects.equals(uri, app.uri);
-
+    return Objects.equals(guid, app.guid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, uri);
+    return Objects.hash(guid);
   }
 
   @Override
   public String toString() {
-    return guid + ", " + uri.toString();
+    return guid + ", " + uri;
   }
 
 }

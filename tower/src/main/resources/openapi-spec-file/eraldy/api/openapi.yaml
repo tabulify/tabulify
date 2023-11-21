@@ -711,8 +711,8 @@ paths:
                 type: array
           description: Ok
       security:
-      - apiKeyAuth:
-        - read:app
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: List apps for a realm
       tags:
       - app
@@ -1845,7 +1845,6 @@ components:
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
-        clientId: clientId
         terms: https://openapi-generator.tech
         name: Doe
         primaryColor: '#3498db'
@@ -1879,7 +1878,7 @@ components:
           handle: handle
           localId: 0
         localId: 1
-        uri: https://doe.com
+        uri: doe.com
         slogan: "Doe, Be You"
         user:
           disabledReason: disabledReason
@@ -1907,17 +1906,13 @@ components:
           format: int64
           type: integer
         guid:
-          description: The global publisher id (realm id + publisher id)
+          description: The global app id (realm id + local app id)
           example: xmmmN
           type: string
         uri:
-          description: "The uri of the app (unique for all apps on the realm, this\
-            \ is equivalent to the authentication scope)"
-          example: https://doe.com
-          format: uri
-          type: string
-        clientId:
-          description: The client id used to connect
+          description: "The uri of the app without the scheme (unique for all apps\
+            \ on the realm, this is equivalent to the authentication scope)"
+          example: doe.com
           type: string
         name:
           description: The name of the app
@@ -1949,14 +1944,16 @@ components:
           description: The location of the terms and conditions document
           format: uri
           type: string
-      required:
-      - guid
-      - uri
       title: An app
       type: object
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = App.class)"
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - uri
       x-parent: true
     RealmPostBody:
       description: Realm creation
@@ -2390,7 +2387,6 @@ components:
         localId: 1
         registrationUrl: https://openapi-generator.tech
         ownerApp:
-          clientId: clientId
           terms: https://openapi-generator.tech
           name: Doe
           primaryColor: '#3498db'
@@ -2424,7 +2420,7 @@ components:
             handle: handle
             localId: 0
           localId: 1
-          uri: https://doe.com
+          uri: doe.com
           slogan: "Doe, Be You"
           user:
             disabledReason: disabledReason
@@ -2656,7 +2652,6 @@ components:
           localId: 1
           registrationUrl: https://openapi-generator.tech
           ownerApp:
-            clientId: clientId
             terms: https://openapi-generator.tech
             name: Doe
             primaryColor: '#3498db'
@@ -2690,7 +2685,7 @@ components:
               handle: handle
               localId: 0
             localId: 1
-            uri: https://doe.com
+            uri: doe.com
             slogan: "Doe, Be You"
             user:
               disabledReason: disabledReason

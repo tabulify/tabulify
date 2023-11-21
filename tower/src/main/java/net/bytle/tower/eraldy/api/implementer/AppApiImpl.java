@@ -1,28 +1,39 @@
 package net.bytle.tower.eraldy.api.implementer;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
+import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.AppPostBody;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 public class AppApiImpl implements AppApi {
 
   private final EraldyApiApp apiApp;
+  private final JsonMapper jsonMapper;
 
   public AppApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
+    this.jsonMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+      .jsonMapperBuilder()
+      .addMixIn(App.class, AppPublicMixinWithRealm.class)
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .addMixIn(Realm.class, RealmPublicMixin.class)
+      .build();
   }
 
   @Override
@@ -92,13 +103,14 @@ public class AppApiImpl implements AppApi {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier, Realm.class)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(appProvider::getApps)
+      .compose(realm -> {
+        this.apiApp.getAuthSignedInUser()
+        return appProvider.getApps(realm);
+      })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(apps -> {
-          java.util.List<App> publicApps = apps.stream().map(appProvider::toPublicClone)
-            .collect(Collectors.toList());
-          return Future.succeededFuture(new ApiResponse<>(publicApps));
-        }
+      .compose(apps -> Future.succeededFuture(new ApiResponse<>(apps)
+          .setMapper(this.jsonMapper)
+        )
       );
   }
 

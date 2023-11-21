@@ -344,7 +344,9 @@ components:
               property = "guid",
               scope = App.class)'
       # required fields are part of the toString
-      required:
+      x-fields-identity:
+        - guid
+      x-fields-to-string:
         - guid
         - uri
       properties:
@@ -355,18 +357,14 @@ components:
           example: 1
         guid:
           type: string
-          description: The global publisher id (realm id + publisher id)
+          description: The global app id (realm id + local app id)
           example: "xmmmN"
           # other application have things like that:
           # jNT9BcNlEjwlfhnBnPNSdsk5Lcij2F0r
         uri:
           type: string
-          format: uri
-          description: The uri of the app (unique for all apps on the realm, this is equivalent to the authentication scope)
-          example: 'https://doe.com'
-        clientId:
-          type: string
-          description: The client id used to connect
+          description: The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
+          example: 'doe.com'
         name:
           type: string
           description: The name of the app
