@@ -304,7 +304,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         user.setEmail(emailClaims);
         UserProvider userProvider = this.getApp().getUserProvider();
         userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), user.getRealm())
+          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), User.class, user.getRealm())
           .onFailure(ctx::fail)
           .onSuccess(userInDb -> {
 
@@ -434,7 +434,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         optInIp = "";
       }
 
-      User user = UsersUtil.toEraldyUser(authUser, this.getApp());
+      User user = UsersUtil.toModelUser(authUser, this.getApp());
       this.authenticateAndRegisterUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH);
       authContext.next();
 

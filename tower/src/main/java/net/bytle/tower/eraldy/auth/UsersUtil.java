@@ -2,17 +2,19 @@ package net.bytle.tower.eraldy.auth;
 
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
-import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
+
+import java.lang.reflect.InvocationTargetException;
 
 public class UsersUtil {
 
@@ -86,10 +88,6 @@ public class UsersUtil {
     return EraldyDomain.get().isEraldyId(user.getRealm().getLocalId());
   }
 
-  public static void assertEraldyUser(User user) throws AssertionException {
-    EraldyDomain.get().assertIsEraldyUser(user.getRealm().getLocalId());
-  }
-
 
   public static AuthUser toAuthUser(User appUser) {
     AuthUser authUserClaims = new AuthUser();
@@ -117,8 +115,20 @@ public class UsersUtil {
   }
 
 
-  public static User toEraldyUser(AuthUser authUser, EraldyApiApp eraldyApiApp) {
+  /**
+   * A utility map to transform into a user to calculate
+   * the identifier
+   * @param authUser - the auth user
+   * @param eraldyApiApp - the app
+   * @return a user with the ids
+   */
+  public static User toModelUser(AuthUser authUser, EraldyApiApp eraldyApiApp) {
 
+    return toUser(authUser,eraldyApiApp,User.class);
+
+  }
+
+  private static <T extends User> T toUser(AuthUser authUser, EraldyApiApp eraldyApiApp, Class<T> userClass) {
     Realm realm = new Realm();
     /**
      * Audience guid may be null when we get an Oauth user
@@ -139,7 +149,12 @@ public class UsersUtil {
     }
     realm.setHandle(audienceHandle);
 
-    User userEraldy = new User();
+    T userEraldy;
+    try {
+      userEraldy = userClass.getDeclaredConstructor().newInstance();
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new InternalException("Unable to create a user instance",e);
+    }
     userEraldy.setRealm(realm);
     String subjectGivenName = authUser.getSubjectGivenName();
     userEraldy.setGivenName(subjectGivenName);
@@ -173,6 +188,18 @@ public class UsersUtil {
     userEraldy.setWebsite(authUser.getSubjectBlog());
     userEraldy.setAvatar(authUser.getSubjectAvatar());
     return userEraldy;
-
   }
+
+  /**
+   *
+   * @param authSignedInUser - the signe user
+   * @param apiApp - the api app
+   * @return an organization user with a user from the Eraldy realm
+   */
+  public static OrganizationUser toOrganizationUser(AuthUser authSignedInUser, EraldyApiApp apiApp) {
+    OrganizationUser user = toUser(authSignedInUser, apiApp, OrganizationUser.class);
+    UsersUtil.isEraldyUser(user);
+    return user;
+  }
+
 }

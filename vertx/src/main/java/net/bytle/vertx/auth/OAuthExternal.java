@@ -112,7 +112,7 @@ public class OAuthExternal {
             .create(PermissionBasedAuthorization.create(OAuthExternalGithub.USER_EMAIL_SCOPE))
             .addAuthorizationProvider(ScopeAuthorization.create(" "))
         );
-      LOGGER.info("Oauth Callback for provider (" + this + ") added at (" + towerApp.getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + towerApp.getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
+      LOGGER.info("Oauth Callback for provider (" + authExternalProvider + ") added at (" + towerApp.getOperationUriForLocalhost(callbackLocalRouterPath) + " , " + towerApp.getOperationUriForPublicHost(callbackLocalRouterPath) + ")");
     }
   }
 

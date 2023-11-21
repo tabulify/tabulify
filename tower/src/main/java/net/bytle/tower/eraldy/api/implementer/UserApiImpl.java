@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -19,6 +20,7 @@ import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.auth.AuthUser;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,7 +61,7 @@ public class UserApiImpl implements UserApi {
             throw ValidationException.create("The realm does not exist", "realmIdentifier", realmIdentifier);
           }
           return userProvider
-            .getUserByEmail(userIdentifier, realm.getLocalId(), realm);
+            .getUserByEmail(userIdentifier, realm.getLocalId(), User.class, realm);
         });
     }
     return userFuture
@@ -86,24 +88,22 @@ public class UserApiImpl implements UserApi {
   @Override
   public Future<ApiResponse<User>> userMeGet(RoutingContext routingContext) {
 
-    return apiApp.getAuthSignedInUser(routingContext, User.class)
-      .compose(signedInUser -> {
-
-        if (signedInUser == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
-              .setMessage("The authenticated user was not found")
-              .build()
-          );
-        }
-        return apiApp.getUserProvider()
-          .getUserByGuid(signedInUser.getGuid(), User.class)
-          .compose(user -> {
-            ApiResponse<User> userApiResponse = new ApiResponse<>(user)
-              .setMapper(this.userMapper);
-            return Future.succeededFuture(userApiResponse);
-          });
+    AuthUser authSignedInUser;
+    try {
+      authSignedInUser = apiApp.getAuthSignedInUser(routingContext);
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .build()
+      );
+    }
+    return apiApp.getUserProvider()
+      .getUserByGuid(authSignedInUser.getSubject(), User.class)
+      .compose(user -> {
+        ApiResponse<User> userApiResponse = new ApiResponse<>(user)
+          .setMapper(this.userMapper);
+        return Future.succeededFuture(userApiResponse);
       });
 
 

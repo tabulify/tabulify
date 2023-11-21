@@ -4,23 +4,27 @@ import io.vertx.core.Future;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
+import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.JdbcSchemaManager;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
-import net.bytle.vertx.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
 /**
- * Organization User are the real customers
+ * Organization Users are the tenants.
+ * They are user of the Eraldy realm
+ * that may create a realm, app and list
+ * <p>
+ * They are child of {@link net.bytle.tower.eraldy.model.openapi.User}
+ * and are therefore created via {@link UserProvider}
+ * The function {@link UserProvider#getUserFromRow(Row, Class, Realm)} checks the realm
+ * before the object is created.
  */
 public class OrganizationUserProvider {
 
@@ -50,41 +54,25 @@ public class OrganizationUserProvider {
         if (user == null) {
           return Future.succeededFuture();
         }
-        return getOrganizationUserByUser(user);
+        return buildOrgUserFromDb(user);
       });
   }
 
-  /**
-   * @param user - the user object used to build the organizational user
-   */
-  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser user) {
-    try {
-      UsersUtil.assertEraldyUser(user);
-    } catch (AssertionException e) {
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-          .setMessage("The user (" + user + ") is not a member of the organizational realm. The user is not member of an organization.")
-          .setException(e)
-          .build()
-      );
-    }
-    return getOrganizationUserById(user.getLocalId(), user);
-  }
+
 
   /**
-   * @param userLocalId - the user local id
-   * @param user        - the user to use to build the organization user
+   * Take a OrganizationUser that was created as a child user object
+   * and add organization information only such as the organization object from the database
+   * @param organizationUser  - the organization user to add extra info
    */
-  public Future<OrganizationUser> getOrganizationUserById(Long userLocalId, OrganizationUser user) {
+  private Future<OrganizationUser> buildOrgUserFromDb(OrganizationUser organizationUser) {
 
 
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " + ORGA_USER_USER_ID_COLUMN + " = $1";
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(userLocalId))
+      .execute(Tuple.of(organizationUser.getLocalId()))
       .onFailure(e -> LOGGER.error("Error: " + e.getMessage() + ", while retrieving the orga user by user id with the sql\n" + sql, e))
       .compose(userRows -> {
 
@@ -93,45 +81,31 @@ public class OrganizationUserProvider {
         }
 
         if (userRows.size() != 1) {
-          return Future.failedFuture(new InternalException("their is more than one orga user with the id (" + user.getLocalId() + ")"));
+          return Future.failedFuture(new InternalException("There is more than one orga user with the id (" + organizationUser.getLocalId() + ")"));
         }
         Row row = userRows.iterator().next();
-        return this.getOrgaUserFromDatabaseRow(row, user);
+        return this.buildOrgaUserFromDatabaseRow(row, organizationUser);
       });
   }
 
-  private Future<OrganizationUser> getOrgaUserFromDatabaseRow(Row row, OrganizationUser user) {
+  private Future<OrganizationUser> buildOrgaUserFromDatabaseRow(Row row, OrganizationUser user) {
 
     Future<OrganizationUser> futureUser;
     Long userId;
     if (user != null) {
-      try {
-        UsersUtil.assertEraldyUser(user);
-      } catch (AssertionException e) {
-        return Future.failedFuture(
-          TowerFailureException
-            .builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-            .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
-            .setException(e)
-            .build()
-        );
-      }
       futureUser = Future.succeededFuture(user);
       userId = user.getLocalId();
     } else {
       userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-      futureUser = apiApp.getUserProvider()
-        .getEraldyUserById(userId);
+      futureUser = this.getOrganizationUserById(userId);
     }
 
     return futureUser
-      .onFailure(t -> LOGGER.error("Error while getting the user", t))
+      .onFailure(t -> LOGGER.error("Error while getting the organization user", t))
       .compose(userFromFuture -> {
         if (userFromFuture == null) {
-          return Future.failedFuture(new NotFoundException("The eraldy user with the id (" + userId + ") was not found"));
+          return Future.failedFuture(new NotFoundException("The organization user with the id (" + userId + ") was not found"));
         }
-        OrganizationUser finalOrganizationUser = (OrganizationUser) userFromFuture;
         Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
         return apiApp
           .getOrganizationProvider()
@@ -141,33 +115,21 @@ public class OrganizationUserProvider {
             if (organization == null) {
               return Future.failedFuture(new NotFoundException("The organization with the id (" + orgaId + ") was not found"));
             }
-            finalOrganizationUser.setOrganization(organization);
-            finalOrganizationUser.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
-            finalOrganizationUser.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
-            return Future.succeededFuture(finalOrganizationUser);
+            userFromFuture.setOrganization(organization);
+            userFromFuture.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
+            userFromFuture.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
+            return Future.succeededFuture(userFromFuture);
 
           });
       });
 
   }
 
-  public Future<OrganizationUser> getUserFromAuthUser(AuthUser authUser) {
+  public Future<OrganizationUser> getOrganizationUserById(Long userId) {
 
-    /**
-     * Guid
-     */
-    String userGuid = authUser.getSubject();
-    if (userGuid != null) {
-      return this.getOrganizationUserByGuid(userGuid);
-    }
+      Realm eraldyRealm = EraldyRealm.get().getRealm();
+      return this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
 
-    /**
-     * We could retrieve by email and realm
-     * Check {@link UsersUtil#toEraldyUser(AuthUser, EraldyApiApp)}
-     * but this function is called after authentication/registration
-     * therefore the authUser has always a guid
-     */
-
-    return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the organizational database user"));
   }
+
 }

@@ -22,7 +22,7 @@ public class OpenApiDoc {
 
     String localPath = towerApp.getPathMount();
     if (localPath.equals("")) {
-      localPath = "/" + towerApp.getAppName();
+      localPath = "/" + towerApp.getAppName().toLowerCase();
     }
     String docLocalPath = localPath + DOC_OPERATION_PATH;
 

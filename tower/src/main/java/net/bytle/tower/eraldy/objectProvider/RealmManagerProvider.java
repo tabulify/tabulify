@@ -14,7 +14,6 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.RealmManager;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,12 +44,15 @@ public class RealmManagerProvider {
   private static final String MODIFICATION_TIME_COLUMN = REALM_MANAGER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
+  private PgPool jdbcPool;
 
 
   public RealmManagerProvider(EraldyApiApp eraldyApiApp) {
-    this.apiApp = eraldyApiApp;
-  }
 
+    this.apiApp = eraldyApiApp;
+    this.jdbcPool = eraldyApiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+
+  }
 
 
   public RealmManager toPublicClone(RealmManager realmManager) {
@@ -82,7 +84,7 @@ public class RealmManagerProvider {
       " values ($1, $2, $3)\n" +
       " ON CONFLICT (" + REALM_MANAGER_REALM_ID_COLUMN + "," + REALM_MANAGER_EMAIL_COLUMN + ") DO UPDATE set " + MODIFICATION_TIME_COLUMN + " = EXCLUDED." + CREATION_TIME_COLUMN;
 
-    return JdbcPostgresPool.getJdbcPool()
+    return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(realmManager.getRealm().getLocalId(), owner.getEmail(), DateTimeUtil.getNowUtc()))
       .onFailure(t -> LOGGER.error("Error while inserting the realm owner with the following sql:\n" + sql, t))
@@ -93,7 +95,6 @@ public class RealmManagerProvider {
   @SuppressWarnings("unused")
   public Future<List<Realm>> getRealmsForOwner(User user) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
       "WHERE\n" +
@@ -124,7 +125,7 @@ public class RealmManagerProvider {
     Long realmId = row.getLong(REALM_MANAGER_REALM_ID_COLUMN);
     Long managerId = row.getLong(REALM_MANAGER_EMAIL_COLUMN);
     Future<Realm> futureRealm = this.apiApp.getRealmProvider().getRealmFromId(realmId);
-    Future<OrganizationUser> futureUser = this.apiApp.getUserProvider().getEraldyUserById(managerId);
+    Future<OrganizationUser> futureUser = this.apiApp.getOrganizationUserProvider().getOrganizationUserById(managerId);
     return Future.all(futureRealm, futureUser)
       .onFailure(t -> LOGGER.error("Error while building the realm manager"))
       .compose(result -> {

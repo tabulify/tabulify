@@ -1,20 +1,18 @@
 package net.bytle.tower.eraldy.api;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
@@ -330,41 +328,25 @@ public class EraldyApiApp extends TowerApp {
 
   /**
    * @param ctx - the context
-   * @return the authenticated user or null (only auth information ie id, guid, email, ...)
+   * @return the authenticated user
+   * @throws NotFoundException if not found
    */
-  public <T extends User> Future<T> getAuthSignedInUser(RoutingContext ctx, Class<T> userType) {
+  public AuthUser getAuthSignedInUser(RoutingContext ctx) throws NotFoundException {
 
     /**
-     * To store the user in a session, it should be serializable
+     * Why not in a {@link net.bytle.tower.eraldy.model.openapi.User} format
+     * Because:
+     * * AuthUser stores the authorization and role
+     * * To store the user in a session, it should be serializable
      * (ie wrapped as in the {@link io.vertx.ext.web.handler.impl.UserHolder})
      * As of today, only the {@link AuthUser} via the vertx {@link io.vertx.ext.auth.User}
      * that is a Json serializable object
      */
     io.vertx.ext.auth.User user = ctx.user();
     if (user == null) {
-      return Future.succeededFuture();
+      throw new NotFoundException();
     }
-    AuthUser authUser = AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
-
-    if (userType.equals(User.class)) {
-
-      //noinspection unchecked
-      return (Future<T>) this.getUserProvider()
-        .getUserFromAuthUser(authUser);
-
-    }
-    if (userType.equals(OrganizationUser.class)) {
-
-      //noinspection unchecked
-      return (Future<T>) this.getOrganizationUserProvider()
-        .getUserFromAuthUser(authUser);
-    }
-    return Future.failedFuture(
-      TowerFailureException.builder()
-        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
-        .setMessage("The type (" + userType + ") is not a user")
-        .build()
-    );
+    return AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
 
 
   }

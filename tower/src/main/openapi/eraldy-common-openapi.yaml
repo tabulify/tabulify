@@ -879,9 +879,8 @@ components:
           description: The guid of an existing app (to update the uri if necessary)
         appUri:
           type: string
-          format: uri
-          description: The unique uri of the app
-          example: "https://doe.com"
+          description: An unique uri name of the app
+          example: "doe.com/doc"
         realmIdentifier:
           type: string
           description: the realm identifier (Guid or handle)

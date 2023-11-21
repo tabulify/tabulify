@@ -15,7 +15,7 @@ public class AppPostBody   {
 
   protected String appGuid;
 
-  protected URI appUri;
+  protected String appUri;
 
   protected String realmIdentifier;
 
@@ -64,7 +64,7 @@ public class AppPostBody   {
   * @return appUri The unique uri of the app
   */
   @JsonProperty("appUri")
-  public URI getAppUri() {
+  public String getAppUri() {
     return appUri;
   }
 
@@ -72,7 +72,7 @@ public class AppPostBody   {
   * @param appUri The unique uri of the app
   */
   @SuppressWarnings("unused")
-  public void setAppUri(URI appUri) {
+  public void setAppUri(String appUri) {
     this.appUri = appUri;
   }
 

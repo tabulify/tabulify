@@ -207,7 +207,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         user.setEmail(authUser.getSubjectEmail());
         UserProvider userProvider = getApp().getUserProvider();
         userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), user.getRealm())
+          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), User.class, user.getRealm())
           .onFailure(ctx::fail)
           .onSuccess(userInDb -> {
             if (userInDb != null) {
@@ -276,14 +276,14 @@ public class UserRegistrationFlow extends WebFlowAbs {
        */
       this.getApp()
         .getUserProvider()
-        .getUserFromAuthUser(authUser)
+        .getUserFromAuthUser(authUser, User.class)
         .onFailure(err -> {
           HttpException throwable = new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in oauth user get for registration", err);
           authContext.getRoutingContext().fail(throwable);
         })
         .onSuccess(dbUser -> {
           Future<User> finalFutureUser;
-          User authUserAsDbUser = UsersUtil.toEraldyUser(authUser, this.getApp());
+          User authUserAsDbUser = UsersUtil.toModelUser(authUser, this.getApp());
           if (dbUser == null) {
             finalFutureUser = this.getApp()
               .getUserProvider()
@@ -294,10 +294,12 @@ public class UserRegistrationFlow extends WebFlowAbs {
               .patchUserIfPropertyValueIsNull(dbUser, authUserAsDbUser);
           }
           finalFutureUser
-            .onFailure(err -> {
-              HttpException throwable = new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in final oauth user registration", err);
-              authContext.getRoutingContext().fail(throwable);
-            })
+            .onFailure(err -> TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+              .setMessage("Error in final oauth user registration: " + err.getMessage())
+              .setException(err)
+              .buildWithContextFailingTerminal(authContext.getRoutingContext())
+            )
             .onSuccess(finalUser -> {
               authUser.setSubject(finalUser.getGuid());
               authUser.setAudience(finalUser.getRealm().getGuid());

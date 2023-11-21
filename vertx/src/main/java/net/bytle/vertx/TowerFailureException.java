@@ -92,9 +92,9 @@ public class TowerFailureException extends Exception {
     /**
      * The exception that has occurred
      */
-    private Exception exception;
+    private Throwable exception;
 
-    public VertxFailureHttpExceptionBuilder setException(Exception e) {
+    public VertxFailureHttpExceptionBuilder setException(Throwable e) {
       this.exception = e;
       return this;
     }

@@ -100,13 +100,11 @@ public class AppApiImpl implements AppApi {
       throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
     }
     AppProvider appProvider = apiApp.getAppProvider();
+    //this.apiApp.getAuthSignedInUser()
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier, Realm.class)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(realm -> {
-        this.apiApp.getAuthSignedInUser()
-        return appProvider.getApps(realm);
-      })
+      .compose(appProvider::getApps)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(apps -> Future.succeededFuture(new ApiResponse<>(apps)
           .setMapper(this.jsonMapper)

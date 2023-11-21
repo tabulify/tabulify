@@ -195,7 +195,7 @@ public class AppProvider {
                 Tuple.of(
                   app.getRealm().getLocalId(),
                   app.getLocalId(),
-                  app.getUri().toString(),
+                  app.getUri(),
                   app.getUser().getLocalId(),
                   this.getDatabaseJsonObject(app),
                   DateTimeUtil.getNowUtc()
@@ -270,7 +270,7 @@ public class AppProvider {
           app.getUser().getLocalId(),
           this.getDatabaseJsonObject(app),
           app.getRealm().getLocalId(),
-          app.getUri().toString()
+          app.getUri()
         )
       )
       .onFailure(t -> LOGGER.error("Error while updating the app by uri and realm. Sql: \n" + updateSqlByUri, t));
@@ -297,7 +297,7 @@ public class AppProvider {
           app.getLocalId())
         );
     } else {
-      java.net.URI appUri = app.getUri();
+      String appUri = app.getUri();
       if (appUri == null) {
         String failureMessage = "An id, or uri should be given to check the existence of an app";
         InternalException internalException = new InternalException(failureMessage);
@@ -408,7 +408,7 @@ public class AppProvider {
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
         App app = Json.decodeValue(jsonAppData.toBuffer(), App.class);
         app.setUser(user);
-        app.setUri(java.net.URI.create(uri));
+        app.setUri(uri);
         app.setRealm(realmResult);
         Long appId = row.getLong(APP_ID_COLUMN);
         app.setLocalId(appId);
@@ -518,7 +518,7 @@ public class AppProvider {
 
   private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(String realmIdentifier, App requestedApp) {
     String appGuid = requestedApp.getGuid();
-    java.net.URI appUri = requestedApp.getUri();
+    String appUri = requestedApp.getUri();
     Future<Realm> realmFuture;
     if (appGuid == null) {
       if (appUri == null) {

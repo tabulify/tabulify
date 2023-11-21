@@ -10,13 +10,11 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
-import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.OrganizationPublicMixin;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
@@ -401,43 +399,21 @@ public class RealmProvider {
   }
 
 
-  public <T extends Realm> Future<List<T>> getRealmsForOwner(User user, Class<T> clazz) {
-
-    try {
-      UsersUtil.assertEraldyUser(user);
-    } catch (AssertionException e) {
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
-          .setMessage("The user (" + user + ") is not a member of the organizational realm. The user owns no realm")
-          .setException(e)
-          .build()
-      );
-    }
+  public <T extends Realm> Future<List<T>> getRealmsForOwner(OrganizationUser user, Class<T> realmClass) {
 
     return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
         "where\n" +
         " " + REALM_ORGA_ID + " = $1")
       .execute(Tuple.of(user.getLocalId()))
-      .onFailure(e -> {
-        throw new InternalException(e);
-      })
-      .compose(rows -> this.getRealmsFromRows(rows, clazz));
+      .compose(rows -> this.getRealmsFromRows(rows, realmClass),
+        err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+            .setMessage("Unable to get the real of the organization user (" + user + ")")
+            .build()
+        ));
   }
 
-//  public <T extends Realm> Future<List<T>> getRealmsForOwner(User user, Class<T> clazz) {
-//    UsersUtil.assertEraldyUser(user);
-//    PgPool jdbcPool = JdbcPoolCs.getJdbcPool(this.vertx);
-//    return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
-//        "where\n" +
-//        " " + REALM_OWNER_ID + " = $1")
-//      .execute(Tuple.of(user.getId()))
-//      .onFailure(e -> {
-//        throw new InternalException(e);
-//      })
-//      .compose(rows -> this.getRealmsFromRows(rows, clazz));
-//  }
 
   private <T extends Realm> Future<List<T>> getRealmsFromRows(RowSet<Row> realmRows, Class<T> clazz) {
     List<Future<T>> futureRealms = new ArrayList<>();

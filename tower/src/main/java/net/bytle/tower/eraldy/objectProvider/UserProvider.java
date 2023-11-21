@@ -331,7 +331,7 @@ public class UserProvider {
     try {
       return this.databaseMapper.writeValueAsString(user);
     } catch (JsonProcessingException e) {
-      throw new InternalException("Could not transform user as json string for database",e);
+      throw new InternalException("Could not transform user as json string for database", e);
     }
   }
 
@@ -369,13 +369,27 @@ public class UserProvider {
 
   /**
    * @param row        - the resulting row
-   * @param userClass - the user class to return
+   * @param userClass  - the user class to return
    * @param knownRealm - the realm that was part of the query or null if unknown
    */
-  private <T extends User> Future<T> getUserFromRow(Row row, Class<T> userClass, Realm knownRealm) {
+  <T extends User> Future<T> getUserFromRow(Row row, Class<T> userClass, Realm knownRealm) {
 
 
     Long userRealmId = row.getLong(REALM_COLUMN);
+
+    /**
+     * OrganizationUser realm check
+     */
+    Realm eraldyRealm = EraldyRealm.get().getRealm();
+    if (userClass.equals(OrganizationUser.class) && !userRealmId.equals(eraldyRealm.getLocalId())) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setMessage("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + userRealmId + ")")
+          .build()
+      );
+    }
+
     boolean validRealm = knownRealm != null && knownRealm.getLocalId().equals(userRealmId);
     Future<Realm> realmFuture;
     if (validRealm) {
@@ -387,6 +401,7 @@ public class UserProvider {
     return realmFuture
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(realm -> {
+
 
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
         T user = Json.decodeValue(jsonAppData.toBuffer(), userClass);
@@ -457,16 +472,17 @@ public class UserProvider {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
-      .compose(realm -> getUserByEmail(userEmail, realm.getLocalId(), realm));
+      .compose(realm -> getUserByEmail(userEmail, realm.getLocalId(), User.class, realm));
   }
 
   /**
    * @param userEmail    - the email
    * @param realmLocalId - the realm local id
+   * @param userClass    - the type of user
    * @param realm        - the realm to use to build the user (maybe null)
    * @return the user or null if not found
    */
-  public Future<User> getUserByEmail(String userEmail, Long realmLocalId, Realm realm) {
+  public <T extends User> Future<T> getUserByEmail(String userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
 
     assert userEmail != null;
     assert realmLocalId != null;
@@ -486,7 +502,7 @@ public class UserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getUserFromRow(row, User.class, realm);
+        return getUserFromRow(row, userClass, realm);
       });
 
   }
@@ -530,7 +546,7 @@ public class UserProvider {
     if (userId != null) {
       userFuture = this.getUserById(userId, realm.getLocalId(), User.class, realm);
     } else {
-      userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), realm);
+      userFuture = this.getUserByEmail(userEmail, realm.getLocalId(), User.class, realm);
     }
     return userFuture;
   }
@@ -615,14 +631,15 @@ public class UserProvider {
    * This function will set property to the user only
    * if there is none (ie if the value is null).
    * It's used to enhance the actual user profile from Oauth data.
-   * @param dbUser - the actual db user
+   *
+   * @param dbUser    - the actual db user
    * @param patchUser - the user with the patch data
    * @return the database user patched
    */
   public Future<User> patchUserIfPropertyValueIsNull(User dbUser, User patchUser) {
 
-    assert dbUser !=null;
-    assert patchUser !=null;
+    assert dbUser != null;
+    assert patchUser != null;
 
     boolean patched = false;
     if (dbUser.getGivenName() == null && patchUser.getGivenName() != null) {
@@ -655,17 +672,15 @@ public class UserProvider {
     return Future.succeededFuture(dbUser);
   }
 
-  public Future<User> updatePassword(User user, String password) {
+  public Future<Void> updatePassword(Long userLocalId, Long realmLocalId, String password) {
 
     String sql;
 
-    if (user.getLocalId() == null) {
+    if (userLocalId == null) {
       throw new InternalException("The user id should not be null.");
     }
-    if (user.getRealm() == null) {
-      throw new InternalException("The realm should not be null.");
-    }
-    if (user.getRealm().getLocalId() == null) {
+
+    if (realmLocalId == null) {
       throw new InternalException("The realm id should not be null.");
     }
 
@@ -686,11 +701,11 @@ public class UserProvider {
       .execute(Tuple.of(
         passwordHashed,
         DateTimeUtil.getNowUtc(),
-        user.getLocalId(),
-        user.getRealm().getLocalId()
+        userLocalId,
+        realmLocalId
       ))
       .onFailure(error -> LOGGER.error("User Password Update: Error:" + error.getMessage() + ". Sql: " + sql, error))
-      .compose(ok -> Future.succeededFuture(user));
+      .compose(ok -> Future.succeededFuture());
 
   }
 
@@ -736,10 +751,6 @@ public class UserProvider {
     return templateClone;
   }
 
-  public Future<OrganizationUser> getEraldyUserById(Long ownerId) {
-    Realm eraldyRealm = EraldyRealm.get().getRealm();
-    return getUserById(ownerId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
-  }
 
   public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
 
@@ -784,15 +795,15 @@ public class UserProvider {
    * @param authUser - an auth user that has user identifiers (from an auth token Oauth Json token)
    * @return the user or null
    */
-  public Future<User> getUserFromAuthUser(AuthUser authUser) {
+  public <T extends User> Future<T> getUserFromAuthUser(AuthUser authUser, Class<T> userClass) {
 
-    User user = UsersUtil.toEraldyUser(authUser, this.apiApp);
+    User user = UsersUtil.toModelUser(authUser, this.apiApp);
     /**
      * Guid
      */
     String userGuid = user.getGuid();
     if (userGuid != null) {
-      return this.getUserByGuid(userGuid, User.class);
+      return this.getUserByGuid(userGuid, userClass);
     }
     /**
      * By local id
@@ -800,14 +811,14 @@ public class UserProvider {
     Long realmLocalId = user.getRealm() == null ? null : user.getRealm().getLocalId();
     Long localId = user.getLocalId();
     if (localId != null && realmLocalId != null) {
-      return this.getUserById(localId, realmLocalId, User.class, null);
+      return this.getUserById(localId, realmLocalId, userClass, null);
     }
     /**
      * By Email
      */
     String email = user.getEmail();
     if (email != null && realmLocalId != null) {
-      return this.getUserByEmail(email, realmLocalId, null);
+      return this.getUserByEmail(email, realmLocalId, userClass, null);
     }
 
     return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the database user"));
