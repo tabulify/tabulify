@@ -212,37 +212,19 @@ public class Registration   {
       return false;
     }
     Registration registration = (Registration) o;
-    return Objects.equals(guid, registration.guid) &&
-        Objects.equals(status, registration.status) &&
-        Objects.equals(list, registration.list) &&
-        Objects.equals(subscriber, registration.subscriber) &&
-        Objects.equals(confirmationTime, registration.confirmationTime) &&
-        Objects.equals(confirmationIp, registration.confirmationIp) &&
-        Objects.equals(optInTime, registration.optInTime) &&
-        Objects.equals(optInIp, registration.optInIp) &&
-        Objects.equals(optInUri, registration.optInUri) &&
-        Objects.equals(flow, registration.flow);
+    return
+
+            Objects.equals(guid, registration.guid) && Objects.equals(status, registration.status) && Objects.equals(list, registration.list) && Objects.equals(subscriber, registration.subscriber) && Objects.equals(confirmationTime, registration.confirmationTime) && Objects.equals(confirmationIp, registration.confirmationIp) && Objects.equals(optInTime, registration.optInTime) && Objects.equals(optInIp, registration.optInIp) && Objects.equals(optInUri, registration.optInUri) && Objects.equals(flow, registration.flow);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid, status, list, subscriber, confirmationTime, confirmationIp, optInTime, optInIp, optInUri, flow);
   }
 
   @Override
   public String toString() {
-    return "class Registration {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

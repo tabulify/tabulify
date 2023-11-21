@@ -1828,12 +1828,17 @@ components:
           type: string
         realm:
           $ref: '#/components/schemas/Realm'
-      required:
-      - email
-      - guid
-      - handle
       title: A user
       type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = User.class)"
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - email
+      - handle
       x-parent: true
     App:
       description: "An app is the container for branding elements (such as logo, color)"
@@ -1949,7 +1954,7 @@ components:
       type: object
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = Realm.class)"
+        \ property = \"guid\", scope = App.class)"
       x-parent: true
     RealmPostBody:
       description: Realm creation
@@ -2074,6 +2079,8 @@ components:
           $ref: '#/components/schemas/User'
         realm:
           $ref: '#/components/schemas/Realm'
+      required:
+      - guid
       type: object
     CampaignEmailPostBody:
       description: |
@@ -2106,14 +2113,16 @@ components:
         data: "{}"
         name: name
         guid: xmllKD23
-        id: 1
         type: email
+        localId: 1
       properties:
-        id:
+        localId:
           description: The campaign id
           example: 1
           format: int64
           type: integer
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            id\"})"
         guid:
           description: The campaign id
           example: xmllKD23
@@ -2129,6 +2138,8 @@ components:
         data:
           description: The configuration for the campaign
           type: object
+      required:
+      - guid
       type: object
     ServiceSmtpPostBody:
       description: |
@@ -2314,7 +2325,11 @@ components:
         type: object
       description: |
         A user in the organization
+        They are the users of the Eraldy realm that own Realms
       type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = User.class)"
     RegistrationList:
       description: |
         A list where user can register

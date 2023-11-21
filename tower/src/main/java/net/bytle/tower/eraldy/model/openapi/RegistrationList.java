@@ -212,16 +212,9 @@ public class RegistrationList   {
       return false;
     }
     RegistrationList registrationList = (RegistrationList) o;
-    return Objects.equals(localId, registrationList.localId) &&
-        Objects.equals(guid, registrationList.guid) &&
-        Objects.equals(handle, registrationList.handle) &&
-        Objects.equals(name, registrationList.name) &&
-        Objects.equals(title, registrationList.title) &&
-        Objects.equals(description, registrationList.description) &&
-        Objects.equals(ownerUser, registrationList.ownerUser) &&
-        Objects.equals(ownerApp, registrationList.ownerApp) &&
-        Objects.equals(realm, registrationList.realm) &&
-        Objects.equals(registrationUrl, registrationList.registrationUrl);
+    return
+            Objects.equals(guid, registrationList.guid) && Objects.equals(handle, registrationList.handle);
+
   }
 
   @Override
@@ -231,22 +224,7 @@ public class RegistrationList   {
 
   @Override
   public String toString() {
-    return "class RegistrationList {\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    handle: " + toIndentedString(handle) + "\n" +
-    "}";
+    return guid + ", " + handle;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -17,17 +17,7 @@ Example:
 * for the [combo private api app](openapi.md)
 ```dos
 cd tower
-..\gradlew ComboPrivateGenerate
-```
-* for the [combo public api app](openapi.md)
-```dos
-cd tower
-..\gradlew ComboPublicGenerate
-```
-* for the [combo member front app](member.md)
-```dos
-cd tower
-..\gradlew MemberGenerate
+..\gradlew openapi
 ```
 * for the model only pojo in [eraldy-openapi-common.yaml](../src/main/openapi/eraldy-common-openapi.yaml)
 ```dos

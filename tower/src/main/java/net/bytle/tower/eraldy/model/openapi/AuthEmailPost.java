@@ -85,9 +85,9 @@ public class AuthEmailPost   {
       return false;
     }
     AuthEmailPost authEmailPost = (AuthEmailPost) o;
-    return Objects.equals(userEmail, authEmailPost.userEmail) &&
-        Objects.equals(realmIdentifier, authEmailPost.realmIdentifier) &&
-        Objects.equals(redirectUri, authEmailPost.redirectUri);
+    return
+            Objects.equals(userEmail, authEmailPost.userEmail) && Objects.equals(realmIdentifier, authEmailPost.realmIdentifier) && Objects.equals(redirectUri, authEmailPost.redirectUri);
+
   }
 
   @Override
@@ -97,24 +97,7 @@ public class AuthEmailPost   {
 
   @Override
   public String toString() {
-    return "class AuthEmailPost {\n" +
-
-    "    userEmail: " + toIndentedString(userEmail) + "\n" +
-
-    "    realmIdentifier: " + toIndentedString(realmIdentifier) + "\n" +
-
-    "    redirectUri: " + toIndentedString(redirectUri) + "\n" +
-    "}";
+    return userEmail + ", " + realmIdentifier + ", " + redirectUri;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

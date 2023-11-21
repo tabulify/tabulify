@@ -67,8 +67,9 @@ public class EmailIdentifier   {
       return false;
     }
     EmailIdentifier emailIdentifier = (EmailIdentifier) o;
-    return Objects.equals(userEmail, emailIdentifier.userEmail) &&
-        Objects.equals(realmIdentifier, emailIdentifier.realmIdentifier);
+    return
+            Objects.equals(userEmail, emailIdentifier.userEmail) && Objects.equals(realmIdentifier, emailIdentifier.realmIdentifier);
+
   }
 
   @Override
@@ -78,22 +79,7 @@ public class EmailIdentifier   {
 
   @Override
   public String toString() {
-    return "class EmailIdentifier {\n" +
-
-    "    userEmail: " + toIndentedString(userEmail) + "\n" +
-
-    "    realmIdentifier: " + toIndentedString(realmIdentifier) + "\n" +
-    "}";
+    return userEmail + ", " + realmIdentifier;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

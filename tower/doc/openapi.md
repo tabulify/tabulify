@@ -32,7 +32,7 @@ For the specification file, the version is mandatory. We use the date of release
 
 ### Tag
 
-In the [openapi.yaml](../src/main/openapi/eraldy-combo-private-openapi.yaml), there is a tag by object type.
+In the [openapi.yaml](../src/main/openapi/eraldy-api-openapi.yaml), there is a tag by object type.
 It will create an API interface and for each interface, we have the corresponding test class.
 
 The goal is to be able to create test that are independent in order:
@@ -86,6 +86,40 @@ RealmAnalytics:
 ```
 
 FYI: See the spec for [Composition](https://spec.openapis.org/oas/v3.1.0#models-with-composition)
+
+## Model / Pojo
+
+We restrict the fields in the hashCode, equality and toString
+because they can cause a circular reference and to be sure of the identity.
+
+### Identity and Equality
+
+The fields that identifies an object should be listed in the field `x-fields-identity`
+
+```yaml
+User:
+  title: A user
+  description: A user
+  type: object
+  x-fields-identity: # hashCode and equality
+    - guid
+```
+
+### ToString
+
+The fields for the toString function should be listed in the field `x-fields-to-string`
+
+
+```yaml
+User:
+  title: A user
+  description: A user
+  type: object
+  x-fields-to-string:
+    - guid
+    - email
+    - handle
+```
 
 ## Extra info
 

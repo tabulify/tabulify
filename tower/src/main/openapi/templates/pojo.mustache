@@ -81,36 +81,22 @@ public class {{classname}} {{#parent}}extends {{{.}}}{{/parent}} {{#vendorExtens
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    {{classname}} {{classVarName}} = ({{classname}}) o;{{#hasVars}}
-    return {{#parent}}super.equals(o) && {{/parent}}{{#vars}}Objects.equals({{name}}, {{classVarName}}.{{name}}){{^-last}} &&
-        {{/-last}}{{#-last}};{{/-last}}{{/vars}}{{/hasVars}}{{^hasVars}}{{#parent}}return super.equals(o);{{/parent}}{{^parent}}return true;{{/parent}}{{/hasVars}}
+    {{classname}} {{classVarName}} = ({{classname}}) o;
+    return {{#parent}}super.equals(o) && {{/parent}}{{#vendorExtensions.x-fields-identity}}Objects.equals({{.}}, {{classVarName}}.{{.}}){{^-last}} && {{/-last}}{{#-last}};{{/-last}}{{/vendorExtensions.x-fields-identity}}
+      {{^vendorExtensions.x-fields-identity}}
+            {{#requiredVars}}Objects.equals({{name}}, {{classVarName}}.{{name}}){{^-last}} && {{/-last}}{{#-last}};{{/-last}}{{/requiredVars}}
+            {{^requiredVars}}{{#vars}}Objects.equals({{name}}, {{classVarName}}.{{name}}){{^-last}} && {{/-last}}{{#-last}};{{/-last}}{{/vars}}{{/requiredVars}}
+      {{/vendorExtensions.x-fields-identity}}
   }
 
   @Override
-  public int hashCode() { {{! The hashCode may bring a circular reference, we show therefore only the required identifier fields if any (guid, ...)}}
-    return {{^hasVars}}{{#parent}}super.hashCode(){{/parent}}{{^parent}}1{{/parent}}{{/hasVars}}{{#hasVars}}Objects.hash({{#requiredVars}}{{#parent}}super.hashCode(), {{/parent}}{{name}}{{^-last}}, {{/-last}}{{/requiredVars}}){{/hasVars}};
+  public int hashCode() { {{! The hashCode may bring a circular reference if all fields are used, we show therefore only the required identifier fields if any (guid, ...)}}
+    return Objects.hash({{#parent}}super.hashCode(), {{/parent}}{{#vendorExtensions.x-fields-identity}}{{.}}{{^-last}}, {{/-last}}{{/vendorExtensions.x-fields-identity}}{{^vendorExtensions.x-fields-identity}}{{#requiredVars}}{{name}}{{^-last}}, {{/-last}}{{/requiredVars}}{{^requiredVars}}{{#vars}}{{name}}{{^-last}}, {{/-last}}{{/vars}}{{^vars}}""{{/vars}}{{/requiredVars}}{{/vendorExtensions.x-fields-identity}});
   }
 
-  @Override
+  @Override {{! The toString may bring a circular reference if all fields are used, we show therefore only the tostring and required identifier fields if any (guid, ...)}}
   public String toString() {
-    return "class {{classname}} {\n" +
-{{#parent}}
-    "    " + toIndentedString(super.toString()) + "\n" +
-{{/parent}}
-{{#requiredVars}}{{! The toString may bring a circular reference, we show therefore only the required identifier fields if any (guid, ...)}}
-    "    {{name}}: " + toIndentedString({{name}}) + "\n" +
-{{/requiredVars}}
-    "}";
+    return {{#parent}}super.toString() + {{/parent}}{{#vendorExtensions.x-fields-to-string}}{{.}}{{^-last}} + ", " + {{/-last}}{{/vendorExtensions.x-fields-to-string}}{{^vendorExtensions.x-fields-to-string}}{{#requiredVars}}{{name}}{{^isPrimitiveType}}.toString(){{/isPrimitiveType}}{{^-last}} + ", " + {{/-last}}{{/requiredVars}}{{^requiredVars}}super.toString(){{/requiredVars}}{{/vendorExtensions.x-fields-to-string}};
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

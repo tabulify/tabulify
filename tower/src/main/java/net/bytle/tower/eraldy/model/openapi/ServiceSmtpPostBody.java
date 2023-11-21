@@ -211,37 +211,19 @@ public class ServiceSmtpPostBody   {
       return false;
     }
     ServiceSmtpPostBody serviceSmtpPostBody = (ServiceSmtpPostBody) o;
-    return Objects.equals(serviceGuid, serviceSmtpPostBody.serviceGuid) &&
-        Objects.equals(serviceUri, serviceSmtpPostBody.serviceUri) &&
-        Objects.equals(realmIdentifier, serviceSmtpPostBody.realmIdentifier) &&
-        Objects.equals(impersonatedUserEmail, serviceSmtpPostBody.impersonatedUserEmail) &&
-        Objects.equals(impersonatedUserGuid, serviceSmtpPostBody.impersonatedUserGuid) &&
-        Objects.equals(smtpHost, serviceSmtpPostBody.smtpHost) &&
-        Objects.equals(smtpPort, serviceSmtpPostBody.smtpPort) &&
-        Objects.equals(smtpStartTls, serviceSmtpPostBody.smtpStartTls) &&
-        Objects.equals(smtpUserName, serviceSmtpPostBody.smtpUserName) &&
-        Objects.equals(smtpPassword, serviceSmtpPostBody.smtpPassword);
+    return
+
+            Objects.equals(serviceGuid, serviceSmtpPostBody.serviceGuid) && Objects.equals(serviceUri, serviceSmtpPostBody.serviceUri) && Objects.equals(realmIdentifier, serviceSmtpPostBody.realmIdentifier) && Objects.equals(impersonatedUserEmail, serviceSmtpPostBody.impersonatedUserEmail) && Objects.equals(impersonatedUserGuid, serviceSmtpPostBody.impersonatedUserGuid) && Objects.equals(smtpHost, serviceSmtpPostBody.smtpHost) && Objects.equals(smtpPort, serviceSmtpPostBody.smtpPort) && Objects.equals(smtpStartTls, serviceSmtpPostBody.smtpStartTls) && Objects.equals(smtpUserName, serviceSmtpPostBody.smtpUserName) && Objects.equals(smtpPassword, serviceSmtpPostBody.smtpPassword);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(serviceGuid, serviceUri, realmIdentifier, impersonatedUserEmail, impersonatedUserGuid, smtpHost, smtpPort, smtpStartTls, smtpUserName, smtpPassword);
   }
 
   @Override
   public String toString() {
-    return "class ServiceSmtpPostBody {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

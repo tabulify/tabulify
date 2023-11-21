@@ -263,11 +263,12 @@ components:
       description: |
         Service
       properties:
-        id:
+        localId:
           format: int64
           type: integer
           description: The service scope id in the realm
           example: 1
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
         guid:
           type: string
           description: The service scope global id
@@ -310,12 +311,16 @@ components:
       type: object
       description: |
         Service
+      # required fields are part of the toString, hash function
+      required:
+        - guid
       properties:
-        id:
+        localId:
           format: int64
           type: integer
           description: The campaign id
           example: 1
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"id"})'
         guid:
           type: string
           description: The campaign id
@@ -337,7 +342,7 @@ components:
       x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
               generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
               property = "guid",
-              scope = Realm.class)'
+              scope = App.class)'
       # required fields are part of the toString
       required:
         - guid
@@ -401,11 +406,13 @@ components:
       # What strange is that we don't get this error for a realm.
       # We will get this error: java.lang.IllegalArgumentException: Already had POJO for id (java.lang.String) [[ObjectId: key=usr-yLMzijN]]
       # Therefore we don't use this JsonIdentityInfo constraint
-      #      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
-      #              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
-      #              property = "guid",
-      #              scope = User.class)'
-      required:
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+              generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+              property = "guid",
+              scope = User.class)'
+      x-fields-identity: # hashCode
+        - guid
+      x-fields-to-string:
         - guid
         - email
         - handle
@@ -1053,7 +1060,12 @@ components:
     OrganizationUser:
       description: |
         A user in the organization
+        They are the users of the Eraldy realm that own Realms
       type: object
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+                    generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+                    property = "guid",
+                    scope = User.class)'
       allOf:
         - $ref: '#/components/schemas/User'
         - type: object
@@ -1062,6 +1074,10 @@ components:
               $ref: '#/components/schemas/Organization'
     UserAnalytics:
       description: "User and Analytics"
+      x-class-extra-annotation: '@com.fasterxml.jackson.annotation.JsonIdentityInfo(
+                          generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
+                          property = "guid",
+                          scope = User.class)'
       allOf:
         - $ref: '#/components/schemas/User'
         - type: object

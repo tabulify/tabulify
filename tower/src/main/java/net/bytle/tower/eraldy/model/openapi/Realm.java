@@ -158,13 +158,9 @@ public class Realm   {
       return false;
     }
     Realm realm = (Realm) o;
-    return Objects.equals(localId, realm.localId) &&
-        Objects.equals(guid, realm.guid) &&
-        Objects.equals(name, realm.name) &&
-        Objects.equals(organization, realm.organization) &&
-        Objects.equals(ownerUser, realm.ownerUser) &&
-        Objects.equals(handle, realm.handle) &&
-        Objects.equals(defaultApp, realm.defaultApp);
+    return
+            Objects.equals(guid, realm.guid) && Objects.equals(handle, realm.handle);
+
   }
 
   @Override
@@ -174,22 +170,7 @@ public class Realm   {
 
   @Override
   public String toString() {
-    return "class Realm {\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    handle: " + toIndentedString(handle) + "\n" +
-    "}";
+    return guid + ", " + handle;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

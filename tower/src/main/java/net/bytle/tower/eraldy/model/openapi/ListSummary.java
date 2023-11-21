@@ -103,31 +103,19 @@ public class ListSummary   {
       return false;
     }
     ListSummary listSummary = (ListSummary) o;
-    return Objects.equals(guid, listSummary.guid) &&
-        Objects.equals(handle, listSummary.handle) &&
-        Objects.equals(appUri, listSummary.appUri) &&
-        Objects.equals(subscriberCount, listSummary.subscriberCount);
+    return
+
+            Objects.equals(guid, listSummary.guid) && Objects.equals(handle, listSummary.handle) && Objects.equals(appUri, listSummary.appUri) && Objects.equals(subscriberCount, listSummary.subscriberCount);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid, handle, appUri, subscriberCount);
   }
 
   @Override
   public String toString() {
-    return "class ListSummary {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -64,29 +64,19 @@ public class RegistrationShort   {
       return false;
     }
     RegistrationShort registrationShort = (RegistrationShort) o;
-    return Objects.equals(guid, registrationShort.guid) &&
-        Objects.equals(subscriberEmail, registrationShort.subscriberEmail);
+    return
+
+            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid, subscriberEmail);
   }
 
   @Override
   public String toString() {
-    return "class RegistrationShort {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

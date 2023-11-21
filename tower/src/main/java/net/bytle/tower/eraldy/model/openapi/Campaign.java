@@ -12,7 +12,7 @@ import java.util.Objects;
 public class Campaign   {
 
 
-  protected Long id;
+  protected Long localId;
 
   protected String guid;
 
@@ -32,19 +32,20 @@ public class Campaign   {
   }
 
   /**
-  * @return id The campaign id
+  * @return localId The campaign id
   */
-  @JsonProperty("id")
-  public Long getId() {
-    return id;
+  @com.fasterxml.jackson.annotation.JsonAlias({"id"})
+  @JsonProperty("localId")
+  public Long getLocalId() {
+    return localId;
   }
 
   /**
-  * @param id The campaign id
+  * @param localId The campaign id
   */
   @SuppressWarnings("unused")
-  public void setId(Long id) {
-    this.id = id;
+  public void setLocalId(Long localId) {
+    this.localId = localId;
   }
 
   /**
@@ -121,32 +122,19 @@ public class Campaign   {
       return false;
     }
     Campaign campaign = (Campaign) o;
-    return Objects.equals(id, campaign.id) &&
-        Objects.equals(guid, campaign.guid) &&
-        Objects.equals(name, campaign.name) &&
-        Objects.equals(type, campaign.type) &&
-        Objects.equals(data, campaign.data);
+    return
+            Objects.equals(guid, campaign.guid);
+
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid);
   }
 
   @Override
   public String toString() {
-    return "class Campaign {\n" +
-    "}";
+    return guid;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

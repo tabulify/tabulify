@@ -30,7 +30,7 @@ public class ServiceUser   {
   * @return id The service scope id in the realm
   */
   @JsonProperty("id")
-  public Long getId() {
+  public Long getLocalId() {
     return id;
   }
 
@@ -38,7 +38,7 @@ public class ServiceUser   {
   * @param id The service scope id in the realm
   */
   @SuppressWarnings("unused")
-  public void setId(Long id) {
+  public void setLocalId(Long id) {
     this.id = id;
   }
 

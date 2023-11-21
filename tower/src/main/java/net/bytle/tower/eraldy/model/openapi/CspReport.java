@@ -86,31 +86,19 @@ public class CspReport extends HashMap<String, String>  {
       return false;
     }
     CspReport cspReport = (CspReport) o;
-    return super.equals(o) && Objects.equals(documentUri, cspReport.documentUri) &&
-        Objects.equals(referrer, cspReport.referrer) &&
-        Objects.equals(blockedUri, cspReport.blockedUri);
+    return super.equals(o) &&
+
+            Objects.equals(documentUri, cspReport.documentUri) && Objects.equals(referrer, cspReport.referrer) && Objects.equals(blockedUri, cspReport.blockedUri);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(super.hashCode(), documentUri, referrer, blockedUri);
   }
 
   @Override
   public String toString() {
-    return "class CspReport {\n" +
-    "    " + toIndentedString(super.toString()) + "\n" +
-    "}";
+    return super.toString() + super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

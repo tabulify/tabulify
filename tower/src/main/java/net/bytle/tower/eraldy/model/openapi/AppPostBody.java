@@ -230,38 +230,19 @@ public class AppPostBody   {
       return false;
     }
     AppPostBody appPostBody = (AppPostBody) o;
-    return Objects.equals(appGuid, appPostBody.appGuid) &&
-        Objects.equals(appUri, appPostBody.appUri) &&
-        Objects.equals(realmIdentifier, appPostBody.realmIdentifier) &&
-        Objects.equals(userGuid, appPostBody.userGuid) &&
-        Objects.equals(userEmail, appPostBody.userEmail) &&
-        Objects.equals(appName, appPostBody.appName) &&
-        Objects.equals(appSlogan, appPostBody.appSlogan) &&
-        Objects.equals(appHome, appPostBody.appHome) &&
-        Objects.equals(appLogo, appPostBody.appLogo) &&
-        Objects.equals(appPrimaryColor, appPostBody.appPrimaryColor) &&
-        Objects.equals(appTerms, appPostBody.appTerms);
+    return
+
+            Objects.equals(appGuid, appPostBody.appGuid) && Objects.equals(appUri, appPostBody.appUri) && Objects.equals(realmIdentifier, appPostBody.realmIdentifier) && Objects.equals(userGuid, appPostBody.userGuid) && Objects.equals(userEmail, appPostBody.userEmail) && Objects.equals(appName, appPostBody.appName) && Objects.equals(appSlogan, appPostBody.appSlogan) && Objects.equals(appHome, appPostBody.appHome) && Objects.equals(appLogo, appPostBody.appLogo) && Objects.equals(appPrimaryColor, appPostBody.appPrimaryColor) && Objects.equals(appTerms, appPostBody.appTerms);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(appGuid, appUri, realmIdentifier, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
   }
 
   @Override
   public String toString() {
-    return "class AppPostBody {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

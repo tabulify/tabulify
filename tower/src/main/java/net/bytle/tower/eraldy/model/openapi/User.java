@@ -10,6 +10,7 @@ import java.util.Objects;
 /**
  * A user
  **/
+@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class User   {
 
@@ -324,49 +325,17 @@ public class User   {
       return false;
     }
     User user = (User) o;
-    return Objects.equals(guid, user.guid) &&
-        Objects.equals(localId, user.localId) &&
-        Objects.equals(handle, user.handle) &&
-        Objects.equals(email, user.email) &&
-        Objects.equals(givenName, user.givenName) &&
-        Objects.equals(fullName, user.fullName) &&
-        Objects.equals(title, user.title) &&
-        Objects.equals(disabled, user.disabled) &&
-        Objects.equals(disabledReason, user.disabledReason) &&
-        Objects.equals(avatar, user.avatar) &&
-        Objects.equals(bio, user.bio) &&
-        Objects.equals(website, user.website) &&
-        Objects.equals(location, user.location) &&
-        Objects.equals(creationTime, user.creationTime) &&
-        Objects.equals(modificationTime, user.modificationTime) &&
-        Objects.equals(realm, user.realm);
+    return Objects.equals(guid, user.guid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, handle, email);
+    return Objects.hash(guid);
   }
 
   @Override
   public String toString() {
-    return "class User {\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    handle: " + toIndentedString(handle) + "\n" +
-
-    "    email: " + toIndentedString(email) + "\n" +
-    "}";
+    return guid + ", " + email + ", " + handle;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

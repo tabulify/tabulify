@@ -103,31 +103,19 @@ public class CampaignEmailPostBody   {
       return false;
     }
     CampaignEmailPostBody campaignEmailPostBody = (CampaignEmailPostBody) o;
-    return Objects.equals(campaignGuid, campaignEmailPostBody.campaignGuid) &&
-        Objects.equals(campaignHandle, campaignEmailPostBody.campaignHandle) &&
-        Objects.equals(emailSubject, campaignEmailPostBody.emailSubject) &&
-        Objects.equals(listGuid, campaignEmailPostBody.listGuid);
+    return
+
+            Objects.equals(campaignGuid, campaignEmailPostBody.campaignGuid) && Objects.equals(campaignHandle, campaignEmailPostBody.campaignHandle) && Objects.equals(emailSubject, campaignEmailPostBody.emailSubject) && Objects.equals(listGuid, campaignEmailPostBody.listGuid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(campaignGuid, campaignHandle, emailSubject, listGuid);
   }
 
   @Override
   public String toString() {
-    return "class CampaignEmailPostBody {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -121,11 +121,9 @@ public class OAuthAccessTokenResponse   {
       return false;
     }
     OAuthAccessTokenResponse oauthAccessTokenResponse = (OAuthAccessTokenResponse) o;
-    return Objects.equals(accessToken, oauthAccessTokenResponse.accessToken) &&
-        Objects.equals(tokenType, oauthAccessTokenResponse.tokenType) &&
-        Objects.equals(scope, oauthAccessTokenResponse.scope) &&
-        Objects.equals(expiresIn, oauthAccessTokenResponse.expiresIn) &&
-        Objects.equals(refreshToken, oauthAccessTokenResponse.refreshToken);
+    return
+            Objects.equals(accessToken, oauthAccessTokenResponse.accessToken) && Objects.equals(tokenType, oauthAccessTokenResponse.tokenType);
+
   }
 
   @Override
@@ -135,22 +133,7 @@ public class OAuthAccessTokenResponse   {
 
   @Override
   public String toString() {
-    return "class OAuthAccessTokenResponse {\n" +
-
-    "    accessToken: " + toIndentedString(accessToken) + "\n" +
-
-    "    tokenType: " + toIndentedString(tokenType) + "\n" +
-    "}";
+    return accessToken + ", " + tokenType;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

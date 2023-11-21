@@ -49,7 +49,9 @@ public class PasswordOnly   {
       return false;
     }
     PasswordOnly passwordOnly = (PasswordOnly) o;
-    return Objects.equals(password, passwordOnly.password);
+    return
+            Objects.equals(password, passwordOnly.password);
+
   }
 
   @Override
@@ -59,20 +61,7 @@ public class PasswordOnly   {
 
   @Override
   public String toString() {
-    return "class PasswordOnly {\n" +
-
-    "    password: " + toIndentedString(password) + "\n" +
-    "}";
+    return password;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -212,37 +212,19 @@ public class ListPostBody   {
       return false;
     }
     ListPostBody listPostBody = (ListPostBody) o;
-    return Objects.equals(listGuid, listPostBody.listGuid) &&
-        Objects.equals(listHandle, listPostBody.listHandle) &&
-        Objects.equals(listName, listPostBody.listName) &&
-        Objects.equals(listTitle, listPostBody.listTitle) &&
-        Objects.equals(listDescription, listPostBody.listDescription) &&
-        Objects.equals(ownerAppGuid, listPostBody.ownerAppGuid) &&
-        Objects.equals(ownerAppUri, listPostBody.ownerAppUri) &&
-        Objects.equals(realmIdentifier, listPostBody.realmIdentifier) &&
-        Objects.equals(ownerUserEmail, listPostBody.ownerUserEmail) &&
-        Objects.equals(ownerUserGuid, listPostBody.ownerUserGuid);
+    return
+
+            Objects.equals(listGuid, listPostBody.listGuid) && Objects.equals(listHandle, listPostBody.listHandle) && Objects.equals(listName, listPostBody.listName) && Objects.equals(listTitle, listPostBody.listTitle) && Objects.equals(listDescription, listPostBody.listDescription) && Objects.equals(ownerAppGuid, listPostBody.ownerAppGuid) && Objects.equals(ownerAppUri, listPostBody.ownerAppUri) && Objects.equals(realmIdentifier, listPostBody.realmIdentifier) && Objects.equals(ownerUserEmail, listPostBody.ownerUserEmail) && Objects.equals(ownerUserGuid, listPostBody.ownerUserGuid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(listGuid, listHandle, listName, listTitle, listDescription, ownerAppGuid, ownerAppUri, realmIdentifier, ownerUserEmail, ownerUserGuid);
   }
 
   @Override
   public String toString() {
-    return "class ListPostBody {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -103,36 +103,19 @@ public class RealmAnalytics extends Realm  {
       return false;
     }
     RealmAnalytics realmAnalytics = (RealmAnalytics) o;
-    return super.equals(o) && Objects.equals(userCount, realmAnalytics.userCount) &&
-        Objects.equals(appCount, realmAnalytics.appCount) &&
-        Objects.equals(listCount, realmAnalytics.listCount) &&
-        Objects.equals(subscriberCount, realmAnalytics.subscriberCount);
+    return super.equals(o) &&
+            Objects.equals(guid, realmAnalytics.guid) && Objects.equals(handle, realmAnalytics.handle);
+
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), guid, super.hashCode(), handle);
+    return Objects.hash(super.hashCode(), guid, handle);
   }
 
   @Override
   public String toString() {
-    return "class RealmAnalytics {\n" +
-    "    " + toIndentedString(super.toString()) + "\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    handle: " + toIndentedString(handle) + "\n" +
-    "}";
+    return super.toString() + guid + ", " + handle;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

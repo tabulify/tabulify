@@ -105,31 +105,19 @@ public class RealmWithAppUris   {
       return false;
     }
     RealmWithAppUris realmWithAppUris = (RealmWithAppUris) o;
-    return Objects.equals(guid, realmWithAppUris.guid) &&
-        Objects.equals(name, realmWithAppUris.name) &&
-        Objects.equals(handle, realmWithAppUris.handle) &&
-        Objects.equals(appUris, realmWithAppUris.appUris);
+    return
+
+            Objects.equals(guid, realmWithAppUris.guid) && Objects.equals(name, realmWithAppUris.name) && Objects.equals(handle, realmWithAppUris.handle) && Objects.equals(appUris, realmWithAppUris.appUris);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid, name, handle, appUris);
   }
 
   @Override
   public String toString() {
-    return "class RealmWithAppUris {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

@@ -67,8 +67,9 @@ public class RealmPostBody   {
       return false;
     }
     RealmPostBody realmPostBody = (RealmPostBody) o;
-    return Objects.equals(name, realmPostBody.name) &&
-        Objects.equals(handle, realmPostBody.handle);
+    return
+            Objects.equals(name, realmPostBody.name);
+
   }
 
   @Override
@@ -78,20 +79,7 @@ public class RealmPostBody   {
 
   @Override
   public String toString() {
-    return "class RealmPostBody {\n" +
-
-    "    name: " + toIndentedString(name) + "\n" +
-    "}";
+    return name;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

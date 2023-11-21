@@ -157,34 +157,19 @@ public class Service   {
       return false;
     }
     Service service = (Service) o;
-    return Objects.equals(id, service.id) &&
-        Objects.equals(guid, service.guid) &&
-        Objects.equals(uri, service.uri) &&
-        Objects.equals(type, service.type) &&
-        Objects.equals(data, service.data) &&
-        Objects.equals(impersonatedUser, service.impersonatedUser) &&
-        Objects.equals(realm, service.realm);
+    return
+            Objects.equals(guid, service.guid);
+
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid);
   }
 
   @Override
   public String toString() {
-    return "class Service {\n" +
-    "}";
+    return guid;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

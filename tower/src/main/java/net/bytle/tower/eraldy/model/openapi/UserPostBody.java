@@ -158,34 +158,19 @@ public class UserPostBody   {
       return false;
     }
     UserPostBody userPostBody = (UserPostBody) o;
-    return Objects.equals(userGuid, userPostBody.userGuid) &&
-        Objects.equals(realmIdentifier, userPostBody.realmIdentifier) &&
-        Objects.equals(userEmail, userPostBody.userEmail) &&
-        Objects.equals(userName, userPostBody.userName) &&
-        Objects.equals(userFullname, userPostBody.userFullname) &&
-        Objects.equals(userTitle, userPostBody.userTitle) &&
-        Objects.equals(userAvatar, userPostBody.userAvatar);
+    return
+
+            Objects.equals(userGuid, userPostBody.userGuid) && Objects.equals(realmIdentifier, userPostBody.realmIdentifier) && Objects.equals(userEmail, userPostBody.userEmail) && Objects.equals(userName, userPostBody.userName) && Objects.equals(userFullname, userPostBody.userFullname) && Objects.equals(userTitle, userPostBody.userTitle) && Objects.equals(userAvatar, userPostBody.userAvatar);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(userGuid, realmIdentifier, userEmail, userName, userFullname, userTitle, userAvatar);
   }
 
   @Override
   public String toString() {
-    return "class UserPostBody {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

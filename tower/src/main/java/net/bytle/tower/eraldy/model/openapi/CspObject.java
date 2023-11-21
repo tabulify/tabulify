@@ -49,7 +49,9 @@ public class CspObject   {
       return false;
     }
     CspObject cspObject = (CspObject) o;
-    return Objects.equals(cspReport, cspObject.cspReport);
+    return
+            Objects.equals(cspReport, cspObject.cspReport);
+
   }
 
   @Override
@@ -59,20 +61,7 @@ public class CspObject   {
 
   @Override
   public String toString() {
-    return "class CspObject {\n" +
-
-    "    cspReport: " + toIndentedString(cspReport) + "\n" +
-    "}";
+    return cspReport.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

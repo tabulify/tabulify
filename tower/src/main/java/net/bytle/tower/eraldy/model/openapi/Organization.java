@@ -85,30 +85,19 @@ public class Organization   {
       return false;
     }
     Organization organization = (Organization) o;
-    return Objects.equals(guid, organization.guid) &&
-        Objects.equals(localId, organization.localId) &&
-        Objects.equals(name, organization.name);
+    return
+
+            Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(name, organization.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash();
+    return Objects.hash(guid, localId, name);
   }
 
   @Override
   public String toString() {
-    return "class Organization {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

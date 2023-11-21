@@ -86,9 +86,9 @@ public class ListRegistrationPostBody   {
       return false;
     }
     ListRegistrationPostBody listRegistrationPostBody = (ListRegistrationPostBody) o;
-    return Objects.equals(subscriberEmail, listRegistrationPostBody.subscriberEmail) &&
-        Objects.equals(listGuid, listRegistrationPostBody.listGuid) &&
-        Objects.equals(redirectUri, listRegistrationPostBody.redirectUri);
+    return
+            Objects.equals(subscriberEmail, listRegistrationPostBody.subscriberEmail) && Objects.equals(listGuid, listRegistrationPostBody.listGuid) && Objects.equals(redirectUri, listRegistrationPostBody.redirectUri);
+
   }
 
   @Override
@@ -98,24 +98,7 @@ public class ListRegistrationPostBody   {
 
   @Override
   public String toString() {
-    return "class ListRegistrationPostBody {\n" +
-
-    "    subscriberEmail: " + toIndentedString(subscriberEmail) + "\n" +
-
-    "    listGuid: " + toIndentedString(listGuid) + "\n" +
-
-    "    redirectUri: " + toIndentedString(redirectUri) + "\n" +
-    "}";
+    return subscriberEmail + ", " + listGuid + ", " + redirectUri.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

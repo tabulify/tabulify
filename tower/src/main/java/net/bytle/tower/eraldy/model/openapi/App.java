@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * An app is the container for branding elements (such as logo, color)
  **/
-@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = Realm.class)
+@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = App.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class App   {
 
@@ -249,18 +249,9 @@ public class App   {
       return false;
     }
     App app = (App) o;
-    return Objects.equals(localId, app.localId) &&
-        Objects.equals(guid, app.guid) &&
-        Objects.equals(uri, app.uri) &&
-        Objects.equals(clientId, app.clientId) &&
-        Objects.equals(name, app.name) &&
-        Objects.equals(home, app.home) &&
-        Objects.equals(slogan, app.slogan) &&
-        Objects.equals(logo, app.logo) &&
-        Objects.equals(primaryColor, app.primaryColor) &&
-        Objects.equals(user, app.user) &&
-        Objects.equals(realm, app.realm) &&
-        Objects.equals(terms, app.terms);
+    return
+            Objects.equals(guid, app.guid) && Objects.equals(uri, app.uri);
+
   }
 
   @Override
@@ -270,22 +261,7 @@ public class App   {
 
   @Override
   public String toString() {
-    return "class App {\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    uri: " + toIndentedString(uri) + "\n" +
-    "}";
+    return guid + ", " + uri.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

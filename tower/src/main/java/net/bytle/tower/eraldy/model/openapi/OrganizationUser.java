@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * A user in the organization
+ * A user in the organization They are the users of the Eraldy realm that own Realms
  **/
+@com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrganizationUser extends User  {
 
@@ -49,35 +50,19 @@ public class OrganizationUser extends User  {
       return false;
     }
     OrganizationUser organizationUser = (OrganizationUser) o;
-    return super.equals(o) && Objects.equals(organization, organizationUser.organization);
+    return super.equals(o) &&
+
+            Objects.equals(organization, organizationUser.organization);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), guid, super.hashCode(), handle, super.hashCode(), email);
+    return Objects.hash(super.hashCode(), organization);
   }
 
   @Override
   public String toString() {
-    return "class OrganizationUser {\n" +
-    "    " + toIndentedString(super.toString()) + "\n" +
-
-    "    guid: " + toIndentedString(guid) + "\n" +
-
-    "    handle: " + toIndentedString(handle) + "\n" +
-
-    "    email: " + toIndentedString(email) + "\n" +
-    "}";
+    return super.toString() + super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

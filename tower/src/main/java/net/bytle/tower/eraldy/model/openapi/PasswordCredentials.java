@@ -85,9 +85,9 @@ public class PasswordCredentials   {
       return false;
     }
     PasswordCredentials passwordCredentials = (PasswordCredentials) o;
-    return Objects.equals(loginRealm, passwordCredentials.loginRealm) &&
-        Objects.equals(loginHandle, passwordCredentials.loginHandle) &&
-        Objects.equals(loginPassword, passwordCredentials.loginPassword);
+    return
+            Objects.equals(loginRealm, passwordCredentials.loginRealm) && Objects.equals(loginHandle, passwordCredentials.loginHandle) && Objects.equals(loginPassword, passwordCredentials.loginPassword);
+
   }
 
   @Override
@@ -97,24 +97,7 @@ public class PasswordCredentials   {
 
   @Override
   public String toString() {
-    return "class PasswordCredentials {\n" +
-
-    "    loginRealm: " + toIndentedString(loginRealm) + "\n" +
-
-    "    loginHandle: " + toIndentedString(loginHandle) + "\n" +
-
-    "    loginPassword: " + toIndentedString(loginPassword) + "\n" +
-    "}";
+    return loginRealm + ", " + loginHandle + ", " + loginPassword;
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }
