@@ -31,7 +31,7 @@ import java.util.List;
 public class AuthContext {
 
   private final RoutingContext ctx;
-  private final AuthUser authUser;
+  private AuthUser authUser;
   private final AuthState authState;
   private final TowerApp towerApp;
   private List<Handler<AuthContext>> handlers = new ArrayList<>();
@@ -92,6 +92,10 @@ public class AuthContext {
     }
     this.redirectUri = redirectUri.addQueryProperty(AuthQueryProperty.REDIRECT_URI, redirectUriParameter.toUrl().toString());
     return this;
+  }
+
+  public void setAuthUser(AuthUser authUser) {
+    this.authUser = authUser;
   }
 
 

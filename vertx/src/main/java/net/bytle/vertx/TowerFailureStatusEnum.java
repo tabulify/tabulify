@@ -52,7 +52,11 @@ public enum TowerFailureStatusEnum implements TowerFailureStatus {
   /**
    * When the user click on an expired link
    */
-  LINK_EXPIRED(400, "The link is expired");
+  LINK_EXPIRED(400, "The link is expired"),
+  /**
+   * When identity claims are invalid
+   */
+  BAD_CLAIMS_400(400, "The identity claims are bad");
 
   private final int httpStatusCode;
   private final String message;

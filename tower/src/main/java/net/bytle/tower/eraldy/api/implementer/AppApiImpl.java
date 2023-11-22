@@ -122,7 +122,7 @@ public class AppApiImpl implements AppApi {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(appPostBody.getRealmIdentifier(), Realm.class)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(realm -> appProvider.postApp(appPostBody, routingContext))
+      .compose(realm -> appProvider.postApp(appPostBody))
       .compose(app -> {
         appProvider.toPublicClone(app);
         return Future.succeededFuture(new ApiResponse<>(app));

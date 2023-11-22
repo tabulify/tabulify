@@ -126,7 +126,7 @@ public class UserApiImpl implements UserApi {
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(realm -> {
         userRequested.setRealm(realm);
-        return userProvider.upsertUser(userRequested, routingContext);
+        return userProvider.upsertUser(userRequested);
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(userUpserted -> {

@@ -12,7 +12,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AuthApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.OAuthAccessTokenResponse;
@@ -205,19 +204,11 @@ public class AuthApiImpl implements AuthApi {
       .getRealmProvider()
       .getRealmFromIdentifier(passwordCredentials.getLoginRealm())
       .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
-      .compose(realm -> apiApp.getUserProvider()
-        .getUserByPassword(handle, password, realm)
+      .compose(realm -> apiApp.getAuthProvider()
+        .getAuthUserForSessionByPasswordNotNull(handle, password, realm)
         .onFailure(err -> FailureStatic.failRoutingContextWithTrace(err, routingContext))
-        .compose(user -> {
-          if (user == null) {
-            return Future.failedFuture(
-              TowerFailureException.builder()
-                .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-                .build()
-            );
-          }
-          AuthUser authUser = UsersUtil.toAuthUser(user);
-          new AuthContext(this.apiApp, routingContext, authUser, AuthState.createEmpty())
+        .compose(authUserForSession -> {
+          new AuthContext(this.apiApp, routingContext, authUserForSession, AuthState.createEmpty())
             .redirectViaClient()
             .authenticateSession();
           return Future.succeededFuture(new ApiResponse<>());

@@ -2,12 +2,9 @@ package net.bytle.tower.eraldy.api.implementer.callback;
 
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
-import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
-import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
 import net.bytle.vertx.auth.AuthUser;
@@ -52,18 +49,12 @@ public class PasswordResetEmailCallback extends WebFlowEmailCallbackAbs {
     String realmIdentifier = authUser.getRealmIdentifier();
     EraldyApiApp apiApp = (EraldyApiApp) this.getWebFlow().getApp();
     apiApp
-      .getUserProvider()
-      .getUserByEmail(email, realmIdentifier)
+      .getAuthProvider()
+      .getAuthUserForSessionByEmailNotNull(email, realmIdentifier)
       .onFailure(ctx::fail)
-      .onSuccess(userInDb -> {
-        if (userInDb == null) {
-          ctx.fail(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), new InternalException("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist"));
-          return;
-        }
-        new AuthContext(this.getWebFlow().getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-          .redirectViaHttp(apiApp.getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
-          .authenticateSession();
-      });
+      .onSuccess(authUserForSession -> new AuthContext(this.getWebFlow().getApp(), ctx, authUserForSession, AuthState.createEmpty())
+        .redirectViaHttp(apiApp.getMemberAppUri().setPath(FRONT_END_UPDATE_OPERATION_PATH))
+        .authenticateSession());
 
   }
 

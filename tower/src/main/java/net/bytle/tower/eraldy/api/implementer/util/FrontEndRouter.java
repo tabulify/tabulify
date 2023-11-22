@@ -82,7 +82,8 @@ public class FrontEndRouter {
         .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
         .setMessage(message)
         .setName(message)
-        .buildWithContextFailingAsHtml(routingContext)
+          .setMimeToHtml()
+        .buildWithContextFailing(routingContext)
       );
     }
 
@@ -101,7 +102,8 @@ public class FrontEndRouter {
             .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setName("Redirect Uri is mandatory")
             .setMessage("The redirect URI is mandatory and was not found")
-            .buildWithContextFailingAsHtml(routingContext)
+            .setMimeToHtml()
+            .buildWithContextFailing(routingContext)
         );
 
       }

@@ -29,7 +29,7 @@ public class DatacadamiaDomain {
     owner.setRealm(eraldyRealm);
     owner.setEmail("owner@datacadamia.com");
     return verticle.getApp().getUserProvider()
-      .upsertUser(owner, null)
+      .upsertUser(owner)
       .compose(ownerResult -> this.verticle.getApp().getRealmProvider()
         .upsertRealm(datacadamiaRealm));
 

@@ -5,7 +5,6 @@ import io.vertx.core.Handler;
 import io.vertx.ext.mail.MailClient;
 import io.vertx.ext.mail.MailMessage;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.HttpException;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
@@ -17,8 +16,8 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
 import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthContext;
@@ -85,7 +84,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
         SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-        AuthUser jwtClaims = UsersUtil.toAuthUser(newUser).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUserForLoginToken(newUser).addRoutingClaims(routingContext);
         String newUserName;
         try {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);
@@ -191,44 +190,35 @@ public class UserRegistrationFlow extends WebFlowAbs {
    * Second steps:
    *
    * @param ctx      - the context
-   * @param authUser - the claims
+   * @param authUserAsClaims - the claims
    */
-  public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthUser authUser) {
+  public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthUser authUserAsClaims) {
 
 
-    getApp()
-      .getRealmProvider()
-      .getRealmFromIdentifier(authUser.getRealmIdentifier())
+    AuthProvider authProvider = getApp().getAuthProvider();
+    authProvider
+      .getAuthUserForSessionByEmailNotNull(authUserAsClaims.getSubjectEmail(), authUserAsClaims.getRealmIdentifier())
       .onFailure(ctx::fail)
-      .onSuccess(realm -> {
-
-        User user = new User();
-        user.setRealm(realm);
-        user.setEmail(authUser.getSubjectEmail());
-        UserProvider userProvider = getApp().getUserProvider();
-        userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), User.class, user.getRealm())
+      .onSuccess(authUserFromGet -> {
+        if (authUserFromGet != null) {
+          // The user was already registered.
+          // Possible causes:
+          // * The user has clicked two times on the validation link received by email
+          // * The user tries to register again
+          new AuthContext(getApp(), ctx, authUserFromGet, AuthState.createEmpty())
+            .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserFromGet.getSubject()))
+            .authenticateSession();
+          return;
+        }
+        authProvider
+          .insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx)
           .onFailure(ctx::fail)
-          .onSuccess(userInDb -> {
-            if (userInDb != null) {
-              // The user was already registered.
-              // Possible causes:
-              // * The user has clicked two times on the validation link received by email
-              // * The user tries to register again
-              new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInDb), AuthState.createEmpty())
-                .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(userInDb.getGuid()))
-                .authenticateSession();
-              return;
-            }
-            userProvider
-              .insertUser(user, ctx)
-              .onFailure(ctx::fail)
-              .onSuccess(userInserted -> new AuthContext(getApp(), ctx, UsersUtil.toAuthUser(userInserted), AuthState.createEmpty())
-                .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(userInserted.getGuid()))
-                .authenticateSession()
-              );
-          });
+          .onSuccess(authUserInserted -> new AuthContext(getApp(), ctx, authUserInserted, AuthState.createEmpty())
+            .redirectViaHttpWithAuthRedirectUriAsParameter(getUriToUserRegistrationConfirmation(authUserInserted.getSubject()))
+            .authenticateSession()
+          );
       });
+
   }
 
   private UriEnhanced getUriToUserRegistrationConfirmation(String guid) {
@@ -245,8 +235,8 @@ public class UserRegistrationFlow extends WebFlowAbs {
   public Handler<AuthContext> handleOAuthAuthentication() {
     return authContext -> {
 
-      AuthUser authUser = authContext.getAuthUser();
-      if (authUser.getSubject() != null) {
+      AuthUser authUserClaims = authContext.getAuthUser();
+      if (authUserClaims.getSubject() != null) {
         authContext.next();
         return;
       }
@@ -266,44 +256,42 @@ public class UserRegistrationFlow extends WebFlowAbs {
           .getRealmProvider()
           .isRealmGuidIdentifier(realmIdentifier)
       ) {
-        authUser.setAudience(realmIdentifier);
+        authUserClaims.setAudience(realmIdentifier);
       } else {
-        authUser.setAudienceHandle(realmIdentifier);
+        authUserClaims.setAudienceHandle(realmIdentifier);
       }
 
       /**
        * Create our principal
        */
       this.getApp()
-        .getUserProvider()
-        .getUserFromAuthUser(authUser, User.class)
-        .onFailure(err -> {
-          HttpException throwable = new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Error in oauth user get for registration", err);
-          authContext.getRoutingContext().fail(throwable);
-        })
-        .onSuccess(dbUser -> {
-          Future<User> finalFutureUser;
-          User authUserAsDbUser = this.getApp().getAuthProvider().toBaseModelUser(authUser);
-          if (dbUser == null) {
-            finalFutureUser = this.getApp()
-              .getUserProvider()
-              .insertUser(authUserAsDbUser, authContext.getRoutingContext());
+        .getAuthProvider()
+        .getAuthUserForSessionByClaims(authUserClaims)
+        .onFailure(err -> TowerFailureException
+          .builder()
+          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setMessage("Error in oauth user get for registration")
+          .setException(err)
+          .buildWithContextFailingTerminal(authContext.getRoutingContext())
+        )
+        .onSuccess(authUserForSession -> {
+          Future<AuthUser> futureFinalAuthUserForSession;
+          if (authUserForSession == null) {
+            futureFinalAuthUserForSession = this.getApp()
+              .getAuthProvider()
+              .insertUserFromLoginAuthUserClaims(authUserClaims, authContext.getRoutingContext());
           } else {
-            finalFutureUser = this.getApp()
-              .getUserProvider()
-              .patchUserIfPropertyValueIsNull(dbUser, authUserAsDbUser);
+            futureFinalAuthUserForSession = Future.succeededFuture(authUserForSession);
           }
-          finalFutureUser
+          futureFinalAuthUserForSession
             .onFailure(err -> TowerFailureException.builder()
               .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
               .setMessage("Error in final oauth user registration: " + err.getMessage())
               .setException(err)
               .buildWithContextFailingTerminal(authContext.getRoutingContext())
             )
-            .onSuccess(finalUser -> {
-              authUser.setSubject(finalUser.getGuid());
-              authUser.setAudience(finalUser.getRealm().getGuid());
-              authUser.setAudienceHandle(finalUser.getRealm().getHandle());
+            .onSuccess(finalAuthUserForSession -> {
+              authContext.setAuthUser(finalAuthUserForSession);
               authContext.next();
             });
         });

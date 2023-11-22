@@ -57,10 +57,10 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
   }
 
   /**
-   * @param routingContext  - the routing context
+   * @param routingContext - the routing context
    * @param smtpSender     - the email sender
-   * @param recipientName - the name of the recipient
-   * @param authUser - the claims (ie the user to authenticate and the state)
+   * @param recipientName  - the name of the recipient
+   * @param authUser       - the claims (ie the user to authenticate and the state)
    * @return the email template to send for validation
    */
   public BMailTransactionalTemplate getCallbackTransactionalEmailTemplateForClaims(RoutingContext routingContext, SmtpSender smtpSender, String recipientName, AuthUser authUser) {
@@ -133,8 +133,14 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     try {
       authUser.checkValidityAndExpiration();
     } catch (IllegalStructure e) {
-      ctx.fail(TowerFailureStatusEnum.BAD_REQUEST_400.getStatusCode(), e);
-      throw new IllegalStructure();
+      throw TowerFailureException
+        .builder()
+        .setStatus(TowerFailureStatusEnum.BAD_CLAIMS_400)
+        .setName("Bad identity claims")
+        .setMessage("The identity claims are invalid")
+        .setException(e)
+        .setMimeToHtml()
+        .buildWithContextFailing(ctx);
     } catch (ExpiredException e) {
       String message = "This <b>" + linkName + "</b> link has expired.";
       try {
@@ -142,13 +148,13 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
         message += " Click <a href=\"" + originReferer.toURL() + "\">here</a> to ask for a new one.";
       } catch (NullValueException | IllegalStructure | MalformedURLException ignored) {
       }
-
       throw TowerFailureException
         .builder()
         .setStatus(TowerFailureStatusEnum.LINK_EXPIRED)
         .setMessage(message)
         .setName("Link expired")
-        .buildWithContextFailingAsHtml(ctx);
+        .setMimeToHtml()
+        .buildWithContextFailing(ctx);
     }
     return authUser;
   }
@@ -173,7 +179,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
 
   @Override
   public String getCallbackOperationPath() {
-    return this.getOriginOperationPath()+"/"+ LAST_URL_OPERATION_CALLBACK_PART;
+    return this.getOriginOperationPath() + "/" + LAST_URL_OPERATION_CALLBACK_PART;
   }
 
   public WebFlow getWebFlow() {

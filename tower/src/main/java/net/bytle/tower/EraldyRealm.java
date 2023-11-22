@@ -58,7 +58,7 @@ public class EraldyRealm {
       throw new InternalException("The eraldy owner URL is not valid", e);
     }
     return apiApp.getUserProvider()
-      .upsertUser(ownerUser, null)
+      .upsertUser(ownerUser)
       .onFailure(t -> {
         throw new InternalException("Error while creating the eraldy owner realm", t);
       })

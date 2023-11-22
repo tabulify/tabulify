@@ -21,8 +21,8 @@ import net.bytle.tower.eraldy.api.implementer.util.FrontEndRouter;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Date;
 import net.bytle.type.time.Timestamp;
@@ -160,8 +160,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
         subscriber.setRealm(listRealm);
 
 
-        AuthUser jwtClaims = UsersUtil
-          .toAuthUser(subscriber)
+        AuthUser jwtClaims = getApp().getAuthProvider()
+          .toAuthUserForLoginToken(subscriber)
           .addRoutingClaims(routingContext)
           .setListGuidClaim(publicationGuid);
 
@@ -268,64 +268,53 @@ public class ListRegistrationFlow extends WebFlowAbs {
       });
   }
 
-  public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthUser authUser) {
+  public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthUser authUserAsClaims) {
 
-    String realmHandleClaims = authUser.getRealmIdentifier();
-    String emailClaims = authUser.getSubjectEmail();
+
     String listGuid;
     try {
-      listGuid = authUser.getListGuid();
+      listGuid = authUserAsClaims.getListGuid();
     } catch (NullValueException e) {
       ctx.fail(new InternalException("No guid was in the claims for a user list registration"));
       return;
     }
-    Date optInTime = authUser.getIssuedAt();
+    Date optInTime = authUserAsClaims.getIssuedAt();
     String optInIp;
     try {
-      optInIp = authUser.getOriginClientIp();
+      optInIp = authUserAsClaims.getOriginClientIp();
     } catch (NullValueException e) {
       LOGGER.error("The opt-in ip of the Jwt Claims is null");
       optInIp = "";
     }
 
     String finalOptInIp = optInIp;
-    this.getApp().getRealmProvider()
-      .getRealmFromIdentifier(realmHandleClaims)
+
+    AuthProvider authProvider = getApp().getAuthProvider();
+    authProvider
+      .getAuthUserForSessionByEmail(authUserAsClaims.getSubjectEmail(), authUserAsClaims.getAudience())
       .onFailure(ctx::fail)
-      .onSuccess(realm -> {
-
-        User user = new User();
-        user.setRealm(realm);
-        user.setEmail(emailClaims);
-        UserProvider userProvider = this.getApp().getUserProvider();
-        userProvider
-          .getUserByEmail(user.getEmail(), user.getRealm().getLocalId(), User.class, user.getRealm())
+      .onSuccess(authUserForSession -> {
+        Future<AuthUser> futureFinaleAuthSessionUser;
+        if (authUserForSession != null) {
+          futureFinaleAuthSessionUser = Future.succeededFuture(authUserForSession);
+        } else {
+          futureFinaleAuthSessionUser = authProvider.insertUserFromLoginAuthUserClaims(authUserAsClaims, ctx);
+        }
+        futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(userInDb -> {
-
-            Future<User> futureUser;
-            if (userInDb != null) {
-              futureUser = Future.succeededFuture(userInDb);
-            } else {
-              futureUser = userProvider.insertUser(user, ctx);
-            }
-            futureUser
-              .onFailure(ctx::fail)
-              .onSuccess(userToRegister -> registerUserToList(ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL)
-                .onFailure(ctx::fail)
-                .onSuccess(registration -> {
-                  if (ctx.user() == null) {
-                    addRegistrationConfirmationCookieData(ctx, registration);
-                    UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-                    new AuthContext(this.getApp(), ctx, authUser, AuthState.createEmpty())
-                      .redirectViaHttp(redirectUri)
-                      .authenticateSession();
-                  }
-                })
-              );
-          });
+          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser) , optInTime, finalOptInIp, RegistrationFlow.EMAIL)
+            .onFailure(ctx::fail)
+            .onSuccess(registration -> {
+              if (ctx.user() == null) {
+                addRegistrationConfirmationCookieData(ctx, registration);
+                UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
+                new AuthContext(this.getApp(), ctx, finalAuthSessionUser, AuthState.createEmpty())
+                  .redirectViaHttp(redirectUri)
+                  .authenticateSession();
+              }
+            })
+          );
       });
-
 
   }
 
@@ -355,7 +344,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
               .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
               .setName("The list was not found")
               .setMessage("The list <mark>" + listGuid + "</mark> was not found.")
-              .buildWithContextFailingAsHtml(routingContext)
+              .setMimeToHtml()
+              .buildWithContextFailing(routingContext)
           );
         }
         Map<String, Object> variables = new HashMap<>();

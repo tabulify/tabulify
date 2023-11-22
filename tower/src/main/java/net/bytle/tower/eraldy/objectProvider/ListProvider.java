@@ -5,7 +5,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -437,7 +436,7 @@ public class ListProvider {
    * @return the publication created
    */
 
-  public Future<RegistrationList> postPublication(ListPostBody listPostBody, RoutingContext routingContext) {
+  public Future<RegistrationList> postPublication(ListPostBody listPostBody) {
 
     /**
      * Realm
@@ -510,7 +509,7 @@ public class ListProvider {
             userToGetOrCreate.setEmail(ownerEmail);
             userToGetOrCreate.setRealm(realm);
             return userProvider
-              .getOrCreateUserFromEmail(userToGetOrCreate, routingContext);
+              .getOrCreateUserFromEmail(userToGetOrCreate);
           });
       }
     }

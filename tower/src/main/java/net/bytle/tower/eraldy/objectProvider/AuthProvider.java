@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
+import net.bytle.vertx.AnalyticsEventName;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthUser;
@@ -219,11 +220,130 @@ public class AuthProvider {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
-          .setMessage("Authenticated User has no permission on the requested realm (" + realm + ") for the permission ("+ authPermission +")")
+          .setMessage("Authenticated User has no permission on the requested realm (" + realm + ") for the permission (" + authPermission + ")")
           .build()
       );
     }
     return Future.succeededFuture(realm);
 
+  }
+
+
+  /**
+   * @param userEmail    - the user email
+   * @param userPassword - the password in clear
+   * @param realm        - the realm
+   * @return a user if the user handle, realm and password combination are good
+   */
+  public Future<AuthUser> getAuthUserForSessionByPasswordNotNull(String userEmail, String userPassword, Realm realm) {
+
+    return this.apiApp.getUserProvider()
+      .getUserByPassword(userEmail, userPassword, realm)
+      .compose(user -> {
+        if (user == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .build()
+          );
+        }
+        return Future.succeededFuture(toAuthUserForSession(user));
+      });
+
+  }
+
+  public Future<AuthUser> getAuthUserForSessionByEmailNotNull(String email, String realmIdentifier) {
+
+    return this.apiApp.getUserProvider()
+      .getUserByEmail(email, realmIdentifier)
+      .compose(userInDb -> {
+        if (userInDb == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist")
+              .build()
+          );
+        }
+        return Future.succeededFuture();
+      });
+
+  }
+
+  public Future<AuthUser> getAuthUserForSessionByEmail(String email, String realmIdentifier) {
+
+    return this.apiApp.getUserProvider()
+      .getUserByEmail(email, realmIdentifier)
+      .compose(userInDb -> {
+        if (userInDb == null) {
+          return Future.succeededFuture();
+        }
+        return Future.succeededFuture(this.toAuthUserForSession(userInDb));
+      });
+
+  }
+
+  /**
+   * @param user - the user
+   * @return an auth user that can be used as claims in order to create a token
+   */
+  public AuthUser toAuthUserForLoginToken(User user) {
+    AuthUser authUserClaims = new AuthUser();
+    authUserClaims.setSubject(user.getGuid());
+    authUserClaims.setSubjectHandle(user.getHandle());
+    authUserClaims.setSubjectEmail(user.getEmail());
+    authUserClaims.setAudience(user.getRealm().getGuid());
+    authUserClaims.setAudienceHandle(user.getRealm().getHandle());
+    return authUserClaims;
+  }
+
+  /**
+   * @param authUserAsClaims - the claims as auth user
+   * @param routingContext   - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test
+   * @return a user suitable
+   */
+  public Future<AuthUser> insertUserFromLoginAuthUserClaims(AuthUser authUserAsClaims, RoutingContext routingContext) {
+    User user = toBaseModelUser(authUserAsClaims);
+    return this.apiApp
+      .getUserProvider()
+      .insertUser(user)
+      .compose(insertedUser -> {
+        AuthUser authUserForSession = this.toAuthUserForSession(insertedUser);
+        this.apiApp
+          .getApexDomain()
+          .getHttpServer()
+          .getServer()
+          .getTrackerAnalytics()
+          .eventBuilder(AnalyticsEventName.SIGN_UP)
+          .setUser(authUserForSession)
+          .setRoutingContext(routingContext)
+          .sendEventAsync();
+        return Future.succeededFuture(authUserForSession);
+      });
+
+  }
+
+  /**
+   * @param user - the user to transform in auth user
+   * @return an auth user suitable to be put in a session (ie with role and permission)
+   */
+  private AuthUser toAuthUserForSession(User user) {
+
+    throw new RuntimeException("todo, add realm ownership" + user);
+
+  }
+
+  public Future<AuthUser> getAuthUserForSessionByClaims(AuthUser authUserClaims) {
+    return this.apiApp.getUserProvider()
+      .getUserByEmail(authUserClaims.getSubjectEmail(), authUserClaims.getAudience())
+      .compose(userInDb -> {
+        if (userInDb == null) {
+          return Future.succeededFuture();
+        }
+        return this.apiApp
+          .getUserProvider()
+          .patchUserIfPropertyValueIsNull(userInDb, toBaseModelUser(authUserClaims))
+          .compose(patchUser -> Future.succeededFuture(this.toAuthUserForSession(patchUser)));
+      });
   }
 }

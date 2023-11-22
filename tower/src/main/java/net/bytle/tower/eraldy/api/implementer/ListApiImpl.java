@@ -166,7 +166,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<RegistrationList>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
     return apiApp.getListProvider()
-      .postPublication(publicationPost, routingContext)
+      .postPublication(publicationPost)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(publication -> {
         apiApp.getListProvider().toPublicClone(publication);
@@ -248,7 +248,7 @@ public class ListApiImpl implements ListApi {
         registrationUser.setEmail(token.getUserEmail());
         Future<RegistrationList> listFuture = Future.succeededFuture(listResult);
         Future<User> user = apiApp.getUserProvider()
-          .getOrCreateUserFromEmail(registrationUser, null);
+          .getOrCreateUserFromEmail(registrationUser);
 
         return Future.all(listFuture, user);
       })

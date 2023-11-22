@@ -107,13 +107,12 @@ public class UserProvider {
   /**
    * This function will update the user of the userId is known
    * Otherwise, it will try to update it by email.
-   * If the update is not successful, the user is {@link #insertUser(User, RoutingContext)  inserted}.
+   * If the update is not successful, the user is {@link #insertUser(User)  inserted}.
    *
-   * @param user           the publication to upsert
-   * @param routingContext - for analytics
+   * @param user the user to upsert
    * @return the user
    */
-  public Future<User> upsertUser(User user, RoutingContext routingContext) {
+  public Future<User> upsertUser(User user) {
 
     Realm userRealm = user.getRealm();
     Long userId = user.getLocalId();
@@ -146,7 +145,7 @@ public class UserProvider {
     return updateUserByEmailAndReturnRowSet(user)
       .compose(rows -> {
         if (rows.size() == 0) {
-          return insertUser(user, routingContext);
+          return insertUser(user);
         }
         /**
          * The row has only the id updated
@@ -160,11 +159,11 @@ public class UserProvider {
   }
 
   /**
+   * Package private because the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
    * @param user           - the user to insert (sign-up)
-   * @param routingContext - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test)
    * @return a user
    */
-  public Future<User> insertUser(User user, RoutingContext routingContext) {
+  Future<User> insertUser(User user) {
 
 
     String sql = "INSERT INTO\n" +
@@ -179,37 +178,38 @@ public class UserProvider {
 
     return jdbcPool
       .withTransaction(sqlConnection -> SequenceProvider.getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, user.getRealm().getLocalId())
-        .onFailure(error -> LOGGER.error("UserProvider: Error on next sequence id" + error.getMessage(), error))
-        .compose(userId -> {
-          user.setLocalId(userId);
-          this.computeGuid(user);
-          String databaseJsonString = this.toDatabaseJsonString(user);
-          return sqlConnection
-            .preparedQuery(sql)
-            .execute(Tuple.of(
-                user.getRealm().getLocalId(),
-                user.getLocalId(),
-                user.getEmail().toLowerCase(),
-                databaseJsonString,
-                DateTimeUtil.getNowUtc()
-              )
-            );
-        }))
-      .onFailure(error -> LOGGER.error("Insert User Error:" + error.getMessage() + ". Sql: " + sql, error))
-      .compose(rows -> {
+        .compose(
+          userId -> {
+            user.setLocalId(userId);
+            this.computeGuid(user);
+            String databaseJsonString = this.toDatabaseJsonString(user);
+            return sqlConnection
+              .preparedQuery(sql)
+              .execute(Tuple.of(
+                  user.getRealm().getLocalId(),
+                  user.getLocalId(),
+                  user.getEmail().toLowerCase(),
+                  databaseJsonString,
+                  DateTimeUtil.getNowUtc()
+                )
+              );
+          },
+          err -> Future.failedFuture(
+            TowerFailureException.builder()
+              .setException(err)
+              .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
+              .build()
+          )
+        ))
 
-        this.apiApp
-          .getApexDomain()
-          .getHttpServer()
-          .getServer()
-          .getTrackerAnalytics()
-          .eventBuilder(AnalyticsEventName.SIGN_UP)
-          .setUser(UsersUtil.toAuthUser(user))
-          .setRoutingContext(routingContext)
-          .sendEventAsync();
-
-        return Future.succeededFuture(user);
-      });
+      .compose(
+        rows -> Future.succeededFuture(user),
+        error -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setException(error)
+            .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
+            .build()
+        ));
   }
 
   @SuppressWarnings("unused")
@@ -522,13 +522,12 @@ public class UserProvider {
   }
 
   /**
-   * @param user           the user to retrieve or to insert with at minimal:
-   *                       * id or email
-   *                       * and the realm
-   * @param routingContext - the http context
+   * @param user the user to retrieve or to insert with at minimal:
+   *             * id or email
+   *             * and the realm
    * @return the user by id if given or by email, create the user if it does not exist with the provided email
    */
-  public Future<User> getOrCreateUserFromEmail(User user, RoutingContext routingContext) {
+  public Future<User> getOrCreateUserFromEmail(User user) {
 
     Long userId = user.getLocalId();
     String userEmail = user.getEmail();
@@ -543,7 +542,7 @@ public class UserProvider {
           throw ValidationException.create("The user with the id was not found", "id", userId);
         }
 
-        return this.upsertUser(user, routingContext);
+        return this.upsertUser(user);
 
       });
   }
@@ -729,7 +728,7 @@ public class UserProvider {
    * @param realm        - the realm
    * @return a user if the user handle, realm and password combination are good
    */
-  public Future<User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
+  Future<User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
@@ -744,7 +743,6 @@ public class UserProvider {
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
-          // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
           return Future.succeededFuture();
         }
 
@@ -805,41 +803,8 @@ public class UserProvider {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(USR_GUID_PREFIX, userGuid);
   }
 
-  /**
-   * @param authUser - an auth user that has user identifiers (from an auth token Oauth Json token)
-   * @return the user or null
-   */
-  public <T extends User> Future<T> getUserFromAuthUser(AuthUser authUser, Class<T> userClass) {
-
-    User user = this.apiApp.getAuthProvider().toBaseModelUser(authUser);
-
-    /**
-     * Guid
-     */
-    String userGuid = user.getGuid();
-    if (userGuid != null) {
-      return this.getUserByGuid(userGuid, userClass);
-    }
-    /**
-     * By local id
-     */
-    Long realmLocalId = user.getRealm() == null ? null : user.getRealm().getLocalId();
-    Long localId = user.getLocalId();
-    if (localId != null && realmLocalId != null) {
-      return this.getUserById(localId, realmLocalId, userClass, null);
-    }
-    /**
-     * By Email
-     */
-    String email = user.getEmail();
-    if (email != null && realmLocalId != null) {
-      return this.getUserByEmail(email, realmLocalId, userClass, null);
-    }
-
-    return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the database user"));
-  }
-
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
   }
+
 }

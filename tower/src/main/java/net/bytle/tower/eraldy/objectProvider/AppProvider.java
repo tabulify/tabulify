@@ -5,7 +5,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -426,7 +425,7 @@ public class AppProvider {
           + " WHERE " + HANDLE_COLUMN + " = $1 "
           + "and " + REALM_ID_COLUMN + " = $2 ")
       .execute(Tuple.of(
-        handle.toString(),
+        handle,
         realm.getLocalId()
       ))
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -446,7 +445,7 @@ public class AppProvider {
    * @param appPostBody - the post object
    * @return the app in a future
    */
-  public Future<App> postApp(AppPostBody appPostBody, RoutingContext routingContext) {
+  public Future<App> postApp(AppPostBody appPostBody) {
 
 
     App requestedApp = new App();
@@ -502,7 +501,7 @@ public class AppProvider {
         userToGetOrCreate.setEmail(userEmail);
         userToGetOrCreate.setRealm(realm);
         return apiApp.getUserProvider()
-          .getOrCreateUserFromEmail(userToGetOrCreate, routingContext)
+          .getOrCreateUserFromEmail(userToGetOrCreate)
           .onFailure(t -> LOGGER.error("Error on app upsert", t))
           .compose(user -> {
             app.setUser(user);
@@ -598,10 +597,6 @@ public class AppProvider {
     cloneApp.setUser(owner);
     cloneApp.setRealm(null);
     return cloneApp;
-  }
-
-  public boolean isAppGuidIdentifier(String realmIdentifier) {
-    return realmIdentifier.startsWith(APP_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
 }
