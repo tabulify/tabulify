@@ -470,10 +470,6 @@ public class RealmProvider {
 
   }
 
-  public Future<Realm> getRealmFromGuid(String guid) {
-    return getRealmFromGuid(guid, Realm.class);
-  }
-
   private <T extends Realm> Future<T> getRealmFromGuid(String guid, Class<T> clazz) {
     long realmId;
     try {
@@ -569,5 +565,28 @@ public class RealmProvider {
 
   public ObjectMapper getPublicJsonMapper() {
     return this.publicRealmJsonMapper;
+  }
+
+  /**
+   * Wrapper around {@link #getRealmFromIdentifier(String)}
+   * and fail if the realm was not found (ie null)
+   * @param realmIdentifier - the realm identifier
+   * @param realmClass - the realm class
+   * @return the realm
+   * @param <T> - the realm class
+   */
+  public <T extends Realm> Future<T> getRealmFromIdentifierNotNull(String realmIdentifier, Class<T> realmClass) {
+    return this.getRealmFromIdentifier(realmIdentifier, realmClass)
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage("The realm ("+realmIdentifier+") was not found")
+              .build()
+          );
+        }
+        return Future.succeededFuture(realm);
+      });
   }
 }

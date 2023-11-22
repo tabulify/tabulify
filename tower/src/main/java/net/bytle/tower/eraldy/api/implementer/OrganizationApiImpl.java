@@ -35,7 +35,7 @@ public class OrganizationApiImpl implements OrganizationApi {
   public Future<ApiResponse<OrganizationUser>> organizationUserMeGet(RoutingContext routingContext) {
     AuthUser signedInUser;
     try {
-      signedInUser = this.apiApp.getAuthUserProvider().getSignedInAuthUser(routingContext);
+      signedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()

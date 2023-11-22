@@ -2,18 +2,17 @@ package net.bytle.tower.eraldy.api.implementer;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.Authorization;
+import net.bytle.tower.eraldy.auth.AuthPermission;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.vertx.*;
+import net.bytle.vertx.FailureStatic;
+import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,32 +55,15 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String guid) {
+  public Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmIdentifier) {
 
     return this.apiApp.getRealmProvider()
-      .getRealmFromGuid(guid)
-      .compose(realm -> {
-        if (realm == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-              .setMessage("The realm was not found")
-              .build()
-          );
-        }
-        UserProvider userProvider = apiApp.getUserProvider();
-        return Authorization.checkForRealm(apiApp, RoutingContextWrapper.createFrom(routingContext), realm)
-          .compose(bool -> userProvider
-            .getRecentUsersCreatedFromRealm(realm)
-            .compose(users -> {
-              List<User> publicUsers = new ArrayList<>();
-              for (User user : users) {
-                publicUsers.add(userProvider.toPublicCloneWithoutRealm(user));
-              }
-              return Future.succeededFuture(new ApiResponse<>(publicUsers));
-            })
-          );
-      });
+      .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
+      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_ACTIVITY_NEW_USERS)
+        .compose(realm1 -> apiApp.getUserProvider()
+          .getRecentUsersCreatedFromRealm(realm)
+          .compose(users -> Future.succeededFuture(new ApiResponse<>(users).setMapper(apiApp.getUserProvider().getApiMapper())))
+        ));
 
   }
 
@@ -132,34 +114,23 @@ public class RealmApiImpl implements RealmApi {
   @Override
   public Future<ApiResponse<List<RealmAnalytics>>> realmsOwnedByMeGet(RoutingContext routingContext) {
 
-    OrganizationUser authSignedInUser;
-    try {
-      authSignedInUser = this.apiApp.getAuthUserProvider().getSignedInOrganizationalUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
-          .setMessage("You should be logged in")
-          .build()
-      );
-    } catch (NotSignedInOrganizationUser e) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
-          .setMessage("You should be logged as organizational user")
-          .setException(e)
-          .build()
-      );
-    }
-
-    RealmProvider realmProvider = this.apiApp.getRealmProvider();
-    return realmProvider
-      .getRealmsForOwner(authSignedInUser, RealmAnalytics.class)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(realms -> Future.succeededFuture(
-        new ApiResponse<>(realms)
-          .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
-      );
+    return this.apiApp
+      .getAuthProvider().getSignedInOrganizationalUser(routingContext)
+      .compose(authSignedInUser -> this.apiApp
+        .getRealmProvider()
+        .getRealmsForOwner(authSignedInUser, RealmAnalytics.class)
+        .compose(
+          realms -> Future.succeededFuture(
+            new ApiResponse<>(realms)
+              .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
+          ,
+          err -> Future.failedFuture(
+            TowerFailureException
+              .builder()
+              .setException(err)
+              .setMessage("Unexpected problem while getting the realms owned by the user")
+              .buildWithContextFailing(routingContext))
+        ));
 
   }
 

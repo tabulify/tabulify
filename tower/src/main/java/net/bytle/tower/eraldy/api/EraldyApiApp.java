@@ -52,7 +52,7 @@ public class EraldyApiApp extends TowerApp {
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
-  private final AuthUserProvider authUserProvider;
+  private final AuthProvider authProvider;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -60,7 +60,7 @@ public class EraldyApiApp extends TowerApp {
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
     this.organizationProvider = new OrganizationProvider(this);
-    this.authUserProvider = new AuthUserProvider(this);
+    this.authProvider = new AuthProvider(this);
     this.listRegistrationProvider = new ListRegistrationProvider(this);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
@@ -339,7 +339,7 @@ public class EraldyApiApp extends TowerApp {
     return this.organizationUserProvider;
   }
 
-  public AuthUserProvider getAuthUserProvider() {
-    return this.authUserProvider;
+  public AuthProvider getAuthProvider() {
+    return this.authProvider;
   }
 }

@@ -283,7 +283,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         })
         .onSuccess(dbUser -> {
           Future<User> finalFutureUser;
-          User authUserAsDbUser = this.getApp().getAuthUserProvider().toBaseModelUser(authUser);
+          User authUserAsDbUser = this.getApp().getAuthProvider().toBaseModelUser(authUser);
           if (dbUser == null) {
             finalFutureUser = this.getApp()
               .getUserProvider()

@@ -117,7 +117,7 @@ public class AuthApiImpl implements AuthApi {
 
 
     try {
-      AuthUser authSignedInUser = this.apiApp.getAuthUserProvider().getSignedInAuthUser(routingContext);
+      AuthUser authSignedInUser = this.apiApp.getAuthProvider().getSignedInAuthUser(routingContext);
       /**
        * Signed-in and in same realm
        */
@@ -238,26 +238,19 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly) {
 
-    User authUser;
-    try {
-      authUser = apiApp.getAuthUserProvider().getSignedInBaseUser(routingContext);
-    } catch (NotFoundException e) {
-      return Future.failedFuture(
-        TowerFailureException
-          .builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
-          .build()
-      );
-    }
-    return apiApp.getUserProvider()
-      .updatePassword(authUser.getLocalId(), authUser.getRealm().getLocalId(), passwordOnly.getPassword())
-      .compose(futureUser -> {
-        /**
-         * Because this is a POST, we can't redirect via HTTP
-         * The javascript client is doing it.
-         */
-        return Future.succeededFuture();
-      });
+
+    return apiApp
+      .getAuthProvider().getSignedInBaseUser(routingContext)
+      .compose(signedInUser -> apiApp
+        .getUserProvider()
+        .updatePassword(signedInUser.getLocalId(), signedInUser.getRealm().getLocalId(), passwordOnly.getPassword())
+        .compose(futureUser -> {
+          /**
+           * Because this is a POST, we can't redirect via HTTP
+           * The javascript client is doing it.
+           */
+          return Future.succeededFuture();
+        }));
 
   }
 

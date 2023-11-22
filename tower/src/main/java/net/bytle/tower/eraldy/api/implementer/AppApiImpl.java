@@ -7,6 +7,7 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthPermission;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
@@ -17,6 +18,7 @@ import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
+import net.bytle.vertx.TowerFailureException;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
@@ -96,18 +98,30 @@ public class AppApiImpl implements AppApi {
 
   @Override
   public Future<ApiResponse<java.util.List<App>>> appsGet(RoutingContext routingContext, String realmIdentifier) {
+
     if (realmIdentifier == null) {
       throw ValidationException.create("A realm identifier should be given", "realmIdentifier", null);
     }
-    AppProvider appProvider = apiApp.getAppProvider();
-    //this.apiApp.getAuthSignedInUser()
+
+
     return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(realmIdentifier, Realm.class)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(appProvider::getApps)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(apps -> Future.succeededFuture(new ApiResponse<>(apps)
-          .setMapper(this.jsonMapper)
+      .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
+      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_APPS_GET))
+      .compose(
+        realm -> apiApp.getAppProvider().getApps(realm),
+        err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setMessage("Unable to get the realm with the identifier (" + realmIdentifier + ")")
+            .setException(err)
+            .buildWithContextFailing(routingContext)
+        ))
+      .compose(
+        apps -> Future.succeededFuture(new ApiResponse<>(apps).setMapper(this.jsonMapper)),
+        err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setMessage("Unable to get the apps for the realm (" + realmIdentifier + ")")
+            .setException(err)
+            .buildWithContextFailing(routingContext)
         )
       );
   }

@@ -439,7 +439,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         optInIp = "";
       }
 
-      User user = this.getApp().getAuthUserProvider().toBaseModelUser(authUser);
+      User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
       this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(registration -> authContext.next());

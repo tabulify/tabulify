@@ -1,5 +1,6 @@
 package net.bytle.tower.eraldy.objectProvider;
 
+import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
@@ -7,22 +8,37 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
+import net.bytle.tower.eraldy.auth.AuthPermission;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
+import net.bytle.vertx.TowerFailureException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 import net.bytle.vertx.auth.AuthUser;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class AuthUserProvider {
+/**
+ * Provide authenticated user and authorization functions
+ */
+public class AuthProvider {
   private final EraldyApiApp apiApp;
 
-  public AuthUserProvider(EraldyApiApp eraldyApiApp) {
+  public AuthProvider(EraldyApiApp eraldyApiApp) {
     this.apiApp = eraldyApiApp;
   }
 
-  public OrganizationUser getSignedInOrganizationalUser(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
+  /**
+   * A private utility function that returns the Auth User has organizational user
+   * You want to use {@link #getSignedInOrganizationalUser(RoutingContext)}
+   *
+   * @param routingContext - the routing context
+   * @return the signed organizational user
+   * @throws NotFoundException           - if the user is not found
+   * @throws NotSignedInOrganizationUser - if the user is not an organization user
+   */
+  private OrganizationUser getSignedInOrganizationalUserOrThrows(RoutingContext routingContext) throws NotFoundException, NotSignedInOrganizationUser {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
     return toModelUser(authUser, OrganizationUser.class);
   }
@@ -140,8 +156,20 @@ public class AuthUserProvider {
 
   }
 
+  public Future<User> getSignedInBaseUser(RoutingContext routingContext) {
+    try {
+      return Future.succeededFuture(this.getSignedInBaseUserOrThrow(routingContext));
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException
+          .builder()
+          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .build()
+      );
+    }
+  }
 
-  public User getSignedInBaseUser(RoutingContext routingContext) throws NotFoundException {
+  private User getSignedInBaseUserOrThrow(RoutingContext routingContext) throws NotFoundException {
     AuthUser authUser = this.getSignedInAuthUser(routingContext);
     try {
       return toModelUser(authUser, User.class);
@@ -152,4 +180,50 @@ public class AuthUserProvider {
     }
   }
 
+  /**
+   * Utility function to get the user as future
+   * (ie fail the context if the user is not present or not the good one)
+   * This function is used mostly in Api implementation interface
+   * to not have to deal with the exception thrown of {@link #getSignedInOrganizationalUserOrThrows(RoutingContext)}
+   *
+   * @param routingContext - the routing context
+   * @return a user or a failed future
+   */
+  public Future<OrganizationUser> getSignedInOrganizationalUser(RoutingContext routingContext) {
+    try {
+      return Future.succeededFuture(this.apiApp.getAuthProvider().getSignedInOrganizationalUserOrThrows(routingContext));
+    } catch (NotFoundException e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setMessage("You should be logged in")
+          .buildWithContextFailing(routingContext)
+      );
+    } catch (NotSignedInOrganizationUser e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+          .setMessage("You should be logged as an organizational user")
+          .setException(e)
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
+  }
+
+  @SuppressWarnings("unused")
+  public Future<Realm> checkRealmAuthorization(Realm realm, AuthPermission authPermission) {
+
+    boolean authorized = false;
+    if (!authorized) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+          .setMessage("Authenticated User has no permission on the requested realm (" + realm + ") for the permission ("+ authPermission +")")
+          .build()
+      );
+    }
+    return Future.succeededFuture(realm);
+
+  }
 }

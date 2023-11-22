@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.objectProvider;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -66,7 +67,14 @@ public class UserProvider {
   private static final String CREATION_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private final EraldyApiApp apiApp;
   private final PgPool jdbcPool;
+  /**
+   * Mapper for the database string
+   */
   private final JsonMapper databaseMapper;
+  /**
+   * Mapper for the API
+   */
+  private final JsonMapper apiMapper;
 
 
   public UserProvider(EraldyApiApp apiApp) {
@@ -75,6 +83,9 @@ public class UserProvider {
     Server server = this.apiApp.getApexDomain().getHttpServer().getServer();
     this.jdbcPool = server.getJdbcPool();
     this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
+      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+      .build();
+    this.apiMapper = server.getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
 
@@ -800,7 +811,7 @@ public class UserProvider {
    */
   public <T extends User> Future<T> getUserFromAuthUser(AuthUser authUser, Class<T> userClass) {
 
-    User user = this.apiApp.getAuthUserProvider().toBaseModelUser(authUser);
+    User user = this.apiApp.getAuthProvider().toBaseModelUser(authUser);
 
     /**
      * Guid
@@ -826,5 +837,9 @@ public class UserProvider {
     }
 
     return Future.failedFuture(new InternalException("The auth user (" + authUser + ") does not have enough user identifier to retrieve the database user"));
+  }
+
+  public ObjectMapper getApiMapper() {
+    return this.apiMapper;
   }
 }
