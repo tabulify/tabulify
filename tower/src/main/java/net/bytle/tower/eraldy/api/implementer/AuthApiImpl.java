@@ -117,7 +117,7 @@ public class AuthApiImpl implements AuthApi {
 
 
     try {
-      AuthUser authSignedInUser = this.apiApp.getAuthSignedInUser(routingContext);
+      AuthUser authSignedInUser = this.apiApp.getAuthUserProvider().getSignedInAuthUser(routingContext);
       /**
        * Signed-in and in same realm
        */
@@ -238,9 +238,9 @@ public class AuthApiImpl implements AuthApi {
   @Override
   public Future<ApiResponse<Void>> authLoginPasswordUpdatePost(RoutingContext routingContext, PasswordOnly passwordOnly) {
 
-    AuthUser authSignedInUser;
+    User authUser;
     try {
-      authSignedInUser = apiApp.getAuthSignedInUser(routingContext);
+      authUser = apiApp.getAuthUserProvider().getSignedInBaseUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException
@@ -249,7 +249,6 @@ public class AuthApiImpl implements AuthApi {
           .build()
       );
     }
-    User authUser = UsersUtil.toModelUser(authSignedInUser, this.apiApp);
     return apiApp.getUserProvider()
       .updatePassword(authUser.getLocalId(), authUser.getRealm().getLocalId(), passwordOnly.getPassword())
       .compose(futureUser -> {

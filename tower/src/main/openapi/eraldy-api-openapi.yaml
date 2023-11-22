@@ -547,7 +547,9 @@ paths:
   /realms/owned-by/me:
     get:
       operationId: "realmsOwnedByMeGet"
-      summary: "Return the list of realms owned by the authenticated user"
+      summary: |
+        Return the list of realms owned by the authenticated user.
+        The authenticated user needs to be a organizational user.
       tags:
         - realm
       security:

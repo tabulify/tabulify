@@ -4,12 +4,14 @@ import io.vertx.core.Future;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +25,7 @@ import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
  * <p>
  * They are child of {@link net.bytle.tower.eraldy.model.openapi.User}
  * and are therefore created via {@link UserProvider}
- * The function {@link UserProvider#getUserFromRow(Row, Class, Realm)} checks the realm
+ * The function {@link #checkOrganizationUserRealmId(Class, Long)}} checks the realm
  * before the object is created.
  */
 public class OrganizationUserProvider {
@@ -130,6 +132,13 @@ public class OrganizationUserProvider {
       Realm eraldyRealm = EraldyRealm.get().getRealm();
       return this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
 
+  }
+
+  <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
+    Realm eraldyRealm = EraldyRealm.get().getRealm();
+    if (userClass.equals(OrganizationUser.class) && !localId.equals(eraldyRealm.getLocalId())) {
+      throw new AssertionException("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + localId + ")");
+    }
   }
 
 }

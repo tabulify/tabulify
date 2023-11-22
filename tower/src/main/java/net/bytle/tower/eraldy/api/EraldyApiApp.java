@@ -6,7 +6,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
@@ -17,7 +16,10 @@ import net.bytle.tower.eraldy.objectProvider.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
-import net.bytle.vertx.auth.*;
+import net.bytle.vertx.auth.ApiSessionAuthenticationHandler;
+import net.bytle.vertx.auth.AuthContext;
+import net.bytle.vertx.auth.AuthQueryProperty;
+import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,6 +52,7 @@ public class EraldyApiApp extends TowerApp {
   private final ListRegistrationFlow userListRegistrationFlow;
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
+  private final AuthUserProvider authUserProvider;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -57,6 +60,7 @@ public class EraldyApiApp extends TowerApp {
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
     this.organizationProvider = new OrganizationProvider(this);
+    this.authUserProvider = new AuthUserProvider(this);
     this.listRegistrationProvider = new ListRegistrationProvider(this);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
@@ -326,31 +330,6 @@ public class EraldyApiApp extends TowerApp {
   }
 
 
-  /**
-   * @param ctx - the context
-   * @return the authenticated user
-   * @throws NotFoundException if not found
-   */
-  public AuthUser getAuthSignedInUser(RoutingContext ctx) throws NotFoundException {
-
-    /**
-     * Why not in a {@link net.bytle.tower.eraldy.model.openapi.User} format
-     * Because:
-     * * AuthUser stores the authorization and role
-     * * To store the user in a session, it should be serializable
-     * (ie wrapped as in the {@link io.vertx.ext.web.handler.impl.UserHolder})
-     * As of today, only the {@link AuthUser} via the vertx {@link io.vertx.ext.auth.User}
-     * that is a Json serializable object
-     */
-    io.vertx.ext.auth.User user = ctx.user();
-    if (user == null) {
-      throw new NotFoundException();
-    }
-    return AuthUser.createFromClaims(user.principal().mergeIn(user.attributes()));
-
-
-  }
-
 
   public OAuthExternalCodeFlow getOauthFlow() {
     return this.oauthExternalFlow;
@@ -358,5 +337,9 @@ public class EraldyApiApp extends TowerApp {
 
   public OrganizationUserProvider getOrganizationUserProvider() {
     return this.organizationUserProvider;
+  }
+
+  public AuthUserProvider getAuthUserProvider() {
+    return this.authUserProvider;
   }
 }

@@ -3,32 +3,40 @@ package net.bytle.tower.eraldy.auth;
 import io.vertx.core.Future;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.vertx.RoutingContextWrapper;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
-import net.bytle.vertx.auth.AuthUser;
 
 public class Authorization {
 
   public static Future<Boolean> checkForRealm(EraldyApiApp apiApp, RoutingContextWrapper routingContext, Realm requestedRealm) {
 
-    AuthUser signedInUser;
+    OrganizationUser signedInUser;
     try {
-      signedInUser = apiApp.getAuthSignedInUser(routingContext.getRoutingContext());
+      signedInUser = apiApp.getAuthUserProvider().getSignedInOrganizationalUser(routingContext.getRoutingContext());
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
           .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
           .buildWithContextFailing(routingContext.getRoutingContext())
       );
+    } catch (NotSignedInOrganizationUser e) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+          .setMessage("You should be logged as organizational user")
+          .setException(e)
+          .build()
+      );
     }
 
-    OrganizationUser organizationUser = UsersUtil.toOrganizationUser(signedInUser, apiApp);
+
     return apiApp
       .getRealmProvider()
-      .getRealmsForOwner(organizationUser, Realm.class)
+      .getRealmsForOwner(signedInUser, Realm.class)
       .compose(userRealms -> {
         boolean authorized = false;
         for (Realm userRealm : userRealms) {

@@ -81,9 +81,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public void authenticateAndRegisterUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public Future<Registration> registerUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
 
-    this.getApp()
+    return this.getApp()
       .getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
@@ -107,13 +107,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .getListRegistrationProvider()
           .upsertRegistration(inputRegistration)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
-          .onSuccess(registration -> {
-            addRegistrationConfirmationCookieData(ctx, registration);
-            UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
-            new AuthContext(this.getApp(), ctx, UsersUtil.toAuthUser(user), AuthState.createEmpty())
-              .redirectViaHttp(redirectUri)
-              .authenticateSession();
-          });
+          .onSuccess(Future::succeededFuture);
       });
   }
 
@@ -275,6 +269,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
   }
 
   public void handleStep2EmailValidationLinkClick(RoutingContext ctx, AuthUser authUser) {
+
     String realmHandleClaims = authUser.getRealmIdentifier();
     String emailClaims = authUser.getSubjectEmail();
     String listGuid;
@@ -316,8 +311,18 @@ public class ListRegistrationFlow extends WebFlowAbs {
             }
             futureUser
               .onFailure(ctx::fail)
-              .onSuccess(userToRegister -> authenticateAndRegisterUserToList(ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL));
-
+              .onSuccess(userToRegister -> registerUserToList(ctx, listGuid, userToRegister, optInTime, finalOptInIp, RegistrationFlow.EMAIL)
+                .onFailure(ctx::fail)
+                .onSuccess(registration -> {
+                  if (ctx.user() == null) {
+                    addRegistrationConfirmationCookieData(ctx, registration);
+                    UriEnhanced redirectUri = getRegistrationConfirmationOperationPath(registration);
+                    new AuthContext(this.getApp(), ctx, authUser, AuthState.createEmpty())
+                      .redirectViaHttp(redirectUri)
+                      .authenticateSession();
+                  }
+                })
+              );
           });
       });
 
@@ -434,10 +439,10 @@ public class ListRegistrationFlow extends WebFlowAbs {
         optInIp = "";
       }
 
-      User user = UsersUtil.toModelUser(authUser, this.getApp());
-      this.authenticateAndRegisterUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH);
-      authContext.next();
-
+      User user = this.getApp().getAuthUserProvider().toBaseModelUser(authUser);
+      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH)
+        .onFailure(err -> authContext.getRoutingContext().fail(err))
+        .onSuccess(registration -> authContext.next());
     };
   }
 

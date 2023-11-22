@@ -90,7 +90,7 @@ public class UserApiImpl implements UserApi {
 
     AuthUser authSignedInUser;
     try {
-      authSignedInUser = apiApp.getAuthSignedInUser(routingContext);
+      authSignedInUser = apiApp.getAuthUserProvider().getSignedInAuthUser(routingContext);
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()

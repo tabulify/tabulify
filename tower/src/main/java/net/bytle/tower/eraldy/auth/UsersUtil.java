@@ -2,19 +2,12 @@ package net.bytle.tower.eraldy.auth;
 
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
-import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.api.EraldyApiApp;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.util.Guid;
 import net.bytle.vertx.EraldyDomain;
 import net.bytle.vertx.auth.AuthUser;
 import net.bytle.vertx.flow.SmtpSender;
-
-import java.lang.reflect.InvocationTargetException;
 
 public class UsersUtil {
 
@@ -114,92 +107,5 @@ public class UsersUtil {
     return smtpSender;
   }
 
-
-  /**
-   * A utility map to transform into a user to calculate
-   * the identifier
-   * @param authUser - the auth user
-   * @param eraldyApiApp - the app
-   * @return a user with the ids
-   */
-  public static User toModelUser(AuthUser authUser, EraldyApiApp eraldyApiApp) {
-
-    return toUser(authUser,eraldyApiApp,User.class);
-
-  }
-
-  private static <T extends User> T toUser(AuthUser authUser, EraldyApiApp eraldyApiApp, Class<T> userClass) {
-    Realm realm = new Realm();
-    /**
-     * Audience guid may be null when we get an Oauth user
-     */
-    String audience = authUser.getAudience();
-    if (audience != null) {
-      try {
-        realm.setGuid(audience);
-        Guid realmGuid = eraldyApiApp.getRealmProvider().getGuidFromHash(audience);
-        realm.setLocalId(realmGuid.getRealmOrOrganizationId());
-      } catch (CastException e) {
-        throw new InternalException("The audience value (" + audience + ") is not a valid realm guid", e);
-      }
-    }
-    String audienceHandle = authUser.getAudienceHandle();
-    if (audienceHandle == null && audience == null) {
-      throw new InternalException("The audience and the audience handle values should not be together null");
-    }
-    realm.setHandle(audienceHandle);
-
-    T userEraldy;
-    try {
-      userEraldy = userClass.getDeclaredConstructor().newInstance();
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new InternalException("Unable to create a user instance",e);
-    }
-    userEraldy.setRealm(realm);
-    String subjectGivenName = authUser.getSubjectGivenName();
-    userEraldy.setGivenName(subjectGivenName);
-    String subject = authUser.getSubject();
-    String subjectEmail = authUser.getSubjectEmail();
-    if (subject == null && subjectEmail == null) {
-      throw new InternalException("The subject and the subject email values should not be together null");
-    }
-    userEraldy.setEmail(subjectEmail);
-    if (subject != null) {
-      /**
-       * when retrieving an external Auth User from a social provider,
-       * we don't have any subject
-       */
-      userEraldy.setGuid(subject);
-      try {
-        Guid guid = eraldyApiApp.getUserProvider().getGuidFromHash(subject);
-        userEraldy.setLocalId(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()));
-      } catch (CastException e) {
-        throw new InternalException(e);
-      }
-    }
-    String subjectFamilyName = authUser.getSubjectFamilyName();
-    String subjectFullName = subjectGivenName;
-    if (subjectFullName != null && subjectFamilyName != null) {
-      subjectFullName += " " + subjectFamilyName;
-    }
-    userEraldy.setFullName(subjectFullName);
-    userEraldy.setBio(authUser.getSubjectBio());
-    userEraldy.setLocation(authUser.getSubjectLocation());
-    userEraldy.setWebsite(authUser.getSubjectBlog());
-    userEraldy.setAvatar(authUser.getSubjectAvatar());
-    return userEraldy;
-  }
-
-  /**
-   *
-   * @param authSignedInUser - the signe user
-   * @param apiApp - the api app
-   * @return an organization user with a user from the Eraldy realm
-   */
-  public static OrganizationUser toOrganizationUser(AuthUser authSignedInUser, EraldyApiApp apiApp) {
-    OrganizationUser user = toUser(authSignedInUser, apiApp, OrganizationUser.class);
-    UsersUtil.isEraldyUser(user);
-    return user;
-  }
 
 }

@@ -14,14 +14,13 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import jakarta.mail.internet.AddressException;
+import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
@@ -376,19 +375,23 @@ public class UserProvider {
 
 
     Long userRealmId = row.getLong(REALM_COLUMN);
+    Long id = row.getLong(ID_COLUMN);
 
     /**
      * OrganizationUser realm check
      */
-    Realm eraldyRealm = EraldyRealm.get().getRealm();
-    if (userClass.equals(OrganizationUser.class) && !userRealmId.equals(eraldyRealm.getLocalId())) {
-      return Future.failedFuture(
-        TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
-          .setMessage("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + userRealmId + ")")
-          .build()
+    try {
+      this.apiApp.getOrganizationUserProvider().checkOrganizationUserRealmId(userClass, userRealmId);
+    } catch (AssertionException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+        .setMessage("You can't build a organization user from this row. User: " + id + ", realm: " + userRealmId + ")")
+        .setException(e)
+        .build()
       );
     }
+
 
     boolean validRealm = knownRealm != null && knownRealm.getLocalId().equals(userRealmId);
     Future<Realm> realmFuture;
@@ -406,7 +409,6 @@ public class UserProvider {
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
         T user = Json.decodeValue(jsonAppData.toBuffer(), userClass);
 
-        Long id = row.getLong(ID_COLUMN);
         user.setLocalId(id);
         user.setRealm(realm);
         this.computeGuid(user);
@@ -422,6 +424,7 @@ public class UserProvider {
       });
 
   }
+
 
   private void computeGuid(User user) {
     if (user.getGuid() != null) {
@@ -797,7 +800,8 @@ public class UserProvider {
    */
   public <T extends User> Future<T> getUserFromAuthUser(AuthUser authUser, Class<T> userClass) {
 
-    User user = UsersUtil.toModelUser(authUser, this.apiApp);
+    User user = this.apiApp.getAuthUserProvider().toBaseModelUser(authUser);
+
     /**
      * Guid
      */

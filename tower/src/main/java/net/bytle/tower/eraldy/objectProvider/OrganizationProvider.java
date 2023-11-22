@@ -9,7 +9,6 @@ import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.JdbcPostgresPool;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +32,11 @@ public class OrganizationProvider {
   private static final String GUID_PREFIX = "org";
   private final EraldyApiApp apiApp;
   public static final String ORGA_NAME_COLUMN = TABLE_PREFIX + COLUMN_PART_SEP + "name";
+  private final PgPool jdbcPool;
 
   public OrganizationProvider(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
+    this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
   }
 
 
@@ -48,9 +49,9 @@ public class OrganizationProvider {
   public Future<Organization> getById(Long orgaId) {
     return getById(orgaId,Organization.class);
   }
+  @SuppressWarnings("SameParameterValue")
   private <T extends Organization> Future<T> getById(Long orgaId, Class<T> clazz) {
 
-    PgPool jdbcPool = JdbcPostgresPool.getJdbcPool();
     String sql = "SELECT * FROM\n" +
       QUALIFIED_TABLE_NAME + "\n" +
       "WHERE " + ORGA_ID_COLUMN + " = $1";
@@ -87,4 +88,6 @@ public class OrganizationProvider {
   private <T extends Organization> Guid computeGuid(T organization) {
     return apiApp.createGuidFromObjectId(GUID_PREFIX, organization.getLocalId());
   }
+
+
 }
