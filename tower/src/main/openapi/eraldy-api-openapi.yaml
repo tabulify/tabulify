@@ -694,7 +694,7 @@ paths:
       tags:
         - app
       security:
-        - apiKeyAuth: [ 'write:app' ]
+        - apiKeyAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/AppPostBody'
       responses:
@@ -704,30 +704,26 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/App'
+  /app/{appIdentifier}:
     get:
       operationId: appGet
       summary: |
-        Retrieve an app by:
-        * id with the appGuid
-        * or by name with the appUri and realm (Handle or Guid)
+        Retrieve an app by identifier (ie guid or handle)
       tags:
         - app
       security:
-        - apiKeyAuth: [ 'read:app' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
-        - name: appGuid
-          description: "The app guid"
-          in: query
+        - name: appIdentifier
+          description: "An app guid or handle"
+          in: path
+          required: true
           schema:
             type: string
-            example: "lis-xjkkLmi"
-        - name: appUri
-          description: "The appUri"
-          in: query
-          schema:
-            type: string
+            example: "app-xjkkLmi"
         - name: realmIdentifier
-          description: "A realm identifier (a guid or handle)"
+          description: "A realm identifier (a guid or handle). Mandatory if the app identifier is not a guid"
           in: query
           schema:
             type: string

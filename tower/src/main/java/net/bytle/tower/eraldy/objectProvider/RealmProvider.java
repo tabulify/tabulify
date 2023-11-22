@@ -582,11 +582,12 @@ public class RealmProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-              .setMessage("The realm ("+realmIdentifier+") was not found")
+              .setMessage("The realm identifier ("+realmIdentifier+") was not found")
               .build()
           );
         }
         return Future.succeededFuture(realm);
       });
   }
+
 }

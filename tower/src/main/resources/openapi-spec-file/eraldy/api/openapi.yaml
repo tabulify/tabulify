@@ -475,7 +475,9 @@ paths:
       security:
       - apiKeyAuth: []
       - cookieAuth: []
-      summary: Return the list of realms owned by the authenticated user
+      summary: |
+        Return the list of realms owned by the authenticated user.
+        The authenticated user needs to be a organizational user.
       tags:
       - realm
       x-accepts: application/json
@@ -624,27 +626,39 @@ paths:
       x-content-type: application/json
       x-accepts: application/json
   /app:
+    post:
+      operationId: appPost
+      requestBody:
+        $ref: '#/components/requestBodies/AppPostBody'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/App'
+          description: Ok
+      security:
+      - apiKeyAuth: []
+      summary: "Create or modify an app (ie design, ...)"
+      tags:
+      - app
+      x-content-type: application/json
+      x-accepts: application/json
+  /app/{appIdentifier}:
     get:
       operationId: appGet
       parameters:
-      - description: The app guid
-        explode: true
-        in: query
-        name: appGuid
-        required: false
+      - description: An app guid or handle
+        explode: false
+        in: path
+        name: appIdentifier
+        required: true
         schema:
-          example: lis-xjkkLmi
+          example: app-xjkkLmi
           type: string
-        style: form
-      - description: The appUri
-        explode: true
-        in: query
-        name: appUri
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: A realm identifier (a guid or handle)
+        style: simple
+      - description: A realm identifier (a guid or handle). Mandatory if the app identifier
+          is not a guid
         explode: true
         in: query
         name: realmIdentifier
@@ -660,33 +674,12 @@ paths:
                 $ref: '#/components/schemas/App'
           description: Ok
       security:
-      - apiKeyAuth:
-        - read:app
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
-        Retrieve an app by:
-        * id with the appGuid
-        * or by name with the appUri and realm (Handle or Guid)
+        Retrieve an app by identifier (ie guid or handle)
       tags:
       - app
-      x-accepts: application/json
-    post:
-      operationId: appPost
-      requestBody:
-        $ref: '#/components/requestBodies/AppPostBody'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/App'
-          description: Ok
-      security:
-      - apiKeyAuth:
-        - write:app
-      summary: "Create or modify an app (ie design, ...)"
-      tags:
-      - app
-      x-content-type: application/json
       x-accepts: application/json
   /apps:
     get:
@@ -1850,6 +1843,7 @@ components:
         primaryColor: '#3498db'
         guid: xmmmN
         logo: https://doe.com/_media/android-chrome-192x192.png
+        handle: "[\"doe.com\",\"doe.com/doc\"]"
         realm:
           defaultApp: ""
           ownerUser:
@@ -1878,7 +1872,6 @@ components:
           handle: handle
           localId: 0
         localId: 1
-        uri: doe.com
         slogan: "Doe, Be You"
         user:
           disabledReason: disabledReason
@@ -1909,11 +1902,15 @@ components:
           description: The global app id (realm id + local app id)
           example: xmmmN
           type: string
-        uri:
-          description: "The uri of the app without the scheme (unique for all apps\
-            \ on the realm, this is equivalent to the authentication scope)"
-          example: doe.com
+        handle:
+          description: |
+            The handle of the app.
+            You may choose an uri without the scheme
+            The handle is unique for all apps on the realm.
+          example: "[\"doe.com\",\"doe.com/doc\"]"
           type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            uri\"})"
         name:
           description: The name of the app
           example: Doe
@@ -1953,7 +1950,7 @@ components:
       - guid
       x-fields-to-string:
       - guid
-      - uri
+      - handle
       x-parent: true
     RealmPostBody:
       description: Realm creation
@@ -2219,16 +2216,15 @@ components:
         appSlogan: "Doe, be you"
         appTerms: https://doe.com/terms
         appGuid: appGuid
-        appUri: https://doe.com
+        appUri: doe.com/doc
         realmIdentifier: realmIdentifier
       properties:
         appGuid:
           description: The guid of an existing app (to update the uri if necessary)
           type: string
         appUri:
-          description: The unique uri of the app
-          example: https://doe.com
-          format: uri
+          description: An unique uri name of the app
+          example: doe.com/doc
           type: string
         realmIdentifier:
           description: the realm identifier (Guid or handle)
@@ -2392,6 +2388,7 @@ components:
           primaryColor: '#3498db'
           guid: xmmmN
           logo: https://doe.com/_media/android-chrome-192x192.png
+          handle: "[\"doe.com\",\"doe.com/doc\"]"
           realm:
             defaultApp: ""
             ownerUser:
@@ -2420,7 +2417,6 @@ components:
             handle: handle
             localId: 0
           localId: 1
-          uri: doe.com
           slogan: "Doe, Be You"
           user:
             disabledReason: disabledReason
@@ -2657,6 +2653,7 @@ components:
             primaryColor: '#3498db'
             guid: xmmmN
             logo: https://doe.com/_media/android-chrome-192x192.png
+            handle: "[\"doe.com\",\"doe.com/doc\"]"
             realm:
               defaultApp: ""
               ownerUser:
@@ -2685,7 +2682,6 @@ components:
               handle: handle
               localId: 0
             localId: 1
-            uri: doe.com
             slogan: "Doe, Be You"
             user:
               disabledReason: disabledReason

@@ -11,9 +11,9 @@ import java.util.List;
 public interface AppApi  {
 
     /**
-     * Retrieve an app by: * id with the appGuid * or by name with the appUri and realm (Handle or Guid)
+     * Retrieve an app by identifier (ie guid or handle)
     */
-    Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
+    Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appIdentifier, String realmIdentifier);
 
     /**
      * Create or modify an app (ie design, ...)

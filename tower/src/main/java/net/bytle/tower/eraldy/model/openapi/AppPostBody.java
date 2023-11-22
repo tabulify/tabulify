@@ -61,7 +61,7 @@ public class AppPostBody   {
   }
 
   /**
-  * @return appUri The unique uri of the app
+  * @return appUri An unique uri name of the app
   */
   @JsonProperty("appUri")
   public String getAppUri() {
@@ -69,7 +69,7 @@ public class AppPostBody   {
   }
 
   /**
-  * @param appUri The unique uri of the app
+  * @param appUri An unique uri name of the app
   */
   @SuppressWarnings("unused")
   public void setAppUri(String appUri) {

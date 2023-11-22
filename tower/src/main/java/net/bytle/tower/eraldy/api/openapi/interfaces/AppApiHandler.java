@@ -34,16 +34,14 @@ public void mount(RouterBuilder builder) {
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String appGuid = requestParameters.queryParameter("appGuid") != null ? requestParameters.queryParameter("appGuid").getString() : null;
-        String appUri = requestParameters.queryParameter("appUri") != null ? requestParameters.queryParameter("appUri").getString() : null;
+            String appIdentifier = requestParameters.pathParameter("appIdentifier") != null ? requestParameters.pathParameter("appIdentifier").getString() : null;
         String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
 
-      logger.debug("Parameter appGuid is {}", appGuid);
-      logger.debug("Parameter appUri is {}", appUri);
+      logger.debug("Parameter appIdentifier is {}", appIdentifier);
       logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
 
     // Based on Route#respond
-    api.appGet(routingContext, appGuid, appUri, realmIdentifier)
+    api.appGet(routingContext, appIdentifier, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

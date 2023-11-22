@@ -18,7 +18,7 @@ public class App   {
 
   protected String guid;
 
-  protected String uri;
+  protected String handle;
 
   protected String name;
 
@@ -78,19 +78,20 @@ public class App   {
   }
 
   /**
-  * @return uri The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
+  * @return handle The handle of the app. You may choose an uri without the scheme The handle is unique for all apps on the realm.
   */
-  @JsonProperty("uri")
-  public String getUri() {
-    return uri;
+  @com.fasterxml.jackson.annotation.JsonAlias({"uri"})
+  @JsonProperty("handle")
+  public String getHandle() {
+    return handle;
   }
 
   /**
-  * @param uri The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
+  * @param handle The handle of the app. You may choose an uri without the scheme The handle is unique for all apps on the realm.
   */
   @SuppressWarnings("unused")
-  public void setUri(String uri) {
-    this.uri = uri;
+  public void setHandle(String handle) {
+    this.handle = handle;
   }
 
   /**
@@ -241,7 +242,7 @@ public class App   {
 
   @Override
   public String toString() {
-    return guid + ", " + uri;
+    return guid + ", " + handle;
   }
 
 }

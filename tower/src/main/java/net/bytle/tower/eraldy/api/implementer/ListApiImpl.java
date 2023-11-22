@@ -82,7 +82,7 @@ public class ListApiImpl implements ListApi {
         futureApp = this.apiApp.getRealmProvider()
           .getRealmFromIdentifier(realmIdentifier)
           .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-          .compose(realm -> apiApp.getAppProvider().getAppByUri(URI.create(appUri), realm));
+          .compose(realm -> apiApp.getAppProvider().getAppByHandle(appUri, realm));
       }
 
       futureLists = futureApp

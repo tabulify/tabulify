@@ -483,7 +483,7 @@ public class ListProvider {
       URI finalPublisherAppUri = publisherAppUri;
       futureApp = realmFuture
         .onFailure(FailureStatic::failFutureWithTrace)
-        .compose(realm -> appProvider.getAppByUri(finalPublisherAppUri, realm));
+        .compose(realm -> appProvider.getAppByHandle(finalPublisherAppUri.toString(), realm));
     }
 
     /**

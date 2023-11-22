@@ -59,7 +59,7 @@ public class AppProvider {
   public static final String GUID = "guid";
 
 
-  public static final String URI_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
+  public static final String HANDLE_COLUMN = COLUMN_PREFIX + COLUMN_PART_SEP + URI;
   private static final String CREATION_TIME = COLUMN_PREFIX + COLUMN_PART_SEP + CREATION_TIME_COLUMN_SUFFIX;
 
   private final EraldyApiApp apiApp;
@@ -144,7 +144,7 @@ public class AppProvider {
       return updateApp(app);
     }
 
-    if (app.getUri() == null) {
+    if (app.getHandle() == null) {
       throw new IllegalArgumentException("The id or uri should be given.");
     }
 
@@ -175,7 +175,7 @@ public class AppProvider {
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
       "  " + REALM_ID_COLUMN + ",\n" +
       "  " + APP_ID_COLUMN + ",\n" +
-      "  " + URI_COLUMN + ",\n" +
+      "  " + HANDLE_COLUMN + ",\n" +
       "  " + USER_COLUMN + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
       "  " + CREATION_TIME + "\n" +
@@ -195,7 +195,7 @@ public class AppProvider {
                 Tuple.of(
                   app.getRealm().getLocalId(),
                   app.getLocalId(),
-                  app.getUri(),
+                  app.getHandle(),
                   app.getUser().getLocalId(),
                   this.getDatabaseJsonObject(app),
                   DateTimeUtil.getNowUtc()
@@ -213,7 +213,7 @@ public class AppProvider {
       String updateSqlById = "UPDATE \n" +
         JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
         "set " +
-        "  " + URI_COLUMN + " = $1,\n" +
+        "  " + HANDLE_COLUMN + " = $1,\n" +
         "  " + USER_COLUMN + " = $2, \n" +
         "  " + DATA_COLUMN + " = $3 \n" +
         "where\n" +
@@ -224,7 +224,7 @@ public class AppProvider {
       return jdbcPool
         .preparedQuery(updateSqlById)
         .execute(Tuple.of(
-          app.getUri(),
+          app.getHandle(),
           app.getUser().getLocalId(),
           databaseJsonObject,
           app.getRealm().getLocalId(),
@@ -236,14 +236,14 @@ public class AppProvider {
         .compose(ok -> Future.succeededFuture(app));
     }
 
-    if (app.getUri() == null) {
+    if (app.getHandle() == null) {
       InternalException internalException = new InternalException("The app id or uri is mandatory to update an app");
       return Future.failedFuture(internalException);
     }
     return updateAppByUriAndGetRowSet(app)
       .compose(rowSet -> {
           if (rowSet.size() != 1) {
-            InternalException internalException = new InternalException("No app was updated with the uri (" + app.getUri() + ") and realm (" + app.getRealm().getHandle() + ")");
+            InternalException internalException = new InternalException("No app was updated with the uri (" + app.getHandle() + ") and realm (" + app.getRealm().getHandle() + ")");
             return Future.failedFuture(internalException);
           }
           Long appId = rowSet.iterator().next().getLong(APP_ID_COLUMN);
@@ -261,7 +261,7 @@ public class AppProvider {
       "  " + DATA_COLUMN + " = $2 \n" +
       "where\n" +
       "  " + REALM_ID_COLUMN + " = $3\n" +
-      " AND " + URI_COLUMN + " = $4\n" +
+      " AND " + HANDLE_COLUMN + " = $4\n" +
       " RETURNING " + APP_ID_COLUMN;
 
     return jdbcPool
@@ -270,7 +270,7 @@ public class AppProvider {
           app.getUser().getLocalId(),
           this.getDatabaseJsonObject(app),
           app.getRealm().getLocalId(),
-          app.getUri()
+          app.getHandle()
         )
       )
       .onFailure(t -> LOGGER.error("Error while updating the app by uri and realm. Sql: \n" + updateSqlByUri, t));
@@ -297,7 +297,7 @@ public class AppProvider {
           app.getLocalId())
         );
     } else {
-      String appUri = app.getUri();
+      String appUri = app.getHandle();
       if (appUri == null) {
         String failureMessage = "An id, or uri should be given to check the existence of an app";
         InternalException internalException = new InternalException(failureMessage);
@@ -307,7 +307,7 @@ public class AppProvider {
         " from " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
         " where " +
         " " + REALM_ID_COLUMN + " = ?" +
-        " AND " + URI_COLUMN + " = ?";
+        " AND " + HANDLE_COLUMN + " = ?";
       futureResponse = jdbcPool
         .preparedQuery(sql)
         .execute(Tuple.of(
@@ -404,11 +404,11 @@ public class AppProvider {
       .compose(compositeFuture -> {
         User user = compositeFuture.resultAt(0);
         Realm realmResult = compositeFuture.resultAt(1);
-        String uri = row.getString(URI_COLUMN);
+        String uri = row.getString(HANDLE_COLUMN);
         JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
         App app = Json.decodeValue(jsonAppData.toBuffer(), App.class);
         app.setUser(user);
-        app.setUri(uri);
+        app.setHandle(uri);
         app.setRealm(realmResult);
         Long appId = row.getLong(APP_ID_COLUMN);
         app.setLocalId(appId);
@@ -419,14 +419,14 @@ public class AppProvider {
   }
 
 
-  public Future<App> getAppByUri(URI uri, Realm realm) {
+  public Future<App> getAppByHandle(String handle, Realm realm) {
 
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
-          + " WHERE " + URI_COLUMN + " = $1 "
+          + " WHERE " + HANDLE_COLUMN + " = $1 "
           + "and " + REALM_ID_COLUMN + " = $2 ")
       .execute(Tuple.of(
-        uri.toString(),
+        handle.toString(),
         realm.getLocalId()
       ))
       .onFailure(FailureStatic::failFutureWithTrace)
@@ -451,7 +451,7 @@ public class AppProvider {
 
     App requestedApp = new App();
     requestedApp.setGuid(appPostBody.getAppGuid());
-    requestedApp.setUri(appPostBody.getAppUri());
+    requestedApp.setHandle(appPostBody.getAppUri());
 
     String realmIdentifier = appPostBody.getRealmIdentifier();
     return apiApp.getAppProvider()
@@ -464,7 +464,7 @@ public class AppProvider {
         }
 
         App app = new App();
-        app.setUri(appPostBody.getAppUri());
+        app.setHandle(appPostBody.getAppUri());
         app.setName(appPostBody.getAppName());
         app.setLogo(appPostBody.getAppLogo());
         app.setHome(appPostBody.getAppHome());
@@ -512,13 +512,13 @@ public class AppProvider {
 
   }
 
-  private Guid getGuid(String appGuid) throws CastException {
+  public Guid getGuid(String appGuid) throws CastException {
     return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(APP_GUID_PREFIX, appGuid);
   }
 
   private Future<Realm> getRealmAndUpdateIdEventuallyFromRequested(String realmIdentifier, App requestedApp) {
     String appGuid = requestedApp.getGuid();
-    String appUri = requestedApp.getUri();
+    String appUri = requestedApp.getHandle();
     Future<Realm> realmFuture;
     if (appGuid == null) {
       if (appUri == null) {
@@ -562,7 +562,7 @@ public class AppProvider {
       .compose(realm -> getAppById(guid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm));
   }
 
-  Future<App> getAppById(long appId, Realm realm) {
+  public Future<App> getAppById(long appId, Realm realm) {
     return jdbcPool.preparedQuery(
         "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
           + " WHERE " + APP_ID_COLUMN + " = $1 "
@@ -598,6 +598,10 @@ public class AppProvider {
     cloneApp.setUser(owner);
     cloneApp.setRealm(null);
     return cloneApp;
+  }
+
+  public boolean isAppGuidIdentifier(String realmIdentifier) {
+    return realmIdentifier.startsWith(APP_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
 }

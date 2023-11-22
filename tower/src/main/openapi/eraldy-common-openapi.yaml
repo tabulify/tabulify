@@ -343,12 +343,11 @@ components:
               generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,
               property = "guid",
               scope = App.class)'
-      # required fields are part of the toString
       x-fields-identity:
         - guid
       x-fields-to-string:
         - guid
-        - uri
+        - handle
       properties:
         localId:
           format: int64
@@ -361,10 +360,16 @@ components:
           example: "xmmmN"
           # other application have things like that:
           # jNT9BcNlEjwlfhnBnPNSdsk5Lcij2F0r
-        uri:
+        handle:
           type: string
-          description: The uri of the app without the scheme (unique for all apps on the realm, this is equivalent to the authentication scope)
-          example: 'doe.com'
+          description: |
+            The handle of the app.
+            The handle is unique for all apps on the realm.
+            For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+          example:
+            - 'doe.com'
+            - 'doe.com/doc'
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"uri"})'
         name:
           type: string
           description: The name of the app

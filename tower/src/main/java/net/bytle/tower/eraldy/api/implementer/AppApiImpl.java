@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
+import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -16,21 +17,20 @@ import net.bytle.tower.eraldy.model.openapi.AppPostBody;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-
-import java.net.URI;
-import java.util.NoSuchElementException;
+import net.bytle.vertx.TowerFailureStatusEnum;
 
 public class AppApiImpl implements AppApi {
 
   private final EraldyApiApp apiApp;
-  private final JsonMapper jsonMapper;
+  private final JsonMapper apiMapper;
 
   public AppApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.jsonMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
+    this.apiMapper = apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager()
       .jsonMapperBuilder()
       .addMixIn(App.class, AppPublicMixinWithRealm.class)
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
@@ -39,39 +39,74 @@ public class AppApiImpl implements AppApi {
   }
 
   @Override
-  public Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier) {
+  public Future<ApiResponse<App>> appGet(RoutingContext routingContext, String appIdentifier, String realmIdentifier) {
 
-    AppProvider appProvider = apiApp.getAppProvider();
-    Future<App> futureApp;
-    if (appGuid != null) {
-      futureApp = appProvider.getAppByGuid(appGuid);
-    } else {
-      if (appUri == null) {
-        throw ValidationException.create("A appGuid or appUri should be given", "appGuid", null);
-      }
+
+    Future<Realm> futureRealm;
+    Guid appGuid = null;
+    try {
+      appGuid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      futureRealm = this.apiApp.getRealmProvider().getRealmFromId(appGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
       if (realmIdentifier == null) {
-        throw ValidationException.create("With an appUri, a realm identifier should be given", "realmIdentifier", null);
+        return Future.failedFuture(
+          TowerFailureException
+            .builder()
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setMessage("The realm identifier cannot be null with the handle appIdentifier (" + appIdentifier + ")")
+            .buildWithContextFailing(routingContext)
+        );
       }
-      URI appUriAsUri;
-      try {
-        appUriAsUri = URI.create(appUri);
-      } catch (Exception e) {
-        throw ValidationException.create("The appUri is not a valid uri", "appUri", appUri);
-      }
-      futureApp = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmIdentifier, Realm.class)
-        .compose(realm -> appProvider.getAppByUri(appUriAsUri, realm));
+      futureRealm = this.apiApp.getRealmProvider().getRealmFromIdentifier(realmIdentifier);
     }
-    return futureApp
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
+
+    Guid finalAppGuid = appGuid;
+    return futureRealm.compose(realm -> {
+        if (realm == null) {
+          String message;
+          if (finalAppGuid != null) {
+            message = "The realm of the app (" + appIdentifier + ") was not found";
+          } else {
+            message = "The realm (" + realmIdentifier + ") was not found";
+          }
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage(message)
+              .build()
+          );
+        }
+        return this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_APP_GET);
+      }).compose(realm -> {
+        Future<App> futureApp;
+        if (finalAppGuid != null) {
+          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.validateAndGetSecondObjectId(realm.getLocalId()), realm);
+        } else {
+          futureApp = this.apiApp.getAppProvider().getAppByHandle(appIdentifier, realm);
+        }
+        return futureApp;
+      })
       .compose(app -> {
         if (app == null) {
-          throw new NoSuchElementException("No app was found");
+          String message;
+          if (finalAppGuid != null) {
+            message = "The realm was found but not the app (" + appIdentifier + ")";
+          } else {
+            message = "The realm (" + realmIdentifier + ") was found but not the app (" + appIdentifier + ")";
+          }
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage(message)
+              .build()
+          );
         }
-        appProvider.toPublicClone(app);
-        return Future.succeededFuture(new ApiResponse<>(app));
+        return Future.succeededFuture(new ApiResponse<>(app)
+          .setMapper(this.apiMapper));
       });
   }
+
+
 
   @Override
   public Future<ApiResponse<App>> appPost(RoutingContext routingContext, AppPostBody appPostBody) {
@@ -116,7 +151,7 @@ public class AppApiImpl implements AppApi {
             .buildWithContextFailing(routingContext)
         ))
       .compose(
-        apps -> Future.succeededFuture(new ApiResponse<>(apps).setMapper(this.jsonMapper)),
+        apps -> Future.succeededFuture(new ApiResponse<>(apps).setMapper(this.apiMapper)),
         err -> Future.failedFuture(
           TowerFailureException.builder()
             .setMessage("Unable to get the apps for the realm (" + realmIdentifier + ")")
