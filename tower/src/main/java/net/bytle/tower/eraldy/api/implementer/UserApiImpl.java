@@ -1,21 +1,19 @@
 package net.bytle.tower.eraldy.api.implementer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.json.schema.ValidationException;
+import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.UserApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
-import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
-import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
@@ -28,47 +26,74 @@ import java.util.stream.Collectors;
 public class UserApiImpl implements UserApi {
 
   private final EraldyApiApp apiApp;
-  private final ObjectMapper userMapper;
 
   public UserApiImpl(TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-    this.userMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
-      .addMixIn(User.class, UserPublicMixinWithRealm.class)
-      .addMixIn(Realm.class, RealmPublicMixin.class)
-      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .build();
   }
 
 
   @Override
   public Future<ApiResponse<User>> userGet(RoutingContext routingContext, String userIdentifier, String realmIdentifier) {
 
-    Future<User> userFuture;
+    Future<Realm> realmFuture;
     UserProvider userProvider = apiApp.getUserProvider();
-
-    if (userIdentifier.startsWith(UserProvider.USR_GUID_PREFIX)) {
-      userFuture = userProvider
-        .getUserByGuid(userIdentifier, User.class);
-    } else {
+    RealmProvider realmProvider = apiApp.getRealmProvider();
+    Guid userGuid = null;
+    try {
+      userGuid = userProvider.getGuidFromHash(userIdentifier);
+      realmFuture = realmProvider.getRealmFromId(userGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
       if (realmIdentifier == null) {
-        throw ValidationException.create("With a userEmail, a realm identifier (guid or handle) should be given", "realmIdentifier", null);
+        return Future.failedFuture(
+          TowerFailureException.builder()
+            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setMessage("When the user identifier is not a guid, a realm identifier should be given")
+            .build()
+        );
       }
-      userFuture = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmIdentifier)
-        .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-        .compose(realm -> {
-          if (realm == null) {
-            throw ValidationException.create("The realm does not exist", "realmIdentifier", realmIdentifier);
-          }
-          return userProvider
-            .getUserByEmail(userIdentifier, realm.getLocalId(), User.class, realm);
-        });
+      realmFuture = this.apiApp.getRealmProvider()
+        .getRealmFromIdentifier(realmIdentifier);
     }
-    return userFuture
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
+
+    Guid finalUserGuid = userGuid;
+    return realmFuture
+      .compose(realm -> {
+        if (realm == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage("The realm was not found")
+              .build()
+          );
+        }
+        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_USER_GET);
+      })
+      .compose(realmChecked -> {
+        Future<User> futureUser;
+        if (finalUserGuid != null) {
+          futureUser = userProvider.getUserById(
+            finalUserGuid.validateRealmAndGetFirstObjectId(realmChecked.getLocalId()),
+            realmChecked.getLocalId(),
+            User.class,
+            realmChecked
+          );
+        } else {
+          futureUser = userProvider.getUserByEmail(userIdentifier, realmChecked.getLocalId(),
+            User.class,
+            realmChecked);
+        }
+        return futureUser;
+      })
       .compose(user -> {
-        userProvider.toPublicCloneWithoutRealm(user);
-        ApiResponse<User> apiResponse = new ApiResponse<>(user);
+        if (user == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setMessage("The realm was found but not the user")
+              .build()
+          );
+        }
+        ApiResponse<User> apiResponse = new ApiResponse<>(user).setMapper(userProvider.getApiMapper());
         return Future.succeededFuture(apiResponse);
       });
 
@@ -102,7 +127,7 @@ public class UserApiImpl implements UserApi {
       .getUserByGuid(authSignedInUser.getSubject(), User.class)
       .compose(user -> {
         ApiResponse<User> userApiResponse = new ApiResponse<>(user)
-          .setMapper(this.userMapper);
+          .setMapper(apiApp.getUserProvider().getApiMapper());
         return Future.succeededFuture(userApiResponse);
       });
 

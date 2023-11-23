@@ -21,7 +21,11 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
+import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
+import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -86,10 +90,11 @@ public class UserProvider {
     this.databaseMapper = server.getJacksonMapperManager().jsonMapperBuilder()
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .build();
-    this.apiMapper = server.getJacksonMapperManager().jsonMapperBuilder()
-      .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
+    this.apiMapper = this.apiApp.getApexDomain().getHttpServer().getServer().getJacksonMapperManager().jsonMapperBuilder()
+      .addMixIn(User.class, UserPublicMixinWithRealm.class)
+      .addMixIn(Realm.class, RealmPublicMixin.class)
+      .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .build();
-
   }
 
 
@@ -169,7 +174,7 @@ public class UserProvider {
 
 
     String sql = "INSERT INTO\n" +
-      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
+      QUALIFIED_TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
       "  " + EMAIL_COLUMN + ",\n" +
@@ -784,29 +789,8 @@ public class UserProvider {
   }
 
 
-  public Future<List<User>> getRecentUsersCreatedFromRealm(Realm realm) {
 
-    String sql = "SELECT *\n" +
-      "FROM  " + QUALIFIED_TABLE_NAME + "\n" +
-      "INNER JOIN " + RealmProvider.QUALIFIED_TABLE_NAME + "\n" +
-      "ON " + QUALIFIED_TABLE_NAME + "." + REALM_COLUMN + " = " + RealmProvider.QUALIFIED_TABLE_NAME + "." + RealmProvider.ID_COLUMN + "\n" +
-      "WHERE\n" +
-      REALM_COLUMN + " = $1\n" +
-      "order by " + CREATION_COLUMN + " desc\n" +
-      "limit 10";
-    return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(realm.getLocalId()))
-      .onFailure(t -> LOGGER.error("Error while retrieving the recent users of a realm. Sql: \n" + sql, t))
-      .compose(userRows -> {
-
-        if (userRows.size() == 0) {
-          // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
-          return Future.succeededFuture(new ArrayList<>());
-        }
-        return getUsersFromRows(userRows, realm);
-      });
-  }
-
+  @SuppressWarnings("unused")
   private Future<List<User>> getUsersFromRows(RowSet<Row> userRows, Realm knowRealm) {
     List<Future<User>> users = new ArrayList<>();
     for (Row row : userRows) {
@@ -826,5 +810,4 @@ public class UserProvider {
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
   }
-
 }
