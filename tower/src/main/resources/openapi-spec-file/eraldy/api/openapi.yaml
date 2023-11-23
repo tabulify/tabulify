@@ -6,6 +6,7 @@ info:
   version: v2023-06-18
 servers:
 - url: https://api.eraldy.com
+- url: https://localhost:8083
 security:
 - apiKeyAuth: []
 - cookieAuth: []
@@ -317,6 +318,55 @@ paths:
       - analytics
       x-content-type: application/json
       x-accepts: application/json
+  /analytics/event/{eventName}:
+    get:
+      operationId: analyticsEventNameGet
+      parameters:
+      - description: The event name to retrieve
+        explode: false
+        in: path
+        name: eventName
+        required: true
+        schema:
+          example: "[\"Sign-up\",\"Sign-in\"]"
+          type: string
+        style: simple
+      - description: The guid or handle of the realm
+        explode: true
+        in: query
+        name: realmIdentifier
+        required: true
+        schema:
+          example: "[\"rea-xjkkLmi\",\"realmhandlename\"]"
+          type: string
+        style: form
+      - description: The guid or handle of an app
+        explode: true
+        in: query
+        name: appIdentifier
+        required: false
+        schema:
+          example: "[\"app-xjkkLmi\",\"doe.com\"]"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AnalyticsEvent'
+                type: array
+          description: The events
+        "403":
+          description: Not authenticated
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Return a list of events
+      tags:
+      - analytics
+      x-accepts: application/json
   /csp/report:
     post:
       operationId: cspReportPost
@@ -378,8 +428,8 @@ paths:
                 $ref: '#/components/schemas/RealmAnalytics'
           description: Ok
       security:
-      - apiKeyAuth:
-        - root
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Return the asked realm
       tags:
       - realm
@@ -397,8 +447,8 @@ paths:
                 $ref: '#/components/schemas/Realm'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:realm
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Create a realm
       tags:
       - realm
@@ -453,7 +503,9 @@ paths:
           description: Not authenticated
       security:
       - apiKeyAuth:
-        - read:realm
+        - root
+      - cookieAuth:
+        - root
       summary: Return the list of realms owned by the user
       tags:
       - realm
@@ -478,37 +530,6 @@ paths:
       summary: |
         Return the list of realms owned by the authenticated user.
         The authenticated user needs to be a organizational user.
-      tags:
-      - realm
-      x-accepts: application/json
-  /realm/{realmIdentifier}/activity/users/new:
-    get:
-      operationId: realmUsersNewGet
-      parameters:
-      - description: The guid or handle of the realm
-        explode: false
-        in: path
-        name: realmIdentifier
-        required: true
-        schema:
-          example: "[\"rea-xjkkLmi\",\"realmhandlename\"]"
-          type: string
-        style: simple
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/User'
-                type: array
-          description: The users
-        "403":
-          description: Not authenticated
-      security:
-      - apiKeyAuth:
-        - read:realm
-      summary: Return the list of recent new users for the realm
       tags:
       - realm
       x-accepts: application/json
@@ -554,8 +575,8 @@ paths:
                 $ref: '#/components/schemas/Campaign'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:campaign
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Create an email campaign
       tags:
       - campaign
@@ -618,8 +639,8 @@ paths:
                 $ref: '#/components/schemas/Service'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:service
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Create a SMTP mail service for a app or a user
       tags:
       - service
@@ -714,7 +735,7 @@ paths:
     get:
       operationId: userGet
       parameters:
-      - description: A user identifier (A guid or an email)
+      - description: "A user identifier (A guid, an email or a handle)"
         explode: true
         in: query
         name: userIdentifier
@@ -724,7 +745,7 @@ paths:
           type: string
         style: form
       - description: A realm identifier (a guid or handle) if the user identifier
-          is an email
+          is not a guid
         explode: true
         in: query
         name: realmIdentifier
@@ -759,8 +780,8 @@ paths:
                 $ref: '#/components/schemas/User'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:user
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Create or modify a user (a guid or a email should be given)
       tags:
       - user
@@ -806,8 +827,8 @@ paths:
                 $ref: '#/components/schemas/User'
           description: Ok
       security:
-      - apiKeyAuth:
-        - read:user
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
         Get a user by guid
 
@@ -839,8 +860,8 @@ paths:
                 type: array
           description: Ok
       security:
-      - apiKeyAuth:
-        - read:user
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: List users
       tags:
       - user
@@ -904,8 +925,8 @@ paths:
                 $ref: '#/components/schemas/RegistrationList'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:read
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
         Get list information
 
@@ -927,8 +948,8 @@ paths:
                 $ref: '#/components/schemas/RegistrationList'
           description: Ok
       security:
-      - apiKeyAuth:
-        - write:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Create a list where users can register
       tags:
       - list
@@ -975,8 +996,8 @@ paths:
         "403":
           description: Not authenticated
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
         Get a list of lists
 
@@ -1011,8 +1032,8 @@ paths:
         "403":
           description: Not authenticated
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Get a list of list in a summary format
       tags:
       - list
@@ -1061,8 +1082,8 @@ paths:
                 $ref: '#/components/schemas/Registration'
           description: The registration
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: Get a registration object
       tags:
       - list
@@ -1161,8 +1182,8 @@ paths:
                 type: string
           description: The confirmation letter
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
         Return the confirmation letter after the user has clicked on the validation link.
 
@@ -1221,8 +1242,8 @@ paths:
                 type: string
           description: The confirmation letter
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: |
         Return the validation letter with a validation link as send by email.
       tags:
@@ -1562,6 +1583,286 @@ components:
     AnalyticsEventPost:
       additionalProperties: true
       description: The structure of the received data
+      type: object
+    AnalyticsEvent:
+      description: |
+        The event. They are the things that happen in our product.
+
+        We follow a mix of
+        * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
+        * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
+
+        The segment spec separates the event property from the context as we do.
+      example:
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        name: name
+        context:
+          os:
+            name: name
+            arch: arch
+            version: version
+          timezone: timezone
+          ip: 143.176.206.76
+          browser:
+            referrer: https://openapi-generator.tech
+            uri: https://openapi-generator.tech
+          channel: null
+          userAgent: userAgent
+          locale: locale
+          utm:
+            referrer: https://openapi-generator.tech
+            campaign: spring_sale
+            term: term
+            id: "summer-sale, abc.123"
+            source: summer-mailer
+            medium: email
+            content: content
+        id: id
+        receptionTime: 2000-01-23T04:56:07.000+00:00
+        deviceId: deviceId
+        user:
+          creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: givenName
+          id: id
+          avatar: https://openapi-generator.tech
+          email: email
+        properties:
+          key: "{}"
+        sendingTime: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          description: |
+            A unique identifier for each event.
+
+            It allows to delete duplicate.
+
+            It's known for:
+            * segment as messageId
+            * mixpanel as $insert_id
+          type: string
+        name:
+          description: the event name
+          type: string
+        properties:
+          additionalProperties:
+            type: object
+          description: The additional event properties
+          type: object
+        deviceId:
+          description: |
+            The device id (a uuid4 or a fingerprint for instance)
+
+            It's also known as the user anonymous id because this is the user identifier
+            when the user is unknown.
+
+            When you send a message, a userId or a deviceId is required in order to identify a user.
+
+            We prefer the term device id (mixpanel) over anonymous id (segment) because it's
+            more meaningful. We track the device.
+
+            It's created on the client side and stored by the client more permanently
+            (via a cookie for the browser and stored in local storage for durability).
+
+            It's not the same as a session id because:
+            * a session id may be regenerated (when the user sign in for instance).
+            * the device id does not have any security feature. You can't login
+          type: string
+        user:
+          $ref: '#/components/schemas/AnalyticsUser'
+        context:
+          $ref: '#/components/schemas/AnalyticsEventContext'
+        receptionTime:
+          description: The timestamp of when a message was received (if created and
+            send by a client)
+          format: date-time
+          type: string
+        sendingTime:
+          description: |
+            The timestamp of when a message was sent to the analytics endpoint api
+            Time: With Ga, you cannot set the time, It uses the notion of queue
+            https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#qt
+          format: date-time
+          type: string
+        creationTime:
+          description: The timestamp when the object was created
+          format: date-time
+          type: string
+      type: object
+    AnalyticsUser:
+      description: The user
+      example:
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        givenName: givenName
+        id: id
+        avatar: https://openapi-generator.tech
+        email: email
+      properties:
+        id:
+          description: A unique identifier
+          type: string
+        givenName:
+          description: the user given name
+          type: string
+        email:
+          description: the user email
+          type: string
+        avatar:
+          description: the user avatar
+          format: uri
+          type: string
+        creationTime:
+          description: The timestamp when the user was created
+          format: date-time
+          type: string
+      type: object
+    AnalyticsEventContext:
+      description: |
+        The event context
+        A dictionary of extra information that provides useful context about a event
+        We follow https://segment.com/docs/connections/spec/common/#context
+      example:
+        os:
+          name: name
+          arch: arch
+          version: version
+        timezone: timezone
+        ip: 143.176.206.76
+        browser:
+          referrer: https://openapi-generator.tech
+          uri: https://openapi-generator.tech
+        channel: null
+        userAgent: userAgent
+        locale: locale
+        utm:
+          referrer: https://openapi-generator.tech
+          campaign: spring_sale
+          term: term
+          id: "summer-sale, abc.123"
+          source: summer-mailer
+          medium: email
+          content: content
+      properties:
+        timezone:
+          description: the timezone id (ie Europe/London)
+          type: string
+        locale:
+          description: "the locale (in a browser, this is the language setting)"
+          type: string
+        ip:
+          description: The ip (the remote client ip)
+          example: 143.176.206.76
+          type: string
+        userAgent:
+          description: The user agent string
+          type: string
+        channel:
+          $ref: '#/components/schemas/AnalyticsEventChannel'
+        os:
+          $ref: '#/components/schemas/AnalyticsOperatingSystem'
+        utm:
+          $ref: '#/components/schemas/AnalyticsUrchinTrackingModule'
+        browser:
+          $ref: '#/components/schemas/AnalyticsBrowser'
+      type: object
+    AnalyticsEventChannel:
+      description: "where the request originated from server, browser or mobile"
+      enum:
+      - server
+      - browser
+      - mobile
+      type: string
+    AnalyticsOperatingSystem:
+      description: The os data
+      example:
+        name: name
+        arch: arch
+        version: version
+      properties:
+        name:
+          description: the name
+          type: string
+        version:
+          description: the version
+          type: string
+        arch:
+          description: the architecture
+          type: string
+      type: object
+    AnalyticsUrchinTrackingModule:
+      description: |
+        The UTM data
+        See:
+        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
+        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
+        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+      example:
+        referrer: https://openapi-generator.tech
+        campaign: spring_sale
+        term: term
+        id: "summer-sale, abc.123"
+        source: summer-mailer
+        medium: email
+        content: content
+      properties:
+        id:
+          description: |
+            The Campaign ID is used to identify a specific ad campaign or promotion
+            This is a required key for GA4 data import.
+          example: "summer-sale, abc.123"
+          type: string
+        campaign:
+          description: "Product, slogan, promo code"
+          example: spring_sale
+          type: string
+        source:
+          description: |
+            Referrer.
+            Identifies which site sent the traffic, and is a required parameter
+            Example: the referrer (e.g. google, newsletter)
+          example: summer-mailer
+          type: string
+        medium:
+          description: |
+            Marketing medium (e.g. cpc, banner, email)
+            Identifies what type of link was used, such as cost per click or email.
+          example: email
+          type: string
+        term:
+          description: |
+            Identifies search terms, the paid keywords
+          type: string
+        content:
+          description: |
+            Identifies what specifically was clicked to bring the user to the site,
+            such as a banner ad or a text link.
+            It is often used for A/B testing and content-targeted ads
+          type: string
+        referrer:
+          description: |
+            Identifies the referrer URL as it's not passed by default by browser HTTP request
+            and therefore not available in the `document.referrer` attribute
+            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
+            utm_source is also a referer but in a named format
+          format: uri
+          type: string
+      type: object
+    AnalyticsBrowser:
+      description: Track browser specific information
+      example:
+        referrer: https://openapi-generator.tech
+        uri: https://openapi-generator.tech
+      properties:
+        uri:
+          description: the address uri in the browser
+          format: uri
+          type: string
+        referrer:
+          description: |
+            The `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
+          format: uri
+          type: string
       type: object
     CspObject:
       description: A CSP violation report object
@@ -1905,8 +2206,8 @@ components:
         handle:
           description: |
             The handle of the app.
-            You may choose an uri without the scheme
             The handle is unique for all apps on the realm.
+            For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
           example: "[\"doe.com\",\"doe.com/doc\"]"
           type: string
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\

@@ -84,7 +84,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         String realmNameOrHandle = RealmProvider.getNameOrHandle(realm);
 
         SmtpSender realmOwnerSender = UsersUtil.toSenderUser(realm.getOwnerUser());
-        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUserForLoginToken(newUser).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUser(newUser).addRoutingClaims(routingContext);
         String newUserName;
         try {
           newUserName = UsersUtil.getNameOrNameFromEmail(newUser);

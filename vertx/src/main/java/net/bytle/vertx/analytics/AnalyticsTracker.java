@@ -1,11 +1,15 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics;
 
 import com.mixpanel.mixpanelapi.ClientDelivery;
 import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
+import net.bytle.vertx.*;
+import net.bytle.vertx.analytics.model.*;
 import net.bytle.vertx.auth.AuthUser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -153,15 +157,32 @@ public class AnalyticsTracker {
       throw new RuntimeException(e);
     }
     for (AnalyticsEvent event : eventInBatch) {
+      try {
+        AnalyticsLogger.log(event);
+      } catch (IllegalStructure e) {
+        throw new RuntimeException(e);
+      }
       this.eventsQueue.remove(event.getId());
     }
     this.mapDb.commit();
     return this;
   }
 
-  public ServerEventBuilder eventBuilder(AnalyticsEventName eventName) {
+  public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEventName eventName) {
 
-    return new ServerEventBuilder(eventName);
+    return new ServerEventBuilder(eventName)
+      .setChannel(AnalyticsEventChannel.SERVER);
+
+  }
+
+  public ServerEventBuilder eventBuilderForBrowserEvent(AnalyticsEvent analyticsEvent) {
+
+    AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(analyticsEvent.getName());
+    analyticsEvent.setName(eventName.toString()); // normalize
+    ServerEventBuilder serverEventBuilder = new ServerEventBuilder(eventName);
+    serverEventBuilder.analyticsEvent = analyticsEvent;
+    serverEventBuilder.setChannel(AnalyticsEventChannel.BROWSER);
+    return serverEventBuilder;
 
   }
 
@@ -169,16 +190,21 @@ public class AnalyticsTracker {
     private final AnalyticsEventName eventName;
     private AuthUser authUser;
 
+    AnalyticsEvent analyticsEvent;
+
     /**
      * The http routing context
      * Event may be inserted outside an HTTP call
      * The context may be therefore null
      */
     private RoutingContext routingContext;
+    private AnalyticsEventChannel channel;
+    private String groupId;
 
     public ServerEventBuilder(AnalyticsEventName eventName) {
       this.eventName = eventName;
     }
+
 
     /**
      * Send the event to the queue
@@ -201,36 +227,86 @@ public class AnalyticsTracker {
     }
 
     public AnalyticsEvent buildEvent() {
-      AnalyticsEvent analyticsEvent = new AnalyticsEvent();
-      analyticsEvent.setId(UUID.randomUUID().toString());
-      analyticsEvent.setName(this.eventName.toCamelCase());
-      analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
 
-      if (this.authUser != null) {
-        AnalyticsUser analyticsUser = new AnalyticsUser();
-        analyticsUser.setId(authUser.getSubject());
-        analyticsUser.setEmail(authUser.getSubjectEmail());
-        analyticsUser.setGivenName(authUser.getSubjectGivenName());
-        analyticsUser.setAvatar(authUser.getSubjectAvatar());
-        analyticsEvent.setUser(analyticsUser);
+      if (analyticsEvent == null) {
+        analyticsEvent = new AnalyticsEvent();
+        analyticsEvent.setName(this.eventName.toCamelCase());
+        analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
+
+        if (this.authUser != null) {
+          AnalyticsUser analyticsUser = new AnalyticsUser();
+          analyticsUser.setId(authUser.getSubject());
+          analyticsUser.setEmail(authUser.getSubjectEmail());
+          analyticsUser.setGivenName(authUser.getSubjectGivenName());
+          analyticsUser.setAvatar(authUser.getSubjectAvatar());
+          analyticsEvent.setUser(analyticsUser);
+        }
+
+        /**
+         * Context
+         */
+        AnalyticsEventContext analyticsEventContext = new AnalyticsEventContext();
+        this.buildContext(routingContext, analyticsEventContext);
+        analyticsEvent.setContext(analyticsEventContext);
+
+        /**
+         * OS
+         */
+        AnalyticsOperatingSystem analyticsOperatingSystem = new AnalyticsOperatingSystem();
+        analyticsOperatingSystem.setName(System.getProperty("os.name"));
+        analyticsOperatingSystem.setVersion(System.getProperty("os.version"));
+        analyticsOperatingSystem.setArch(System.getProperty("os.arch"));
+        analyticsEventContext.setOs(analyticsOperatingSystem);
+
+      } else {
+
+        /**
+         * Browser event
+         */
+        AnalyticsEventContext context = analyticsEvent.getContext();
+        if (context == null) {
+          context = new AnalyticsEventContext();
+          analyticsEvent.setContext(context);
+        }
+        this.buildContext(routingContext, context);
+
       }
 
       /**
-       * Context
+       * General
        */
-      AnalyticsEventContext analyticsEventContext = new AnalyticsEventContext();
-      analyticsEventContext.setChannel(AnalyticsEventChannel.SERVER);
-      analyticsEvent.setContext(analyticsEventContext);
+      AnalyticsEventContext context = analyticsEvent.getContext();
+      context.setChannel(this.channel);
+      if (this.groupId != null) {
+        context.setGroupId(this.groupId);
+      }
 
-      /**
-       * OS
-       */
-      AnalyticsOperatingSystem analyticsOperatingSystem = new AnalyticsOperatingSystem();
-      analyticsOperatingSystem.setName(System.getProperty("os.name"));
-      analyticsOperatingSystem.setVersion(System.getProperty("os.version"));
-      analyticsOperatingSystem.setArch(System.getProperty("os.arch"));
-      analyticsEventContext.setOs(analyticsOperatingSystem);
+      if (analyticsEvent.getId() == null) {
+        analyticsEvent.setId(UUID.randomUUID().toString());
+      }
+
       return analyticsEvent;
+    }
+
+    private void buildContext(RoutingContext routingContext, AnalyticsEventContext analyticsEventContext) {
+      if (routingContext == null) {
+        return;
+      }
+      try {
+        analyticsEventContext.setIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
+      } catch (NotFoundException e) {
+        //
+      }
+    }
+
+    public ServerEventBuilder setChannel(AnalyticsEventChannel channel) {
+      this.channel = channel;
+      return this;
+    }
+
+    public ServerEventBuilder setGroupId(String groupId) {
+      this.groupId = groupId;
+      return this;
     }
   }
 

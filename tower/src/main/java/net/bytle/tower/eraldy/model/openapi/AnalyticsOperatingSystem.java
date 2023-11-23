@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,9 +11,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnalyticsOperatingSystem   {
 
-  private String name;
-  private String version;
-  private String arch;
+
+  protected String name;
+
+  protected String version;
+
+  protected String arch;
 
   /**
   * The empty constructor is
@@ -82,9 +85,9 @@ public class AnalyticsOperatingSystem   {
       return false;
     }
     AnalyticsOperatingSystem analyticsOperatingSystem = (AnalyticsOperatingSystem) o;
-    return Objects.equals(name, analyticsOperatingSystem.name) &&
-        Objects.equals(version, analyticsOperatingSystem.version) &&
-        Objects.equals(arch, analyticsOperatingSystem.arch);
+    return
+
+            Objects.equals(name, analyticsOperatingSystem.name) && Objects.equals(version, analyticsOperatingSystem.version) && Objects.equals(arch, analyticsOperatingSystem.arch);
   }
 
   @Override
@@ -94,18 +97,7 @@ public class AnalyticsOperatingSystem   {
 
   @Override
   public String toString() {
-    return "class AnalyticsOperatingSystem {\n" +
-    "}";
+    return super.toString();
   }
 
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
-  }
 }

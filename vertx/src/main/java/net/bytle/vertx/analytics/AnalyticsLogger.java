@@ -1,9 +1,10 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
+import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
+import net.bytle.vertx.Log4JXmlConfiguration;
+import net.bytle.vertx.analytics.model.AnalyticsEvent;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +20,6 @@ import org.apache.logging.log4j.core.config.plugins.util.PluginBuilder;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Manage the writing of analytics to log file
@@ -174,33 +174,19 @@ public class AnalyticsLogger {
 
   }
 
-  static public void log(AnalyticsEvent analyticsEvent, RoutingContext routingContext, String groupId) {
+  static public void log(AnalyticsEvent analyticsEvent) throws IllegalStructure {
 
-    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
-    AnalyticsEventContext context = analyticsEvent.getContext();
-    if(context==null){
-      context = new AnalyticsEventContext();
-      analyticsEvent.setContext(context);
-    }
-    try {
-      context.setIp(routingContextWrapper.getRealRemoteClientIp());
-    } catch (NotFoundException e) {
-      //
-    }
 
-    String id = analyticsEvent.getId();
-    if(id==null){
-      analyticsEvent.setId(UUID.randomUUID().toString());
-    }
 
     // Event Name
     String eventName = analyticsEvent.getName();
     if (eventName == null) {
-      return;
+      throw new IllegalStructure("The event name is mandatory");
     }
-
-
-    context.setGroupId(groupId);
+    String groupIdFromEvent = analyticsEvent.getContext().getGroupId();
+    if (groupIdFromEvent == null) {
+      throw new IllegalStructure("The group id is mandatory");
+    }
 
     /**
      * the event-file system name is used in the name of the file and directory
@@ -210,7 +196,7 @@ public class AnalyticsLogger {
     AnalyticsEventName analyticsEventName = AnalyticsEventName.createFromEvent(eventName);
     String eventFileSystemName = analyticsEventName.toFileSystemName();
     ThreadContext.put(LOOKUP_VARIABLE_EVENT_SLUG, eventFileSystemName);
-    ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, analyticsEvent.getContext().getGroupId());
+    ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, groupIdFromEvent);
     String jsonString = JsonObject.mapFrom(analyticsEvent).toString();
     ANALYTICS_LOGGER.info(jsonString);
     ThreadContext.clearAll();

@@ -8,6 +8,7 @@ import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoSecretException;
+import net.bytle.vertx.analytics.AnalyticsTracker;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

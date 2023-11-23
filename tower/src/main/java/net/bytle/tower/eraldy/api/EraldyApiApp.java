@@ -6,6 +6,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
@@ -341,5 +342,17 @@ public class EraldyApiApp extends TowerApp {
 
   public AuthProvider getAuthProvider() {
     return this.authProvider;
+  }
+
+  public boolean isEraldyRealm(Realm realm) {
+    return getEraldyRealm().getLocalId().equals(realm.getLocalId());
+  }
+
+  public Realm getEraldyRealm() {
+    return EraldyRealm.get().getRealm();
+  }
+
+  public boolean isEraldyRealm(Long localId) {
+    return getEraldyRealm().getLocalId().equals(localId);
   }
 }

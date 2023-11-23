@@ -1,9 +1,13 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics;
 
 import io.vertx.core.json.JsonObject;
 import jakarta.mail.internet.AddressException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.model.AnalyticsEventChannel;
+import net.bytle.vertx.analytics.model.AnalyticsOperatingSystem;
+import net.bytle.vertx.analytics.model.AnalyticsUser;
 
 import java.net.URI;
 import java.util.Map;

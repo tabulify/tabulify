@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,7 +16,8 @@ import java.util.Objects;
  * The segment spec separates the event property from the context as we do.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AnalyticsEvent {
+public class
+AnalyticsEvent {
 
   private String id;
   private String name;

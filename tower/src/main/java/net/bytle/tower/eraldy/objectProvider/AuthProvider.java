@@ -8,22 +8,31 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
-import net.bytle.tower.eraldy.auth.AuthPermission;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.AnalyticsEventName;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
 
 /**
- * Provide authenticated user and authorization functions
+ * This class provides function to:
+ * * build and get the signed-in user for the session
+ * * get login claims
+ * * get and authorization functions
  */
 public class AuthProvider {
+
+  /**
+   * The realms that the user may manage
+   */
+  private static final String REALMS_KEY = "realms";
   private final EraldyApiApp apiApp;
 
   public AuthProvider(EraldyApiApp eraldyApiApp) {
@@ -52,7 +61,7 @@ public class AuthProvider {
   public AuthUser getSignedInAuthUser(RoutingContext ctx) throws NotFoundException {
 
     /**
-     * Why not in a {@link net.bytle.tower.eraldy.model.openapi.User} format
+     * Why the auth user is not in a {@link net.bytle.tower.eraldy.model.openapi.User} format
      * Because:
      * * AuthUser stores the authorization and role
      * * To store the user in a session, it should be serializable
@@ -73,6 +82,7 @@ public class AuthProvider {
     Realm realm = new Realm();
     /**
      * Audience guid may be null when we get an Oauth user
+     * from an external oauth provider for instance
      */
     String audience = authUser.getAudience();
     if (audience != null) {
@@ -157,7 +167,7 @@ public class AuthProvider {
 
   }
 
-  public Future<User> getSignedInBaseUser(RoutingContext routingContext) {
+  public Future<User> getSignedInBaseUserOrFail(RoutingContext routingContext) {
     try {
       return Future.succeededFuture(this.getSignedInBaseUserOrThrow(routingContext));
     } catch (NotFoundException e) {
@@ -212,20 +222,45 @@ public class AuthProvider {
 
   }
 
-  @SuppressWarnings("unused")
-  public Future<Realm> checkRealmAuthorization(Realm realm, AuthPermission authPermission) {
+  /**
+   * @param routingContext - the http context
+   * @param realm          - the realm to authorize
+   * @param authScope      - the scopes (permissions) - not implemented for now
+   * @return the realm if authorize or a failure
+   */
+  public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthScope authScope) {
 
-    boolean authorized = false;
-    if (!authorized) {
+    return this.getSignedInAuthUserOrFail(routingContext)
+      .compose(signedInUser -> {
+        Set<String> realmGuids = getManagedRealmsGuid(signedInUser);
+        if (!realmGuids.contains(realm.getGuid())) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realm + "). Scope: " + authScope)
+              .build()
+          );
+        }
+        return Future.succeededFuture(realm);
+      });
+
+
+  }
+
+  private Set<String> getManagedRealmsGuid(AuthUser signedInUser) {
+    return signedInUser.getSet(REALMS_KEY);
+  }
+
+  private Future<AuthUser> getSignedInAuthUserOrFail(RoutingContext routingContext) {
+    try {
+      return Future.succeededFuture(getSignedInAuthUser(routingContext));
+    } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
-          .setMessage("Authenticated User has no permission on the requested realm (" + realm + ") for the permission (" + authPermission + ")")
+          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
           .build()
       );
     }
-    return Future.succeededFuture(realm);
-
   }
 
 
@@ -239,16 +274,18 @@ public class AuthProvider {
 
     return this.apiApp.getUserProvider()
       .getUserByPassword(userEmail, userPassword, realm)
-      .compose(user -> {
-        if (user == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-              .build()
-          );
-        }
-        return Future.succeededFuture(toAuthUserForSession(user));
-      });
+      .compose(
+        user -> {
+          if (user == null) {
+            return Future.failedFuture(
+              TowerFailureException.builder()
+                .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+                .build()
+            );
+          }
+          return toAuthUserForSession(user)
+            .compose(Future::succeededFuture);
+        });
 
   }
 
@@ -261,11 +298,12 @@ public class AuthProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-              .setMessage("The user (" + email + "," + realmIdentifier + ")  send by mail, does not exist")
+              .setMessage("The user (" + email + "," + realmIdentifier + ") does not exist")
               .build()
           );
         }
-        return Future.succeededFuture();
+        return toAuthUserForSession(userInDb)
+          .compose(Future::succeededFuture);
       });
 
   }
@@ -278,16 +316,17 @@ public class AuthProvider {
         if (userInDb == null) {
           return Future.succeededFuture();
         }
-        return Future.succeededFuture(this.toAuthUserForSession(userInDb));
+        return toAuthUserForSession(userInDb)
+          .compose(Future::succeededFuture);
       });
 
   }
 
   /**
    * @param user - the user
-   * @return an auth user that can be used as claims in order to create a token
+   * @return an base auth user (that can be used as claims in order to create a token or to create an auth user for a session)
    */
-  public AuthUser toAuthUserForLoginToken(User user) {
+  public AuthUser toAuthUser(User user) {
     AuthUser authUserClaims = new AuthUser();
     authUserClaims.setSubject(user.getGuid());
     authUserClaims.setSubjectHandle(user.getHandle());
@@ -307,19 +346,19 @@ public class AuthProvider {
     return this.apiApp
       .getUserProvider()
       .insertUser(user)
-      .compose(insertedUser -> {
-        AuthUser authUserForSession = this.toAuthUserForSession(insertedUser);
-        this.apiApp
-          .getApexDomain()
-          .getHttpServer()
-          .getServer()
-          .getTrackerAnalytics()
-          .eventBuilder(AnalyticsEventName.SIGN_UP)
-          .setUser(authUserForSession)
-          .setRoutingContext(routingContext)
-          .sendEventAsync();
-        return Future.succeededFuture(authUserForSession);
-      });
+      .compose(insertedUser -> toAuthUserForSession(user)
+        .compose(authUserForSession -> {
+          this.apiApp
+            .getApexDomain()
+            .getHttpServer()
+            .getServer()
+            .getTrackerAnalytics()
+            .eventBuilderForServerEvent(AnalyticsEventName.SIGN_UP)
+            .setUser(authUserForSession)
+            .setRoutingContext(routingContext)
+            .sendEventAsync();
+          return Future.succeededFuture(authUserForSession);
+        }));
 
   }
 
@@ -327,9 +366,22 @@ public class AuthProvider {
    * @param user - the user to transform in auth user
    * @return an auth user suitable to be put in a session (ie with role and permission)
    */
-  private AuthUser toAuthUserForSession(User user) {
+  private Future<AuthUser> toAuthUserForSession(User user) {
 
-    throw new RuntimeException("todo, add realm ownership" + user);
+    AuthUser authUser = toAuthUser(user);
+    Future<Set<String>> futureRealmList;
+    if (user instanceof OrganizationUser) {
+      futureRealmList = this.apiApp.getRealmProvider().getRealmsGuidForOwner((OrganizationUser) user);
+    } else {
+      futureRealmList = Future.succeededFuture();
+    }
+    return futureRealmList
+      .compose(realmList -> {
+        if (realmList != null) {
+          authUser.put(REALMS_KEY, realmList);
+        }
+        return Future.succeededFuture(authUser);
+      });
 
   }
 
@@ -343,7 +395,9 @@ public class AuthProvider {
         return this.apiApp
           .getUserProvider()
           .patchUserIfPropertyValueIsNull(userInDb, toBaseModelUser(authUserClaims))
-          .compose(patchUser -> Future.succeededFuture(this.toAuthUserForSession(patchUser)));
+          .compose(patchUser -> toAuthUserForSession(patchUser)
+            .compose(Future::succeededFuture)
+          );
       });
   }
 }

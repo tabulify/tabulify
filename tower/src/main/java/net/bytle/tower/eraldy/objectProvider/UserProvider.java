@@ -22,6 +22,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
+import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
@@ -160,7 +161,8 @@ public class UserProvider {
 
   /**
    * Package private because the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
-   * @param user           - the user to insert (sign-up)
+   *
+   * @param user - the user to insert (sign-up)
    * @return a user
    */
   Future<User> insertUser(User user) {
@@ -482,11 +484,20 @@ public class UserProvider {
   }
 
 
-  public Future<User> getUserByEmail(String userEmail, String realmIdentifier) {
+  public Future<? extends User> getUserByEmail(String userEmail, String realmIdentifier) {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
-      .compose(realm -> getUserByEmail(userEmail, realm.getLocalId(), User.class, realm));
+      .compose(realm -> {
+          Class<? extends User> userClass;
+          if (this.apiApp.isEraldyRealm(realm)) {
+            userClass = OrganizationUser.class;
+          } else {
+            userClass = User.class;
+          }
+          return getUserByEmail(userEmail, realm.getLocalId(), userClass, realm);
+        }
+      );
   }
 
   /**
@@ -728,7 +739,7 @@ public class UserProvider {
    * @param realm        - the realm
    * @return a user if the user handle, realm and password combination are good
    */
-  Future<User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
+  Future<? extends User> getUserByPassword(String userEmail, String userPassword, Realm realm) {
 
     String hashedPassword = PasswordHashManager.get().hash(userPassword);
 
@@ -739,16 +750,25 @@ public class UserProvider {
       " AND " + PASSWORD_COLUMN + " = $3";
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(userEmail, realm.getLocalId(), hashedPassword))
-      .onFailure(t -> LOGGER.error("Error while retrieving the user by email and realm. Sql: \n" + sql, t))
-      .compose(userRows -> {
-
-        if (userRows.size() == 0) {
-          return Future.succeededFuture();
-        }
-
-        Row row = userRows.iterator().next();
-        return getUserFromRow(row, User.class, realm);
-      });
+      .compose(
+        userRows -> {
+          if (userRows.size() == 0) {
+            return Future.succeededFuture();
+          }
+          Class<? extends User> userClass;
+          if (this.apiApp.isEraldyRealm(realm)) {
+            userClass = OrganizationUser.class;
+          } else {
+            userClass = User.class;
+          }
+          Row row = userRows.iterator().next();
+          return getUserFromRow(row, userClass, realm);
+        },
+        err -> Future.failedFuture(TowerFailureException.builder()
+          .setMessage("Error while retrieving the user by email, password and realm. Sql: \n" + sql)
+          .setException(err)
+          .build())
+      );
 
   }
 

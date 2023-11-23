@@ -1,6 +1,6 @@
 package net.bytle.vertx;
 
-import static net.bytle.vertx.AnalyticsLogger.ANALYTICS_CONF_FILE;
+import static net.bytle.vertx.analytics.AnalyticsLogger.ANALYTICS_CONF_FILE;
 
 public class Log4JManager {
 

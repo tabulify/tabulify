@@ -135,8 +135,8 @@ public class OrganizationUserProvider {
   }
 
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
-    Realm eraldyRealm = EraldyRealm.get().getRealm();
-    if (userClass.equals(OrganizationUser.class) && !localId.equals(eraldyRealm.getLocalId())) {
+    if (userClass.equals(OrganizationUser.class) && !this.apiApp.isEraldyRealm(localId)) {
+      Realm eraldyRealm = this.apiApp.getEraldyRealm();
       throw new AssertionException("Organizational user are users from the realm id (" + eraldyRealm.getLocalId() + ") not from the realm id (" + localId + ")");
     }
   }

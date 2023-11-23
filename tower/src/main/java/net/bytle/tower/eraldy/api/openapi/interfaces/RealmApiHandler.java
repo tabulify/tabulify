@@ -25,7 +25,6 @@ this.api = api;
 public void mount(RouterBuilder builder) {
     builder.operation("realmGet").handler(this::realmGet);
     builder.operation("realmPost").handler(this::realmPost);
-    builder.operation("realmUsersNewGet").handler(this::realmUsersNewGet);
     builder.operation("realmsGet").handler(this::realmsGet);
     builder.operation("realmsOwnedByGet").handler(this::realmsOwnedByGet);
     builder.operation("realmsOwnedByMeGet").handler(this::realmsOwnedByMeGet);
@@ -60,22 +59,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.realmPost(routingContext, realmPostBody)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void realmUsersNewGet(RoutingContext routingContext) {
-    logger.info("realmUsersNewGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String realmIdentifier = requestParameters.pathParameter("realmIdentifier") != null ? requestParameters.pathParameter("realmIdentifier").getString() : null;
-
-      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
-
-    // Based on Route#respond
-    api.realmUsersNewGet(routingContext, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

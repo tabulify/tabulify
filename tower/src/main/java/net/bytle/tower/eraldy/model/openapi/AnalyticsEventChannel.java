@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -13,7 +13,7 @@ public enum AnalyticsEventChannel {
 
   MOBILE("mobile");
 
-  private final String value;
+  private String value;
 
   AnalyticsEventChannel(String value) {
     this.value = value;

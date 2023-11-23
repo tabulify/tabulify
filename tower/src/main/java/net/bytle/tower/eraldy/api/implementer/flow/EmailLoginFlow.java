@@ -66,7 +66,7 @@ public class EmailLoginFlow extends WebFlowAbs {
         }
         String realmNameOrHandle = RealmProvider.getNameOrHandle(userToLogin.getRealm());
 
-        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUserForLoginToken(userToLogin).addRoutingClaims(routingContext);
+        AuthUser jwtClaims = getApp().getAuthProvider().toAuthUser(userToLogin).addRoutingClaims(routingContext);
 
         /**
          * Recipient

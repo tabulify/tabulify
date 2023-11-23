@@ -78,7 +78,7 @@ public class App   {
   }
 
   /**
-  * @return handle The handle of the app. You may choose an uri without the scheme The handle is unique for all apps on the realm.
+  * @return handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"uri"})
   @JsonProperty("handle")
@@ -87,7 +87,7 @@ public class App   {
   }
 
   /**
-  * @param handle The handle of the app. You may choose an uri without the scheme The handle is unique for all apps on the realm.
+  * @param handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {

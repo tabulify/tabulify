@@ -1,5 +1,6 @@
 package net.bytle.vertx.auth;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -9,6 +10,9 @@ import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A JWT claims object that represents a auth user with extra environment claims
@@ -275,6 +279,36 @@ public class AuthUser {
 
   public String getAudienceHandle() {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
+  }
+
+  public Set<String> getSet(String key) {
+    JsonArray jsonArray = claims.getJsonArray(key);
+    if (jsonArray == null) {
+      return new HashSet<>();
+    }
+    return jsonArray.stream()
+      .map(Object::toString)
+      .collect(Collectors.toSet());
+  }
+
+  @Override
+  public String toString() {
+
+    String toString = "";
+    String subjectEmail = this.getSubjectEmail();
+    if(subjectEmail!=null){
+      toString = subjectEmail;
+    }
+    String subject = this.getSubject();
+    if(subject!=null){
+      toString = ", "+subject;
+    }
+    return toString;
+
+  }
+
+  public void put(String key, Set<String> strings) {
+    claims.put(key,strings);
   }
 
 }

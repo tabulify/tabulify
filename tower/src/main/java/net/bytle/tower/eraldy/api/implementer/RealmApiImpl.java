@@ -5,8 +5,10 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthPermission;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
+import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
+import net.bytle.tower.eraldy.model.openapi.RealmWithAppUris;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
@@ -51,19 +53,6 @@ public class RealmApiImpl implements RealmApi {
           return Future.succeededFuture(response);
         }
       );
-
-  }
-
-  @Override
-  public Future<ApiResponse<List<User>>> realmUsersNewGet(RoutingContext routingContext, String realmIdentifier) {
-
-    return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
-      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_ACTIVITY_NEW_USERS)
-        .compose(realm1 -> apiApp.getUserProvider()
-          .getRecentUsersCreatedFromRealm(realm)
-          .compose(users -> Future.succeededFuture(new ApiResponse<>(users).setMapper(apiApp.getUserProvider().getApiMapper())))
-        ));
 
   }
 

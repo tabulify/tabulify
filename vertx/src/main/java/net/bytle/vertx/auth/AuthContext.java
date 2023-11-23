@@ -10,10 +10,10 @@ import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
-import net.bytle.vertx.AnalyticsEventName;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.analytics.AnalyticsEventName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -216,7 +216,7 @@ public class AuthContext {
         .getHttpServer()
         .getServer()
         .getTrackerAnalytics()
-        .eventBuilder(AnalyticsEventName.SIGN_IN)
+        .eventBuilderForServerEvent(AnalyticsEventName.SIGN_IN)
         .setUser(authUser)
         .setRoutingContext(this.getRoutingContext())
         .sendEventAsync();

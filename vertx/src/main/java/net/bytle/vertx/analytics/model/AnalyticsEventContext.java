@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

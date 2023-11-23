@@ -8,7 +8,7 @@ import net.bytle.exception.CastException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.auth.AuthPermission;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
@@ -76,11 +76,11 @@ public class AppApiImpl implements AppApi {
               .build()
           );
         }
-        return this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_APP_GET);
+        return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_APP_GET);
       }).compose(realm -> {
         Future<App> futureApp;
         if (finalAppGuid != null) {
-          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.validateAndGetSecondObjectId(realm.getLocalId()), realm);
+          futureApp = this.apiApp.getAppProvider().getAppById(finalAppGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm);
         } else {
           futureApp = this.apiApp.getAppProvider().getAppByHandle(appIdentifier, realm);
         }
@@ -141,7 +141,7 @@ public class AppApiImpl implements AppApi {
 
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifierNotNull(realmIdentifier, Realm.class)
-      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(realm, AuthPermission.REALM_APPS_GET))
+      .compose(realm -> this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.REALM_APPS_GET))
       .compose(
         realm -> apiApp.getAppProvider().getApps(realm),
         err -> Future.failedFuture(

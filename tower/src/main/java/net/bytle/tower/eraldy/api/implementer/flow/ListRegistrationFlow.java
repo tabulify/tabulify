@@ -161,7 +161,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
 
         AuthUser jwtClaims = getApp().getAuthProvider()
-          .toAuthUserForLoginToken(subscriber)
+          .toAuthUser(subscriber)
           .addRoutingClaims(routingContext)
           .setListGuidClaim(publicationGuid);
 

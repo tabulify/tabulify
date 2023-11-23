@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics.model;
 
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
@@ -22,7 +22,7 @@ public class AnalyticsUser {
     return this.email;
   }
 
-  public String getName() {
+  public String getGivenName() {
     return this.name;
   }
 

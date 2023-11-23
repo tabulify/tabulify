@@ -231,7 +231,7 @@ public class AuthApiImpl implements AuthApi {
 
 
     return apiApp
-      .getAuthProvider().getSignedInBaseUser(routingContext)
+      .getAuthProvider().getSignedInBaseUserOrFail(routingContext)
       .compose(signedInUser -> apiApp
         .getUserProvider()
         .updatePassword(signedInUser.getLocalId(), signedInUser.getRealm().getLocalId(), passwordOnly.getPassword())

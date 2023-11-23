@@ -9,6 +9,7 @@ info:
   version: "v2023-06-18"
 servers:
   - url: 'https://api.eraldy.com'
+  - url: 'https://localhost:8083'
 # check the openApi.md file to know more about tags.
 tags:
   - name: env
@@ -259,7 +260,7 @@ paths:
       summary: Login by sending an email with a login link
       tags:
         - auth
-      security: [ ]
+      security: [] # open
       requestBody:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
@@ -309,7 +310,7 @@ paths:
       summary: The login form end point for password credentials
       tags:
         - auth
-      security: [ ]
+      security: [] # open
       requestBody:
         $ref: '#/components/requestBodies/LoginPostBody'
       responses:
@@ -338,7 +339,7 @@ paths:
       summary: "Login via a link and give the possibility to modify the password"
       tags:
         - auth
-      security: [ ]
+      security: [] # open
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/EmailPostBody'
       responses:
@@ -353,7 +354,7 @@ paths:
       summary: "Register a user"
       tags:
         - auth
-      security: [ ]
+      security: [] # open
       requestBody:
         $ref: '#/components/requestBodies/AuthEmailPostBody'
       responses:
@@ -368,7 +369,7 @@ paths:
       summary: "Register a user to a list by sending an email for validation"
       tags:
         - auth
-      security: [ ]
+      security: [] # open
       requestBody:
         required: true
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
@@ -387,7 +388,7 @@ paths:
           * signed in, a redirection occurs to the confirmation page
       tags:
         - auth
-      security: [ ] # open
+      security: [] # open
       parameters:
         - name: listGuid
           description: "The list guid"
@@ -403,7 +404,7 @@ paths:
     post:
       operationId: analyticsEventPost
       summary: "Report a analytics event"
-      security: [ ]
+      security: [] # open
       tags:
         - analytics
       requestBody:
@@ -415,12 +416,63 @@ paths:
       responses:
         '200':
           description: "Event was processed"
+  /analytics/event/{eventName}:
+    get:
+      operationId: "analyticsEventNameGet"
+      summary: "Return a list of events"
+      tags:
+        - analytics
+      parameters:
+        - name: eventName
+          description: "The event name to retrieve"
+          # Path parameters are mandatory
+          # https://github.com/OAI/OpenAPI-Specification/issues/622
+          required: true
+          in: path
+          schema:
+            type: string
+            example:
+              - "Sign-up"
+              - "Sign-in"
+        - name: realmIdentifier
+          description: "The guid or handle of the realm"
+          # Path parameters are mandatory
+          # https://github.com/OAI/OpenAPI-Specification/issues/622
+          required: true
+          in: query
+          schema:
+            type: string
+            example:
+              - "rea-xjkkLmi"
+              - "realmhandlename"
+        - name: appIdentifier
+          description: "The guid or handle of an app"
+          in: query
+          schema:
+            type: string
+            example:
+              - "app-xjkkLmi"
+              - "doe.com"
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      responses:
+        '200':
+          description: "The events"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../../../../vertx/src/main/openapi/analytics-openapi.yaml#/components/schemas/AnalyticsEvent'
+        '403':
+          description: "Not authenticated"
   /csp/report:
     post:
       operationId: cspReportPost
       # https://w3c.github.io/webappsec-csp/#cspviolationreportbody
       summary: "Report a CSP Violation"
-      security: [ ]
+      security: [] # open
       tags:
         - csp
       requestBody:
@@ -447,7 +499,7 @@ paths:
       operationId: "pingGet"
       summary: A health check endpoint
       # tag is the prefix of the API
-      security: [ ]
+      security: [] # open
       tags:
         - health
       responses:
@@ -460,7 +512,8 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: [ 'root' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "The guid or handle of the realm"
@@ -485,7 +538,8 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: [ 'write:realm' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/RealmPostBody'
       responses:
@@ -522,7 +576,8 @@ paths:
       tags:
         - realm
       security:
-        - apiKeyAuth: [ 'read:realm' ]
+        - apiKeyAuth: [ 'root' ]
+        - cookieAuth: [ 'root' ]
       parameters:
         - name: userGuid
           description: "The user guid"
@@ -566,37 +621,6 @@ paths:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/RealmAnalytics'
         '403':
           description: "Not authenticated"
-  /realm/{realmIdentifier}/activity/users/new:
-    get:
-      operationId: "realmUsersNewGet"
-      summary: "Return the list of recent new users for the realm"
-      tags:
-        - realm
-      parameters:
-        - name: realmIdentifier
-          description: "The guid or handle of the realm"
-          # Path parameters are mandatory
-          # https://github.com/OAI/OpenAPI-Specification/issues/622
-          required: true
-          in: path
-          schema:
-            type: string
-            example:
-              - "rea-xjkkLmi"
-              - "realmhandlename"
-      security:
-        - apiKeyAuth: [ 'read:realm' ]
-      responses:
-        '200':
-          description: "The users"
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
-        '403':
-          description: "Not authenticated"
   /services:
     get:
       operationId: servicesGet
@@ -628,7 +652,8 @@ paths:
       tags:
         - campaign
       security:
-        - apiKeyAuth: [ 'write:campaign' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/CampaignEmailPostBody'
       responses:
@@ -677,7 +702,8 @@ paths:
       tags:
         - service
       security:
-        - apiKeyAuth: [ 'write:service' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ServiceSmtpPostBody'
       responses:
@@ -770,7 +796,7 @@ paths:
         - apiKeyAuth: [ 'read:user' ]
       parameters:
         - name: userIdentifier
-          description: "A user identifier (A guid or an email)"
+          description: "A user identifier (A guid, an email or a handle)"
           in: query
           required: true
           schema:
@@ -779,7 +805,7 @@ paths:
               - "usr-xjkkLmi"
               - "john@doe.com"
         - name: realmIdentifier
-          description: "A realm identifier (a guid or handle) if the user identifier is an email"
+          description: "A realm identifier (a guid or handle) if the user identifier is not a guid"
           in: query
           schema:
             type: string
@@ -796,7 +822,8 @@ paths:
       tags:
         - user
       security:
-        - apiKeyAuth: [ 'write:user' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/UserPostBody'
       responses:
@@ -837,7 +864,8 @@ paths:
       tags:
         - user
       security:
-        - apiKeyAuth: [ 'read:user' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: guid
           description: "The guid of the user"
@@ -869,7 +897,8 @@ paths:
             type: string
             example: "rea-xjkkLmi"
       security:
-        - apiKeyAuth: [ 'read:user' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       responses:
         '200':
           description: Ok
@@ -911,7 +940,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'write:read' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: listGuid
           description: "The list guid"
@@ -942,7 +972,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'write:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListPostBody'
       responses:
@@ -964,7 +995,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: appGuid
           description: "The app guid"
@@ -1001,7 +1033,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: realmIdentifier
           description: "A realm identifier (guid or realm)"
@@ -1031,7 +1064,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: guid
           description: "The guid of the registration"
@@ -1096,7 +1130,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: subscriberName
           description: "The name of the subscriber"
@@ -1151,7 +1186,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: listGuid
           description: "The list guid"

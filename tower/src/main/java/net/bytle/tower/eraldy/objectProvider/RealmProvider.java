@@ -30,9 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
@@ -414,6 +412,34 @@ public class RealmProvider {
         ));
   }
 
+  /**
+   * @param owner - the owner user
+   * @return a set of guid for the user (used in authorization)
+   */
+  public Future<Set<String>> getRealmsGuidForOwner(OrganizationUser owner) {
+
+    return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
+        "where\n" +
+        " " + REALM_ORGA_ID + " = $1")
+      .execute(Tuple.of(owner.getLocalId()))
+      .compose(rows -> {
+          Set<String> realmGuids = new HashSet<>();
+          for (Row row : rows) {
+
+            Long realmId = row.getLong(ID_COLUMN);
+            realmGuids.add(this.getGuidFromLong(realmId).toString());
+
+          }
+          return Future.succeededFuture(realmGuids);
+        },
+        err -> Future.failedFuture(
+          TowerFailureException.builder()
+            .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+            .setMessage("Unable to get the realm of the organization user (" + owner + ")")
+            .build()
+        ));
+  }
+
 
   private <T extends Realm> Future<List<T>> getRealmsFromRows(RowSet<Row> realmRows, Class<T> clazz) {
     List<Future<T>> futureRealms = new ArrayList<>();
@@ -570,10 +596,11 @@ public class RealmProvider {
   /**
    * Wrapper around {@link #getRealmFromIdentifier(String)}
    * and fail if the realm was not found (ie null)
+   *
    * @param realmIdentifier - the realm identifier
-   * @param realmClass - the realm class
+   * @param realmClass      - the realm class
+   * @param <T>             - the realm class
    * @return the realm
-   * @param <T> - the realm class
    */
   public <T extends Realm> Future<T> getRealmFromIdentifierNotNull(String realmIdentifier, Class<T> realmClass) {
     return this.getRealmFromIdentifier(realmIdentifier, realmClass)
@@ -582,7 +609,7 @@ public class RealmProvider {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
-              .setMessage("The realm identifier ("+realmIdentifier+") was not found")
+              .setMessage("The realm identifier (" + realmIdentifier + ") was not found")
               .build()
           );
         }

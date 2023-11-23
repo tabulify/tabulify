@@ -1,4 +1,4 @@
-package net.bytle.vertx;
+package net.bytle.vertx.analytics;
 
 import net.bytle.type.Strings;
 
