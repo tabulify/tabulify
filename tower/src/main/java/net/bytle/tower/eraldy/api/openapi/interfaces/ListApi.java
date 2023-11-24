@@ -12,12 +12,12 @@ public interface ListApi  {
     /**
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmHandle
     */
-    Future<ApiResponse<RegistrationList>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle);
+    Future<ApiResponse<ListItem>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle);
 
     /**
      * Create a list where users can register
     */
-    Future<ApiResponse<RegistrationList>> listPost(RoutingContext routingContext, ListPostBody listPostBody);
+    Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody listPostBody);
 
     /**
      * Shows a confirmation page for the registration
@@ -27,7 +27,7 @@ public interface ListApi  {
     /**
      * Get a registration object
     */
-    Future<ApiResponse<Registration>> listRegistrationGet(RoutingContext routingContext, String guid, String listGuid, String subscriberEmail);
+    Future<ApiResponse<ListRegistration>> listRegistrationGet(RoutingContext routingContext, String guid, String listGuid, String subscriberEmail);
 
     /**
      * Return the confirmation letter after the user has clicked on the validation link.  To get a confirmation as it's show to a user, you just need to set the subscriber name and the list guid  The other parameters will overwrite other list information.
@@ -52,7 +52,7 @@ public interface ListApi  {
     /**
      * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)
     */
-    Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
+    Future<ApiResponse<List<ListItem>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
 
     /**
      * Get a list of list in a summary format

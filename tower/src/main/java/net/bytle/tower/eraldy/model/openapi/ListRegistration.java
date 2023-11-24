@@ -10,14 +10,14 @@ import java.util.Objects;
  * A registration
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Registration   {
+public class ListRegistration   {
 
 
   protected String guid;
 
   protected String status;
 
-  protected RegistrationList list;
+  protected ListItem list;
 
   protected User subscriber;
 
@@ -39,7 +39,7 @@ public class Registration   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public Registration () {
+  public ListRegistration () {
   }
 
   /**
@@ -78,7 +78,7 @@ public class Registration   {
   * @return list
   */
   @JsonProperty("list")
-  public RegistrationList getList() {
+  public ListItem getList() {
     return list;
   }
 
@@ -86,7 +86,7 @@ public class Registration   {
   * @param list Set list
   */
   @SuppressWarnings("unused")
-  public void setList(RegistrationList list) {
+  public void setList(ListItem list) {
     this.list = list;
   }
 
@@ -211,10 +211,10 @@ public class Registration   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Registration registration = (Registration) o;
+    ListRegistration listRegistration = (ListRegistration) o;
     return
 
-            Objects.equals(guid, registration.guid) && Objects.equals(status, registration.status) && Objects.equals(list, registration.list) && Objects.equals(subscriber, registration.subscriber) && Objects.equals(confirmationTime, registration.confirmationTime) && Objects.equals(confirmationIp, registration.confirmationIp) && Objects.equals(optInTime, registration.optInTime) && Objects.equals(optInIp, registration.optInIp) && Objects.equals(optInUri, registration.optInUri) && Objects.equals(flow, registration.flow);
+            Objects.equals(guid, listRegistration.guid) && Objects.equals(status, listRegistration.status) && Objects.equals(list, listRegistration.list) && Objects.equals(subscriber, listRegistration.subscriber) && Objects.equals(confirmationTime, listRegistration.confirmationTime) && Objects.equals(confirmationIp, listRegistration.confirmationIp) && Objects.equals(optInTime, listRegistration.optInTime) && Objects.equals(optInIp, listRegistration.optInIp) && Objects.equals(optInUri, listRegistration.optInUri) && Objects.equals(flow, listRegistration.flow);
   }
 
   @Override

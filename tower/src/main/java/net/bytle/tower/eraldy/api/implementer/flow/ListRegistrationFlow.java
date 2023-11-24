@@ -57,12 +57,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
    */
   private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
   private final ListRegistrationEmailCallback callback;
-  private final FrontEndCookie<Registration> cookieData;
+  private final FrontEndCookie<ListRegistration> cookieData;
 
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
-    this.cookieData = FrontEndCookie.createCookieData(Registration.class);
+    this.cookieData = FrontEndCookie.createCookieData(ListRegistration.class);
   }
 
   @Override
@@ -81,38 +81,38 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<Registration> registerUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public Future<ListRegistration> registerUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
 
     return this.getApp()
       .getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
       .compose(list -> {
-        Registration inputRegistration = new Registration();
-        inputRegistration.setList(list);
-        inputRegistration.setSubscriber(user);
-        inputRegistration.setOptInTime(optInTime.toIsoString());
+        ListRegistration inputListRegistration = new ListRegistration();
+        inputListRegistration.setList(list);
+        inputListRegistration.setSubscriber(user);
+        inputListRegistration.setOptInTime(optInTime.toIsoString());
         String nowTime = Timestamp.createFromNow().toIsoString();
-        inputRegistration.setConfirmationTime(nowTime);
-        inputRegistration.setOptInIp(optInIp);
+        inputListRegistration.setConfirmationTime(nowTime);
+        inputListRegistration.setOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          inputRegistration.setConfirmationIp(realRemoteClient);
+          inputListRegistration.setConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        inputRegistration.setFlow(registrationFlow);
+        inputListRegistration.setFlow(registrationFlow);
         return this
           .getApp()
           .getListRegistrationProvider()
-          .upsertRegistration(inputRegistration)
+          .upsertRegistration(inputListRegistration)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(Future::succeededFuture);
       });
   }
 
-  public UriEnhanced getRegistrationConfirmationOperationPath(Registration registration) {
-    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, registration.getGuid());
+  public UriEnhanced getRegistrationConfirmationOperationPath(ListRegistration listRegistration) {
+    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, listRegistration.getGuid());
     return this.getApp().getMemberAppUri().setPath(registrationConfirmationOperationPath);
   }
 
@@ -120,11 +120,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * Send registration data to the front end via cookie
    *
    * @param routingContext - the context
-   * @param registration   - the registration
+   * @param listRegistration   - the registration
    */
-  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, Registration registration) {
-    Registration templateClone = this.getApp().getListRegistrationProvider()
-      .toTemplateClone(registration);
+  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, ListRegistration listRegistration) {
+    ListRegistration templateClone = this.getApp().getListRegistrationProvider()
+      .toTemplateClone(listRegistration);
     this.cookieData.setValue(templateClone, routingContext);
   }
 

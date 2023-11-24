@@ -922,7 +922,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegistrationList'
+                $ref: '#/components/schemas/ListItem'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -945,7 +945,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegistrationList'
+                $ref: '#/components/schemas/ListItem'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -990,7 +990,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/RegistrationList'
+                  $ref: '#/components/schemas/ListItem'
                 type: array
           description: Return a list of lists for the app
         "403":
@@ -1079,7 +1079,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Registration'
+                $ref: '#/components/schemas/ListRegistration'
           description: The registration
       security:
       - apiKeyAuth: []
@@ -2626,7 +2626,7 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = User.class)"
-    RegistrationList:
+    ListItem:
       description: |
         A list where user can register
 
@@ -2774,11 +2774,13 @@ components:
           description: The public page where to register for this list
           format: uri
           type: string
-      required:
-      - guid
-      - handle
       title: A list where user can register
       type: object
+      x-fields-identity:
+      - guid
+      x-fields-to-string:
+      - guid
+      - handle
     ListPostBody:
       description: |
         List creation and/or modification
@@ -2871,7 +2873,7 @@ components:
           type: integer
       title: A list summary
       type: object
-    Registration:
+    ListRegistration:
       description: A registration
       example:
         confirmationIp: confirmationIp
@@ -3014,7 +3016,7 @@ components:
           description: The status of the registration
           type: string
         list:
-          $ref: '#/components/schemas/RegistrationList'
+          $ref: '#/components/schemas/ListItem'
         subscriber:
           $ref: '#/components/schemas/User'
         confirmationTime:

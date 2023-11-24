@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 public class ListApiImpl implements ListApi {
 
@@ -48,13 +47,13 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<List<RegistrationList>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier) {
+  public Future<ApiResponse<List<ListItem>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier) {
 
     if (appGuid == null && appUri == null && realmIdentifier == null) {
       throw ValidationException.create("A app or realm definition should be given to get a list of lists.", "any", null);
     }
 
-    Future<List<RegistrationList>> futureLists;
+    Future<List<ListItem>> futureLists;
     ListProvider listProvider = apiApp.getListProvider();
     if (appGuid == null && appUri == null) {
 
@@ -100,10 +99,8 @@ public class ListApiImpl implements ListApi {
     return futureLists
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(lists -> {
-        List<RegistrationList> publicRegistrationLists = lists
-          .stream().map(listProvider::toPublicClone)
-          .collect(Collectors.toList());
-        ApiResponse<java.util.List<RegistrationList>> apiResponse = new ApiResponse<>(publicRegistrationLists);
+        ApiResponse<java.util.List<ListItem>> apiResponse = new ApiResponse<>(lists)
+          .setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResponse);
       });
 
@@ -133,9 +130,9 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<RegistrationList>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle) {
+  public Future<ApiResponse<ListItem>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle) {
 
-    Future<RegistrationList> listFuture;
+    Future<ListItem> listFuture;
     ListProvider listProvider = apiApp.getListProvider();
     if (listGuid != null) {
       listFuture = listProvider.getListByGuid(listGuid);
@@ -152,26 +149,19 @@ public class ListApiImpl implements ListApi {
     }
     return listFuture
       .compose(registrationList -> {
-        RegistrationList registrationListClone = listProvider.toPublicClone(registrationList);
-        /**
-         * The realm is deleted by default, but we need it on the frontend
-         */
-        registrationListClone.setRealm(this.apiApp.getRealmProvider().toPublicClone(registrationList.getRealm()));
-        ApiResponse<RegistrationList> apiResult = new ApiResponse<>(registrationListClone);
+        ApiResponse<ListItem> apiResult = new ApiResponse<>(registrationList).setMapper(listProvider.getApiMapper());
         return Future.succeededFuture(apiResult);
       });
   }
 
   @Override
-  public Future<ApiResponse<RegistrationList>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
+  public Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
-    return apiApp.getListProvider()
+    ListProvider listProvider = apiApp.getListProvider();
+    return listProvider
       .postPublication(publicationPost)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(publication -> {
-        apiApp.getListProvider().toPublicClone(publication);
-        return Future.succeededFuture(new ApiResponse<>(publication));
-      });
+      .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
 
 
   }
@@ -189,13 +179,13 @@ public class ListApiImpl implements ListApi {
   public static final String REGISTRATION_EMAIL_SUBJECT_PREFIX = "User Registration: ";
 
   @Override
-  public Future<ApiResponse<Registration>> listRegistrationGet(RoutingContext routingContext, String guid, String
+  public Future<ApiResponse<ListRegistration>> listRegistrationGet(RoutingContext routingContext, String guid, String
     listGuid, String subscriberEmail) {
 
-    Future<Registration> futureRegistration;
-    ListRegistrationProvider registrationProvider = apiApp.getListRegistrationProvider();
+    Future<ListRegistration> futureListRegistration;
+    ListRegistrationProvider listRegistrationProvider = apiApp.getListRegistrationProvider();
     if (guid != null) {
-      futureRegistration = registrationProvider
+      futureListRegistration = listRegistrationProvider
         .getRegistrationByGuid(guid);
     } else if (listGuid != null || subscriberEmail != null) {
       if (listGuid == null) {
@@ -204,20 +194,15 @@ public class ListApiImpl implements ListApi {
       if (subscriberEmail == null) {
         throw IllegalArgumentExceptions.createWithInputNameAndValue("The subscriberEmail should be given with a listGuid", "subscriberEmail", null);
       }
-      futureRegistration = registrationProvider
+      futureListRegistration = listRegistrationProvider
         .getRegistrationByListGuidAndSubscriberEmail(listGuid, subscriberEmail);
     } else {
       throw IllegalArgumentExceptions.createWithInputNameAndValue("A registration guid or a listGuid and a subscriberEmail should be given", "guid", null);
     }
-    return futureRegistration
+    return futureListRegistration
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(subscription -> {
-        Registration subscriptionClone = registrationProvider.toPublicClone(subscription);
-        /**
-         * The realm is deleted by default
-         */
-        subscriptionClone.getList().setRealm(this.apiApp.getRealmProvider().toPublicClone(subscription.getList().getRealm()));
-        return Future.succeededFuture(new ApiResponse<>(subscription));
+        return Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listRegistrationProvider.getApiMapper()));
       });
 
   }
@@ -246,7 +231,7 @@ public class ListApiImpl implements ListApi {
         registrationUser.setRealm(listResult.getRealm());
         registrationUser.setGivenName(token.getUserName());
         registrationUser.setEmail(token.getUserEmail());
-        Future<RegistrationList> listFuture = Future.succeededFuture(listResult);
+        Future<ListItem> listFuture = Future.succeededFuture(listResult);
         Future<User> user = apiApp.getUserProvider()
           .getOrCreateUserFromEmail(registrationUser);
 
@@ -254,14 +239,14 @@ public class ListApiImpl implements ListApi {
       })
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(compositeFuture -> {
-        RegistrationList registrationList = compositeFuture.resultAt(0);
+        ListItem listItem = compositeFuture.resultAt(0);
         User subscriber = compositeFuture.resultAt(1);
         /**
          * The token is validated, we can create the subscription
          */
-        Registration listRegistration = new Registration();
+        ListRegistration listRegistration = new ListRegistration();
         listRegistration.setFlow(RegistrationFlow.EMAIL);
-        listRegistration.setList(registrationList);
+        listRegistration.setList(listItem);
         listRegistration.setSubscriber(subscriber);
         listRegistration.setOptInTime(token.getOptInTime());
         listRegistration.setOptInIp(token.getOptInIp());
@@ -309,13 +294,13 @@ public class ListApiImpl implements ListApi {
           .withRoutingContext(routingContext)
           .addMapData(jsonData.getMap());
 
-        RegistrationList registrationList = registrationResult.getList();
-        letter.setPublicationName(registrationList.getName());
+        ListItem listItem = registrationResult.getList();
+        letter.setPublicationName(listItem.getName());
         // Subscriber
         User subscriberUser = registrationResult.getSubscriber();
         letter.setSubscriberName(subscriberUser.getGivenName());
         // Publisher
-        User publisherUser = ListProvider.getOwnerUser(registrationList);
+        User publisherUser = ListProvider.getOwnerUser(listItem);
         letter
           .setPublisherName(publisherUser.getGivenName())
           .setPublisherFullname(publisherUser.getFullName())
@@ -323,7 +308,7 @@ public class ListApiImpl implements ListApi {
           .setPublisherTitle(publisherUser.getTitle())
           .setPublisherAvatar(publisherUser.getAvatar())
         ;
-        App publisherApp = registrationList.getOwnerApp();
+        App publisherApp = listItem.getOwnerApp();
         // https://combostrap.com/_media/android-chrome-192x192.png"
         URI logo = publisherApp.getLogo();
         if (logo != null) {

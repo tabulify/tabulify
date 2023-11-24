@@ -39,7 +39,9 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/CampaignEmailPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspObject.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspReport.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/EmailIdentifier.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListItem.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListPostBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistration.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistrationPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
@@ -51,9 +53,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/Realm.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmWithAppUris.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/Registration.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationFlow.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationList.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Service.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ServiceSmtpPostBody.java

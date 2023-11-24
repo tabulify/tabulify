@@ -10,7 +10,7 @@ import java.util.Objects;
  * A list where user can register  RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RegistrationList   {
+public class ListItem   {
 
 
   protected Long localId;
@@ -39,7 +39,7 @@ public class RegistrationList   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public RegistrationList () {
+  public ListItem () {
   }
 
   /**
@@ -211,15 +211,13 @@ public class RegistrationList   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RegistrationList registrationList = (RegistrationList) o;
-    return
-            Objects.equals(guid, registrationList.guid) && Objects.equals(handle, registrationList.handle);
-
+    ListItem listItem = (ListItem) o;
+    return Objects.equals(guid, listItem.guid);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, handle);
+    return Objects.hash(guid);
   }
 
   @Override

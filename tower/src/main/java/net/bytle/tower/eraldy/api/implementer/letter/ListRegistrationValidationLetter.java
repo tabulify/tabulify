@@ -12,8 +12,8 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
-import net.bytle.tower.eraldy.model.openapi.RegistrationList;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.Booleans;
@@ -67,7 +67,7 @@ public class ListRegistrationValidationLetter {
     private final TowerApp towerApp;
     private RoutingContext routingContext;
     private ListRegistrationPostBody subscriptionPostObject;
-    private RegistrationList registrationList;
+    private ListItem listItem;
 
     public Config(TowerApp towerApp) {
       Vertx vertx = towerApp.getApexDomain().getHttpServer().getServer().getVertx();
@@ -115,7 +115,7 @@ public class ListRegistrationValidationLetter {
       UriEnhanced validationUri = getValidationUri(publicationSubscriptionConfirmationToken, jsonToken);
       if (HttpRequestUtil.isLocalhostRequest(routingContext)) {
         // only in a test environment, to not modify the host file when testing with an external http client such as postman
-        validationUri.addQueryProperty(RealmProvider.REALM_HANDLE_URL_PARAMETER, registrationList.getRealm().getHandle());
+        validationUri.addQueryProperty(RealmProvider.REALM_HANDLE_URL_PARAMETER, listItem.getRealm().getHandle());
       }
       String validationUrl = validationUri.toUri().toString();
 
@@ -132,9 +132,9 @@ public class ListRegistrationValidationLetter {
       }
 
       String publisherName;
-      User publisher = registrationList.getOwnerUser();
+      User publisher = listItem.getOwnerUser();
       if (publisher == null) {
-        publisher = registrationList.getOwnerApp().getUser();
+        publisher = listItem.getOwnerApp().getUser();
       }
 
       try {
@@ -144,14 +144,14 @@ public class ListRegistrationValidationLetter {
         throw new InternalException(e);
       }
 
-      App publisherApp = registrationList.getOwnerApp();
+      App publisherApp = listItem.getOwnerApp();
 
       transactionalTemplate
-        .setPreview("Validate your subscription to `" + registrationList.getName() + "`")
+        .setPreview("Validate your subscription to `" + listItem.getName() + "`")
         .setSalutation("Hy")
         .setRecipientName(recipientName)
         .addIntroParagraph(
-          "I just got a subscription request to the <mark>" + registrationList.getName() + "</mark> publication with your email." +
+          "I just got a subscription request to the <mark>" + listItem.getName() + "</mark> publication with your email." +
             "<br>For bot and consent protections, I need to check that it was really you asking.")
         .setActionUrl(validationUrl)
         .setActionName("Click on this link to validate your subscription.")
@@ -183,8 +183,8 @@ public class ListRegistrationValidationLetter {
       return this;
     }
 
-    public Config withRegistrationList(RegistrationList registrationList) {
-      this.registrationList = registrationList;
+    public Config withRegistrationList(ListItem listItem) {
+      this.listItem = listItem;
       return this;
     }
   }

@@ -965,7 +965,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
     post:
       operationId: listPost
       summary: "Create a list where users can register"
@@ -982,7 +982,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
   /lists:
     get:
       operationId: listsGet
@@ -1023,7 +1023,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationList'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
         '403':
           description: "Not authenticated"
   /lists/summary:
@@ -1092,7 +1092,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/Registration'
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListRegistration'
   /list/registration/validation:
     get:
       operationId: listRegistrationValidationGet
