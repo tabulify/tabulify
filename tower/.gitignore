@@ -1,6 +1,9 @@
 ### Tower cache data
 .tower
 
+### Vertx file upload
+file-uploads
+
 ### Vert.x ###
 .vertx/
 
