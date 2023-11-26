@@ -7,6 +7,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailMessage;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import io.vertx.json.schema.ValidationException;
@@ -155,6 +156,18 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
+  public Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
+
+    /**
+     * https://vertx.io/docs/vertx-web/java/#_handling_file_uploads
+     * https://github.com/vert-x3/vertx-examples/blob/4.x/web-examples/src/main/java/io/vertx/example/web/upload/Server.java
+     */
+    System.out.println(fileBinary.fileName());
+    System.out.println(fileBinary.uploadedFileName());
+    return Future.succeededFuture();
+  }
+
+  @Override
   public Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
     ListProvider listProvider = apiApp.getListProvider();
@@ -201,9 +214,7 @@ public class ListApiImpl implements ListApi {
     }
     return futureListRegistration
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(subscription -> {
-        return Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listRegistrationProvider.getApiMapper()));
-      });
+      .compose(subscription -> Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listRegistrationProvider.getApiMapper())));
 
   }
 

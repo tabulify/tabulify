@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.api.openapi.interfaces;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.validation.RequestParameter;
@@ -24,6 +25,7 @@ this.api = api;
 
 public void mount(RouterBuilder builder) {
     builder.operation("listGet").handler(this::listGet);
+    builder.operation("listImportPost").handler(this::listImportPost);
     builder.operation("listPost").handler(this::listPost);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
@@ -51,6 +53,24 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listGet(routingContext, listGuid, listHandle, realmHandle)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listImportPost(RoutingContext routingContext) {
+    logger.info("listImportPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        FileUpload fileBinary = routingContext.fileUploads().iterator().next();
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter fileBinary is {}", fileBinary);
+
+    // Based on Route#respond
+    api.listImportPost(routingContext, listIdentifier, fileBinary)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

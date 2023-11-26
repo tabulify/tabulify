@@ -1282,6 +1282,41 @@ paths:
       tags:
       - list
       x-accepts: text/html
+  /list/{listIdentifier}/import:
+    post:
+      operationId: listImportPost
+      parameters:
+      - description: A list identifier (guid)
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding:
+              fileBinary:
+                contentType: text/csv
+                style: form
+            schema:
+              $ref: '#/components/schemas/listImportPost_request'
+        description: The file containing the users to import
+        required: true
+      responses:
+        "200":
+          description: List of users
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Import users in a list
+      tags:
+      - list
+      x-content-type: multipart/form-data
+      x-accepts: application/json
   /list/registrations:
     get:
       operationId: listRegistrationsGet
@@ -1292,7 +1327,7 @@ paths:
         name: listGuid
         required: true
         schema:
-          example: xjkkLmi
+          example: list-xjkkLmi
           type: string
         style: form
       responses:
@@ -1305,8 +1340,8 @@ paths:
                 type: array
           description: List of registrations
       security:
-      - apiKeyAuth:
-        - read:list
+      - apiKeyAuth: []
+      - cookieAuth: []
       summary: List the registrations for a list
       tags:
       - list
@@ -3084,6 +3119,13 @@ components:
       - loginPassword
       - loginRealm
       title: The password credentials object
+      type: object
+    listImportPost_request:
+      properties:
+        fileBinary:
+          description: The file
+          format: binary
+          type: string
       type: object
   securitySchemes:
     apiKeyAuth:

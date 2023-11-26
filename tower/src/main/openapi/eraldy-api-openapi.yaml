@@ -1244,6 +1244,41 @@ paths:
             text/html:
               schema:
                 type: string
+  /list/{listIdentifier}/import:
+    post:
+      operationId: listImportPost
+      summary: "Import users in a list"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "A list identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      requestBody:
+        description: The file containing the users to import
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileBinary:
+                  type: string
+                  format: binary
+                  description: The file
+            encoding: # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#considerations-for-file-uploads
+              fileBinary:
+                contentType: text/csv # default is application/octet-stream
+      responses:
+        '200':
+          description: "List of users"
   /list/registrations:
     get:
       operationId: listRegistrationsGet
@@ -1251,7 +1286,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: [ 'read:list' ]
+        - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: listGuid
           description: "The guid of the list"
@@ -1259,7 +1295,7 @@ paths:
           in: query
           schema:
             type: string
-            example: "xjkkLmi"
+            example: "list-xjkkLmi"
       responses:
         '200':
           description: "List of registrations"

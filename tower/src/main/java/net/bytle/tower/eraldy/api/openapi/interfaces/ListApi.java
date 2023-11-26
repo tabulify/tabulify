@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
 import io.vertx.core.Future;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.*;
@@ -13,6 +14,11 @@ public interface ListApi  {
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmHandle
     */
     Future<ApiResponse<ListItem>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle);
+
+    /**
+     * Import users in a list
+    */
+    Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
 
     /**
      * Create a list where users can register
