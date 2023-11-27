@@ -5,10 +5,10 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 
-public interface MailApi  {
+public interface EmailApi  {
 
     /**
      * Validate an email
     */
-    Future<ApiResponse<Void>> mailEmailEmailValidationGet(RoutingContext routingContext, String email);
+    Future<ApiResponse<Void>> emailAddressAddressValidationGet(RoutingContext routingContext, String address);
 }

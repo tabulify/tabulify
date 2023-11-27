@@ -930,20 +930,20 @@ paths:
           description: Not logged in
         '403':
           description: Logged in but the authenticated user is not the member of an organization
-  /mail/email/{email}/validation:
+  /email/address/{address}/validation:
     get:
-      operationId: "mailEmailEmailValidationGet"
+      operationId: "emailAddressAddressValidationGet"
       summary: "Validate an email"
       description: |
         Note that for the request, the email should be URL encoded (ie arobase, @ becomes %40)
       tags:
-        - mail
+        - email
       security:
         - apiKeyAuth: [ ]
         - cookieAuth: [ ]
       parameters:
-        - name: email
-          description: "The email"
+        - name: address
+          description: "The email address"
           in: path
           required: true
           schema:

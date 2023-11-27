@@ -362,11 +362,11 @@ components:
           example: 'https://en.gravatar.com/userimage/john.doe.png'
     ListItem:
       # not List because this is a reserved java word
-      title: "A list where user can register"
+      title: "A list of users known also as audience"
       description: |
-        A list where user can register
+        A list where a user can register.
 
-        RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+        ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
       type: object
       x-fields-identity:
         - guid

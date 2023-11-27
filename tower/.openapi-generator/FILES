@@ -6,14 +6,14 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/CampaignApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/CampaignApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/CspApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/CspApiHandler.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EmailApi.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EmailApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApiHandler.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailApi.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/RealmApi.java

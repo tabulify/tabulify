@@ -1,0 +1,42 @@
+{
+  "config": {"view": {"continuousWidth": 300, "continuousHeight": 300}},
+  "data": {"name": "data-7dd5647af621691bdde3ca93d1742776"},
+  "mark": {"type": "line"},
+  "encoding": {
+    "tooltip": [
+      {"field": "day", "type": "temporal"},
+      {"field": "count", "type": "quantitative"}
+    ],
+    "x": {"field": "day", "type": "temporal"},
+    "y": {"field": "count", "type": "quantitative"}
+  },
+  "height": 300,
+  "title": "Subscription by Day",
+  "width": 600,
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.15.1.json",
+  "datasets": {
+    "data-7dd5647af621691bdde3ca93d1742776": [
+      {"day": "2019-09-27T00:00:00", "count": 147},
+      {"day": "2019-09-28T00:00:00", "count": 177},
+      {"day": "2019-09-29T00:00:00", "count": 93},
+      {"day": "2019-09-30T00:00:00", "count": 68},
+      {"day": "2019-10-01T00:00:00", "count": 102},
+      {"day": "2019-10-02T00:00:00", "count": 74},
+      {"day": "2019-10-03T00:00:00", "count": 103},
+      {"day": "2019-10-04T00:00:00", "count": 102},
+      {"day": "2019-10-05T00:00:00", "count": 101},
+      {"day": "2019-10-06T00:00:00", "count": 98},
+      {"day": "2019-10-07T00:00:00", "count": 96},
+      {"day": "2019-10-08T00:00:00", "count": 99},
+      {"day": "2019-10-09T00:00:00", "count": 81},
+      {"day": "2019-10-10T00:00:00", "count": 69},
+      {"day": "2019-10-11T00:00:00", "count": 87},
+      {"day": "2019-10-12T00:00:00", "count": 67},
+      {"day": "2019-10-13T00:00:00", "count": 95},
+      {"day": "2019-10-14T00:00:00", "count": 15},
+      {"day": "2019-10-17T00:00:00", "count": 1},
+      {"day": "2019-10-26T00:00:00", "count": 1},
+      {"day": "2019-10-28T00:00:00", "count": 1}
+    ]
+  }
+}

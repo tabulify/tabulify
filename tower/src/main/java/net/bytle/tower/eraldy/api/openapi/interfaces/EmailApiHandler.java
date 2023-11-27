@@ -9,32 +9,32 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MailApiHandler {
+public class EmailApiHandler {
 
-private static final Logger logger = LoggerFactory.getLogger(MailApiHandler.class);
+private static final Logger logger = LoggerFactory.getLogger(EmailApiHandler.class);
 
 private final EmailApi api;
 
-public MailApiHandler(EmailApi api) {
+public EmailApiHandler(EmailApi api) {
 this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("mailEmailEmailValidationGet").handler(this::mailEmailEmailValidationGet);
+    builder.operation("emailAddressAddressValidationGet").handler(this::emailAddressAddressValidationGet);
 }
 
-    private void mailEmailEmailValidationGet(RoutingContext routingContext) {
-    logger.info("mailEmailEmailValidationGet()");
+    private void emailAddressAddressValidationGet(RoutingContext routingContext) {
+    logger.info("emailAddressAddressValidationGet()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String email = requestParameters.pathParameter("email") != null ? requestParameters.pathParameter("email").getString() : null;
+            String address = requestParameters.pathParameter("address") != null ? requestParameters.pathParameter("address").getString() : null;
 
-      logger.debug("Parameter email is {}", email);
+      logger.debug("Parameter address is {}", address);
 
     // Based on Route#respond
-    api.emailAddressAddressValidationGet(routingContext, email)
+    api.emailAddressAddressValidationGet(routingContext, address)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
