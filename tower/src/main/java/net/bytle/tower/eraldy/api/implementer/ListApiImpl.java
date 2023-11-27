@@ -158,10 +158,6 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
 
-    /**
-     * https://vertx.io/docs/vertx-web/java/#_handling_file_uploads
-     * https://github.com/vert-x3/vertx-examples/blob/4.x/web-examples/src/main/java/io/vertx/example/web/upload/Server.java
-     */
     System.out.println(fileBinary.fileName());
     System.out.println(fileBinary.uploadedFileName());
     return Future.succeededFuture();

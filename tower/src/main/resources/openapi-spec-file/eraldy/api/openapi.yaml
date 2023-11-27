@@ -27,6 +27,8 @@ tags:
   name: analytics
 - description: Organization module
   name: organization
+- description: Mail module (ie SMTP)
+  name: mail
 paths:
   /auth/logout:
     get:
@@ -275,17 +277,17 @@ paths:
       - auth
       x-content-type: application/json
       x-accepts: application/json
-  /auth/register/list/{listGuid}:
+  /auth/register/list/{listIdentifier}:
     get:
-      operationId: authRegisterListListGuidGet
+      operationId: authRegisterListListIdentifierGet
       parameters:
-      - description: The list guid
+      - description: "The list identifier (guid, ...)"
         explode: false
         in: path
-        name: listGuid
+        name: listIdentifier
         required: true
         schema:
-          example: xklm
+          example: lis-xklm
           type: string
         style: simple
       responses:
@@ -887,6 +889,35 @@ paths:
       summary: Get the authenticated user and its organization
       tags:
       - organization
+      x-accepts: application/json
+  /mail/email/{email}/validation:
+    get:
+      operationId: mailEmailEmailValidationGet
+      parameters:
+      - description: The email
+        explode: false
+        in: path
+        name: email
+        required: true
+        schema:
+          example: foo@example.com
+          format: email
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Ok
+        "401":
+          description: Not logged in
+        "403":
+          description: Logged in but the authenticated user is not the member of an
+            organization
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Validate an email
+      tags:
+      - mail
       x-accepts: application/json
   /list:
     get:

@@ -27,3 +27,5 @@ README.md
 **/HttpServerVerticle.java
 # Implementer are created by us with our code, we  don't want any override
 **/*Impl.java
+# Analytics Model
+**/Analytics*.java

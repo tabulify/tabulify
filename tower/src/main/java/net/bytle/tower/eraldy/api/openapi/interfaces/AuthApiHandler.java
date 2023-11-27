@@ -31,7 +31,7 @@ public void mount(RouterBuilder builder) {
     builder.operation("authLoginPasswordResetPost").handler(this::authLoginPasswordResetPost);
     builder.operation("authLoginPasswordUpdatePost").handler(this::authLoginPasswordUpdatePost);
     builder.operation("authLogoutGet").handler(this::authLogoutGet);
-    builder.operation("authRegisterListListGuidGet").handler(this::authRegisterListListGuidGet);
+    builder.operation("authRegisterListListIdentifierGet").handler(this::authRegisterListListIdentifierGet);
     builder.operation("authRegisterListPost").handler(this::authRegisterListPost);
     builder.operation("authRegisterUserPost").handler(this::authRegisterUserPost);
 }
@@ -180,18 +180,18 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-    private void authRegisterListListGuidGet(RoutingContext routingContext) {
-    logger.info("authRegisterListListGuidGet()");
+    private void authRegisterListListIdentifierGet(RoutingContext routingContext) {
+    logger.info("authRegisterListListIdentifierGet()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-            String listGuid = requestParameters.pathParameter("listGuid") != null ? requestParameters.pathParameter("listGuid").getString() : null;
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
 
-      logger.debug("Parameter listGuid is {}", listGuid);
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
 
     // Based on Route#respond
-    api.authRegisterListListGuidGet(routingContext, listGuid)
+    api.authRegisterListListIdentifierGet(routingContext, listIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

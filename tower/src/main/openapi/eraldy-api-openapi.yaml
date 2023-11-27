@@ -28,6 +28,8 @@ tags:
     description: Analytics module
   - name: organization
     description: Organization module
+  - name: mail
+    description: Mail module (ie SMTP)
 # Secure by default, if you want to make an operation public,
 # you need to set the security for an operation to the empty array
 # security: []
@@ -378,9 +380,9 @@ paths:
           description: "Email was send for validation"
         '204':
           description: "Email was send for validation"
-  /auth/register/list/{listGuid}:
+  /auth/register/list/{listIdentifier}:
     get:
-      operationId: authRegisterListListGuidGet
+      operationId: authRegisterListListIdentifierGet
       summary: |
         Register a user to a list
         If the user is:
@@ -388,15 +390,15 @@ paths:
           * signed in, a redirection occurs to the confirmation page
       tags:
         - auth
-      security: [] # open
+      security: [ ] # open
       parameters:
-        - name: listGuid
-          description: "The list guid"
+        - name: listIdentifier
+          description: "The list identifier (guid, ...)"
           in: path
           required: true
           schema:
             type: string
-            example: "xklm"
+            example: "lis-xklm"
       responses:
         '302':
           description: "Redirect to the form or confirmation page"
@@ -924,6 +926,33 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
+        '401':
+          description: Not logged in
+        '403':
+          description: Logged in but the authenticated user is not the member of an organization
+  /mail/email/{email}/validation:
+    get:
+      operationId: "mailEmailEmailValidationGet"
+      summary: "Validate an email"
+      description: |
+        Note that for the request, the email should be URL encoded (ie arobase, @ becomes %40)
+      tags:
+        - mail
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: email
+          description: "The email"
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+            example: "foo@example.com"
+      responses:
+        '200':
+          description: Ok
         '401':
           description: Not logged in
         '403':

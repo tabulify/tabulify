@@ -1,4 +1,0 @@
-files:
-  supportFiles/ApiVertxSupport.mustache:
-    templateType: SupportingFiles
-    destinationFilename: src/main/java/net/bytle/tower/eraldy/app/MemberApp/openapi/invoker/ApiVertxSupport.java

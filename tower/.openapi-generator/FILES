@@ -1,5 +1,3 @@
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/AnalyticsApi.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/AnalyticsApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/AppApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/AppApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/AuthApi.java
@@ -14,6 +12,8 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApiHandler.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailApi.java
+src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/MailApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/RealmApi.java
@@ -24,13 +24,6 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/UserApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/UserApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/invoker/ApiResponse.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/invoker/ApiVertxSupport.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsBrowser.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsEvent.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsEventChannel.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsEventContext.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsOperatingSystem.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsUrchinTrackingModule.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/AnalyticsUser.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/App.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/AppPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/AuthEmailPost.java

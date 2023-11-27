@@ -236,9 +236,12 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(apiG
       "OffsetDateTime" to "LocalDateTime"
     )
   )
+
   importMappings.set(
     mapOf(
-      "java.time.OffsetDateTime" to "java.time.LocalDateTime"
+      "java.time.OffsetDateTime" to "java.time.LocalDateTime",
+      // Import Analytics objects from the common vertx module
+      "AnalyticsEvent" to "net.bytle.vertx.analytics.model.AnalyticsEvent"
     )
   )
 

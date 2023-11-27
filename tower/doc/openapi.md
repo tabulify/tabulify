@@ -60,6 +60,37 @@ properties:
     format: date-time
 ```
 
+### Enum
+
+https://openapi-generator.tech/docs/templating#all-generators-core
+
+### File Upload
+
+Example with the list import functionality that accepts a csv
+
+```yaml
+requestBody:
+  description: The file containing the users to import
+  required: true
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          fileBinary:
+            type: string
+            format: binary
+            description: The file
+      encoding: # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#considerations-for-file-uploads
+        fileBinary:
+          contentType: text/csv # default is application/octet-stream
+```
+
+Ref:
+  * https://vertx.io/docs/vertx-web/java/#_handling_file_uploads
+  * https://github.com/vert-x3/vertx-examples/blob/4.x/web-examples/src/main/java/io/vertx/example/web/upload/Server.java
+  * From [](https://vertx.io/docs/vertx-web-openapi/java/#_multipartform_data_validation), if the parameter has type: string and format: base64 or format: binary is a file upload with content-type application/octet-stream
+
 ## Schema composition
 
 For schema composition, we use the [REF_AS_PARENT_IN_ALLOF](https://openapi-generator.tech/docs/customization#openapi-normalizer)
@@ -119,6 +150,35 @@ User:
     - guid
     - email
     - handle
+```
+
+## Bring your own model
+
+
+The analytics event model is in another openapi file and other dependency, and we don't want it to be generated twice.
+
+Example:
+```yaml
+schema:
+  type: array
+  items:
+    $ref: '../../../../vertx/src/main/openapi/analytics-openapi.yaml#/components/schemas/AnalyticsEvent'
+```
+
+
+Steps:
+  * Mapping as configuration (example in gradle)
+```kotlin
+importMappings.set(
+    mapOf(
+      // Import Analytics objects from the common vertx module
+      "AnalyticsEvent" to "net.bytle.vertx.analytics.model.AnalyticsEvent"
+    )
+)
+```
+  * Ignore model in the ignore file [openapi-generator-ignore](../.openapi-generator-ignore)
+```ignorelang
+**/Analytics*.java
 ```
 
 ## Extra info

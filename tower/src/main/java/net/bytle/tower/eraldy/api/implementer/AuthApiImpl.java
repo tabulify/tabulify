@@ -292,9 +292,10 @@ public class AuthApiImpl implements AuthApi {
   }
 
   @Override
-  public Future<ApiResponse<Void>> authRegisterListListGuidGet(RoutingContext routingContext, String listGuid) {
+  public Future<ApiResponse<Void>> authRegisterListListIdentifierGet(RoutingContext routingContext, String listIdentifier) {
     throw new InternalException("Not yet implemented");
   }
+
 
 
   @Override

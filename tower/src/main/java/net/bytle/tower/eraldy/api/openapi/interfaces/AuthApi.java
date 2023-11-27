@@ -50,7 +50,7 @@ public interface AuthApi  {
     /**
      * Register a user to a list If the user is:   * not signed in, a redirection occurs to the page with the register form   * signed in, a redirection occurs to the confirmation page
     */
-    Future<ApiResponse<Void>> authRegisterListListGuidGet(RoutingContext routingContext, String listGuid);
+    Future<ApiResponse<Void>> authRegisterListListIdentifierGet(RoutingContext routingContext, String listIdentifier);
 
     /**
      * Register a user to a list by sending an email for validation

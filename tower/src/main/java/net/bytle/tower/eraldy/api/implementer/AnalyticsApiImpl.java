@@ -42,7 +42,7 @@ public class AnalyticsApiImpl implements AnalyticsApi {
 
 
   @Override
-  public Future<ApiResponse<List<net.bytle.tower.eraldy.model.openapi.AnalyticsEvent>>> analyticsEventNameGet(RoutingContext routingContext, String eventName, String realmIdentifier, String appIdentifier) {
+  public Future<ApiResponse<List<AnalyticsEvent>>> analyticsEventNameGet(RoutingContext routingContext, String eventName, String realmIdentifier, String appIdentifier) {
 
     return Future.failedFuture("To do");
 //      return this.apiApp.getRealmProvider()
