@@ -317,7 +317,7 @@ public class AuthContext {
         .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
         .setName("Bad URL redirect")
         .setMimeToHtml()
-        .setException(e)
+        .setCauseException(e)
         .buildWithContextFailing(ctx);
     }
 

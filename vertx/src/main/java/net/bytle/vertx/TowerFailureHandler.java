@@ -9,13 +9,13 @@ import net.bytle.exception.Exceptions;
  * Handler for the failures
  * that happen on the Vertx threads
  */
-public class VertxFailureHandler implements Handler<Throwable> {
+public class TowerFailureHandler implements Handler<Throwable> {
 
   private final Counter failureCounter;
 
   private final TowerSmtpClient mailProvider;
 
-  public VertxFailureHandler(Server server) {
+  public TowerFailureHandler(Server server) {
 
 
     failureCounter = server
@@ -72,7 +72,7 @@ public class VertxFailureHandler implements Handler<Throwable> {
 
   private Boolean sendEmailOnError;
 
-  public VertxFailureHandler setSendMailOnError(boolean b) {
+  public TowerFailureHandler setSendMailOnError(boolean b) {
     this.sendEmailOnError = b;
     return this;
   }

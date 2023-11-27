@@ -21,7 +21,7 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
 
 
   public static final String ERROR_NAME = "error";
-  private final VertxFailureHandler failureHandler;
+  private final TowerFailureHandler failureHandler;
 
 
   public TowerFailureHttpHandler(Server server) throws IllegalConfiguration {
@@ -98,9 +98,9 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
       case TEXT_JSON:
         context
           .response()
-          .setStatusCode(statusCode.getStatusCode());
-        ExitStatusResponse exitStatusResponse = towerFailureException.toJsonObject();
-        context.json(exitStatusResponse);
+          .putHeader(HttpHeaders.CONTENT_TYPE, MediaTypes.TEXT_JSON.toString())
+          .setStatusCode(statusCode.getStatusCode())
+          .send(towerFailureException.toJsonObject().toString());
     }
   }
 

@@ -1,11 +1,11 @@
 package net.bytle.vertx;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
-import io.vertx.ext.web.validation.BodyProcessorException;
-import io.vertx.ext.web.validation.ParameterProcessorException;
+import io.vertx.ext.web.validation.BadRequestException;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.Exceptions;
 import net.bytle.exception.NotFoundException;
@@ -31,7 +31,7 @@ public class TowerFailureException extends Exception {
   private final VertxFailureHttpExceptionBuilder builder;
 
   public TowerFailureException(VertxFailureHttpExceptionBuilder vertxFailureHttpExceptionBuilder) {
-    super(vertxFailureHttpExceptionBuilder.message, vertxFailureHttpExceptionBuilder.exception);
+    super(vertxFailureHttpExceptionBuilder.message, vertxFailureHttpExceptionBuilder.causeException);
     this.builder = vertxFailureHttpExceptionBuilder;
   }
 
@@ -65,11 +65,18 @@ public class TowerFailureException extends Exception {
 
   }
 
-  public ExitStatusResponse toJsonObject() {
-    ExitStatusResponse exitStatusResponse = new ExitStatusResponse();
-    exitStatusResponse.setCode(this.builder.status.getStatusCode());
-    exitStatusResponse.setMessage(this.getMessage());
-    return exitStatusResponse;
+  public JsonObject toJsonObject() {
+    JsonObject res = new JsonObject()
+      .put("code", this.builder.status.getStatusCode())
+      .put("type", this.builder.status.getType())
+      .put("message", this.getMessage());
+    if (this.builder.causeException != null) {
+      res
+        .put("causeType", this.builder.causeException.getClass().getSimpleName())
+        .put("causeMessage", this.builder.causeException.getMessage());
+    }
+    return res;
+
   }
 
   public TowerFailureStatus getStatus() {
@@ -92,10 +99,10 @@ public class TowerFailureException extends Exception {
     /**
      * The exception that has occurred
      */
-    private Throwable exception;
+    private Throwable causeException;
 
-    public VertxFailureHttpExceptionBuilder setException(Throwable e) {
-      this.exception = e;
+    public VertxFailureHttpExceptionBuilder setCauseException(Throwable e) {
+      this.causeException = e;
       return this;
     }
 
@@ -172,6 +179,11 @@ public class TowerFailureException extends Exception {
               throw new NullValueException();
             }
 
+            @Override
+            public String getType() {
+              return "unknown";
+            }
+
           };
         }
       }
@@ -182,69 +194,69 @@ public class TowerFailureException extends Exception {
 
       this.setStatusCodeFromFailureContext(context);
 
-      Throwable thrown = context.failure();
+      Throwable exception = context.failure();
+      this.causeException = exception;
+
       /**
        * Failure may be not given
        */
-      if (thrown == null) {
+      if (exception == null) {
         return this;
       }
 
-      String message = thrown.getMessage();
-      String stackTraceAsString = Exceptions.getStackTraceAsString(thrown);
+      String message = exception.getMessage();
+      String stackTraceAsString = Exceptions.getStackTraceAsString(exception);
       if (JavaEnvs.IS_DEV) {
         message += "\n" + stackTraceAsString;
       }
 
 
       /**
-       * BodyProcessorException may wrap a validation exception
+       * Vertx Validation Exception
+       * https://vertx.io/docs/vertx-web-validation/java/#_manage_the_failures
+       * The possible subclasses of BadRequestException are:
+       * * ParameterProcessorException: To manage a parameter failure
+       * * BodyProcessorException: To manage a body failure
+       * * RequestPredicateException: To manage a request predicate failure
        */
-      if (thrown instanceof BodyProcessorException) {
-        if (thrown.getCause() instanceof ValidationException) {
-          thrown = thrown.getCause();
-        }
+      if (exception instanceof BadRequestException) {
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
+        this.message = exception.getMessage();
+        this.causeException = exception.getCause();
       }
 
-      if (thrown instanceof ValidationException) {
+      /**
+       * Here and there we still use it directly
+       */
+      if (exception instanceof ValidationException) {
         this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
-        String keyWord = ((ValidationException) thrown).keyword();
+        String keyWord = ((ValidationException) exception).keyword();
         message += " (Keyword: " + keyWord + ", ";
 
         String input = "unknown";
-        Object inputObject = ((ValidationException) thrown).input();
+        Object inputObject = ((ValidationException) exception).input();
         if (inputObject != null) {
           // for what ever reason it may be null
           input = inputObject.toString();
         }
         message += "Input: " + input + ", ";
 
-        JsonPointer inputScopeJson = ((ValidationException) thrown).inputScope();
+        JsonPointer inputScopeJson = ((ValidationException) exception).inputScope();
         String inputScope = "unknown";
         if (inputScopeJson != null) {
           // for what ever reason it may be null
           inputScope = inputScopeJson.toString();
         }
         message += "InputScope: " + inputScope + ")";
-      } else if (thrown instanceof NotFoundException) {
+      } else if (exception instanceof NotFoundException) {
         this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
-      } else if (thrown instanceof ParameterProcessorException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
-      } else if (thrown instanceof NotLoggedInException) {
-        if (!context.request().path().contains("api")) {
-          String redirectEndpoint = "/login";
-          context.response()
-            .putHeader(io.vertx.core.http.HttpHeaders.LOCATION, redirectEndpoint)
-            .setStatusCode(HttpResponseStatus.FOUND.code())
-            .end();
-        } else {
-          context.response()
-            .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
-            .end();
-        }
+      } else if (exception instanceof NotLoggedInException) {
+        context.response()
+          .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
+          .end();
         return this;
-      } else if (thrown instanceof HttpException) {
-        int statusCode = ((HttpException) thrown).getStatusCode();
+      } else if (exception instanceof HttpException) {
+        int statusCode = ((HttpException) exception).getStatusCode();
         try {
           this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.fromHttpStatusCode(statusCode));
         } catch (NotFoundException e) {
@@ -259,12 +271,17 @@ public class TowerFailureException extends Exception {
               public String getMessage() throws NullValueException {
                 throw new NullValueException();
               }
+
+              @Override
+              public String getType() {
+                return "unknown";
+              }
             }
           );
         }
-      } else if (thrown instanceof IllegalArgumentException) {
+      } else if (exception instanceof IllegalArgumentException) {
         this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
-      } else if (thrown instanceof NoSuchElementException) {
+      } else if (exception instanceof NoSuchElementException) {
         this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.NOT_FOUND_404);
       }
 

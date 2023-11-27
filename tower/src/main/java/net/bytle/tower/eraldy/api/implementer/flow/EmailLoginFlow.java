@@ -111,7 +111,7 @@ public class EmailLoginFlow extends WebFlowAbs {
                 TowerFailureException.builder()
                   .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
                   .setMessage("The recipient email (" + userToLogin.getEmail() + ") is not valid")
-                  .setException(e)
+                  .setCauseException(e)
                   .buildWithContextFailing(routingContext)
               );
             }
@@ -123,7 +123,7 @@ public class EmailLoginFlow extends WebFlowAbs {
                 TowerFailureException.builder()
                   .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
                   .setMessage("The sender email (" + sender.getEmail() + ") is not valid")
-                  .setException(e)
+                  .setCauseException(e)
                   .buildWithContextFailing(routingContext)
               );
             }

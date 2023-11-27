@@ -203,7 +203,7 @@ public class UserProvider {
           },
           err -> Future.failedFuture(
             TowerFailureException.builder()
-              .setException(err)
+              .setCauseException(err)
               .setMessage("UserProvider: Error on next sequence id" + err.getMessage())
               .build()
           )
@@ -213,7 +213,7 @@ public class UserProvider {
         rows -> Future.succeededFuture(user),
         error -> Future.failedFuture(
           TowerFailureException.builder()
-            .setException(error)
+            .setCauseException(error)
             .setMessage("Insert User Error:" + error.getMessage() + ". Sql: " + sql)
             .build()
         ));
@@ -405,7 +405,7 @@ public class UserProvider {
         .builder()
         .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
         .setMessage("You can't build a organization user from this row. User: " + id + ", realm: " + userRealmId + ")")
-        .setException(e)
+        .setCauseException(e)
         .build()
       );
     }
@@ -771,7 +771,7 @@ public class UserProvider {
         },
         err -> Future.failedFuture(TowerFailureException.builder()
           .setMessage("Error while retrieving the user by email, password and realm. Sql: \n" + sql)
-          .setException(err)
+          .setCauseException(err)
           .build())
       );
 

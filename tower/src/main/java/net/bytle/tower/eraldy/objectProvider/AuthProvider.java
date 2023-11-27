@@ -215,7 +215,7 @@ public class AuthProvider {
         TowerFailureException.builder()
           .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
           .setMessage("You should be logged as an organizational user")
-          .setException(e)
+          .setCauseException(e)
           .buildWithContextFailing(routingContext)
       );
     }

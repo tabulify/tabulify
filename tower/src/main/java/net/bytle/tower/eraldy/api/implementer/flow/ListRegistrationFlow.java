@@ -174,7 +174,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             .builder()
             .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
             .setMessage("The name of the subscriber could not be determined (" + e.getMessage() + ")")
-            .setException(e)
+            .setCauseException(e)
             .buildWithContextFailing(routingContext)
           );
         }
@@ -211,7 +211,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException.builder().setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
                 .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
-                .setException(e)
+                .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
             }
@@ -224,7 +224,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
                 .builder()
                 .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
                 .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
-                .setException(e)
+                .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
             }

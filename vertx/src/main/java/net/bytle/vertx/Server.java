@@ -59,7 +59,7 @@ public class Server implements AutoCloseable {
   private HashId hashId;
   private JacksonMapperManager jacksonMapperManager;
   private JsonToken jsonToken;
-  private VertxFailureHandler failureHandler;
+  private TowerFailureHandler failureHandler;
   private AnalyticsTracker analyticsTracker;
   private TowerSmtpClient smtpClient;
   private MapDb mapDb;
@@ -170,7 +170,7 @@ public class Server implements AutoCloseable {
   }
 
 
-  public VertxFailureHandler getFailureHandler() {
+  public TowerFailureHandler getFailureHandler() {
     return this.failureHandler;
   }
 
@@ -338,7 +338,7 @@ public class Server implements AutoCloseable {
       /**
        * Failure Handler (Always on)
        */
-      server.failureHandler = new VertxFailureHandler(server);
+      server.failureHandler = new TowerFailureHandler(server);
       vertx.exceptionHandler(server.failureHandler);
       LOGGER.info("Vertx Failure Handler started");
 

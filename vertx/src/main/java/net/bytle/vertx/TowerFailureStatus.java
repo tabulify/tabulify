@@ -8,4 +8,6 @@ public interface TowerFailureStatus {
 
   String getMessage() throws NullValueException;
 
+  String getType();
+
 }

@@ -147,7 +147,7 @@ public class AppApiImpl implements AppApi {
         err -> Future.failedFuture(
           TowerFailureException.builder()
             .setMessage("Unable to get the realm with the identifier (" + realmIdentifier + ")")
-            .setException(err)
+            .setCauseException(err)
             .buildWithContextFailing(routingContext)
         ))
       .compose(
@@ -155,7 +155,7 @@ public class AppApiImpl implements AppApi {
         err -> Future.failedFuture(
           TowerFailureException.builder()
             .setMessage("Unable to get the apps for the realm (" + realmIdentifier + ")")
-            .setException(err)
+            .setCauseException(err)
             .buildWithContextFailing(routingContext)
         )
       );

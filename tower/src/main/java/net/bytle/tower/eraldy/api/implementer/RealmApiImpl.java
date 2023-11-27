@@ -116,7 +116,7 @@ public class RealmApiImpl implements RealmApi {
           err -> Future.failedFuture(
             TowerFailureException
               .builder()
-              .setException(err)
+              .setCauseException(err)
               .setMessage("Unexpected problem while getting the realms owned by the user")
               .buildWithContextFailing(routingContext))
         ));

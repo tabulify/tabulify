@@ -138,7 +138,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
         .setStatus(TowerFailureStatusEnum.BAD_CLAIMS_400)
         .setName("Bad identity claims")
         .setMessage("The identity claims are invalid")
-        .setException(e)
+        .setCauseException(e)
         .setMimeToHtml()
         .buildWithContextFailing(ctx);
     } catch (ExpiredException e) {

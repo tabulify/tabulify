@@ -94,7 +94,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               .builder()
               .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
               .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
-              .setException(e)
+              .setCauseException(e)
               .buildWithContextFailing(routingContext)
           );
         }
@@ -137,7 +137,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
                   .builder()
                   .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
                   .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
-                  .setException(e)
+                  .setCauseException(e)
                   .buildWithContextFailing(routingContext)
               );
             }
@@ -150,7 +150,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
                   .builder()
                   .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
                   .setMessage("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
-                  .setException(e)
+                  .setCauseException(e)
                   .buildWithContextFailing(routingContext)
               );
             }
@@ -271,7 +271,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           .builder()
           .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
           .setMessage("Error in oauth user get for registration")
-          .setException(err)
+          .setCauseException(err)
           .buildWithContextFailingTerminal(authContext.getRoutingContext())
         )
         .onSuccess(authUserForSession -> {
@@ -287,7 +287,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
             .onFailure(err -> TowerFailureException.builder()
               .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
               .setMessage("Error in final oauth user registration: " + err.getMessage())
-              .setException(err)
+              .setCauseException(err)
               .buildWithContextFailingTerminal(authContext.getRoutingContext())
             )
             .onSuccess(finalAuthUserForSession -> {
