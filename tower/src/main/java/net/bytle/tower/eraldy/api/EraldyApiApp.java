@@ -31,7 +31,7 @@ import java.util.List;
 import static net.bytle.tower.util.Guid.*;
 
 /**
- * The public api
+ * The api application
  */
 public class EraldyApiApp extends TowerApp {
 
@@ -228,6 +228,8 @@ public class EraldyApiApp extends TowerApp {
     return false;
   }
 
+
+
   /**
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
@@ -329,7 +331,6 @@ public class EraldyApiApp extends TowerApp {
   public PasswordResetFlow getPasswordResetFlow() {
     return new PasswordResetFlow(this);
   }
-
 
 
   public OAuthExternalCodeFlow getOauthFlow() {

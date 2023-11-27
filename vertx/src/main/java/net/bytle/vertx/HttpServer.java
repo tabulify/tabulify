@@ -9,6 +9,8 @@ import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.SessionStore;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
+import net.bytle.java.JavaEnvs;
 
 /**
  * This class represents an HTTP server:
@@ -23,6 +25,7 @@ public class HttpServer implements AutoCloseable {
   private JWTAuthHandler bearerAuthenticationHandler;
   private BasicAuthHandler basicAuthenticator;
   private PersistentLocalSessionStore persistentSessionStore;
+  private BodyHandler bodyHandler;
 
 
   public HttpServer(builder builder) {
@@ -129,22 +132,30 @@ public class HttpServer implements AutoCloseable {
 
   @Override
   public void close() throws Exception {
-    if(this.persistentSessionStore !=null){
+    if (this.persistentSessionStore != null) {
       this.persistentSessionStore.close();
     }
     this.getServer().close();
   }
 
   public SessionStore getPersistentSessionStore() {
-    if(this.persistentSessionStore ==null){
+    if (this.persistentSessionStore == null) {
       throw new InternalException("Session store was not enabled");
     }
     return this.persistentSessionStore;
   }
 
+  public BodyHandler getBodyHandler() throws NotFoundException {
+    if (this.bodyHandler == null) {
+      throw new NotFoundException();
+    }
+    return this.bodyHandler;
+  }
+
 
   public static class builder {
 
+    private static final String BODY_HANDLER_CONF = "body.handler.upload-dir";
     private boolean addBodyHandler = true;
     private boolean addWebLog = true;
     private boolean isBehindProxy = true;
@@ -210,12 +221,31 @@ public class HttpServer implements AutoCloseable {
       return this;
     }
 
-    private Router buildRouter() throws IllegalConfiguration {
+    private Router buildRouter(HttpServer httpServer) throws IllegalConfiguration {
 
       Vertx vertx = this.server.getVertx();
       Router router = Router.router(vertx);
       if (this.addBodyHandler) {
-        router.route().handler(BodyHandler.create());
+        /**
+         * It works also with OpenApi
+         */
+        int bodyLimit5mb = 1024 * 1024 * 5;
+        BodyHandler bodyHandler = BodyHandler
+          .create()
+          .setHandleFileUploads(true)
+          .setDeleteUploadedFilesOnEnd(true)
+          .setBodyLimit(bodyLimit5mb);
+        String uploadDir = this.server.getConfigAccessor().getString(BODY_HANDLER_CONF);
+        if (uploadDir == null) {
+          if (JavaEnvs.IS_DEV) {
+            uploadDir = "build/vertx-uploaded-files";
+          } else {
+            uploadDir = "temp/vertx-uploaded-files";
+          }
+        }
+        bodyHandler.setUploadsDirectory(uploadDir);
+        httpServer.bodyHandler = bodyHandler;
+        router.route().handler(bodyHandler);
       }
       if (this.addWebLog) {
         router.route().handler(new WebLogger(LoggerFormat.DEFAULT));
@@ -258,14 +288,14 @@ public class HttpServer implements AutoCloseable {
     }
 
     public HttpServer build() throws IllegalConfiguration {
-      HttpServer httpserver = new HttpServer(this);
-      httpserver.router = this.buildRouter();
+      HttpServer httpServer = new HttpServer(this);
+      httpServer.router = this.buildRouter(httpServer);
 
-      if(this.enablePersistentSessionStore){
-        httpserver.persistentSessionStore = PersistentLocalSessionStore.create(httpserver);
+      if (this.enablePersistentSessionStore) {
+        httpServer.persistentSessionStore = PersistentLocalSessionStore.create(httpServer);
       }
-      httpserver.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
-      return httpserver;
+      httpServer.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
+      return httpServer;
     }
 
 

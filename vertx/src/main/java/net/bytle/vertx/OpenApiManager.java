@@ -8,10 +8,13 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
+import io.vertx.ext.web.openapi.impl.OpenAPI3RouterBuilderImpl;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +25,9 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
-
+/**
+ * An entry point for all OpenApi related code
+ */
 public class OpenApiManager {
 
 
@@ -64,6 +69,27 @@ public class OpenApiManager {
       .onFailure(err -> LOGGER.error("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err))
       .compose(routerBuilder -> {
 
+        /**
+         * The order of the build of the router is important:
+         * - bodyHandler, first
+         * - securityHandler, second
+         * - then operation mount (platform), third
+         */
+
+        /**
+         * Custom Body Handler
+         * (Open Api adds a default body handler
+         * if there is no global handler (ie {@link RouterBuilder#rootHandler(Handler)}) defined
+         * We add therefore ours to disable this behaviour
+         * See {@link OpenAPI3RouterBuilderImpl#createRouter()}
+         */
+        try {
+          BodyHandler bodyHandler = towerApp.getApexDomain().getHttpServer().getBodyHandler();
+          routerBuilder.rootHandler(bodyHandler);
+        } catch (NotFoundException e) {
+          // default body handler of openapi is used
+        }
+
         try {
           towerApp
             .openApiBindSecurityScheme(routerBuilder, towerApp.getApexDomain().getHttpServer().getServer().getConfigAccessor())
@@ -92,8 +118,13 @@ public class OpenApiManager {
           openApiRouter = routerBuilder
             .createRouter();
         } catch (Exception e) {
-          RuntimeException error = new RuntimeException("Error while building the router for the app (" + this.towerApp + ")", e);
-          return Future.failedFuture(error);
+          return Future.failedFuture(
+            TowerFailureException
+            .builder()
+            .setMessage("Error while building the openapi router for the app (" + this.towerApp + ")")
+            .setCauseException(e)
+            .build()
+          );
         }
         /**
          * Sub-router tip from https://vertx.io/docs/vertx-web-openapi/java/#_generate_the_router

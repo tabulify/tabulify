@@ -146,6 +146,10 @@ public abstract class TowerApp {
   }
 
 
+  /**
+   * Mount all openApi operations described in the spec
+   * @param builder - the open api builder
+   */
   public abstract TowerApp openApiMount(RouterBuilder builder);
 
   /**
@@ -504,4 +508,7 @@ public abstract class TowerApp {
   public OpenApiManager getOpenApi() {
     return openApi;
   }
+
+
+
 }
