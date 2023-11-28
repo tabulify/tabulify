@@ -8,7 +8,7 @@ import net.bytle.exception.NullValueException;
  * A failure status with HTTP status code mapping
  * (not that NOT_AUTHORIZED and NOT_LOGGED_IN have the HTTP status code)
  */
-public enum TowerFailureStatusEnum implements TowerFailureStatus {
+public enum TowerFailureTypeEnum implements TowerFailureType {
 
 
   SUCCESS_NO_CONTENT_204(204, "Success, the response has no body", "success"),
@@ -56,13 +56,17 @@ public enum TowerFailureStatusEnum implements TowerFailureStatus {
   /**
    * When identity claims are invalid
    */
-  BAD_CLAIMS_400(400, "The identity claims are bad", "badClaims");
+  BAD_CLAIMS_400(400, "The identity claims are bad", "badClaims"),
+  /**
+   * Returned
+   */
+  BAD_STRUCTURE_422(422, "Unprocessable Entity", "badEntity");
 
   private final int httpStatusCode;
   private final String message;
   private final String type;
 
-  TowerFailureStatusEnum(int httpStatusCode, String message, String type) {
+  TowerFailureTypeEnum(int httpStatusCode, String message, String type) {
 
     this.httpStatusCode = httpStatusCode;
     this.message = message;
@@ -70,10 +74,10 @@ public enum TowerFailureStatusEnum implements TowerFailureStatus {
 
   }
 
-  public static TowerFailureStatusEnum fromHttpStatusCode(int httpStatusCode) throws NotFoundException {
-    for (TowerFailureStatusEnum towerFailureStatusEnum : values()) {
-      if (towerFailureStatusEnum.httpStatusCode == httpStatusCode) {
-        return towerFailureStatusEnum;
+  public static TowerFailureTypeEnum fromHttpStatusCode(int httpStatusCode) throws NotFoundException {
+    for (TowerFailureTypeEnum towerFailureTypeEnum : values()) {
+      if (towerFailureTypeEnum.httpStatusCode == httpStatusCode) {
+        return towerFailureTypeEnum;
       }
     }
     throw new NotFoundException();

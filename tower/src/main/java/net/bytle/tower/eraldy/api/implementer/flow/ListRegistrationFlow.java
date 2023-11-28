@@ -172,7 +172,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(TowerFailureException
             .builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
             .setMessage("The name of the subscriber could not be determined (" + e.getMessage() + ")")
             .setCauseException(e)
             .buildWithContextFailing(routingContext)
@@ -209,7 +209,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             try {
               ownerEmailAddressInRfcFormat = BMailInternetAddress.of(listOwnerUser.getEmail(), listOwnerUser.getGivenName()).toString();
             } catch (AddressException e) {
-              return Future.failedFuture(TowerFailureException.builder().setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+              return Future.failedFuture(TowerFailureException.builder().setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
                 .setMessage("The list owner email (" + listOwnerUser.getEmail() + ") is not good (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
@@ -222,7 +222,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException
                 .builder()
-                .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+                .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
                 .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
@@ -341,7 +341,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           return Future.failedFuture(
             TowerFailureException
               .builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setName("The list was not found")
               .setMessage("The list <mark>" + listGuid + "</mark> was not found.")
               .setMimeToHtml()

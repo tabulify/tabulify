@@ -84,6 +84,9 @@ dependencies {
   implementation(project(":bytle-zip"))
   // Shares
   implementation(project(":bytle-vertx"))
+  // To test email
+  implementation(project(":bytle-dns"))
+
   // Web
   implementation("io.vertx:vertx-web:$vertxVersion")
   implementation("io.vertx:vertx-web-client:$vertxVersion")

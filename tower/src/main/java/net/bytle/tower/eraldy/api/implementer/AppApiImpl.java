@@ -21,7 +21,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 
 public class AppApiImpl implements AppApi {
 
@@ -52,7 +52,7 @@ public class AppApiImpl implements AppApi {
         return Future.failedFuture(
           TowerFailureException
             .builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
             .setMessage("The realm identifier cannot be null with the handle appIdentifier (" + appIdentifier + ")")
             .buildWithContextFailing(routingContext)
         );
@@ -71,7 +71,7 @@ public class AppApiImpl implements AppApi {
           }
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage(message)
               .build()
           );
@@ -96,7 +96,7 @@ public class AppApiImpl implements AppApi {
           }
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage(message)
               .build()
           );

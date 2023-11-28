@@ -260,7 +260,7 @@ public class HttpServer implements AutoCloseable {
          * https://vertx.io/docs/vertx-web/java/#_route_match_failures
          */
         TowerFailureHttpHandler errorHandlerXXX = TowerFailureHttpHandler.createOrGet(server);
-        router.errorHandler(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), errorHandlerXXX);
+        router.errorHandler(TowerFailureTypeEnum.INTERNAL_ERROR_500.getStatusCode(), errorHandlerXXX);
 
         /**
          * Handle the failures. ie

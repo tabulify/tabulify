@@ -79,7 +79,7 @@ public class TowerFailureException extends Exception {
 
   }
 
-  public TowerFailureStatus getStatus() {
+  public TowerFailureType getStatus() {
     return this.builder.status;
   }
 
@@ -90,7 +90,7 @@ public class TowerFailureException extends Exception {
 
   public static class VertxFailureHttpExceptionBuilder {
 
-    private TowerFailureStatus status = TowerFailureStatusEnum.INTERNAL_ERROR_500;
+    private TowerFailureType status = TowerFailureTypeEnum.INTERNAL_ERROR_500;
     private String message;
     private String name;
 
@@ -124,8 +124,8 @@ public class TowerFailureException extends Exception {
      *
      * @param code - the code
      */
-    private VertxFailureHttpExceptionBuilder setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatus code) {
-      if (status == TowerFailureStatusEnum.INTERNAL_ERROR_500) {
+    private VertxFailureHttpExceptionBuilder setStatusCodeOnlyIfValueIsInternalError(TowerFailureType code) {
+      if (status == TowerFailureTypeEnum.INTERNAL_ERROR_500) {
         this.status = code;
       }
       return this;
@@ -141,7 +141,7 @@ public class TowerFailureException extends Exception {
       return this;
     }
 
-    public VertxFailureHttpExceptionBuilder setStatus(TowerFailureStatusEnum status) {
+    public VertxFailureHttpExceptionBuilder setType(TowerFailureTypeEnum status) {
       this.status = status;
       return this;
     }
@@ -163,12 +163,12 @@ public class TowerFailureException extends Exception {
     private VertxFailureHttpExceptionBuilder setStatusCodeFromFailureContext(RoutingContext context) {
       int httpStatusCode = context.statusCode();
       if (status.getStatusCode() == -1) {
-        status = TowerFailureStatusEnum.INTERNAL_ERROR_500;
+        status = TowerFailureTypeEnum.INTERNAL_ERROR_500;
       } else {
         try {
-          status = TowerFailureStatusEnum.fromHttpStatusCode(httpStatusCode);
+          status = TowerFailureTypeEnum.fromHttpStatusCode(httpStatusCode);
         } catch (NotFoundException e) {
-          status = new TowerFailureStatus() {
+          status = new TowerFailureType() {
             @Override
             public int getStatusCode() {
               return httpStatusCode;
@@ -220,7 +220,7 @@ public class TowerFailureException extends Exception {
        * * RequestPredicateException: To manage a request predicate failure
        */
       if (exception instanceof BadRequestException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.BAD_REQUEST_400);
         this.message = exception.getMessage();
         this.causeException = exception.getCause();
       }
@@ -229,7 +229,7 @@ public class TowerFailureException extends Exception {
        * Here and there we still use it directly
        */
       if (exception instanceof ValidationException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.BAD_REQUEST_400);
         String keyWord = ((ValidationException) exception).keyword();
         message += " (Keyword: " + keyWord + ", ";
 
@@ -249,7 +249,7 @@ public class TowerFailureException extends Exception {
         }
         message += "InputScope: " + inputScope + ")";
       } else if (exception instanceof NotFoundException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.BAD_REQUEST_400);
       } else if (exception instanceof NotLoggedInException) {
         context.response()
           .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
@@ -258,10 +258,10 @@ public class TowerFailureException extends Exception {
       } else if (exception instanceof HttpException) {
         int statusCode = ((HttpException) exception).getStatusCode();
         try {
-          this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.fromHttpStatusCode(statusCode));
+          this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.fromHttpStatusCode(statusCode));
         } catch (NotFoundException e) {
           this.setStatusCodeOnlyIfValueIsInternalError(
-            new TowerFailureStatus() {
+            new TowerFailureType() {
               @Override
               public int getStatusCode() {
                 return statusCode;
@@ -280,9 +280,9 @@ public class TowerFailureException extends Exception {
           );
         }
       } else if (exception instanceof IllegalArgumentException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.BAD_REQUEST_400);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.BAD_REQUEST_400);
       } else if (exception instanceof NoSuchElementException) {
-        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureStatusEnum.NOT_FOUND_404);
+        this.setStatusCodeOnlyIfValueIsInternalError(TowerFailureTypeEnum.NOT_FOUND_404);
       }
 
       this.message = message;
@@ -293,7 +293,7 @@ public class TowerFailureException extends Exception {
        * within 60 seconds (ie the new csrf token was not flushed on the disk)
        * We delete the cookie and ask the user to reload the page
        */
-      if (this.status == TowerFailureStatusEnum.NOT_AUTHORIZED_403 && message.toLowerCase().contains("token")) {
+      if (this.status == TowerFailureTypeEnum.NOT_AUTHORIZED_403 && message.toLowerCase().contains("token")) {
         context.session().remove(VertxCsrf.getCsrfName());
         context.response().removeCookie(VertxCsrf.getCsrfCookieName());
       }

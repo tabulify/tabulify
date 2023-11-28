@@ -72,15 +72,15 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
       return;
     }
 
-    TowerFailureStatus statusCode = towerFailureException.getStatus();
+    TowerFailureType statusCode = towerFailureException.getStatus();
 
     /**
      * Internal error
      * <p>
-     * We don't log forbidden request (ie {@link TowerFailureStatusEnum.NOT_AUTHORIZED_403})
+     * We don't log forbidden request (ie {@link TowerFailureTypeEnum.NOT_AUTHORIZED_403})
      * Note that a {@link io.vertx.ext.web.handler.CSRFHandler problem} will log a 403 ...
      */
-    if (statusCode == TowerFailureStatusEnum.INTERNAL_ERROR_500) {
+    if (statusCode == TowerFailureTypeEnum.INTERNAL_ERROR_500) {
       this.logUnExpectedFailure(context);
     }
 

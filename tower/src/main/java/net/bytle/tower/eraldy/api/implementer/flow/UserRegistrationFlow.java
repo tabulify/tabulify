@@ -92,7 +92,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           return Future.failedFuture(
             TowerFailureException
               .builder()
-              .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+              .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
               .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
               .setCauseException(e)
               .buildWithContextFailing(routingContext)
@@ -135,7 +135,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               return Future.failedFuture(
                 TowerFailureException
                   .builder()
-                  .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+                  .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
                   .setMessage("The new user email (" + newUser.getEmail() + ") is not good (" + e.getMessage() + ")")
                   .setCauseException(e)
                   .buildWithContextFailing(routingContext)
@@ -148,7 +148,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
               return Future.failedFuture(
                 TowerFailureException
                   .builder()
-                  .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+                  .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
                   .setMessage("The realm owner email (" + realmOwnerSender.getEmail() + ") is not good (" + e.getMessage() + ")")
                   .setCauseException(e)
                   .buildWithContextFailing(routingContext)
@@ -244,7 +244,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
       String realmIdentifier = authContext.getAuthState().getRealmIdentifier();
       if (realmIdentifier == null) {
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
           .setMessage("For a user registration flow, the realm should have been set in the authentication state")
           .buildWithContextFailingTerminal(authContext.getRoutingContext());
         authContext.next();
@@ -269,7 +269,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
         .getAuthUserForSessionByClaims(authUserClaims)
         .onFailure(err -> TowerFailureException
           .builder()
-          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
           .setMessage("Error in oauth user get for registration")
           .setCauseException(err)
           .buildWithContextFailingTerminal(authContext.getRoutingContext())
@@ -285,7 +285,7 @@ public class UserRegistrationFlow extends WebFlowAbs {
           }
           futureFinalAuthUserForSession
             .onFailure(err -> TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+              .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
               .setMessage("Error in final oauth user registration: " + err.getMessage())
               .setCauseException(err)
               .buildWithContextFailingTerminal(authContext.getRoutingContext())

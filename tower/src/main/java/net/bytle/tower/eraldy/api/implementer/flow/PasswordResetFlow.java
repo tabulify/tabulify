@@ -65,7 +65,7 @@ public class PasswordResetFlow extends WebFlowAbs {
           recipientName = UsersUtil.getNameOrNameFromEmail(userToResetPassword);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
             .setMessage("A name for the user to reset could not be found (" + e.getMessage() + ")")
             .setCauseException(e)
             .buildWithContextFailing(routingContext)
@@ -98,7 +98,7 @@ public class PasswordResetFlow extends WebFlowAbs {
               recipientEmailAddressInRfcFormat = BMailInternetAddress.of(userToResetPassword.getEmail(), recipientName).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException.builder()
-                .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+                .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
                 .setMessage("The email for the user to reset (" + userToResetPassword.getEmail() + ") is not valid (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
@@ -109,7 +109,7 @@ public class PasswordResetFlow extends WebFlowAbs {
               senderEmail = BMailInternetAddress.of(sender.getEmail(), sender.getName()).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException.builder()
-                .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+                .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
                 .setMessage("The sender email (" + sender.getEmail() + ") is not valid (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)

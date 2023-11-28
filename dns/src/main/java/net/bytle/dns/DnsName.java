@@ -86,7 +86,7 @@ public class DnsName {
 
 
   /**
-   * @return subdomains (A and AAAA record)
+   * @return the subdomains (A and AAAA record) of the name considered a zone
    */
   @SuppressWarnings("unused")
   public List<Record> getSubdomains() {

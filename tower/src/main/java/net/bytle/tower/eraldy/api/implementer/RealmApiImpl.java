@@ -13,7 +13,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.List;
 
@@ -68,7 +68,7 @@ public class RealmApiImpl implements RealmApi {
         if (realm == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The realm was not found")
               .build()
           );

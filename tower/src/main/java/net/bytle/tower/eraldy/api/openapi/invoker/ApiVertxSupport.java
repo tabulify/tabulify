@@ -10,7 +10,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.tower.eraldy.api.implementer.*;
 import net.bytle.tower.eraldy.api.openapi.interfaces.*;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.function.Function;
 
@@ -105,7 +105,7 @@ public class ApiVertxSupport {
       try {
         ctx.response().end(jsonMapper.writeValueAsString(data));
       } catch (JsonProcessingException e) {
-        ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Unable to map the data to json", e));
+        ctx.fail(new HttpException(TowerFailureTypeEnum.INTERNAL_ERROR_500.getStatusCode(), "Unable to map the data to json", e));
       }
       return;
     }

@@ -2,7 +2,7 @@ package net.bytle.vertx;
 
 import net.bytle.exception.NullValueException;
 
-public interface TowerFailureStatus {
+public interface TowerFailureType {
 
   int getStatusCode();
 

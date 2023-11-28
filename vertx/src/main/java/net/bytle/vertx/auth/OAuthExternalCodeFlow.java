@@ -75,7 +75,7 @@ public class OAuthExternalCodeFlow extends WebFlowAbs {
       return Future.failedFuture(
         TowerFailureException
           .builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
           .setMessage("The (" + OAuthInternalSession.REDIRECT_URI_KEY + ") of the client cannot be null for a user registration.")
           .buildWithContextFailing(routingContext)
       );

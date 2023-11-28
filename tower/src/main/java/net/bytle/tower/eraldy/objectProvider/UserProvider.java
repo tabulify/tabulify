@@ -403,7 +403,7 @@ public class UserProvider {
     } catch (AssertionException e) {
       return Future.failedFuture(TowerFailureException
         .builder()
-        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
         .setMessage("You can't build a organization user from this row. User: " + id + ", realm: " + userRealmId + ")")
         .setCauseException(e)
         .build()

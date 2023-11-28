@@ -7,7 +7,7 @@ import java.net.URI;
 import java.util.Objects;
 
 /**
- * A list where user can register  RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+ * A list where a user can register.  ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListItem   {

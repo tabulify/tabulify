@@ -135,7 +135,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
     } catch (IllegalStructure e) {
       throw TowerFailureException
         .builder()
-        .setStatus(TowerFailureStatusEnum.BAD_CLAIMS_400)
+        .setType(TowerFailureTypeEnum.BAD_CLAIMS_400)
         .setName("Bad identity claims")
         .setMessage("The identity claims are invalid")
         .setCauseException(e)
@@ -150,7 +150,7 @@ public abstract class WebFlowEmailCallbackAbs implements WebFlowEmailCallback {
       }
       throw TowerFailureException
         .builder()
-        .setStatus(TowerFailureStatusEnum.LINK_EXPIRED)
+        .setType(TowerFailureTypeEnum.LINK_EXPIRED)
         .setMessage(message)
         .setName("Link expired")
         .setMimeToHtml()

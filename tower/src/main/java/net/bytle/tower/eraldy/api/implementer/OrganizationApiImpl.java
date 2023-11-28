@@ -14,7 +14,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthUser;
 
 public class OrganizationApiImpl implements OrganizationApi {
@@ -39,7 +39,7 @@ public class OrganizationApiImpl implements OrganizationApi {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .buildWithContextFailing(routingContext)
       );
     }
@@ -51,7 +51,7 @@ public class OrganizationApiImpl implements OrganizationApi {
         if (orgUser == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
               .setMessage("The authenticated user (" + signedInUser.getSubject() + "," + signedInUser.getSubjectEmail() + ") is not member of an organization")
               .buildWithContextFailing(routingContext)
           );

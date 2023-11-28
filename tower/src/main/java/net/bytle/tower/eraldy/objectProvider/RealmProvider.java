@@ -25,7 +25,7 @@ import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JdbcSchemaManager;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -406,7 +406,7 @@ public class RealmProvider {
       .compose(rows -> this.getRealmsFromRows(rows, realmClass),
         err -> Future.failedFuture(
           TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+            .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
             .setMessage("Unable to get the real of the organization user (" + user + ")")
             .build()
         ));
@@ -434,7 +434,7 @@ public class RealmProvider {
         },
         err -> Future.failedFuture(
           TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+            .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
             .setMessage("Unable to get the realm of the organization user (" + owner + ")")
             .build()
         ));
@@ -608,7 +608,7 @@ public class RealmProvider {
         if (realm == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The realm identifier (" + realmIdentifier + ") was not found")
               .build()
           );

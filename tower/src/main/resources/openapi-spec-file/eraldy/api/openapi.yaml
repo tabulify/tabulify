@@ -27,8 +27,8 @@ tags:
   name: analytics
 - description: Organization module
   name: organization
-- description: Mail module (ie SMTP)
-  name: mail
+- description: EMail module (ie SMTP)
+  name: email
 paths:
   /auth/logout:
     get:
@@ -2696,9 +2696,9 @@ components:
         \ property = \"guid\", scope = User.class)"
     ListItem:
       description: |
-        A list where user can register
+        A list where a user can register.
 
-        RegistrationList and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+        ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
       example:
         ownerUser:
           disabledReason: disabledReason
@@ -2842,7 +2842,7 @@ components:
           description: The public page where to register for this list
           format: uri
           type: string
-      title: A list where user can register
+      title: A list of users known also as audience
       type: object
       x-fields-identity:
       - guid

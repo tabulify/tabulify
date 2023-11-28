@@ -11,7 +11,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
 import net.bytle.vertx.auth.OAuthInternalSession;
@@ -79,7 +79,7 @@ public class FrontEndRouter {
       }
       return Future.failedFuture(
         TowerFailureException.builder()
-        .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+        .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
         .setMessage(message)
         .setName(message)
           .setMimeToHtml()
@@ -99,7 +99,7 @@ public class FrontEndRouter {
         return Future.failedFuture(
           TowerFailureException
             .builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
             .setName("Redirect Uri is mandatory")
             .setMessage("The redirect URI is mandatory and was not found")
             .setMimeToHtml()

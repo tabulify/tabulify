@@ -17,7 +17,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthUser;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class UserApiImpl implements UserApi {
       if (realmIdentifier == null) {
         return Future.failedFuture(
           TowerFailureException.builder()
-            .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+            .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
             .setMessage("When the user identifier is not a guid, a realm identifier should be given")
             .build()
         );
@@ -61,7 +61,7 @@ public class UserApiImpl implements UserApi {
         if (realm == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The realm was not found")
               .build()
           );
@@ -88,7 +88,7 @@ public class UserApiImpl implements UserApi {
         if (user == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The realm was found but not the user")
               .build()
           );
@@ -119,7 +119,7 @@ public class UserApiImpl implements UserApi {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .build()
       );
     }

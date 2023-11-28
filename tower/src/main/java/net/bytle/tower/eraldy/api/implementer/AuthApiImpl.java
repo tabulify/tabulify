@@ -52,7 +52,7 @@ public class AuthApiImpl implements AuthApi {
     if (realmIdentifier == null) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
           .setMessage("A realm query property identifier (" + AuthQueryProperty.REALM_IDENTIFIER + ") is mandatory.")
           .buildWithContextFailing(routingContext)
       );
@@ -90,7 +90,7 @@ public class AuthApiImpl implements AuthApi {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
           .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the authorize endpoint")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
@@ -105,7 +105,7 @@ public class AuthApiImpl implements AuthApi {
     } catch (NotAuthorizedException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .setMessage("The redirect uri (" + redirectUri + ") is unknown")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)
@@ -271,7 +271,7 @@ public class AuthApiImpl implements AuthApi {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.BAD_REQUEST_400)
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
           .setMessage("A redirect uri query property (" + AuthQueryProperty.REDIRECT_URI + ") is mandatory in your url in the logout endpoint.")
           .setMimeToHtml()
           .buildWithContextFailing(routingContext)

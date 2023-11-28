@@ -14,6 +14,7 @@ import net.bytle.tower.eraldy.api.implementer.flow.UserRegistrationFlow;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
+import net.bytle.tower.util.EmailAddressValidator;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -54,6 +55,7 @@ public class EraldyApiApp extends TowerApp {
   private final EmailLoginFlow emailLoginFlow;
   private final OAuthExternalCodeFlow oauthExternalFlow;
   private final AuthProvider authProvider;
+  private final EmailAddressValidator emailAddressValidator;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
@@ -73,6 +75,7 @@ public class EraldyApiApp extends TowerApp {
     } catch (Exception e) {
       throw new ConfigIllegalException("The member app value (" + memberUri + ") of the conf (" + MEMBER_APP_URI_CONF + ") is not a valid URI", e);
     }
+    this.emailAddressValidator = new EmailAddressValidator(this);
     /**
      * Flow management
      */
@@ -355,5 +358,9 @@ public class EraldyApiApp extends TowerApp {
 
   public boolean isEraldyRealm(Long localId) {
     return getEraldyRealm().getLocalId().equals(localId);
+  }
+
+  public EmailAddressValidator getEmailAddressValidator() {
+    return this.emailAddressValidator;
   }
 }

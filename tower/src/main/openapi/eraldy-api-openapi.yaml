@@ -28,8 +28,8 @@ tags:
     description: Analytics module
   - name: organization
     description: Organization module
-  - name: mail
-    description: Mail module (ie SMTP)
+  - name: email
+    description: EMail module (ie SMTP)
 # Secure by default, if you want to make an operation public,
 # you need to set the security for an operation to the empty array
 # security: []

@@ -12,7 +12,7 @@ import net.bytle.java.JavaEnvs;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.AnalyticsEventName;
 
 import java.util.ArrayList;
@@ -278,7 +278,7 @@ public class AuthContext {
       .putHeader(HttpHeaders.EXPIRES, "0")
       // redirect (when there is no state, redirect to home)
       .putHeader(HttpHeaders.LOCATION, this.redirectUri.toUrl().toString())
-      .setStatusCode(TowerFailureStatusEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
+      .setStatusCode(TowerFailureTypeEnum.REDIRECT_SEE_OTHER_URI_303.getStatusCode())
       .end("Redirecting to " + this.redirectUri + ".");
   }
 
@@ -299,7 +299,7 @@ public class AuthContext {
     if (sessionRedirectionUrl == null) {
       throw TowerFailureException.builder()
         .setMessage("Redirect URI not found")
-        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
         .setName("Redirect Uri not ")
         .setMimeToHtml()
         .buildWithContextFailing(ctx);
@@ -314,7 +314,7 @@ public class AuthContext {
       // internal error, we don't throw
       throw TowerFailureException.builder()
         .setMessage(message)
-        .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+        .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
         .setName("Bad URL redirect")
         .setMimeToHtml()
         .setCauseException(e)
@@ -334,7 +334,7 @@ public class AuthContext {
       if (inState == null) {
         throw TowerFailureException.builder()
           .setMessage("The session state is null")
-          .setStatus(TowerFailureStatusEnum.INTERNAL_ERROR_500)
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
           .setMimeToHtml()
           .buildWithContextFailing(ctx);
       }

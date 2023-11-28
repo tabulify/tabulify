@@ -14,7 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
 
@@ -174,7 +174,7 @@ public class AuthProvider {
       return Future.failedFuture(
         TowerFailureException
           .builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .build()
       );
     }
@@ -206,14 +206,14 @@ public class AuthProvider {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .setMessage("You should be logged in")
           .buildWithContextFailing(routingContext)
       );
     } catch (NotSignedInOrganizationUser e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+          .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
           .setMessage("You should be logged as an organizational user")
           .setCauseException(e)
           .buildWithContextFailing(routingContext)
@@ -236,7 +236,7 @@ public class AuthProvider {
         if (!realmGuids.contains(realm.getGuid())) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_AUTHORIZED_403)
+              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
               .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realm + "). Scope: " + authScope)
               .build()
           );
@@ -257,7 +257,7 @@ public class AuthProvider {
     } catch (NotFoundException e) {
       return Future.failedFuture(
         TowerFailureException.builder()
-          .setStatus(TowerFailureStatusEnum.NOT_LOGGED_IN_401)
+          .setType(TowerFailureTypeEnum.NOT_LOGGED_IN_401)
           .build()
       );
     }
@@ -279,7 +279,7 @@ public class AuthProvider {
           if (user == null) {
             return Future.failedFuture(
               TowerFailureException.builder()
-                .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+                .setType(TowerFailureTypeEnum.NOT_FOUND_404)
                 .build()
             );
           }
@@ -297,7 +297,7 @@ public class AuthProvider {
         if (userInDb == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
-              .setStatus(TowerFailureStatusEnum.NOT_FOUND_404)
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
               .setMessage("The user (" + email + "," + realmIdentifier + ") does not exist")
               .build()
           );

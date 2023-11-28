@@ -13,6 +13,8 @@ import java.util.Map;
  * Filtering third party incoming transaction
  * We follow
  * <a href="https://www.spamhaus.org/whitepapers/effective_filtering/">...</a>
+ * See also:
+ * <a href="https://docs.spamhaus.com/datasets/docs/source/40-real-world-usage/smtp/000-intro.html">Filtering SMTP</a>
  * <p>
  */
 public class SmtpFiltering {

@@ -7,15 +7,12 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.TowerApp;
 import java.util.function.Function;
-import net.bytle.type.Casts;
-import java.util.Collection;
 
 {{#apiInfo}}{{#apis}}
-import {{apiPackage}}.{{classname}}Handler;
-import net.bytle.tower.eraldy.{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
+import {{apiPackage}}.{{classname}}Handler;{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
 {{/apis}}{{/apiInfo}}
 
 /**
@@ -96,7 +93,7 @@ public class ApiVertxSupport {
       try {
         ctx.response().end(jsonMapper.writeValueAsString(data));
       } catch (JsonProcessingException e) {
-        ctx.fail(new HttpException(TowerFailureStatusEnum.INTERNAL_ERROR_500.getStatusCode(), "Unable to map the data to json", e));
+        ctx.fail(new HttpException(TowerFailureTypeEnum.INTERNAL_ERROR_500.getStatusCode(), "Unable to map the data to json", e));
       }
       return;
     }

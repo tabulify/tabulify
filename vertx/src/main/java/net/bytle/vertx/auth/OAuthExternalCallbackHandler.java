@@ -11,7 +11,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.TowerFailureStatusEnum;
+import net.bytle.vertx.TowerFailureTypeEnum;
 
 import java.util.Arrays;
 import java.util.List;
@@ -95,7 +95,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
     // server after validation
     final String state = ctx.request().getParam(AuthQueryProperty.STATE.toString());
     if (state == null) {
-      ctx.fail(TowerFailureStatusEnum.BAD_REQUEST_400.getStatusCode(), new IllegalStateException("Missing state parameter"));
+      ctx.fail(TowerFailureTypeEnum.BAD_REQUEST_400.getStatusCode(), new IllegalStateException("Missing state parameter"));
       return;
     }
 
@@ -107,7 +107,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
        * state has a random value, against replay attack.
        * forbidden if not the same.
        */
-      ctx.fail(TowerFailureStatusEnum.NOT_LOGGED_IN_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
+      ctx.fail(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode(), new IllegalStateException("Invalid oauth2 state"));
       return;
     }
     AuthState authState = AuthState.createFromStateString(ctxState);
@@ -164,7 +164,7 @@ class OAuthExternalCallbackHandler implements AuthenticationHandler {
         if (!responsesScopes.contains(requestedScope)) {
           response
             .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
-            .setStatusCode(TowerFailureStatusEnum.NOT_LOGGED_IN_401.getStatusCode())
+            .setStatusCode(TowerFailureTypeEnum.NOT_LOGGED_IN_401.getStatusCode())
             .end("The requested scope (" + requestedScope + ") was not granted.");
           return;
         }
