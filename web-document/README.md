@@ -2,7 +2,7 @@
 
 ## About
 
-This module is all about the manipulation of web document file
+This module is all about the manipulation of web document file (HTML)
 
 TODO: Move in the type module with json and yaml ?
 
@@ -12,6 +12,7 @@ TODO: Move in the type module with json and yaml ?
 ### Select (Parsing)
 
   * https://jsoup.org/
+
 
 ### CSS
 
@@ -23,6 +24,9 @@ Others. See also the [SAC](https://www.w3.org/Style/CSS/SAC/)
   * https://github.com/radkovo/jStyleParser
   * https://github.com/phax/ph-css
 
+### Browser
+GUI-Less browser
+https://htmlunit.sourceforge.io/
 
 ### Note
 

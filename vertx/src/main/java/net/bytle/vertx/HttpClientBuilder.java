@@ -12,6 +12,9 @@ import io.vertx.ext.web.client.WebClientOptions;
  */
 public class HttpClientBuilder {
 
+  private Integer maxHeaderSize;
+  private Integer connectTimeOut;
+
   public HttpClientBuilder(Vertx vertx) {
     this.vertx = vertx;
   }
@@ -83,10 +86,16 @@ public class HttpClientBuilder {
       httpClientOptions.setProxyOptions(proxyOptions);
     }
 
+    if (this.maxHeaderSize != null) {
+      httpClientOptions.setMaxHeaderSize(this.maxHeaderSize);
+    }
+
     /**
      * TCP Timeout
      */
-    //httpClientOptions.setConnectTimeout(100); // ms
+    if (this.connectTimeOut != null) {
+      httpClientOptions.setConnectTimeout(this.connectTimeOut); // ms
+    }
     //httpClientOptions.setIdleTimeout(1); // second, a normal answer is of 22 ms
     //httpClientOptions.setKeepAlive(true);
 
@@ -107,5 +116,22 @@ public class HttpClientBuilder {
     return this;
   }
 
+  /**
+   * The maximum length of the HTTP headers.
+   * This is a restriction in cookie length, including number of cookies and size of cookie values.
+   * Default: 8192
+   */
+  public HttpClientBuilder setMaxHeaderSize(int maxHeaderSize) {
+    this.maxHeaderSize = maxHeaderSize;
+    return this;
+  }
+
+  /**
+   * @param connectTimeout en microseconds
+   */
+  public HttpClientBuilder setConnectTimeout(int connectTimeout) {
+    this.connectTimeOut = connectTimeout;
+    return this;
+  }
 
 }

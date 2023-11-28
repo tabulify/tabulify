@@ -38,6 +38,8 @@ val caffeineVersion = "2.9.3"
 // Embdedded Map database
 // https://mvnrepository.com/artifact/org.mapdb/mapdb
 val mapdbVersion = "3.0.10"
+// Jsoup
+val jsoupVersion = "1.15.3"
 
 ext {
   set("vertxVersion", vertxVersion)
@@ -53,6 +55,7 @@ ext {
   set("hashIdVersion", hashIdVersion)
   set("caffeineVersion", caffeineVersion)
   set("mapdbVersion", mapdbVersion)
+  set("jsoupVersion", jsoupVersion)
 }
 
 /**
