@@ -15,6 +15,7 @@ dependencies {
   implementation(project(":bytle-base"))
   implementation(project(":bytle-type"))
   implementation(project(":bytle-template"))
+  implementation(project(":bytle-dns"))
 
   // It seems that you don't need to add the version after declaring the platform
   // As Seen here https://how-to.vertx.io/web-session-infinispan-howto/

@@ -64,6 +64,7 @@ public class Server implements AutoCloseable {
   private TowerSmtpClient smtpClient;
   private MapDb mapDb;
   private final List<AutoCloseable> closeableServices = new ArrayList<>();
+  private TowerDnsClient dnsClient;
 
   Server(builder builder) {
 
@@ -188,6 +189,13 @@ public class Server implements AutoCloseable {
     return this.smtpClient;
   }
 
+  public TowerDnsClient getDnsClient() {
+    if (this.dnsClient == null) {
+      throw new InternalException("Dns Client is not enabled");
+    }
+    return this.dnsClient;
+  }
+
   public MapDb getMapDb() {
     if (this.mapDb == null) {
       throw new InternalException("Map Db is not enabled");
@@ -224,6 +232,7 @@ public class Server implements AutoCloseable {
 
     private String smtpClientUserAgentName = null;
     private boolean enableMapdb = false;
+    private boolean enableDnsClient = false;
 
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
@@ -360,6 +369,9 @@ public class Server implements AutoCloseable {
         LOGGER.info("Analytics tracker disabled");
       }
 
+      if(this.enableDnsClient){
+       server.dnsClient = new TowerDnsClient(server);
+      }
 
       return server;
     }
@@ -427,6 +439,13 @@ public class Server implements AutoCloseable {
       this.enableJsonToken = true;
       return this;
     }
+
+    public Server.builder enableDnsClient() {
+      this.enableDnsClient = true;
+      return this;
+    }
+
+
 
     public Server.builder enableTrackerAnalytics() {
       this.enableMapdb = true;

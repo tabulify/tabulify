@@ -2,7 +2,6 @@ package net.bytle.tower.util;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.DnsBlockList;
@@ -14,6 +13,8 @@ import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.HttpClientBuilder;
+import net.bytle.vertx.Server;
+import net.bytle.vertx.TowerDnsClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +26,12 @@ public class EmailAddressValidator {
   private final TowerDnsClient dnsClient;
 
   public EmailAddressValidator(EraldyApiApp eraldyApiApp) {
-    Vertx vertx = eraldyApiApp.getApexDomain().getHttpServer().getServer().getVertx();
-    webClient = HttpClientBuilder.builder(vertx)
+    Server server = eraldyApiApp.getApexDomain().getHttpServer().getServer();
+    webClient = HttpClientBuilder.builder(server.getVertx())
       .setMaxHeaderSize(8192 * 10) // mail.ru has HTTP headers that are bigger than 8192 bytes
       .setConnectTimeout(1000) // 1 second, 163.com
       .buildWebClient();
-    dnsClient = new TowerDnsClient(eraldyApiApp);
+    dnsClient = server.getDnsClient();
   }
 
 

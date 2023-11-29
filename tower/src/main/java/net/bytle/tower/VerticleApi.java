@@ -74,6 +74,7 @@ public class VerticleApi extends AbstractVerticle {
               .enableSmtpClient("Eraldy.com")
               .enableMapDb()
               .enableTrackerAnalytics()
+              .enableDnsClient()
               .build();
           } catch (ConfigIllegalException e) {
             this.handlePromiseFailure(verticlePromise, e);

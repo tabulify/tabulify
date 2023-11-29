@@ -1,10 +1,8 @@
-package net.bytle.tower.util;
+package net.bytle.vertx;
 
 import io.vertx.core.Future;
 import io.vertx.core.dns.DnsClientOptions;
 import net.bytle.dns.*;
-import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,8 +18,7 @@ public class TowerDnsClient {
 
   private final io.vertx.core.dns.DnsClient client;
 
-  public TowerDnsClient(TowerApp towerApp) {
-    Server server = towerApp.getApexDomain().getHttpServer().getServer();
+  public TowerDnsClient(Server server) {
     DnsClientOptions dnsClientOptions = new DnsClientOptions();
     String dnsResolver = server.getConfigAccessor().getString(DNS_RESOLVER_HOST);
     if (dnsResolver != null) {
