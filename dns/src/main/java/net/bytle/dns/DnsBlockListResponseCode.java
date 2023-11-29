@@ -77,7 +77,7 @@ public enum DnsBlockListResponseCode {
     this.block = block;
   }
 
-  public String getResponseCode() {
+  public String getCode() {
     return this.responseCode;
   }
 

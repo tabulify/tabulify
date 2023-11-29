@@ -1,13 +1,10 @@
 package net.bytle.smtp;
 
-import net.bytle.dns.DnsBlockList;
-import net.bytle.dns.DnsBlockListQuery;
-import net.bytle.dns.DnsBlockListResponseCode;
-import net.bytle.dns.DnsName;
+import net.bytle.dns.*;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.IllegalStructure;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Filtering third party incoming transaction
@@ -38,12 +35,19 @@ public class SmtpFiltering {
       return;
     }
     String domain = emailAddress.getDomain();
-    Map.Entry<DnsBlockList, DnsBlockListResponseCode> isBlocked = DnsBlockListQuery.forDomain(domain)
-      .query()
-      .getFirstRecord();
-    DnsBlockListResponseCode value = isBlocked.getValue();
-    if (value.getBlocked()) {
-      throw SmtpFiltering.getException("Domain " + domain + " blacklisted by " + isBlocked.getKey() + " (Reason: " + value.getDescription() + ")");
+    DnsBlockListQueryHelper dnsBlockListHelper = DnsBlockListQueryHelper.forDomain(domain).build().get(0);
+    Set<DnsIp> dnsIps;
+    try {
+      dnsIps = smtpSession.getSmtpService().getSmtpServer().getDnsClient().resolveA(dnsBlockListHelper.getDnsNameToQuery());
+    } catch (DnsNotFoundException | DnsException e) {
+      return;
+    }
+    if (dnsIps.size() == 0) {
+      return;
+    }
+    DnsBlockListResponseCode responseCode = dnsBlockListHelper.createResponseCode(dnsIps.iterator().next());
+    if (responseCode.getBlocked()) {
+      throw SmtpFiltering.getException("Domain " + domain + " blacklisted by " + responseCode.getCode() + " (Reason: " + responseCode.getDescription() + ")");
     }
   }
 
@@ -55,18 +59,31 @@ public class SmtpFiltering {
       return;
     }
     String ipAddressToCheck = smtpSession.getSmtpSocket().getRemoteAddress().hostAddress();
-    DnsBlockListResponseCode response;
+    DnsBlockListQueryHelper dblQueryHelper;
     try {
-      response = DnsBlockListQuery
+      dblQueryHelper = DnsBlockListQueryHelper
         .forIp(ipAddressToCheck)
-        .query()
-        .getFirst();
+        .build()
+        .get(0);
     } catch (IllegalStructure e) {
       // ipv6 address, we don't know how to filter
       return;
     }
-    if (response.getBlocked()) {
-      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: " + response.getDescription() + ")");
+    Set<DnsIp> dnsIps;
+    try {
+      dnsIps = smtpSession.getSmtpService().getSmtpServer().getDnsClient()
+        .resolveA(dblQueryHelper.getDnsNameToQuery());
+    } catch (DnsNotFoundException e) {
+      return;
+    } catch (DnsException e) {
+      throw SmtpException.createForInternalException("Error while querying the Ip Block list", e);
+    }
+    if (dnsIps.size() == 0) {
+      return;
+    }
+    DnsBlockListResponseCode responseCode = dblQueryHelper.createResponseCode(dnsIps.iterator().next());
+    if (responseCode.getBlocked()) {
+      throw SmtpFiltering.getException("Ip " + ipAddressToCheck + " blacklisted (Reason: " + responseCode.getDescription() + ", code: " + responseCode.getCode() + ")");
     }
   }
 

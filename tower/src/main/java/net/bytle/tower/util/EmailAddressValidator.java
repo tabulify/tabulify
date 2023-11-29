@@ -4,10 +4,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.internet.AddressException;
-import net.bytle.dns.DnsBlockList;
-import net.bytle.dns.DnsBlockListQuery;
-import net.bytle.dns.DnsIllegalArgumentException;
-import net.bytle.dns.DnsName;
+import net.bytle.dns.*;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
@@ -52,9 +49,8 @@ public class EmailAddressValidator {
     }
     emailValidityReport.addSuccess(emailValidCheck, "Email address is valid");
 
-
     /**
-     * Mx text
+     * The domain to check
      */
     DnsName emailDomain;
     try {
@@ -63,8 +59,16 @@ public class EmailAddressValidator {
       return Future.failedFuture(e);
     }
 
+    /**
+     * Composite execution for all checks
+     */
+    List<Future<Void>> compositeFutureList = new ArrayList<>();
+
+    /**
+     * Mx record
+     */
     String mxValidCheck = "mxRecord";
-    Future<EmailAddressValidityReport> mxRecords = dnsClient.resolveMx(emailDomain)
+    Future<Void> mxRecords = dnsClient.resolveMx(emailDomain)
       .compose(records -> {
         String noMxRecordMessage = "The domain (" + emailDomain + ") has no MX records";
 
@@ -73,15 +77,15 @@ public class EmailAddressValidator {
         } else {
           emailValidityReport.addSuccess(mxValidCheck, "Mx records were found");
         }
-        return Future.succeededFuture(emailValidityReport);
+        return Future.succeededFuture();
 
       }, err -> {
 
         emailValidityReport.addError(mxValidCheck, err.getMessage());
-        return Future.succeededFuture(emailValidityReport);
+        return Future.succeededFuture();
 
       });
-
+    compositeFutureList.add(mxRecords);
 
     /**
      * A records
@@ -89,7 +93,7 @@ public class EmailAddressValidator {
     String aValidCheck = "aRecord";
     DnsName apexDomain = emailDomain.getApexName();
     String noARecordMessage = "The apex domain (" + apexDomain + ") has no A records";
-    Future<EmailAddressValidityReport> aRecordFuture = dnsClient.resolveA(apexDomain)
+    Future<Void> aRecordFuture = dnsClient.resolveA(apexDomain)
       .compose(
         aRecords -> {
           if (aRecords.size() == 0) {
@@ -97,13 +101,13 @@ public class EmailAddressValidator {
           } else {
             emailValidityReport.addSuccess(aValidCheck, "A records were found");
           }
-          return Future.succeededFuture(emailValidityReport);
+          return Future.succeededFuture();
         }
         , err -> {
           emailValidityReport.addError(aValidCheck, err.getMessage());
-          return Future.succeededFuture(emailValidityReport);
+          return Future.succeededFuture();
         });
-
+    compositeFutureList.add(aRecordFuture);
 
     /**
      * Domain blocked?
@@ -111,19 +115,31 @@ public class EmailAddressValidator {
      */
     String blockListCheck = "blockList";
     String apexDomainNameAsString = apexDomain.toStringWithoutRoot();
-    boolean blocked = DnsBlockListQuery.forDomain(apexDomainNameAsString)
-      .addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
-      .query()
-      .getFirst()
-      .getBlocked();
-    if (blocked) {
-      emailValidityReport.addError(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is blocked by SpamHaus");
-      if (failEarly) {
-        return Future.succeededFuture(emailValidityReport);
-      }
-    } else {
-      emailValidityReport.addSuccess(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is not blocked by SpamHaus");
+    List<DnsBlockListQueryHelper> dnsBlockLists = DnsBlockListQueryHelper.forDomain(apexDomainNameAsString).addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
+      .build();
+    for(DnsBlockListQueryHelper dnsBlockListQueryHelper : dnsBlockLists){
+      DnsName dnsNameToQuery = dnsBlockListQueryHelper.getDnsNameToQuery();
+      Future<Void> futureBlockListCheck =  dnsClient.resolveA(dnsNameToQuery)
+        .compose(dnsIps->{
+          if(dnsIps.size()==0){
+             emailValidityReport.addSuccess(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is not blocked by "+ dnsBlockListQueryHelper.getBlockList());
+            return Future.succeededFuture();
+          }
+          DnsIp dnsIp = dnsIps.iterator().next();
+          DnsBlockListResponseCode dnsBlockListResponse = dnsBlockListQueryHelper.createResponseCode(dnsIp);
+          if(dnsBlockListResponse.getBlocked()){
+            emailValidityReport.addError(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is blocked by "+ dnsBlockListQueryHelper.getBlockList());
+          } else {
+            emailValidityReport.addSuccess(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is not blocked by "+ dnsBlockListQueryHelper.getBlockList());
+          }
+          return Future.succeededFuture();
+        }, err->{
+          emailValidityReport.addError(blockListCheck, "Block list query error: "+err.getMessage());
+          return Future.succeededFuture();
+        });
+      compositeFutureList.add(futureBlockListCheck);
     }
+
 
     /**
      * HTML page test
@@ -140,7 +156,7 @@ public class EmailAddressValidator {
     // gsalike@mail.ru
     String homePage = "homePage";
     String absoluteURI = "https://" + apexDomainNameAsString;
-    Future<EmailAddressValidityReport> homePageFuture = webClient.getAbs(absoluteURI)
+    Future<Void> homePageFuture = webClient.getAbs(absoluteURI)
       .send()
       .compose(response -> {
           try {
@@ -149,27 +165,28 @@ public class EmailAddressValidator {
           } catch (HtmlStructureException e) {
             emailValidityReport.addError(homePage, "The HTML page (" + absoluteURI + ") is not legit" + e.getMessage());
           }
-          return Future.succeededFuture(emailValidityReport);
+          return Future.succeededFuture();
         },
-        err -> Future.succeededFuture(emailValidityReport.addError(homePage, "The HTTP website (" + absoluteURI + ") could not be contacted. Error: " + err.getClass().getSimpleName() + ": " + err.getMessage()))
+        err -> {
+          emailValidityReport.addError(homePage, "The HTTP website (" + absoluteURI + ") could not be contacted. Error: " + err.getClass().getSimpleName() + ": " + err.getMessage());
+          return Future.succeededFuture();
+        }
       );
+    compositeFutureList.add(homePageFuture);
+
 
     /**
      * Composite execution
      */
-    List<Future<EmailAddressValidityReport>> futureReports = new ArrayList<>();
-    futureReports.add(mxRecords);
-    futureReports.add(aRecordFuture);
-    futureReports.add(homePageFuture);
     CompositeFuture compositeFutureReport;
-    if(failEarly){
-      compositeFutureReport = Future.all(futureReports);
+    if (failEarly) {
+      compositeFutureReport = Future.all(compositeFutureList);
     } else {
-      compositeFutureReport = Future.join(futureReports);
+      compositeFutureReport = Future.join(compositeFutureList);
     }
     return compositeFutureReport.compose(
-      c->Future.succeededFuture(emailValidityReport),
-      err->Future.succeededFuture(emailValidityReport)
+      c -> Future.succeededFuture(emailValidityReport),
+      err -> Future.succeededFuture(emailValidityReport)
     );
 
   }

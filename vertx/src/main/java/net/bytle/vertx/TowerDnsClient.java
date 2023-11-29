@@ -74,7 +74,19 @@ public class TowerDnsClient {
           }
           return Future.succeededFuture(dnsIp);
         },
-        err -> Future.failedFuture(new DnsException("The A records for the domain (" + dnsName + ") could not be resolved.", err))
+        err -> {
+          /**
+           * NXDomain (ie not found)
+           */
+          if(
+            err instanceof io.vertx.core.dns.DnsException &&
+            ((io.vertx.core.dns.DnsException) err).code().name().equals("NXDOMAIN")
+          ){
+            return Future.succeededFuture(new HashSet<>());
+          }
+          return Future.failedFuture(new DnsException("Error while resolving the A records for the domain (" + dnsName + "). Message:" + err.getMessage(), err));
+        }
       );
   }
+
 }

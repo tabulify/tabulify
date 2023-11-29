@@ -6,7 +6,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import jakarta.mail.internet.AddressException;
+import net.bytle.dns.DnsClient;
 import net.bytle.dns.DnsIllegalArgumentException;
+import net.bytle.dns.XBillDnsClient;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.NotFoundException;
@@ -78,6 +80,7 @@ public class SmtpServer {
   private final SmtpDelivery smtpDelivery;
   private final boolean sessionReplayEnabled;
   private final boolean enableDnsBlockList;
+  private final DnsClient dnsClient;
 
   public List<SmtpService> getSmtpServices() {
     return services;
@@ -204,6 +207,12 @@ public class SmtpServer {
       this.services.add(smtpService);
       LOGGER.info(LOG_TAB + "Service added: " + smtpService);
     }
+
+    /**
+     * Dns Client for block list
+     * (Should become {@link net.bytle.vertx.TowerDnsClient})
+     */
+    this.dnsClient = XBillDnsClient.builder().build();
 
     /**
      * Create the mailboxes
@@ -449,4 +458,7 @@ public class SmtpServer {
     return !this.enableDnsBlockList;
   }
 
+  public DnsClient getDnsClient() {
+    return this.dnsClient;
+  }
 }
