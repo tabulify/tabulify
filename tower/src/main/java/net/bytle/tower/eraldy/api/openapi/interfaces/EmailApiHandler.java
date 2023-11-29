@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
-
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.validation.RequestParameters;
@@ -20,11 +19,11 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("emailAddressAddressValidationGet").handler(this::emailAddressAddressValidationGet);
+    builder.operation("emailAddressAddressValidateGet").handler(this::emailAddressAddressValidateGet);
 }
 
-    private void emailAddressAddressValidationGet(RoutingContext routingContext) {
-    logger.info("emailAddressAddressValidationGet()");
+    private void emailAddressAddressValidateGet(RoutingContext routingContext) {
+    logger.info("emailAddressAddressValidateGet()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -34,7 +33,7 @@ public void mount(RouterBuilder builder) {
       logger.debug("Parameter address is {}", address);
 
     // Based on Route#respond
-    api.emailAddressAddressValidationGet(routingContext, address)
+    api.emailAddressAddressValidateGet(routingContext, address)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

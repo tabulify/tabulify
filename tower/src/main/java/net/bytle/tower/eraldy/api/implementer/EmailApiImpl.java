@@ -18,7 +18,7 @@ public class EmailApiImpl implements EmailApi {
   }
 
   @Override
-  public Future<ApiResponse<JsonObject>> emailAddressAddressValidationGet(RoutingContext routingContext, String email) {
+  public Future<ApiResponse<JsonObject>> emailAddressAddressValidateGet(RoutingContext routingContext, String email) {
 
     return this.apiApp.getEmailAddressValidator()
       .validate(email, false)

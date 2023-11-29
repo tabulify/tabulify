@@ -1,4 +1,15 @@
+#
+# https://openapi-generator.tech/docs/customization/#user-defined-templates'
 files:
   supportFiles/ApiVertxSupport.mustache:
     templateType: SupportingFiles
     destinationFilename: src/main/java/net/bytle/tower/eraldy/api/openapi/invoker/ApiVertxSupport.java
+additionalProperties:
+  dateLibrary: java8
+importMappings:
+  java.time.OffsetDateTime: "java.time.LocalDateTime"
+  # Import Analytics objects from the common vertx module
+  AnalyticsEvent: "net.bytle.vertx.analytics.model.AnalyticsEvent"
+  JsonObject: "io.vertx.core.json.JsonObject"
+schemaMappings:
+  JsonObject: "JsonObject"

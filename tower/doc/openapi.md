@@ -152,8 +152,27 @@ User:
     - handle
 ```
 
-## Bring your own model
+### Bring your own model
+#### Third object
 
+Example:
+```yaml
+schema:
+  JsonObject:
+    description: "A Json object"
+    type: JsonObject # Th external type
+```
+
+Steps:
+* Mapping as configuration (example in the configuration file)
+```yaml
+schemaMappings:
+  JsonObject: "JsonObject" # The name of the type
+importMappings:
+  JsonObject: "io.vertx.core.json.JsonObject" # the string used in the import statement
+```
+
+#### Third Open Api Spec
 
 The analytics event model is in another openapi file and other dependency, and we don't want it to be generated twice.
 
@@ -167,7 +186,7 @@ schema:
 
 
 Steps:
-  * Mapping as configuration (example in gradle)
+* Mapping as configuration (example in gradle)
 ```kotlin
 importMappings.set(
     mapOf(
@@ -176,7 +195,7 @@ importMappings.set(
     )
 )
 ```
-  * Ignore model in the ignore file [openapi-generator-ignore](../.openapi-generator-ignore)
+* Ignore model in the ignore file [openapi-generator-ignore](../.openapi-generator-ignore)
 ```ignorelang
 **/Analytics*.java
 ```

@@ -6,6 +6,10 @@ info:
   version: "v2023-06-18"
 components:
   schemas:
+    JsonObject:
+      description: "A Json object"
+      type: JsonObject # Vertx Json, see openapi.md bring your own model
+      additionalProperties: true
     AnalyticsEventPost:
       description: "The structure of the received data"
       # https://swagger.io/docs/specification/data-models/data-types/#free-form

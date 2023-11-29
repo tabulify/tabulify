@@ -240,19 +240,20 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(apiG
     )
   )
 
-  importMappings.set(
-    mapOf(
-      "java.time.OffsetDateTime" to "java.time.LocalDateTime",
-      // Import Analytics objects from the common vertx module
-      "AnalyticsEvent" to "net.bytle.vertx.analytics.model.AnalyticsEvent"
-    )
-  )
+  // Import Mapping are now in the config file
+  //  importMappings.set(
+  //    mapOf(
+  //      "java.time.OffsetDateTime" to "java.time.LocalDateTime",
+  //      // Import Analytics objects from the common vertx module
+  //      "AnalyticsEvent" to "net.bytle.vertx.analytics.model.AnalyticsEvent"
+  //    )
+  //  )
 
   // https://openapi-generator.tech/docs/generators/java-vertx-web
-  val configs = mapOf(
+  val additionalProperties = mapOf(
     "dateLibrary" to "java8"
   )
-  configOptions.set(configs)
+  configOptions.set(additionalProperties)
 
   // https://openapi-generator.tech/docs/globals/
   // https://openapi-generator.tech/docs/debugging/#templates

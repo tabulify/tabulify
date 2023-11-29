@@ -29,3 +29,4 @@ README.md
 **/*Impl.java
 # Analytics Model
 **/Analytics*.java
+**/JsonObject.java

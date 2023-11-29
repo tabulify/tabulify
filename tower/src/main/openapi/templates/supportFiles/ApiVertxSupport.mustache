@@ -12,7 +12,8 @@ import net.bytle.vertx.TowerApp;
 import java.util.function.Function;
 
 {{#apiInfo}}{{#apis}}
-import {{apiPackage}}.{{classname}}Handler;{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
+import {{apiPackage}}.{{classname}}Handler;
+import net.bytle.tower.eraldy.{{#apiNameSuffix}}{{{.}}}{{/apiNameSuffix}}.implementer.{{classname}}Impl;
 {{/apis}}{{/apiInfo}}
 
 /**

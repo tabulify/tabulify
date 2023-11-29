@@ -890,11 +890,11 @@ paths:
       tags:
       - organization
       x-accepts: application/json
-  /email/address/{address}/validation:
+  /email/address/{address}/validate:
     get:
       description: |
         Note that for the request, the email should be URL encoded (ie arobase, @ becomes %40)
-      operationId: emailAddressAddressValidationGet
+      operationId: emailAddressAddressValidateGet
       parameters:
       - description: The email address
         explode: false
@@ -908,6 +908,10 @@ paths:
         style: simple
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonObject'
           description: Ok
         "401":
           description: Not logged in
@@ -917,7 +921,7 @@ paths:
       security:
       - apiKeyAuth: []
       - cookieAuth: []
-      summary: Validate an email
+      summary: Validate an email address
       tags:
       - email
       x-accepts: application/json
@@ -2694,6 +2698,10 @@ components:
       x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
         \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
         \ property = \"guid\", scope = User.class)"
+    JsonObject:
+      additionalProperties: true
+      description: A Json object
+      type: object
     ListItem:
       description: |
         A list where a user can register.
