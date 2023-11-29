@@ -427,7 +427,7 @@ public class SmtpSession implements Handler<List<SmtpInput>> {
 
   private SmtpDomain getFirstPartyDomain(String domain) throws NotFoundException {
     return this.getFirstPartyDomains().stream()
-      .filter(d -> d.getDnsDomain().getNameWithoutRoot().equals(domain))
+      .filter(d -> d.getDnsDomain().toStringWithoutRoot().equals(domain))
       .findFirst()
       .orElseThrow(NotFoundException::new);
   }

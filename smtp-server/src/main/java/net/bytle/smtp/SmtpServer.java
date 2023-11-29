@@ -423,7 +423,7 @@ public class SmtpServer {
       .values()
       .stream()
       .map(SmtpHost::getDomain)
-      .filter(d -> d.getDnsDomain().getNameWithoutRoot().equals(userDomain))
+      .filter(d -> d.getDnsDomain().toStringWithoutRoot().equals(userDomain))
       .findFirst()
       .orElse(null);
     if (domain == null) {

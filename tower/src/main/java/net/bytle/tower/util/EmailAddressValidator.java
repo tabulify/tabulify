@@ -1,6 +1,7 @@
 package net.bytle.tower.util;
 
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.internet.AddressException;
 import net.bytle.dns.*;
@@ -9,7 +10,6 @@ import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.HttpClientBuilder;
-import org.xbill.DNS.MXRecord;
 
 import java.util.List;
 import java.util.Set;
@@ -20,7 +20,8 @@ public class EmailAddressValidator {
   private final WebClient webClient;
 
   public EmailAddressValidator(EraldyApiApp eraldyApiApp) {
-    webClient = HttpClientBuilder.builder(eraldyApiApp.getApexDomain().getHttpServer().getServer().getVertx())
+    Vertx vertx = eraldyApiApp.getApexDomain().getHttpServer().getServer().getVertx();
+    webClient = HttpClientBuilder.builder(vertx)
       .setMaxHeaderSize(8192*10) // mail.ru has HTTP headers that are bigger than 8192 bytes
       .setConnectTimeout(1000) // 1 second, 163.com
       .buildWebClient();
@@ -44,21 +45,23 @@ public class EmailAddressValidator {
     }
     emailValidityReport.addSuccess(emailValidCheck, "Email address is valid");
 
+
     /**
      * Mx text
      */
-    String mxValidCheck = "mxRecord";
-    DnsSession dnsSession = DnsSession.builder().build();
     String domain = mail.getDomain();
+    String mxValidCheck = "mxRecord";
+    XBillDnsClient dnsClient = XBillDnsClient.builder().build();
+
     DnsName name;
     try {
-      name = dnsSession.createDnsName(domain);
+      name = dnsClient.createDnsName(domain);
     } catch (DnsIllegalArgumentException e) {
       return Future.failedFuture(new RuntimeException("Internal error: The domain (" + domain + ") is not valid. The email is valid, The domain should be valid", e));
     }
     String noMxRecordMessage = "The domain (" + name + ") has no MX records";
     try {
-      List<MXRecord> records = name.getMxRecords();
+      List<DnsMxRecord> records = name.getMxRecords();
       if (records.size() == 0) {
         emailValidityReport.addError(mxValidCheck, noMxRecordMessage);
       } else {
@@ -81,7 +84,7 @@ public class EmailAddressValidator {
     DnsName apexName = name.getApexName();
     String noARecordMessage = "The apex domain (" + apexName + ") has no A records";
     try {
-      Set<DnsIp> aRecords = apexName.getARecords();
+      Set<DnsIp> aRecords = apexName.resolveA();
       if (aRecords.size() == 0) {
         emailValidityReport.addError(aValidCheck, noARecordMessage);
       } else {
@@ -101,7 +104,7 @@ public class EmailAddressValidator {
      * Domain blocked?
      */
     String blockListCheck = "blockList";
-    String apexDomainNameAsString = apexName.getNameWithoutRoot();
+    String apexDomainNameAsString = apexName.toStringWithoutRoot();
     boolean blocked = DnsBlockListQuery.forDomain(apexDomainNameAsString)
       .addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
       .query()

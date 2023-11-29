@@ -1,13 +1,9 @@
 package net.bytle.dns;
 
 import net.bytle.email.BMailInternetAddress;
-import org.xbill.DNS.*;
-import org.xbill.DNS.lookup.LookupResult;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DnsName {
 
@@ -15,26 +11,20 @@ public class DnsName {
   public static final String ROOT_DOT = DNS_SEPARATOR;
 
   private final String absoluteDnsName;
-  private final DnsSession session;
-  private final Name dnsName;
+  private final DnsClient client;
   /**
    * Selector / Value
    */
   private final Map<String, String> expectedDkims = new HashMap<>();
   private final List<BMailInternetAddress> expectedDmarcEmails = new ArrayList<>();
 
-  protected DnsName(DnsSession session, String absoluteName) throws DnsIllegalArgumentException {
+  protected DnsName(DnsClient client, String absoluteName) throws DnsIllegalArgumentException {
     if (!absoluteName.endsWith(ROOT_DOT)) {
       this.absoluteDnsName = absoluteName + ROOT_DOT;
     } else {
       this.absoluteDnsName = absoluteName;
     }
-    try {
-      this.dnsName = Name.fromString(this.absoluteDnsName);
-    } catch (TextParseException e) {
-      throw new DnsIllegalArgumentException(e);
-    }
-    this.session = session;
+    this.client = client;
   }
 
 
@@ -46,9 +36,9 @@ public class DnsName {
    * * for a list of host (mailers)
    * We return the first one
    */
-  public DnsIp getFirstARecord() throws DnsNotFoundException, DnsException {
+  public DnsIp lookupA() throws DnsNotFoundException, DnsException {
 
-    Set<DnsIp> aRecords = this.getARecords();
+    Set<DnsIp> aRecords = this.resolveA();
     int size = aRecords.size();
     switch (size) {
       case 0:
@@ -63,9 +53,9 @@ public class DnsName {
 
   }
 
-  public DnsIp getFirstAAAARecord() throws DnsNotFoundException, DnsException {
+  public DnsIp lookupAAAA() throws DnsNotFoundException, DnsException {
 
-    Set<DnsIp> aaaaRecords = getAAAARecords();
+    Set<DnsIp> aaaaRecords = resolveAAAA();
     switch (aaaaRecords.size()) {
       case 0:
         throw new DnsNotFoundException("There is no AAAA record for the name (" + this + ")");
@@ -81,77 +71,25 @@ public class DnsName {
 
   @SuppressWarnings("unused")
   boolean isSubdomain(DnsName dnsName) {
-    return this.dnsName.subdomain(dnsName.dnsName);
+    return this.absoluteDnsName.contains(dnsName.absoluteDnsName);
   }
 
-
-  /**
-   * @return the subdomains (A and AAAA record) of the name considered a zone
-   */
-  @SuppressWarnings("unused")
-  public List<Record> getSubdomains() {
-
-
-    CompletableFuture<LookupResult> AFutureRecords = session
-      .getLookupSession()
-      .lookupAsync(this.dnsName, Type.A)
-      .toCompletableFuture();
-    CompletableFuture<LookupResult> AAAAFutureRecords = session
-      .getLookupSession()
-      .lookupAsync(this.dnsName, Type.AAAA)
-      .toCompletableFuture();
-
-
-    return Stream.of(AFutureRecords, AAAAFutureRecords)
-      .map(CompletableFuture::join)
-      .flatMap(res -> res.getRecords().stream())
-      .collect(Collectors.toList());
-
-
-  }
-
-
-  /**
-   * Just an alias
-   */
-  @SuppressWarnings("unused")
-  public DnsIp forwardLookup() throws DnsException, DnsNotFoundException {
-
-    return getFirstARecord();
-
-  }
 
   public String getDkimRecord(String dkimSelector) throws DnsException, DnsNotFoundException {
 
     String dkimSelectorName = dkimSelector + "._domainkey." + this.absoluteDnsName;
-    DnsName dkimDnsName;
     try {
-      dkimDnsName = this.session.createDnsName(dkimSelectorName);
+      return this.client.createDnsName(dkimSelectorName).getTextRecordThatStartsWith("v=DKIM1");
     } catch (DnsIllegalArgumentException e) {
-      throw new DnsInternalException(e);
+      throw new RuntimeException(e);
     }
-    return DnsUtil.getStringFromTxtRecord(dkimDnsName.getTextRecordThatStartsWith("v=DKIM1"));
 
   }
 
 
-  public List<MXRecord> getMxRecords() throws DnsException, DnsNotFoundException {
+  public List<DnsMxRecord> getMxRecords() throws DnsException, DnsNotFoundException {
 
-
-    try {
-      return this.session
-        .getLookupSession()
-        .lookupAsync(dnsName, Type.MX)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream()
-        .map(MXRecord.class::cast)
-        .collect(Collectors.toList()
-        );
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+    return this.client.resolveMx(this);
 
   }
 
@@ -159,48 +97,33 @@ public class DnsName {
   /**
    * @param startsWith - the prefix
    */
-  TXTRecord getTextRecordThatStartsWith(String startsWith) throws DnsNotFoundException, DnsException {
+  String getTextRecordThatStartsWith(String startsWith) throws DnsNotFoundException, DnsException {
 
 
-    try {
-      return this.getTxtRecords()
-        .stream()
-        .filter(record -> DnsUtil.getStringFromTxtRecord(record).startsWith(startsWith))
-        .findFirst()
-        .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+    return this.getTxtRecords()
+      .stream()
+      .filter(record -> record.startsWith(startsWith))
+      .findFirst()
+      .orElseThrow(() -> new DnsNotFoundException("The (" + startsWith + ") text record for the name (" + absoluteDnsName + ") was not found"));
+
 
   }
 
-  private List<TXTRecord> getTxtRecords() throws DnsNotFoundException, DnsException {
-    try {
-      return this.session
-        .getLookupSession()
-        .lookupAsync(this.dnsName, Type.TXT)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream()
-        .map(TXTRecord.class::cast)
-        .collect(Collectors.toList());
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+  private List<String> getTxtRecords() throws DnsNotFoundException, DnsException {
+    return this.client.resolveTxt(this);
   }
 
 
   public String getSpfRecord() throws DnsException, DnsNotFoundException {
 
-    return DnsUtil.getStringFromTxtRecord(getTextRecordThatStartsWith("v=spf1"));
+    return getTextRecordThatStartsWith("v=spf1");
 
   }
 
 
   public String getDmarcRecord() throws DnsException, DnsNotFoundException {
     try {
-      return DnsUtil.getStringFromTxtRecord(getSubdomain("_dmarc").getTextRecordThatStartsWith("v=DMARC1"));
+      return getSubdomain("_dmarc").getTextRecordThatStartsWith("v=DMARC1");
     } catch (DnsIllegalArgumentException e) {
       throw new DnsInternalException("_dmarc is a valid name", e);
     }
@@ -229,100 +152,65 @@ public class DnsName {
   public DnsIp getFirstDnsIpAddress() throws DnsException, DnsNotFoundException {
     DnsIp dnsIp;
     try {
-      dnsIp = getFirstARecord();
+      dnsIp = lookupA();
     } catch (DnsNotFoundException e) {
-      dnsIp = getFirstAAAARecord();
+      dnsIp = lookupAAAA();
     }
     return dnsIp;
   }
 
   public DnsIp getFirstDnsIpv4Address() throws DnsException, DnsNotFoundException {
-    return getFirstARecord();
+    return lookupA();
   }
 
 
   @Override
   public String toString() {
-    return dnsName.toString();
-  }
-
-  public String getName() {
     return this.absoluteDnsName;
   }
 
-  public DnsIp getFirstDnsIpv6Address() throws DnsException, DnsNotFoundException {
-    return getFirstAAAARecord();
+
+  public DnsIp lookupIpv6() throws DnsException, DnsNotFoundException {
+    return lookupAAAA();
   }
 
   public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
-    return new DnsName(this.session, label + DNS_SEPARATOR + this.absoluteDnsName);
+    return new DnsName(this.client, label + DNS_SEPARATOR + this.absoluteDnsName);
   }
 
   /**
    * In Spf record, the name does not have any root separator
    */
-  public String getNameWithoutRoot() {
+  public String toStringWithoutRoot() {
     return this.absoluteDnsName.substring(0, this.absoluteDnsName.length() - 1);
   }
 
-  public Set<DnsIp>
-  getARecords() throws DnsException, DnsNotFoundException {
-    try {
-      return session.getLookupSession().lookupAsync(this.dnsName, Type.A)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream().map(ARecord.class::cast)
-        .map(ARecord::getAddress)
-        .map(this.session::createIpFromAddress)
-        .collect(Collectors.toSet());
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+  public Set<DnsIp> resolveA() throws DnsException, DnsNotFoundException {
+    return this.client.resolveA(this);
   }
 
   public DnsName getApexName() {
-    int labels = this.dnsName.labels();
-    if (labels <= 3) {
+    String[] labels = this.absoluteDnsName.split("\\.");
+    int labelSize = labels.length;
+    if (labelSize <= 3) {
       return this;
     }
     try {
-      String rootLabel = this.dnsName.getLabelString(labels - 1);
-      String tldLabel = this.dnsName.getLabelString(labels - 2);
-      String apexLabel = this.dnsName.getLabelString(labels - 3);
-      return new DnsName(this.session, apexLabel + "." + tldLabel + "." + rootLabel);
+      String rootLabel = labels[labelSize - 1];
+      String tldLabel = labels[labelSize - 2];
+      String apexLabel = labels[labelSize - 3];
+      return new DnsName(this.client, apexLabel + "." + tldLabel + "." + rootLabel);
     } catch (DnsIllegalArgumentException e) {
       throw new DnsInternalException("It should not throw");
     }
   }
 
-  public Set<CNAMERecord> getCNameRecords() throws DnsNotFoundException, DnsException {
-    try {
-      return session.getLookupSession()
-        .lookupAsync(this.dnsName, Type.CNAME)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream().map(CNAMERecord.class::cast)
-        .collect(Collectors.toSet());
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+  public Set<DnsName> getCNameRecords() throws DnsNotFoundException, DnsException {
+    return this.client.lookupCName(this);
   }
 
-  public Set<DnsIp> getAAAARecords() throws DnsNotFoundException, DnsException {
-    try {
-      return session.getLookupSession().lookupAsync(this.dnsName, Type.AAAA)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream()
-        .map(AAAARecord.class::cast)
-        .map(r -> this.session.createIpFromAddress(r.getAddress()))
-        .collect(Collectors.toSet());
-    } catch (Exception e) {
-      throw this.session.handleLookupException(this, e);
-    }
+  public Set<DnsIp> resolveAAAA() throws DnsNotFoundException, DnsException {
+    return this.client.resolveAAAA(this);
   }
 
   public void printRecord() {
@@ -332,7 +220,7 @@ public class DnsName {
     String tabLevel2 = "     - ";
     try {
       System.out.println(tabLevel1 + "Ipv4 (A records)");
-      Set<DnsIp> aRecords = this.getARecords();
+      Set<DnsIp> aRecords = this.resolveA();
       for (DnsIp dnsIp : aRecords) {
         System.out.println(tabLevel2 + dnsIp);
       }
@@ -345,7 +233,7 @@ public class DnsName {
 
     try {
       System.out.println(tabLevel1 + "Ipv6 (AAAA records)");
-      Set<DnsIp> dnsIpv6s = this.getAAAARecords();
+      Set<DnsIp> dnsIpv6s = this.resolveAAAA();
       if (dnsIpv6s.size() == 0) {
         System.out.println(tabLevel2 + "none");
       }
@@ -360,12 +248,12 @@ public class DnsName {
 
     try {
       System.out.println(tabLevel1 + "Cname for " + this);
-      Set<CNAMERecord> cnameRecords = this.getCNameRecords();
+      Set<DnsName> cnameRecords = this.getCNameRecords();
       if (cnameRecords.size() == 0) {
         System.out.println(tabLevel2 + "none");
       }
-      for (CNAMERecord cnameRecord : cnameRecords) {
-        System.out.println(tabLevel2 + cnameRecord.getTarget().toString(true));
+      for (DnsName cnameRecord : cnameRecords) {
+        System.out.println(tabLevel2 + cnameRecord.toString());
       }
     } catch (DnsException e) {
       throw new RuntimeException(e);
@@ -427,12 +315,13 @@ public class DnsName {
     return this.expectedDmarcEmails;
   }
 
-  public String getFirstTxtValue() throws DnsException, DnsNotFoundException {
-    List<TXTRecord> txtRecords = this.getTxtRecords();
-    if (txtRecords.size() == 0) {
-      throw new DnsNotFoundException();
-    }
-    return DnsUtil.getStringFromTxtRecord(txtRecords.get(0));
+  public String lookupTxt() throws DnsException, DnsNotFoundException {
+    return this.client.lookupTxt(this);
   }
+
+  public String getAbsoluteName() {
+    return this.absoluteDnsName;
+  }
+
 
 }

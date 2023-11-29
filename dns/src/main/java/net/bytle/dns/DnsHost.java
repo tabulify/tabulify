@@ -33,28 +33,28 @@ public class DnsHost {
 
   public static class DnsHostConfig {
     private final String name;
-    private final DnsSession dnsSession;
+    private final XBillDnsClient dnsClient;
     private final DnsName dnsName;
     private DnsIp ipv4;
     private DnsIp ipv6;
 
-    public DnsHostConfig(DnsSession dnsSession, String name) throws DnsIllegalArgumentException {
+    public DnsHostConfig(XBillDnsClient dnsClient, String name) throws DnsIllegalArgumentException {
 
-      this.dnsSession = dnsSession;
+      this.dnsClient = dnsClient;
       this.name = name;
-      this.dnsName = dnsSession.createDnsName(name);
+      this.dnsName = dnsClient.createDnsName(name);
 
     }
 
     public DnsHostConfig setIpv4(String ipv4) throws UnknownHostException {
       InetAddress inetAddress = InetAddress.getByAddress(this.name, Address.toByteArray(ipv4, Address.IPv4));
-      this.ipv4 = dnsSession.createIpFromAddress(inetAddress);
+      this.ipv4 = dnsClient.createIpFromAddress(inetAddress);
       return this;
     }
 
     public DnsHostConfig setIpv6(String ipv6) throws UnknownHostException {
       InetAddress inetAddress = InetAddress.getByAddress(this.name, Address.toByteArray(ipv6, Address.IPv6));
-      this.ipv6 = dnsSession.createIpFromAddress(inetAddress);
+      this.ipv6 = dnsClient.createIpFromAddress(inetAddress);
       return this;
     }
 

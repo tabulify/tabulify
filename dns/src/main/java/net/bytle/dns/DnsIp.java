@@ -1,6 +1,6 @@
 package net.bytle.dns;
 
-import org.xbill.DNS.*;
+import org.xbill.DNS.Address;
 
 import java.net.InetAddress;
 import java.util.Objects;
@@ -8,18 +8,18 @@ import java.util.Objects;
 public class DnsIp {
 
   private final InetAddress address;
-  private final DnsSession dnsSession;
+  private final DnsClient dnsClient;
 
-  public DnsIp(DnsSession session, InetAddress inetAddress) {
+  public DnsIp(DnsClient session, InetAddress inetAddress) {
 
-    this.dnsSession = session;
+    this.dnsClient = session;
 
     this.address = inetAddress;
 
   }
 
-  public static DnsIp createFromInetAddress(DnsSession dnsSession, InetAddress inetAddress) {
-    return new DnsIp(dnsSession, inetAddress);
+  public static DnsIp createFromInetAddress(DnsClient dnsClient, InetAddress inetAddress) {
+    return new DnsIp(dnsClient, inetAddress);
   }
 
 
@@ -33,31 +33,10 @@ public class DnsIp {
   }
 
 
-  public PTRRecord getPtrRecord() throws DnsNotFoundException, DnsException {
+  public DnsName getPtrRecord() throws DnsNotFoundException, DnsException {
 
+    return this.dnsClient.resolvePtr(this);
 
-    Name name = ReverseMap.fromAddress(this.address);
-    try {
-      return dnsSession
-        .getLookupSession()
-        .lookupAsync(name, Type.PTR)
-        .toCompletableFuture()
-        .get()
-        .getRecords()
-        .stream()
-        .map(PTRRecord.class::cast)
-        .findFirst()
-        .orElseThrow(DnsNotFoundException::new);
-    } catch (Exception e) {
-      DnsName dnsName;
-      String reverseName = name.toString();
-      try {
-        dnsName = this.dnsSession.createDnsName(reverseName);
-      } catch (DnsIllegalArgumentException ex) {
-        throw new DnsInternalException("The reverse name should be good ("+reverseName+")");
-      }
-      throw this.dnsSession.handleLookupException(dnsName, e);
-    }
 
   }
 
@@ -67,12 +46,9 @@ public class DnsIp {
   }
 
   public DnsName getReverseDnsName() throws DnsException, DnsNotFoundException {
-    try {
-      return this.dnsSession.createDnsName(getPtrRecord().getTarget().toString());
-    } catch (DnsIllegalArgumentException e) {
-      // should not be illegal
-      throw new RuntimeException(e);
-    }
+
+    return getPtrRecord();
+
   }
 
   public String getAddress() {

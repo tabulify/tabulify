@@ -8,7 +8,6 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.vertx.ConfigAccessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.xbill.DNS.MXRecord;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.UnknownHostException;
@@ -41,7 +40,7 @@ public class MonitorServices {
   private final Set<DnsName> apexDomains;
   private final Map<String, Integer> apexMxs;
   private final Map<String, Integer> eraldyInboxMx;
-  private final DnsSession dnsSession;
+  private final XBillDnsClient dnsClient;
   private final NetClient netClient;
   private final long certificateExpirationDelayBeforeFailure;
   private final HashMap<DnsName, Future<List<MonitorReportResult>>> asyncListResults = new HashMap<>();
@@ -58,7 +57,7 @@ public class MonitorServices {
 
     // we are at cloudflare, no need to wait the sync
     // we resolve to cloudflare immediately
-    dnsSession = DnsSession.builder()
+    dnsClient = XBillDnsClient.builder()
       // we are at cloudflare, no need to wait the sync
       // we resolve to cloudflare immediately
       .setResolverToCloudflare()
@@ -72,7 +71,7 @@ public class MonitorServices {
      */
     LOGGER.info("Monitor Dns - Creating Hosts");
     try {
-      monitorBeauHost = dnsSession.configHost("beau.bytle.net")
+      monitorBeauHost = dnsClient.configHost("beau.bytle.net")
         .setIpv4("192.99.55.226")
         .setIpv6("2607:5300:201:3100::85b") // 2607:5300:201:3100:0:0:0:85b
         .build();
@@ -80,7 +79,7 @@ public class MonitorServices {
       mailers = new ArrayList<>();
       mailers.add(monitorBeauHost);
 
-      monitorOegHost = dnsSession.configHost("oeg.bytle.net")
+      monitorOegHost = dnsClient.configHost("oeg.bytle.net")
         .setIpv4("143.176.206.82")
         .build();
 
@@ -88,12 +87,12 @@ public class MonitorServices {
        * Domains
        */
       LOGGER.info("Monitor Dns - Creating apex domains");
-      eraldyDomain = dnsSession.createDnsName("eraldy.com");
-      gerardNicoDomain = dnsSession.createDnsName("gerardnico.com");
-      DnsName bytleDomain = dnsSession.createDnsName("bytle.net");
-      DnsName combostrapDomain = dnsSession.createDnsName("combostrap.com");
-      DnsName datacadamiaDomain = dnsSession.createDnsName("datacadamia.com");
-      DnsName tabulifyDomain = dnsSession.createDnsName("tabulify.com");
+      eraldyDomain = dnsClient.createDnsName("eraldy.com");
+      gerardNicoDomain = dnsClient.createDnsName("gerardnico.com");
+      DnsName bytleDomain = dnsClient.createDnsName("bytle.net");
+      DnsName combostrapDomain = dnsClient.createDnsName("combostrap.com");
+      DnsName datacadamiaDomain = dnsClient.createDnsName("datacadamia.com");
+      DnsName tabulifyDomain = dnsClient.createDnsName("tabulify.com");
       apexDomains = Set.of(
         bytleDomain,
         combostrapDomain,
@@ -208,7 +207,7 @@ public class MonitorServices {
         String hostIpv6Address = ipv6.getAddress();
         DnsIp dnsIpv6Address;
         try {
-          dnsIpv6Address = hostDnsName.getFirstDnsIpv6Address();
+          dnsIpv6Address = hostDnsName.lookupIpv6();
         } catch (DnsNotFoundException e) {
           this.addFailure(checkName, hostDnsName, e.getMessage());
           continue;
@@ -284,7 +283,7 @@ public class MonitorServices {
     );
     String includeMechanism = " include:";
     String expectedFullSpfRecord = "v=spf1 mx a:" +
-      mailersName.getNameWithoutRoot() +
+      mailersName.toStringWithoutRoot() +
       includeMechanism + String.join(includeMechanism, includes) +
       " -all";
     checkSpfRecordForDomain(expectedFullSpfRecord, spfSubDomainName, checkName);
@@ -293,7 +292,7 @@ public class MonitorServices {
      * Check the spf include record in all domains
      */
     checkName = "Domains Spf Check";
-    String expectedIncludeSpfRecord = "v=spf1 include:" + spfSubDomainName.getNameWithoutRoot() + " -all";
+    String expectedIncludeSpfRecord = "v=spf1 include:" + spfSubDomainName.toStringWithoutRoot() + " -all";
     checkSpfRecordForDomain(expectedIncludeSpfRecord, mainDomain, checkName);
     for (DnsName dnsName : thirdDomains) {
       checkSpfRecordForDomain(expectedIncludeSpfRecord, dnsName, checkName);
@@ -336,7 +335,7 @@ public class MonitorServices {
     try {
       Set<DnsIp> aIps;
       try {
-        aIps = mailersName.getARecords();
+        aIps = mailersName.resolveA();
       } catch (DnsNotFoundException e) {
         aIps = new HashSet<>();
       }
@@ -359,7 +358,7 @@ public class MonitorServices {
     String mxCheck = "Mx Check";
 
     for (DnsName domain : domains) {
-      List<MXRecord> mxRecords;
+      List<DnsMxRecord> mxRecords;
       try {
         mxRecords = domain.getMxRecords();
       } catch (DnsException e) {
@@ -374,8 +373,8 @@ public class MonitorServices {
         this.addFailure(mxCheck, domain, "The expected number of mx is (" + mxs.size() + ") but there are (" + mxRecords.size() + ")");
       }
       Map<String, Integer> actualMxs = new HashMap<>();
-      for (MXRecord mxRecord : mxRecords) {
-        String target = mxRecord.getTarget().toString(true);
+      for (DnsMxRecord mxRecord : mxRecords) {
+        String target = mxRecord.getTarget().toStringWithoutRoot();
         actualMxs.put(target, mxRecord.getPriority());
       }
       for (Map.Entry<String, Integer> expectedMx : mxs.entrySet()) {
@@ -410,8 +409,8 @@ public class MonitorServices {
 
     for (DnsName dnsName : domains) {
 
-      String cloudflareName = dnsName.getNameWithoutRoot();
-      Future<MonitorReportResult> result = this.cloudflareDns.getZone(dnsName.getApexName().getNameWithoutRoot())
+      String cloudflareName = dnsName.toStringWithoutRoot();
+      Future<MonitorReportResult> result = this.cloudflareDns.getZone(dnsName.getApexName().toStringWithoutRoot())
         .compose(zone -> zone.getName(cloudflareName)
           .getFirstARecordOrNull()
           .compose(inetAddress -> {
@@ -496,7 +495,7 @@ public class MonitorServices {
     try {
       Set<DnsIp> aIps;
       try {
-        aIps = mailersName.getAAAARecords();
+        aIps = mailersName.resolveAAAA();
       } catch (DnsNotFoundException e) {
         aIps = new HashSet<>();
       }
@@ -518,7 +517,7 @@ public class MonitorServices {
     int port = 443;
     String checkTitle = "Http Certificates";
     for (DnsName dnsName : dnsNames) {
-      String nameWithoutRoot = dnsName.getNameWithoutRoot();
+      String nameWithoutRoot = dnsName.toStringWithoutRoot();
 
       String service = nameWithoutRoot + ":" + port;
 
@@ -696,15 +695,15 @@ public class MonitorServices {
       for (BMailInternetAddress email : domain.getDmarcEmails()) {
         DnsName emailDomain;
         try {
-          emailDomain = this.dnsSession.createDnsName(email.getDomain());
+          emailDomain = this.dnsClient.createDnsName(email.getDomain());
           if (!emailDomain.equals(domain)) {
             DnsName dmarcReportName = emailDomain
               .getSubdomain("_dmarc")
               .getSubdomain("_report");
             DnsName edvDomainName = dmarcReportName
-              .getSubdomain(domain.getNameWithoutRoot());
+              .getSubdomain(domain.toStringWithoutRoot());
             try {
-              String edvValue = edvDomainName.getFirstTxtValue();
+              String edvValue = edvDomainName.lookupTxt();
               if (!edvValue.trim().startsWith(expectedEdvSuffixValue)) {
                 this.addFailure(checkName, dmarcReportName, "The edv dmarc txt record should be (" + expectedEdvSuffixValue + "), not (" + edvValue + ")");
               } else {
@@ -720,7 +719,7 @@ public class MonitorServices {
                */
               DnsName edvWildcardName = dmarcReportName.getSubdomain("*");
               try {
-                String edvWildcardValue = edvWildcardName.getFirstTxtValue();
+                String edvWildcardValue = edvWildcardName.lookupTxt();
                 if (!edvWildcardValue.trim().startsWith(expectedEdvSuffixValue)) {
                   this.addFailure(checkName, dmarcReportName, "The edv wildcard dmarc txt record (" + edvWildcardName + ") should be (" + expectedEdvSuffixValue + "), not (" + edvWildcardValue + ")");
                 } else {

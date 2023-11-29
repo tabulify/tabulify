@@ -2,7 +2,7 @@ package net.bytle.smtp;
 
 import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.dns.DnsName;
-import net.bytle.dns.DnsSession;
+import net.bytle.dns.XBillDnsClient;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 
@@ -22,7 +22,7 @@ public class SmtpDomain {
 
   public SmtpDomain(String name) throws DnsIllegalArgumentException {
 
-    this.domainName = DnsSession.createDefault().createDnsName(name);
+    this.domainName = XBillDnsClient.createDefault().createDnsName(name);
 
   }
 
@@ -45,7 +45,7 @@ public class SmtpDomain {
 
   @Override
   public String toString() {
-    return getDnsDomain().getNameWithoutRoot();
+    return getDnsDomain().toStringWithoutRoot();
   }
 
   public SmtpDomain addUser(SmtpUser smtpUser) {
@@ -66,7 +66,7 @@ public class SmtpDomain {
 
   @Override
   public int hashCode() {
-    return Objects.hash(domainName.getName());
+    return Objects.hash(domainName.toString());
   }
 
 }
