@@ -87,12 +87,12 @@ public class MonitorServices {
        * Domains
        */
       LOGGER.info("Monitor Dns - Creating apex domains");
-      eraldyDomain = dnsClient.createDnsName("eraldy.com");
-      gerardNicoDomain = dnsClient.createDnsName("gerardnico.com");
-      DnsName bytleDomain = dnsClient.createDnsName("bytle.net");
-      DnsName combostrapDomain = dnsClient.createDnsName("combostrap.com");
-      DnsName datacadamiaDomain = dnsClient.createDnsName("datacadamia.com");
-      DnsName tabulifyDomain = dnsClient.createDnsName("tabulify.com");
+      eraldyDomain = DnsName.create("eraldy.com");
+      gerardNicoDomain = DnsName.create("gerardnico.com");
+      DnsName bytleDomain = DnsName.create("bytle.net");
+      DnsName combostrapDomain = DnsName.create("combostrap.com");
+      DnsName datacadamiaDomain = DnsName.create("datacadamia.com");
+      DnsName tabulifyDomain = DnsName.create("tabulify.com");
       apexDomains = Set.of(
         bytleDomain,
         combostrapDomain,
@@ -175,7 +175,7 @@ public class MonitorServices {
        */
       DnsIp dnsIpv4Address;
       try {
-        dnsIpv4Address = hostDnsName.getFirstDnsIpv4Address();
+        dnsIpv4Address = dnsClient.lookupIpv4(hostDnsName);
       } catch (DnsNotFoundException e) {
         this.addFailure(checkName, hostDnsName, e.getMessage());
         continue;
@@ -188,7 +188,7 @@ public class MonitorServices {
       }
 
       try {
-        DnsName ptrName = dnsIpv4Address.getReverseDnsName();
+        DnsName ptrName = dnsClient.lookupPtr(dnsIpv4Address);
         if (ptrName.equals(hostDnsName)) {
           this.addSuccess(checkName, hostDnsName, "The ipv4 (" + dnsIpv4Address + ") has the reverse PTR name (" + hostDnsName + ")");
         } else {
@@ -207,7 +207,7 @@ public class MonitorServices {
         String hostIpv6Address = ipv6.getAddress();
         DnsIp dnsIpv6Address;
         try {
-          dnsIpv6Address = hostDnsName.lookupIpv6();
+          dnsIpv6Address = dnsClient.lookupIpv6(hostDnsName);
         } catch (DnsNotFoundException e) {
           this.addFailure(checkName, hostDnsName, e.getMessage());
           continue;
@@ -219,7 +219,7 @@ public class MonitorServices {
         }
 
         try {
-          DnsName ptrName = dnsIpv6Address.getReverseDnsName();
+          DnsName ptrName = dnsClient.lookupPtr(dnsIpv6Address);
           if (ptrName.equals(hostDnsName)) {
             this.addSuccess(checkName, hostDnsName, "The ipv6 (" + dnsIpv6Address + ") has the reverse PTR name (" + hostDnsName + ")");
           } else {
@@ -305,7 +305,7 @@ public class MonitorServices {
   private void checkSpfRecordForDomain(String expectedIncludeSpfRecord, DnsName dnsName, String checkName) {
     String spfRecordValue;
     try {
-      spfRecordValue = dnsName.getSpfRecord();
+      spfRecordValue = dnsClient.lookupSpf(dnsName);
     } catch (DnsNotFoundException e) {
       this.addFailure(checkName, dnsName, "The spf record was not found for the domain (" + dnsName + ")");
       return;
@@ -331,11 +331,10 @@ public class MonitorServices {
 
   public MonitorServices checkMailersARecord(List<DnsHost> mailers, DnsName mailersName) {
 
-
     try {
       Set<DnsIp> aIps;
       try {
-        aIps = mailersName.resolveA();
+        aIps = dnsClient.resolveA(mailersName);
       } catch (DnsNotFoundException e) {
         aIps = new HashSet<>();
       }
@@ -360,7 +359,7 @@ public class MonitorServices {
     for (DnsName domain : domains) {
       List<DnsMxRecord> mxRecords;
       try {
-        mxRecords = domain.getMxRecords();
+        mxRecords = dnsClient.resolveMx(domain);
       } catch (DnsException e) {
         this.addFailure(mxCheck, domain, "A DNS exception has occurred: " + e.getMessage());
         continue;
@@ -495,7 +494,7 @@ public class MonitorServices {
     try {
       Set<DnsIp> aIps;
       try {
-        aIps = mailersName.resolveAAAA();
+        aIps = dnsClient.resolveAAAA(mailersName);
       } catch (DnsNotFoundException e) {
         aIps = new HashSet<>();
       }
@@ -639,7 +638,7 @@ public class MonitorServices {
       for (String selector : domain.getExpectedDkimSelector()) {
         String domainDkimTextRecord;
         try {
-          domainDkimTextRecord = domain.getDkimRecord(selector);
+          domainDkimTextRecord = dnsClient.lookupDkimRecord(domain,selector);
         } catch (DnsException e) {
           this.addFailure(checkName, domain, "An exception has occurred: " + e.getMessage());
           continue;
@@ -673,7 +672,7 @@ public class MonitorServices {
        * Dmarc
        */
       try {
-        String dmarc = domain.getDmarcRecord();
+        String dmarc = dnsClient.lookupDmarc(domain);
         String expectedDmarc = domain.getExpectedDmarcRecord();
         if (dmarc.equals(expectedDmarc)) {
           this.addSuccess(checkName, domain, "The dmarc is correct");
@@ -695,7 +694,7 @@ public class MonitorServices {
       for (BMailInternetAddress email : domain.getDmarcEmails()) {
         DnsName emailDomain;
         try {
-          emailDomain = this.dnsClient.createDnsName(email.getDomain());
+          emailDomain = DnsName.create(email.getDomain());
           if (!emailDomain.equals(domain)) {
             DnsName dmarcReportName = emailDomain
               .getSubdomain("_dmarc")
@@ -703,7 +702,7 @@ public class MonitorServices {
             DnsName edvDomainName = dmarcReportName
               .getSubdomain(domain.toStringWithoutRoot());
             try {
-              String edvValue = edvDomainName.lookupTxt();
+              String edvValue = dnsClient.lookupTxt(edvDomainName);
               if (!edvValue.trim().startsWith(expectedEdvSuffixValue)) {
                 this.addFailure(checkName, dmarcReportName, "The edv dmarc txt record should be (" + expectedEdvSuffixValue + "), not (" + edvValue + ")");
               } else {
@@ -719,7 +718,7 @@ public class MonitorServices {
                */
               DnsName edvWildcardName = dmarcReportName.getSubdomain("*");
               try {
-                String edvWildcardValue = edvWildcardName.lookupTxt();
+                String edvWildcardValue = dnsClient.lookupTxt(edvWildcardName);
                 if (!edvWildcardValue.trim().startsWith(expectedEdvSuffixValue)) {
                   this.addFailure(checkName, dmarcReportName, "The edv wildcard dmarc txt record (" + edvWildcardName + ") should be (" + expectedEdvSuffixValue + "), not (" + edvWildcardValue + ")");
                 } else {

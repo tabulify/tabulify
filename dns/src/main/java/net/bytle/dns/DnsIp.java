@@ -3,23 +3,32 @@ package net.bytle.dns;
 import org.xbill.DNS.Address;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
 public class DnsIp {
 
   private final InetAddress address;
-  private final DnsClient dnsClient;
 
-  public DnsIp(DnsClient session, InetAddress inetAddress) {
-
-    this.dnsClient = session;
+  public DnsIp(InetAddress inetAddress) {
 
     this.address = inetAddress;
 
   }
 
-  public static DnsIp createFromInetAddress(DnsClient dnsClient, InetAddress inetAddress) {
-    return new DnsIp(dnsClient, inetAddress);
+  public static DnsIp createFromInetAddress(InetAddress inetAddress) {
+    return new DnsIp(inetAddress);
+  }
+
+  @SuppressWarnings("unused")
+  public static DnsIp createFromString(String ipAddress) throws DnsException {
+    InetAddress inetAddress;
+    try {
+      inetAddress = Address.getByAddress(ipAddress);
+    } catch (UnknownHostException e) {
+      throw new DnsException("Invalid Address",e);
+    }
+    return createFromInetAddress(inetAddress);
   }
 
 
@@ -33,23 +42,11 @@ public class DnsIp {
   }
 
 
-  public DnsName getPtrRecord() throws DnsNotFoundException, DnsException {
-
-    return this.dnsClient.resolvePtr(this);
-
-
-  }
-
   @SuppressWarnings("unused")
   public int familyOf() {
     return Address.familyOf(this.address);
   }
 
-  public DnsName getReverseDnsName() throws DnsException, DnsNotFoundException {
-
-    return getPtrRecord();
-
-  }
 
   public String getAddress() {
     return this.address.getHostAddress();

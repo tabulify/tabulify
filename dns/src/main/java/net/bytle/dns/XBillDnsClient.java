@@ -44,7 +44,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .getRecords()
         .stream().map(ARecord.class::cast)
         .map(ARecord::getAddress)
-        .map(this::createIpFromAddress)
+        .map(DnsIp::createFromInetAddress)
         .collect(Collectors.toSet());
     } catch (Exception e) {
       throw this.handleLookupException(dnsName, e);
@@ -52,7 +52,7 @@ public class XBillDnsClient extends DnsClientAbs {
   }
 
   @Override
-  public Set<DnsName> lookupCName(DnsName dnsName) throws DnsNotFoundException, DnsException {
+  public Set<DnsName> resolveCName(DnsName dnsName) throws DnsNotFoundException, DnsException {
     try {
       return this.getLookupSession()
         .lookupAsync(getXbillName(dnsName), Type.CNAME)
@@ -63,7 +63,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(CNAMERecord.class::cast)
         .map(rec-> {
           try {
-            return this.createDnsName(rec.getTarget().toString());
+            return DnsName.create(rec.getTarget().toString());
           } catch (DnsIllegalArgumentException e) {
             throw new RuntimeException(e);
           }
@@ -75,7 +75,7 @@ public class XBillDnsClient extends DnsClientAbs {
   }
 
   @Override
-  public DnsName resolvePtr(DnsIp dnsIp) throws DnsNotFoundException, DnsException {
+  public DnsName lookupPtr(DnsIp dnsIp) throws DnsNotFoundException, DnsException {
     Name name = ReverseMap.fromAddress(dnsIp.getInetAddress());
     try {
       return this
@@ -88,7 +88,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(PTRRecord.class::cast)
         .map(rec-> {
           try {
-            return this.createDnsName(rec.getTarget().toString());
+            return DnsName.create(rec.getTarget().toString());
           } catch (DnsIllegalArgumentException e) {
             throw new RuntimeException(e);
           }
@@ -99,7 +99,7 @@ public class XBillDnsClient extends DnsClientAbs {
       DnsName dnsName;
       String reverseName = name.toString();
       try {
-        dnsName = this.createDnsName(reverseName);
+        dnsName = DnsName.create(reverseName);
       } catch (DnsIllegalArgumentException ex) {
         throw new DnsInternalException("The reverse name should be good ("+reverseName+")");
       }
@@ -162,25 +162,20 @@ public class XBillDnsClient extends DnsClientAbs {
         .getRecords()
         .stream()
         .map(MXRecord.class::cast)
-        .map(mx -> {
+        .map(mx -> new DnsMxRecord() {
+          @Override
+          public int getPriority() {
+            return mx.getPriority();
+          }
 
-          XBillDnsClient client = this;
-          return new DnsMxRecord() {
-            @Override
-            public int getPriority() {
-              return mx.getPriority();
+          @Override
+          public DnsName getTarget() {
+            try {
+              return DnsName.create(mx.getName().toString());
+            } catch (DnsIllegalArgumentException e) {
+              throw new RuntimeException(e);
             }
-
-            @Override
-            public DnsName getTarget() {
-              try {
-                return client.createDnsName(mx.getName().toString());
-              } catch (DnsIllegalArgumentException e) {
-                throw new RuntimeException(e);
-              }
-            }
-          };
-
+          }
         })
         .collect(Collectors.toList());
     } catch (Exception e) {
@@ -188,24 +183,6 @@ public class XBillDnsClient extends DnsClientAbs {
     }
   }
 
-  @Override
-  public DnsIp lookupA(DnsName dnsName) {
-    return null;
-  }
-
-  @Override
-  public DnsIp lookupAAAA(DnsName dnsName) {
-    return null;
-  }
-
-  @Override
-  public String lookupTxt(DnsName dnsName) throws DnsException, DnsNotFoundException {
-    List<String> txtRecords = this.resolveTxt(dnsName);
-    if (txtRecords.size() == 0) {
-      throw new DnsNotFoundException();
-    }
-    return txtRecords.get(0);
-  }
 
   @Override
   public Set<DnsIp> resolveAAAA(DnsName dnsName) throws DnsNotFoundException, DnsException {
@@ -216,7 +193,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .getRecords()
         .stream()
         .map(AAAARecord.class::cast)
-        .map(r -> this.createIpFromAddress(r.getAddress()))
+        .map(r -> DnsIp.createFromInetAddress(r.getAddress()))
         .collect(Collectors.toSet());
     } catch (Exception e) {
       throw this.handleLookupException(dnsName, e);
