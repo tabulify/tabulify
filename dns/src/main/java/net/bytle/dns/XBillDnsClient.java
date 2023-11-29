@@ -121,7 +121,7 @@ public class XBillDnsClient extends DnsClientAbs {
   }
 
   public DnsHost.DnsHostConfig configHost(String name) throws DnsIllegalArgumentException {
-    return new DnsHost.DnsHostConfig(this, name);
+    return new DnsHost.DnsHostConfig(name);
   }
 
   @Override
@@ -145,7 +145,7 @@ public class XBillDnsClient extends DnsClientAbs {
 
   private Name getXbillName(DnsName dnsName) throws DnsException {
     try {
-      return Name.fromString(dnsName.getAbsoluteName());
+      return Name.fromString(dnsName.toString());
     } catch (TextParseException e) {
       throw new DnsException(e);
     }

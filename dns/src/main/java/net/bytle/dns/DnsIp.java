@@ -31,6 +31,26 @@ public class DnsIp {
     return createFromInetAddress(inetAddress);
   }
 
+  public static DnsIp createFromIpv4String(String ipv4) throws DnsException {
+    InetAddress inetAddress;
+    try {
+      inetAddress = InetAddress.getByAddress(Address.toByteArray(ipv4, Address.IPv4));
+    } catch (UnknownHostException e) {
+      throw new DnsException("Bad Ip v4 ("+ipv4+")",e);
+    }
+    return new DnsIp(inetAddress);
+  }
+
+  public static DnsIp createFromIpv6String(String ipv6) throws DnsException {
+    InetAddress inetAddress;
+    try {
+      inetAddress = InetAddress.getByAddress(Address.toByteArray(ipv6, Address.IPv6));
+    } catch (UnknownHostException e) {
+      throw new DnsException("Bad Ip v6 ("+ipv6+")",e);
+    }
+    return new DnsIp(inetAddress);
+  }
+
 
   public InetAddress getInetAddress() {
     return this.address;

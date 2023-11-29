@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -140,7 +139,7 @@ public class MonitorServices {
       eraldyInboxMx = new HashMap<>();
       eraldyInboxMx.put(monitorBeauHost.getName(), 1);
 
-    } catch (UnknownHostException | DnsIllegalArgumentException e) {
+    } catch (DnsException | DnsIllegalArgumentException e) {
       throw new RuntimeException(e);
     }
 

@@ -1,10 +1,8 @@
 package net.bytle.dns;
 
-import org.xbill.DNS.Address;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
+/**
+ * Represents a host with a name and its 2 ip address
+ */
 public class DnsHost {
   private final DnsHostConfig config;
 
@@ -15,7 +13,7 @@ public class DnsHost {
 
 
   public String getName() {
-    return this.config.name;
+    return this.config.dnsName.toStringWithoutRoot();
   }
 
   public DnsIp getIpv4() {
@@ -32,29 +30,24 @@ public class DnsHost {
 
 
   public static class DnsHostConfig {
-    private final String name;
-    private final XBillDnsClient dnsClient;
     private final DnsName dnsName;
     private DnsIp ipv4;
     private DnsIp ipv6;
 
-    public DnsHostConfig(XBillDnsClient dnsClient, String name) throws DnsIllegalArgumentException {
+    public DnsHostConfig(String name) throws DnsIllegalArgumentException {
 
-      this.dnsClient = dnsClient;
-      this.name = name;
-      this.dnsName = dnsClient.createDnsName(name);
+      this.dnsName = DnsName.create(name);
 
     }
 
-    public DnsHostConfig setIpv4(String ipv4) throws UnknownHostException {
-      InetAddress inetAddress = InetAddress.getByAddress(this.name, Address.toByteArray(ipv4, Address.IPv4));
-      this.ipv4 = dnsClient.createIpFromAddress(inetAddress);
+    public DnsHostConfig setIpv4(String ipv4) throws DnsException {
+
+      this.ipv4 = DnsIp.createFromIpv4String(ipv4);
       return this;
     }
 
-    public DnsHostConfig setIpv6(String ipv6) throws UnknownHostException {
-      InetAddress inetAddress = InetAddress.getByAddress(this.name, Address.toByteArray(ipv6, Address.IPv6));
-      this.ipv6 = dnsClient.createIpFromAddress(inetAddress);
+    public DnsHostConfig setIpv6(String ipv6) throws DnsException {
+      this.ipv6 = DnsIp.createFromIpv6String(ipv6);
       return this;
     }
 
@@ -65,7 +58,7 @@ public class DnsHost {
 
   @Override
   public String toString() {
-    return config.name;
+    return config.dnsName.toString();
   }
 
 }

@@ -2,16 +2,16 @@ package net.bytle.tower.util;
 
 import io.vertx.core.Future;
 import io.vertx.core.dns.DnsClientOptions;
-import net.bytle.dns.DnsException;
-import net.bytle.dns.DnsMxRecord;
-import net.bytle.dns.DnsName;
-import net.bytle.dns.DnsNotFoundException;
+import net.bytle.dns.*;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TowerDnsClient {
 
@@ -22,24 +22,62 @@ public class TowerDnsClient {
 
   public TowerDnsClient(TowerApp towerApp) {
     Server server = towerApp.getApexDomain().getHttpServer().getServer();
-    DnsClientOptions dnsClientOptions =new DnsClientOptions();
+    DnsClientOptions dnsClientOptions = new DnsClientOptions();
     String dnsResolver = server.getConfigAccessor().getString(DNS_RESOLVER_HOST);
-    if(dnsResolver!=null) {
-      LOGGER.info("Dns resolver host set with the value ("+dnsResolver+") of the configuration ("+DNS_RESOLVER_HOST+")");
+    if (dnsResolver != null) {
+      LOGGER.info("Dns resolver host set with the value (" + dnsResolver + ") of the configuration (" + DNS_RESOLVER_HOST + ")");
       dnsClientOptions.setHost(dnsResolver);
     } else {
-      LOGGER.info("Dns resolver host set to the OS value because the configuration ("+DNS_RESOLVER_HOST+") was not found");
+      LOGGER.info("Dns resolver host set to the OS value because the configuration (" + DNS_RESOLVER_HOST + ") was not found");
     }
     this.client = server.getVertx().createDnsClient(dnsClientOptions);
   }
 
-  public Future<List<String>> resolveTxt(DnsName dnsName) throws DnsException, DnsNotFoundException {
-    return null;
+  public Future<List<DnsMxRecord>> resolveMx(DnsName dnsName) {
+
+
+    return this.client.resolveMX(dnsName.toStringWithoutRoot())
+      .compose(mxRecords -> {
+          List<DnsMxRecord> dnsMxRecords = mxRecords.stream()
+            .map(mx -> new DnsMxRecord() {
+              @Override
+              public int getPriority() {
+                return mx.priority();
+              }
+
+              @Override
+              public DnsName getTarget() {
+                try {
+                  return DnsName.create(mx.name());
+                } catch (DnsIllegalArgumentException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+            })
+            .collect(Collectors.toList());
+          return Future.succeededFuture(dnsMxRecords);
+        },
+        Future::failedFuture
+      );
   }
 
-  public List<DnsMxRecord> resolveMx(DnsName dnsName) throws DnsNotFoundException, DnsException {
-    return null;
+
+  public Future<Set<DnsIp>> resolveA(DnsName dnsName) {
+    return this.client
+      .resolveA(dnsName.toStringWithoutRoot())
+      .compose(
+        ipStrings -> {
+          Set<DnsIp> dnsIp = new HashSet<>();
+          for (String ipString : ipStrings) {
+            try {
+              dnsIp.add(DnsIp.createFromString(ipString));
+            } catch (DnsException e) {
+              return Future.failedFuture(new DnsException("The A record (" + ipString + ") of (" + dnsName + ") is not a valid ip.", e));
+            }
+          }
+          return Future.succeededFuture(dnsIp);
+        },
+        err -> Future.failedFuture(new DnsException("The A records for the domain (" + dnsName + ") could not be resolved.", err))
+      );
   }
-
-
 }

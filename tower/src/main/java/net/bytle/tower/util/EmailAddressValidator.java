@@ -1,30 +1,36 @@
 package net.bytle.tower.util;
 
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import jakarta.mail.internet.AddressException;
-import net.bytle.dns.*;
+import net.bytle.dns.DnsBlockList;
+import net.bytle.dns.DnsBlockListQuery;
+import net.bytle.dns.DnsIllegalArgumentException;
+import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.vertx.HttpClientBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class EmailAddressValidator {
 
 
   private final WebClient webClient;
+  private final TowerDnsClient dnsClient;
 
   public EmailAddressValidator(EraldyApiApp eraldyApiApp) {
     Vertx vertx = eraldyApiApp.getApexDomain().getHttpServer().getServer().getVertx();
     webClient = HttpClientBuilder.builder(vertx)
-      .setMaxHeaderSize(8192*10) // mail.ru has HTTP headers that are bigger than 8192 bytes
+      .setMaxHeaderSize(8192 * 10) // mail.ru has HTTP headers that are bigger than 8192 bytes
       .setConnectTimeout(1000) // 1 second, 163.com
       .buildWebClient();
+    dnsClient = new TowerDnsClient(eraldyApiApp);
   }
 
 
@@ -49,62 +55,61 @@ public class EmailAddressValidator {
     /**
      * Mx text
      */
-    String domain = mail.getDomain();
-    String mxValidCheck = "mxRecord";
-    XBillDnsClient dnsClient = XBillDnsClient.builder().build();
-
-    DnsName name;
+    DnsName emailDomain;
     try {
-      name = dnsClient.createDnsName(domain);
+      emailDomain = DnsName.create(mail.getDomain());
     } catch (DnsIllegalArgumentException e) {
-      return Future.failedFuture(new RuntimeException("Internal error: The domain (" + domain + ") is not valid. The email is valid, The domain should be valid", e));
-    }
-    String noMxRecordMessage = "The domain (" + name + ") has no MX records";
-    try {
-      List<DnsMxRecord> records = name.getMxRecords();
-      if (records.size() == 0) {
-        emailValidityReport.addError(mxValidCheck, noMxRecordMessage);
-      } else {
-        emailValidityReport.addSuccess(mxValidCheck, "Mx records were found");
-      }
-    } catch (DnsNotFoundException e) {
-      emailValidityReport.addError(mxValidCheck, noMxRecordMessage);
-      if (failEarly) {
-        return Future.succeededFuture(emailValidityReport);
-      }
-    } catch (DnsException e) {
       return Future.failedFuture(e);
     }
+
+    String mxValidCheck = "mxRecord";
+    Future<EmailAddressValidityReport> mxRecords = dnsClient.resolveMx(emailDomain)
+      .compose(records -> {
+        String noMxRecordMessage = "The domain (" + emailDomain + ") has no MX records";
+
+        if (records.size() == 0) {
+          emailValidityReport.addError(mxValidCheck, noMxRecordMessage);
+        } else {
+          emailValidityReport.addSuccess(mxValidCheck, "Mx records were found");
+        }
+        return Future.succeededFuture(emailValidityReport);
+
+      }, err -> {
+
+        emailValidityReport.addError(mxValidCheck, err.getMessage());
+        return Future.succeededFuture(emailValidityReport);
+
+      });
 
 
     /**
      * A records
      */
     String aValidCheck = "aRecord";
-    DnsName apexName = name.getApexName();
-    String noARecordMessage = "The apex domain (" + apexName + ") has no A records";
-    try {
-      Set<DnsIp> aRecords = apexName.resolveA();
-      if (aRecords.size() == 0) {
-        emailValidityReport.addError(aValidCheck, noARecordMessage);
-      } else {
-        emailValidityReport.addSuccess(aValidCheck, "A records were found");
-      }
-    } catch (DnsNotFoundException e) {
-      emailValidityReport.addError(aValidCheck, noARecordMessage);
-      if (failEarly) {
-        return Future.succeededFuture(emailValidityReport);
-      }
-    } catch (DnsException e) {
-      return Future.failedFuture(e);
-    }
+    DnsName apexDomain = emailDomain.getApexName();
+    String noARecordMessage = "The apex domain (" + apexDomain + ") has no A records";
+    Future<EmailAddressValidityReport> aRecordFuture = dnsClient.resolveA(apexDomain)
+      .compose(
+        aRecords -> {
+          if (aRecords.size() == 0) {
+            emailValidityReport.addError(aValidCheck, noARecordMessage);
+          } else {
+            emailValidityReport.addSuccess(aValidCheck, "A records were found");
+          }
+          return Future.succeededFuture(emailValidityReport);
+        }
+        , err -> {
+          emailValidityReport.addError(aValidCheck, err.getMessage());
+          return Future.succeededFuture(emailValidityReport);
+        });
 
 
     /**
      * Domain blocked?
+     * (Not yet async)
      */
     String blockListCheck = "blockList";
-    String apexDomainNameAsString = apexName.toStringWithoutRoot();
+    String apexDomainNameAsString = apexDomain.toStringWithoutRoot();
     boolean blocked = DnsBlockListQuery.forDomain(apexDomainNameAsString)
       .addBlockList(DnsBlockList.DBL_SPAMHAUS_ORG)
       .query()
@@ -134,7 +139,7 @@ public class EmailAddressValidator {
     // gsalike@mail.ru
     String homePage = "homePage";
     String absoluteURI = "https://" + apexDomainNameAsString;
-    return webClient.getAbs(absoluteURI)
+    Future<EmailAddressValidityReport> homePageFuture = webClient.getAbs(absoluteURI)
       .send()
       .compose(response -> {
           try {
@@ -147,5 +152,24 @@ public class EmailAddressValidator {
         },
         err -> Future.succeededFuture(emailValidityReport.addError(homePage, "The HTTP website (" + absoluteURI + ") could not be contacted. Error: " + err.getClass().getSimpleName() + ": " + err.getMessage()))
       );
+
+    /**
+     * Composite execution
+     */
+    List<Future<EmailAddressValidityReport>> futureReports = new ArrayList<>();
+    futureReports.add(mxRecords);
+    futureReports.add(aRecordFuture);
+    futureReports.add(homePageFuture);
+    CompositeFuture compositeFutureReport;
+    if(failEarly){
+      compositeFutureReport = Future.all(futureReports);
+    } else {
+      compositeFutureReport = Future.join(futureReports);
+    }
+    return compositeFutureReport.compose(
+      c->Future.succeededFuture(emailValidityReport),
+      err->Future.succeededFuture(emailValidityReport)
+    );
+
   }
 }

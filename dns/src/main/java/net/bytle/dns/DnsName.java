@@ -1,6 +1,8 @@
 package net.bytle.dns;
 
 import net.bytle.email.BMailInternetAddress;
+import org.xbill.DNS.Name;
+import org.xbill.DNS.TextParseException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -10,7 +12,7 @@ public class DnsName {
   private static final String DNS_SEPARATOR = ".";
   public static final String ROOT_DOT = DNS_SEPARATOR;
 
-  private final String absoluteDnsName;
+  private final Name xBillDnsName;
   /**
    * Selector / Value
    */
@@ -18,11 +20,18 @@ public class DnsName {
   private final List<BMailInternetAddress> expectedDmarcEmails = new ArrayList<>();
 
   protected DnsName(String absoluteName) throws DnsIllegalArgumentException {
+    String nameWithRoot;
     if (!absoluteName.endsWith(ROOT_DOT)) {
-      this.absoluteDnsName = absoluteName + ROOT_DOT;
+      nameWithRoot = absoluteName + ROOT_DOT;
     } else {
-      this.absoluteDnsName = absoluteName;
+      nameWithRoot = absoluteName;
     }
+    try {
+      this.xBillDnsName = Name.fromString(nameWithRoot);
+    } catch (TextParseException e) {
+      throw new DnsIllegalArgumentException(e);
+    }
+
   }
 
   public static DnsName create(String absoluteName) throws DnsIllegalArgumentException {
@@ -35,7 +44,7 @@ public class DnsName {
 
   @SuppressWarnings("unused")
   boolean isSubdomain(DnsName dnsName) {
-    return this.absoluteDnsName.contains(dnsName.absoluteDnsName);
+    return this.xBillDnsName.subdomain(dnsName.xBillDnsName);
   }
 
 
@@ -45,44 +54,43 @@ public class DnsName {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DnsName dnsDomain = (DnsName) o;
-    return Objects.equals(absoluteDnsName, dnsDomain.absoluteDnsName);
+    return Objects.equals(xBillDnsName, dnsDomain.xBillDnsName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(absoluteDnsName);
+    return Objects.hash(xBillDnsName);
   }
 
 
 
   @Override
   public String toString() {
-    return this.absoluteDnsName;
+    return this.xBillDnsName.toString();
   }
 
 
   public DnsName getSubdomain(String label) throws DnsIllegalArgumentException {
-    return new DnsName( label + DNS_SEPARATOR + this.absoluteDnsName);
+    return new DnsName( label + DNS_SEPARATOR + this.xBillDnsName);
   }
 
   /**
    * In Spf record, the name does not have any root separator
    */
   public String toStringWithoutRoot() {
-    return this.absoluteDnsName.substring(0, this.absoluteDnsName.length() - 1);
+    return this.xBillDnsName.toString(true);
   }
 
   public DnsName getApexName() {
-    String[] labels = this.absoluteDnsName.split("\\.");
-    int labelSize = labels.length;
-    if (labelSize <= 3) {
+    int labels = this.xBillDnsName.labels();
+    if (labels <= 3) {
       return this;
     }
     try {
-      String rootLabel = labels[labelSize - 1];
-      String tldLabel = labels[labelSize - 2];
-      String apexLabel = labels[labelSize - 3];
-      return new DnsName(apexLabel + "." + tldLabel + "." + rootLabel);
+      String rootLabel = this.xBillDnsName.getLabelString(labels - 1);
+      String tldLabel = this.xBillDnsName.getLabelString(labels - 2);
+      String apexLabel = this.xBillDnsName.getLabelString(labels - 3);
+      return new DnsName( apexLabel + "." + tldLabel + "." + rootLabel);
     } catch (DnsIllegalArgumentException e) {
       throw new DnsInternalException("It should not throw");
     }
@@ -143,10 +151,6 @@ public class DnsName {
     return this.expectedDmarcEmails;
   }
 
-
-  public String getAbsoluteName() {
-    return this.absoluteDnsName;
-  }
 
 
 }

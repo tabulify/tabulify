@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Dns Client interface
- * * lookup method return the first record
- * * resolve method returns a list
+ * A sync Dns Client interface
+ * * lookup methods return the first record
+ * * resolve methods return a list of record
  */
 public interface DnsClient {
 
