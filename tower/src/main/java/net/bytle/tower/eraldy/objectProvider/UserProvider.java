@@ -353,35 +353,43 @@ public class UserProvider {
   }
 
   /**
-   * @param realm - the realmId
+   * @param realm    - the realmId
+   * @param pageId   - the page identifier
+   * @param pageSize - the page size
    * @return the realm
    */
-  public Future<List<User>> getUsers(Realm realm) {
+  public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize) {
 
-    return jdbcPool.preparedQuery(
-        "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
-          " where " + REALM_COLUMN + " = $1"
-      )
-
-      .execute(Tuple.of(realm.getLocalId()))
-      .onFailure(FailureStatic::failFutureWithTrace)
+    String sql = "select *" +
+      " from (" +
+      "   SELECT " +
+      "      ROW_NUMBER() OVER (ORDER BY user_creation_time DESC) AS rn," +
+      "      *" +
+      "   FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      "   where " + REALM_COLUMN + " = $1" +
+      "  ) as userNumbered" +
+      " where rn >= 1 + $2::BIGINT * $3::BIGINT" +
+      "  and rn < $4::BIGINT * $5::BIGINT + 1";
+    return jdbcPool.preparedQuery(sql)
+      .execute(Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId+1))
       .compose(userRows -> {
 
-        List<Future<?>> futureUsers = new ArrayList<>();
-        for (Row row : userRows) {
-          Future<User> user = getUserFromRow(row, User.class, realm);
-          futureUsers.add(user);
-        }
-        /**
-         * https://vertx.io/docs/vertx-core/java/#_future_coordination
-         * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
-         */
-        return Future
-          .all(futureUsers)
-          .onFailure(e -> LOGGER.error("Error on getting all users", e))
-          .map(CompositeFuture::<User>list);
+          List<Future<?>> futureUsers = new ArrayList<>();
+          for (Row row : userRows) {
+            Future<User> user = getUserFromRow(row, User.class, realm);
+            futureUsers.add(user);
+          }
+          /**
+           * https://vertx.io/docs/vertx-core/java/#_future_coordination
+           * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
+           */
+          return Future
+            .all(futureUsers)
+            .map(CompositeFuture::<User>list);
 
-      });
+        },
+        err -> Future.failedFuture(new InternalException("Error while retrieving the users: "+err.getMessage()+". Sql:\n" + sql, err))
+      );
   }
 
   /**
@@ -787,7 +795,6 @@ public class UserProvider {
     }
     return templateClone;
   }
-
 
 
   @SuppressWarnings("unused")

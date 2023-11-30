@@ -5,15 +5,10 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.RealmApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
-import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
-import net.bytle.tower.eraldy.model.openapi.RealmWithAppUris;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.vertx.*;
 
 import java.util.List;
 
@@ -52,6 +47,39 @@ public class RealmApiImpl implements RealmApi {
             .setMapper(this.apiApp.getRealmProvider().getPublicJsonMapper());
           return Future.succeededFuture(response);
         }
+      );
+
+  }
+
+  @Override
+  public Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId) {
+
+    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize",10L);
+    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId",0L);
+
+    UserProvider userProvider = apiApp.getUserProvider();
+    Long finalPageId = pageId;
+    Long finalPageSize = pageSize;
+    return this.apiApp.getRealmProvider()
+      .getRealmFromIdentifier(realmIdentifier)
+      .compose(
+        realm -> userProvider.getUsers(realm, finalPageId, finalPageSize),
+        err->Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
+          .setMessage("Realm could not be retrieved with the identifier "+realmIdentifier)
+          .setCauseException(err)
+          .build()
+        )
+      )
+      .compose(
+        users -> Future.succeededFuture(new ApiResponse<>(users).setMapper(userProvider.getApiMapper())),
+        err->Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
+          .setMessage("Users could not be retrieved")
+          .setCauseException(err)
+          .build()
+        )
       );
 
   }

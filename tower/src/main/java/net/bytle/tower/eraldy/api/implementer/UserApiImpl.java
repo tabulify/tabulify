@@ -20,9 +20,6 @@ import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.auth.AuthUser;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class UserApiImpl implements UserApi {
 
   private final EraldyApiApp apiApp;
@@ -161,23 +158,5 @@ public class UserApiImpl implements UserApi {
 
   }
 
-
-  @Override
-  public Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmIdentifier) {
-
-    UserProvider userProvider = apiApp.getUserProvider();
-    return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(realmIdentifier)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(userProvider::getUsers)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(users -> {
-        java.util.List<User> publicUsers = users
-          .stream()
-          .map(userProvider::toPublicCloneWithoutRealm)
-          .collect(Collectors.toList());
-        return Future.succeededFuture(new ApiResponse<>(publicUsers));
-      });
-  }
 
 }

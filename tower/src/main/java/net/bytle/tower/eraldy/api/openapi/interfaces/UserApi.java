@@ -6,8 +6,6 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 
-import java.util.List;
-
 public interface UserApi  {
 
     /**
@@ -29,9 +27,4 @@ public interface UserApi  {
      * Create or modify a user (a guid or a email should be given)
     */
     Future<ApiResponse<User>> userPost(RoutingContext routingContext, UserPostBody userPostBody);
-
-    /**
-     * List users
-    */
-    Future<ApiResponse<List<User>>> usersGet(RoutingContext routingContext, String realmIdentifier);
 }

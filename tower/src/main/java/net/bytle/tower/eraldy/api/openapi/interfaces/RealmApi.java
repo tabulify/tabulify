@@ -3,10 +3,7 @@ package net.bytle.tower.eraldy.api.openapi.interfaces;
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
-import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
-import net.bytle.tower.eraldy.model.openapi.RealmWithAppUris;
+import net.bytle.tower.eraldy.model.openapi.*;
 
 import java.util.List;
 
@@ -21,6 +18,11 @@ public interface RealmApi  {
      * Create a realm
     */
     Future<ApiResponse<Realm>> realmPost(RoutingContext routingContext, RealmPostBody realmPostBody);
+
+    /**
+     * Get users for the realm for pagination
+    */
+    Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId);
 
     /**
      * Return the list of realms

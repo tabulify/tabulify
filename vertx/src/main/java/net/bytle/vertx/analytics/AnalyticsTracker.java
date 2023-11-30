@@ -160,6 +160,10 @@ public class AnalyticsTracker {
       try {
         AnalyticsLogger.log(event);
       } catch (IllegalStructure e) {
+        if (JavaEnvs.IS_DEV) {
+          // otherwise we get continuously an email error
+          this.eventsQueue.remove(event.getId());
+        }
         throw new RuntimeException(e);
       }
       this.eventsQueue.remove(event.getId());

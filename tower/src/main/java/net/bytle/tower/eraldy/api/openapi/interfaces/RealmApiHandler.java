@@ -25,6 +25,7 @@ this.api = api;
 public void mount(RouterBuilder builder) {
     builder.operation("realmGet").handler(this::realmGet);
     builder.operation("realmPost").handler(this::realmPost);
+    builder.operation("realmRealmUsersGet").handler(this::realmRealmUsersGet);
     builder.operation("realmsGet").handler(this::realmsGet);
     builder.operation("realmsOwnedByGet").handler(this::realmsOwnedByGet);
     builder.operation("realmsOwnedByMeGet").handler(this::realmsOwnedByMeGet);
@@ -59,6 +60,26 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.realmPost(routingContext, realmPostBody)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void realmRealmUsersGet(RoutingContext routingContext) {
+    logger.info("realmRealmUsersGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String realmIdentifier = requestParameters.pathParameter("realmIdentifier") != null ? requestParameters.pathParameter("realmIdentifier").getString() : null;
+        Long pageSize = requestParameters.queryParameter("pageSize") != null ? requestParameters.queryParameter("pageSize").getLong() : null;
+        Long pageId = requestParameters.queryParameter("pageId") != null ? requestParameters.queryParameter("pageId").getLong() : null;
+
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+      logger.debug("Parameter pageSize is {}", pageSize);
+      logger.debug("Parameter pageId is {}", pageId);
+
+    // Based on Route#respond
+    api.realmRealmUsersGet(routingContext, realmIdentifier, pageSize, pageId)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

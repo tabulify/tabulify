@@ -507,6 +507,46 @@ paths:
       responses:
         '200':
           description: API health status
+  /realm/{realmIdentifier}/users:
+    get:
+      operationId: realmRealmUsersGet
+      summary: "Get users for the realm for pagination"
+      tags:
+        - realm
+      parameters:
+        - name: realmIdentifier
+          description: "A realm identifier (a guid or a handle)"
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "rea-xjkkLmi"
+        - name: pageSize
+          description: "The number of rows by page"
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 10
+        - name: pageId
+          description: "The id of the page to return (zero based)"
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
   /realm/{realmIdentifier}:
     get:
       operationId: "realmGet"
@@ -885,31 +925,6 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
-  /users:
-    get:
-      operationId: usersGet
-      summary: "List users"
-      tags:
-        - user
-      parameters:
-        - name: realmIdentifier
-          description: "A realm identifier (a guid or a handle)"
-          in: query
-          schema:
-            type: string
-            example: "rea-xjkkLmi"
-      security:
-        - apiKeyAuth: []
-        - cookieAuth: []
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/User'
   /organization/user/me:
     get:
       operationId: "organizationUserMeGet"

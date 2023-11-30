@@ -27,7 +27,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("userGuidGet").handler(this::userGuidGet);
     builder.operation("userMeGet").handler(this::userMeGet);
     builder.operation("userPost").handler(this::userPost);
-    builder.operation("usersGet").handler(this::usersGet);
 }
 
     private void userGet(RoutingContext routingContext) {
@@ -91,22 +90,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.userPost(routingContext, userPostBody)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void usersGet(RoutingContext routingContext) {
-    logger.info("usersGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
-
-      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
-
-    // Based on Route#respond
-    api.usersGet(routingContext, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

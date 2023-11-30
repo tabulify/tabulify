@@ -60,9 +60,45 @@ properties:
     format: date-time
 ```
 
-### Enum
+For Long
+```yaml
+schema:
+  type: integer
+  format: int64
+```
 
+### Enum
+```yaml
+- name: orderBy
+  description: "A user attribute to order by"
+  in: query
+  schema:
+    type: string
+    enum:
+      - 'asc'
+      - 'desc'
+```
+
+May be more sophisticated:
 https://openapi-generator.tech/docs/templating#all-generators-core
+
+```yaml
+WeatherType:
+  type: integer
+  format: int32
+  enum:
+    - 42
+    - 18
+    - 56
+  x-enum-descriptions:
+    - 'Blue sky'
+    - 'Slightly overcast'
+    - 'Take an umbrella with you'
+  x-enum-varnames:
+    - Sunny
+    - Cloudy
+    - Rainy
+```
 
 ### File Upload
 

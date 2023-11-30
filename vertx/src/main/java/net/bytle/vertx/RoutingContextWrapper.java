@@ -5,6 +5,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.validation.RequestParameter;
+import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.ext.web.validation.ValidationHandler;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
@@ -27,10 +30,14 @@ public class RoutingContextWrapper {
 
 
   private final RoutingContext ctx;
+  private final RequestParameters requestParameters;
   private UriEnhanced requestUri;
 
   public RoutingContextWrapper(RoutingContext routingContext) {
+
     this.ctx = routingContext;
+    this.requestParameters = ctx.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
   }
 
   public static RoutingContextWrapper createFrom(RoutingContext routingContext) {
@@ -195,4 +202,25 @@ public class RoutingContextWrapper {
   public HttpServerResponse response() {
     return this.ctx.response();
   }
+
+  private RequestParameter getRequestQueryParameter(String parameterName) {
+    if (requestParameters == null) {
+      return null;
+    }
+    return requestParameters.queryParameter(parameterName);
+  }
+
+  /**
+   * The order is in an openapi spec file may change but not the signature of the function
+   * leading to error. We asks then every time, the value of the parameter again
+   * @param parameterName - the parameter name
+   * @return the value
+   */
+  public Long getRequestQueryParameterAsLong(String parameterName, Long defaultValue) {
+    RequestParameter requestQueryParameter = getRequestQueryParameter(parameterName);
+    return requestQueryParameter != null ? requestQueryParameter.getLong() : defaultValue;
+  }
+
+
+
 }

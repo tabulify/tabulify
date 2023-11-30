@@ -409,6 +409,55 @@ paths:
       tags:
       - health
       x-accepts: application/json
+  /realm/{realmIdentifier}/users:
+    get:
+      operationId: realmRealmUsersGet
+      parameters:
+      - description: A realm identifier (a guid or a handle)
+        explode: false
+        in: path
+        name: realmIdentifier
+        required: true
+        schema:
+          example: rea-xjkkLmi
+          type: string
+        style: simple
+      - description: The number of rows by page
+        explode: true
+        in: query
+        name: pageSize
+        required: false
+        schema:
+          example: 10
+          format: int64
+          type: integer
+        style: form
+      - description: The id of the page to return (zero based)
+        explode: true
+        in: query
+        name: pageId
+        required: false
+        schema:
+          example: 1
+          format: int64
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                type: array
+          description: Ok
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Get users for the realm for pagination
+      tags:
+      - realm
+      x-accepts: application/json
   /realm/{realmIdentifier}:
     get:
       operationId: realmGet
@@ -836,35 +885,6 @@ paths:
 
         If you want to use the email has identifier,
         you should use the `userGet` operation passing the email as query parameter
-      tags:
-      - user
-      x-accepts: application/json
-  /users:
-    get:
-      operationId: usersGet
-      parameters:
-      - description: A realm identifier (a guid or a handle)
-        explode: true
-        in: query
-        name: realmIdentifier
-        required: false
-        schema:
-          example: rea-xjkkLmi
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/User'
-                type: array
-          description: Ok
-      security:
-      - apiKeyAuth: []
-      - cookieAuth: []
-      summary: List users
       tags:
       - user
       x-accepts: application/json
@@ -1972,123 +1992,6 @@ components:
             referrer.
           type: string
       type: object
-    RealmAnalytics:
-      allOf:
-      - $ref: '#/components/schemas/Realm'
-      - properties:
-          userCount:
-            description: The number of users for the realm
-            type: integer
-          appCount:
-            description: The number of apps for the realm
-            type: integer
-          listCount:
-            description: The number of lists for the realm
-            type: integer
-          subscriberCount:
-            description: The number of subscribers for the realm
-            type: integer
-        type: object
-      description: "Realm Analytics (count, ...)"
-    Realm:
-      description: |
-        A realm.
-
-        It identifies a protection space where the user and their credentials
-        are stored.
-
-        * In a marketing level, it represents a brand. When people log in, they see the realm logo.
-        * In a web/dns level, it would be a domain name (and apps would be subdomain)
-        * In a security level, this is the authentication realm.
-        * In an infrastructure level, this is called a tenant.
-      example:
-        defaultApp: ""
-        ownerUser:
-          disabledReason: disabledReason
-          website: https://mywebsite
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: John
-          fullName: John Doe
-          bio: bio
-          handle: foo
-          avatar: https://en.gravatar.com/userimage/john.doe.png
-          title: Chief Executive Officer
-          localId: 1
-          modificationTime: 2000-01-23T04:56:07.000+00:00
-          guid: xmmmN
-          disabled: true
-          location: The world
-          realm: null
-          email: john@doe.com
-        organization:
-          name: name
-          guid: org-xmmmN
-          localId: 1
-        name: name
-        guid: guid
-        handle: handle
-        localId: 0
-      properties:
-        localId:
-          description: The realm id in the database
-          format: int64
-          type: integer
-        guid:
-          description: |
-            The public id
-            (derived from the database id)
-          format: int64
-          type: string
-        name:
-          description: A shor description of the realm
-          type: string
-        organization:
-          $ref: '#/components/schemas/Organization'
-        ownerUser:
-          $ref: '#/components/schemas/User'
-        handle:
-          description: |
-            The handle is a name unique identifier.
-            It's used as:
-              - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
-              - database schema, dns name
-          type: string
-        defaultApp:
-          allOf:
-          - $ref: '#/components/schemas/App'
-          description: The default application of the realm
-      required:
-      - guid
-      - handle
-      type: object
-      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
-        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
-        \ property = \"guid\", scope = Realm.class)"
-      x-parent: true
-    Organization:
-      description: |
-        Organization for the users using the Combostrap product
-        (Not from the user of other Realm)
-      example:
-        name: name
-        guid: org-xmmmN
-        localId: 1
-      properties:
-        guid:
-          description: The string representation of the organization id
-          example: org-xmmmN
-          type: string
-        localId:
-          description: The organization id in the database
-          example: 1
-          format: int64
-          type: integer
-          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
-            id\"})"
-        name:
-          description: Organization name
-          type: string
-      type: object
     User:
       description: A user
       example:
@@ -2106,7 +2009,17 @@ components:
         guid: xmmmN
         disabled: true
         location: The world
-        realm: null
+        realm:
+          defaultApp: ""
+          ownerUser: null
+          organization:
+            name: name
+            guid: org-xmmmN
+            localId: 1
+          name: name
+          guid: guid
+          handle: handle
+          localId: 0
         email: john@doe.com
       properties:
         guid:
@@ -2208,6 +2121,89 @@ components:
       - email
       - handle
       x-parent: true
+    Realm:
+      description: |
+        A realm.
+
+        It identifies a protection space where the user and their credentials
+        are stored.
+
+        * In a marketing level, it represents a brand. When people log in, they see the realm logo.
+        * In a web/dns level, it would be a domain name (and apps would be subdomain)
+        * In a security level, this is the authentication realm.
+        * In an infrastructure level, this is called a tenant.
+      example:
+        defaultApp: ""
+        ownerUser: null
+        organization:
+          name: name
+          guid: org-xmmmN
+          localId: 1
+        name: name
+        guid: guid
+        handle: handle
+        localId: 0
+      properties:
+        localId:
+          description: The realm id in the database
+          format: int64
+          type: integer
+        guid:
+          description: |
+            The public id
+            (derived from the database id)
+          format: int64
+          type: string
+        name:
+          description: A shor description of the realm
+          type: string
+        organization:
+          $ref: '#/components/schemas/Organization'
+        ownerUser:
+          $ref: '#/components/schemas/User'
+        handle:
+          description: |
+            The handle is a name unique identifier.
+            It's used as:
+              - basic authentication: "WWW-Authenticate: Basic realm="WallyWorld"
+              - database schema, dns name
+          type: string
+        defaultApp:
+          allOf:
+          - $ref: '#/components/schemas/App'
+          description: The default application of the realm
+      required:
+      - guid
+      - handle
+      type: object
+      x-class-extra-annotation: "@com.fasterxml.jackson.annotation.JsonIdentityInfo(\
+        \ generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class,\
+        \ property = \"guid\", scope = Realm.class)"
+      x-parent: true
+    Organization:
+      description: |
+        Organization for the users using the Combostrap product
+        (Not from the user of other Realm)
+      example:
+        name: name
+        guid: org-xmmmN
+        localId: 1
+      properties:
+        guid:
+          description: The string representation of the organization id
+          example: org-xmmmN
+          type: string
+        localId:
+          description: The organization id in the database
+          example: 1
+          format: int64
+          type: integer
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            id\"})"
+        name:
+          description: Organization name
+          type: string
+      type: object
     App:
       description: "An app is the container for branding elements (such as logo, color)"
       example:
@@ -2219,23 +2215,7 @@ components:
         handle: "[\"doe.com\",\"doe.com/doc\"]"
         realm:
           defaultApp: ""
-          ownerUser:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            fullName: John Doe
-            bio: bio
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm: null
-            email: john@doe.com
+          ownerUser: null
           organization:
             name: name
             guid: org-xmmmN
@@ -2261,7 +2241,17 @@ components:
           guid: xmmmN
           disabled: true
           location: The world
-          realm: null
+          realm:
+            defaultApp: ""
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
           email: john@doe.com
         home: https://doe.com
       properties:
@@ -2325,6 +2315,24 @@ components:
       - guid
       - handle
       x-parent: true
+    RealmAnalytics:
+      allOf:
+      - $ref: '#/components/schemas/Realm'
+      - properties:
+          userCount:
+            description: The number of users for the realm
+            type: integer
+          appCount:
+            description: The number of apps for the realm
+            type: integer
+          listCount:
+            description: The number of lists for the realm
+            type: integer
+          subscriberCount:
+            description: The number of subscribers for the realm
+            type: integer
+        type: object
+      description: "Realm Analytics (count, ...)"
     RealmPostBody:
       description: Realm creation
       example:
@@ -2377,23 +2385,7 @@ components:
         guid: xmllKD23
         realm:
           defaultApp: ""
-          ownerUser:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            fullName: John Doe
-            bio: bio
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm: null
-            email: john@doe.com
+          ownerUser: null
           organization:
             name: name
             guid: org-xmmmN
@@ -2420,7 +2412,17 @@ components:
           guid: xmmmN
           disabled: true
           location: The world
-          realm: null
+          realm:
+            defaultApp: ""
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
           email: john@doe.com
       properties:
         id:
@@ -2723,7 +2725,17 @@ components:
           guid: xmmmN
           disabled: true
           location: The world
-          realm: null
+          realm:
+            defaultApp: ""
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
           email: john@doe.com
         name: Mailing list
         guid: xmmmN
@@ -2731,23 +2743,7 @@ components:
         handle: newsletter
         realm:
           defaultApp: ""
-          ownerUser:
-            disabledReason: disabledReason
-            website: https://mywebsite
-            creationTime: 2000-01-23T04:56:07.000+00:00
-            givenName: John
-            fullName: John Doe
-            bio: bio
-            handle: foo
-            avatar: https://en.gravatar.com/userimage/john.doe.png
-            title: Chief Executive Officer
-            localId: 1
-            modificationTime: 2000-01-23T04:56:07.000+00:00
-            guid: xmmmN
-            disabled: true
-            location: The world
-            realm: null
-            email: john@doe.com
+          ownerUser: null
           organization:
             name: name
             guid: org-xmmmN
@@ -2768,23 +2764,7 @@ components:
           handle: "[\"doe.com\",\"doe.com/doc\"]"
           realm:
             defaultApp: ""
-            ownerUser:
-              disabledReason: disabledReason
-              website: https://mywebsite
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              givenName: John
-              fullName: John Doe
-              bio: bio
-              handle: foo
-              avatar: https://en.gravatar.com/userimage/john.doe.png
-              title: Chief Executive Officer
-              localId: 1
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              guid: xmmmN
-              disabled: true
-              location: The world
-              realm: null
-              email: john@doe.com
+            ownerUser: null
             organization:
               name: name
               guid: org-xmmmN
@@ -2810,7 +2790,17 @@ components:
             guid: xmmmN
             disabled: true
             location: The world
-            realm: null
+            realm:
+              defaultApp: ""
+              ownerUser: null
+              organization:
+                name: name
+                guid: org-xmmmN
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
             email: john@doe.com
           home: https://doe.com
       properties:
@@ -2969,7 +2959,17 @@ components:
           guid: xmmmN
           disabled: true
           location: The world
-          realm: null
+          realm:
+            defaultApp: ""
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
           email: john@doe.com
         optInIp: optInIp
         guid: xmmmN
@@ -2990,7 +2990,17 @@ components:
             guid: xmmmN
             disabled: true
             location: The world
-            realm: null
+            realm:
+              defaultApp: ""
+              ownerUser: null
+              organization:
+                name: name
+                guid: org-xmmmN
+                localId: 1
+              name: name
+              guid: guid
+              handle: handle
+              localId: 0
             email: john@doe.com
           name: Mailing list
           guid: xmmmN
@@ -2998,23 +3008,7 @@ components:
           handle: newsletter
           realm:
             defaultApp: ""
-            ownerUser:
-              disabledReason: disabledReason
-              website: https://mywebsite
-              creationTime: 2000-01-23T04:56:07.000+00:00
-              givenName: John
-              fullName: John Doe
-              bio: bio
-              handle: foo
-              avatar: https://en.gravatar.com/userimage/john.doe.png
-              title: Chief Executive Officer
-              localId: 1
-              modificationTime: 2000-01-23T04:56:07.000+00:00
-              guid: xmmmN
-              disabled: true
-              location: The world
-              realm: null
-              email: john@doe.com
+            ownerUser: null
             organization:
               name: name
               guid: org-xmmmN
@@ -3035,23 +3029,7 @@ components:
             handle: "[\"doe.com\",\"doe.com/doc\"]"
             realm:
               defaultApp: ""
-              ownerUser:
-                disabledReason: disabledReason
-                website: https://mywebsite
-                creationTime: 2000-01-23T04:56:07.000+00:00
-                givenName: John
-                fullName: John Doe
-                bio: bio
-                handle: foo
-                avatar: https://en.gravatar.com/userimage/john.doe.png
-                title: Chief Executive Officer
-                localId: 1
-                modificationTime: 2000-01-23T04:56:07.000+00:00
-                guid: xmmmN
-                disabled: true
-                location: The world
-                realm: null
-                email: john@doe.com
+              ownerUser: null
               organization:
                 name: name
                 guid: org-xmmmN
@@ -3077,7 +3055,17 @@ components:
               guid: xmmmN
               disabled: true
               location: The world
-              realm: null
+              realm:
+                defaultApp: ""
+                ownerUser: null
+                organization:
+                  name: name
+                  guid: org-xmmmN
+                  localId: 1
+                name: name
+                guid: guid
+                handle: handle
+                localId: 0
               email: john@doe.com
             home: https://doe.com
         flow: null
