@@ -353,13 +353,19 @@ public class UserProvider {
   }
 
   /**
-   * @param realm    - the realmId
-   * @param pageId   - the page identifier
-   * @param pageSize - the page size
+   * @param realm      - the realmId
+   * @param pageId     - the page identifier
+   * @param pageSize   - the page size
+   * @param searchTerm
    * @return the realm
    */
-  public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize) {
-
+  public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize, String searchTerm) {
+    String searchTermFiltering = "";
+    Tuple parametersTuples = Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId + 1);
+    if (searchTerm != null && !searchTerm.trim().equals("")) {
+      searchTermFiltering = " AND " + EMAIL_COLUMN + " like $6";
+      parametersTuples.addString("%" + searchTerm + "%");
+    }
     String sql = "select *" +
       " from (" +
       "   SELECT " +
@@ -367,11 +373,12 @@ public class UserProvider {
       "      *" +
       "   FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       "   where " + REALM_COLUMN + " = $1" +
+      searchTermFiltering +
       "  ) as userNumbered" +
       " where rn >= 1 + $2::BIGINT * $3::BIGINT" +
       "  and rn < $4::BIGINT * $5::BIGINT + 1";
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId+1))
+      .execute(parametersTuples)
       .compose(userRows -> {
 
           List<Future<?>> futureUsers = new ArrayList<>();
@@ -388,7 +395,7 @@ public class UserProvider {
             .map(CompositeFuture::<User>list);
 
         },
-        err -> Future.failedFuture(new InternalException("Error while retrieving the users: "+err.getMessage()+". Sql:\n" + sql, err))
+        err -> Future.failedFuture(new InternalException("Error while retrieving the users: " + err.getMessage() + ". Sql:\n" + sql, err))
       );
   }
 

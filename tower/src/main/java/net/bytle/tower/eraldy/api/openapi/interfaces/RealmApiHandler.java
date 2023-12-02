@@ -73,13 +73,15 @@ public void mount(RouterBuilder builder) {
             String realmIdentifier = requestParameters.pathParameter("realmIdentifier") != null ? requestParameters.pathParameter("realmIdentifier").getString() : null;
         Long pageSize = requestParameters.queryParameter("pageSize") != null ? requestParameters.queryParameter("pageSize").getLong() : null;
         Long pageId = requestParameters.queryParameter("pageId") != null ? requestParameters.queryParameter("pageId").getLong() : null;
+        String searchTerm = requestParameters.queryParameter("searchTerm") != null ? requestParameters.queryParameter("searchTerm").getString() : null;
 
       logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
       logger.debug("Parameter pageSize is {}", pageSize);
       logger.debug("Parameter pageId is {}", pageId);
+      logger.debug("Parameter searchTerm is {}", searchTerm);
 
     // Based on Route#respond
-    api.realmRealmUsersGet(routingContext, realmIdentifier, pageSize, pageId)
+    api.realmRealmUsersGet(routingContext, realmIdentifier, pageSize, pageId, searchTerm)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

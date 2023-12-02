@@ -221,6 +221,15 @@ public class RoutingContextWrapper {
     return requestQueryParameter != null ? requestQueryParameter.getLong() : defaultValue;
   }
 
-
+  /**
+   * The order is in an openapi spec file may change but not the signature of the function
+   * leading to error. We asks then every time, the value of the parameter again
+   * @param parameterName - the parameter name
+   * @return the value
+   */
+  public String getRequestQueryParameterAsString(String parameterName, String defaultValue) {
+    RequestParameter requestQueryParameter = getRequestQueryParameter(parameterName);
+    return requestQueryParameter != null ? requestQueryParameter.getString() : defaultValue;
+  }
 
 }

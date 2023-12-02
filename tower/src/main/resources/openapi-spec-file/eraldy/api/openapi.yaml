@@ -442,6 +442,15 @@ paths:
           format: int64
           type: integer
         style: form
+      - description: A search term (search for now only against email)
+        explode: true
+        in: query
+        name: searchTerm
+        required: false
+        schema:
+          example: foo@example.com
+          type: string
+        style: form
       responses:
         "200":
           content:

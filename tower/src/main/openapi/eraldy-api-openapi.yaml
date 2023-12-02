@@ -535,6 +535,12 @@ paths:
             type: integer
             format: int64
             example: 1
+        - name: searchTerm
+          description: "A search term (search for now only against email)"
+          in: query
+          schema:
+            type: string
+            example: "foo@example.com"
       security:
         - apiKeyAuth: [ ]
         - cookieAuth: [ ]

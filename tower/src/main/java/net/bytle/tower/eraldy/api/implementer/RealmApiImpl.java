@@ -27,7 +27,6 @@ public class RealmApiImpl implements RealmApi {
 
   public RealmApiImpl(@SuppressWarnings("unused") TowerApp towerApp) {
     this.apiApp = (EraldyApiApp) towerApp;
-
   }
 
   @Override
@@ -52,19 +51,21 @@ public class RealmApiImpl implements RealmApi {
   }
 
   @Override
-  public Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId) {
+  public Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId, String searchTerm) {
 
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize",10L);
     pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId",0L);
+    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm",null);
 
     UserProvider userProvider = apiApp.getUserProvider();
     Long finalPageId = pageId;
     Long finalPageSize = pageSize;
+    String finalSearchTerm = searchTerm;
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .compose(
-        realm -> userProvider.getUsers(realm, finalPageId, finalPageSize),
+        realm -> userProvider.getUsers(realm, finalPageId, finalPageSize, finalSearchTerm),
         err->Future.failedFuture(TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
           .setMessage("Realm could not be retrieved with the identifier "+realmIdentifier)
