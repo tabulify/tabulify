@@ -2858,31 +2858,18 @@ components:
       - handle
     ListPostBody:
       description: |
-        List creation and/or modification
-
-        For creation, the mandatory data are:
-          * the name
-          * the publisher app (guid or uri and realm)
+        List creation
 
         If the communication channel should be personal, the publisher (guid / email) can be given.
-
-        For modification, you need to give the list guid or the unique handle.
       example:
         listTitle: The top Newsletters
-        ownerAppUri: https://doe.com
-        listGuid: xmllKD23
+        ownerUserIdentifier: "[\"john@doe.com\",\"usr-xklls\"]"
         listHandle: Newsletter
-        ownerUserGuid: xklls
+        ownerAppIdentifier: doe.com
         listName: Newsletters
         listDescription: The last news ....
-        ownerAppGuid: doe.com
-        ownerUserEmail: john@doe.com
         realmIdentifier: realmIdentifier
       properties:
-        listGuid:
-          description: "The public list id, if you want to update the list handle"
-          example: xmllKD23
-          type: string
         listHandle:
           description: A unique name / code for the list
           example: Newsletter
@@ -2899,32 +2886,31 @@ components:
           description: The description of the list
           example: The last news ....
           type: string
-        ownerAppGuid:
-          description: the owner app guid
+        ownerAppIdentifier:
+          description: A owner app identifier (handle or guid)
           example: doe.com
-          format: hostname
-          type: string
-        ownerAppUri:
-          description: the owner app uri
-          example: https://doe.com
-          format: uri
           type: string
         realmIdentifier:
           description: "the realm identifier (guid or handle), needed if the handle\
             \ are used, ie user email or app uri"
           type: string
-        ownerUserEmail:
+        ownerUserIdentifier:
           description: "if the communication channel is personal and not transactional,\
-            \ the email of the publisher"
-          example: john@doe.com
+            \ a user identifier (email or guid) of the publisher"
+          example: "[\"john@doe.com\",\"usr-xklls\"]"
           format: email
           type: string
-        ownerUserGuid:
-          description: "if the communication channel is personal and not transactional,\
-            \ the guid of the publisher"
-          example: xklls
-          type: string
+      required:
+      - listHandle
+      - ownerAppIdentifier
+      - realmIdentifier
       type: object
+      x-fields-to-string:
+      - listHandle
+      - realmIdentifier
+      x-fields-identity:
+      - listHandle
+      - realmIdentifier
     ListSummary:
       description: A list summary
       example:

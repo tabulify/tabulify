@@ -2,6 +2,6 @@ package net.bytle.tower.eraldy.auth;
 
 public enum AuthScope {
 
-  ANALYTICS_EVENT_GET, REALM_APPS_GET, REALM_APP_GET, REALM_USER_GET,
+  ANALYTICS_EVENT_GET, REALM_APPS_GET, REALM_APP_GET, REALM_USER_GET, LIST_CREATION,
 
 }

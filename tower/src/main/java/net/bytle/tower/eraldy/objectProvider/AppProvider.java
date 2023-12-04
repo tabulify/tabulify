@@ -599,4 +599,10 @@ public class AppProvider {
     return cloneApp;
   }
 
+  public boolean isGuid(String appIdentifier) {
+    if (appIdentifier.startsWith(APP_GUID_PREFIX + Guid.GUID_SEPARATOR)) {
+      return true;
+    }
+    return false;
+  }
 }

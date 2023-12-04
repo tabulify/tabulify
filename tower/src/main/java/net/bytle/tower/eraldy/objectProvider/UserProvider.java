@@ -601,19 +601,14 @@ public class UserProvider {
       throw ValidationException.create("The user email and id cannot be both null", "userEmail", null);
     }
 
-    Long userId = null;
-    if (userGuid != null) {
-      try {
-        userId = this.getGuidFromHash(userGuid)
-          .validateRealmAndGetFirstObjectId(realm.getLocalId());
-      } catch (CastException e) {
-        throw ValidationException.create("The user guid is not valid", "userGuid", userGuid);
-      }
+    String identifier = userGuid;
+    if (identifier == null) {
+      identifier = userEmail;
     }
-    return getUserFromIdOrEmail(userId, userEmail, realm);
+    return getUserFromIdentifier(identifier, realm);
   }
 
-  public <T extends User> Future<T> getUserByGuid(String guid, Class<T> userClass) {
+  public <T extends User> Future<T> getUserByGuid(String guid, Class<T> userClass, Realm realm) {
 
     Guid guidObject;
     try {
@@ -621,10 +616,23 @@ public class UserProvider {
     } catch (CastException e) {
       throw ValidationException.create("The user guid is not valid", "userGuid", guid);
     }
-
-    return this.apiApp.getRealmProvider()
-      .getRealmFromId(guidObject.getRealmOrOrganizationId())
-      .compose(realm -> this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm.getLocalId(), userClass, realm));
+    Future<Realm> futureRealm;
+    if (realm != null) {
+      if (realm.getLocalId() != guidObject.getRealmOrOrganizationId()) {
+        return Future.failedFuture(new InternalException("The user guid (" + guid + ") has a realm (" + guidObject.getRealmOrOrganizationId() + " that is not the same than the passed realm (" + realm.getLocalId() + ")"));
+      }
+      futureRealm = Future.succeededFuture(realm);
+    } else {
+      futureRealm = this.apiApp.getRealmProvider()
+        .getRealmFromId(guidObject.getRealmOrOrganizationId());
+    }
+    return futureRealm
+      .compose(realmResult -> {
+        if (realmResult == null) {
+          return Future.failedFuture(new InternalException("The realm was not found"));
+        }
+        return this.getUserById(guidObject.validateRealmAndGetFirstObjectId(realmResult.getLocalId()), realmResult.getLocalId(), userClass, realmResult);
+      });
 
 
   }
@@ -823,5 +831,21 @@ public class UserProvider {
 
   public ObjectMapper getApiMapper() {
     return this.apiMapper;
+  }
+
+  public boolean isGuid(String identifier) {
+    return identifier.startsWith(USR_GUID_PREFIX + Guid.GUID_SEPARATOR);
+  }
+
+  public Future<User> getUserFromIdentifier(String ownerIdentifier, Realm realm) {
+
+    if (this.isGuid(ownerIdentifier)) {
+      return getUserByGuid(ownerIdentifier, User.class, realm);
+    } else {
+      if (realm == null) {
+        return Future.failedFuture(new InternalException("With a user email (" + ownerIdentifier + ") as user identifer, the realm should be provided"));
+      }
+      return getUserByEmail(ownerIdentifier, realm.getLocalId(), User.class, realm);
+    }
   }
 }

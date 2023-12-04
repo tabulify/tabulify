@@ -12,8 +12,6 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
@@ -71,7 +69,7 @@ public class ListProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixin.class )
+      .addMixIn(ListItem.class, ListItemMixin.class)
       .build();
   }
 
@@ -126,7 +124,7 @@ public class ListProvider {
     if (owner != null) {
       ownerId = owner.getLocalId();
       if (ownerId == null) {
-        throw new InternalException("The owner id of a user object should not be null");
+        return Future.failedFuture(new InternalException("The owner id of a user object should not be null"));
       }
     }
 
@@ -444,90 +442,49 @@ public class ListProvider {
   }
 
   /**
-   * A utility function to create a publication easily from a post publication object
+   * Build a list object from a post and insert it
    *
    * @param listPostBody - the post object
-   * @return the publication created
+   * @return the list created
    */
 
-  public Future<ListItem> postPublication(ListPostBody listPostBody) {
+  public Future<ListItem> postList(ListPostBody listPostBody, Realm realm) {
 
     /**
      * Realm
      */
-    Future<Realm> realmFuture = null;
-    if (listPostBody.getRealmIdentifier() != null) {
-      realmFuture = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(listPostBody.getRealmIdentifier());
-    }
+
 
     /**
      * App
      */
     Future<App> futureApp;
-    String publisherAppGuid = listPostBody.getOwnerAppGuid();
+    String publisherAppIdentifier = listPostBody.getOwnerAppIdentifier();
     AppProvider appProvider = apiApp.getAppProvider();
-    if (publisherAppGuid != null) {
-      futureApp = appProvider
-        .getAppByGuid(publisherAppGuid);
-    } else {
-      URI publisherAppUri = listPostBody.getOwnerAppUri();
-      if (publisherAppUri == null) {
-
-        String publisherEmail = listPostBody.getOwnerUserEmail();
-        if (publisherEmail == null) {
-          throw ValidationException.create("The app uri or guid should be given", "appGuid", null);
-        }
-
-        try {
-          //String scheme = HttpsCertificateUtil.createOrGet().getHttpScheme();
-          String scheme = "http";
-          publisherAppUri = URI.create(
-            scheme + "://" + BMailInternetAddress.of(publisherEmail)
-              .getDomain()
-          );
-        } catch (AddressException e) {
-          throw ValidationException.create("The publisher user email is not valid. Error: " + e.getMessage(), "publisherUserEmail", publisherEmail);
-        }
-      }
-      if (realmFuture == null) {
-        throw ValidationException.create("The realm handle or guid should be given with an app uri", "realmGuid", null);
-      }
-      URI finalPublisherAppUri = publisherAppUri;
-      futureApp = realmFuture
-        .onFailure(FailureStatic::failFutureWithTrace)
-        .compose(realm -> appProvider.getAppByHandle(finalPublisherAppUri.toString(), realm));
+    if (publisherAppIdentifier == null) {
+      throw ValidationException.create("An app identifier (handle or guid) should be given", "appIdentifier", null);
     }
+    if (appProvider.isGuid(publisherAppIdentifier)) {
+      futureApp = appProvider
+        .getAppByGuid(publisherAppIdentifier);
+    } else {
+
+      futureApp = appProvider
+        .getAppByHandle(publisherAppIdentifier, realm);
+
+    }
+
 
     /**
      * User
      */
-    String ownerEmail = listPostBody.getOwnerUserEmail();
-    String ownerGuid = listPostBody.getOwnerUserGuid();
+    String ownerIdentifier = listPostBody.getOwnerUserIdentifier();
 
     Future<User> futureUser = Future.succeededFuture(null);
-    if (ownerEmail != null || ownerGuid != null) {
+    if (ownerIdentifier != null) {
       UserProvider userProvider = apiApp.getUserProvider();
-      Long userId = null;
-      if (ownerGuid != null) {
-        futureUser = userProvider.getUserByGuid(ownerGuid, User.class);
-      } else {
-        if (realmFuture == null) {
-          throw ValidationException.create("The realm handle or guid should be given with an app uri", "realmGuid", null);
-        }
-        futureUser = realmFuture
-          .onFailure(FailureStatic::failFutureWithTrace)
-          .compose(realm -> {
-            User userToGetOrCreate = new User();
-            userToGetOrCreate.setLocalId(userId);
-            userToGetOrCreate.setEmail(ownerEmail);
-            userToGetOrCreate.setRealm(realm);
-            return userProvider
-              .getOrCreateUserFromEmail(userToGetOrCreate);
-          });
-      }
+      futureUser = userProvider.getUserFromIdentifier(ownerIdentifier, realm);
     }
-
 
     return Future
       .all(futureApp, futureUser)
@@ -543,7 +500,7 @@ public class ListProvider {
         listItem.setHandle(listPostBody.getListHandle());
         listItem.setOwnerUser(user);
         listItem.setOwnerApp(app);
-        return this.upsertList(listItem);
+        return this.insertList(listItem);
       });
 
   }

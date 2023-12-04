@@ -3,17 +3,14 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.net.URI;
 import java.util.Objects;
 
 /**
- * List creation and/or modification  For creation, the mandatory data are:   * the name   * the publisher app (guid or uri and realm)  If the communication channel should be personal, the publisher (guid / email) can be given.  For modification, you need to give the list guid or the unique handle.
+ * List creation  If the communication channel should be personal, the publisher (guid / email) can be given.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListPostBody   {
 
-
-  protected String listGuid;
 
   protected String listHandle;
 
@@ -23,15 +20,11 @@ public class ListPostBody   {
 
   protected String listDescription;
 
-  protected String ownerAppGuid;
-
-  protected URI ownerAppUri;
+  protected String ownerAppIdentifier;
 
   protected String realmIdentifier;
 
-  protected String ownerUserEmail;
-
-  protected String ownerUserGuid;
+  protected String ownerUserIdentifier;
 
   /**
   * The empty constructor is
@@ -40,22 +33,6 @@ public class ListPostBody   {
   */
   @SuppressWarnings("unused")
   public ListPostBody () {
-  }
-
-  /**
-  * @return listGuid The public list id, if you want to update the list handle
-  */
-  @JsonProperty("listGuid")
-  public String getListGuid() {
-    return listGuid;
-  }
-
-  /**
-  * @param listGuid The public list id, if you want to update the list handle
-  */
-  @SuppressWarnings("unused")
-  public void setListGuid(String listGuid) {
-    this.listGuid = listGuid;
   }
 
   /**
@@ -123,35 +100,19 @@ public class ListPostBody   {
   }
 
   /**
-  * @return ownerAppGuid the owner app guid
+  * @return ownerAppIdentifier A owner app identifier (handle or guid)
   */
-  @JsonProperty("ownerAppGuid")
-  public String getOwnerAppGuid() {
-    return ownerAppGuid;
+  @JsonProperty("ownerAppIdentifier")
+  public String getOwnerAppIdentifier() {
+    return ownerAppIdentifier;
   }
 
   /**
-  * @param ownerAppGuid the owner app guid
+  * @param ownerAppIdentifier A owner app identifier (handle or guid)
   */
   @SuppressWarnings("unused")
-  public void setOwnerAppGuid(String ownerAppGuid) {
-    this.ownerAppGuid = ownerAppGuid;
-  }
-
-  /**
-  * @return ownerAppUri the owner app uri
-  */
-  @JsonProperty("ownerAppUri")
-  public URI getOwnerAppUri() {
-    return ownerAppUri;
-  }
-
-  /**
-  * @param ownerAppUri the owner app uri
-  */
-  @SuppressWarnings("unused")
-  public void setOwnerAppUri(URI ownerAppUri) {
-    this.ownerAppUri = ownerAppUri;
+  public void setOwnerAppIdentifier(String ownerAppIdentifier) {
+    this.ownerAppIdentifier = ownerAppIdentifier;
   }
 
   /**
@@ -171,35 +132,19 @@ public class ListPostBody   {
   }
 
   /**
-  * @return ownerUserEmail if the communication channel is personal and not transactional, the email of the publisher
+  * @return ownerUserIdentifier if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
   */
-  @JsonProperty("ownerUserEmail")
-  public String getOwnerUserEmail() {
-    return ownerUserEmail;
+  @JsonProperty("ownerUserIdentifier")
+  public String getOwnerUserIdentifier() {
+    return ownerUserIdentifier;
   }
 
   /**
-  * @param ownerUserEmail if the communication channel is personal and not transactional, the email of the publisher
+  * @param ownerUserIdentifier if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
   */
   @SuppressWarnings("unused")
-  public void setOwnerUserEmail(String ownerUserEmail) {
-    this.ownerUserEmail = ownerUserEmail;
-  }
-
-  /**
-  * @return ownerUserGuid if the communication channel is personal and not transactional, the guid of the publisher
-  */
-  @JsonProperty("ownerUserGuid")
-  public String getOwnerUserGuid() {
-    return ownerUserGuid;
-  }
-
-  /**
-  * @param ownerUserGuid if the communication channel is personal and not transactional, the guid of the publisher
-  */
-  @SuppressWarnings("unused")
-  public void setOwnerUserGuid(String ownerUserGuid) {
-    this.ownerUserGuid = ownerUserGuid;
+  public void setOwnerUserIdentifier(String ownerUserIdentifier) {
+    this.ownerUserIdentifier = ownerUserIdentifier;
   }
 
 
@@ -212,19 +157,17 @@ public class ListPostBody   {
       return false;
     }
     ListPostBody listPostBody = (ListPostBody) o;
-    return
-
-            Objects.equals(listGuid, listPostBody.listGuid) && Objects.equals(listHandle, listPostBody.listHandle) && Objects.equals(listName, listPostBody.listName) && Objects.equals(listTitle, listPostBody.listTitle) && Objects.equals(listDescription, listPostBody.listDescription) && Objects.equals(ownerAppGuid, listPostBody.ownerAppGuid) && Objects.equals(ownerAppUri, listPostBody.ownerAppUri) && Objects.equals(realmIdentifier, listPostBody.realmIdentifier) && Objects.equals(ownerUserEmail, listPostBody.ownerUserEmail) && Objects.equals(ownerUserGuid, listPostBody.ownerUserGuid);
+    return Objects.equals(listHandle, listPostBody.listHandle) && Objects.equals(realmIdentifier, listPostBody.realmIdentifier);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(listGuid, listHandle, listName, listTitle, listDescription, ownerAppGuid, ownerAppUri, realmIdentifier, ownerUserEmail, ownerUserGuid);
+    return Objects.hash(listHandle, realmIdentifier);
   }
 
   @Override
   public String toString() {
-    return super.toString();
+    return listHandle + ", " + realmIdentifier;
   }
 
 }

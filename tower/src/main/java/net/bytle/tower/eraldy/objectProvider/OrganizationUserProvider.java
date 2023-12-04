@@ -51,7 +51,7 @@ public class OrganizationUserProvider {
   public Future<OrganizationUser> getOrganizationUserByGuid(String guid) {
 
     return apiApp.getUserProvider()
-      .getUserByGuid(guid, OrganizationUser.class)
+      .getUserByGuid(guid, OrganizationUser.class, null)
       .compose(user -> {
         if (user == null) {
           return Future.succeededFuture();

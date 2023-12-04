@@ -31,7 +31,7 @@ It should be done once a week in a normal setup with a team.
 Steps:
   * If done locally, close Idea
   * Download the cli tool and unzip it
-  * Create the indexes for a project
+  * Create the indexes for a project (1hr)
 ```dos
 cd /D C:\ij-shared-indexes-tool-cli-0.9.8\
 .\bin\ij-shared-indexes-tool-cli indexes --ij C:\IntelliJ-IDEA-2023.1 --project d:\code\java-mono --base-url https://idea-shared-indexes.t0w0.c15.e2-3.dev

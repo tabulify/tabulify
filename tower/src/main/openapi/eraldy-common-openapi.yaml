@@ -528,21 +528,21 @@ components:
           description: The list audience (the valid subscribers to the list)
     ListPostBody:
       type: object
+      x-fields-to-string:
+        - listHandle
+        - realmIdentifier
+      x-fields-identity: # hashCode and equality
+        - listHandle
+        - realmIdentifier
       description: |
-        List creation and/or modification
-
-        For creation, the mandatory data are:
-          * the name
-          * the publisher app (guid or uri and realm)
+        List creation
 
         If the communication channel should be personal, the publisher (guid / email) can be given.
-
-        For modification, you need to give the list guid or the unique handle.
+      required:
+        - listHandle
+        - realmIdentifier
+        - ownerAppIdentifier
       properties:
-        listGuid:
-          type: string
-          description: The public list id, if you want to update the list handle
-          example: "xmllKD23"
         listHandle:
           type: string
           description: A unique name / code for the list
@@ -559,28 +559,20 @@ components:
           type: string
           description: The description of the list
           example: "The last news ...."
-        ownerAppGuid:
-          description: the owner app guid
+        ownerAppIdentifier:
+          description: A owner app identifier (handle or guid)
           type: string
-          format: hostname
           example: "doe.com"
-        ownerAppUri:
-          description: the owner app uri
-          type: string
-          format: uri
-          example: "https://doe.com"
         realmIdentifier:
           description: the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
           type: string
-        ownerUserEmail:
-          description: if the communication channel is personal and not transactional, the email of the publisher
+        ownerUserIdentifier:
+          description: if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
           type: string
           format: email
-          example: "john@doe.com"
-        ownerUserGuid:
-          description: if the communication channel is personal and not transactional, the guid of the publisher
-          type: string
-          example: "xklls"
+          example:
+            - "john@doe.com"
+            - "usr-xklls"
     RegistrationShort:
       title: A registration to a list
       type: object

@@ -23,6 +23,7 @@ import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationL
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
@@ -166,11 +167,32 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
 
-    ListProvider listProvider = apiApp.getListProvider();
-    return listProvider
-      .postPublication(publicationPost)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
+    String realmIdentifier = publicationPost.getRealmIdentifier();
+    if (realmIdentifier == null) {
+      throw ValidationException.create("An realm identifier (handle or guid) should be given", "realmIdentifier", null);
+    }
+    return this.apiApp.getRealmProvider()
+      .getRealmFromIdentifier(realmIdentifier)
+      .compose(realm -> {
+
+        if (realm == null) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage("The realm (" + realmIdentifier + ") was not found")
+              .build()
+          );
+        }
+
+        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_CREATION);
+      })
+      .compose(futureRealm -> {
+        ListProvider listProvider = apiApp.getListProvider();
+        return listProvider
+          .postList(publicationPost, futureRealm)
+          .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
+          .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
+      });
 
 
   }
