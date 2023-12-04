@@ -179,6 +179,7 @@ public class ListProvider {
           .getNextIdForTableAndRealm(sqlConnection, TABLE_NAME, listItem.getRealm().getLocalId())
           .compose(nextId -> {
             listItem.setLocalId(nextId);
+            computeGuid(listItem);
             return sqlConnection
               .preparedQuery(insertSql)
               .execute(Tuple.of(
@@ -449,10 +450,6 @@ public class ListProvider {
    */
 
   public Future<ListItem> postList(ListPostBody listPostBody, Realm realm) {
-
-    /**
-     * Realm
-     */
 
 
     /**

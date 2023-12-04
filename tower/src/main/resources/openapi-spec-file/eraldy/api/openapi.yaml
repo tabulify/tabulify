@@ -1534,6 +1534,9 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RealmPostBody'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/RealmPostBody'
       description: The data needed to create a realm
       required: true
     CampaignEmailPostBody:
@@ -1567,6 +1570,9 @@ components:
     ListPostBody:
       content:
         application/json:
+          schema:
+            $ref: '#/components/schemas/ListPostBody'
+        multipart/form-data:
           schema:
             $ref: '#/components/schemas/ListPostBody'
       description: The data needed to create a list
@@ -2898,7 +2904,6 @@ components:
           description: "if the communication channel is personal and not transactional,\
             \ a user identifier (email or guid) of the publisher"
           example: "[\"john@doe.com\",\"usr-xklls\"]"
-          format: email
           type: string
       required:
       - listHandle

@@ -569,7 +569,6 @@ components:
         ownerUserIdentifier:
           description: if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
           type: string
-          format: email
           example:
             - "john@doe.com"
             - "usr-xklls"
@@ -983,6 +982,9 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ListPostBody'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/ListPostBody'
     AppPostBody:
       description: The data needed to create / modify a app
       required: true
@@ -1013,6 +1015,9 @@ components:
       required: true
       content:
         application/json:
+          schema:
+            $ref: '#/components/schemas/RealmPostBody'
+        multipart/form-data:
           schema:
             $ref: '#/components/schemas/RealmPostBody'
     EmailPostBody:

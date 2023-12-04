@@ -1,9 +1,8 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Objects;
 
 /**
  * A list summary
@@ -103,17 +102,17 @@ public class ListSummary   {
       return false;
     }
     ListSummary listSummary = (ListSummary) o;
-    return
-
+    return 
+            
             Objects.equals(guid, listSummary.guid) && Objects.equals(handle, listSummary.handle) && Objects.equals(appUri, listSummary.appUri) && Objects.equals(subscriberCount, listSummary.subscriberCount);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(guid, handle, appUri, subscriberCount);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

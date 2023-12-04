@@ -1,9 +1,8 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Objects;
 
 /**
  * The access token response
@@ -121,17 +120,17 @@ public class OAuthAccessTokenResponse   {
       return false;
     }
     OAuthAccessTokenResponse oauthAccessTokenResponse = (OAuthAccessTokenResponse) o;
-    return
+    return 
             Objects.equals(accessToken, oauthAccessTokenResponse.accessToken) && Objects.equals(tokenType, oauthAccessTokenResponse.tokenType);
-
+            
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(accessToken, tokenType);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return accessToken + ", " + tokenType;
   }
