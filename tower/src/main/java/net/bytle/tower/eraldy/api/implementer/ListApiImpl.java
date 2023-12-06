@@ -27,6 +27,8 @@ import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
+import net.bytle.tower.eraldy.objectProvider.RealmProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
@@ -132,36 +134,98 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListItem>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle) {
-
-    Future<ListItem> listFuture;
-    ListProvider listProvider = apiApp.getListProvider();
-    if (listGuid != null) {
-      listFuture = listProvider.getListByGuid(listGuid);
-    } else {
-      if (listHandle == null) {
-        throw ValidationException.create("A listGuid or a listHandle is mandatory to retrieve a list", "listGuid", null);
-      }
-      if (realmHandle == null) {
-        throw ValidationException.create("A realm Handle is mandatory to retrieve a list with a listHandle", "realmHandle", null);
-      }
-      listFuture = this.apiApp.getRealmProvider()
-        .getRealmFromIdentifier(realmHandle)
-        .compose(realm -> listProvider.getListByHandle(listHandle, realm));
-    }
-    return listFuture
-      .compose(registrationList -> {
-        ApiResponse<ListItem> apiResult = new ApiResponse<>(registrationList).setMapper(listProvider.getApiMapper());
-        return Future.succeededFuture(apiResult);
-      });
-  }
-
-  @Override
   public Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
 
     System.out.println(fileBinary.fileName());
     System.out.println(fileBinary.uploadedFileName());
     return Future.succeededFuture();
+  }
+
+  @Override
+  public Future<ApiResponse<Void>> listListDelete(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    try {
+      listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
+    } catch (NotFoundException e) {
+      return Future.failedFuture(e);
+    }
+    realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
+    ListProvider listProvider = apiApp.getListProvider();
+    RealmProvider realmProvider = apiApp.getRealmProvider();
+    Future<Realm> futureRealm;
+    Guid listGuid = null;
+    try {
+      listGuid = listProvider.getGuidObject(listIdentifier);
+      futureRealm = realmProvider.getRealmFromId(listGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      if (realmIdentifier == null) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The realm identifier should be given when the list identifier (" + listIdentifier + ") is a handle")
+          .buildWithContextFailing(routingContext)
+        );
+      }
+      futureRealm = realmProvider.getRealmFromIdentifier(realmIdentifier);
+    }
+    Guid finalListGuid = listGuid;
+    String finalListIdentifier = listIdentifier;
+    return futureRealm
+      .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_DELETE))
+      .compose(realm -> {
+
+        if (finalListGuid!=null) {
+          return listProvider.deleteById(finalListGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm)
+            .compose(res -> Future.succeededFuture(new ApiResponse<>()));
+        } else
+          return listProvider.deleteByHandle(finalListIdentifier, realm)
+            .compose(res -> Future.succeededFuture(new ApiResponse<>()));
+      });
+  }
+
+
+  @Override
+  public Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    try {
+      listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
+    } catch (NotFoundException e) {
+      return Future.failedFuture(e);
+    }
+    realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
+    ListProvider listProvider = apiApp.getListProvider();
+    RealmProvider realmProvider = apiApp.getRealmProvider();
+    Guid listGuid = null;
+    Future<Realm> futureRealm;
+    try {
+      listGuid = listProvider.getGuidObject(listIdentifier);
+      futureRealm = realmProvider.getRealmFromId(listGuid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      if (realmIdentifier == null) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The realm identifier should be given when the list identifier (" + listIdentifier + ") is a handle")
+          .buildWithContextFailing(routingContext)
+        );
+      }
+      futureRealm = realmProvider.getRealmFromIdentifier(realmIdentifier);
+    }
+    Guid finalListGuid = listGuid;
+    String finalListIdentifier = listIdentifier;
+    return futureRealm
+      .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_GET))
+      .compose(realm -> {
+        Future<ListItem> listFuture;
+        if (finalListGuid != null) {
+          listFuture = listProvider.getListById(finalListGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm);
+        } else {
+          listFuture = listProvider.getListByHandle(finalListIdentifier, realm);
+        }
+        return listFuture;
+      })
+      .compose(registrationList -> {
+        ApiResponse<ListItem> apiResult = new ApiResponse<>(registrationList).setMapper(this.apiApp.getListProvider().getApiMapper());
+        return Future.succeededFuture(apiResult);
+      });
   }
 
   @Override

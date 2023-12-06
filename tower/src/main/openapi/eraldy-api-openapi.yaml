@@ -982,34 +982,36 @@ paths:
           description: Not logged in
         '403':
           description: Logged in but the authenticated user is not the member of an organization
-  /list:
+  /list/{listIdentifier}:
     get:
-      operationId: listGet
+      operationId: listListGet
       summary: |
         Get list information
 
         Access by:
         * id with the listGuid
-        * name with the listHandle and realmHandle
+        * name with the listHandle and realmIdentifier
       tags:
         - list
       security:
         - apiKeyAuth: []
         - cookieAuth: []
       parameters:
-        - name: listGuid
-          description: "The list guid"
-          in: query
+        - name: listIdentifier
+          description: |
+            The list identifier (handle or guid)
+            If an handle is given, a realm identifier should be given.
+          in: path
+          required: true
           schema:
             type: string
-            example: "lis-xjkkLmi"
-        - name: listHandle
-          description: "The list handle"
-          in: query
-          schema:
-            type: string
-        - name: realmHandle
-          description: "The realm handle"
+            example:
+              - "lis-xjkkLmi"
+              - "mylisthandle"
+        - name: realmIdentifier
+          description: |
+            A realm identifier (handle or guid)
+            The realm identifier is mandatory if a list handle was given as identifier
           in: query
           schema:
             type: string
@@ -1020,6 +1022,38 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/ListItem'
+    delete:
+      operationId: listListDelete
+      summary: Delete the list
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "The list identifier (handle or guid)"
+          in: path
+          required: true
+          schema:
+            type: string
+            example:
+              - "lis-xjkkLmi"
+              - "mylisthandle"
+        - name: realmIdentifier
+          description: |
+            A realm identifier (handle or guid)
+            The realm identifier is mandatory if a list handle was given as identifier
+          in: query
+          schema:
+            type: string
+            example:
+              - "rea-xjkkLmi"
+              - "myrealmhandle"
+      responses:
+        '200':
+          description: Ok
+  /list:
     post:
       operationId: listPost
       summary: "Create a list where users can register"

@@ -24,8 +24,9 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("listGet").handler(this::listGet);
     builder.operation("listImportPost").handler(this::listImportPost);
+    builder.operation("listListDelete").handler(this::listListDelete);
+    builder.operation("listListGet").handler(this::listListGet);
     builder.operation("listPost").handler(this::listPost);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
@@ -36,26 +37,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
-
-    private void listGet(RoutingContext routingContext) {
-    logger.info("listGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String listGuid = requestParameters.queryParameter("listGuid") != null ? requestParameters.queryParameter("listGuid").getString() : null;
-        String listHandle = requestParameters.queryParameter("listHandle") != null ? requestParameters.queryParameter("listHandle").getString() : null;
-        String realmHandle = requestParameters.queryParameter("realmHandle") != null ? requestParameters.queryParameter("realmHandle").getString() : null;
-
-      logger.debug("Parameter listGuid is {}", listGuid);
-      logger.debug("Parameter listHandle is {}", listHandle);
-      logger.debug("Parameter realmHandle is {}", realmHandle);
-
-    // Based on Route#respond
-    api.listGet(routingContext, listGuid, listHandle, realmHandle)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
 
     private void listImportPost(RoutingContext routingContext) {
     logger.info("listImportPost()");
@@ -71,6 +52,42 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listImportPost(routingContext, listIdentifier, fileBinary)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListDelete(RoutingContext routingContext) {
+    logger.info("listListDelete()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.listListDelete(routingContext, listIdentifier, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListGet(RoutingContext routingContext) {
+    logger.info("listListGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.listListGet(routingContext, listIdentifier, realmIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

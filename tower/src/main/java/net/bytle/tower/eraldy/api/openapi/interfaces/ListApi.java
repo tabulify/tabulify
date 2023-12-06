@@ -11,14 +11,19 @@ import java.util.List;
 public interface ListApi  {
 
     /**
-     * Get list information  Access by: * id with the listGuid * name with the listHandle and realmHandle
-    */
-    Future<ApiResponse<ListItem>> listGet(RoutingContext routingContext, String listGuid, String listHandle, String realmHandle);
-
-    /**
      * Import users in a list
     */
     Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
+
+    /**
+     * Delete the list
+    */
+    Future<ApiResponse<Void>> listListDelete(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
+
+    /**
+     * Get list information  Access by: * id with the listGuid * name with the listHandle and realmIdentifier
+    */
+    Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
      * Create a list where users can register

@@ -677,4 +677,48 @@ public class ListProvider {
     return this.apiMapper;
   }
 
+  public Future<Void> deleteById(Long listId, Realm realm) {
+
+    final String deleteSql = "DELETE FROM\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+      " WHERE \n" +
+      " " + ID_COLUMN + " = $1 " +
+      " AND " + REALM_COLUMN + " = $2";
+    Tuple parameters = Tuple.of(listId, realm.getLocalId());
+    return jdbcPool
+      .preparedQuery(deleteSql)
+      .execute(parameters)
+      .compose(
+        res -> Future.succeededFuture(),
+        err -> Future.failedFuture(new InternalException("Delete list by guid error with the sql.\n" + deleteSql, err))
+      );
+  }
+
+  public boolean isGuid(String listIdentifier) {
+    try {
+      getGuidObject(listIdentifier);
+      return true;
+    } catch (CastException e) {
+      return false;
+    }
+
+  }
+
+  public Future<Void> deleteByHandle(String listIdentifier, Realm realm) {
+
+    final String deleteSql = "DELETE FROM\n" +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
+      " WHERE \n" +
+      " " + HANDLE_COLUMN + " = $1 " +
+      " AND " + REALM_COLUMN + " = $2";
+    Tuple parameters = Tuple.of(listIdentifier, realm.getLocalId());
+    return jdbcPool
+      .preparedQuery(deleteSql)
+      .execute(parameters)
+      .compose(
+        res -> Future.succeededFuture(),
+        err -> Future.failedFuture(new InternalException("Delete list by handle error with the sql.\n" + deleteSql, err))
+      );
+
+  }
 }

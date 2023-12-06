@@ -954,31 +954,60 @@ paths:
       tags:
       - email
       x-accepts: application/json
-  /list:
-    get:
-      operationId: listGet
+  /list/{listIdentifier}:
+    delete:
+      operationId: listListDelete
       parameters:
-      - description: The list guid
+      - description: The list identifier (handle or guid)
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: "[\"lis-xjkkLmi\",\"mylisthandle\"]"
+          type: string
+        style: simple
+      - description: |
+          A realm identifier (handle or guid)
+          The realm identifier is mandatory if a list handle was given as identifier
         explode: true
         in: query
-        name: listGuid
+        name: realmIdentifier
         required: false
         schema:
-          example: lis-xjkkLmi
+          example: "[\"rea-xjkkLmi\",\"myrealmhandle\"]"
           type: string
         style: form
-      - description: The list handle
-        explode: true
-        in: query
-        name: listHandle
-        required: false
+      responses:
+        "200":
+          description: Ok
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Delete the list
+      tags:
+      - list
+      x-accepts: application/json
+    get:
+      operationId: listListGet
+      parameters:
+      - description: |
+          The list identifier (handle or guid)
+          If an handle is given, a realm identifier should be given.
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
         schema:
+          example: "[\"lis-xjkkLmi\",\"mylisthandle\"]"
           type: string
-        style: form
-      - description: The realm handle
+        style: simple
+      - description: |
+          A realm identifier (handle or guid)
+          The realm identifier is mandatory if a list handle was given as identifier
         explode: true
         in: query
-        name: realmHandle
+        name: realmIdentifier
         required: false
         schema:
           type: string
@@ -998,10 +1027,11 @@ paths:
 
         Access by:
         * id with the listGuid
-        * name with the listHandle and realmHandle
+        * name with the listHandle and realmIdentifier
       tags:
       - list
       x-accepts: application/json
+  /list:
     post:
       operationId: listPost
       requestBody:

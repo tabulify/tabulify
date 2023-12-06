@@ -232,4 +232,19 @@ public class RoutingContextWrapper {
     return requestQueryParameter != null ? requestQueryParameter.getString() : defaultValue;
   }
 
+  public String getRequestQueryParameterAsString(String parameterName) {
+    return getRequestQueryParameterAsString(parameterName, null);
+  }
+
+  public RequestParameter getRequestPathParameter(String parameterName) throws NotFoundException {
+    if (requestParameters == null) {
+      throw new NotFoundException("No requests parameters was found. We can't therefore return the value for the parameter ("+parameterName+")");
+    }
+    RequestParameter requestPathParameter = requestParameters.pathParameter(parameterName);
+    if(requestPathParameter == null){
+      throw new NotFoundException("The parameter "+parameterName+" was not found");
+    }
+    return requestPathParameter;
+  }
+
 }
