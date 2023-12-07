@@ -362,7 +362,7 @@ public class UserProvider {
   public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize, String searchTerm) {
     String searchTermFiltering = "";
     Tuple parametersTuples = Tuple.of(realm.getLocalId(), pageSize, pageId, pageSize, pageId + 1);
-    if (searchTerm != null && !searchTerm.trim().equals("")) {
+    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
       searchTermFiltering = " AND " + EMAIL_COLUMN + " like $6";
       parametersTuples.addString("%" + searchTerm + "%");
     }

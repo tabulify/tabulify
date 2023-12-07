@@ -414,20 +414,20 @@ public class RealmProvider {
 
   /**
    * @param owner - the owner user
-   * @return a set of guid for the user (used in authorization)
+   * @return a set of local id for the user (used in authorization)
    */
-  public Future<Set<String>> getRealmsGuidForOwner(OrganizationUser owner) {
+  public Future<Set<Long>> getRealmsLocalIdForOwner(OrganizationUser owner) {
 
-    return jdbcPool.preparedQuery("SELECT * FROM cs_realms.realm\n" +
+    return jdbcPool.preparedQuery("SELECT "+ID_COLUMN+" FROM cs_realms.realm\n" +
         "where\n" +
         " " + REALM_ORGA_ID + " = $1")
       .execute(Tuple.of(owner.getLocalId()))
       .compose(rows -> {
-          Set<String> realmGuids = new HashSet<>();
+          Set<Long> realmGuids = new HashSet<>();
           for (Row row : rows) {
 
             Long realmId = row.getLong(ID_COLUMN);
-            realmGuids.add(this.getGuidFromLong(realmId).toString());
+            realmGuids.add(realmId);
 
           }
           return Future.succeededFuture(realmGuids);

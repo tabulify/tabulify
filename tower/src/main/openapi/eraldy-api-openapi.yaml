@@ -1367,9 +1367,9 @@ paths:
       responses:
         '200':
           description: "List of users"
-  /list/registrations:
+  /list/{listIdentifier}/registrations:
     get:
-      operationId: listRegistrationsGet
+      operationId: listListRegistrationsGet
       summary: "List the registrations for a list"
       tags:
         - list
@@ -1377,13 +1377,33 @@ paths:
         - apiKeyAuth: []
         - cookieAuth: []
       parameters:
-        - name: listGuid
-          description: "The guid of the list"
+        - name: listIdentifier
+          description: "The identifier of the list (guid)"
           required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+        - name: pageSize
+          description: "The number of rows by page"
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 10
+        - name: pageId
+          description: "The id of the page to return (zero based)"
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 1
+        - name: searchTerm
+          description: "A search term (search for now only against email)"
           in: query
           schema:
             type: string
-            example: "list-xjkkLmi"
+            example: "foo@example.com"
       responses:
         '200':
           description: "List of registrations"

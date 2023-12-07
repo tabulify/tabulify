@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
+import net.bytle.type.Casts;
 import net.bytle.type.time.Date;
 import net.bytle.vertx.RoutingContextWrapper;
 
@@ -281,13 +282,19 @@ public class AuthUser {
     return claims.getString(AuthUserJwtClaims.CUSTOM_AUDIENCE_HANDLE.toString());
   }
 
-  public Set<String> getSet(String key) {
+  public <T> Set<T> getSet(String key, Class<T> clazz) {
     JsonArray jsonArray = claims.getJsonArray(key);
     if (jsonArray == null) {
       return new HashSet<>();
     }
     return jsonArray.stream()
-      .map(Object::toString)
+      .map(e -> {
+        try {
+          return Casts.cast(e, clazz);
+        } catch (CastException ex) {
+          throw new InternalException("The value (" + e + ") of the claims key (" + key + ") is not a " + clazz, ex);
+        }
+      })
       .collect(Collectors.toSet());
   }
 
@@ -296,19 +303,19 @@ public class AuthUser {
 
     String toString = "";
     String subjectEmail = this.getSubjectEmail();
-    if(subjectEmail!=null){
+    if (subjectEmail != null) {
       toString = subjectEmail;
     }
     String subject = this.getSubject();
-    if(subject!=null){
-      toString = ", "+subject;
+    if (subject != null) {
+      toString = ", " + subject;
     }
     return toString;
 
   }
 
-  public void put(String key, Set<String> strings) {
-    claims.put(key,strings);
+  public void put(String key, Object obj) {
+    claims.put(key, obj);
   }
 
 }

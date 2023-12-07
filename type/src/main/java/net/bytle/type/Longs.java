@@ -1,5 +1,7 @@
 package net.bytle.type;
 
+import net.bytle.exception.CastException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
@@ -15,7 +17,7 @@ public class Longs {
     this.aLong = aLong;
   }
 
-  public static Longs createFromObject(Object o) {
+  public static Longs createFromObject(Object o) throws CastException {
     if (o == null) {
       return new Longs(null);
     } else if (o instanceof Float) {
@@ -33,7 +35,7 @@ public class Longs {
     } else if (o instanceof String) {
       return createFromString((String) o);
     }  else {
-      throw new IllegalStateException("The value (" + o.toString() + ") has a class (" + o.getClass() + ") that is not supported for a Long transformation");
+      throw new CastException("The value (" + o + ") has a class (" + o.getClass() + ") that is not supported for a Long transformation");
     }
   }
 
@@ -45,15 +47,15 @@ public class Longs {
    * @param s
    * @return an integer from the string s or a runtime exception
    */
-  public static Longs createFromString(String s, NumberFormat numberFormat) {
+  public static Longs createFromString(String s, NumberFormat numberFormat) throws CastException {
     try {
       return new Longs(numberFormat.parse(s).longValue());
     } catch (ParseException e) {
-      throw new RuntimeException(e);
+      throw new CastException(e);
     }
   }
 
-  public static Longs createFromString(String s) {
+  public static Longs createFromString(String s) throws CastException {
     /**
      * Format for parsing integers. Not thread-safe
      */

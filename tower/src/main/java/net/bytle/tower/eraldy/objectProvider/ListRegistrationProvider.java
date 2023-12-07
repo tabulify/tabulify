@@ -26,6 +26,7 @@ import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 /**
@@ -46,7 +47,7 @@ public class ListRegistrationProvider {
   public static final String STATUS_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "status";
   public static final String ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
-  public static final String USER_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  public static final String USER_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
   private static final String GUID_PREFIX = "reg";
   static final String REALM_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
   public static final String REGISTERED_STATUS = "registered";
@@ -67,7 +68,7 @@ public class ListRegistrationProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixin.class )
+      .addMixIn(ListItem.class, ListItemMixin.class)
       .build();
 
   }
@@ -84,7 +85,7 @@ public class ListRegistrationProvider {
 
   /**
    * @param listRegistration - the registration
-   * @param forTemplate  - if true, the data have default (for instance, the username would never be empty)
+   * @param forTemplate      - if true, the data have default (for instance, the username would never be empty)
    */
   private ListRegistration toClone(ListRegistration listRegistration, boolean forTemplate) {
 
@@ -181,7 +182,7 @@ public class ListRegistrationProvider {
       "where\n" +
       "  " + REALM_COLUMN + " = $4\n" +
       "AND  " + ID_COLUMN + " = $5\n" +
-      "AND  " + USER_COLUMN + " = $6\n";
+      "AND  " + USER_ID_COLUMN + " = $6\n";
 
     return jdbcPool
       .preparedQuery(sql)
@@ -202,7 +203,7 @@ public class ListRegistrationProvider {
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
       "  " + REALM_COLUMN + ",\n" +
       "  " + ID_COLUMN + ",\n" +
-      "  " + USER_COLUMN + ",\n" +
+      "  " + USER_ID_COLUMN + ",\n" +
       "  " + DATA_COLUMN + ",\n" +
       "  " + STATUS_COLUMN + ",\n" +
       "  " + CREATION_TIME_COLUMN + "\n" +
@@ -249,7 +250,7 @@ public class ListRegistrationProvider {
         Long listId = row.getLong(LIST_ID_COLUMN);
         Future<ListItem> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
 
-        Long subscriberId = row.getLong(USER_COLUMN);
+        Long subscriberId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
           .getUserById(subscriberId, realm.getLocalId(), User.class, realm);
 
@@ -293,7 +294,7 @@ public class ListRegistrationProvider {
       " WHERE " +
       REALM_COLUMN + " = $1\n" +
       "AND " + LIST_ID_COLUMN + " = $2\n " +
-      "and " + USER_COLUMN + " = $3";
+      "and " + USER_ID_COLUMN + " = $3";
     long realmId = guidObject.getRealmOrOrganizationId();
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(
@@ -323,7 +324,8 @@ public class ListRegistrationProvider {
   }
 
 
-  public Future<java.util.List<RegistrationShort>> getRegistrations(String listGuid) {
+  public Future<java.util.List<RegistrationShort>> getRegistrations(String listGuid,
+                                                                    Long pageId, Long pageSize, String searchTerm) {
     Guid guid;
     try {
       guid = apiApp.getListProvider().getGuidObject(listGuid);
@@ -331,19 +333,37 @@ public class ListRegistrationProvider {
       return Future.failedFuture(e);
     }
 
+    /**
+     * The query on the whole set
+     * (without search term)
+     */
+    String emptySearchTermSql = "SELECT registration_pages.registration_creation_time,\n" +
+      "       registration_pages.registration_user_id,\n" +
+      "       realm_user.user_email as subscriber_email\n" +
+      "FROM (select *\n" +
+      "      from (SELECT ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,\n" +
+      "                   *\n" +
+      "            FROM cs_realms.realm_list_registration registration\n" +
+      "            where registration.registration_realm_id = $1\n" +
+      "              AND registration.registration_list_id = $2) registration\n" +
+      "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
+      "        and rn < $5::BIGINT * $6::BIGINT + 1" +
+      "       ) registration_pages\n" +
+      "         JOIN cs_realms.realm_user realm_user\n" +
+      "              on registration_pages.registration_user_id = realm_user.user_id\n" +
+      "                  and registration_pages.registration_realm_id = realm_user.user_realm_id\n" +
+      "        order by registration_pages.registration_creation_time desc";
+
     long realmId = guid.getRealmOrOrganizationId();
-    return jdbcPool.preparedQuery(
-        "SELECT registration_list_id as list_id, registration_user_id as user_id, user_email as subscriber_email " +
-          " FROM cs_realms.realm_list_registration  registration " +
-          " JOIN cs_realms.realm_user \"user\" " +
-          " on registration.registration_user_id = \"user\".user_id" +
-          " WHERE " +
-          " registration.registration_realm_id = $1" +
-          " AND registration.registration_list_id = $2"
-      )
+    long listId = guid.validateRealmAndGetFirstObjectId(realmId);
+    return jdbcPool.preparedQuery(emptySearchTermSql)
       .execute(Tuple.of(
         realmId,
-        guid.validateRealmAndGetFirstObjectId(realmId)
+        listId,
+        pageSize,
+        pageId,
+        pageSize,
+        pageId + 1
       ))
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(registrationRows -> {
@@ -355,22 +375,18 @@ public class ListRegistrationProvider {
 
         for (Row row : registrationRows) {
 
-
           RegistrationShort registrationShort = new RegistrationShort();
-          Long listId = row.getLong("list_id");
-          Long userId = row.getLong("user_id");
+          Long userId = row.getLong(USER_ID_COLUMN);
           String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
           registrationShort.setGuid(guidString);
-          String subscriberEmail = row.getString("subscriber_email");
+          String subscriberEmailAliasInQuery = "subscriber_email";
+          String subscriberEmail = row.getString(subscriberEmailAliasInQuery);
           registrationShort.setSubscriberEmail(subscriberEmail);
-
+          LocalDateTime localDateTime = row.getLocalDateTime(CREATION_TIME_COLUMN);
+          registrationShort.setConfirmationTime(localDateTime);
           futureSubscriptions.add(registrationShort);
 
         }
-        /**
-         * https://vertx.io/docs/vertx-core/java/#_future_coordination
-         * https://stackoverflow.com/questions/71936229/vertx-compositefuture-on-completion-of-all-futures
-         */
         return Future.succeededFuture(futureSubscriptions);
 
       });

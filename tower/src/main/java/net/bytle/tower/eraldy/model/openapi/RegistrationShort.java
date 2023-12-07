@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -11,7 +12,11 @@ public class RegistrationShort   {
 
   protected String guid;
 
+  protected String subscriberGuid;
+
   protected String subscriberEmail;
+
+  protected LocalDateTime confirmationTime;
 
   /**
   * The empty constructor is
@@ -39,6 +44,22 @@ public class RegistrationShort   {
   }
 
   /**
+  * @return subscriberGuid The subscriber guid
+  */
+  @JsonProperty("subscriberGuid")
+  public String getSubscriberGuid() {
+    return subscriberGuid;
+  }
+
+  /**
+  * @param subscriberGuid The subscriber guid
+  */
+  @SuppressWarnings("unused")
+  public void setSubscriberGuid(String subscriberGuid) {
+    this.subscriberGuid = subscriberGuid;
+  }
+
+  /**
   * @return subscriberEmail The subscriber email
   */
   @JsonProperty("subscriberEmail")
@@ -54,6 +75,22 @@ public class RegistrationShort   {
     this.subscriberEmail = subscriberEmail;
   }
 
+  /**
+  * @return confirmationTime The confirmation time
+  */
+  @JsonProperty("confirmationTime")
+  public LocalDateTime getConfirmationTime() {
+    return confirmationTime;
+  }
+
+  /**
+  * @param confirmationTime The confirmation time
+  */
+  @SuppressWarnings("unused")
+  public void setConfirmationTime(LocalDateTime confirmationTime) {
+    this.confirmationTime = confirmationTime;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -66,12 +103,12 @@ public class RegistrationShort   {
     RegistrationShort registrationShort = (RegistrationShort) o;
     return
 
-            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail);
+            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberGuid, registrationShort.subscriberGuid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail) && Objects.equals(confirmationTime, registrationShort.confirmationTime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, subscriberEmail);
+    return Objects.hash(guid, subscriberGuid, subscriberEmail, confirmationTime);
   }
 
   @Override

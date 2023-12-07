@@ -1413,17 +1413,46 @@ paths:
       - list
       x-content-type: multipart/form-data
       x-accepts: application/json
-  /list/registrations:
+  /list/{listIdentifier}/registrations:
     get:
-      operationId: listRegistrationsGet
+      operationId: listListRegistrationsGet
       parameters:
-      - description: The guid of the list
-        explode: true
-        in: query
-        name: listGuid
+      - description: The identifier of the list (guid)
+        explode: false
+        in: path
+        name: listIdentifier
         required: true
         schema:
-          example: list-xjkkLmi
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      - description: The number of rows by page
+        explode: true
+        in: query
+        name: pageSize
+        required: false
+        schema:
+          example: 10
+          format: int64
+          type: integer
+        style: form
+      - description: The id of the page to return (zero based)
+        explode: true
+        in: query
+        name: pageId
+        required: false
+        schema:
+          example: 1
+          format: int64
+          type: integer
+        style: form
+      - description: A search term (search for now only against email)
+        explode: true
+        in: query
+        name: searchTerm
+        required: false
+        schema:
+          example: foo@example.com
           type: string
         style: form
       responses:
@@ -3141,15 +3170,24 @@ components:
       type: string
     RegistrationShort:
       example:
+        subscriberGuid: subscriberGuid
         guid: xmmmN
+        confirmationTime: 2000-01-23T04:56:07.000+00:00
         subscriberEmail: subscriberEmail
       properties:
         guid:
           description: The public registration id
           example: xmmmN
           type: string
+        subscriberGuid:
+          description: The subscriber guid
+          type: string
         subscriberEmail:
           description: The subscriber email
+          type: string
+        confirmationTime:
+          description: The confirmation time
+          format: date-time
           type: string
       title: A registration to a list
       type: object

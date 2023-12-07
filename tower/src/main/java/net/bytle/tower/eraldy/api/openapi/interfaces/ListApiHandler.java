@@ -27,13 +27,13 @@ public void mount(RouterBuilder builder) {
     builder.operation("listImportPost").handler(this::listImportPost);
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
+    builder.operation("listListRegistrationsGet").handler(this::listListRegistrationsGet);
     builder.operation("listPost").handler(this::listPost);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
     builder.operation("listRegistrationLetterConfirmationGet").handler(this::listRegistrationLetterConfirmationGet);
     builder.operation("listRegistrationLetterValidationGet").handler(this::listRegistrationLetterValidationGet);
     builder.operation("listRegistrationValidationGet").handler(this::listRegistrationValidationGet);
-    builder.operation("listRegistrationsGet").handler(this::listRegistrationsGet);
     builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
@@ -88,6 +88,28 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListGet(routingContext, listIdentifier, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListRegistrationsGet(RoutingContext routingContext) {
+    logger.info("listListRegistrationsGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        Long pageSize = requestParameters.queryParameter("pageSize") != null ? requestParameters.queryParameter("pageSize").getLong() : null;
+        Long pageId = requestParameters.queryParameter("pageId") != null ? requestParameters.queryParameter("pageId").getLong() : null;
+        String searchTerm = requestParameters.queryParameter("searchTerm") != null ? requestParameters.queryParameter("searchTerm").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter pageSize is {}", pageSize);
+      logger.debug("Parameter pageId is {}", pageId);
+      logger.debug("Parameter searchTerm is {}", searchTerm);
+
+    // Based on Route#respond
+    api.listListRegistrationsGet(routingContext, listIdentifier, pageSize, pageId, searchTerm)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
@@ -207,22 +229,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listRegistrationValidationGet(routingContext, data)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listRegistrationsGet(RoutingContext routingContext) {
-    logger.info("listRegistrationsGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String listGuid = requestParameters.queryParameter("listGuid") != null ? requestParameters.queryParameter("listGuid").getString() : null;
-
-      logger.debug("Parameter listGuid is {}", listGuid);
-
-    // Based on Route#respond
-    api.listRegistrationsGet(routingContext, listGuid)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

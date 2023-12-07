@@ -30,9 +30,9 @@ import java.util.Set;
 public class AuthProvider {
 
   /**
-   * The realms that the user may manage
+   * A realms local id set that the user may manage.
    */
-  private static final String REALMS_KEY = "realms";
+  private static final String REALMS_ID_KEY = "realms_id";
   private final EraldyApiApp apiApp;
 
   public AuthProvider(EraldyApiApp eraldyApiApp) {
@@ -230,25 +230,29 @@ public class AuthProvider {
    */
   public Future<Realm> checkRealmAuthorization(RoutingContext routingContext, Realm realm, AuthScope authScope) {
 
-    return this.getSignedInAuthUserOrFail(routingContext)
-      .compose(signedInUser -> {
-        Set<String> realmGuids = getManagedRealmsGuid(signedInUser);
-        if (!realmGuids.contains(realm.getGuid())) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
-              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realm + "). Scope: " + authScope)
-              .build()
-          );
-        }
-        return Future.succeededFuture(realm);
-      });
-
+    return checkRealmAuthorization(routingContext, realm.getLocalId(), authScope)
+      .compose(realmId -> Future.succeededFuture(realm));
 
   }
 
-  private Set<String> getManagedRealmsGuid(AuthUser signedInUser) {
-    return signedInUser.getSet(REALMS_KEY);
+  public Future<Long> checkRealmAuthorization(RoutingContext routingContext, Long realmId, AuthScope authScope) {
+    return this.getSignedInAuthUserOrFail(routingContext)
+      .compose(signedInUser -> {
+        Set<Long> realmGuids = getManagedRealmsId(signedInUser);
+        if (!realmGuids.contains(realmId)) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested realm (" + realmId + "). Scope: " + authScope)
+              .build()
+          );
+        }
+        return Future.succeededFuture(realmId);
+      });
+  }
+
+  private Set<Long> getManagedRealmsId(AuthUser signedInUser) {
+    return signedInUser.getSet(REALMS_ID_KEY, Long.class);
   }
 
   private Future<AuthUser> getSignedInAuthUserOrFail(RoutingContext routingContext) {
@@ -369,16 +373,16 @@ public class AuthProvider {
   private Future<AuthUser> toAuthUserForSession(User user) {
 
     AuthUser authUser = toAuthUser(user);
-    Future<Set<String>> futureRealmList;
+    Future<Set<Long>> futureRealmList;
     if (user instanceof OrganizationUser) {
-      futureRealmList = this.apiApp.getRealmProvider().getRealmsGuidForOwner((OrganizationUser) user);
+      futureRealmList = this.apiApp.getRealmProvider().getRealmsLocalIdForOwner((OrganizationUser) user);
     } else {
       futureRealmList = Future.succeededFuture();
     }
     return futureRealmList
       .compose(realmList -> {
         if (realmList != null) {
-          authUser.put(REALMS_KEY, realmList);
+          authUser.put(REALMS_ID_KEY, realmList);
         }
         return Future.succeededFuture(authUser);
       });

@@ -26,6 +26,11 @@ public interface ListApi  {
     Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
+     * List the registrations for a list
+    */
+    Future<ApiResponse<List<RegistrationShort>>> listListRegistrationsGet(RoutingContext routingContext, String listIdentifier, Long pageSize, Long pageId, String searchTerm);
+
+    /**
      * Create a list where users can register
     */
     Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody listPostBody);
@@ -54,11 +59,6 @@ public interface ListApi  {
      * The URI of the validation link in the validation letter that the user receive. The user needs to click this link to confirm her/his registration.
     */
     Future<ApiResponse<String>> listRegistrationValidationGet(RoutingContext routingContext, String data);
-
-    /**
-     * List the registrations for a list
-    */
-    Future<ApiResponse<List<RegistrationShort>>> listRegistrationsGet(RoutingContext routingContext, String listGuid);
 
     /**
      * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)

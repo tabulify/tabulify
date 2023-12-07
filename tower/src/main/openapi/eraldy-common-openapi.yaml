@@ -580,9 +580,16 @@ components:
           type: string
           description: The public registration id
           example: xmmmN
+        subscriberGuid:
+          description: The subscriber guid
+          type: string
         subscriberEmail:
           description: The subscriber email
           type: string
+        confirmationTime:
+          description: The confirmation time
+          type: string
+          format: date-time
     ListRegistration:
       title: A registration to a list
       description: A registration

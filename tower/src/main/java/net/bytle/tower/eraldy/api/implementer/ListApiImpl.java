@@ -173,7 +173,7 @@ public class ListApiImpl implements ListApi {
       .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_DELETE))
       .compose(realm -> {
 
-        if (finalListGuid!=null) {
+        if (finalListGuid != null) {
           return listProvider.deleteById(finalListGuid.validateRealmAndGetFirstObjectId(realm.getLocalId()), realm)
             .compose(res -> Future.succeededFuture(new ApiResponse<>()));
         } else
@@ -428,11 +428,39 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<List<RegistrationShort>>> listRegistrationsGet(RoutingContext routingContext, String publicationGuid) {
-    return apiApp.getListRegistrationProvider()
-      .getRegistrations(publicationGuid)
-      .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
-      .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts)));
+  public Future<ApiResponse<List<RegistrationShort>>> listListRegistrationsGet(RoutingContext routingContext, String listIdentifier, Long pageId, Long pageSize, String searchTerm) {
+    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    try {
+      listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
+    } catch (NotFoundException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The list identifier is mandatory on the request path and was not found")
+        .build()
+      );
+    }
+    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId", 0L);
+    pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize", 10L);
+    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm", null);
+    Guid guid;
+    try {
+      guid = apiApp.getListProvider().getGuidObject(listIdentifier);
+    } catch (CastException e) {
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .setMessage("The list identifier (" + listIdentifier + ") is not a guid")
+        .build()
+      );
+    }
+    String finalListIdentifier = listIdentifier;
+    Long finalPageId = pageId;
+    Long finalPageSize = pageSize;
+    String finalSearchTerm = searchTerm;
+    return this.apiApp.getAuthProvider().checkRealmAuthorization(routingContext, guid.getRealmOrOrganizationId(), AuthScope.LIST_GET_REGISTRATIONS)
+      .compose(realmId -> apiApp.getListRegistrationProvider()
+        .getRegistrations(finalListIdentifier, finalPageId, finalPageSize, finalSearchTerm)
+        .compose(subscriptionShorts -> Future.succeededFuture(new ApiResponse<>(subscriptionShorts))));
+
   }
 
 
