@@ -14,8 +14,6 @@ import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.type.MediaTypes;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -47,16 +45,13 @@ public class TowerFailureException extends Exception {
    * (ie the user clicks on a confirmation link, if the link is expired
    * it gets a meaningful informational page and not a json)
    */
-  public String toHtml(RoutingContext context) {
+  public String toHtml(RoutingContext context, boolean withStackTrace) {
 
     Map<String, Object> variables = new HashMap<>();
     variables.put("title", this.builder.name);
     variables.put("message", this.getMessage());
-    if (JavaEnvs.IS_DEV && this.getCause() != null) {
-      StringWriter stringWriter = new StringWriter();
-      PrintWriter printWriter = new PrintWriter(stringWriter);
-      this.getCause().printStackTrace(printWriter);
-      variables.put("stacktrace", stringWriter.toString());
+    if (withStackTrace) {
+      variables.put("stacktrace", Exceptions.getStackTraceAsString(this));
     }
     return TemplateEngine.getLocalHtmlEngine(context.vertx())
       .compile("Error.html")
@@ -65,7 +60,7 @@ public class TowerFailureException extends Exception {
 
   }
 
-  public JsonObject toJsonObject() {
+  public JsonObject toJsonObject(boolean withStackTrace) {
     JsonObject res = new JsonObject()
       .put("code", this.builder.status.getStatusCode())
       .put("type", this.builder.status.getType())
@@ -74,6 +69,10 @@ public class TowerFailureException extends Exception {
       res
         .put("causeType", this.builder.causeException.getClass().getSimpleName())
         .put("causeMessage", this.builder.causeException.getMessage());
+    }
+    if (withStackTrace) {
+      String stackTraceAsString = Exceptions.getStackTraceAsString(this);
+      res.put("stackTrace", stackTraceAsString);
     }
     return res;
 
@@ -205,10 +204,6 @@ public class TowerFailureException extends Exception {
       }
 
       String message = exception.getMessage();
-      String stackTraceAsString = Exceptions.getStackTraceAsString(exception);
-      if (JavaEnvs.IS_DEV) {
-        message += "\n" + stackTraceAsString;
-      }
 
 
       /**
@@ -299,7 +294,7 @@ public class TowerFailureException extends Exception {
       }
 
       if (JavaEnvs.IS_DEV) {
-        System.out.println(stackTraceAsString);
+        System.out.println(Exceptions.getStackTraceAsString(exception));
       }
       return this;
 

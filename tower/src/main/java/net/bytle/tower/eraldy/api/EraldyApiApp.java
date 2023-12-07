@@ -6,6 +6,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
@@ -232,7 +233,6 @@ public class EraldyApiApp extends TowerApp {
   }
 
 
-
   /**
    * @return the login uri used for redirection in case of non-authentication
    * For an API, it's a no-sense but yeah
@@ -363,4 +363,13 @@ public class EraldyApiApp extends TowerApp {
   public EmailAddressValidator getEmailAddressValidator() {
     return this.emailAddressValidator;
   }
+
+  /**
+   * Do we output debug information
+   * to the user?
+   */
+  public boolean addDebugInfo() {
+    return JavaEnvs.IS_DEV;
+  }
+
 }

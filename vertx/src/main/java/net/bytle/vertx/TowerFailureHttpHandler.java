@@ -2,9 +2,11 @@ package net.bytle.vertx;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
+import net.bytle.java.JavaEnvs;
 import net.bytle.type.MediaTypes;
 
 import java.util.NoSuchElementException;
@@ -80,8 +82,12 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
      * We don't log forbidden request (ie {@link TowerFailureTypeEnum.NOT_AUTHORIZED_403})
      * Note that a {@link io.vertx.ext.web.handler.CSRFHandler problem} will log a 403 ...
      */
+    boolean withStackTrace = false;
     if (statusCode == TowerFailureTypeEnum.INTERNAL_ERROR_500) {
       this.logUnExpectedFailure(context);
+      if(JavaEnvs.IS_DEV){
+        withStackTrace = true;
+      }
     }
 
 
@@ -89,18 +95,19 @@ public class TowerFailureHttpHandler implements Handler<RoutingContext> {
     switch (format) {
       case TEXT_HTML:
       default:
-        String html = towerFailureException.toHtml(context);
+        String html = towerFailureException.toHtml(context,withStackTrace);
         context
           .response()
           .setStatusCode(statusCode.getStatusCode())
           .putHeader(HttpHeaders.CONTENT_TYPE, MediaTypes.TEXT_HTML.toString())
           .send(html);
       case TEXT_JSON:
+        JsonObject jsonObject = towerFailureException.toJsonObject(withStackTrace);
         context
           .response()
           .putHeader(HttpHeaders.CONTENT_TYPE, MediaTypes.TEXT_JSON.toString())
           .setStatusCode(statusCode.getStatusCode())
-          .send(towerFailureException.toJsonObject().toString());
+          .send(jsonObject.toString());
     }
   }
 

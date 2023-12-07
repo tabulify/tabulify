@@ -13,6 +13,8 @@ import io.vertx.ext.web.sstore.SessionStore;
 import io.vertx.ext.web.sstore.impl.SharedDataSessionImpl;
 import net.bytle.exception.InternalException;
 import net.bytle.java.JavaEnvs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
@@ -20,6 +22,7 @@ import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -35,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PersistentLocalSessionStore implements SessionStore, LocalSessionStore, Handler<Long> {
 
+  static final Logger LOGGER  = LogManager.getLogger(PersistentLocalSessionStore.class);
   /**
    * Default of how often, in ms, to check for expired sessions
    */
@@ -102,6 +106,9 @@ public class PersistentLocalSessionStore implements SessionStore, LocalSessionSt
     if (syncInterval != 0) {
       timerID = server.getVertx().setTimer(syncInterval, this);
     }
+    // run once to see if the store is still correct
+    // may block if there is a problem
+    this.purgeOldSession();
 
   }
 
@@ -204,14 +211,23 @@ public class PersistentLocalSessionStore implements SessionStore, LocalSessionSt
     long now = System.currentTimeMillis();
 
     AtomicBoolean deleted = new AtomicBoolean(false);
-    sessionMap.forEach((String id, Session session) -> {
+    for(Map.Entry<String,Session> entry:sessionMap.entrySet()){
+      String id = entry.getKey();
+      Session session = entry.getValue();
       long idlePeriod = now - session.lastAccessed();
       long timeout = session.timeout();
+      if(!session.id().equals(id)){
+        // Serialization/Deserialization problem?
+        LOGGER.error("The id of the session ("+session.id()+") is not the same than the id of the map ("+id+"). Sessions was deleted");
+        this.sessionMap.remove(id);
+        continue;
+      }
       if (idlePeriod > timeout) {
         deleted.set(true);
-        this.sessionMap.remove(session.id());
+        this.sessionMap.remove(id);
       }
-    });
+
+    }
 
     if(deleted.get()){
       this.mapDb.commit();

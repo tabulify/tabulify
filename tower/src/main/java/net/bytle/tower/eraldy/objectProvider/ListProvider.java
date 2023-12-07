@@ -690,7 +690,15 @@ public class ListProvider {
       .execute(parameters)
       .compose(
         res -> Future.succeededFuture(),
-        err -> Future.failedFuture(new InternalException("Delete list by guid error with the sql.\n" + deleteSql, err))
+        err -> {
+          Throwable cause;
+          if (this.apiApp.addDebugInfo()) {
+            cause = new InternalException("SQL executed:\n" + deleteSql, err);
+          } else {
+            cause = err;
+          }
+          return Future.failedFuture(new InternalException("Could not delete the list by id. Error: " + err.getMessage(), cause));
+        }
       );
   }
 
@@ -717,7 +725,15 @@ public class ListProvider {
       .execute(parameters)
       .compose(
         res -> Future.succeededFuture(),
-        err -> Future.failedFuture(new InternalException("Delete list by handle error with the sql.\n" + deleteSql, err))
+        err -> {
+          Throwable cause;
+          if (this.apiApp.addDebugInfo()) {
+            cause = new InternalException("SQL executed:\n" + deleteSql, err);
+          } else {
+            cause = err;
+          }
+          return Future.failedFuture(new InternalException("Could not delete the list by handle. Error: " + err.getMessage(), cause));
+        }
       );
 
   }
