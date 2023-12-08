@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * List creation  If the communication channel should be personal, the publisher (guid / email) can be given.
+ * List creation and update  If the communication channel should be personal, the publisher (guid / email) can be given.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListPostBody   {
+public class ListBody   {
 
 
   protected String listHandle;
@@ -22,8 +22,6 @@ public class ListPostBody   {
 
   protected String ownerAppIdentifier;
 
-  protected String realmIdentifier;
-
   protected String ownerUserIdentifier;
 
   /**
@@ -32,7 +30,7 @@ public class ListPostBody   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListPostBody () {
+  public ListBody () {
   }
 
   /**
@@ -116,22 +114,6 @@ public class ListPostBody   {
   }
 
   /**
-  * @return realmIdentifier the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
-  */
-  @JsonProperty("realmIdentifier")
-  public String getRealmIdentifier() {
-    return realmIdentifier;
-  }
-
-  /**
-  * @param realmIdentifier the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
-  */
-  @SuppressWarnings("unused")
-  public void setRealmIdentifier(String realmIdentifier) {
-    this.realmIdentifier = realmIdentifier;
-  }
-
-  /**
   * @return ownerUserIdentifier if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
   */
   @JsonProperty("ownerUserIdentifier")
@@ -156,18 +138,18 @@ public class ListPostBody   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListPostBody listPostBody = (ListPostBody) o;
-    return Objects.equals(listHandle, listPostBody.listHandle) && Objects.equals(realmIdentifier, listPostBody.realmIdentifier);
+    ListBody listBody = (ListBody) o;
+    return Objects.equals(listHandle, listBody.listHandle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(listHandle, realmIdentifier);
+    return Objects.hash(listHandle);
   }
 
   @Override
   public String toString() {
-    return listHandle + ", " + realmIdentifier;
+    return listHandle;
   }
 
 }

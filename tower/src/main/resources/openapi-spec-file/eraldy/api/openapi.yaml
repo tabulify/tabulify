@@ -1031,11 +1031,72 @@ paths:
       tags:
       - list
       x-accepts: application/json
-  /list:
-    post:
-      operationId: listPost
+    patch:
+      operationId: listListPatch
+      parameters:
+      - description: |
+          The list identifier (handle or guid)
+          If an handle is given, a realm identifier should be given.
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: "[\"lis-xjkkLmi\",\"mylisthandle\"]"
+          type: string
+        style: simple
+      - description: |
+          A realm identifier (handle or guid)
+          The realm identifier is mandatory if a list handle was given as identifier
+        explode: true
+        in: query
+        name: realmIdentifier
+        required: false
+        schema:
+          type: string
+        style: form
       requestBody:
-        $ref: '#/components/requestBodies/ListPostBody'
+        $ref: '#/components/requestBodies/ListBody'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListItem'
+          description: Ok
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: |
+        Update a list
+      tags:
+      - list
+      x-content-type: application/json
+      x-accepts: application/json
+  /app/{appIdentifier}/list:
+    post:
+      operationId: appAppListPost
+      parameters:
+      - description: An app guid or handle
+        explode: false
+        in: path
+        name: appIdentifier
+        required: true
+        schema:
+          example: "[\"app-xjkkLmi\",\"doe.com\"]"
+          type: string
+        style: simple
+      - description: A realm identifier (a guid or handle). Mandatory if the app identifier
+          is not a guid
+        explode: true
+        in: query
+        name: realmIdentifier
+        required: false
+        schema:
+          type: string
+        style: form
+      requestBody:
+        $ref: '#/components/requestBodies/ListBody'
       responses:
         "200":
           content:
@@ -1048,7 +1109,7 @@ paths:
       - cookieAuth: []
       summary: Create a list where users can register
       tags:
-      - list
+      - app
       x-content-type: application/json
       x-accepts: application/json
   /lists:
@@ -1626,15 +1687,15 @@ components:
             $ref: '#/components/schemas/UserPostBody'
       description: The data needed to create / modify a user
       required: true
-    ListPostBody:
+    ListBody:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListPostBody'
+            $ref: '#/components/schemas/ListBody'
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListPostBody'
-      description: The data needed to create a list
+            $ref: '#/components/schemas/ListBody'
+      description: The data needed to create or update a list
       required: true
   schemas:
     AuthEmailPost:
@@ -2921,19 +2982,18 @@ components:
       x-fields-to-string:
       - guid
       - handle
-    ListPostBody:
+    ListBody:
       description: |
-        List creation
+        List creation and update
 
         If the communication channel should be personal, the publisher (guid / email) can be given.
       example:
         listTitle: The top Newsletters
         ownerUserIdentifier: "[\"john@doe.com\",\"usr-xklls\"]"
         listHandle: Newsletter
-        ownerAppIdentifier: doe.com
+        ownerAppIdentifier: "[\"doe.com\",\"app-xkllsd\"]"
         listName: Newsletters
         listDescription: The last news ....
-        realmIdentifier: realmIdentifier
       properties:
         listHandle:
           description: A unique name / code for the list
@@ -2953,11 +3013,7 @@ components:
           type: string
         ownerAppIdentifier:
           description: A owner app identifier (handle or guid)
-          example: doe.com
-          type: string
-        realmIdentifier:
-          description: "the realm identifier (guid or handle), needed if the handle\
-            \ are used, ie user email or app uri"
+          example: "[\"doe.com\",\"app-xkllsd\"]"
           type: string
         ownerUserIdentifier:
           description: "if the communication channel is personal and not transactional,\
@@ -2966,15 +3022,11 @@ components:
           type: string
       required:
       - listHandle
-      - ownerAppIdentifier
-      - realmIdentifier
       type: object
       x-fields-to-string:
       - listHandle
-      - realmIdentifier
       x-fields-identity:
       - listHandle
-      - realmIdentifier
     ListSummary:
       description: A list summary
       example:

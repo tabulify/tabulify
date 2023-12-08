@@ -26,14 +26,14 @@ public interface ListApi  {
     Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
+     * Update a list
+    */
+    Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier);
+
+    /**
      * List the registrations for a list
     */
     Future<ApiResponse<List<RegistrationShort>>> listListRegistrationsGet(RoutingContext routingContext, String listIdentifier, Long pageSize, Long pageId, String searchTerm);
-
-    /**
-     * Create a list where users can register
-    */
-    Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody listPostBody);
 
     /**
      * Shows a confirmation page for the registration

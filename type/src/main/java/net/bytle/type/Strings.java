@@ -2,6 +2,7 @@ package net.bytle.type;
 
 
 import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -79,7 +80,13 @@ public class Strings {
      * system.
      */
     InputStream resource = aClass.getResourceAsStream(path);
-    assert resource != null;
+    if (resource == null) {
+      /**
+       * We don't throw an exception to manage because
+       * the path is normally given in a code as a literal
+       */
+      throw new InternalException("The resource path (" + path + ") was not found");
+    }
     String s = new BufferedReader(new InputStreamReader(resource))
       .lines()
       .collect(Collectors.joining(EOL));

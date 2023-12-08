@@ -9,6 +9,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.AppPostBody;
+import net.bytle.tower.eraldy.model.openapi.ListBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +24,32 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
+    builder.operation("appAppListPost").handler(this::appAppListPost);
     builder.operation("appGet").handler(this::appGet);
     builder.operation("appPost").handler(this::appPost);
     builder.operation("appsGet").handler(this::appsGet);
 }
+
+    private void appAppListPost(RoutingContext routingContext) {
+    logger.info("appAppListPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String appIdentifier = requestParameters.pathParameter("appIdentifier") != null ? requestParameters.pathParameter("appIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  ListBody listBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListBody>(){}) : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
+
+      logger.debug("Parameter appIdentifier is {}", appIdentifier);
+      logger.debug("Parameter listBody is {}", listBody);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.appAppListPost(routingContext, appIdentifier, listBody, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
 
     private void appGet(RoutingContext routingContext) {
     logger.info("appGet()");

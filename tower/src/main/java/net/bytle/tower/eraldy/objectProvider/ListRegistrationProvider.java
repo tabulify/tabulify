@@ -20,6 +20,7 @@ import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
+import net.bytle.type.Strings;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.JdbcSchemaManager;
@@ -40,8 +41,7 @@ public class ListRegistrationProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ListRegistrationProvider.class);
 
   static final String TABLE_NAME = "realm_list_registration";
-
-
+  static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String REGISTRATION_PREFIX = "registration";
   public static final String STATUS_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "status";
@@ -56,7 +56,8 @@ public class ListRegistrationProvider {
   private static final String CREATION_TIME_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
   private static final String MODIFICATION_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
-  private ObjectMapper apiMapper;
+  private final String registrationsBySearchTermSql;
+  private final ObjectMapper apiMapper;
 
 
   public ListRegistrationProvider(EraldyApiApp apiApp) {
@@ -70,6 +71,13 @@ public class ListRegistrationProvider {
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
       .addMixIn(ListItem.class, ListItemMixin.class)
       .build();
+
+    // the sql too big to handle in Java
+    String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
+    this.registrationsBySearchTermSql = Strings.createFromResource(ListRegistrationProvider.class, registrationPath).toString();
+    if(this.registrationsBySearchTermSql==null){
+      throw new InternalException("The registration by search sql was not found in the resource path ("+registrationPath+")");
+    }
 
   }
 
@@ -333,38 +341,58 @@ public class ListRegistrationProvider {
       return Future.failedFuture(e);
     }
 
-    /**
-     * The query on the whole set
-     * (without search term)
-     */
-    String emptySearchTermSql = "SELECT registration_pages.registration_creation_time,\n" +
-      "       registration_pages.registration_user_id,\n" +
-      "       realm_user.user_email as subscriber_email\n" +
-      "FROM (select *\n" +
-      "      from (SELECT ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,\n" +
-      "                   *\n" +
-      "            FROM cs_realms.realm_list_registration registration\n" +
-      "            where registration.registration_realm_id = $1\n" +
-      "              AND registration.registration_list_id = $2) registration\n" +
-      "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
-      "        and rn < $5::BIGINT * $6::BIGINT + 1" +
-      "       ) registration_pages\n" +
-      "         JOIN cs_realms.realm_user realm_user\n" +
-      "              on registration_pages.registration_user_id = realm_user.user_id\n" +
-      "                  and registration_pages.registration_realm_id = realm_user.user_realm_id\n" +
-      "        order by registration_pages.registration_creation_time desc";
 
     long realmId = guid.getRealmOrOrganizationId();
     long listId = guid.validateRealmAndGetFirstObjectId(realmId);
-    return jdbcPool.preparedQuery(emptySearchTermSql)
-      .execute(Tuple.of(
+    String sql;
+    Tuple sqlParameters;
+    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+
+      sql = this.registrationsBySearchTermSql;
+      sqlParameters = Tuple.of(
+        realmId,
+        "%" + searchTerm + "%",
+        listId,
+        pageSize,
+        pageId,
+        pageSize,
+        pageId + 1
+      );
+
+    } else {
+      /**
+       * The query on the whole set
+       * (without search term)
+       */
+      sql = "SELECT registration_pages.registration_creation_time,\n" +
+        "       registration_pages.registration_user_id as user_id,\n" +
+        "       realm_user.user_email as user_email\n" +
+        "FROM (select *\n" +
+        "      from (SELECT ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,\n" +
+        "                   *\n" +
+        "            FROM cs_realms.realm_list_registration registration\n" +
+        "            where registration.registration_realm_id = $1\n" +
+        "              AND registration.registration_list_id = $2) registration\n" +
+        "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
+        "        and rn < $5::BIGINT * $6::BIGINT + 1" +
+        "       ) registration_pages\n" +
+        "         JOIN cs_realms.realm_user realm_user\n" +
+        "              on registration_pages.registration_user_id = realm_user.user_id\n" +
+        "                  and registration_pages.registration_realm_id = realm_user.user_realm_id\n" +
+        "        order by registration_pages.registration_creation_time desc";
+      sqlParameters = Tuple.of(
         realmId,
         listId,
         pageSize,
         pageId,
         pageSize,
         pageId + 1
-      ))
+      );
+    }
+
+
+    return jdbcPool.preparedQuery(sql)
+      .execute(sqlParameters)
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(registrationRows -> {
 
@@ -376,11 +404,12 @@ public class ListRegistrationProvider {
         for (Row row : registrationRows) {
 
           RegistrationShort registrationShort = new RegistrationShort();
-          Long userId = row.getLong(USER_ID_COLUMN);
+          String userIdAliasInQuery = "user_id";
+          Long userId = row.getLong(userIdAliasInQuery);
           String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
           registrationShort.setGuid(guidString);
-          String subscriberEmailAliasInQuery = "subscriber_email";
-          String subscriberEmail = row.getString(subscriberEmailAliasInQuery);
+          String userEmailAliasInQuery = "user_email";
+          String subscriberEmail = row.getString(userEmailAliasInQuery);
           registrationShort.setSubscriberEmail(subscriberEmail);
           LocalDateTime localDateTime = row.getLocalDateTime(CREATION_TIME_COLUMN);
           registrationShort.setConfirmationTime(localDateTime);

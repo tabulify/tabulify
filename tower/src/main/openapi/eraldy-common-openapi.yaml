@@ -526,22 +526,18 @@ components:
         listGuid:
           type: string
           description: The list audience (the valid subscribers to the list)
-    ListPostBody:
+    ListBody:
       type: object
       x-fields-to-string:
         - listHandle
-        - realmIdentifier
       x-fields-identity: # hashCode and equality
         - listHandle
-        - realmIdentifier
       description: |
-        List creation
+        List creation and update
 
         If the communication channel should be personal, the publisher (guid / email) can be given.
       required:
         - listHandle
-        - realmIdentifier
-        - ownerAppIdentifier
       properties:
         listHandle:
           type: string
@@ -562,10 +558,9 @@ components:
         ownerAppIdentifier:
           description: A owner app identifier (handle or guid)
           type: string
-          example: "doe.com"
-        realmIdentifier:
-          description: the realm identifier (guid or handle), needed if the handle are used, ie user email or app uri
-          type: string
+          example:
+            - "doe.com"
+            - "app-xkllsd"
         ownerUserIdentifier:
           description: if the communication channel is personal and not transactional, a user identifier (email or guid) of the publisher
           type: string
@@ -982,16 +977,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CampaignEmailPostBody'
-    ListPostBody:
-      description: The data needed to create a list
+    ListBody:
+      description: The data needed to create or update a list
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListPostBody'
+            $ref: '#/components/schemas/ListBody'
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListPostBody'
+            $ref: '#/components/schemas/ListBody'
     AppPostBody:
       description: The data needed to create / modify a app
       required: true

@@ -185,13 +185,24 @@ public class ListApiImpl implements ListApi {
 
   @Override
   public Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+
+    return this.getListByIdentifier(routingContext, AuthScope.LIST_GET)
+      .compose(registrationList -> {
+        ApiResponse<ListItem> apiResult = new ApiResponse<>(registrationList)
+          .setMapper(this.apiApp.getListProvider().getApiMapper());
+        return Future.succeededFuture(apiResult);
+      });
+  }
+
+  private Future<ListItem> getListByIdentifier(RoutingContext routingContext, AuthScope scope) {
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    String listIdentifier;
     try {
       listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
     } catch (NotFoundException e) {
       return Future.failedFuture(e);
     }
-    realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
+    String realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
     ListProvider listProvider = apiApp.getListProvider();
     RealmProvider realmProvider = apiApp.getRealmProvider();
     Guid listGuid = null;
@@ -212,7 +223,7 @@ public class ListApiImpl implements ListApi {
     Guid finalListGuid = listGuid;
     String finalListIdentifier = listIdentifier;
     return futureRealm
-      .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_GET))
+      .compose(realm -> apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, scope))
       .compose(realm -> {
         Future<ListItem> listFuture;
         if (finalListGuid != null) {
@@ -221,43 +232,14 @@ public class ListApiImpl implements ListApi {
           listFuture = listProvider.getListByHandle(finalListIdentifier, realm);
         }
         return listFuture;
-      })
-      .compose(registrationList -> {
-        ApiResponse<ListItem> apiResult = new ApiResponse<>(registrationList).setMapper(this.apiApp.getListProvider().getApiMapper());
-        return Future.succeededFuture(apiResult);
       });
   }
 
   @Override
-  public Future<ApiResponse<ListItem>> listPost(RoutingContext routingContext, ListPostBody publicationPost) {
+  public Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
 
-    String realmIdentifier = publicationPost.getRealmIdentifier();
-    if (realmIdentifier == null) {
-      throw ValidationException.create("An realm identifier (handle or guid) should be given", "realmIdentifier", null);
-    }
-    return this.apiApp.getRealmProvider()
-      .getRealmFromIdentifier(realmIdentifier)
-      .compose(realm -> {
-
-        if (realm == null) {
-          return Future.failedFuture(
-            TowerFailureException.builder()
-              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-              .setMessage("The realm (" + realmIdentifier + ") was not found")
-              .build()
-          );
-        }
-
-        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_CREATION);
-      })
-      .compose(futureRealm -> {
-        ListProvider listProvider = apiApp.getListProvider();
-        return listProvider
-          .postList(publicationPost, futureRealm)
-          .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-          .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
-      });
-
+    return this.getListByIdentifier(routingContext,AuthScope.LIST_PATCH)
+      .compose(realm -> Future.succeededFuture());
 
   }
 

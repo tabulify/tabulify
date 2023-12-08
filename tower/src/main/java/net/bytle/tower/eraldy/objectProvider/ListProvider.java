@@ -449,53 +449,28 @@ public class ListProvider {
    * @return the list created
    */
 
-  public Future<ListItem> postList(ListPostBody listPostBody, Realm realm) {
-
-
-    /**
-     * App
-     */
-    Future<App> futureApp;
-    String publisherAppIdentifier = listPostBody.getOwnerAppIdentifier();
-    AppProvider appProvider = apiApp.getAppProvider();
-    if (publisherAppIdentifier == null) {
-      throw ValidationException.create("An app identifier (handle or guid) should be given", "appIdentifier", null);
-    }
-    if (appProvider.isGuid(publisherAppIdentifier)) {
-      futureApp = appProvider
-        .getAppByGuid(publisherAppIdentifier);
-    } else {
-
-      futureApp = appProvider
-        .getAppByHandle(publisherAppIdentifier, realm);
-
-    }
+  public Future<ListItem> postList(ListBody listPostBody, App app) {
 
 
     /**
      * User
      */
     String ownerIdentifier = listPostBody.getOwnerUserIdentifier();
-
     Future<User> futureUser = Future.succeededFuture(null);
     if (ownerIdentifier != null) {
       UserProvider userProvider = apiApp.getUserProvider();
-      futureUser = userProvider.getUserFromIdentifier(ownerIdentifier, realm);
+      futureUser = userProvider.getUserFromIdentifier(ownerIdentifier, app.getRealm());
     }
 
-    return Future
-      .all(futureApp, futureUser)
-      .onFailure(FailureStatic::failFutureWithTrace)
-      .compose(successMapper -> {
-        App app = successMapper.resultAt(0);
-        User user = successMapper.resultAt(1);
+    return futureUser
+      .compose(user -> {
         ListItem listItem = new ListItem();
         listItem.setRealm(app.getRealm());
         listItem.setName(listPostBody.getListName());
         listItem.setTitle(listPostBody.getListTitle());
         listItem.setDescription(listPostBody.getListDescription());
         listItem.setHandle(listPostBody.getListHandle());
-        listItem.setOwnerUser(user);
+        listItem.setOwnerUser(user); // may be null
         listItem.setOwnerApp(app);
         return this.insertList(listItem);
       });

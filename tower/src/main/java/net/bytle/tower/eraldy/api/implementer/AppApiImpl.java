@@ -5,6 +5,7 @@ import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.CastException;
+import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.openapi.interfaces.AppApi;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -12,16 +13,11 @@ import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.model.openapi.App;
-import net.bytle.tower.eraldy.model.openapi.AppPostBody;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AppProvider;
+import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.tower.util.Guid;
-import net.bytle.vertx.FailureStatic;
-import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.*;
 
 public class AppApiImpl implements AppApi {
 
@@ -36,6 +32,68 @@ public class AppApiImpl implements AppApi {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .build();
+  }
+
+  @Override
+  public Future<ApiResponse<ListItem>> appAppListPost(RoutingContext routingContext, String appIdentifier, ListBody listBody, String realmIdentifier) {
+
+    RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
+    try {
+      appIdentifier = routingContextWrapper.getRequestPathParameter("appIdentifier").getString();
+    } catch (NotFoundException e) {
+      throw ValidationException.create("An app identifier (handle or guid) should be given", "appIdentifier", null);
+    }
+    realmIdentifier = routingContextWrapper.getRequestQueryParameterAsString("realmIdentifier");
+    Future<Realm> realmFuture;
+    Guid guid = null;
+    try {
+      guid = this.apiApp.getAppProvider().getGuid(appIdentifier);
+      realmFuture = this.apiApp.getRealmProvider().getRealmFromId(guid.getRealmOrOrganizationId());
+    } catch (CastException e) {
+      if (realmIdentifier == null) {
+        throw ValidationException.create("An realm identifier (handle or guid) should be given when the app identifier (" + appIdentifier + ") is a handle", "realmIdentifier", null);
+      }
+      realmFuture = this.apiApp.getRealmProvider().getRealmFromIdentifier(realmIdentifier);
+    }
+
+    Guid finalGuid = guid;
+    String finalAppIdentifier = appIdentifier;
+    String finalRealmIdentifier = realmIdentifier;
+    return realmFuture
+      .compose(realm -> {
+
+        if (realm == null) {
+          String message;
+          if (finalGuid != null) {
+            message = "The realm for the app (" + finalAppIdentifier + ") was not found";
+          } else {
+            message = "The realm (" + finalRealmIdentifier + ") was not found";
+          }
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+              .setMessage(message)
+              .build()
+          );
+        }
+
+        return apiApp.getAuthProvider().checkRealmAuthorization(routingContext, realm, AuthScope.LIST_CREATION);
+      })
+      .compose(futureRealm -> {
+        if (finalGuid != null) {
+          return this.apiApp.getAppProvider().getAppById(finalGuid.validateRealmAndGetFirstObjectId(futureRealm.getLocalId()),futureRealm);
+        }
+        return this.apiApp.getAppProvider().getAppByHandle(finalAppIdentifier, futureRealm);
+      })
+      .compose(futureApp -> {
+        ListProvider listProvider = apiApp.getListProvider();
+        return listProvider
+          .postList(listBody, futureApp)
+          .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
+          .compose(publication -> Future.succeededFuture(new ApiResponse<>(publication).setMapper(listProvider.getApiMapper())));
+      });
+
+
   }
 
   @Override
@@ -105,7 +163,6 @@ public class AppApiImpl implements AppApi {
           .setMapper(this.apiMapper));
       });
   }
-
 
 
   @Override

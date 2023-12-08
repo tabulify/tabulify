@@ -9,7 +9,7 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.model.openapi.ListPostBody;
+import net.bytle.tower.eraldy.model.openapi.ListBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +27,8 @@ public void mount(RouterBuilder builder) {
     builder.operation("listImportPost").handler(this::listImportPost);
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
+    builder.operation("listListPatch").handler(this::listListPatch);
     builder.operation("listListRegistrationsGet").handler(this::listListRegistrationsGet);
-    builder.operation("listPost").handler(this::listPost);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
     builder.operation("listRegistrationLetterConfirmationGet").handler(this::listRegistrationLetterConfirmationGet);
@@ -92,6 +92,27 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
+    private void listListPatch(RoutingContext routingContext) {
+    logger.info("listListPatch()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+  RequestParameter requestParameterBody = requestParameters.body();
+  ListBody listBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListBody>(){}) : null;
+        String realmIdentifier = requestParameters.queryParameter("realmIdentifier") != null ? requestParameters.queryParameter("realmIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter listBody is {}", listBody);
+      logger.debug("Parameter realmIdentifier is {}", realmIdentifier);
+
+    // Based on Route#respond
+    api.listListPatch(routingContext, listIdentifier, listBody, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
     private void listListRegistrationsGet(RoutingContext routingContext) {
     logger.info("listListRegistrationsGet()");
 
@@ -110,23 +131,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListRegistrationsGet(routingContext, listIdentifier, pageSize, pageId, searchTerm)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listPost(RoutingContext routingContext) {
-    logger.info("listPost()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-      RequestParameter requestParameterBody = requestParameters.body();
-  ListPostBody listPostBody = requestParameterBody != null ? DatabindCodec.mapper().convertValue(requestParameterBody.get(), new TypeReference<ListPostBody>(){}) : null;
-
-      logger.debug("Parameter listPostBody is {}", listPostBody);
-
-    // Based on Route#respond
-    api.listPost(routingContext, listPostBody)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
