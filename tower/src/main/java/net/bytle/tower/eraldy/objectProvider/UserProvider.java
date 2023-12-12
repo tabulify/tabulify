@@ -356,7 +356,7 @@ public class UserProvider {
    * @param realm      - the realmId
    * @param pageId     - the page identifier
    * @param pageSize   - the page size
-   * @param searchTerm
+   * @param searchTerm - the search term (for now works only on email search)
    * @return the realm
    */
   public Future<List<User>> getUsers(Realm realm, Long pageId, Long pageSize, String searchTerm) {
@@ -605,7 +605,7 @@ public class UserProvider {
     if (identifier == null) {
       identifier = userEmail;
     }
-    return getUserFromIdentifier(identifier, realm);
+    return getUserByIdentifier(identifier, realm);
   }
 
   public <T extends User> Future<T> getUserByGuid(String guid, Class<T> userClass, Realm realm) {
@@ -837,15 +837,17 @@ public class UserProvider {
     return identifier.startsWith(USR_GUID_PREFIX + Guid.GUID_SEPARATOR);
   }
 
-  public Future<User> getUserFromIdentifier(String ownerIdentifier, Realm realm) {
+  public Future<User> getUserByIdentifier(String identifier, Realm realm) {
 
-    if (this.isGuid(ownerIdentifier)) {
-      return getUserByGuid(ownerIdentifier, User.class, realm);
+    if (this.isGuid(identifier)) {
+      return getUserByGuid(identifier, User.class, realm);
     } else {
       if (realm == null) {
-        return Future.failedFuture(new InternalException("With a user email (" + ownerIdentifier + ") as user identifer, the realm should be provided"));
+        return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifer, the realm should be provided"));
       }
-      return getUserByEmail(ownerIdentifier, realm.getLocalId(), User.class, realm);
+      return getUserByEmail(identifier, realm.getLocalId(), User.class, realm);
     }
   }
+
+
 }

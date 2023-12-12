@@ -210,7 +210,7 @@ public class ListProvider {
           .compose(rows -> Future.succeededFuture(listItem)));
   }
 
-  private Future<ListItem> updateList(ListItem listItem) {
+  public Future<ListItem> updateList(ListItem listItem) {
 
     if (listItem.getRealm() == null) {
       InternalException internalException = new InternalException("The realm is null. You can't update a list without a realm");
@@ -459,7 +459,7 @@ public class ListProvider {
     Future<User> futureUser = Future.succeededFuture(null);
     if (ownerIdentifier != null) {
       UserProvider userProvider = apiApp.getUserProvider();
-      futureUser = userProvider.getUserFromIdentifier(ownerIdentifier, app.getRealm());
+      futureUser = userProvider.getUserByIdentifier(ownerIdentifier, app.getRealm());
     }
 
     return futureUser

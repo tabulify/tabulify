@@ -238,8 +238,53 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<ListItem>> listListPatch(RoutingContext routingContext, String listIdentifier, ListBody listBody, String realmIdentifier) {
 
-    return this.getListByIdentifier(routingContext,AuthScope.LIST_PATCH)
-      .compose(realm -> Future.succeededFuture());
+    return this.getListByIdentifier(routingContext, AuthScope.LIST_PATCH)
+      .compose(list -> {
+        String listHandle = listBody.getListHandle();
+        if (listHandle != null) {
+          list.setHandle(listHandle);
+        }
+        String listName = listBody.getListName();
+        if (listName != null) {
+          list.setName(listName);
+        }
+        String listTitle = listBody.getListTitle();
+        if (listTitle != null) {
+          list.setTitle(listTitle);
+        }
+        String listDescription = listBody.getListDescription();
+        if (listDescription != null) {
+          list.setDescription(listDescription);
+        }
+        String ownerIdentifier = listBody.getOwnerUserIdentifier();
+        Future<User> futureOwner;
+        User actualOwnerUser = list.getOwnerUser();
+        if (ownerIdentifier != null) {
+          if(ownerIdentifier.isEmpty()){
+            futureOwner = Future.succeededFuture(null);
+          } else {
+            Future<User> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm());
+            if (actualOwnerUser == null) {
+              futureOwner = futureOwnerByIdentifier;
+            } else if (!(actualOwnerUser.getGuid().equals(ownerIdentifier) || actualOwnerUser.getEmail().equals(ownerIdentifier))) {
+              futureOwner = futureOwnerByIdentifier;
+            } else {
+              futureOwner = Future.succeededFuture(actualOwnerUser);
+            }
+          }
+        } else {
+          futureOwner = Future.succeededFuture(actualOwnerUser);
+        }
+        return futureOwner
+          .compose(newOwner -> {
+            list.setOwnerUser(newOwner);
+            ListProvider listProvider = this.apiApp.getListProvider();
+            return listProvider
+              .updateList(list)
+              .compose(updatedList -> Future.succeededFuture(new ApiResponse<>(updatedList).setMapper(listProvider.getApiMapper())));
+          });
+
+      });
 
   }
 
