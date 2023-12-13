@@ -123,7 +123,13 @@ public enum AuthUserJwtClaims {
    * The subject avatar
    */
   CUSTOM_SUBJECT_AVATAR("subAvatar"),
-  CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName");
+  CUSTOM_SUBJECT_FAMILY_NAME("subFamilyName"),
+  /**
+   * The group is the group id at the organizational level
+   * For us, this is the organization level
+   */
+  CUSTOM_GROUP("group");
+
   private final String jwtKey;
 
   AuthUserJwtClaims(String jwtKey) {

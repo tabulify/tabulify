@@ -5,7 +5,14 @@ import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 
+import java.util.List;
+
 public interface OrganizationApi  {
+
+    /**
+     * Get the users of the organization
+    */
+    Future<ApiResponse<List<OrganizationUser>>> orgaOrgaUsersGet(RoutingContext routingContext, String orgaIdentifier);
 
     /**
      * Get the authenticated user and its organization

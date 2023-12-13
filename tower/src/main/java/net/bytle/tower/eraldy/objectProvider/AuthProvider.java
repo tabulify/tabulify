@@ -328,15 +328,18 @@ public class AuthProvider {
 
   /**
    * @param user - the user
-   * @return an base auth user (that can be used as claims in order to create a token or to create an auth user for a session)
+   * @return a base auth user (that can be used as claims in order to create a token or to create an auth user for a session)
    */
-  public AuthUser toAuthUser(User user) {
+  public <T extends User> AuthUser toAuthUser(T user) {
     AuthUser authUserClaims = new AuthUser();
     authUserClaims.setSubject(user.getGuid());
     authUserClaims.setSubjectHandle(user.getHandle());
     authUserClaims.setSubjectEmail(user.getEmail());
     authUserClaims.setAudience(user.getRealm().getGuid());
     authUserClaims.setAudienceHandle(user.getRealm().getHandle());
+    if(user instanceof OrganizationUser){
+      authUserClaims.setGroup(((OrganizationUser) user).getOrganization().getGuid());
+    }
     return authUserClaims;
   }
 
@@ -402,6 +405,31 @@ public class AuthProvider {
           .compose(patchUser -> toAuthUserForSession(patchUser)
             .compose(Future::succeededFuture)
           );
+      });
+  }
+
+
+  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthScope authScope){
+    return this.getSignedInAuthUserOrFail(routingContext)
+      .compose(signedInUser -> {
+        String signedInUserGroup = signedInUser.getGroup();
+        if(signedInUserGroup==null){
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+              .setMessage("Authenticated User (" + signedInUser + ") is not an organizational user. Scope: " + authScope)
+              .build()
+          );
+        }
+        if (!signedInUserGroup.contains(requestedOrgGuid)) {
+          return Future.failedFuture(
+            TowerFailureException.builder()
+              .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)
+              .setMessage("Authenticated User (" + signedInUser + ") has no permission on the requested organization (" + requestedOrgGuid + "). Scope: " + authScope)
+              .build()
+          );
+        }
+        return Future.succeededFuture();
       });
   }
 }

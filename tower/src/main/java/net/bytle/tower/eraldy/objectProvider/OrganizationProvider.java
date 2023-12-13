@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
@@ -89,5 +90,9 @@ public class OrganizationProvider {
     return apiApp.createGuidFromObjectId(GUID_PREFIX, organization.getLocalId());
   }
 
+
+  public Guid createGuid(String guid) throws CastException {
+    return apiApp.createGuidFromHashWithOneId(GUID_PREFIX,guid);
+  }
 
 }

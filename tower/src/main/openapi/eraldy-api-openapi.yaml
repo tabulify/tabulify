@@ -951,6 +951,36 @@ paths:
           description: Not logged in
         '403':
           description: Logged in but the authenticated user is not the member of an organization
+  /organization/{orgaIdentifier}/users:
+    get:
+      operationId: "orgaOrgaUsersGet"
+      summary: "Get the users of the organization"
+      tags:
+        - organization
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: orgaIdentifier
+          description: "A organization identifier (a guid or a handle)"
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "org-xjkkLmi"
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/OrganizationUser'
+        '401':
+          description: Not logged in
+        '403':
+          description: Logged in but the authenticated user is not the member of an organization
   /email/address/{address}/validate:
     get:
       operationId: "emailAddressAddressValidateGet"

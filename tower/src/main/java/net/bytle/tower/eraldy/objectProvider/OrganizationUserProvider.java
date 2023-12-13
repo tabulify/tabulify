@@ -9,12 +9,15 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
 
@@ -141,4 +144,7 @@ public class OrganizationUserProvider {
     }
   }
 
+  public Future<List<OrganizationUser>> getOrgUsers(Organization organization) {
+    return Future.failedFuture("Not Yet implemented");
+  }
 }

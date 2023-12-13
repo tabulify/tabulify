@@ -919,6 +919,40 @@ paths:
       tags:
       - organization
       x-accepts: application/json
+  /organization/{orgaIdentifier}/users:
+    get:
+      operationId: orgaOrgaUsersGet
+      parameters:
+      - description: A organization identifier (a guid or a handle)
+        explode: false
+        in: path
+        name: orgaIdentifier
+        required: true
+        schema:
+          example: org-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrganizationUser'
+                type: array
+          description: Ok
+        "401":
+          description: Not logged in
+        "403":
+          description: Logged in but the authenticated user is not the member of an
+            organization
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: Get the users of the organization
+      tags:
+      - organization
+      x-accepts: application/json
   /email/address/{address}/validate:
     get:
       description: |
