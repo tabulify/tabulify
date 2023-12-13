@@ -37,7 +37,7 @@ public class OrganizationApiImpl implements OrganizationApi {
   }
 
   @Override
-  public Future<ApiResponse<List<OrganizationUser>>> orgaOrgaUsersGet(RoutingContext routingContext, String orgaIdentifier) {
+  public Future<ApiResponse<List<User>>> orgaOrgaUsersGet(RoutingContext routingContext, String orgaIdentifier) {
 
     Guid guid;
     try {

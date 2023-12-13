@@ -9,6 +9,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthScope;
+import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
@@ -337,8 +338,13 @@ public class AuthProvider {
     authUserClaims.setSubjectEmail(user.getEmail());
     authUserClaims.setAudience(user.getRealm().getGuid());
     authUserClaims.setAudienceHandle(user.getRealm().getHandle());
-    if(user instanceof OrganizationUser){
-      authUserClaims.setGroup(((OrganizationUser) user).getOrganization().getGuid());
+    if (user instanceof OrganizationUser) {
+      Organization organization = ((OrganizationUser) user).getOrganization();
+      // An organization user object is
+      // a Eraldy user with or without an organization
+      if (organization != null) {
+        authUserClaims.setGroup(organization.getGuid());
+      }
     }
     return authUserClaims;
   }
@@ -409,11 +415,11 @@ public class AuthProvider {
   }
 
 
-  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthScope authScope){
+  public Future<Void> checkOrgAuthorization(RoutingContext routingContext, String requestedOrgGuid, AuthScope authScope) {
     return this.getSignedInAuthUserOrFail(routingContext)
       .compose(signedInUser -> {
         String signedInUserGroup = signedInUser.getGroup();
-        if(signedInUserGroup==null){
+        if (signedInUserGroup == null) {
           return Future.failedFuture(
             TowerFailureException.builder()
               .setType(TowerFailureTypeEnum.NOT_AUTHORIZED_403)

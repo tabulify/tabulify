@@ -326,7 +326,6 @@ public class RealmProvider {
   private JsonObject getRealmAsJsonObject(Realm realm) {
     JsonObject data = JsonObject.mapFrom(realm);
     data.remove(Guid.GUID);
-    data.remove(RealmManagerProvider.OWNER_KEY);
     return data;
   }
 

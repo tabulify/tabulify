@@ -6,7 +6,6 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
 import net.bytle.tower.EraldyRealm;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.Organization;
@@ -17,6 +16,7 @@ import net.bytle.vertx.JdbcSchemaManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
@@ -64,11 +64,11 @@ public class OrganizationUserProvider {
   }
 
 
-
   /**
    * Take a OrganizationUser that was created as a child user object
    * and add organization information only such as the organization object from the database
-   * @param organizationUser  - the organization user to add extra info
+   *
+   * @param organizationUser - the organization user to add extra info
    */
   private Future<OrganizationUser> buildOrgUserFromDb(OrganizationUser organizationUser) {
 
@@ -89,11 +89,11 @@ public class OrganizationUserProvider {
           return Future.failedFuture(new InternalException("There is more than one orga user with the id (" + organizationUser.getLocalId() + ")"));
         }
         Row row = userRows.iterator().next();
-        return this.buildOrgaUserFromDatabaseRow(row, organizationUser);
+        return this.buildOrgaUserFromDatabaseRow(row, organizationUser, null);
       });
   }
 
-  private Future<OrganizationUser> buildOrgaUserFromDatabaseRow(Row row, OrganizationUser user) {
+  private Future<OrganizationUser> buildOrgaUserFromDatabaseRow(Row row, OrganizationUser user, Organization organization) {
 
     Future<OrganizationUser> futureUser;
     Long userId;
@@ -102,25 +102,31 @@ public class OrganizationUserProvider {
       userId = user.getLocalId();
     } else {
       userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
-      futureUser = this.getOrganizationUserById(userId);
+      futureUser = this.buildUserAsOrganizationUserById(userId);
     }
 
     return futureUser
-      .onFailure(t -> LOGGER.error("Error while getting the organization user", t))
-      .compose(userFromFuture -> {
+      .compose(
+        userFromFuture -> {
         if (userFromFuture == null) {
-          return Future.failedFuture(new NotFoundException("The organization user with the id (" + userId + ") was not found"));
+          return Future.failedFuture(new InternalException("The organization user with the id (" + userId + ") was not found"));
         }
+        Future<Organization> futureOrganization;
         Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
-        return apiApp
-          .getOrganizationProvider()
-          .getById(orgaId)
-          .onFailure(t -> LOGGER.error("Error while getting the organization", t))
-          .compose(organization -> {
-            if (organization == null) {
-              return Future.failedFuture(new NotFoundException("The organization with the id (" + orgaId + ") was not found"));
+        if(organization!=null){
+          futureOrganization = Future.succeededFuture(organization);
+        } else {
+          futureOrganization = apiApp
+            .getOrganizationProvider()
+            .getById(orgaId);
+        }
+        return futureOrganization
+
+          .compose(resOrganization -> {
+            if (resOrganization == null) {
+              return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
             }
-            userFromFuture.setOrganization(organization);
+            userFromFuture.setOrganization(resOrganization);
             userFromFuture.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
             userFromFuture.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
             return Future.succeededFuture(userFromFuture);
@@ -130,12 +136,17 @@ public class OrganizationUserProvider {
 
   }
 
-  public Future<OrganizationUser> getOrganizationUserById(Long userId) {
+  /**
+   * Build a  OrganizationUser object
+   * without organization data
+   */
+  private Future<OrganizationUser> buildUserAsOrganizationUserById(Long userId) {
 
-      Realm eraldyRealm = EraldyRealm.get().getRealm();
-      return this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
+    Realm eraldyRealm = EraldyRealm.get().getRealm();
+    return this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), OrganizationUser.class, eraldyRealm);
 
   }
+
 
   <T extends User> void checkOrganizationUserRealmId(Class<T> userClass, Long localId) throws AssertionException {
     if (userClass.equals(OrganizationUser.class) && !this.apiApp.isEraldyRealm(localId)) {
@@ -144,7 +155,29 @@ public class OrganizationUserProvider {
     }
   }
 
-  public Future<List<OrganizationUser>> getOrgUsers(Organization organization) {
-    return Future.failedFuture("Not Yet implemented");
+  public Future<List<User>> getOrgUsers(Organization organization) {
+    String sql = "SELECT * FROM " +
+      JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
+      " WHERE " + ORGA_USER_ORGA_ID_COLUMN + " = $1";
+    return jdbcPool.preparedQuery(sql)
+      .execute(Tuple.of(organization.getLocalId()))
+      .compose(
+        userRows -> {
+          List<Future<User>> users = new ArrayList<>();
+          Realm eraldyRealm = this.apiApp.getEraldyRealm();
+          for (Row row : userRows) {
+            Long userId = row.getLong(ORGA_USER_USER_ID_COLUMN);
+            users.add(this.apiApp.getUserProvider().getUserById(userId, eraldyRealm.getLocalId(), User.class, eraldyRealm));
+          }
+          // all: stop on the first failure
+          return Future.all(users);
+        },
+        err -> Future.failedFuture(new InternalException("Unable to get the org users for the organization (" + organization + "). Message:" + err.getMessage(), err))
+      )
+      .compose(
+        res -> Future.succeededFuture(res.list()),
+        err -> Future.failedFuture(new InternalException("Unable to build the org users for the organization (" + organization + "). Message:" + err.getMessage(), err))
+      );
+
   }
 }
