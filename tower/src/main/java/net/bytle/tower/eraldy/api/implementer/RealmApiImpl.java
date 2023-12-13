@@ -10,6 +10,7 @@ import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -54,9 +55,9 @@ public class RealmApiImpl implements RealmApi {
   public Future<ApiResponse<List<User>>> realmRealmUsersGet(RoutingContext routingContext, String realmIdentifier, Long pageSize, Long pageId, String searchTerm) {
 
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
-    pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize",10L);
-    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId",0L);
-    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm",null);
+    pageSize = routingContextWrapper.getRequestQueryParameterAsLong("pageSize", 10L);
+    pageId = routingContextWrapper.getRequestQueryParameterAsLong("pageId", 0L);
+    searchTerm = routingContextWrapper.getRequestQueryParameterAsString("searchTerm", null);
 
     UserProvider userProvider = apiApp.getUserProvider();
     Long finalPageId = pageId;
@@ -66,16 +67,16 @@ public class RealmApiImpl implements RealmApi {
       .getRealmFromIdentifier(realmIdentifier)
       .compose(
         realm -> userProvider.getUsers(realm, finalPageId, finalPageSize, finalSearchTerm),
-        err->Future.failedFuture(TowerFailureException.builder()
+        err -> Future.failedFuture(TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-          .setMessage("Realm could not be retrieved with the identifier "+realmIdentifier)
+          .setMessage("Realm could not be retrieved with the identifier " + realmIdentifier)
           .setCauseException(err)
           .build()
         )
       )
       .compose(
         users -> Future.succeededFuture(new ApiResponse<>(users).setMapper(userProvider.getApiMapper())),
-        err->Future.failedFuture(TowerFailureException.builder()
+        err -> Future.failedFuture(TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
           .setMessage("Users could not be retrieved")
           .setCauseException(err)
@@ -126,7 +127,7 @@ public class RealmApiImpl implements RealmApi {
       .getOrganizationUserByGuid(userGuid)
       .compose(user -> this.apiApp.getRealmProvider()
         .getRealmsForOwner(user, Realm.class)
-        .compose(realms -> Future.succeededFuture(new ApiResponse<>(realms))));
+        .compose(realms -> Future.succeededFuture(new ApiResponse<>(new ArrayList<>(realms)))));
   }
 
   @Override
@@ -138,10 +139,13 @@ public class RealmApiImpl implements RealmApi {
         .getRealmProvider()
         .getRealmsForOwner(authSignedInUser, RealmAnalytics.class)
         .compose(
-          realms -> Future.succeededFuture(
-            new ApiResponse<>(realms)
-              .setMapper(apiApp.getRealmProvider().getPublicJsonMapper()))
-          ,
+          realms -> {
+            List<RealmAnalytics> realmAnalytics = new ArrayList<>(realms);
+            return Future.succeededFuture(
+              new ApiResponse<>(realmAnalytics)
+                .setMapper(apiApp.getRealmProvider().getPublicJsonMapper())
+            );
+          },
           err -> Future.failedFuture(
             TowerFailureException
               .builder()

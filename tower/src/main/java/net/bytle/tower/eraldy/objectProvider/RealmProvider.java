@@ -30,7 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static net.bytle.vertx.JdbcSchemaManager.COLUMN_PART_SEP;
@@ -407,34 +409,6 @@ public class RealmProvider {
           TowerFailureException.builder()
             .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
             .setMessage("Unable to get the real of the organization user (" + user + ")")
-            .build()
-        ));
-  }
-
-  /**
-   * @param owner - the owner user
-   * @return a set of local id for the user (used in authorization)
-   */
-  public Future<Set<Long>> getRealmsLocalIdForOwner(OrganizationUser owner) {
-
-    return jdbcPool.preparedQuery("SELECT "+ID_COLUMN+" FROM cs_realms.realm\n" +
-        "where\n" +
-        " " + REALM_ORGA_ID + " = $1")
-      .execute(Tuple.of(owner.getLocalId()))
-      .compose(rows -> {
-          Set<Long> realmGuids = new HashSet<>();
-          for (Row row : rows) {
-
-            Long realmId = row.getLong(ID_COLUMN);
-            realmGuids.add(realmId);
-
-          }
-          return Future.succeededFuture(realmGuids);
-        },
-        err -> Future.failedFuture(
-          TowerFailureException.builder()
-            .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)
-            .setMessage("Unable to get the realm of the organization user (" + owner + ")")
             .build()
         ));
   }

@@ -20,7 +20,9 @@ import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This class provides function to:
@@ -376,25 +378,42 @@ public class AuthProvider {
   }
 
   /**
-   * @param user - the user to transform in auth user
+   * @param user - the user to transform in auth user (This is a normal user build even if the user is a {@link OrganizationUser})
    * @return an auth user suitable to be put in a session (ie with role and permission)
    */
   private Future<AuthUser> toAuthUserForSession(User user) {
 
     AuthUser authUser = toAuthUser(user);
-    Future<Set<Long>> futureRealmList;
+    Future<List<Realm>> futureRealmOwnerList;
+    Future<OrganizationUser> futureOrgaUser;
     if (user instanceof OrganizationUser) {
-      futureRealmList = this.apiApp.getRealmProvider().getRealmsLocalIdForOwner((OrganizationUser) user);
+      OrganizationUser orgUser = (OrganizationUser) user;
+      futureRealmOwnerList = this.apiApp.getRealmProvider().getRealmsForOwner(orgUser, Realm.class);
+      futureOrgaUser = this.apiApp.getOrganizationUserProvider().getOrganizationUserByUser(orgUser);
     } else {
-      futureRealmList = Future.succeededFuture();
+      futureRealmOwnerList = Future.succeededFuture();
+      futureOrgaUser = Future.succeededFuture();
     }
-    return futureRealmList
-      .compose(realmList -> {
-        if (realmList != null) {
-          authUser.put(REALMS_ID_KEY, realmList);
-        }
-        return Future.succeededFuture(authUser);
-      });
+
+    return Future.all(futureRealmOwnerList, futureOrgaUser)
+      .compose(
+        res -> {
+          List<Realm> realmList = res.resultAt(0);
+          OrganizationUser orgaUser = res.resultAt(1);
+          if (realmList != null) {
+            List<Long> realmListLongId = realmList.stream()
+              .map(Realm::getLocalId)
+              .collect(Collectors.toList());
+            authUser.put(REALMS_ID_KEY, realmListLongId);
+          }
+          if (orgaUser != null) {
+            Organization organization = orgaUser.getOrganization();
+            if (organization != null) {
+              authUser.setGroup(organization.getGuid());
+            }
+          }
+          return Future.succeededFuture(authUser);
+        });
 
   }
 

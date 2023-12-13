@@ -843,7 +843,7 @@ public class UserProvider {
       return getUserByGuid(identifier, User.class, realm);
     } else {
       if (realm == null) {
-        return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifer, the realm should be provided"));
+        return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
       }
       return getUserByEmail(identifier, realm.getLocalId(), User.class, realm);
     }

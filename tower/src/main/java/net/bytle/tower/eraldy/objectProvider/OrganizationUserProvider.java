@@ -63,6 +63,11 @@ public class OrganizationUserProvider {
       });
   }
 
+  public Future<OrganizationUser> getOrganizationUserByUser(OrganizationUser orgUser) {
+
+    return buildOrgUserFromDb(orgUser);
+
+  }
 
   /**
    * Take a OrganizationUser that was created as a child user object
@@ -72,6 +77,9 @@ public class OrganizationUserProvider {
    */
   private Future<OrganizationUser> buildOrgUserFromDb(OrganizationUser organizationUser) {
 
+    if(organizationUser.getOrganization()!=null){
+      return Future.succeededFuture(organizationUser);
+    }
 
     String sql = "SELECT * FROM " +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
@@ -108,31 +116,31 @@ public class OrganizationUserProvider {
     return futureUser
       .compose(
         userFromFuture -> {
-        if (userFromFuture == null) {
-          return Future.failedFuture(new InternalException("The organization user with the id (" + userId + ") was not found"));
-        }
-        Future<Organization> futureOrganization;
-        Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
-        if(organization!=null){
-          futureOrganization = Future.succeededFuture(organization);
-        } else {
-          futureOrganization = apiApp
-            .getOrganizationProvider()
-            .getById(orgaId);
-        }
-        return futureOrganization
+          if (userFromFuture == null) {
+            return Future.failedFuture(new InternalException("The organization user with the id (" + userId + ") was not found"));
+          }
+          Future<Organization> futureOrganization;
+          Long orgaId = row.getLong(ORGA_USER_ORGA_ID_COLUMN);
+          if (organization != null) {
+            futureOrganization = Future.succeededFuture(organization);
+          } else {
+            futureOrganization = apiApp
+              .getOrganizationProvider()
+              .getById(orgaId);
+          }
+          return futureOrganization
 
-          .compose(resOrganization -> {
-            if (resOrganization == null) {
-              return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
-            }
-            userFromFuture.setOrganization(resOrganization);
-            userFromFuture.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
-            userFromFuture.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
-            return Future.succeededFuture(userFromFuture);
+            .compose(resOrganization -> {
+              if (resOrganization == null) {
+                return Future.failedFuture(new InternalException("The organization with the identifier (" + orgaId + ") was not found"));
+              }
+              userFromFuture.setOrganization(resOrganization);
+              userFromFuture.setCreationTime(row.getLocalDateTime(ORGA_USER_CREATION_COLUMN));
+              userFromFuture.setModificationTime(row.getLocalDateTime(ORGA_USER_MODIFICATION_TIME_COLUMN));
+              return Future.succeededFuture(userFromFuture);
 
-          });
-      });
+            });
+        });
 
   }
 
