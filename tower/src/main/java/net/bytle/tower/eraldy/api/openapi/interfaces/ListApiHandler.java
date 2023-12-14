@@ -51,7 +51,7 @@ public void mount(RouterBuilder builder) {
       logger.debug("Parameter fileBinary is {}", fileBinary);
 
     // Based on Route#respond
-    api.listImportPost(routingContext, listIdentifier, fileBinary)
+    api.listListImportPost(routingContext, listIdentifier, fileBinary)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

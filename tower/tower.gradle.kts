@@ -125,8 +125,10 @@ dependencies {
   // to enable handling
   // https://vertx.io/docs/4.1.8/vertx-sql-client-templates/java/#_java_datetime_api_mapping
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-
-  // Cache
+  // csv parsing
+  // https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-csv
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$jacksonVersion")
+  // Map Cache
   implementation("com.github.ben-manes.caffeine:caffeine:$caffeineVersion")
 
 

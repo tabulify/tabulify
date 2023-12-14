@@ -1416,7 +1416,7 @@ paths:
                 type: string
   /list/{listIdentifier}/import:
     post:
-      operationId: listImportPost
+      operationId: listListImportPost
       summary: "Import users in a list"
       tags:
         - list

@@ -233,7 +233,6 @@ public class HttpServer implements AutoCloseable {
         BodyHandler bodyHandler = BodyHandler
           .create()
           .setHandleFileUploads(true)
-          .setDeleteUploadedFilesOnEnd(true)
           .setBodyLimit(bodyLimit5mb);
         String uploadDir = this.server.getConfigAccessor().getString(BODY_HANDLER_CONF);
         if (uploadDir == null) {

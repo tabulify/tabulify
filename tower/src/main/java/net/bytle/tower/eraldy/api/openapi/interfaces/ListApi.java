@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -13,7 +14,7 @@ public interface ListApi  {
     /**
      * Import users in a list
     */
-    Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
+    Future<ApiResponse<JsonObject>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
 
     /**
      * Delete the list

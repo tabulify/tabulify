@@ -1,5 +1,9 @@
 package net.bytle.tower.eraldy.api.implementer;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -35,11 +39,11 @@ import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class ListApiImpl implements ListApi {
 
@@ -134,11 +138,41 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<Void>> listImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
+  public Future<ApiResponse<JsonObject>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
 
-    System.out.println(fileBinary.fileName());
+    String fileNameWithExtension = fileBinary.fileName();
+    System.out.println(fileNameWithExtension);
     System.out.println(fileBinary.uploadedFileName());
-    return Future.succeededFuture();
+
+    /**
+     * Doc is at:
+     * https://github.com/FasterXML/jackson-dataformats-text/tree/master/csv
+     * below the howto
+     */
+    Path csv = Paths.get(fileBinary.uploadedFileName());
+    CsvMapper csvMapper = new CsvMapper();
+    CsvSchema schema = CsvSchema.emptySchema();
+
+    int counter = 0;
+    try (MappingIterator<String[]> it = csvMapper
+      .readerFor(String[].class)
+      // This setting will transform the json as array
+      .with(CsvParser.Feature.WRAP_AS_ARRAY)
+      .with(schema)
+      .readValues(csv.toFile())) {
+
+      while (it.hasNextValue()) {
+        String[] row = it.nextValue();
+        if(counter==0) {
+          System.out.println(Arrays.toString(row));
+        }
+        counter++;
+      }
+    } catch (IOException e) {
+      return Future.failedFuture(new InternalException("couldn't read the csv file (" + fileNameWithExtension + "). Error: " + e.getMessage(), e));
+    }
+
+    return Future.succeededFuture(new ApiResponse<>(JsonObject.of("counter", counter)));
   }
 
   @Override
@@ -260,7 +294,7 @@ public class ListApiImpl implements ListApi {
         Future<User> futureOwner;
         User actualOwnerUser = list.getOwnerUser();
         if (ownerIdentifier != null) {
-          if(ownerIdentifier.isEmpty()){
+          if (ownerIdentifier.isEmpty()) {
             futureOwner = Future.succeededFuture(null);
           } else {
             Future<User> futureOwnerByIdentifier = this.apiApp.getUserProvider().getUserByIdentifier(ownerIdentifier, list.getRealm());
