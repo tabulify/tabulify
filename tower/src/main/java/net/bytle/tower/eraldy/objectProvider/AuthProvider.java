@@ -9,10 +9,7 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.exception.NotSignedInOrganizationUser;
 import net.bytle.tower.eraldy.auth.AuthScope;
-import net.bytle.tower.eraldy.model.openapi.Organization;
-import net.bytle.tower.eraldy.model.openapi.OrganizationUser;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.util.Guid;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
@@ -456,5 +453,10 @@ public class AuthProvider {
         }
         return Future.succeededFuture();
       });
+  }
+
+  public Future<ListItem> checkListAuthorization(RoutingContext routingContext, ListItem list, AuthScope authScope) {
+    return this.checkRealmAuthorization(routingContext,list.getRealm(), authScope)
+      .compose(realm->Future.succeededFuture(list));
   }
 }

@@ -72,7 +72,7 @@ public class EmailAddressValidator {
       .compose(records -> {
         String noMxRecordMessage = "The domain (" + emailDomain + ") has no MX records";
 
-        if (records.size() == 0) {
+        if (records.isEmpty()) {
           emailValidityReport.addError(mxValidCheck, noMxRecordMessage);
         } else {
           emailValidityReport.addSuccess(mxValidCheck, "Mx records were found");
@@ -96,7 +96,7 @@ public class EmailAddressValidator {
     Future<Void> aRecordFuture = dnsClient.resolveA(apexDomain)
       .compose(
         aRecords -> {
-          if (aRecords.size() == 0) {
+          if (aRecords.isEmpty()) {
             emailValidityReport.addError(aValidCheck, noARecordMessage);
           } else {
             emailValidityReport.addSuccess(aValidCheck, "A records were found");
@@ -121,7 +121,7 @@ public class EmailAddressValidator {
       DnsName dnsNameToQuery = dnsBlockListQueryHelper.getDnsNameToQuery();
       Future<Void> futureBlockListCheck =  dnsClient.resolveA(dnsNameToQuery)
         .compose(dnsIps->{
-          if(dnsIps.size()==0){
+          if(dnsIps.isEmpty()){
              emailValidityReport.addSuccess(blockListCheck, "The apex domain (" + apexDomainNameAsString + ") is not blocked by "+ dnsBlockListQueryHelper.getBlockList());
             return Future.succeededFuture();
           }

@@ -24,7 +24,7 @@ public class EmailAddressValidityReport {
   }
 
   public boolean isValid() {
-    return !(this.errorMessages.size()>0);
+    return this.errorMessages.isEmpty();
   }
 
   public JsonObject toJsonObject() {
@@ -36,5 +36,13 @@ public class EmailAddressValidityReport {
     jsonObjectMessage.put("errors", this.errorMessages);
     jsonObjectMessage.put("success", this.successMessages);
     return jsonObject;
+  }
+
+  public Map<String, String> getErrors() {
+    return errorMessages;
+  }
+
+  public String getEmailAddress() {
+    return this.email;
   }
 }
