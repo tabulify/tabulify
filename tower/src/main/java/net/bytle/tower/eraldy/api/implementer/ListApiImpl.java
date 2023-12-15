@@ -134,7 +134,7 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<List<ListImport.ListImportRow>>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
+  public Future<ApiResponse<JsonObject>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
 
     return this.apiApp.getListProvider()
       .getListByGuid(listIdentifier)
@@ -149,15 +149,22 @@ public class ListApiImpl implements ListApi {
         }
         return this.apiApp.getAuthProvider().checkListAuthorization(routingContext, list, AuthScope.LIST_IMPORT);
       })
-      .compose(list -> ListImport
-        .create(this.apiApp,list,fileBinary)
-        .execute()
-        .compose(listImportRows -> Future.succeededFuture(new ApiResponse<>(listImportRows))));
+      .compose(list -> {
+        String jobId;
+        try {
+          jobId = this.apiApp.getListImport().createAndGetJobId(list, fileBinary);
+        } catch (TowerFailureException e) {
+          return Future.failedFuture(e);
+        }
+        return Future.succeededFuture(new ApiResponse<>(JsonObject.of("jobId",jobId)));
+      });
+
 
   }
 
   @Override
   public Future<ApiResponse<Void>> listListDelete(RoutingContext routingContext, String listIdentifier, String realmIdentifier) {
+
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     try {
       listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();

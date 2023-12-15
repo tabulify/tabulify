@@ -8,6 +8,7 @@ import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.EraldyRealm;
+import net.bytle.tower.eraldy.api.implementer.ListImportManager;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
@@ -57,12 +58,14 @@ public class EraldyApiApp extends TowerApp {
   private final OAuthExternalCodeFlow oauthExternalFlow;
   private final AuthProvider authProvider;
   private final EmailAddressValidator emailAddressValidator;
+  private final ListImportManager listImportManager;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
     this.realmProvider = new RealmProvider(this);
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
+    this.listImportManager = new ListImportManager(this);
     this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);
     this.listRegistrationProvider = new ListRegistrationProvider(this);
@@ -372,4 +375,7 @@ public class EraldyApiApp extends TowerApp {
     return JavaEnvs.IS_DEV;
   }
 
+  public ListImportManager getListImport() {
+    return this.listImportManager;
+  }
 }

@@ -60,7 +60,12 @@ public enum TowerFailureTypeEnum implements TowerFailureType {
   /**
    * Returned
    */
-  BAD_STRUCTURE_422(422, "Unprocessable Entity", "badEntity");
+  BAD_STRUCTURE_422(422, "Unprocessable Entity", "badEntity"),
+  /**
+   * When a resource was already found
+   * (2 submission for a job or another creation for instance)
+   */
+  ALREADY_EXIST_409(409, "Resource already exists", "alreadyExist");
 
   private final int httpStatusCode;
   private final String message;
