@@ -152,7 +152,7 @@ public class ListApiImpl implements ListApi {
       .compose(list -> {
         String jobId;
         try {
-          jobId = this.apiApp.getListImport().createAndGetJobId(list, fileBinary);
+          jobId = this.apiApp.getListImport().step1CreateAndGetJobId(list, fileBinary);
         } catch (TowerFailureException e) {
           return Future.failedFuture(e);
         }

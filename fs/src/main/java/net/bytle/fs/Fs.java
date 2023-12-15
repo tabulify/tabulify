@@ -8,8 +8,6 @@ import net.bytle.exception.NotAbsoluteException;
 import net.bytle.os.Oss;
 import net.bytle.type.MediaType;
 import net.bytle.type.MediaTypes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -17,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
@@ -29,8 +28,6 @@ import static net.bytle.os.Oss.WIN;
 
 public class Fs {
 
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(Fs.class);
 
   /**
    * A safe method even if the string is not a path
@@ -197,7 +194,7 @@ public class Fs {
 
   /**
    * @param path - the file path
-   * @return See also: https://github.com/google/guava/wiki/HashingExplained
+   * @return See also: <a href="https://github.com/google/guava/wiki/HashingExplained">...</a>
    */
   public static String getMd5(Path path) {
     if (Files.isDirectory(path)) {
@@ -252,6 +249,7 @@ public class Fs {
     return Paths.get(home);
   }
 
+  @SuppressWarnings("unused")
   private static String getPathSeparator() {
     return System.getProperty("file.separator");
   }
@@ -260,10 +258,12 @@ public class Fs {
    * @return the system (process) encoding
    * ie the value of the system property file.encoding
    */
+  @SuppressWarnings("unused")
   private static String getSystemEncoding() {
     return System.getProperty("file.encoding");
   }
 
+  @SuppressWarnings("unused")
   private static Path getTempDir() {
     return Paths.get(System.getProperty("java.io.tmpdir"));
   }
@@ -286,7 +286,7 @@ public class Fs {
 
   /**
    * Wrapper around {@link Files#write(Path, byte[], OpenOption...)}
-   * to write a string to a file
+   * to write a string to a file in UTF8
    * without exception handling
    *
    * @param path - the path
@@ -294,7 +294,7 @@ public class Fs {
    */
   public static void write(Path path, String s) {
     try {
-      Files.write(path, s.getBytes());
+      Files.write(path, s.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -371,9 +371,9 @@ public class Fs {
    */
   public static List<Path> getChildrenFiles(Path path) {
 
-    try {
+    try (DirectoryStream<Path> paths = Files.newDirectoryStream(path)) {
       List<Path> childrenPaths = new ArrayList<>();
-      for (Path childPath : Files.newDirectoryStream(path)) {
+      for (Path childPath : paths) {
         childrenPaths.add(childPath);
       }
       return childrenPaths;
@@ -612,12 +612,12 @@ public class Fs {
   }
 
   /**
-   * http://userguide.icu-project.org/conversion/detection
+   * <a href="http://userguide.icu-project.org/conversion/detection">...</a>
    *
    * @param path - the path
    * @return a encoding value or null if this is not possible
    * See possible values at
-   * http://userguide.icu-project.org/conversion/detection#TOC-Detected-Encodings
+   * <a href="http://userguide.icu-project.org/conversion/detection#TOC-Detected-Encodings">...</a>
    */
   public static String detectCharacterSet(Path path) {
     /**
@@ -638,7 +638,7 @@ public class Fs {
        * If the file is used, we can get a java.nio.file.FileSystemException exception
        * such as `The process cannot access the file`
        * Example on windows with `C:/Users/userName/NTUSER.DAT`
-       *
+       * <p>
        * We can also get a problem when basic authentication is mandatory
        * for http path
        */
@@ -657,7 +657,7 @@ public class Fs {
   public static String getFileContent(Path path, Charset charset) throws NoSuchFileException {
 
     try {
-      return new String(Files.readAllBytes(path), charset);
+      return Files.readString(path, charset);
     } catch (NoSuchFileException e) {
       throw e;
     } catch (IOException e) {

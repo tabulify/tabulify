@@ -5,6 +5,8 @@ import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 import net.bytle.type.env.DotEnv;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +31,7 @@ public class ConfigAccessor {
    */
   private ConfigAccessor(List<String> keys, JsonObject jsonObject, ConfigAccessor parentConfigAccessor) throws ConfigIllegalException {
     this.parentConfigAccessor = parentConfigAccessor;
-    if (keys.size() == 0) {
+    if (keys.isEmpty()) {
       throw new InternalException("Internal Error: We should have at least one key");
     }
     if (this.parentConfigAccessor != null) {
@@ -76,7 +78,6 @@ public class ConfigAccessor {
   }
 
   /**
-   *
    * @return the root json that contains the environment variable
    */
   private JsonObject getEnvJson() {
@@ -188,4 +189,11 @@ public class ConfigAccessor {
   }
 
 
+  public Path getPath(String key, Path defaultValue) {
+    String path = getString(key);
+    if (path == null) {
+      return defaultValue;
+    }
+    return Paths.get(path);
+  }
 }

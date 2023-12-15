@@ -230,4 +230,14 @@ public class Timestamp {
   public OffsetDateTime toOffsetDateTime() {
     return this.localDateTime.atOffset(OffsetDateTime.now().getOffset());
   }
+
+  /**
+   * @return a timestamp "YYYYMMDDHHMMSS" suitable for the file system
+   */
+  public String toFileSystemString() {
+    /**
+     * An ISO string has `:` that is not permitted
+     */
+    return toString("YYYYMMDDHHMMSS")  ;
+  }
 }

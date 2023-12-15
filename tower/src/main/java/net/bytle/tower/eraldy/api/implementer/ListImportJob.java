@@ -5,9 +5,11 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.FileUpload;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
+import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
 
@@ -17,13 +19,13 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ListImportJob {
-  private final ListImportManager listImportManager;
+  private final ListImportFlow listImportFlow;
   private final ListItem list;
   private final FileUpload fileUpload;
   private final Timestamp creationTime;
 
-  public ListImportJob(ListImportManager listImportManager, ListItem list, FileUpload fileUpload) {
-    this.listImportManager = listImportManager;
+  public ListImportJob(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload) {
+    this.listImportFlow = listImportFlow;
     this.list = list;
     this.fileUpload = fileUpload;
     this.creationTime = Timestamp.createFromNow();
@@ -36,8 +38,8 @@ public class ListImportJob {
     return list.getGuid();
   }
 
-  String getFileNameWitExtension() {
-    return this.fileUpload.fileName();
+  Path getFileNameWithExtension() {
+    return Path.of(this.fileUpload.fileName());
   }
 
   public void execute() {
@@ -52,7 +54,7 @@ public class ListImportJob {
     CsvSchema schema = CsvSchema.emptySchema();
 
     int counter = -1;
-    Map<ListImportManager.IMPORT_FIELD, Integer> headerMapping = new HashMap<>();
+    Map<ListImportFlow.IMPORT_FIELD, Integer> headerMapping = new HashMap<>();
     try (MappingIterator<String[]> it = csvMapper
       .readerFor(String[].class)
       // This setting will transform the json as array
@@ -60,7 +62,7 @@ public class ListImportJob {
       .with(schema)
       .readValues(csv.toFile())) {
 
-      List<Future<ListImportManager.ListImportRow>> futureListImportRows = new ArrayList<>();
+      List<Future<ListImportFlow.ListImportRow>> futureListImportRows = new ArrayList<>();
       while (it.hasNextValue()) {
         counter++;
         String[] row = it.nextValue();
@@ -79,36 +81,36 @@ public class ListImportJob {
             switch (normalizedHeader) {
               case "email":
               case "emailaddress":
-                headerMapping.put(ListImportManager.IMPORT_FIELD.EMAIL_ADDRESS, i);
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS, i);
                 continue;
               case "firstname":
               case "givenname":
-                headerMapping.put(ListImportManager.IMPORT_FIELD.GIVEN_NAME, i);
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.GIVEN_NAME, i);
                 continue;
               case "lastname":
               case "familyname":
-                headerMapping.put(ListImportManager.IMPORT_FIELD.FAMILY_NAME, i);
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.FAMILY_NAME, i);
                 break;
               default:
                 System.out.println(normalizedHeader);
             }
           }
-          if (headerMapping.get(ListImportManager.IMPORT_FIELD.EMAIL_ADDRESS) == null) {
-            throw new IllegalStructure("An email address header could not be found in the file (" + this.getFileNameWitExtension() + "). Headers found: " + Arrays.toString(row));
+          if (headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS) == null) {
+            throw new IllegalStructure("An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row));
 
           }
           // second record
           continue;
         }
-        Future<ListImportManager.ListImportRow> futureListImportRow = this.listImportManager.getEmailAddressValidator()
-          .validate(row[headerMapping.get(ListImportManager.IMPORT_FIELD.EMAIL_ADDRESS)], true)
+        Future<ListImportFlow.ListImportRow> futureListImportRow = this.listImportFlow.getEmailAddressValidator()
+          .validate(row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)], true)
           .compose(emailAddressValidityReport -> {
-            ListImportManager.ListImportRow listImportRow = new ListImportManager.ListImportRow();
+            ListImportFlow.ListImportRow listImportRow = new ListImportFlow.ListImportRow();
             listImportRow.emailAddress = emailAddressValidityReport.getEmailAddress();
             listImportRow.valid = emailAddressValidityReport.isValid();
             listImportRow.validityMessage = String.join(", ", emailAddressValidityReport.getErrors().values());
-            listImportRow.familyName = row[headerMapping.get(ListImportManager.IMPORT_FIELD.FAMILY_NAME)];
-            listImportRow.givenName = row[headerMapping.get(ListImportManager.IMPORT_FIELD.GIVEN_NAME)];
+            listImportRow.familyName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
+            listImportRow.givenName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
             return Future.succeededFuture(listImportRow);
           });
         futureListImportRows.add(futureListImportRow);
@@ -118,11 +120,17 @@ public class ListImportJob {
       }
       Future.all(futureListImportRows)
         .onComplete(composite -> {
-          System.out.println("Save the output into " + this.list.getGuid() + "/" + this.creationTime.toIsoString() + "-" + csv.getFileName().toString());
-          System.out.println(composite.result().list());
+          Path listDirectory = this.listImportFlow
+            .getRuntimeDataDirectory()
+            .resolve(this.list.getGuid());
+          Fs.createDirectoryIfNotExists(listDirectory);
+          Path resultFile = listDirectory
+            .resolve(this.creationTime.toFileSystemString() + "-" + Fs.getFileNameWithoutExtension(getFileNameWithExtension()) + ".json");
+          String resultString = JsonArray.of(composite.result().list()).toString();
+          Fs.write(resultFile, resultString);
         });
     } catch (IOException e) {
-      throw new InternalException("List import couldn't read the csv file (" + this.getFileNameWitExtension() + "). Error: " + e.getMessage(), e);
+      throw new InternalException("List import couldn't read the csv file (" + this.getFileNameWithExtension() + "). Error: " + e.getMessage(), e);
     } catch (IllegalStructure e) {
       System.out.println(e.getMessage());
     }

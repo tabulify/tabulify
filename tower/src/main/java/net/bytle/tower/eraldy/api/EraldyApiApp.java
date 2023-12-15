@@ -6,9 +6,10 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import net.bytle.exception.CastException;
+import net.bytle.fs.Fs;
 import net.bytle.java.JavaEnvs;
 import net.bytle.tower.EraldyRealm;
-import net.bytle.tower.eraldy.api.implementer.ListImportManager;
+import net.bytle.tower.eraldy.api.implementer.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.EmailLoginFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListRegistrationFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.PasswordResetFlow;
@@ -28,6 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +42,7 @@ import static net.bytle.tower.util.Guid.*;
 public class EraldyApiApp extends TowerApp {
 
 
+  private static final String RUNTIME_DATA_DIR_CONF = "data.runtime.dir.path";
   static Logger LOGGER = LogManager.getLogger(EraldyApiApp.class);
   private static final String MEMBER_APP_URI_CONF = "member.app.uri";
   private final UserProvider userProvider;
@@ -58,21 +62,40 @@ public class EraldyApiApp extends TowerApp {
   private final OAuthExternalCodeFlow oauthExternalFlow;
   private final AuthProvider authProvider;
   private final EmailAddressValidator emailAddressValidator;
-  private final ListImportManager listImportManager;
+  private final ListImportFlow listImportFlow;
+  /**
+   * Data that are used during runtime
+   * (example: list import result)
+   * We keep them in a transient way
+   * until there is no space on the VPS ...
+   */
+  private final Path runtimeDataDirectory;
 
   public EraldyApiApp(TowerApexDomain apexDomain) throws ConfigIllegalException {
     super(apexDomain);
+    ConfigAccessor configAccessor = apexDomain.getHttpServer().getServer().getConfigAccessor();
+
+    // data directory
+    Path runtime = Paths.get("data/runtime");
+    if(JavaEnvs.IS_DEV){
+      // put it in the build
+      runtime = Paths.get("build/"+this.getAppName().toLowerCase()+"/data/runtime");
+    }
+    this.runtimeDataDirectory = configAccessor.getPath(RUNTIME_DATA_DIR_CONF, runtime);
+    Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
+
     this.realmProvider = new RealmProvider(this);
     this.userProvider = new UserProvider(this);
     this.listProvider = new ListProvider(this);
-    this.listImportManager = new ListImportManager(this);
+    this.listImportFlow = new ListImportFlow(this);
     this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);
     this.listRegistrationProvider = new ListRegistrationProvider(this);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
-    String memberUri = apexDomain.getHttpServer().getServer().getConfigAccessor().getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
+
+    String memberUri = configAccessor.getString(MEMBER_APP_URI_CONF, "https://member." + apexDomain.getApexNameWithPort());
     try {
       this.memberApp = URI.create(memberUri);
       LOGGER.info("The member app URI was set to ({}) via the conf ({})", memberUri, MEMBER_APP_URI_CONF);
@@ -90,6 +113,7 @@ public class EraldyApiApp extends TowerApp {
     authHandlers.add(this.userRegistrationFlow.handleOAuthAuthentication());
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authHandlers);
+
 
   }
 
@@ -375,7 +399,12 @@ public class EraldyApiApp extends TowerApp {
     return JavaEnvs.IS_DEV;
   }
 
-  public ListImportManager getListImport() {
-    return this.listImportManager;
+  public ListImportFlow getListImport() {
+    return this.listImportFlow;
+  }
+
+  public Path getRuntimeDataDirectory() {
+
+    return this.runtimeDataDirectory;
   }
 }
