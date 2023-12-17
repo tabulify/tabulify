@@ -1,4 +1,4 @@
-package net.bytle.tower.eraldy.api.implementer;
+package net.bytle.tower.eraldy.api.implementer.flow;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -21,25 +21,24 @@ import java.util.*;
 public class ListImportJob {
   private final ListImportFlow listImportFlow;
   private final ListItem list;
-  private final FileUpload fileUpload;
+  private final Path uploadedCsvFile;
   private final Timestamp creationTime;
+  private final String jobId;
+  private final Path originalFileName;
 
   public ListImportJob(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload) {
     this.listImportFlow = listImportFlow;
     this.list = list;
-    this.fileUpload = fileUpload;
+    this.uploadedCsvFile = Paths.get(fileUpload.uploadedFileName());
     this.creationTime = Timestamp.createFromNow();
+    this.originalFileName = Path.of(fileUpload.fileName());
+    // time + the random uploaded file name
+    this.jobId = this.creationTime.toFileSystemString() + "-" + this.uploadedCsvFile.getFileName().toString();
   }
 
-  public String getIdentifier() {
-    /**
-     * One job by list
-     */
-    return list.getGuid();
-  }
 
   Path getFileNameWithExtension() {
-    return Path.of(this.fileUpload.fileName());
+    return this.originalFileName;
   }
 
   public void execute() {
@@ -49,7 +48,7 @@ public class ListImportJob {
      * https://github.com/FasterXML/jackson-dataformats-text/tree/master/csv
      * below the howto
      */
-    Path csv = Paths.get(fileUpload.uploadedFileName());
+
     CsvMapper csvMapper = new CsvMapper();
     CsvSchema schema = CsvSchema.emptySchema();
 
@@ -60,7 +59,7 @@ public class ListImportJob {
       // This setting will transform the json as array
       .with(CsvParser.Feature.WRAP_AS_ARRAY)
       .with(schema)
-      .readValues(csv.toFile())) {
+      .readValues(uploadedCsvFile.toFile())) {
 
       List<Future<ListImportFlow.ListImportRow>> futureListImportRows = new ArrayList<>();
       while (it.hasNextValue()) {
@@ -114,18 +113,13 @@ public class ListImportJob {
             return Future.succeededFuture(listImportRow);
           });
         futureListImportRows.add(futureListImportRow);
-        if (counter >= 10) {
+        if (counter >= this.listImportFlow.getMaxRowsProcessedByImport()) {
           break;
         }
       }
       Future.all(futureListImportRows)
         .onComplete(composite -> {
-          Path listDirectory = this.listImportFlow
-            .getRuntimeDataDirectory()
-            .resolve(this.list.getGuid());
-          Fs.createDirectoryIfNotExists(listDirectory);
-          Path resultFile = listDirectory
-            .resolve(this.creationTime.toFileSystemString() + "-" + Fs.getFileNameWithoutExtension(getFileNameWithExtension()) + ".json");
+          Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
           String resultString = JsonArray.of(composite.result().list()).toString();
           Fs.write(resultFile, resultString);
         });
@@ -134,5 +128,9 @@ public class ListImportJob {
     } catch (IllegalStructure e) {
       System.out.println(e.getMessage());
     }
+  }
+
+  public String getIdentifier() {
+    return this.jobId;
   }
 }

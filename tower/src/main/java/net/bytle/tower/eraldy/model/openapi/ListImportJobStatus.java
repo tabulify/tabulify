@@ -1,0 +1,176 @@
+package net.bytle.tower.eraldy.model.openapi;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+/**
+ * This object represents the status of a job that imports users for a list.
+ **/
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ListImportJobStatus   {
+
+
+  protected String jobId;
+
+  protected Integer statusCode;
+
+  protected String statusMessage;
+
+  protected Integer countTotal;
+
+  protected Integer countFailure;
+
+  protected LocalDateTime creationTime;
+
+  protected LocalDateTime processingTime;
+
+  /**
+  * The empty constructor is
+  * needed for the construction of the pojo
+  * with the Jackson library
+  */
+  @SuppressWarnings("unused")
+  public ListImportJobStatus () {
+  }
+
+  /**
+  * @return jobId The job id
+  */
+  @JsonProperty("jobId")
+  public String getJobId() {
+    return jobId;
+  }
+
+  /**
+  * @param jobId The job id
+  */
+  @SuppressWarnings("unused")
+  public void setJobId(String jobId) {
+    this.jobId = jobId;
+  }
+
+  /**
+  * @return statusCode The status code: -2: queued, -1: processing, 0: done, other: fatal error
+  */
+  @JsonProperty("statusCode")
+  public Integer getStatusCode() {
+    return statusCode;
+  }
+
+  /**
+  * @param statusCode The status code: -2: queued, -1: processing, 0: done, other: fatal error
+  */
+  @SuppressWarnings("unused")
+  public void setStatusCode(Integer statusCode) {
+    this.statusCode = statusCode;
+  }
+
+  /**
+  * @return statusMessage A description of any fatal error if any
+  */
+  @JsonProperty("statusMessage")
+  public String getStatusMessage() {
+    return statusMessage;
+  }
+
+  /**
+  * @param statusMessage A description of any fatal error if any
+  */
+  @SuppressWarnings("unused")
+  public void setStatusMessage(String statusMessage) {
+    this.statusMessage = statusMessage;
+  }
+
+  /**
+  * @return countTotal The number of rows processed
+  */
+  @JsonProperty("countTotal")
+  public Integer getCountTotal() {
+    return countTotal;
+  }
+
+  /**
+  * @param countTotal The number of rows processed
+  */
+  @SuppressWarnings("unused")
+  public void setCountTotal(Integer countTotal) {
+    this.countTotal = countTotal;
+  }
+
+  /**
+  * @return countFailure The number of rows with failures or validation errors.
+  */
+  @JsonProperty("countFailure")
+  public Integer getCountFailure() {
+    return countFailure;
+  }
+
+  /**
+  * @param countFailure The number of rows with failures or validation errors.
+  */
+  @SuppressWarnings("unused")
+  public void setCountFailure(Integer countFailure) {
+    this.countFailure = countFailure;
+  }
+
+  /**
+  * @return creationTime
+  */
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+
+  /**
+  * @param creationTime Set creationTime
+  */
+  @SuppressWarnings("unused")
+  public void setCreationTime(LocalDateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  /**
+  * @return processingTime
+  */
+  @JsonProperty("processingTime")
+  public LocalDateTime getProcessingTime() {
+    return processingTime;
+  }
+
+  /**
+  * @param processingTime Set processingTime
+  */
+  @SuppressWarnings("unused")
+  public void setProcessingTime(LocalDateTime processingTime) {
+    this.processingTime = processingTime;
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ListImportJobStatus listImportJobStatus = (ListImportJobStatus) o;
+    return
+            Objects.equals(jobId, listImportJobStatus.jobId);
+
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(jobId);
+  }
+
+  @Override
+  public String toString() {
+    return jobId;
+  }
+
+}

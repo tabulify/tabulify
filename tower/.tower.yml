@@ -97,3 +97,6 @@ password.hash.salt: 'welcome'
 # These secrets should be copied into the file .tower.secret.yml
 # eraldy.mixpanel.project.token: 'xxxxxxxxxxxxxxx'
 # eraldy.mixpanel.api.secret: 'xxxxxxxxxxxxxxxxxxxxxx'
+
+# The max number of rows imported by batch
+list.import.max.rows: 10

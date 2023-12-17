@@ -90,8 +90,60 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/PasswordOnly'
-
   schemas:
+    ListImportPostResponse:
+      description: |
+        The succesful response to the submission of a import job for a list
+      type: object
+      properties:
+        jobIdentifier:
+          type: string
+          description: The job id
+          example: xmmmN
+    ListImportJobRowStatus:
+      description: |
+        This object represents the status of a row in a import job for a list.
+      type: object
+      properties:
+        emailAddress:
+          type: string
+          description: The email to import
+        statusCode:
+          type: number
+          description: 0 if imported, other otherwise
+        statusMessage:
+          type: string
+          description: A message
+    ListImportJobStatus:
+      type: object
+      description: |
+        This object represents the status of a job that imports users for a list.
+      required:
+        - jobId
+      properties:
+        jobId:
+          type: string
+          # the job id is not a guid, you also need the list guid
+          description: The job id
+          example: xmmmN
+        statusCode:
+          type: integer
+          description: "The status code: -2: queued, -1: processing, 0: done, other: fatal error"
+        statusMessage:
+          type: string
+          description: A description of any fatal error if any
+        countTotal:
+          type: integer
+          description: The number of rows processed
+        countFailure:
+          type: integer
+          description: The number of rows with failures or validation errors.
+        creationTime:
+          type: string
+          format: date-time
+        processingTime:
+          type: string
+          format: date-time
     AuthEmailPost:
       type: object
       description: A auth post object based on email to register, get a magic link, ...
@@ -1417,7 +1469,7 @@ paths:
   /list/{listIdentifier}/import:
     post:
       operationId: listListImportPost
-      summary: "Import users in a list"
+      summary: "Submit an import of users for a list"
       tags:
         - list
       security:
@@ -1448,7 +1500,70 @@ paths:
                 contentType: text/csv # default is application/octet-stream
       responses:
         '200':
-          description: "List of users"
+          description: "The import job id"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListImportPostResponse'
+  /list/{listIdentifier}/imports:
+    get:
+      operationId: listListImportsGet
+      summary: "A list of imports"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "A list identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      responses:
+        '200':
+          description: "The import jobs"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListImportJobStatus'
+  /list/{listIdentifier}/import/{jobIdentifier}/details:
+    get:
+      operationId: listListImportJobDetailsGet
+      summary: "The list of emails with their import status"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "A list identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+        - name: jobIdentifier
+          description: "A import identifier"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      responses:
+        '200':
+          description: "The import jobs"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListImportJobRowStatus'
   /list/{listIdentifier}/registrations:
     get:
       operationId: listListRegistrationsGet

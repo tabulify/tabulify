@@ -24,9 +24,11 @@ this.api = api;
 }
 
 public void mount(RouterBuilder builder) {
-    builder.operation("listImportPost").handler(this::listImportPost);
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
+    builder.operation("listListImportJobDetailsGet").handler(this::listListImportJobDetailsGet);
+    builder.operation("listListImportPost").handler(this::listListImportPost);
+    builder.operation("listListImportsGet").handler(this::listListImportsGet);
     builder.operation("listListPatch").handler(this::listListPatch);
     builder.operation("listListRegistrationsGet").handler(this::listListRegistrationsGet);
     builder.operation("listRegisterConfirmationRegistrationGet").handler(this::listRegisterConfirmationRegistrationGet);
@@ -37,24 +39,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
-
-    private void listImportPost(RoutingContext routingContext) {
-    logger.info("listImportPost()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
-        FileUpload fileBinary = routingContext.fileUploads().iterator().next();
-
-      logger.debug("Parameter listIdentifier is {}", listIdentifier);
-      logger.debug("Parameter fileBinary is {}", fileBinary);
-
-    // Based on Route#respond
-    api.listListImportPost(routingContext, listIdentifier, fileBinary)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
 
     private void listListDelete(RoutingContext routingContext) {
     logger.info("listListDelete()");
@@ -88,6 +72,58 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListGet(routingContext, listIdentifier, realmIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListImportJobDetailsGet(RoutingContext routingContext) {
+    logger.info("listListImportJobDetailsGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        String jobIdentifier = requestParameters.pathParameter("jobIdentifier") != null ? requestParameters.pathParameter("jobIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter jobIdentifier is {}", jobIdentifier);
+
+    // Based on Route#respond
+    api.listListImportJobDetailsGet(routingContext, listIdentifier, jobIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListImportPost(RoutingContext routingContext) {
+    logger.info("listListImportPost()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        FileUpload fileBinary = routingContext.fileUploads().iterator().next();
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter fileBinary is {}", fileBinary);
+
+    // Based on Route#respond
+    api.listListImportPost(routingContext, listIdentifier, fileBinary)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListImportsGet(RoutingContext routingContext) {
+    logger.info("listListImportsGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+
+    // Based on Route#respond
+    api.listListImportsGet(routingContext, listIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

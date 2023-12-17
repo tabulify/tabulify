@@ -1,7 +1,6 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
@@ -12,11 +11,6 @@ import java.util.List;
 public interface ListApi  {
 
     /**
-     * Import users in a list
-    */
-    Future<ApiResponse<JsonObject>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
-
-    /**
      * Delete the list
     */
     Future<ApiResponse<Void>> listListDelete(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
@@ -25,6 +19,21 @@ public interface ListApi  {
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmIdentifier
     */
     Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
+
+    /**
+     * The list of emails with their import status
+    */
+    Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier);
+
+    /**
+     * Submit an import of users for a list
+    */
+    Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);
+
+    /**
+     * A list of imports
+    */
+    Future<ApiResponse<List<ListImportJobStatus>>> listListImportsGet(RoutingContext routingContext, String listIdentifier);
 
     /**
      * Update a list

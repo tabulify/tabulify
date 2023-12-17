@@ -1,19 +1,25 @@
-package net.bytle.tower.eraldy.api.implementer;
+package net.bytle.tower.eraldy.api.implementer.flow;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.tower.util.EmailAddressValidator;
+import net.bytle.type.Strings;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,9 +28,11 @@ import java.util.Map;
  */
 public class ListImportFlow implements WebFlow {
 
+  private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
   private boolean running = false;
+  private int maxRowsProcessedByImport;
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();
@@ -38,6 +46,55 @@ public class ListImportFlow implements WebFlow {
   public Path getRuntimeDataDirectory() {
     return this.runtimeDataDirectory;
   }
+
+  public int getMaxRowsProcessedByImport() {
+    return this.maxRowsProcessedByImport;
+  }
+
+  public Path getRowStatusFileJobByIdentifier(String listIdentifier, String jobIdentifier) {
+
+    return this.getListDirectory(listIdentifier)
+      .resolve(jobIdentifier + "-status-rows.json");
+  }
+
+  public Path getStatusFileJobByIdentifier(String listIdentifier, String jobIdentifier) {
+
+    return this.getListDirectory(listIdentifier)
+      .resolve(jobIdentifier + FILE_SUFFIX_JOB_STATUS);
+  }
+
+  private Path getListDirectory(String listIdentifier) {
+    Path listDirectory = this
+      .getRuntimeDataDirectory()
+      .resolve(listIdentifier);
+    Fs.createDirectoryIfNotExists(listDirectory);
+    return listDirectory;
+  }
+
+  public List<ListImportJobStatus> getJobsStatuses(String listIdentifier) {
+    List<Path> files = Fs.getChildrenFiles(this.getListDirectory(listIdentifier));
+    List<ListImportJobStatus> listImportJobStatuses = new ArrayList<>();
+    for(Path file:files){
+      if(Files.isDirectory(file)){
+        continue;
+      }
+      if(!file.endsWith(FILE_SUFFIX_JOB_STATUS)){
+        continue;
+      }
+      String string = Strings.createFromPath(file).toString();
+      JsonObject jsonObject =new JsonObject(string);
+      ListImportJobStatus listImportStatus;
+      try {
+         listImportStatus = jsonObject.mapTo(ListImportJobStatus.class);
+      } catch (Exception e) {
+        // Migration error
+        continue;
+      }
+      listImportJobStatuses.add(listImportStatus);
+    }
+    return listImportJobStatuses;
+  }
+
 
   enum IMPORT_FIELD {
     GIVEN_NAME, FAMILY_NAME, EMAIL_ADDRESS
@@ -64,6 +121,7 @@ public class ListImportFlow implements WebFlow {
     Vertx vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
+    this.maxRowsProcessedByImport = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor().getInteger("list.import.max.rows", 3000);
     vertx.setPeriodic(sec10, sec10, jobId -> processJob());
   }
 

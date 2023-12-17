@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<JsonObject>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
+  public Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
 
     return this.apiApp.getListProvider()
       .getListByGuid(listIdentifier)
@@ -156,10 +157,20 @@ public class ListApiImpl implements ListApi {
         } catch (TowerFailureException e) {
           return Future.failedFuture(e);
         }
-        return Future.succeededFuture(new ApiResponse<>(JsonObject.of("jobId",jobId)));
+        ListImportPostResponse listListImportPost200Response = new ListImportPostResponse();
+        listListImportPost200Response.setJobIdentifier(jobId);
+        return Future.succeededFuture(new ApiResponse<>(listListImportPost200Response));
       });
 
 
+  }
+
+  @Override
+  public Future<ApiResponse<List<ListImportJobStatus>>> listListImportsGet(RoutingContext routingContext, String listIdentifier) {
+    List<ListImportJobStatus> listImportJobs = this.apiApp
+      .getListImport()
+      .getJobsStatuses(listIdentifier);
+    return Future.succeededFuture(new ApiResponse<>(listImportJobs));
   }
 
   @Override
@@ -214,6 +225,21 @@ public class ListApiImpl implements ListApi {
           .setMapper(this.apiApp.getListProvider().getApiMapper());
         return Future.succeededFuture(apiResult);
       });
+  }
+
+  @Override
+  public Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
+
+    Path path = this.apiApp
+      .getListImport()
+      .getRowStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
+
+    routingContext
+      .response()
+      .sendFile(path.toAbsolutePath().toString());
+
+    return Future.succeededFuture();
+
   }
 
   private Future<ListItem> getListByIdentifier(RoutingContext routingContext, AuthScope scope) {

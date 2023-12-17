@@ -33,6 +33,9 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/CspObject.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/CspReport.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/EmailIdentifier.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobRowStatus.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobStatus.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListItem.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistration.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistrationPostBody.java
