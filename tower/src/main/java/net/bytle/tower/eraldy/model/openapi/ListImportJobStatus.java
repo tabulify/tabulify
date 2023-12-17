@@ -19,13 +19,17 @@ public class ListImportJobStatus   {
 
   protected String statusMessage;
 
+  protected String uploadedFileName;
+
   protected Integer countTotal;
 
   protected Integer countFailure;
 
   protected LocalDateTime creationTime;
 
-  protected LocalDateTime processingTime;
+  protected LocalDateTime startTime;
+
+  protected LocalDateTime endTime;
 
   /**
   * The empty constructor is
@@ -85,6 +89,22 @@ public class ListImportJobStatus   {
   }
 
   /**
+  * @return uploadedFileName The original file name
+  */
+  @JsonProperty("uploadedFileName")
+  public String getUploadedFileName() {
+    return uploadedFileName;
+  }
+
+  /**
+  * @param uploadedFileName The original file name
+  */
+  @SuppressWarnings("unused")
+  public void setUploadedFileName(String uploadedFileName) {
+    this.uploadedFileName = uploadedFileName;
+  }
+
+  /**
   * @return countTotal The number of rows processed
   */
   @JsonProperty("countTotal")
@@ -133,19 +153,35 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @return processingTime
+  * @return startTime
   */
-  @JsonProperty("processingTime")
-  public LocalDateTime getProcessingTime() {
-    return processingTime;
+  @JsonProperty("startTime")
+  public LocalDateTime getStartTime() {
+    return startTime;
   }
 
   /**
-  * @param processingTime Set processingTime
+  * @param startTime Set startTime
   */
   @SuppressWarnings("unused")
-  public void setProcessingTime(LocalDateTime processingTime) {
-    this.processingTime = processingTime;
+  public void setStartTime(LocalDateTime startTime) {
+    this.startTime = startTime;
+  }
+
+  /**
+  * @return endTime
+  */
+  @JsonProperty("endTime")
+  public LocalDateTime getEndTime() {
+    return endTime;
+  }
+
+  /**
+  * @param endTime Set endTime
+  */
+  @SuppressWarnings("unused")
+  public void setEndTime(LocalDateTime endTime) {
+    this.endTime = endTime;
   }
 
 

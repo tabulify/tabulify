@@ -1,6 +1,5 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
@@ -63,7 +62,7 @@ public class ListImportFlow implements WebFlow {
       .resolve(jobIdentifier + FILE_SUFFIX_JOB_STATUS);
   }
 
-  private Path getListDirectory(String listIdentifier) {
+  Path getListDirectory(String listIdentifier) {
     Path listDirectory = this
       .getRuntimeDataDirectory()
       .resolve(listIdentifier);
@@ -74,18 +73,18 @@ public class ListImportFlow implements WebFlow {
   public List<ListImportJobStatus> getJobsStatuses(String listIdentifier) {
     List<Path> files = Fs.getChildrenFiles(this.getListDirectory(listIdentifier));
     List<ListImportJobStatus> listImportJobStatuses = new ArrayList<>();
-    for(Path file:files){
-      if(Files.isDirectory(file)){
+    for (Path file : files) {
+      if (Files.isDirectory(file)) {
         continue;
       }
-      if(!file.endsWith(FILE_SUFFIX_JOB_STATUS)){
+      if (!file.endsWith(FILE_SUFFIX_JOB_STATUS)) {
         continue;
       }
       String string = Strings.createFromPath(file).toString();
-      JsonObject jsonObject =new JsonObject(string);
+      JsonObject jsonObject = new JsonObject(string);
       ListImportJobStatus listImportStatus;
       try {
-         listImportStatus = jsonObject.mapTo(ListImportJobStatus.class);
+        listImportStatus = jsonObject.mapTo(ListImportJobStatus.class);
       } catch (Exception e) {
         // Migration error
         continue;
@@ -96,22 +95,13 @@ public class ListImportFlow implements WebFlow {
   }
 
 
+  /**
+   * The fields in the import file
+   */
   enum IMPORT_FIELD {
     GIVEN_NAME, FAMILY_NAME, EMAIL_ADDRESS
   }
 
-  public static class ListImportRow {
-    @JsonProperty("valid")
-    public boolean valid;
-    @JsonProperty("validityMessage")
-    public String validityMessage;
-    @JsonProperty("emailAddress")
-    public String emailAddress;
-    @JsonProperty("givenName")
-    public String givenName;
-    @JsonProperty("familyName")
-    public String familyName;
-  }
 
   Map<String, ListImportJob> importJobs = new HashMap<>();
 
@@ -147,7 +137,8 @@ public class ListImportFlow implements WebFlow {
     this.running = true;
     try {
       for (Map.Entry<String, ListImportJob> listImportJobEntry : this.importJobs.entrySet()) {
-        listImportJobEntry.getValue().execute();
+        ListImportJob listImportJob = listImportJobEntry.getValue();
+        listImportJob.execute();
         this.importJobs.remove(listImportJobEntry.getKey());
       }
     } finally {

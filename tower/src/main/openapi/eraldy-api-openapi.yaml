@@ -109,7 +109,7 @@ components:
           type: string
           description: The email to import
         statusCode:
-          type: number
+          type: integer
           description: 0 if imported, other otherwise
         statusMessage:
           type: string
@@ -132,6 +132,9 @@ components:
         statusMessage:
           type: string
           description: A description of any fatal error if any
+        uploadedFileName:
+          type: string
+          description: The original file name
         countTotal:
           type: integer
           description: The number of rows processed
@@ -141,7 +144,10 @@ components:
         creationTime:
           type: string
           format: date-time
-        processingTime:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
           type: string
           format: date-time
     AuthEmailPost:

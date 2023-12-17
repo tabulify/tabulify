@@ -1820,14 +1820,14 @@ components:
       example:
         emailAddress: emailAddress
         statusMessage: statusMessage
-        statusCode: 0.8008281904610115
+        statusCode: 0
       properties:
         emailAddress:
           description: The email to import
           type: string
         statusCode:
           description: "0 if imported, other otherwise"
-          type: number
+          type: integer
         statusMessage:
           description: A message
           type: string
@@ -1837,11 +1837,13 @@ components:
         This object represents the status of a job that imports users for a list.
       example:
         jobId: xmmmN
+        uploadedFileName: uploadedFileName
         creationTime: 2000-01-23T04:56:07.000+00:00
         countTotal: 6
         countFailure: 1
+        startTime: 2000-01-23T04:56:07.000+00:00
+        endTime: 2000-01-23T04:56:07.000+00:00
         statusMessage: statusMessage
-        processingTime: 2000-01-23T04:56:07.000+00:00
         statusCode: 0
       properties:
         jobId:
@@ -1855,6 +1857,9 @@ components:
         statusMessage:
           description: A description of any fatal error if any
           type: string
+        uploadedFileName:
+          description: The original file name
+          type: string
         countTotal:
           description: The number of rows processed
           type: integer
@@ -1864,7 +1869,10 @@ components:
         creationTime:
           format: date-time
           type: string
-        processingTime:
+        startTime:
+          format: date-time
+          type: string
+        endTime:
           format: date-time
           type: string
       required:

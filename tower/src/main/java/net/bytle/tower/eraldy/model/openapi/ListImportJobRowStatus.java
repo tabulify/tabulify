@@ -3,7 +3,6 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
@@ -15,7 +14,7 @@ public class ListImportJobRowStatus   {
 
   protected String emailAddress;
 
-  protected BigDecimal statusCode;
+  protected Integer statusCode;
 
   protected String statusMessage;
 
@@ -48,7 +47,7 @@ public class ListImportJobRowStatus   {
   * @return statusCode 0 if imported, other otherwise
   */
   @JsonProperty("statusCode")
-  public BigDecimal getStatusCode() {
+  public Integer getStatusCode() {
     return statusCode;
   }
 
@@ -56,7 +55,7 @@ public class ListImportJobRowStatus   {
   * @param statusCode 0 if imported, other otherwise
   */
   @SuppressWarnings("unused")
-  public void setStatusCode(BigDecimal statusCode) {
+  public void setStatusCode(Integer statusCode) {
     this.statusCode = statusCode;
   }
 
