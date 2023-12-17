@@ -26,6 +26,11 @@ public interface ListApi  {
     Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier);
 
     /**
+     * The import status for the job
+    */
+    Future<ApiResponse<ListImportJobStatus>> listListImportJobGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier);
+
+    /**
      * Submit an import of users for a list
     */
     Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary);

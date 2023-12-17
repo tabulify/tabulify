@@ -18,6 +18,7 @@ import net.bytle.exception.IllegalArgumentExceptions;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationToken;
@@ -30,12 +31,14 @@ import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
+import net.bytle.type.Strings;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -153,7 +156,7 @@ public class ListApiImpl implements ListApi {
       .compose(list -> {
         String jobId;
         try {
-          jobId = this.apiApp.getListImport().step1CreateAndGetJobId(list, fileBinary);
+          jobId = this.apiApp.getListImportFlow().step1CreateAndGetJobId(list, fileBinary);
         } catch (TowerFailureException e) {
           return Future.failedFuture(e);
         }
@@ -168,7 +171,7 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<List<ListImportJobStatus>>> listListImportsGet(RoutingContext routingContext, String listIdentifier) {
     List<ListImportJobStatus> listImportJobs = this.apiApp
-      .getListImport()
+      .getListImportFlow()
       .getJobsStatuses(listIdentifier);
     return Future.succeededFuture(new ApiResponse<>(listImportJobs));
   }
@@ -231,7 +234,7 @@ public class ListApiImpl implements ListApi {
   public Future<ApiResponse<List<ListImportJobRowStatus>>> listListImportJobDetailsGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
 
     Path path = this.apiApp
-      .getListImport()
+      .getListImportFlow()
       .getRowStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
 
     routingContext
@@ -240,6 +243,33 @@ public class ListApiImpl implements ListApi {
 
     return Future.succeededFuture();
 
+  }
+
+  @Override
+  public Future<ApiResponse<ListImportJobStatus>> listListImportJobGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
+
+    ListImportFlow listImport = this.apiApp.getListImportFlow();
+
+    // Running Job
+    if (listImport.isRunning(jobIdentifier)) {
+      ListImportJobStatus listImportStatus = listImport.getQueuedJob(jobIdentifier)
+        .getStatus();
+      return Future.succeededFuture(new ApiResponse<>(listImportStatus));
+    }
+
+    // Processed Job On file system?
+    Path path = listImport
+      .getStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
+    if(!Files.exists(path)){
+      return Future.failedFuture(TowerFailureException.builder()
+        .setType(TowerFailureTypeEnum.NOT_FOUND_404)
+        .setMessage("The job ("+jobIdentifier+") for the list ("+listIdentifier+") was not found")
+        .build()
+      );
+    }
+    String string = Strings.createFromPath(path).toString();
+    ListImportJobStatus listImportStatus = new JsonObject(string).mapTo(ListImportJobStatus.class);
+    return Future.succeededFuture(new ApiResponse<>(listImportStatus));
   }
 
   private Future<ListItem> getListByIdentifier(RoutingContext routingContext, AuthScope scope) {

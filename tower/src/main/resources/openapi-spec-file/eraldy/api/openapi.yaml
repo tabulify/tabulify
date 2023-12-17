@@ -1579,6 +1579,42 @@ paths:
       tags:
       - list
       x-accepts: application/json
+  /list/{listIdentifier}/import/{jobIdentifier}:
+    get:
+      operationId: listListImportJobGet
+      parameters:
+      - description: A list identifier (guid)
+        explode: false
+        in: path
+        name: listIdentifier
+        required: true
+        schema:
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      - description: A import identifier
+        explode: false
+        in: path
+        name: jobIdentifier
+        required: true
+        schema:
+          example: lis-xjkkLmi
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListImportJobStatus'
+          description: The import job status
+      security:
+      - apiKeyAuth: []
+      - cookieAuth: []
+      summary: The import status for the job
+      tags:
+      - list
+      x-accepts: application/json
   /list/{listIdentifier}/registrations:
     get:
       operationId: listListRegistrationsGet

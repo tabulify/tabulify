@@ -395,7 +395,7 @@ public class EraldyApiApp extends TowerApp {
     return JavaEnvs.IS_DEV;
   }
 
-  public ListImportFlow getListImport() {
+  public ListImportFlow getListImportFlow() {
     return this.listImportFlow;
   }
 

@@ -27,6 +27,7 @@ public void mount(RouterBuilder builder) {
     builder.operation("listListDelete").handler(this::listListDelete);
     builder.operation("listListGet").handler(this::listListGet);
     builder.operation("listListImportJobDetailsGet").handler(this::listListImportJobDetailsGet);
+    builder.operation("listListImportJobGet").handler(this::listListImportJobGet);
     builder.operation("listListImportPost").handler(this::listListImportPost);
     builder.operation("listListImportsGet").handler(this::listListImportsGet);
     builder.operation("listListPatch").handler(this::listListPatch);
@@ -90,6 +91,24 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listListImportJobDetailsGet(routingContext, listIdentifier, jobIdentifier)
+    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
+    .onFailure(routingContext::fail);
+    }
+
+    private void listListImportJobGet(RoutingContext routingContext) {
+    logger.info("listListImportJobGet()");
+
+    // Param extraction
+    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+
+            String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        String jobIdentifier = requestParameters.pathParameter("jobIdentifier") != null ? requestParameters.pathParameter("jobIdentifier").getString() : null;
+
+      logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter jobIdentifier is {}", jobIdentifier);
+
+    // Based on Route#respond
+    api.listListImportJobGet(routingContext, listIdentifier, jobIdentifier)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }

@@ -1570,6 +1570,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ListImportJobRowStatus'
+  /list/{listIdentifier}/import/{jobIdentifier}:
+    get:
+      operationId: listListImportJobGet
+      summary: "The import status for the job"
+      tags:
+        - list
+      security:
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
+      parameters:
+        - name: listIdentifier
+          description: "A list identifier (guid)"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+        - name: jobIdentifier
+          description: "A import identifier"
+          required: true
+          in: path
+          schema:
+            type: string
+            example: "lis-xjkkLmi"
+      responses:
+        '200':
+          description: "The import job status"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListImportJobStatus'
   /list/{listIdentifier}/registrations:
     get:
       operationId: listListRegistrationsGet

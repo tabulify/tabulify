@@ -77,7 +77,8 @@ public class ListImportFlow implements WebFlow {
       if (Files.isDirectory(file)) {
         continue;
       }
-      if (!file.endsWith(FILE_SUFFIX_JOB_STATUS)) {
+      // The toString is important otherwise it compares with the object id
+      if (!file.toString().endsWith(FILE_SUFFIX_JOB_STATUS)) {
         continue;
       }
       String string = Strings.createFromPath(file).toString();
@@ -92,6 +93,14 @@ public class ListImportFlow implements WebFlow {
       listImportJobStatuses.add(listImportStatus);
     }
     return listImportJobStatuses;
+  }
+
+  public boolean isRunning(String jobIdentifier) {
+    return this.importJobs.containsKey(jobIdentifier);
+  }
+
+  public ListImportJob getQueuedJob(String jobIdentifier) {
+    return this.importJobs.get(jobIdentifier);
   }
 
 

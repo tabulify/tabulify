@@ -75,25 +75,28 @@ public class ListImportJob {
     listImportJobStatus.setStartTime(LocalDateTime.now());
 
     /**
+     * Jackson Csv Processing
      * Csv import Doc for Jackson is at:
      * https://github.com/FasterXML/jackson-dataformats-text/tree/master/csv
      * below the howto
      */
-    CsvMapper csvMapper = new CsvMapper();
-    CsvSchema schema = CsvSchema.emptySchema(); // we detect the columns
+    CsvMapper csvMapper = new CsvMapper(); // the mapper is the entry point
+    CsvSchema schema = CsvSchema.emptySchema(); // the jackson schema (we detect the columns)
 
     /**
-     * Mappng hea
+     * Mapping header
      */
     Map<ListImportFlow.IMPORT_FIELD, Integer> headerMapping = new HashMap<>();
 
+    /**
+     * The Jackson Iterator
+     */
     try (MappingIterator<String[]> it = csvMapper
       .readerFor(String[].class)
-      // This setting will transform the json as array
+      // This setting will transform the json as array to get a String[]
       .with(CsvParser.Feature.WRAP_AS_ARRAY)
       .with(schema)
       .readValues(uploadedCsvFile.toFile())) {
-
 
       int counter = -1;
       while (it.hasNextValue()) {
@@ -143,7 +146,7 @@ public class ListImportJob {
           .compose(emailAddressValidityReport -> {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
-            listImportRow.setStatusCode(emailAddressValidityReport.isValid()?0:1);
+            listImportRow.setStatusCode(emailAddressValidityReport.isValid() ? 0 : 1);
             listImportRow.setStatusMessage(String.join(", ", emailAddressValidityReport.getErrors().values()));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
@@ -153,7 +156,7 @@ public class ListImportJob {
         int maxRowsProcessedByImport = this.listImportFlow.getMaxRowsProcessedByImport();
         if (counter >= maxRowsProcessedByImport) {
           this.listImportJobStatus.setStatusCode(ABOVE_IMPORT_QUOTA);
-          this.listImportJobStatus.setStatusMessage("The import quota is set to ("+maxRowsProcessedByImport+") and was reached");
+          this.listImportJobStatus.setStatusMessage("The import quota is set to (" + maxRowsProcessedByImport + ") and was reached");
           break;
         }
       }
@@ -200,6 +203,10 @@ public class ListImportJob {
 
   public String getIdentifier() {
     return this.jobId;
+  }
+
+  public ListImportJobStatus getStatus() {
+    return this.listImportJobStatus;
   }
 
 }
