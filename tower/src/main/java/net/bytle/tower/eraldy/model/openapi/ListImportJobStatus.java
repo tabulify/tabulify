@@ -25,6 +25,8 @@ public class ListImportJobStatus   {
 
   protected Integer countFailure;
 
+  protected Integer countExists;
+
   protected LocalDateTime creationTime;
 
   protected LocalDateTime startTime;
@@ -134,6 +136,22 @@ public class ListImportJobStatus   {
   @SuppressWarnings("unused")
   public void setCountFailure(Integer countFailure) {
     this.countFailure = countFailure;
+  }
+
+  /**
+  * @return countExists The number of rows that already exists in the list and were not imported
+  */
+  @JsonProperty("countExists")
+  public Integer getCountExists() {
+    return countExists;
+  }
+
+  /**
+  * @param countExists The number of rows that already exists in the list and were not imported
+  */
+  @SuppressWarnings("unused")
+  public void setCountExists(Integer countExists) {
+    this.countExists = countExists;
   }
 
   /**

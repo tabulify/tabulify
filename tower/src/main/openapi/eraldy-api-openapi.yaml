@@ -141,6 +141,9 @@ components:
         countFailure:
           type: integer
           description: The number of rows with failures or validation errors.
+        countExists:
+          type: integer
+          description: The number of rows that already exists in the list and were not imported
         creationTime:
           type: string
           format: date-time

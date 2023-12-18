@@ -1875,6 +1875,7 @@ components:
         jobId: xmmmN
         uploadedFileName: uploadedFileName
         creationTime: 2000-01-23T04:56:07.000+00:00
+        countExists: 5
         countTotal: 6
         countFailure: 1
         startTime: 2000-01-23T04:56:07.000+00:00
@@ -1901,6 +1902,10 @@ components:
           type: integer
         countFailure:
           description: The number of rows with failures or validation errors.
+          type: integer
+        countExists:
+          description: The number of rows that already exists in the list and were
+            not imported
           type: integer
         creationTime:
           format: date-time
