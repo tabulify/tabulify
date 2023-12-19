@@ -30,6 +30,7 @@ public class ListImportJob {
   private static final Integer ABOVE_IMPORT_QUOTA = 2;
   private static final Integer TO_PROCESS_STATUS_CODE = -2;
 
+
   private final ListImportFlow listImportFlow;
   private final ListItem list;
   private final Path uploadedCsvFile;
@@ -146,7 +147,7 @@ public class ListImportJob {
           .compose(emailAddressValidityReport -> {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
-            listImportRow.setStatusCode(emailAddressValidityReport.isValid() ? 0 : 1);
+            listImportRow.setStatusCode(emailAddressValidityReport.isValid() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
             listImportRow.setStatusMessage(String.join(", ", emailAddressValidityReport.getErrors().values()));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
@@ -182,7 +183,7 @@ public class ListImportJob {
          */
         listImportJobStatus.setEndTime(LocalDateTime.now());
         Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
-        String resultString = JsonArray.of(composite.result().list()).toString();
+        String resultString = new JsonArray(composite.result().list()).toString();
         Fs.write(resultFile, resultString);
 
         /**

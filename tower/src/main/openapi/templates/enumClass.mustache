@@ -1,0 +1,17 @@
+
+{{>additionalEnumTypeAnnotations}}public enum {{{datatypeWithEnum}}} {
+{{#allowableValues}}{{#enumVars}}{{{name}}}({{{value}}}){{^-last}},
+{{/-last}}{{#-last}};{{/-last}}{{/enumVars}}{{/allowableValues}}
+
+  private final {{{dataType}}} value;
+
+  {{{datatypeWithEnum}}}({{{dataType}}} value) {
+      this.value = value;
+  }
+
+  @Override
+  @JsonValue
+  public String toString() {
+    return String.valueOf(value);
+  }
+}

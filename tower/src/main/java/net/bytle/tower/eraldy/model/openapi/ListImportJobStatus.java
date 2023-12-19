@@ -59,7 +59,7 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @return statusCode The status code: -2: queued, -1: processing, 0: done, other: fatal error
+  * @return statusCode The status code: -2: queued, -1: processing, 0: done, 1: fatal error, 2: quota reached
   */
   @JsonProperty("statusCode")
   public Integer getStatusCode() {
@@ -67,7 +67,7 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @param statusCode The status code: -2: queued, -1: processing, 0: done, other: fatal error
+  * @param statusCode The status code: -2: queued, -1: processing, 0: done, 1: fatal error, 2: quota reached
   */
   @SuppressWarnings("unused")
   public void setStatusCode(Integer statusCode) {

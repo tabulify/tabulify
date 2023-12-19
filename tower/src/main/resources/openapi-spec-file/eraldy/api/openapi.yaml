@@ -1862,8 +1862,21 @@ components:
           description: The email to import
           type: string
         statusCode:
-          description: "0 if imported, other otherwise"
+          description: "The status code: 0: done, 1: fatal error, 2: invalid email"
+          enum:
+          - 0
+          - 1
+          - 2
+          format: int32
           type: integer
+          x-enum-descriptions:
+          - Success
+          - Error
+          - Invalid Email
+          x-enum-varnames:
+          - Success
+          - Error
+          - InvalidEmail
         statusMessage:
           description: A message
           type: string
@@ -1888,8 +1901,8 @@ components:
           example: xmmmN
           type: string
         statusCode:
-          description: "The status code: -2: queued, -1: processing, 0: done, other:\
-            \ fatal error"
+          description: "The status code: -2: queued, -1: processing, 0: done, 1: fatal\
+            \ error, 2: quota reached"
           type: integer
         statusMessage:
           description: A description of any fatal error if any

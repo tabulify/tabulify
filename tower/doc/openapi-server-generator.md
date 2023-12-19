@@ -45,6 +45,7 @@ We have:
   https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaVertXWebServer)
   * added the description in the `pojo.mustache`.
   * added the custom field `x-fields-identity` and `x-fields-to-string` in the `pojo.mustache`
+  * added the type of value in the `enumClass.mustache`.
 
 The added custom templates (SupportingFiles) are defined in the [openapi-generator-config.yaml](../.openapi-generator-eraldy-api-config.yaml)
 

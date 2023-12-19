@@ -2,6 +2,7 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Objects;
 
@@ -9,67 +10,86 @@ import java.util.Objects;
  * This object represents the status of a row in a import job for a list.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListImportJobRowStatus   {
+public class ListImportJobRowStatus {
 
 
   protected String emailAddress;
 
-  protected Integer statusCode;
+  public enum StatusCodeEnum {
+    Success(0),
+    Error(1),
+    InvalidEmail(2);
+
+    private final Integer value;
+
+    StatusCodeEnum(Integer value) {
+      this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return String.valueOf(value);
+    }
+  }
+
+
+  protected StatusCodeEnum statusCode;
 
   protected String statusMessage;
 
   /**
-  * The empty constructor is
-  * needed for the construction of the pojo
-  * with the Jackson library
-  */
+   * The empty constructor is
+   * needed for the construction of the pojo
+   * with the Jackson library
+   */
   @SuppressWarnings("unused")
-  public ListImportJobRowStatus () {
+  public ListImportJobRowStatus() {
   }
 
   /**
-  * @return emailAddress The email to import
-  */
+   * @return emailAddress The email to import
+   */
   @JsonProperty("emailAddress")
   public String getEmailAddress() {
     return emailAddress;
   }
 
   /**
-  * @param emailAddress The email to import
-  */
+   * @param emailAddress The email to import
+   */
   @SuppressWarnings("unused")
   public void setEmailAddress(String emailAddress) {
     this.emailAddress = emailAddress;
   }
 
   /**
-  * @return statusCode 0 if imported, other otherwise
-  */
+   * @return statusCode The status code: 0: done, 1: fatal error, 2: invalid email
+   */
   @JsonProperty("statusCode")
-  public Integer getStatusCode() {
+  public StatusCodeEnum getStatusCode() {
     return statusCode;
   }
 
   /**
-  * @param statusCode 0 if imported, other otherwise
-  */
+   * @param statusCode The status code: 0: done, 1: fatal error, 2: invalid email
+   */
   @SuppressWarnings("unused")
-  public void setStatusCode(Integer statusCode) {
+  public void setStatusCode(StatusCodeEnum statusCode) {
     this.statusCode = statusCode;
   }
 
   /**
-  * @return statusMessage A message
-  */
+   * @return statusMessage A message
+   */
   @JsonProperty("statusMessage")
   public String getStatusMessage() {
     return statusMessage;
   }
 
   /**
-  * @param statusMessage A message
-  */
+   * @param statusMessage A message
+   */
   @SuppressWarnings("unused")
   public void setStatusMessage(String statusMessage) {
     this.statusMessage = statusMessage;
@@ -87,7 +107,7 @@ public class ListImportJobRowStatus   {
     ListImportJobRowStatus listImportJobRowStatus = (ListImportJobRowStatus) o;
     return
 
-            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage);
+      Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage);
   }
 
   @Override
