@@ -1890,11 +1890,13 @@ components:
         creationTime: 2000-01-23T04:56:07.000+00:00
         countExists: 5
         countTotal: 6
-        countFailure: 1
+        countFailure: 5
         startTime: 2000-01-23T04:56:07.000+00:00
         endTime: 2000-01-23T04:56:07.000+00:00
+        countInvalidEmail: 2
         statusMessage: statusMessage
         statusCode: 0
+        countSuccess: 1
       properties:
         jobId:
           description: The job id
@@ -1913,12 +1915,18 @@ components:
         countTotal:
           description: The number of rows processed
           type: integer
+        countSuccess:
+          description: The number of rows processed with success.
+          type: integer
         countFailure:
-          description: The number of rows with failures or validation errors.
+          description: The number of rows with failures.
           type: integer
         countExists:
           description: The number of rows that already exists in the list and were
-            not imported
+            not processed.
+          type: integer
+        countInvalidEmail:
+          description: The number of rows that have an invalid email.
           type: integer
         creationTime:
           format: date-time

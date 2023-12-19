@@ -109,21 +109,24 @@ components:
           type: string
           description: The email to import
         statusCode:
-          description: "The status code: 0: done, 1: fatal error, 2: invalid email"
+          description: "The status code"
           type: integer
-          format: int32
+          format: int32 # integer
           enum:
             - 0
             - 1
             - 2
+            - 3
           x-enum-descriptions:
             - 'Success'
             - 'Error'
             - 'Invalid Email'
+            - 'Existing Email'
           x-enum-varnames:
             - Success
             - Error
             - InvalidEmail
+            - ExistingEmail
         statusMessage:
           type: string
           description: A message
@@ -151,12 +154,18 @@ components:
         countTotal:
           type: integer
           description: The number of rows processed
+        countSuccess:
+          type: integer
+          description: The number of rows processed with success.
         countFailure:
           type: integer
-          description: The number of rows with failures or validation errors.
+          description: The number of rows with failures.
         countExists:
           type: integer
-          description: The number of rows that already exists in the list and were not imported
+          description: The number of rows that already exists in the list and were not processed.
+        countInvalidEmail:
+          type: integer
+          description: The number of rows that have an invalid email.
         creationTime:
           type: string
           format: date-time

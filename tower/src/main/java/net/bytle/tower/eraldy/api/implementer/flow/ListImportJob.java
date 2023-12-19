@@ -48,12 +48,17 @@ public class ListImportJob {
     // time + the random uploaded file name
     this.jobId = creationTime.toFileSystemString() + "-" + this.uploadedCsvFile.getFileName().toString();
 
+    // Init all field
+    // to avoid dealing with empty value when returning the data object
     this.listImportJobStatus = new ListImportJobStatus();
     listImportJobStatus.setJobId(this.getIdentifier());
     listImportJobStatus.setStatusCode(TO_PROCESS_STATUS_CODE);
     listImportJobStatus.setUploadedFileName(fileUpload.fileName());
     listImportJobStatus.setCountTotal(0);
     listImportJobStatus.setCountFailure(0);
+    listImportJobStatus.setCountInvalidEmail(0);
+    listImportJobStatus.setCountExists(0);
+    listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
 
   }
@@ -183,12 +188,34 @@ public class ListImportJob {
          */
         listImportJobStatus.setEndTime(LocalDateTime.now());
         Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
-        String resultString = new JsonArray(composite.result().list()).toString();
+        List<ListImportJobRowStatus> importJobRowStatuses = composite.result().list();
+        String resultString = new JsonArray(importJobRowStatuses).toString();
         Fs.write(resultFile, resultString);
 
         /**
          * Write the job status
          */
+        int failCounter = 0;
+        int successCounter = 0;
+        int invalidEmail = 0;
+        for(ListImportJobRowStatus listImportJobRowStatus:importJobRowStatuses){
+          switch( listImportJobRowStatus.getStatusCode()){
+            case Success:
+              successCounter++;
+              break;
+            case InvalidEmail:
+              invalidEmail++;
+              break;
+            default:
+            case Error:
+              failCounter++;
+              break;
+          }
+        }
+        listImportJobStatus.setCountTotal(importJobRowStatuses.size());
+        listImportJobStatus.setCountFailure(failCounter);
+        listImportJobStatus.setCountSuccess(successCounter);
+        listImportJobStatus.setCountInvalidEmail(invalidEmail);
         Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
         Fs.write(statusPath, JsonObject.mapFrom(listImportJobStatus).toString());
 
