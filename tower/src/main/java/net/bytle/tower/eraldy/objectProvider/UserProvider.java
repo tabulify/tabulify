@@ -850,4 +850,7 @@ public class UserProvider {
   }
 
 
+  public Guid createUserGuid(long realmId, Long userId) {
+    return this.apiApp.createGuidFromRealmAndObjectId(USR_GUID_PREFIX, realmId, userId);
+  }
 }

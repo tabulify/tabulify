@@ -13,7 +13,6 @@ import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
-import net.bytle.tower.util.EmailAddressValidator;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -21,6 +20,7 @@ import net.bytle.vertx.auth.ApiSessionAuthenticationHandler;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
+import net.bytle.vertx.validator.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -306,7 +306,15 @@ public class EraldyApiApp extends TowerApp {
 
     return new builder(this.hashIds, shortPrefix)
       .setRealm(realm)
-      .setId(id)
+      .setFirstObjectId(id)
+      .build();
+  }
+
+  public Guid createGuidFromRealmAndObjectId(String shortPrefix, Long realmId, Long id) {
+
+    return new builder(this.hashIds, shortPrefix)
+      .setOrganizationOrRealmId(realmId)
+      .setFirstObjectId(id)
       .build();
   }
 
@@ -327,8 +335,8 @@ public class EraldyApiApp extends TowerApp {
 
     return Guid.builder(this.hashIds, shortPrefix)
       .setOrganizationOrRealmId(realmId)
-      .setFirstId(id1)
-      .setSecondId(id2)
+      .setFirstObjectId(id1)
+      .setSecondObjectId(id2)
       .build();
 
   }

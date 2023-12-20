@@ -41,7 +41,6 @@ public class ListRegistrationProvider {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ListRegistrationProvider.class);
 
   static final String TABLE_NAME = "realm_list_registration";
-  static final String QUALIFIED_TABLE_NAME = JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME;
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
   private static final String REGISTRATION_PREFIX = "registration";
   public static final String STATUS_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "status";
@@ -408,6 +407,8 @@ public class ListRegistrationProvider {
           Long userId = row.getLong(userIdAliasInQuery);
           String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
           registrationShort.setGuid(guidString);
+          String userGuid = apiApp.getUserProvider().createUserGuid(realmId, userId).toString();
+          registrationShort.setSubscriberGuid(userGuid);
           String userEmailAliasInQuery = "user_email";
           String subscriberEmail = row.getString(userEmailAliasInQuery);
           registrationShort.setSubscriberEmail(subscriberEmail);

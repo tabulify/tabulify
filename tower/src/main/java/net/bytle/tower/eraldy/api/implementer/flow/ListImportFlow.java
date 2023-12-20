@@ -7,12 +7,12 @@ import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.util.EmailAddressValidator;
 import net.bytle.type.Strings;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
+import net.bytle.vertx.validator.EmailAddressValidator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +31,7 @@ public class ListImportFlow implements WebFlow {
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
   private boolean running = false;
-  private int maxRowsProcessedByImport;
+  private final int maxRowsProcessedByImport;
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();

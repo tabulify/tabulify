@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ListImportJob {
 
@@ -147,13 +148,15 @@ public class ListImportJob {
 
         // header is at 0, 1 is the first row
         listImportJobStatus.setCountTotal(counter);
+        // fail early make the report returns to the first error
+        boolean failEarly = true;
         Future<ListImportJobRowStatus> futureListImportRow = this.listImportFlow.getEmailAddressValidator()
-          .validate(row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)], true)
+          .validate(row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)], failEarly)
           .compose(emailAddressValidityReport -> {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
-            listImportRow.setStatusCode(emailAddressValidityReport.isValid() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
-            listImportRow.setStatusMessage(String.join(", ", emailAddressValidityReport.getErrors().values()));
+            listImportRow.setStatusCode(emailAddressValidityReport.pass() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
+            listImportRow.setStatusMessage(emailAddressValidityReport.getReports().stream().map(Throwable::getMessage).collect(Collectors.joining(", ")));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
             return Future.succeededFuture(listImportRow);
@@ -198,8 +201,8 @@ public class ListImportJob {
         int failCounter = 0;
         int successCounter = 0;
         int invalidEmail = 0;
-        for(ListImportJobRowStatus listImportJobRowStatus:importJobRowStatuses){
-          switch( listImportJobRowStatus.getStatusCode()){
+        for (ListImportJobRowStatus listImportJobRowStatus : importJobRowStatuses) {
+          switch (listImportJobRowStatus.getStatusCode()) {
             case Success:
               successCounter++;
               break;

@@ -40,11 +40,11 @@ public class Guid {
   public String toString() {
     List<Long> ids = new ArrayList<>();
     ids.add(this.builder.organizationOrRealmId);
-    if (this.builder.firstId != null) {
-      ids.add(this.builder.firstId);
+    if (this.builder.firstObjectId != null) {
+      ids.add(this.builder.firstObjectId);
     }
-    if (this.builder.secondId != null) {
-      ids.add(this.builder.secondId);
+    if (this.builder.secondObjectId != null) {
+      ids.add(this.builder.secondObjectId);
     }
     long[] arrayIds = new long[ids.size()];
     for (int i = 0; i < ids.size(); i++) {
@@ -62,14 +62,14 @@ public class Guid {
     if (!this.builder.organizationOrRealmId.equals(realmId)) {
       throw new InternalException("The expected realm id (" + realmId + ") is not the same than the actual (" + this.builder.organizationOrRealmId + ")");
     }
-    return this.builder.firstId;
+    return this.builder.firstObjectId;
   }
 
   public long validateAndGetSecondObjectId(Long realmId) {
     if (!this.builder.organizationOrRealmId.equals(realmId)) {
       throw new InternalException("The expected realm id (" + realmId + ") is not the same than the actual (" + this.builder.organizationOrRealmId + ")");
     }
-    return this.builder.secondId;
+    return this.builder.secondObjectId;
   }
 
 
@@ -79,8 +79,8 @@ public class Guid {
     private final String guidPrefix;
 
     private Long organizationOrRealmId;
-    private Long firstId;
-    private Long secondId;
+    private Long firstObjectId;
+    private Long secondObjectId;
 
 
     public builder(HashId hashId, String guidPrefix) {
@@ -104,13 +104,13 @@ public class Guid {
         case REALM_ID_OBJECT_ID_TYPE:
           this.checkIds(ids, 2);
           this.organizationOrRealmId = ids[0];
-          this.firstId = ids[1];
+          this.firstObjectId = ids[1];
           break;
         case REALM_ID_TWO_OBJECT_ID_TYPE:
           this.checkIds(ids, 3);
           this.organizationOrRealmId = ids[0];
-          this.firstId = ids[1];
-          this.secondId = ids[2];
+          this.firstObjectId = ids[1];
+          this.secondObjectId = ids[2];
           break;
         default:
           throw new InternalException("The Guid type " + type + " is not in the branch");
@@ -130,11 +130,6 @@ public class Guid {
       return this;
     }
 
-    public builder setId(Long id) {
-      this.firstId = id;
-      return this;
-    }
-
     public Guid build() {
       if (this.organizationOrRealmId == null) {
         throw new InternalException("The realm or organization id should not be null");
@@ -147,13 +142,13 @@ public class Guid {
       return this;
     }
 
-    public builder setFirstId(Long id1) {
-      this.firstId = id1;
+    public builder setFirstObjectId(Long id1) {
+      this.firstObjectId = id1;
       return this;
     }
 
-    public builder setSecondId(Long id2) {
-      this.secondId = id2;
+    public builder setSecondObjectId(Long id2) {
+      this.secondObjectId = id2;
       return this;
     }
   }

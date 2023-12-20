@@ -25,7 +25,7 @@ public class EmailApiImpl implements EmailApi {
       .compose(
         res -> {
           int statusCode = 200;
-          if(!res.isValid()){
+          if(!res.pass()){
             statusCode = TowerFailureTypeEnum.BAD_STRUCTURE_422.getStatusCode();
           }
           return Future.succeededFuture(new ApiResponse<>(statusCode,res.toJsonObject()));
