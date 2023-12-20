@@ -18,17 +18,21 @@ public class EmailApiImpl implements EmailApi {
   }
 
   @Override
-  public Future<ApiResponse<JsonObject>> emailAddressAddressValidateGet(RoutingContext routingContext, String email) {
+  public Future<ApiResponse<JsonObject>> emailAddressAddressValidateGet(RoutingContext routingContext, String email, Boolean failEarly) {
+
+    if (failEarly == null) {
+      failEarly = true;
+    }
 
     return this.apiApp.getEmailAddressValidator()
-      .validate(email, false)
+      .validate(email, failEarly)
       .compose(
         res -> {
           int statusCode = 200;
-          if(!res.pass()){
+          if (!res.pass()) {
             statusCode = TowerFailureTypeEnum.BAD_STRUCTURE_422.getStatusCode();
           }
-          return Future.succeededFuture(new ApiResponse<>(statusCode,res.toJsonObject()));
+          return Future.succeededFuture(new ApiResponse<>(statusCode, res.toJsonObject()));
         },
         err -> Future.failedFuture(TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.INTERNAL_ERROR_500)

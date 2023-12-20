@@ -18,7 +18,8 @@ public class ListImportJobRowStatus   {
 public enum StatusCodeEnum {
 Success(0),
 Error(1),
-InvalidEmail(2);
+InvalidEmail(2),
+ExistingEmail(3);
 
   private final Integer value;
 
@@ -64,7 +65,7 @@ InvalidEmail(2);
   }
 
   /**
-  * @return statusCode The status code: 0: done, 1: fatal error, 2: invalid email
+  * @return statusCode The status code
   */
   @JsonProperty("statusCode")
   public StatusCodeEnum getStatusCode() {
@@ -72,7 +73,7 @@ InvalidEmail(2);
   }
 
   /**
-  * @param statusCode The status code: 0: done, 1: fatal error, 2: invalid email
+  * @param statusCode The status code
   */
   @SuppressWarnings("unused")
   public void setStatusCode(StatusCodeEnum statusCode) {

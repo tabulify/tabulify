@@ -9,7 +9,10 @@ import net.bytle.html.HtmlStructureException;
 import net.bytle.vertx.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DomainValidator {
 
@@ -32,22 +35,22 @@ public class DomainValidator {
    * @param failEarly - if true, will stop to the first failure and return it
    * @return a list of validation
    */
-  public Future<List<ValidationResult>> validate(DnsName dnsName, boolean failEarly) {
+  public Future<Set<ValidationResult>> validate(DnsName dnsName, boolean failEarly) {
 
     /**
      * Mx record
      */
     ValidationResult.Builder mxValidCheck = ValidationResult.builder("mxRecord");
-    Future<ValidationResult> mxRecords = dnsClient.resolveMx(dnsName)
+    Future<ValidationResult.Builder> mxRecords = dnsClient.resolveMx(dnsName)
       .compose(records -> {
         String noMxRecordMessage = "The domain (" + dnsName + ") has no MX records";
         if (records.isEmpty()) {
-          return Future.failedFuture(mxValidCheck.fail(noMxRecordMessage));
+          return Future.failedFuture(mxValidCheck.setMessage(noMxRecordMessage));
         } else {
-          return Future.succeededFuture(mxValidCheck.succeed("Mx records were found"));
+          return Future.succeededFuture(mxValidCheck.setMessage("Mx records were found"));
         }
-      }, err -> Future.failedFuture(mxValidCheck.fail(err)));
-    List<Future<ValidationResult>> compositeFutureList = new ArrayList<>();
+      }, err -> Future.failedFuture(mxValidCheck.setError(err)));
+    List<Future<ValidationResult.Builder>> compositeFutureList = new ArrayList<>();
     compositeFutureList.add(mxRecords);
 
     /**
@@ -55,17 +58,17 @@ public class DomainValidator {
      */
     ValidationResult.Builder aValidCheck = ValidationResult.builder("aRecord");
     DnsName apexDomain = dnsName.getApexName();
-    Future<ValidationResult> aRecordFuture = dnsClient.resolveA(apexDomain)
+    Future<ValidationResult.Builder> aRecordFuture = dnsClient.resolveA(apexDomain)
       .compose(
         aRecords -> {
 
           if (aRecords.isEmpty()) {
-            return Future.failedFuture(aValidCheck.fail("The apex domain (" + apexDomain + ") has no A records"));
+            return Future.failedFuture(aValidCheck.setMessage("The apex domain (" + apexDomain + ") has no A records"));
           }
-          return Future.succeededFuture(aValidCheck.succeed("A records were found"));
+          return Future.succeededFuture(aValidCheck.setMessage("A records were found"));
 
         }
-        , err -> Future.failedFuture(aValidCheck.fail(err))
+        , err -> Future.failedFuture(aValidCheck.setError(err))
       );
     compositeFutureList.add(aRecordFuture);
 
@@ -79,21 +82,21 @@ public class DomainValidator {
       .build();
     for (DnsBlockListQueryHelper dnsBlockListQueryHelper : dnsBlockLists) {
       DnsName dnsNameToQuery = dnsBlockListQueryHelper.getDnsNameToQuery();
-      Future<ValidationResult> futureBlockListCheck = dnsClient.resolveA(dnsNameToQuery)
+      Future<ValidationResult.Builder> futureBlockListCheck = dnsClient.resolveA(dnsNameToQuery)
         .compose(dnsIps -> {
 
           if (dnsIps.isEmpty()) {
-            return Future.failedFuture(blockListCheck.succeed("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
+            return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
           }
 
           DnsIp dnsIp = dnsIps.iterator().next();
           DnsBlockListResponseCode dnsBlockListResponse = dnsBlockListQueryHelper.createResponseCode(dnsIp);
           if (dnsBlockListResponse.getBlocked()) {
-            return Future.failedFuture(blockListCheck.fail("The apex domain (" + apexDomainNameAsString + ") is blocked by " + dnsBlockListQueryHelper.getBlockList()));
+            return Future.failedFuture(blockListCheck.setMessage("The apex domain (" + apexDomainNameAsString + ") is blocked by " + dnsBlockListQueryHelper.getBlockList()));
           }
 
-          return Future.succeededFuture(blockListCheck.succeed("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
-        }, err -> Future.failedFuture(blockListCheck.fail(err)));
+          return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
+        }, err -> Future.failedFuture(blockListCheck.setError(err)));
       compositeFutureList.add(futureBlockListCheck);
     }
 
@@ -114,17 +117,17 @@ public class DomainValidator {
     ValidationResult.Builder webServer = ValidationResult.builder("webServer");
     ValidationResult.Builder homePage = ValidationResult.builder("homePage");
     String absoluteURI = "https://" + apexDomainNameAsString;
-    Future<ValidationResult> homePageFuture = webClient.getAbs(absoluteURI)
+    Future<ValidationResult.Builder> homePageFuture = webClient.getAbs(absoluteURI)
       .send()
       .compose(response -> {
           try {
             HtmlGrading.grade(response.bodyAsString());
-            return Future.succeededFuture(homePage.succeed("HTML page legit at (" + absoluteURI + ")"));
+            return Future.succeededFuture(homePage.setMessage("HTML page legit at (" + absoluteURI + ")"));
           } catch (HtmlStructureException e) {
-            return Future.failedFuture(homePage.fail("The HTML page (" + absoluteURI + ") is not legit" + e.getMessage()));
+            return Future.failedFuture(homePage.setMessage("The HTML page (" + absoluteURI + ") is not legit" + e.getMessage()));
           }
         },
-        err -> Future.failedFuture(webServer.fail(err, "The web server (" + absoluteURI + ") could not be contacted."))
+        err -> Future.failedFuture(webServer.setError(err, "The web server (" + absoluteURI + ") could not be contacted."))
       );
     compositeFutureList.add(homePageFuture);
 
@@ -140,17 +143,35 @@ public class DomainValidator {
     }
     return compositeFuture
       .compose(
-        results -> Future.succeededFuture(results.list()),
+        results -> Future.succeededFuture(
+          results
+            .list()
+            .stream()
+            .map(e -> ((ValidationResult.Builder) e).succeed())
+            .collect(Collectors.toSet())
+        ),
         err -> {
-          if (!(err instanceof ValidationResult)) {
+          if (!(err instanceof ValidationResult.Builder)) {
             return Future.failedFuture(err);
           }
-          List<ValidationResult> validationResults = new ArrayList<>();
-          validationResults.add((ValidationResult) err);
-          for (Object validationResult : compositeFuture.list()) {
-            // not completed future are null
-            if (validationResult != null) {
-              validationResults.add((ValidationResult) validationResult);
+          Set<ValidationResult> validationResults = new HashSet<>();
+          // We add the error because it may not in the causes
+          // when failing early (ie Future.all)
+          ValidationResult validationError = ((ValidationResult.Builder) err).fail();
+          validationResults.add(validationError);
+          for (int i = 0; i < compositeFuture.size(); i++) {
+            if (compositeFuture.failed(i)) {
+              Throwable cause = compositeFuture.cause(i);
+              if (cause instanceof ValidationResult.Builder) {
+                ValidationResult validationResultBuilder = ((ValidationResult.Builder) cause).fail();
+                validationResults.add(validationResultBuilder);
+                continue;
+              }
+              return Future.failedFuture(cause);
+            }
+            if (compositeFuture.succeeded(i)) {
+              ValidationResult validationResult = ((ValidationResult.Builder) compositeFuture.resultAt(i)).succeed();
+              validationResults.add(validationResult);
             }
           }
           return Future.succeededFuture(validationResults);

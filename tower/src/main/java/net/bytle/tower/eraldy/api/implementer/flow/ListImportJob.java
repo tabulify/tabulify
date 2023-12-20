@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
+import net.bytle.vertx.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -156,7 +157,7 @@ public class ListImportJob {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
             listImportRow.setStatusCode(emailAddressValidityReport.pass() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
-            listImportRow.setStatusMessage(emailAddressValidityReport.getReports().stream().map(Throwable::getMessage).collect(Collectors.joining(", ")));
+            listImportRow.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationResult::getMessage).collect(Collectors.joining(", ")));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
             return Future.succeededFuture(listImportRow);
@@ -189,44 +190,62 @@ public class ListImportJob {
         /**
          * Write the row status
          */
-        listImportJobStatus.setEndTime(LocalDateTime.now());
-        Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
-        List<ListImportJobRowStatus> importJobRowStatuses = composite.result().list();
-        String resultString = new JsonArray(importJobRowStatuses).toString();
-        Fs.write(resultFile, resultString);
+        if (composite.succeeded()) {
 
-        /**
-         * Write the job status
-         */
-        int failCounter = 0;
-        int successCounter = 0;
-        int invalidEmail = 0;
-        for (ListImportJobRowStatus listImportJobRowStatus : importJobRowStatuses) {
-          switch (listImportJobRowStatus.getStatusCode()) {
-            case Success:
-              successCounter++;
-              break;
-            case InvalidEmail:
-              invalidEmail++;
-              break;
-            default:
-            case Error:
-              failCounter++;
-              break;
+          Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
+          List<ListImportJobRowStatus> importJobRowStatuses = composite.result().list();
+          String resultString = new JsonArray(importJobRowStatuses).toString();
+          Fs.write(resultFile, resultString);
+
+          /**
+           * Calculate the summaries
+           */
+          int failCounter = 0;
+          int successCounter = 0;
+          int invalidEmail = 0;
+          for (ListImportJobRowStatus listImportJobRowStatus : importJobRowStatuses) {
+            switch (listImportJobRowStatus.getStatusCode()) {
+              case Success:
+                successCounter++;
+                break;
+              case InvalidEmail:
+                invalidEmail++;
+                break;
+              default:
+              case Error:
+                failCounter++;
+                break;
+            }
           }
+          listImportJobStatus.setCountTotal(importJobRowStatuses.size());
+          listImportJobStatus.setCountFailure(failCounter);
+          listImportJobStatus.setCountSuccess(successCounter);
+          listImportJobStatus.setCountInvalidEmail(invalidEmail);
+
+        } else {
+
+          /**
+           * Fatal Error
+           */
+          Throwable error = composite.cause();
+          listImportJobStatus.setStatusMessage(error.getMessage());
+          listImportJobStatus.setStatusCode(FAILURE_STATUS_CODE);
+          LOGGER.error("A fatal error has occurred with the list import job (" + list.getGuid() + "," + listImportJobStatus.getJobId() + ")", error);
+
         }
-        listImportJobStatus.setCountTotal(importJobRowStatuses.size());
-        listImportJobStatus.setCountFailure(failCounter);
-        listImportJobStatus.setCountSuccess(successCounter);
-        listImportJobStatus.setCountInvalidEmail(invalidEmail);
-        Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
-        Fs.write(statusPath, JsonObject.mapFrom(listImportJobStatus).toString());
 
         /**
          * Move the csv file
          */
         Path csvFile = this.listImportFlow.getListDirectory(this.list.getGuid()).resolve(this.getIdentifier() + ".csv");
         Fs.move(this.uploadedCsvFile, csvFile);
+
+        /**
+         * Write the job report
+         */
+        listImportJobStatus.setEndTime(LocalDateTime.now());
+        Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
+        Fs.write(statusPath, JsonObject.mapFrom(listImportJobStatus).toString());
 
       });
 

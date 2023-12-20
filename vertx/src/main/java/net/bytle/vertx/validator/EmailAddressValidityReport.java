@@ -5,6 +5,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.vertx.ValidationResult;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ public class EmailAddressValidityReport {
       .stream()
       .collect(Collectors.toMap(
         ValidationResult::getName,
-        Throwable::getMessage
+        ValidationResult::getMessage
       )));
     jsonObjectMessage.put("success", this.builder
       .validationResults
@@ -44,7 +45,7 @@ public class EmailAddressValidityReport {
       .filter(ValidationResult::pass)
       .collect(Collectors.toMap(
         ValidationResult::getName,
-        Throwable::getMessage
+        ValidationResult::getMessage
       ))
     );
     return jsonObject;
@@ -92,7 +93,7 @@ public class EmailAddressValidityReport {
       return new EmailAddressValidityReport(this);
     }
 
-    public Builder addResults(List<ValidationResult> res) {
+    public Builder addResults(Collection<ValidationResult> res) {
       validationResults.addAll(res);
       return this;
     }

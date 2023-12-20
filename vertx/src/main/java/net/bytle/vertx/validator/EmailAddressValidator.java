@@ -34,10 +34,10 @@ public class EmailAddressValidator {
 
       return Future.succeededFuture(
         emailValidityReport
-          .addResult(emailValidCheck.fail("Email address is not valid"))
+          .addResult(emailValidCheck.setMessage("Email address is not valid").fail())
           .build());
     }
-    emailValidityReport.addResult(emailValidCheck.succeed("Email address is valid"));
+    emailValidityReport.addResult(emailValidCheck.setMessage("Email address is valid").succeed());
 
     /**
      * The domain to check

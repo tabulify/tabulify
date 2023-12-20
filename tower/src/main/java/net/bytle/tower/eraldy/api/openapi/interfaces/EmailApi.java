@@ -10,5 +10,5 @@ public interface EmailApi  {
     /**
      * Validate an email address
     */
-    Future<ApiResponse<JsonObject>> emailAddressAddressValidateGet(RoutingContext routingContext, String address);
+    Future<ApiResponse<JsonObject>> emailAddressAddressValidateGet(RoutingContext routingContext, String address, Boolean failEarly);
 }

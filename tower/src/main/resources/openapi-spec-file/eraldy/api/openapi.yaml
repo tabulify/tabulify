@@ -969,6 +969,16 @@ paths:
           format: email
           type: string
         style: simple
+      - description: |
+          If true, the validation will stop at the first fail of all checks
+          If false, the validation will have all checkes
+        explode: true
+        in: query
+        name: failEarly
+        required: false
+        schema:
+          type: boolean
+        style: form
       responses:
         "200":
           content:
@@ -1862,21 +1872,24 @@ components:
           description: The email to import
           type: string
         statusCode:
-          description: "The status code: 0: done, 1: fatal error, 2: invalid email"
+          description: The status code
           enum:
           - 0
           - 1
           - 2
+          - 3
           format: int32
           type: integer
           x-enum-descriptions:
           - Success
           - Error
           - Invalid Email
+          - Existing Email
           x-enum-varnames:
           - Success
           - Error
           - InvalidEmail
+          - ExistingEmail
         statusMessage:
           description: A message
           type: string

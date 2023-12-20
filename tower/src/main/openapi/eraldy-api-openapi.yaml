@@ -1084,6 +1084,14 @@ paths:
             type: string
             format: email
             example: "foo@example.com"
+        - name: failEarly
+          description: |
+            If true, the validation will stop at the first fail of all checks.
+            If false, the validation will have all checks
+          in: query
+          default: true
+          schema:
+            type: boolean
       responses:
         '200':
           description: Ok

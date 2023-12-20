@@ -29,11 +29,13 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
             String address = requestParameters.pathParameter("address") != null ? requestParameters.pathParameter("address").getString() : null;
+        Boolean failEarly = requestParameters.queryParameter("failEarly") != null ? requestParameters.queryParameter("failEarly").getBoolean() : null;
 
       logger.debug("Parameter address is {}", address);
+      logger.debug("Parameter failEarly is {}", failEarly);
 
     // Based on Route#respond
-    api.emailAddressAddressValidateGet(routingContext, address)
+    api.emailAddressAddressValidateGet(routingContext, address, failEarly)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
