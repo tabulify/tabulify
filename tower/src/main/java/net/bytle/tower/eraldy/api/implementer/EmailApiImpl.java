@@ -9,6 +9,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.resilience.ValidationStatus;
 
 public class EmailApiImpl implements EmailApi {
   private final EraldyApiApp apiApp;
@@ -29,7 +30,7 @@ public class EmailApiImpl implements EmailApi {
       .compose(
         res -> {
           int statusCode = 200;
-          if (!res.pass()) {
+          if (res.getStatus() != ValidationStatus.LEGIT) {
             statusCode = TowerFailureTypeEnum.BAD_STRUCTURE_422.getStatusCode();
           }
           return Future.succeededFuture(new ApiResponse<>(statusCode, res.toJsonObject()));

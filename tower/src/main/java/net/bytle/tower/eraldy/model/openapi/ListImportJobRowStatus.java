@@ -35,7 +35,7 @@ ExistingEmail(3);
 }
 
 
-  protected StatusCodeEnum statusCode;
+  protected int statusCode;
 
   protected String statusMessage;
 
@@ -68,7 +68,7 @@ ExistingEmail(3);
   * @return statusCode The status code
   */
   @JsonProperty("statusCode")
-  public StatusCodeEnum getStatusCode() {
+  public int getStatusCode() {
     return statusCode;
   }
 
@@ -76,7 +76,7 @@ ExistingEmail(3);
   * @param statusCode The status code
   */
   @SuppressWarnings("unused")
-  public void setStatusCode(StatusCodeEnum statusCode) {
+  public void setStatusCode(int statusCode) {
     this.statusCode = statusCode;
   }
 

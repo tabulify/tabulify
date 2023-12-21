@@ -156,7 +156,7 @@ public class ListImportJob {
           .compose(emailAddressValidityReport -> {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
-            listImportRow.setStatusCode(emailAddressValidityReport.pass() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
+            listImportRow.setStatusCode(emailAddressValidityReport.getStatus().getStatusCode());
             listImportRow.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
@@ -202,17 +202,12 @@ public class ListImportJob {
            */
           int failCounter = 0;
           int successCounter = 0;
-          int invalidEmail = 0;
           for (ListImportJobRowStatus listImportJobRowStatus : importJobRowStatuses) {
             switch (listImportJobRowStatus.getStatusCode()) {
-              case Success:
+              case 0:
                 successCounter++;
                 break;
-              case InvalidEmail:
-                invalidEmail++;
-                break;
               default:
-              case Error:
                 failCounter++;
                 break;
             }
@@ -220,7 +215,6 @@ public class ListImportJob {
           listImportJobStatus.setCountTotal(importJobRowStatuses.size());
           listImportJobStatus.setCountFailure(failCounter);
           listImportJobStatus.setCountSuccess(successCounter);
-          listImportJobStatus.setCountInvalidEmail(invalidEmail);
 
         } else {
 

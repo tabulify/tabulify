@@ -3,9 +3,7 @@ package net.bytle.vertx.resilience;
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class EmailAddressValidatorReport {
@@ -22,13 +20,13 @@ public class EmailAddressValidatorReport {
   }
 
 
-  public boolean pass() {
-    return this.builder.pass;
+  public ValidationStatus getStatus() {
+    return this.builder.status;
   }
 
   public JsonObject toJsonObject() {
     JsonObject jsonObject = new JsonObject();
-    jsonObject.put("pass", this.builder.pass);
+    jsonObject.put("pass", this.builder.status);
     jsonObject.put("email", this.builder.emailAddress);
     JsonObject jsonObjectMessage = new JsonObject();
     jsonObject.put("results", jsonObjectMessage);
@@ -59,15 +57,15 @@ public class EmailAddressValidatorReport {
   }
 
   public List<ValidationTestResult> getReports() {
-    return this.builder.validationTestResults;
+    return new ArrayList<>(this.builder.validationTestResults);
   }
 
 
   public static class Builder {
 
     private final String emailAddress;
-    public boolean pass;
-    private final List<ValidationTestResult> validationTestResults = new ArrayList<>();
+    public ValidationStatus status;
+    private final Set<ValidationTestResult> validationTestResults = new HashSet<>();
 
     public Builder(String emailAddress) {
       this.emailAddress = emailAddress;
@@ -82,11 +80,13 @@ public class EmailAddressValidatorReport {
       if (this.validationTestResults.isEmpty()) {
         throw new InternalException("A validation result should be added");
       }
-      this.pass = true;
+      status = ValidationStatus.LEGIT;
       for (ValidationTestResult validationTestResult : validationTestResults) {
         if (validationTestResult.fail()) {
-          this.pass = false;
-          break;
+          ValidationStatus validationStatus = validationTestResult.getValidation().getValidationType();
+          if (validationStatus.getOrderOfPrecedence() > status.getOrderOfPrecedence()) {
+            status = validationStatus;
+          }
         }
       }
       return new EmailAddressValidatorReport(this);
