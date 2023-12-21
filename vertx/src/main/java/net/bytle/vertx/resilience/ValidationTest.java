@@ -29,7 +29,11 @@ public enum ValidationTest {
   /**
    * Test if the string is a valid email address
    */
-  EMAIL_ADDRESS("emailAddress", ValidationStatus.EMAIL_ADDRESS_INVALID);
+  EMAIL_ADDRESS("emailAddress", ValidationStatus.EMAIL_ADDRESS_INVALID),
+  /**
+   * Test if the domain is on a while list
+   */
+  WHITE_LIST("whiteList", ValidationStatus.LEGIT);
   private final String name;
   private final ValidationStatus validationStatus;
 

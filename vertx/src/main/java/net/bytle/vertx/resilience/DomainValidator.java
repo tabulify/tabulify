@@ -21,6 +21,10 @@ public class DomainValidator {
 
   private final WebClient webClient;
   private final TowerDnsClient dnsClient;
+  /**
+   * ESP Domains
+   */
+  private final Set<String> whiteListDomains;
 
 
   public DomainValidator(TowerApp towerApp) {
@@ -30,6 +34,24 @@ public class DomainValidator {
       .setConnectTimeout(1000) // 1 second, 163.com
       .buildWebClient();
     dnsClient = server.getDnsClient();
+    /**
+     * The known white list that we don't test
+     */
+    whiteListDomains = new HashSet<>();
+    whiteListDomains.add("gmail.com");
+    whiteListDomains.add("googlemail.com");
+    whiteListDomains.add("yahoo.com");
+    whiteListDomains.add("outlook.com");
+    whiteListDomains.add("hotmail.com");
+    whiteListDomains.add("live.com");
+    whiteListDomains.add("icloud.com");
+    whiteListDomains.add("aol.com");
+    whiteListDomains.add("protonmail.com");
+    whiteListDomains.add("gmx.com");
+    whiteListDomains.add("yandex.com");
+    whiteListDomains.add("yandex.ru");
+    whiteListDomains.add("mail.com");
+    whiteListDomains.add("zoho.com");
   }
 
   /**
@@ -39,6 +61,16 @@ public class DomainValidator {
    * @return a list of validation
    */
   public Future<DomainValidatorResult> validate(DnsName dnsName, boolean failEarly) {
+
+    DomainValidatorResult domainValidatorResult = new DomainValidatorResult();
+
+    /**
+     * White List / Legit Domains
+     */
+    if (whiteListDomains.contains(dnsName.toString().toLowerCase())) {
+      domainValidatorResult.addTest(ValidationTest.WHITE_LIST.createResultBuilder().succeed());
+      return Future.succeededFuture(domainValidatorResult);
+    }
 
     /**
      * Mx record
@@ -147,7 +179,7 @@ public class DomainValidator {
     return compositeFuture
       .compose(
         results -> Future.succeededFuture(
-          new DomainValidatorResult(results
+          domainValidatorResult.addTests(results
             .list()
             .stream()
             .map(e -> ((ValidationTestResult.Builder) e).succeed())
@@ -178,8 +210,7 @@ public class DomainValidator {
               validationTestResults.add(validationTestResult);
             }
           }
-          DomainValidatorResult result = new DomainValidatorResult(validationTestResults);
-          return Future.succeededFuture(result);
+          return Future.succeededFuture(domainValidatorResult.addTests(validationTestResults));
         }
       );
   }
