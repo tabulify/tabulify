@@ -1,4 +1,4 @@
-package net.bytle.vertx.validator;
+package net.bytle.vertx.resilience;
 
 import io.vertx.core.Future;
 import jakarta.mail.internet.AddressException;
@@ -6,7 +6,6 @@ import net.bytle.dns.DnsIllegalArgumentException;
 import net.bytle.dns.DnsName;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.vertx.TowerApp;
-import net.bytle.vertx.ValidationResult;
 
 public class EmailAddressValidator {
 
@@ -21,13 +20,13 @@ public class EmailAddressValidator {
 
   /**
    * @param email - the email to valid
-   * @return {@link EmailAddressValidityReport}
+   * @return {@link EmailAddressValidatorReport}
    */
-  public Future<EmailAddressValidityReport> validate(String email, boolean failEarly) {
+  public Future<EmailAddressValidatorReport> validate(String email, boolean failEarly) {
     BMailInternetAddress mail;
 
-    ValidationResult.Builder emailValidCheck = ValidationResult.builder("emailAddress");
-    EmailAddressValidityReport.Builder emailValidityReport = EmailAddressValidityReport.builder(email);
+    ValidationTestResult.Builder emailValidCheck = ValidationTest.EMAIL_ADDRESS.createResultBuilder();
+    EmailAddressValidatorReport.Builder emailValidityReport = EmailAddressValidatorReport.builder(email);
     try {
       mail = BMailInternetAddress.of(email);
     } catch (AddressException e) {
@@ -35,7 +34,8 @@ public class EmailAddressValidator {
       return Future.succeededFuture(
         emailValidityReport
           .addResult(emailValidCheck.setMessage("Email address is not valid").fail())
-          .build());
+          .build()
+      );
     }
     emailValidityReport.addResult(emailValidCheck.setMessage("Email address is valid").succeed());
 
@@ -54,7 +54,7 @@ public class EmailAddressValidator {
      */
     return domainValidator
       .validate(emailDomain, failEarly)
-      .compose(res -> Future.succeededFuture(emailValidityReport.addResults(res).build()));
+      .compose(res -> Future.succeededFuture(emailValidityReport.addResults(res.getResults()).build()));
 
   }
 }

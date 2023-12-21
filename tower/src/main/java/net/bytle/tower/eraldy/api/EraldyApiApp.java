@@ -20,7 +20,7 @@ import net.bytle.vertx.auth.ApiSessionAuthenticationHandler;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthQueryProperty;
 import net.bytle.vertx.auth.OAuthExternalCodeFlow;
-import net.bytle.vertx.validator.EmailAddressValidator;
+import net.bytle.vertx.resilience.EmailAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

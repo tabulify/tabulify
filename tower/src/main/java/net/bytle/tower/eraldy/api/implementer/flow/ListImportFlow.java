@@ -12,7 +12,7 @@ import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
-import net.bytle.vertx.validator.EmailAddressValidator;
+import net.bytle.vertx.resilience.EmailAddressValidator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

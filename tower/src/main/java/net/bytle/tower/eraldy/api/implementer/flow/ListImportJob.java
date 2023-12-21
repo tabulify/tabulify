@@ -13,7 +13,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.ValidationResult;
+import net.bytle.vertx.resilience.ValidationTestResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -157,7 +157,7 @@ public class ListImportJob {
             ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
             listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
             listImportRow.setStatusCode(emailAddressValidityReport.pass() ? ListImportJobRowStatus.StatusCodeEnum.Success : ListImportJobRowStatus.StatusCodeEnum.InvalidEmail);
-            listImportRow.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationResult::getMessage).collect(Collectors.joining(", ")));
+            listImportRow.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
             // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
             return Future.succeededFuture(listImportRow);

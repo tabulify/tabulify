@@ -1,18 +1,18 @@
-package net.bytle.vertx;
+package net.bytle.vertx.resilience;
 
 import java.util.Objects;
 
-public class ValidationResult  {
+public class ValidationTestResult {
 
 
   private final Builder builder;
 
 
-  static public Builder builder(String name) {
-    return new Builder(name);
+  static public Builder builder(ValidationTest validationTest) {
+    return new Builder(validationTest);
   }
 
-  public ValidationResult(Builder builder) {
+  public ValidationTestResult(Builder builder) {
     this.builder = builder;
   }
 
@@ -20,13 +20,13 @@ public class ValidationResult  {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ValidationResult that = (ValidationResult) o;
-    return Objects.equals(builder.name, that.builder.name);
+    ValidationTestResult that = (ValidationTestResult) o;
+    return Objects.equals(builder.validationTest, that.builder.validationTest);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(builder.name);
+    return Objects.hash(builder.validationTest);
   }
 
   public boolean fail() {
@@ -36,8 +36,8 @@ public class ValidationResult  {
     return this.builder.pass;
   }
 
-  public String getName() {
-    return this.builder.name;
+  public ValidationTest getValidation() {
+    return this.builder.validationTest;
   }
 
   public String getMessage() {
@@ -50,12 +50,12 @@ public class ValidationResult  {
    */
   static public class Builder extends Exception {
 
-    private final String name;
+    private final ValidationTest validationTest;
     private String message;
     private Boolean pass;
 
-    public Builder(String name) {
-      this.name = name;
+    public Builder(ValidationTest validationTest) {
+      this.validationTest = validationTest;
     }
 
     public Builder setMessage(String message) {
@@ -75,7 +75,6 @@ public class ValidationResult  {
     }
 
 
-
     /**
      * Fail and succeed are the final methods
      * because the status should be consistent with the
@@ -83,9 +82,9 @@ public class ValidationResult  {
      * The status of the validation is then set
      * after the execution of the Future.
      */
-    public ValidationResult succeed() {
+    public ValidationTestResult succeed() {
       this.pass = true;
-      return new ValidationResult(this);
+      return new ValidationTestResult(this);
     }
 
 
@@ -96,9 +95,9 @@ public class ValidationResult  {
      * The status of the validation is then set
      * after the execution of the Future.
      */
-    public ValidationResult fail() {
+    public ValidationTestResult fail() {
       this.pass = false;
-      return new ValidationResult(this);
+      return new ValidationTestResult(this);
     }
 
 

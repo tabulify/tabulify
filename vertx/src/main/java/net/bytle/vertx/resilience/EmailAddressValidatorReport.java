@@ -1,20 +1,19 @@
-package net.bytle.vertx.validator;
+package net.bytle.vertx.resilience;
 
 import io.vertx.core.json.JsonObject;
 import net.bytle.exception.InternalException;
-import net.bytle.vertx.ValidationResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class EmailAddressValidityReport {
+public class EmailAddressValidatorReport {
 
 
   private final Builder builder;
 
-  public EmailAddressValidityReport(Builder builder) {
+  public EmailAddressValidatorReport(Builder builder) {
     this.builder = builder;
   }
 
@@ -36,16 +35,16 @@ public class EmailAddressValidityReport {
     jsonObjectMessage.put("errors", this.getErrors()
       .stream()
       .collect(Collectors.toMap(
-        ValidationResult::getName,
-        ValidationResult::getMessage
+        ValidationTestResult::getValidation,
+        ValidationTestResult::getMessage
       )));
     jsonObjectMessage.put("success", this.builder
-      .validationResults
+      .validationTestResults
       .stream()
-      .filter(ValidationResult::pass)
+      .filter(ValidationTestResult::pass)
       .collect(Collectors.toMap(
-        ValidationResult::getName,
-        ValidationResult::getMessage
+        ValidationTestResult::getValidation,
+        ValidationTestResult::getMessage
       ))
     );
     return jsonObject;
@@ -55,12 +54,12 @@ public class EmailAddressValidityReport {
     return this.builder.emailAddress;
   }
 
-  public List<ValidationResult> getErrors() {
-    return this.builder.validationResults.stream().filter(ValidationResult::fail).collect(Collectors.toList());
+  public List<ValidationTestResult> getErrors() {
+    return this.builder.validationTestResults.stream().filter(ValidationTestResult::fail).collect(Collectors.toList());
   }
 
-  public List<ValidationResult> getReports() {
-    return this.builder.validationResults;
+  public List<ValidationTestResult> getReports() {
+    return this.builder.validationTestResults;
   }
 
 
@@ -68,33 +67,33 @@ public class EmailAddressValidityReport {
 
     private final String emailAddress;
     public boolean pass;
-    private final List<ValidationResult> validationResults = new ArrayList<>();
+    private final List<ValidationTestResult> validationTestResults = new ArrayList<>();
 
     public Builder(String emailAddress) {
       this.emailAddress = emailAddress;
     }
 
-    public Builder addResult(ValidationResult validationResult) {
-      this.validationResults.add(validationResult);
+    public Builder addResult(ValidationTestResult validationTestResult) {
+      this.validationTestResults.add(validationTestResult);
       return this;
     }
 
-    public EmailAddressValidityReport build() {
-      if (this.validationResults.isEmpty()) {
+    public EmailAddressValidatorReport build() {
+      if (this.validationTestResults.isEmpty()) {
         throw new InternalException("A validation result should be added");
       }
       this.pass = true;
-      for (ValidationResult validationResult : validationResults) {
-        if (validationResult.fail()) {
+      for (ValidationTestResult validationTestResult : validationTestResults) {
+        if (validationTestResult.fail()) {
           this.pass = false;
           break;
         }
       }
-      return new EmailAddressValidityReport(this);
+      return new EmailAddressValidatorReport(this);
     }
 
-    public Builder addResults(Collection<ValidationResult> res) {
-      validationResults.addAll(res);
+    public Builder addResults(Collection<ValidationTestResult> res) {
+      validationTestResults.addAll(res);
       return this;
     }
   }
