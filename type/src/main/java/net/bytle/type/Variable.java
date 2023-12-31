@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 public class Variable implements Comparable<Variable> {
 
 
-  private final Attribute attribute;
+  private Attribute attribute;
   private final String column;
   private Object originalValue;
   private final Origin origin;
@@ -276,5 +276,9 @@ public class Variable implements Comparable<Variable> {
     return this;
   }
 
+
+  public void setAttribute(Attribute attribute) {
+    this.attribute = attribute;
+  }
 
 }

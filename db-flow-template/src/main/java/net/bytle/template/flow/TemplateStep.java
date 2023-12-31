@@ -135,9 +135,9 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
        * Template Selectors if any
        */
       Set<DataPath> templateDataPaths;
-      if (templateSelectors.size() > 0) {
+      if (!templateSelectors.isEmpty()) {
         templateDataPaths = tabular.select(templateSelectors, false, null);
-        if (templateDataPaths.size() == 0) {
+        if (templateDataPaths.isEmpty()) {
           throw new RuntimeException("No templates were selected by the selectors (" + templateSelectors.stream().map(DataUri::toString).collect(Collectors.joining(",")));
         }
         for (DataPath templateDataPath : templateDataPaths) {
@@ -316,7 +316,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
              * Add tabular variables from the template-tables
              */
             Map<String, DataUri> tabularVariables = this.templateStep.tableVariables;
-            if (tabularVariables.size() > 0) {
+            if (!tabularVariables.isEmpty()) {
               Map<String, Object> tablesTemplateVariables = new HashMap<>();
               for (Map.Entry<String, DataUri> tablesVariable : tabularVariables.entrySet()) {
                 String variableName = tablesVariable.getKey();
@@ -646,7 +646,12 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
             if (!(tableVariable instanceof Map)) {
               throw new IllegalStateException("A table variable value is not a map but a " + value.getClass().getSimpleName());
             }
-            Map<String, String> tableVariableMap = Casts.castToSameMap(tableVariable, String.class, String.class);
+            Map<String, String> tableVariableMap;
+            try {
+              tableVariableMap = Casts.castToSameMap(tableVariable, String.class, String.class);
+            } catch (CastException e) {
+              throw new InternalException("String, string should not throw an exception", e);
+            }
             String variableName = tableVariableMap.get("name");
             String variableDataSelectors = tableVariableMap.get("selectors");
             this.addTemplateTabularVariable(variableName, tabular.createDataUri(variableDataSelectors));
@@ -672,7 +677,7 @@ public class TemplateStep extends FilterStepAbs implements OperationStep {
     }
 
     // Mandatory
-    if (this.templateSelectors.size() == 0 && this.inlineTemplates.size() == 0) {
+    if (this.templateSelectors.isEmpty() && this.inlineTemplates.isEmpty()) {
       throw new IllegalStateException("A template is mandatory (selector or inline) for the the step (" + this + ")");
     }
     return this;

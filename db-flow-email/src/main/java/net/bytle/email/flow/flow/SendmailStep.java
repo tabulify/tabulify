@@ -387,15 +387,20 @@ public class SendmailStep extends FilterStepAbs {
         if (!environment.equals(ProjectConfigurationFile.PRODUCTION_ENV)) {
 
           List<InternetAddress> toMessagesAddresses = bMailMimeMessage.getToInternetAddresses();
-          if (toMessagesAddresses.size() == 0) {
+          if (toMessagesAddresses.isEmpty()) {
             // should not happen as it's checked before
             throw new RuntimeException("A `to` address was not found.");
           }
 
           SmtpConnection connectionRun = this.getConnectionRun();
           List<InternetAddress> connectionTos = connectionRun.getDefaultToInternetAddresses();
-          if (connectionTos.size() == 0) {
-            throw new RuntimeException("A `to` address was not specified for the connection (" + connectionRun + "). It's mandatory because the execution runs with the environment (" + environment + ") that is not a production environment, therefore the email are send to the `to` address of the connection. Set the environment to production or give a `to` email property to smtp.");
+          if (connectionTos.isEmpty()) {
+            /**
+             * TODO: This error comes from the fact that the attributes
+             * are not passed to the building of the connection
+             * The `to` should be in the URI for now.
+             */
+            throw new RuntimeException("A `to` address was not found for the connection (" + connectionRun + "). It's mandatory because the execution runs with the environment (" + environment + ") that is not a production environment, therefore the email are send to the `to` address of the connection. Set the environment to production or give a `to` email property to smtp.");
           }
           InternetAddress connectionTo = connectionTos.get(0);
           for (InternetAddress internetAddress : toMessagesAddresses) {

@@ -20,6 +20,7 @@ import java.util.*;
 import static net.bytle.db.gen.GenColumnDef.GENERATOR_PROPERTY_KEY;
 
 
+@SuppressWarnings("removal")
 public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements CollectionGenerator<T>, java.util.function.Supplier<T> {
 
   public static final String TYPE = "expression";
@@ -32,7 +33,9 @@ public class ExpressionGenerator<T> extends CollectionGeneratorAbs<T> implements
 
   static {
     ScriptEngineManager mgr = new ScriptEngineManager();
-    engine = mgr.getEngineByName("nashorn"); // name may be also "Javascript"
+    // We need to move to graalJs
+    // https://docs.oracle.com/en/java/javase/11/docs/api/jdk.scripting.nashorn/module-summary.html
+    engine = mgr.getEngineByName("Javascript");
   }
 
   private final List<CollectionGenerator<?>> parentCollectionGenerators = new ArrayList<>();

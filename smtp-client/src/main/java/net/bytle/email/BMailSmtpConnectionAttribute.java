@@ -11,7 +11,7 @@ public enum BMailSmtpConnectionAttribute implements Attribute {
   /**
    * Attribute of a connection
    */
-  AUTH("if authentication is mandatory", Boolean.class, DEFAULTS.AUTH),
+  AUTH("if authentication is mandatory (deprecated)", Boolean.class, DEFAULTS.AUTH),
   TLS("use secure connection", Boolean.class, DEFAULTS.TLS),
   // Default same as php
   // https://www.php.net/manual/en/mail.configuration.php

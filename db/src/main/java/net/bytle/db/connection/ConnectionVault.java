@@ -143,8 +143,9 @@ public class ConnectionVault implements AutoCloseable {
   public List<Connection> removeConnections(String... globPatterns) {
     initCheck();
     List<Connection> connectionsToRemove = getConnections(globPatterns);
-    connectionsToRemove.forEach(dataStore -> connections.remove(dataStore.getName()));
-
+    for (Connection connectionToRemove : connectionsToRemove) {
+      connections.remove(connectionToRemove.getName());
+    }
     return connectionsToRemove;
   }
 
@@ -255,7 +256,7 @@ public class ConnectionVault implements AutoCloseable {
               uri = variable;
             }
           } catch (Exception e) {
-            throw new RuntimeException("An error has occurred while reading the variable " + propertyName + " for the connection (" + connectionName + "). Error: "+e.getMessage(),e);
+            throw new RuntimeException("An error has occurred while reading the variable " + propertyName + " for the connection (" + connectionName + "). Error: " + e.getMessage(), e);
           }
           variableMap.add(variable);
 
@@ -269,6 +270,8 @@ public class ConnectionVault implements AutoCloseable {
          * Create the connection
          */
         Connection connection = Connection.createConnectionFromProviderOrDefault(this.tabular, connectionName, (String) uri.getValueOrDefaultOrNull());
+        // variables map should be in the building of the connection
+        // as they may be used for the default values
         connection.setVariables(variableMap);
         connections.put(connectionName, connection);
 

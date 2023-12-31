@@ -196,7 +196,12 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
     this.clazz = clazz;
 
     if (element instanceof Map) {
-      Map<T, Double> castedElement = Casts.castToSameMap(element, clazz, Double.class);
+      Map<T, Double> castedElement;
+      try {
+        castedElement = Casts.castToSameMap(element, clazz, Double.class);
+      } catch (CastException e) {
+        throw new RuntimeException("An histogram element is not a double",e);
+      }
       return addHistogramGenerator(clazz, castedElement);
     } else {
       Map<T, Double> buckets = Arrays.stream(Arrayss.concat(element, elements))
@@ -334,7 +339,7 @@ public class GenColumnDef extends ColumnDefBase implements ColumnDef {
 
       /**
        * Hidden action
-       *
+       * <p>
        * !!! After the loop processing above. !!!
        * This is important for the above loop
        * otherwise you miss the next column

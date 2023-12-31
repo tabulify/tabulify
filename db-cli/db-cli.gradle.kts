@@ -257,6 +257,7 @@ dependencies {
   api(project(":bytle-db-json"))
   api(project(":bytle-db-web-document"))
   api(project(":bytle-db-flow-template"))
+  api(project(":bytle-db-flow-email"))
   api(project(":bytle-sftp"))
   api(project(":bytle-http"))
   api(project(":bytle-db-sqlite"))

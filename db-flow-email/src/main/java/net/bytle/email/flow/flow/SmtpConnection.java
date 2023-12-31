@@ -111,16 +111,6 @@ public class SmtpConnection extends Connection {
     }
   }
 
-  private Boolean getAuth() {
-    try {
-      return getBooleanProperty(BMailSmtpConnectionAttribute.AUTH.toString());
-    } catch (NoValueException | NoVariableException e) {
-      return BMailSmtpConnectionAttribute.DEFAULTS.AUTH;
-    } catch (CastException e) {
-      throw IllegalArgumentExceptions.createFromMessage("The value for the attribute (" + BMailSmtpConnectionAttribute.AUTH + ") of the connection (" + this + ") is not valid. Error: " + e.getMessage(), e);
-    }
-  }
-
   private Boolean getTls() {
     try {
       return getBooleanProperty(BMailSmtpConnectionAttribute.TLS.toString());
@@ -134,7 +124,7 @@ public class SmtpConnection extends Connection {
   @Nullable
   private Boolean getBooleanProperty(String propertyKey) throws NoValueException, NoVariableException, CastException {
     String tls = this.uri.getQueryProperty(propertyKey);
-    if (tls != null && !tls.trim().equals("")) {
+    if (tls != null && !tls.trim().isEmpty()) {
       return Booleans.createFromString(tls).toBoolean();
     }
     return this.getVariable(propertyKey).getValueOrDefaultCastAs(Boolean.class);
@@ -152,7 +142,7 @@ public class SmtpConnection extends Connection {
   private String getSmtpUser() throws NoValueException {
 
     String user = this.uri.getQueryProperty(ConnectionAttribute.USER);
-    if (user != null && !user.trim().equals("")) {
+    if (user != null && !user.trim().isEmpty()) {
       return user;
     }
     return (String) this.getUser().getValueOrDefault();
@@ -257,9 +247,6 @@ public class SmtpConnection extends Connection {
     } catch (NoValueException e) {
       // ok
     }
-
-    Boolean auth = this.getAuth();
-    smtpConfig.setAuth(auth);
 
     Boolean tls = this.getTls();
     if (tls) {

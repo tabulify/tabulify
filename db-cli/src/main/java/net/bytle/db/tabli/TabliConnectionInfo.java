@@ -54,7 +54,7 @@ public class TabliConnectionInfo {
     final List<Connection> connections = tabular.selectConnections(connectionNames.toArray(new String[0]));
 
     List<DataPath> feedbackDataPaths = new ArrayList<>();
-    if (connections.size() == 0) {
+    if (connections.isEmpty()) {
       tabular.warningOrTerminateIfStrict("No connection was found with the name (" + connectionNames + ")");
     } else {
 

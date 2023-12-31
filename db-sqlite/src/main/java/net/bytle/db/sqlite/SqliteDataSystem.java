@@ -47,10 +47,10 @@ public class SqliteDataSystem extends SqlDataSystem {
    * Returns statement to create the table
    * SQLlite has limited support on the alter statement
    * The primary key shoud be in the create statement.
-   * See https://sqlite.org/faq.html#q11
+   * See <a href="https://sqlite.org/faq.html#q11">...</a>
    *
    * @param dataPath the data path source
-   * @return a create statement https://www.sqlite.org/lang_createtable.html
+   * @return a create statement <a href="https://www.sqlite.org/lang_createtable.html">lang_createtable</a>
    */
   @Override
   public String createTableStatement(SqlDataPath dataPath) {
@@ -124,7 +124,7 @@ public class SqliteDataSystem extends SqlDataSystem {
     // Syntax in the table constraint clause
     // https://sqlite.org/lang_createtable.html
     tableDef.getUniqueKeys().forEach(uk -> {
-      assert uk.getColumns().size() > 0 : "The unique key (" + uk + ") of the table (" + tableDef.getDataPath() + ") has no columns";
+      assert !uk.getColumns().isEmpty() : "The unique key (" + uk + ") of the table (" + tableDef.getDataPath() + ") has no columns";
       statement.append(",\nunique (");
       for (int i = 1; i <= uk.getColumns().size(); i++) {
         ColumnDef columnDef = uk.getColumns().get(i - 1);
@@ -146,7 +146,7 @@ public class SqliteDataSystem extends SqlDataSystem {
 
   /**
    * Already include in the {@link #createTableStatement(SqlDataPath)}
-   * SQLite does not support in its alter statement the creation of a primary key. See https://sqlite.org/lang_altertable.html
+   * SQLite does not support in its alter statement the creation of a primary key. See <a href="https://sqlite.org/lang_altertable.html">alter</a>
    */
   @Override
   protected String createPrimaryKeyStatement(SqlDataPath jdbcDataPath) {
@@ -155,7 +155,7 @@ public class SqliteDataSystem extends SqlDataSystem {
 
   /**
    * Already include in the {@link #createTableStatement(SqlDataPath)}
-   * SQLite does not support in its alter statement the creation of a primary key. See https://sqlite.org/lang_altertable.html
+   * SQLite does not support in its alter statement the creation of a primary key. See <a href="https://sqlite.org/lang_altertable.html">...</a>
    */
   @Override
   protected String createUniqueKeyStatement(UniqueKeyDef uniqueKeyDef) {
@@ -164,7 +164,7 @@ public class SqliteDataSystem extends SqlDataSystem {
 
   /**
    * Already include in the {@link #createTableStatement(SqlDataPath)}
-   * SQLite does not support in its alter statement the creation of a primary key. See https://sqlite.org/lang_altertable.html
+   * SQLite does not support in its alter statement the creation of a primary key. See <a href="https://sqlite.org/lang_altertable.html">...</a>
    */
   @Override
   protected String createForeignKeyStatement(ForeignKeyDef foreignKeyDef) {
@@ -172,7 +172,7 @@ public class SqliteDataSystem extends SqlDataSystem {
   }
 
   /**
-   * https://sqlite.org/lang_delete.html#the_truncate_optimization
+   * <a href="https://sqlite.org/lang_delete.html#the_truncate_optimization">...</a>
    */
   @Override
   public List<String> createTruncateStatement(List<SqlDataPath> dataPaths) {
@@ -312,7 +312,7 @@ public class SqliteDataSystem extends SqlDataSystem {
        * Sqlite will still drop the table even if there is a foreign key that references it
        */
       List<ForeignKeyDef> foreignKeysThatReference = super.getForeignKeysThatReference(sqlDataPath);
-      if (foreignKeysThatReference.size() > 0) {
+      if (!foreignKeysThatReference.isEmpty()) {
         throw new RuntimeException("The table (" + dataPath + ") is referenced by the following tables " + foreignKeysThatReference.stream().map(fk -> fk.getRelationDef().getDataPath().getName()).collect(Collectors.joining(", ")) + " and can't therefore be dropped");
       }
 

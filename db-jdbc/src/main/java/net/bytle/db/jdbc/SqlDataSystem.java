@@ -87,7 +87,7 @@ public class SqlDataSystem extends DataSystemAbs {
    */
   public String createColumnsStatementForQuery(List<? extends ColumnDef> columnDefs) {
 
-    assert columnDefs.size() != 0 : "The number of columns passed should be more than 0";
+    assert !columnDefs.isEmpty() : "The number of columns passed should be more than 0";
     SqlDataSystem dataSystem = (SqlDataSystem) columnDefs.get(0).getRelationDef().getDataPath().getConnection().getDataSystem();
     return columnDefs.stream()
       .map(col -> dataSystem.createQuotedName(col.getColumnName()))
@@ -459,7 +459,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
 
   /**
-   * https://www.postgresql.org/docs/current/sql-altertable.html
+   * <a href="https://www.postgresql.org/docs/current/sql-altertable.html">...</a>
    */
   private String createAlterTableRenameStatement(SqlDataPath source, SqlDataPath target) {
     return "alter table " + source.toSqlStringPath() + " rename to " + createQuotedName(target.getName());
@@ -742,9 +742,9 @@ public class SqlDataSystem extends DataSystemAbs {
        */
       String primaryTableCatalogName = sqlMeta.getPrimaryTableCatalogName();
       if (
-        (primaryTableCatalogName == null || primaryTableCatalogName.equals(""))
+        (primaryTableCatalogName == null || primaryTableCatalogName.isEmpty())
           &&
-          (catalog != null && !catalog.equals(""))
+          (catalog != null && !catalog.isEmpty())
       ) {
         primaryTableCatalogName = catalog;
       }
@@ -860,7 +860,7 @@ public class SqlDataSystem extends DataSystemAbs {
 
       /**
        * Add the constraints
-       *
+       * <p>
        * We are not throwing an error when a constraint statement is asked
        * because the CREATE statement is seen as a unit.
        * There is not a lot of change to get an constraint statement (alter)
@@ -872,7 +872,7 @@ public class SqlDataSystem extends DataSystemAbs {
       // Add the Primary Key
       final PrimaryKeyDef primaryKey = dataPath.getOrCreateRelationDef().getPrimaryKey();
       if (primaryKey != null) {
-        if (primaryKey.getColumns().size() != 0) {
+        if (!primaryKey.getColumns().isEmpty()) {
           String createPrimaryKeyStatement = createPrimaryKeyStatement(sqlDataPath);
           if (createPrimaryKeyStatement != null) {
             this.execute(createPrimaryKeyStatement);
@@ -1166,8 +1166,8 @@ public class SqlDataSystem extends DataSystemAbs {
    *
    * <p>
    * Known for postgres below the term `INSERT .. ON CONFLICT .. DO UPDATE SET ..`
-   * https://wiki.postgresql.org/wiki/UPSERT
-   * https://www.postgresql.org/docs/devel/sql-insert.html
+   * <a href="https://wiki.postgresql.org/wiki/UPSERT">...</a>
+   * <a href="https://www.postgresql.org/docs/devel/sql-insert.html">sql-insert</a>
    *
    * @return a upsert statement that is used by the loader
    */
@@ -1216,7 +1216,7 @@ public class SqlDataSystem extends DataSystemAbs {
      * Build the statement
      */
     StringBuilder upsertStatement = new StringBuilder();
-    if (targetUniqueKeyFoundInSourceColumns.size() > 0) {
+    if (!targetUniqueKeyFoundInSourceColumns.isEmpty()) {
       UniqueKeyDef targetUniqueKey = targetUniqueKeyFoundInSourceColumns.get(0);
       upsertStatement
         .append("on conflict ( ")
@@ -1358,8 +1358,14 @@ public class SqlDataSystem extends DataSystemAbs {
       case VIEW:
         // supported
         break;
+      case SYSTEM_TABLE:
+      case SYSTEM_VIEW:
+        // Not supported, but we don't return an error because
+        // a `*@sqlite` selection returns them by default for now
+        SqlLog.LOGGER_DB_JDBC.warning("The resource ("+sqlDataPath+") is not a (" + type + ") and was not dropped");
+        return;
       default:
-        throw new UnsupportedOperationException("The drop of the SQL object type (" + type + ") is not supported. We can't drop the resource ("+sqlDataPath+")");
+        throw new UnsupportedOperationException("The resource ("+sqlDataPath+") is not a view or a table. It's a (" + type + "). We don't support a drop");
     }
 
 
@@ -1403,7 +1409,7 @@ public class SqlDataSystem extends DataSystemAbs {
   public void delete(DataPath dataPath) {
 
     SqlDataPath sqlDataPath = (SqlDataPath) dataPath;
-    //noinspection SqlDialectInspection
+    //noinspection SqlDialectInspection,SqlWithoutWhere
     String deleteStatement = "delete from " + sqlDataPath.toSqlStringPath();
     try (Statement statement = sqlDataPath.getConnection().getCurrentConnection().createStatement()) {
       statement.execute(deleteStatement);
@@ -1798,7 +1804,7 @@ public class SqlDataSystem extends DataSystemAbs {
   /**
    * Create the drop not null constraint statement
    * <p>
-   * From https://www.postgresql.org/docs/9.5/ddl-alter.html
+   * From <a href="https://www.postgresql.org/docs/9.5/ddl-alter.html">...</a>
    */
   protected String createDropNotNullConstraintStatement(ColumnDef columnDef) {
     SqlDataPath sqlDataPath = (SqlDataPath) columnDef.getRelationDef().getDataPath();
@@ -1934,7 +1940,7 @@ public class SqlDataSystem extends DataSystemAbs {
   }
 
   /**
-   * https://www.postgresql.org/docs/10/sql-delete.html
+   * <a href="https://www.postgresql.org/docs/10/sql-delete.html">...</a>
    */
   public String createDeleteStatementWithSelect(TransferSourceTarget transferSourceTarget) {
     /**
@@ -2066,7 +2072,6 @@ public class SqlDataSystem extends DataSystemAbs {
    * or
    * * return false
    *
-   * @return true if the table exists in the metadata or false
    * <p>
    * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    * We are not using the {@link SqlDataSystem#exists(DataPath)} function

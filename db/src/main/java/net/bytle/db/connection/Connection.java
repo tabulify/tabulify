@@ -9,7 +9,10 @@ import net.bytle.db.noop.NoOpConnection;
 import net.bytle.db.spi.*;
 import net.bytle.db.uri.DataUri;
 import net.bytle.db.uri.DataUriString;
-import net.bytle.exception.*;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NoValueException;
+import net.bytle.exception.NoVariableException;
 import net.bytle.type.*;
 
 import java.math.BigDecimal;
@@ -330,6 +333,12 @@ public abstract class Connection implements Comparable<Connection>, AutoCloseabl
     // we don't send any error to not give any burden to the developer
     if (variable.getAttribute().equals(ConnectionAttribute.NAME) || variable.getAttribute().equals(ConnectionAttribute.URI)) {
       return this;
+    }
+    Variable actualVariable = variables.get(variable.getUniqueName());
+    if (actualVariable != null) {
+      // overwrite of an actual known attribute
+      // we copy the attribute otherwise the description is lost
+      variable.setAttribute(actualVariable.getAttribute());
     }
     variables.put(variable.getUniqueName(), variable);
     return this;
