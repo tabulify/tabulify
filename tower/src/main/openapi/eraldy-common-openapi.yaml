@@ -568,7 +568,7 @@ components:
             - "john@doe.com"
             - "usr-xklls"
     RegistrationShort:
-      title: A registration to a list
+      title: A registration to a list in a short format (used to represent a list format)
       type: object
       properties:
         guid:
@@ -585,6 +585,9 @@ components:
           description: The confirmation time
           type: string
           format: date-time
+        status:
+          description: The status of the registration
+          type: integer
     ListRegistration:
       title: A registration to a list
       description: A registration
@@ -595,8 +598,10 @@ components:
           description: The public registration id
           example: xmmmN
         status:
-          type: string
-          description: The status of the registration
+          type: integer
+          description: |
+            The status code of the registration
+            (0: registred or subscribed, other: not registred or unsubscribed)
         list:
           description: The list
           $ref: '#/components/schemas/ListItem'
@@ -606,23 +611,27 @@ components:
         confirmationTime:
           description: The confirmation time
           type: string
-        #          format: date-time (does not work with OpenAPI verxt router)
+          format: date-time
         confirmationIp:
           description: The confirmation ip
           type: string
         optInTime:
           description: The opt-in time
           type: string
-        #          format: date (does not work with OpenAPI verxt router)
+          format: date-time
         optInIp:
           description: The opt-in ip
           type: string
         optInUri:
-          description: The opt-in uri
+          description: |
+            The opt-in uri (or a text)
+
+            The opt-in uri is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {optInUri}
+            at {optInTime} with the Ip {optInIp}
           type: string
-          format: uri
         flow:
-          description: The flow of registration
+          description: The source flow of registration
           $ref: '#/components/schemas/RegistrationFlow'
     RegistrationFlow:
       description: How the user has been registered
@@ -630,6 +639,7 @@ components:
       enum:
         - oauth # the user has clicked on the oauth button
         - email # the user has given its email
+        - import # the user was imported
     ListRegistrationPostBody:
       title: Registration Request to a list
       description: |

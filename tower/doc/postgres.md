@@ -6,7 +6,7 @@ We use postgres version `15.1`.
 
 ## Doc
 
-  * For database migration, see [scheme](schema.md)
+  * For database migration, see [scheme](schema-flyway.md)
 
 ## Dev Install
 

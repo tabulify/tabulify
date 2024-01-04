@@ -970,13 +970,14 @@ paths:
           type: string
         style: simple
       - description: |
-          If true, the validation will stop at the first fail of all checks
-          If false, the validation will have all checkes
+          If true, the validation will stop at the first fail of all checks.
+          If false, the validation will have all checks
         explode: true
         in: query
         name: failEarly
         required: false
         schema:
+          default: true
           type: boolean
         style: form
       responses:
@@ -1289,35 +1290,9 @@ paths:
       tags:
       - list
       x-accepts: application/json
-  /list/registration/validation:
-    get:
-      operationId: listRegistrationValidationGet
-      parameters:
-      - description: The payload
-        explode: true
-        in: query
-        name: data
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            text/html:
-              schema:
-                type: string
-          description: The validation letter
-      security: []
-      summary: |
-        The URI of the validation link in the validation
-        letter that the user receive.
-        The user needs to click this link to confirm her/his registration.
-      tags:
-      - list
-      x-accepts: text/html
   /list/registration/letter/confirmation:
     get:
+      deprecated: true
       operationId: listRegistrationLetterConfirmationGet
       parameters:
       - description: The name of the subscriber
@@ -1386,6 +1361,8 @@ paths:
       - apiKeyAuth: []
       - cookieAuth: []
       summary: |
+        Deprecated - The front end is now separated from the API
+
         Return the confirmation letter after the user has clicked on the validation link.
 
         To get a confirmation as it's show to a user, you just need to set
@@ -1873,23 +1850,8 @@ components:
           type: string
         statusCode:
           description: The status code
-          enum:
-          - 0
-          - 1
-          - 2
-          - 3
           format: int32
           type: integer
-          x-enum-descriptions:
-          - Success
-          - Error
-          - Invalid Email
-          - Existing Email
-          x-enum-varnames:
-          - Success
-          - Error
-          - InvalidEmail
-          - ExistingEmail
         statusMessage:
           description: A message
           type: string
@@ -1901,12 +1863,9 @@ components:
         jobId: xmmmN
         uploadedFileName: uploadedFileName
         creationTime: 2000-01-23T04:56:07.000+00:00
-        countExists: 5
         countTotal: 6
-        countFailure: 5
         startTime: 2000-01-23T04:56:07.000+00:00
         endTime: 2000-01-23T04:56:07.000+00:00
-        countInvalidEmail: 2
         statusMessage: statusMessage
         statusCode: 0
         countSuccess: 1
@@ -1929,17 +1888,7 @@ components:
           description: The number of rows processed
           type: integer
         countSuccess:
-          description: The number of rows processed with success.
-          type: integer
-        countFailure:
-          description: The number of rows with failures.
-          type: integer
-        countExists:
-          description: The number of rows that already exists in the list and were
-            not processed.
-          type: integer
-        countInvalidEmail:
-          description: The number of rows that have an invalid email.
+          description: The number of rows processed with success (imported or legit)
           type: integer
         creationTime:
           format: date-time
@@ -3309,7 +3258,7 @@ components:
       description: A registration
       example:
         confirmationIp: confirmationIp
-        optInUri: https://openapi-generator.tech
+        optInUri: optInUri
         subscriber:
           disabledReason: disabledReason
           website: https://mywebsite
@@ -3339,7 +3288,7 @@ components:
           email: john@doe.com
         optInIp: optInIp
         guid: xmmmN
-        confirmationTime: confirmationTime
+        confirmationTime: 2000-01-23T04:56:07.000+00:00
         list:
           ownerUser:
             disabledReason: disabledReason
@@ -3435,35 +3384,43 @@ components:
               email: john@doe.com
             home: https://doe.com
         flow: null
-        status: status
-        optInTime: optInTime
+        status: 0
+        optInTime: 2000-01-23T04:56:07.000+00:00
       properties:
         guid:
           description: The public registration id
           example: xmmmN
           type: string
         status:
-          description: The status of the registration
-          type: string
+          description: |
+            The status code of the registration
+            (0: registred or subscribed, other: not registred or unsubscribed)
+          type: integer
         list:
           $ref: '#/components/schemas/ListItem'
         subscriber:
           $ref: '#/components/schemas/User'
         confirmationTime:
           description: The confirmation time
+          format: date-time
           type: string
         confirmationIp:
           description: The confirmation ip
           type: string
         optInTime:
           description: The opt-in time
+          format: date-time
           type: string
         optInIp:
           description: The opt-in ip
           type: string
         optInUri:
-          description: The opt-in uri
-          format: uri
+          description: |
+            The opt-in uri (or a text)
+
+            The opt-in uri is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {optInUri}
+            at {optInTime} with the Ip {optInIp}
           type: string
         flow:
           $ref: '#/components/schemas/RegistrationFlow'
@@ -3474,6 +3431,7 @@ components:
       enum:
       - oauth
       - email
+      - import
       type: string
     RegistrationShort:
       example:
@@ -3481,6 +3439,7 @@ components:
         guid: xmmmN
         confirmationTime: 2000-01-23T04:56:07.000+00:00
         subscriberEmail: subscriberEmail
+        status: 0
       properties:
         guid:
           description: The public registration id
@@ -3496,7 +3455,11 @@ components:
           description: The confirmation time
           format: date-time
           type: string
-      title: A registration to a list
+        status:
+          description: The status of the registration
+          type: integer
+      title: A registration to a list in a short format (used to represent a list
+        format)
       type: object
     PasswordCredentials:
       description: |

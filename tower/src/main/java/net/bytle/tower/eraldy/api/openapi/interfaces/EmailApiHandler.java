@@ -29,7 +29,7 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
             String address = requestParameters.pathParameter("address") != null ? requestParameters.pathParameter("address").getString() : null;
-        Boolean failEarly = requestParameters.queryParameter("failEarly") != null ? requestParameters.queryParameter("failEarly").getBoolean() : null;
+        Boolean failEarly = requestParameters.queryParameter("failEarly") != null ? requestParameters.queryParameter("failEarly").getBoolean() : true;
 
       logger.debug("Parameter address is {}", address);
       logger.debug("Parameter failEarly is {}", failEarly);

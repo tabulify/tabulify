@@ -2,7 +2,6 @@ package net.bytle.tower.eraldy.model.openapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Objects;
 
@@ -15,27 +14,7 @@ public class ListImportJobRowStatus   {
 
   protected String emailAddress;
 
-public enum StatusCodeEnum {
-Success(0),
-Error(1),
-InvalidEmail(2),
-ExistingEmail(3);
-
-  private final Integer value;
-
-  StatusCodeEnum(Integer value) {
-      this.value = value;
-  }
-
-  @Override
-  @JsonValue
-  public String toString() {
-    return String.valueOf(value);
-  }
-}
-
-
-  protected int statusCode;
+  protected Integer statusCode;
 
   protected String statusMessage;
 
@@ -68,7 +47,7 @@ ExistingEmail(3);
   * @return statusCode The status code
   */
   @JsonProperty("statusCode")
-  public int getStatusCode() {
+  public Integer getStatusCode() {
     return statusCode;
   }
 
@@ -76,7 +55,7 @@ ExistingEmail(3);
   * @param statusCode The status code
   */
   @SuppressWarnings("unused")
-  public void setStatusCode(int statusCode) {
+  public void setStatusCode(Integer statusCode) {
     this.statusCode = statusCode;
   }
 

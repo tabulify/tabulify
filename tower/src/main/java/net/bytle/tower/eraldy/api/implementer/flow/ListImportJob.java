@@ -57,9 +57,6 @@ public class ListImportJob {
     listImportJobStatus.setStatusCode(TO_PROCESS_STATUS_CODE);
     listImportJobStatus.setUploadedFileName(fileUpload.fileName());
     listImportJobStatus.setCountTotal(0);
-    listImportJobStatus.setCountFailure(0);
-    listImportJobStatus.setCountInvalidEmail(0);
-    listImportJobStatus.setCountExists(0);
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
 
@@ -213,7 +210,6 @@ public class ListImportJob {
             }
           }
           listImportJobStatus.setCountTotal(importJobRowStatuses.size());
-          listImportJobStatus.setCountFailure(failCounter);
           listImportJobStatus.setCountSuccess(successCounter);
 
         } else {

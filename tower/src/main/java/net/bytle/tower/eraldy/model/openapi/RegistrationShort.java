@@ -18,6 +18,8 @@ public class RegistrationShort   {
 
   protected LocalDateTime confirmationTime;
 
+  protected Integer status;
+
   /**
   * The empty constructor is
   * needed for the construction of the pojo
@@ -91,6 +93,22 @@ public class RegistrationShort   {
     this.confirmationTime = confirmationTime;
   }
 
+  /**
+  * @return status The status of the registration
+  */
+  @JsonProperty("status")
+  public Integer getStatus() {
+    return status;
+  }
+
+  /**
+  * @param status The status of the registration
+  */
+  @SuppressWarnings("unused")
+  public void setStatus(Integer status) {
+    this.status = status;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -103,12 +121,12 @@ public class RegistrationShort   {
     RegistrationShort registrationShort = (RegistrationShort) o;
     return
 
-            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberGuid, registrationShort.subscriberGuid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail) && Objects.equals(confirmationTime, registrationShort.confirmationTime);
+            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberGuid, registrationShort.subscriberGuid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail) && Objects.equals(confirmationTime, registrationShort.confirmationTime) && Objects.equals(status, registrationShort.status);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, subscriberGuid, subscriberEmail, confirmationTime);
+    return Objects.hash(guid, subscriberGuid, subscriberEmail, confirmationTime, status);
   }
 
   @Override

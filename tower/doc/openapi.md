@@ -67,6 +67,21 @@ schema:
   format: int64
 ```
 
+For Integer
+```yaml
+schema:
+  type: integer
+```
+
+### Default
+
+Default value is in the schema
+
+```yaml
+schema:
+  default: true
+```
+
 ### Enum
 ```yaml
 - name: orderBy

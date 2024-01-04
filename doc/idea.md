@@ -25,21 +25,25 @@ gradle idea
 
 We use shared index to speed up the indexing.
 
+Indexing diagnostic:
+C:\Users\gerardnico\AppData\Local\JetBrains\IntelliJIdea2023.2\log\indexing-diagnostic
+
 The indexing uses a diff.
 It should be done once a week in a normal setup with a team.
 
 Steps:
   * If done locally, close Idea
-  * Download the cli tool and unzip it
+  * Download the [zip cli tool](https://packages.jetbrains.team/maven/p/ij/intellij-shared-indexes/com/jetbrains/intellij/indexing/shared/ij-shared-indexes-tool-cli/) and unzip it
   * Create the indexes for a project (1hr)
 ```dos
-cd /D C:\ij-shared-indexes-tool-cli-0.9.8\
+cd /D C:\ij-shared-indexes-tool-cli-0.9.9\
 .\bin\ij-shared-indexes-tool-cli indexes --ij C:\IntelliJ-IDEA-2023.1 --project d:\code\java-mono --base-url https://idea-shared-indexes.t0w0.c15.e2-3.dev
 ```
   * Upload the indexes created for all projects
 ```cmd
+REM 7 minutes with progres feedback
 cd /D C:\ij-shared-indexes-tool-cli-0.9.8\ij-shared-indexes-tool-data\server
-rclone copy . idea-shared-indexes:idea-shared-indexes/
+rclone copy . idea-shared-indexes:idea-shared-indexes/ --progress
 ```
   * Then for each project a `intellij.yaml` is created
 ```yml
@@ -53,7 +57,7 @@ sharedIndex:
 ```
 
 ### How to verify, log error ?
-You can also search in the Log the URL: C:\Users\gerardnico\AppData\Local\JetBrains\IntelliJIdea2023.1\log
+You can also search in the Log the URL: C:\Users\gerardnico\AppData\Local\JetBrains\IntelliJIdea2023.3\log
 You can see that it download the list first:
 ```
 https://idea-shared-indexes.t0w0.c15.e2-3.dev/project/java-mono/vcs/list.json.xz

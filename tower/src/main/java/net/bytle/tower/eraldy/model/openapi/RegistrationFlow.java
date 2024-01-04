@@ -9,7 +9,9 @@ public enum RegistrationFlow {
 
   OAUTH("oauth"),
 
-  EMAIL("email");
+  EMAIL("email"),
+
+  IMPORT("import");
 
   private String value;
 

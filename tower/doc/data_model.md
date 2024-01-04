@@ -27,4 +27,4 @@ Therefore, we may back up and apply features by realm and/or an application.
 
 ## Schema
 
-See [Schema](schema.md) for the schema definitions
+See [Schema](schema-flyway.md) for the schema definitions

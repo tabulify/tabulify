@@ -3,7 +3,7 @@ with users as (select user_id, user_email, user_realm_id
                where user_realm_id = $1 -- 1 -- realm id
                  and user_email like $2 -- '%gmail%' email
 ),
-     registrations as (select users.*, registration.registration_creation_time
+     registrations as (select users.*, registration.registration_creation_time, registration.registration_status
                        from users
                               join cs_realms.realm_list_registration registration
                                    on users.user_realm_id = registration.registration_realm_id

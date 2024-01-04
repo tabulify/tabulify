@@ -36,3 +36,11 @@ You can start the container with the machine id
 ```bash
 fly machine start 683d920b195638
 ```
+
+
+## Dashboard example
+
+https://status.checklyhq.com/
+https://images.prismic.io/checklyhq/03e3bce4-2910-4068-ab70-fe0ef76ec806_CleanShot+2023-12-13+at+20.55.30%402x.png?auto=compress%2Cformat&fit=max&w=1200
+
+https://www.checklyhq.com/the-new-relic-alternative-with-no-hidden-fees/

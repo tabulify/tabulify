@@ -1065,9 +1065,9 @@ paths:
             If true, the validation will stop at the first fail of all checks.
             If false, the validation will have all checks
           in: query
-          default: true
           schema:
             type: boolean
+            default: true
       responses:
         '200':
           description: Ok
@@ -1330,34 +1330,13 @@ paths:
             application/json:
               schema:
                 $ref: './eraldy-common-openapi.yaml#/components/schemas/ListRegistration'
-  /list/registration/validation:
-    get:
-      operationId: listRegistrationValidationGet
-      summary: |
-        The URI of the validation link in the validation
-        letter that the user receive.
-        The user needs to click this link to confirm her/his registration.
-      tags:
-        - list
-      security: [ ]
-      parameters:
-        - name: data
-          description: "The payload"
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: "The validation letter"
-          content:
-            text/html:
-              schema:
-                type: string
   /list/registration/letter/confirmation:
     get:
       operationId: listRegistrationLetterConfirmationGet
+      deprecated: true
       summary: |
+        Deprecated - The front end is now separated from the API
+
         Return the confirmation letter after the user has clicked on the validation link.
 
         To get a confirmation as it's show to a user, you just need to set

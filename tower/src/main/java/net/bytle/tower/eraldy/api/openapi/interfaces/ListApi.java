@@ -61,7 +61,7 @@ public interface ListApi  {
     Future<ApiResponse<ListRegistration>> listRegistrationGet(RoutingContext routingContext, String guid, String listGuid, String subscriberEmail);
 
     /**
-     * Return the confirmation letter after the user has clicked on the validation link.  To get a confirmation as it's show to a user, you just need to set the subscriber name and the list guid  The other parameters will overwrite other list information.
+     * Deprecated - The front end is now separated from the API  Return the confirmation letter after the user has clicked on the validation link.  To get a confirmation as it's show to a user, you just need to set the subscriber name and the list guid  The other parameters will overwrite other list information.
     */
     Future<ApiResponse<String>> listRegistrationLetterConfirmationGet(RoutingContext routingContext, String subscriberName, String listGuid, String listName, String ownerName, String ownerEmail, String ownerLogo);
 
@@ -69,11 +69,6 @@ public interface ListApi  {
      * Return the validation letter with a validation link as send by email.
     */
     Future<ApiResponse<String>> listRegistrationLetterValidationGet(RoutingContext routingContext, String listGuid, String subscriberName, String subscriberEmail, Boolean debug);
-
-    /**
-     * The URI of the validation link in the validation letter that the user receive. The user needs to click this link to confirm her/his registration.
-    */
-    Future<ApiResponse<String>> listRegistrationValidationGet(RoutingContext routingContext, String data);
 
     /**
      * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)

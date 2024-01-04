@@ -25,12 +25,6 @@ public class ListImportJobStatus   {
 
   protected Integer countSuccess;
 
-  protected Integer countFailure;
-
-  protected Integer countExists;
-
-  protected Integer countInvalidEmail;
-
   protected LocalDateTime creationTime;
 
   protected LocalDateTime startTime;
@@ -127,7 +121,7 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @return countSuccess The number of rows processed with success.
+  * @return countSuccess The number of rows processed with success (imported or legit)
   */
   @JsonProperty("countSuccess")
   public Integer getCountSuccess() {
@@ -135,59 +129,11 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @param countSuccess The number of rows processed with success.
+  * @param countSuccess The number of rows processed with success (imported or legit)
   */
   @SuppressWarnings("unused")
   public void setCountSuccess(Integer countSuccess) {
     this.countSuccess = countSuccess;
-  }
-
-  /**
-  * @return countFailure The number of rows with failures.
-  */
-  @JsonProperty("countFailure")
-  public Integer getCountFailure() {
-    return countFailure;
-  }
-
-  /**
-  * @param countFailure The number of rows with failures.
-  */
-  @SuppressWarnings("unused")
-  public void setCountFailure(Integer countFailure) {
-    this.countFailure = countFailure;
-  }
-
-  /**
-  * @return countExists The number of rows that already exists in the list and were not processed.
-  */
-  @JsonProperty("countExists")
-  public Integer getCountExists() {
-    return countExists;
-  }
-
-  /**
-  * @param countExists The number of rows that already exists in the list and were not processed.
-  */
-  @SuppressWarnings("unused")
-  public void setCountExists(Integer countExists) {
-    this.countExists = countExists;
-  }
-
-  /**
-  * @return countInvalidEmail The number of rows that have an invalid email.
-  */
-  @JsonProperty("countInvalidEmail")
-  public Integer getCountInvalidEmail() {
-    return countInvalidEmail;
-  }
-
-  /**
-  * @param countInvalidEmail The number of rows that have an invalid email.
-  */
-  @SuppressWarnings("unused")
-  public void setCountInvalidEmail(Integer countInvalidEmail) {
-    this.countInvalidEmail = countInvalidEmail;
   }
 
   /**

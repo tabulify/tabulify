@@ -3,7 +3,7 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -15,21 +15,21 @@ public class ListRegistration   {
 
   protected String guid;
 
-  protected String status;
+  protected Integer status;
 
   protected ListItem list;
 
   protected User subscriber;
 
-  protected String confirmationTime;
+  protected LocalDateTime confirmationTime;
 
   protected String confirmationIp;
 
-  protected String optInTime;
+  protected LocalDateTime optInTime;
 
   protected String optInIp;
 
-  protected URI optInUri;
+  protected String optInUri;
 
   protected RegistrationFlow flow;
 
@@ -59,18 +59,18 @@ public class ListRegistration   {
   }
 
   /**
-  * @return status The status of the registration
+  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @JsonProperty("status")
-  public String getStatus() {
+  public Integer getStatus() {
     return status;
   }
 
   /**
-  * @param status The status of the registration
+  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @SuppressWarnings("unused")
-  public void setStatus(String status) {
+  public void setStatus(Integer status) {
     this.status = status;
   }
 
@@ -110,7 +110,7 @@ public class ListRegistration   {
   * @return confirmationTime The confirmation time
   */
   @JsonProperty("confirmationTime")
-  public String getConfirmationTime() {
+  public LocalDateTime getConfirmationTime() {
     return confirmationTime;
   }
 
@@ -118,7 +118,7 @@ public class ListRegistration   {
   * @param confirmationTime The confirmation time
   */
   @SuppressWarnings("unused")
-  public void setConfirmationTime(String confirmationTime) {
+  public void setConfirmationTime(LocalDateTime confirmationTime) {
     this.confirmationTime = confirmationTime;
   }
 
@@ -142,7 +142,7 @@ public class ListRegistration   {
   * @return optInTime The opt-in time
   */
   @JsonProperty("optInTime")
-  public String getOptInTime() {
+  public LocalDateTime getOptInTime() {
     return optInTime;
   }
 
@@ -150,7 +150,7 @@ public class ListRegistration   {
   * @param optInTime The opt-in time
   */
   @SuppressWarnings("unused")
-  public void setOptInTime(String optInTime) {
+  public void setOptInTime(LocalDateTime optInTime) {
     this.optInTime = optInTime;
   }
 
@@ -171,18 +171,18 @@ public class ListRegistration   {
   }
 
   /**
-  * @return optInUri The opt-in uri
+  * @return optInUri The opt-in uri (or a text)  The opt-in uri is used in the mailing reason: You are receiving this email because you subscribe to it from {optInUri} at {optInTime} with the Ip {optInIp}
   */
   @JsonProperty("optInUri")
-  public URI getOptInUri() {
+  public String getOptInUri() {
     return optInUri;
   }
 
   /**
-  * @param optInUri The opt-in uri
+  * @param optInUri The opt-in uri (or a text)  The opt-in uri is used in the mailing reason: You are receiving this email because you subscribe to it from {optInUri} at {optInTime} with the Ip {optInIp}
   */
   @SuppressWarnings("unused")
-  public void setOptInUri(URI optInUri) {
+  public void setOptInUri(String optInUri) {
     this.optInUri = optInUri;
   }
 

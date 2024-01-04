@@ -24,8 +24,6 @@ import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
 import net.bytle.type.UriEnhanced;
-import net.bytle.type.time.Date;
-import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthContext;
 import net.bytle.vertx.auth.AuthState;
@@ -36,6 +34,7 @@ import net.bytle.vertx.flow.WebFlowAbs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,7 +80,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<ListRegistration> registerUserToList(RoutingContext ctx, String listGuid, User user, Date optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public Future<ListRegistration> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, RegistrationFlow registrationFlow) {
 
     return this.getApp()
       .getListProvider()
@@ -91,9 +90,8 @@ public class ListRegistrationFlow extends WebFlowAbs {
         ListRegistration inputListRegistration = new ListRegistration();
         inputListRegistration.setList(list);
         inputListRegistration.setSubscriber(user);
-        inputListRegistration.setOptInTime(optInTime.toIsoString());
-        String nowTime = Timestamp.createFromNow().toIsoString();
-        inputListRegistration.setConfirmationTime(nowTime);
+        inputListRegistration.setOptInTime(optInTime);
+        inputListRegistration.setConfirmationTime(LocalDateTime.now());
         inputListRegistration.setOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
@@ -278,7 +276,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       ctx.fail(new InternalException("No guid was in the claims for a user list registration"));
       return;
     }
-    Date optInTime = authUserAsClaims.getIssuedAt();
+    LocalDateTime optInTime = authUserAsClaims.getIssuedAt().toLocalDateTime();
     String optInIp;
     try {
       optInIp = authUserAsClaims.getOriginClientIp();
@@ -302,7 +300,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser) , optInTime, finalOptInIp, RegistrationFlow.EMAIL)
+          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, RegistrationFlow.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(registration -> {
               if (ctx.user() == null) {
@@ -419,7 +417,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       /**
        * A list registration
        */
-      Date optInTime = Date.createFromNow();
+      LocalDateTime optInTime = LocalDateTime.now();
       String optInIp;
       try {
 

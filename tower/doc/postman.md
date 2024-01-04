@@ -5,7 +5,7 @@
 The below realm is use for test:
 
 * `scope`: `http://foo.combostrap.com`: the local and production test realm
-* `handle`: `test`: the realm hand (ie the [cs_test schema](schema.md))
+* `handle`: `test`: the realm hand (ie the [cs_test schema](schema-flyway.md))
 
 ## Environment
 We therefore use an environment with the following variables in Postman:
@@ -20,4 +20,3 @@ pre-request script:
 ```javascript
 pm.request.headers.add({key: 'Host', value: pm.variables.get('host') });
 ```
-

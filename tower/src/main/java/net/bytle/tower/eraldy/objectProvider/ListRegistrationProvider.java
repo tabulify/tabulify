@@ -365,6 +365,7 @@ public class ListRegistrationProvider {
        */
       sql = "SELECT registration_pages.registration_creation_time,\n" +
         "       registration_pages.registration_user_id as user_id,\n" +
+        "       registration_pages.registration_status,\n" +
         "       realm_user.user_email as user_email\n" +
         "FROM (select *\n" +
         "      from (SELECT ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,\n" +
@@ -414,6 +415,8 @@ public class ListRegistrationProvider {
           registrationShort.setSubscriberEmail(subscriberEmail);
           LocalDateTime localDateTime = row.getLocalDateTime(CREATION_TIME_COLUMN);
           registrationShort.setConfirmationTime(localDateTime);
+          Integer registrationStatus = row.getInteger(STATUS_COLUMN);
+          registrationShort.setStatus(registrationStatus);
           futureSubscriptions.add(registrationShort);
 
         }

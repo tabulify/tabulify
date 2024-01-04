@@ -6,7 +6,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.*;
 import net.bytle.type.Casts;
-import net.bytle.type.time.Date;
+import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.RoutingContextWrapper;
 
 import java.net.URI;
@@ -151,12 +151,12 @@ public class AuthUser {
   /**
    * @return the date
    */
-  public Date getIssuedAt() {
+  public Timestamp  getIssuedAt() {
     Long issuedAtInSec = claims.getLong(AuthUserJwtClaims.ISSUED_AT.toString());
     if (issuedAtInSec == null) {
       throw new InternalException("The issued at should not be null");
     }
-    return Date.createFromEpochSec(issuedAtInSec);
+    return Timestamp.createFromEpochSec(issuedAtInSec);
   }
 
   public AuthUser setListGuidClaim(String listGuid) {

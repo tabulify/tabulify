@@ -36,7 +36,6 @@ public void mount(RouterBuilder builder) {
     builder.operation("listRegistrationGet").handler(this::listRegistrationGet);
     builder.operation("listRegistrationLetterConfirmationGet").handler(this::listRegistrationLetterConfirmationGet);
     builder.operation("listRegistrationLetterValidationGet").handler(this::listRegistrationLetterValidationGet);
-    builder.operation("listRegistrationValidationGet").handler(this::listRegistrationValidationGet);
     builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
@@ -272,22 +271,6 @@ public void mount(RouterBuilder builder) {
 
     // Based on Route#respond
     api.listRegistrationLetterValidationGet(routingContext, listGuid, subscriberName, subscriberEmail, debug)
-    .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
-    .onFailure(routingContext::fail);
-    }
-
-    private void listRegistrationValidationGet(RoutingContext routingContext) {
-    logger.info("listRegistrationValidationGet()");
-
-    // Param extraction
-    RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-
-            String data = requestParameters.queryParameter("data") != null ? requestParameters.queryParameter("data").getString() : null;
-
-      logger.debug("Parameter data is {}", data);
-
-    // Based on Route#respond
-    api.listRegistrationValidationGet(routingContext, data)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
