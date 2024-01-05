@@ -17,6 +17,8 @@ For one app:
 ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags app-tower
 #
 ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags app-inbox
+#
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags app-tabli
 ```
 
 ## Appctl
