@@ -67,12 +67,17 @@ public class ListImportJob {
     return this.originalFileName;
   }
 
-  public void execute() {
+  /**
+   *
+   * @return a void when finished
+   */
+  public Future<Void> execute() {
 
     int statusCode = listImportJobStatus.getStatusCode();
     if (statusCode != TO_PROCESS_STATUS_CODE) {
-      LOGGER.warn("The job (" + this + ") was already processed. It has the status code (" + statusCode + ")");
-      return;
+      String message = "The job (" + this + ") was already processed. It has the status code (" + statusCode + ")";
+      LOGGER.warn(message);
+      return Future.failedFuture(message);
     }
 
 
@@ -137,8 +142,7 @@ public class ListImportJob {
             }
           }
           if (headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS) == null) {
-            this.closeJobWithFailure("An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row));
-            return;
+            return this.closeJobWithFailure("An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row));
           }
           // second record
           continue;
@@ -167,22 +171,22 @@ public class ListImportJob {
           break;
         }
       }
-      this.closeJob();
+      return this.closeJob();
     } catch (IOException e) {
-      this.closeJobWithFailure("List import couldn't read the csv file (" + this.getFileNameWithExtension() + "). Error: " + e.getMessage());
+      return this.closeJobWithFailure("List import couldn't read the csv file (" + this.getFileNameWithExtension() + "). Error: " + e.getMessage());
     }
   }
 
-  private void closeJobWithFailure(String message) {
+  private Future<Void> closeJobWithFailure(String message) {
     listImportJobStatus.setStatusCode(FAILURE_STATUS_CODE);
     listImportJobStatus.setStatusMessage(message);
-    this.closeJob();
+    return this.closeJob();
   }
 
-  private void closeJob() {
+  private Future<Void> closeJob() {
 
-    Future.all(futureListImportRows)
-      .onComplete(composite -> {
+    return Future.all(futureListImportRows)
+      .compose(composite -> {
 
         /**
          * Write the row status
@@ -197,7 +201,6 @@ public class ListImportJob {
           /**
            * Calculate the summaries
            */
-          int failCounter = 0;
           int successCounter = 0;
           for (ListImportJobRowStatus listImportJobRowStatus : importJobRowStatuses) {
             switch (listImportJobRowStatus.getStatusCode()) {
@@ -205,7 +208,6 @@ public class ListImportJob {
                 successCounter++;
                 break;
               default:
-                failCounter++;
                 break;
             }
           }
@@ -237,6 +239,7 @@ public class ListImportJob {
         Path statusPath = this.listImportFlow.getStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
         Fs.write(statusPath, JsonObject.mapFrom(listImportJobStatus).toString());
 
+        return Future.succeededFuture();
       });
 
   }
@@ -247,6 +250,17 @@ public class ListImportJob {
 
   public ListImportJobStatus getStatus() {
     return this.listImportJobStatus;
+  }
+
+  public ListItem getList() {
+    return this.list;
+  }
+
+  /**
+   * @return if the job should be processed
+   */
+  public boolean shouldProcess() {
+    return this.getStatus().getStatusCode().equals(TO_PROCESS_STATUS_CODE);
   }
 
 }

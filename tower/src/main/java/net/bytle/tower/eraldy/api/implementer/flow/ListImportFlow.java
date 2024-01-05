@@ -30,7 +30,6 @@ public class ListImportFlow implements WebFlow {
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
-  private boolean running = false;
   private final int maxRowsProcessedByImport;
 
   public EmailAddressValidator getEmailAddressValidator() {
@@ -111,7 +110,9 @@ public class ListImportFlow implements WebFlow {
     GIVEN_NAME, FAMILY_NAME, EMAIL_ADDRESS
   }
 
-
+  /**
+   * Import Job by JobId String
+   */
   Map<String, ListImportJob> importJobs = new HashMap<>();
 
   public ListImportFlow(EraldyApiApp apiApp) {
@@ -126,32 +127,44 @@ public class ListImportFlow implements WebFlow {
 
   public String step1CreateAndGetJobId(ListItem list, FileUpload upload) throws TowerFailureException {
 
-    if (importJobs.containsKey(list.getGuid())) {
-      throw TowerFailureException.builder()
-        .setType(TowerFailureTypeEnum.ALREADY_EXIST_409)
-        .setMessage("The list (" + list + ") has already a job running")
-        .build();
+    for (ListImportJob listImportJob : importJobs.values()) {
+      if (listImportJob.getList().equals(list)) {
+        throw TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.ALREADY_EXIST_409)
+          .setMessage("The list (" + list + ") has already a job running")
+          .build();
+      }
     }
     ListImportJob importJob = new ListImportJob(this, list, upload);
-    importJobs.put(list.getGuid(), importJob);
-    return importJob.getIdentifier();
+    String identifier = importJob.getIdentifier();
+    importJobs.put(identifier, importJob);
+    return identifier;
   }
 
 
   public void processJob() {
 
-    if (this.running || this.importJobs.isEmpty()) {
+    if (this.importJobs.isEmpty()) {
       return;
     }
-    this.running = true;
-    try {
-      for (Map.Entry<String, ListImportJob> listImportJobEntry : this.importJobs.entrySet()) {
-        ListImportJob listImportJob = listImportJobEntry.getValue();
-        listImportJob.execute();
-        this.importJobs.remove(listImportJobEntry.getKey());
+
+    for (Map.Entry<String, ListImportJob> listImportJobEntry : this.importJobs.entrySet()) {
+      ListImportJob listImportJob = listImportJobEntry.getValue();
+      /**
+       * Job may be processing
+       */
+      if (listImportJob.shouldProcess()) {
+        listImportJob
+          .execute()
+          .onComplete(v -> {
+            // We delete the entry on future completion
+            // And not in the loop
+            // Otherwise there may be an interval of time
+            // When the job is no more in the map and not yet on the file system
+            this.importJobs.remove(listImportJobEntry.getKey());
+          });
       }
-    } finally {
-      this.running = false;
     }
+
   }
 }
