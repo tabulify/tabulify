@@ -41,8 +41,9 @@ public class ListImportJob {
   private final Path originalFileName;
   private final ListImportJobStatus listImportJobStatus;
   private final List<Future<ListImportJobRowStatus>> futureListImportRows = new ArrayList<>();
+  private final Integer maxRowCountToProcess;
 
-  public ListImportJob(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload) {
+  public ListImportJob(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, Integer maxRowCountToProcess) {
     this.listImportFlow = listImportFlow;
     this.list = list;
     this.uploadedCsvFile = Paths.get(fileUpload.uploadedFileName());
@@ -60,6 +61,12 @@ public class ListImportJob {
     listImportJobStatus.setCountTotal(0);
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
+
+    if(maxRowCountToProcess==null){
+      this.maxRowCountToProcess = 10000;
+    } else {
+      this.maxRowCountToProcess = maxRowCountToProcess;
+    }
 
   }
 
@@ -166,7 +173,7 @@ public class ListImportJob {
             return Future.succeededFuture(listImportRow);
           });
         futureListImportRows.add(futureListImportRow);
-        int maxRowsProcessedByImport = this.listImportFlow.getMaxRowsProcessedByImport();
+        int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
         if (counter >= maxRowsProcessedByImport) {
           executionStatusCode = ABOVE_IMPORT_QUOTA;
           this.listImportJobStatus.setStatusMessage("The import quota is set to (" + maxRowsProcessedByImport + ") and was reached");
@@ -177,6 +184,10 @@ public class ListImportJob {
     } catch (IOException e) {
       return this.closeJobWithFailure("List import couldn't read the csv file (" + this.getFileNameWithExtension() + "). Error: " + e.getMessage());
     }
+  }
+
+  private int getMaxRowCountToProcess() {
+    return this.maxRowCountToProcess;
   }
 
   private Future<Void> closeJobWithFailure(String message) {
@@ -270,6 +281,10 @@ public class ListImportJob {
    */
   public boolean shouldProcess() {
     return this.getStatus().getStatusCode().equals(TO_PROCESS_STATUS_CODE);
+  }
+
+  public boolean isRunning() {
+    return this.getStatus().getStatusCode().equals(RUNNING_STATUS_CODE);
   }
 
 }

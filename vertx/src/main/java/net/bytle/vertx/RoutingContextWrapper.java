@@ -247,4 +247,20 @@ public class RoutingContextWrapper {
     return requestPathParameter;
   }
 
+  /**
+   * Get a parameter as integer
+   * <p>
+   * Why?
+   * Parameter positions may change in the openapi file but not in the signature,
+   * leading to variable value attribution error.
+   * This function retrieve them to avoid this problem.
+   * @param parameterName - the name
+   * @param defaultValue - the default value
+   * @return the value or the default value
+   */
+  public Integer getRequestQueryParameterAsInteger(String parameterName, Integer defaultValue) {
+    RequestParameter requestQueryParameter = getRequestQueryParameter(parameterName);
+    return requestQueryParameter != null ? requestQueryParameter.getInteger() : defaultValue;
+  }
+
 }

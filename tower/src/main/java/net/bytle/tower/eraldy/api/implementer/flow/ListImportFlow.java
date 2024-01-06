@@ -30,7 +30,10 @@ public class ListImportFlow implements WebFlow {
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
-  private final int maxRowsProcessedByImport;
+  /**
+   * The number of import jobs executing at a time
+   */
+  private final Integer maxExecutingJobs;
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();
@@ -45,9 +48,6 @@ public class ListImportFlow implements WebFlow {
     return this.runtimeDataDirectory;
   }
 
-  public int getMaxRowsProcessedByImport() {
-    return this.maxRowsProcessedByImport;
-  }
 
   public Path getRowStatusFileJobByIdentifier(String listIdentifier, String jobIdentifier) {
 
@@ -121,11 +121,11 @@ public class ListImportFlow implements WebFlow {
     Vertx vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
-    this.maxRowsProcessedByImport = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor().getInteger("list.import.max.rows", 3000);
-    vertx.setPeriodic(sec10, sec10, jobId -> processJob());
+    this.maxExecutingJobs = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor().getInteger("list.import.max.jobs", 5);
+    vertx.setPeriodic(sec10, sec10, jobId -> processJobQueue());
   }
 
-  public String step1CreateAndGetJobId(ListItem list, FileUpload upload) throws TowerFailureException {
+  public String step1CreateAndGetJobId(ListItem list, FileUpload upload, Integer maxRowCountToProcess) throws TowerFailureException {
 
     for (ListImportJob listImportJob : importJobs.values()) {
       if (listImportJob.getList().equals(list)) {
@@ -135,23 +135,29 @@ public class ListImportFlow implements WebFlow {
           .build();
       }
     }
-    ListImportJob importJob = new ListImportJob(this, list, upload);
+    ListImportJob importJob = new ListImportJob(this, list, upload, maxRowCountToProcess);
     String identifier = importJob.getIdentifier();
     importJobs.put(identifier, importJob);
     return identifier;
   }
 
 
-  public void processJob() {
+  public void processJobQueue() {
 
     if (this.importJobs.isEmpty()) {
+      return;
+    }
+
+    int executingJobsCount = this.getExecutingJobsCount();
+    if (executingJobsCount > this.maxExecutingJobs) {
       return;
     }
 
     for (Map.Entry<String, ListImportJob> listImportJobEntry : this.importJobs.entrySet()) {
       ListImportJob listImportJob = listImportJobEntry.getValue();
       /**
-       * Job may be processing
+       * We check the status as a queued job may be processing
+       * (ie {@link ListImportJob#isRunning()} return true)
        */
       if (listImportJob.shouldProcess()) {
         listImportJob
@@ -163,8 +169,27 @@ public class ListImportFlow implements WebFlow {
             // When the job is no more in the map and not yet on the file system
             this.importJobs.remove(listImportJobEntry.getKey());
           });
+        executingJobsCount++;
+        if (executingJobsCount > this.maxExecutingJobs) {
+          break;
+        }
       }
     }
 
   }
+
+  /**
+   *
+   * @return the number of jobs actually executing
+   */
+  private int getExecutingJobsCount() {
+    int count = 0;
+    for (ListImportJob listImportJob : this.importJobs.values()) {
+      if (listImportJob.isRunning()) {
+        count++;
+      }
+    }
+    return count;
+  }
+
 }

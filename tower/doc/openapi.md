@@ -119,6 +119,8 @@ WeatherType:
 
 Example with the list import functionality that accepts a csv
 
+https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#considerations-for-file-uploads
+
 ```yaml
 requestBody:
   description: The file containing the users to import

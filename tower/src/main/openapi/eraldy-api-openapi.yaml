@@ -1477,8 +1477,14 @@ paths:
           schema:
             type: string
             example: "lis-xjkkLmi"
+        - name: rowCountToProcess
+          description: "The maximum number of row processed"
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 10000
       requestBody:
-        description: The file containing the users to import
         required: true
         content:
           multipart/form-data:
@@ -1488,7 +1494,7 @@ paths:
                 fileBinary:
                   type: string
                   format: binary
-                  description: The file
+                  description: The file containing the users to import
             encoding: # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#considerations-for-file-uploads
               fileBinary:
                 contentType: text/csv # default is application/octet-stream

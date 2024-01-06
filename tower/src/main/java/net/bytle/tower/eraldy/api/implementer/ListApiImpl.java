@@ -130,8 +130,28 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, FileUpload fileBinary) {
+  public Future<ApiResponse<ListImportPostResponse>> listListImportPost(RoutingContext routingContext, String listIdentifier, Integer rowCountToProcess, FileUpload fileBinary) {
 
+    RoutingContextWrapper routingContextWrapper = new RoutingContextWrapper(routingContext);
+    rowCountToProcess = routingContextWrapper.getRequestQueryParameterAsInteger("rowCountToProcess", 10000);
+    if (rowCountToProcess < 0) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The rowCountToProcess parameters value (" + rowCountToProcess + ") should not be negative")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+    if (rowCountToProcess == 0) {
+      return Future.failedFuture(
+        TowerFailureException.builder()
+          .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+          .setMessage("The rowCountToProcess parameters value (" + rowCountToProcess + ") is zero")
+          .buildWithContextFailing(routingContext)
+      );
+    }
+
+    Integer finalRowCountToProcess = rowCountToProcess;
     return this.apiApp.getListProvider()
       .getListByGuid(listIdentifier)
       .compose(list -> {
@@ -148,7 +168,7 @@ public class ListApiImpl implements ListApi {
       .compose(list -> {
         String jobId;
         try {
-          jobId = this.apiApp.getListImportFlow().step1CreateAndGetJobId(list, fileBinary);
+          jobId = this.apiApp.getListImportFlow().step1CreateAndGetJobId(list, fileBinary, finalRowCountToProcess);
         } catch (TowerFailureException e) {
           return Future.failedFuture(e);
         }
@@ -252,10 +272,10 @@ public class ListApiImpl implements ListApi {
     // Processed Job On file system?
     Path path = listImport
       .getStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
-    if(!Files.exists(path)){
+    if (!Files.exists(path)) {
       return Future.failedFuture(TowerFailureException.builder()
         .setType(TowerFailureTypeEnum.NOT_FOUND_404)
-        .setMessage("The job ("+jobIdentifier+") for the list ("+listIdentifier+") was not found")
+        .setMessage("The job (" + jobIdentifier + ") for the list (" + listIdentifier + ") was not found")
         .build()
       );
     }

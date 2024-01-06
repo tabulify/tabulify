@@ -119,13 +119,15 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
             String listIdentifier = requestParameters.pathParameter("listIdentifier") != null ? requestParameters.pathParameter("listIdentifier").getString() : null;
+        Integer rowCountToProcess = requestParameters.queryParameter("rowCountToProcess") != null ? requestParameters.queryParameter("rowCountToProcess").getInteger() : 10000;
         FileUpload fileBinary = routingContext.fileUploads().iterator().next();
 
       logger.debug("Parameter listIdentifier is {}", listIdentifier);
+      logger.debug("Parameter rowCountToProcess is {}", rowCountToProcess);
       logger.debug("Parameter fileBinary is {}", fileBinary);
 
     // Based on Route#respond
-    api.listListImportPost(routingContext, listIdentifier, fileBinary)
+    api.listListImportPost(routingContext, listIdentifier, rowCountToProcess, fileBinary)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
     }
