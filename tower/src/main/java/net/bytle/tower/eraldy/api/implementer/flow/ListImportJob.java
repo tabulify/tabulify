@@ -61,12 +61,7 @@ public class ListImportJob {
     listImportJobStatus.setCountTotal(0);
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
-
-    if(maxRowCountToProcess==null){
-      this.maxRowCountToProcess = 10000;
-    } else {
-      this.maxRowCountToProcess = maxRowCountToProcess;
-    }
+    this.maxRowCountToProcess = Objects.requireNonNullElse(maxRowCountToProcess, 10000);
 
   }
 

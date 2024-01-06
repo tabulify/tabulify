@@ -83,6 +83,10 @@ public class EmailAddressValidatorReport {
       status = ValidationStatus.LEGIT;
       for (ValidationTestResult validationTestResult : validationTestResults) {
         if (validationTestResult.fail()) {
+          if(validationTestResult.hasFatalError()){
+            status = ValidationStatus.FATAL_ERROR;
+            break;
+          }
           ValidationStatus validationStatus = validationTestResult.getValidation().getValidationType();
           if (validationStatus.getOrderOfPrecedence() > status.getOrderOfPrecedence()) {
             status = validationStatus;

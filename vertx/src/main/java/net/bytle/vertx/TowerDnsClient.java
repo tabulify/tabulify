@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,12 +29,12 @@ public class TowerDnsClient {
     this.client = server.getVertx().createDnsClient(dnsClientOptions);
   }
 
-  public Future<List<DnsMxRecord>> resolveMx(DnsName dnsName) {
+  public Future<Set<DnsMxRecord>> resolveMx(DnsName dnsName) {
 
 
     return this.client.resolveMX(dnsName.toStringWithoutRoot())
       .compose(mxRecords -> {
-          List<DnsMxRecord> dnsMxRecords = mxRecords.stream()
+          Set<DnsMxRecord> dnsMxRecords = mxRecords.stream()
             .map(mx -> new DnsMxRecord() {
               @Override
               public int getPriority() {
@@ -51,10 +50,21 @@ public class TowerDnsClient {
                 }
               }
             })
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
           return Future.succeededFuture(dnsMxRecords);
         },
-        Future::failedFuture
+        err -> {
+          /**
+           * NXDomain (ie not found)
+           */
+          if(
+            err instanceof io.vertx.core.dns.DnsException &&
+              ((io.vertx.core.dns.DnsException) err).code().name().equals("NXDOMAIN")
+          ){
+            return Future.succeededFuture(new HashSet<>());
+          }
+          return Future.failedFuture(new DnsException("Error while resolving the Mx records for the domain (" + dnsName + "). Message:" + err.getMessage(), err));
+        }
       );
   }
 

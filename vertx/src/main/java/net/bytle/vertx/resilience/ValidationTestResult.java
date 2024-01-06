@@ -32,6 +32,7 @@ public class ValidationTestResult {
   public boolean fail() {
     return !this.builder.pass;
   }
+
   public boolean pass() {
     return this.builder.pass;
   }
@@ -41,7 +42,15 @@ public class ValidationTestResult {
   }
 
   public String getMessage() {
-    return this.builder.message;
+    /**
+     * Map and other structure requires a non-null value
+     * NPE fight continues
+     */
+    return Objects.requireNonNullElse(this.builder.message, "");
+  }
+
+  public boolean hasFatalError() {
+    return this.builder.fatalError != null;
   }
 
   /**
@@ -53,6 +62,7 @@ public class ValidationTestResult {
     private final ValidationTest validationTest;
     private String message;
     private Boolean pass;
+    private Throwable fatalError;
 
     public Builder(ValidationTest validationTest) {
       this.validationTest = validationTest;
@@ -63,14 +73,13 @@ public class ValidationTestResult {
       return this;
     }
 
-    public Builder setError(Throwable err) {
-      return setError(err, null);
+    public Builder setFatalError(Throwable fatalError) {
+      return setFatalError(fatalError, null);
     }
-    public Builder setError(Throwable err, String s) {
-      this.message = err.getClass().getSimpleName() + ": " + err.getMessage();
-      if(s!=null){
-        this.message = s+". "+this.message;
-      }
+
+    public Builder setFatalError(Throwable fatalError, String s) {
+      this.fatalError = fatalError;
+      this.setNonFatalError(fatalError,s);
       return this;
     }
 
@@ -101,7 +110,13 @@ public class ValidationTestResult {
     }
 
 
-
+    public Builder setNonFatalError(Throwable error, String s) {
+      this.message = error.getClass().getSimpleName() + ": " + error.getMessage();
+      if (s != null) {
+        this.message = s + ". " + this.message;
+      }
+      return this;
+    }
   }
 
 }

@@ -11,6 +11,7 @@ import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerDnsClient;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -67,8 +68,11 @@ public class DomainValidator {
     /**
      * White List / Legit Domains
      */
-    if (whiteListDomains.contains(dnsName.toString().toLowerCase())) {
-      domainValidatorResult.addTest(ValidationTest.WHITE_LIST.createResultBuilder().succeed());
+    String lowerCaseDomainWithoutRoot = dnsName.toStringWithoutRoot().toLowerCase();
+    if (whiteListDomains.contains(lowerCaseDomainWithoutRoot)) {
+      domainValidatorResult.addTest(ValidationTest.WHITE_LIST.createResultBuilder()
+        .setMessage("Domain (" + lowerCaseDomainWithoutRoot + ") is on the white list")
+        .succeed());
       return Future.succeededFuture(domainValidatorResult);
     }
 
@@ -84,7 +88,7 @@ public class DomainValidator {
         } else {
           return Future.succeededFuture(mxValidCheck.setMessage("Mx records were found"));
         }
-      }, err -> Future.failedFuture(mxValidCheck.setError(err)));
+      }, err -> Future.failedFuture(mxValidCheck.setFatalError(err)));
     List<Future<ValidationTestResult.Builder>> compositeFutureList = new ArrayList<>();
     compositeFutureList.add(mxRecords);
 
@@ -103,7 +107,7 @@ public class DomainValidator {
           return Future.succeededFuture(aValidCheck.setMessage("A records were found"));
 
         }
-        , err -> Future.failedFuture(aValidCheck.setError(err))
+        , err -> Future.failedFuture(aValidCheck.setFatalError(err))
       );
     compositeFutureList.add(aRecordFuture);
 
@@ -131,7 +135,7 @@ public class DomainValidator {
           }
 
           return Future.succeededFuture(blockListCheck.setMessage("The apex domain (" + apexDomainNameAsString + ") is not blocked by " + dnsBlockListQueryHelper.getBlockList()));
-        }, err -> Future.failedFuture(blockListCheck.setError(err)));
+        }, err -> Future.failedFuture(blockListCheck.setFatalError(err)));
       compositeFutureList.add(futureBlockListCheck);
     }
 
@@ -162,7 +166,22 @@ public class DomainValidator {
             return Future.failedFuture(homePage.setMessage("The HTML page (" + absoluteURI + ") is not legit" + e.getMessage()));
           }
         },
-        err -> Future.failedFuture(webServer.setError(err, "The web server (" + absoluteURI + ") could not be contacted."))
+        err -> {
+          String message = "The web server (" + absoluteURI + ") could not be contacted.";
+          Set<Class<?>> nonFatalError = new HashSet<>();
+          // bad ssl (don't repeat)
+          nonFatalError.add(javax.net.ssl.SSLHandshakeException.class);
+          // unknown host (don't repeat)
+          nonFatalError.add(UnknownHostException.class);
+          // connection was closed
+          nonFatalError.add(io.vertx.core.http.HttpClosedException.class);
+          // time out
+          nonFatalError.add(io.netty.channel.ConnectTimeoutException.class);
+          if (nonFatalError.contains(err.getClass())) {
+            return Future.failedFuture(webServer.setNonFatalError(err, message));
+          }
+          return Future.failedFuture(webServer.setFatalError(err, message));
+        }
       );
     compositeFutureList.add(homePageFuture);
 
