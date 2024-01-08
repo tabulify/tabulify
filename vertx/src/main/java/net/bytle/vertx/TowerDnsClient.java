@@ -19,6 +19,7 @@ public class TowerDnsClient {
 
   public TowerDnsClient(Server server) {
     DnsClientOptions dnsClientOptions = new DnsClientOptions();
+    dnsClientOptions.setQueryTimeout(30000);
     String dnsResolver = server.getConfigAccessor().getString(DNS_RESOLVER_HOST);
     if (dnsResolver != null) {
       LOGGER.info("Dns resolver host set with the value (" + dnsResolver + ") of the configuration (" + DNS_RESOLVER_HOST + ")");

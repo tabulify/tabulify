@@ -10,7 +10,7 @@ import java.util.Objects;
  * This object represents the status of a job that imports users for a list.
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListImportJobStatus   {
+public class ListImportJobStatus  implements net.bytle.vertx.TowerCompositeFutureListener {
 
 
   protected String jobId;
@@ -23,7 +23,11 @@ public class ListImportJobStatus   {
 
   protected Integer countTotal;
 
+  protected Integer countComplete;
+
   protected Integer countSuccess;
+
+  protected Integer countFailure;
 
   protected LocalDateTime creationTime;
 
@@ -105,7 +109,7 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @return countTotal The number of rows processed
+  * @return countTotal The number of rows to process
   */
   @JsonProperty("countTotal")
   public Integer getCountTotal() {
@@ -113,7 +117,7 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @param countTotal The number of rows processed
+  * @param countTotal The number of rows to process
   */
   @SuppressWarnings("unused")
   public void setCountTotal(Integer countTotal) {
@@ -121,7 +125,23 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @return countSuccess The number of rows processed with success (imported or legit)
+  * @return countComplete The number of rows processed
+  */
+  @JsonProperty("countComplete")
+  public Integer getCountComplete() {
+    return countComplete;
+  }
+
+  /**
+  * @param countComplete The number of rows processed
+  */
+  @SuppressWarnings("unused")
+  public void setCountComplete(Integer countComplete) {
+    this.countComplete = countComplete;
+  }
+
+  /**
+  * @return countSuccess The number of rows processed without a fatal failure
   */
   @JsonProperty("countSuccess")
   public Integer getCountSuccess() {
@@ -129,11 +149,27 @@ public class ListImportJobStatus   {
   }
 
   /**
-  * @param countSuccess The number of rows processed with success (imported or legit)
+  * @param countSuccess The number of rows processed without a fatal failure
   */
   @SuppressWarnings("unused")
   public void setCountSuccess(Integer countSuccess) {
     this.countSuccess = countSuccess;
+  }
+
+  /**
+  * @return countFailure The number of rows processed with a fatal failure
+  */
+  @JsonProperty("countFailure")
+  public Integer getCountFailure() {
+    return countFailure;
+  }
+
+  /**
+  * @param countFailure The number of rows processed with a fatal failure
+  */
+  @SuppressWarnings("unused")
+  public void setCountFailure(Integer countFailure) {
+    this.countFailure = countFailure;
   }
 
   /**

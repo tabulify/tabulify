@@ -128,7 +128,7 @@ public class ListImportFlow implements WebFlow {
     ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
     int executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 1000);
     this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
-    this.executionBatchSize = configAccessor.getInteger("list.import.execution.batch.size",20);
+    this.executionBatchSize = configAccessor.getInteger("list.import.execution.batch.size", 20);
     vertx.setPeriodic(executionPeriodInMilliSec, executionPeriodInMilliSec, jobId -> executeJobs());
   }
 
@@ -166,10 +166,14 @@ public class ListImportFlow implements WebFlow {
         this.importJobs.remove(listImportJobEntry.getKey());
         continue;
       }
-      listImportJob
-        .executeIncrementally(executionBatchSize);
-      executingJobsCount++;
-      if (executingJobsCount > this.executionJobCount) {
+      /**
+       * Not completed, not running
+       */
+      if (!listImportJob.isRunning()) {
+        listImportJob.executeSequentially();
+        executingJobsCount++;
+      }
+      if (executingJobsCount >= this.executionJobCount) {
         break;
       }
 

@@ -121,6 +121,8 @@ components:
         This object represents the status of a job that imports users for a list.
       required:
         - jobId
+      x-implements:
+        - "net.bytle.vertx.TowerCompositeFutureListener"
       properties:
         jobId:
           type: string
@@ -138,10 +140,16 @@ components:
           description: The original file name
         countTotal:
           type: integer
+          description: The number of rows to process
+        countComplete:
+          type: integer
           description: The number of rows processed
         countSuccess:
           type: integer
-          description: The number of rows processed with success (imported or legit)
+          description: The number of rows processed without a fatal failure
+        countFailure:
+          type: integer
+          description: The number of rows processed with a fatal failure
         creationTime:
           type: string
           format: date-time

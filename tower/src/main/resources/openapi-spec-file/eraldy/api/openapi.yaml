@@ -1868,15 +1868,17 @@ components:
       description: |
         This object represents the status of a job that imports users for a list.
       example:
+        countComplete: 1
         jobId: xmmmN
         uploadedFileName: uploadedFileName
         creationTime: 2000-01-23T04:56:07.000+00:00
         countTotal: 6
+        countFailure: 5
         startTime: 2000-01-23T04:56:07.000+00:00
         endTime: 2000-01-23T04:56:07.000+00:00
         statusMessage: statusMessage
         statusCode: 0
-        countSuccess: 1
+        countSuccess: 5
       properties:
         jobId:
           description: The job id
@@ -1893,10 +1895,16 @@ components:
           description: The original file name
           type: string
         countTotal:
+          description: The number of rows to process
+          type: integer
+        countComplete:
           description: The number of rows processed
           type: integer
         countSuccess:
-          description: The number of rows processed with success (imported or legit)
+          description: The number of rows processed without a fatal failure
+          type: integer
+        countFailure:
+          description: The number of rows processed with a fatal failure
           type: integer
         creationTime:
           format: date-time
@@ -1910,6 +1918,7 @@ components:
       required:
       - jobId
       type: object
+      x-implements: net.bytle.vertx.TowerCompositeFutureListener
     AuthEmailPost:
       description: "A auth post object based on email to register, get a magic link,\
         \ ..."
