@@ -10,6 +10,7 @@ import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupResult;
 import org.xbill.DNS.lookup.LookupSession;
 import org.xbill.DNS.lookup.NoSuchDomainException;
+import org.xbill.DNS.lookup.ServerFailedException;
 
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -39,7 +40,7 @@ public class TowerDnsClient {
     String clientType = configAccessor.getString(DNS_ASYNC_CLIENT, "xbill");
     LOGGER.info("Dns client type is: " + clientType);
     String dnsResolver = configAccessor.getString(DNS_ASYNC_RESOLVER_HOST);
-    long timeout = configAccessor.getLong(DNS_ASYNC_QUERY_TIMEOUT, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
+    long timeout = configAccessor.getLong(DNS_ASYNC_QUERY_TIMEOUT, 10000);
     if (dnsResolver != null) {
       LOGGER.info("Dns resolver host set with the value (" + dnsResolver + ") of the configuration (" + DNS_ASYNC_RESOLVER_HOST + ")");
     } else {
@@ -112,13 +113,8 @@ public class TowerDnsClient {
               .collect(Collectors.toSet());
             return Future.succeededFuture(mxRecords);
           },
-          err->{
-            if (err.getCause() instanceof NoSuchDomainException) {
-              return Future.succeededFuture(new HashSet<>());
-            }
-            DnsException dnsException = new DnsException("Error while resolving the Mx records for the domain (" + dnsName + "). Message: " + err.getMessage() + " (" + err.getClass().getName() + ")", err);
-            return Future.failedFuture(dnsException);
-          });
+          err -> handleXbillFailure("Mx", dnsName, err)
+        );
 
     }
 
@@ -182,13 +178,8 @@ public class TowerDnsClient {
               .collect(Collectors.toSet());
             return Future.succeededFuture(IpRecord);
           },
-          err->{
-            if (err.getCause() instanceof NoSuchDomainException) {
-              return Future.succeededFuture(new HashSet<>());
-            }
-            DnsException dnsException = new DnsException("Error while resolving the A records for the domain (" + dnsName + "). Message: " + err.getMessage() + " (" + err.getClass().getName() + ")", err);
-            return Future.failedFuture(dnsException);
-          });
+          err -> handleXbillFailure("A", dnsName, err)
+        );
 
     }
 
@@ -219,6 +210,25 @@ public class TowerDnsClient {
           return Future.failedFuture(new DnsException("Error while resolving the A records for the domain (" + dnsName + "). Message:" + err.getMessage(), err));
         }
       );
+  }
+
+  private static <T> Future<Set<T>> handleXbillFailure(String recordType, DnsName dnsName, Throwable err) {
+    Throwable cause = err.getCause();
+    if (cause instanceof NoSuchDomainException) {
+      HashSet<T> result = new HashSet<>();
+      return Future.succeededFuture(result);
+    }
+    String heading = "Error while resolving the " + recordType + " records for the domain (" + dnsName + ").";
+    String message = null;
+    if (cause instanceof ServerFailedException) {
+      message = "The DNS server returned a SERVFAIL status;";
+    }
+    if (message == null) {
+      message = err.getMessage() + " (" + err.getClass().getName() + ")";
+    }
+
+    DnsException dnsException = new DnsException(heading + " Message: " + message, err);
+    return Future.failedFuture(dnsException);
   }
 
 }

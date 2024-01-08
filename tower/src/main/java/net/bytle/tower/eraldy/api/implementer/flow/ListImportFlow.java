@@ -29,10 +29,7 @@ import java.util.Map;
 public class ListImportFlow implements WebFlow {
 
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
-  /**
-   * The number of rows processed by batch
-   */
-  private final int executionBatchSize;
+
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
   /**
@@ -128,7 +125,6 @@ public class ListImportFlow implements WebFlow {
     ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
     int executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 1000);
     this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
-    this.executionBatchSize = configAccessor.getInteger("list.import.execution.batch.size", 20);
     vertx.setPeriodic(executionPeriodInMilliSec, executionPeriodInMilliSec, jobId -> executeJobs());
   }
 
@@ -156,7 +152,7 @@ public class ListImportFlow implements WebFlow {
     }
 
     int executingJobsCount = this.getExecutingJobsCount();
-    if (executingJobsCount > this.executionJobCount) {
+    if (executingJobsCount >= this.executionJobCount) {
       return;
     }
 
