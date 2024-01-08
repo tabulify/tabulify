@@ -1,6 +1,7 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import net.bytle.fs.Fs;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A class tha handles
@@ -36,6 +38,13 @@ public class ListImportFlow implements WebFlow {
    * The number of import jobs executing at a time
    */
   private final Integer executionJobCount;
+  private final Vertx vertx;
+  /**
+   * If a validation fail with a fatal error
+   * (DNS timeout, DNS servfail error, ...)
+   * we retry up to this number (default is 3)
+   */
+  private final int rowValidationRetryCount;
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();
@@ -104,6 +113,10 @@ public class ListImportFlow implements WebFlow {
     return this.importJobs.get(jobIdentifier);
   }
 
+  public int getRowValidationRetryCount() {
+    return this.rowValidationRetryCount;
+  }
+
 
   /**
    * The fields in the import file
@@ -119,13 +132,16 @@ public class ListImportFlow implements WebFlow {
 
   public ListImportFlow(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    Vertx vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
+    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
     ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
-    int executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 1000);
+    int executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
     this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
+    this.rowValidationRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
     vertx.setPeriodic(executionPeriodInMilliSec, executionPeriodInMilliSec, jobId -> executeJobs());
+
+
   }
 
   public String step1CreateAndGetJobId(ListItem list, FileUpload upload, Integer maxRowCountToProcess) throws TowerFailureException {
@@ -147,6 +163,7 @@ public class ListImportFlow implements WebFlow {
 
   public void executeJobs() {
 
+
     if (this.importJobs.isEmpty()) {
       return;
     }
@@ -166,7 +183,26 @@ public class ListImportFlow implements WebFlow {
        * Not completed, not running
        */
       if (!listImportJob.isRunning()) {
-        listImportJob.executeSequentially();
+        int poolSize = 1;
+        long maxExecutionTime = 1;
+        TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
+        WorkerExecutor executor = vertx.createSharedWorkerExecutor("list-import-flow", poolSize, maxExecutionTime, maxExecuteTimeUnit);
+        executor.executeBlocking(listImportJob::executeSequentially)
+          .onComplete(blockingAsyncResult -> {
+            if (blockingAsyncResult.failed()) {
+              Throwable cause = blockingAsyncResult.cause();
+              listImportJob.closeJobWithFatalError(cause, cause.getMessage(), new ArrayList<>());
+              executor.close();
+            }
+            blockingAsyncResult.result().onComplete(v -> {
+              if (v.failed()) {
+                // timeout
+                Throwable cause = v.cause();
+                listImportJob.closeJobWithFatalError(cause, null, new ArrayList<>());
+              }
+              executor.close();
+            });
+          });
         executingJobsCount++;
       }
       if (executingJobsCount >= this.executionJobCount) {
@@ -183,7 +219,7 @@ public class ListImportFlow implements WebFlow {
   private int getExecutingJobsCount() {
     int count = 0;
     for (ListImportJob listImportJob : this.importJobs.values()) {
-      if (!listImportJob.isComplete()) {
+      if (listImportJob.isRunning()) {
         count++;
       }
     }

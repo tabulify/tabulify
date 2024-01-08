@@ -26,7 +26,7 @@ public class TowerCompositeFuture<T> {
    */
   public static <T> Future<TowerCompositeFuture<T>> allSequentially(List<Future<T>> futures, TowerCompositeFutureListener listener) {
 
-    TowerCompositeFuture<T> towerCompositeFuture = new TowerCompositeFuture<T>(futures, listener);
+    TowerCompositeFuture<T> towerCompositeFuture = new TowerCompositeFuture<>(futures, listener);
     return towerCompositeFuture
       .executeSequentially();
 
@@ -48,7 +48,7 @@ public class TowerCompositeFuture<T> {
         res -> {
           T castResult;
           try {
-            //noinspection unchecked
+            //noinspection RedundantCast
             castResult = (T) res;
           } catch (Exception e) {
             this.failure = e;

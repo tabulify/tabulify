@@ -40,7 +40,7 @@ public class TowerDnsClient {
     String clientType = configAccessor.getString(DNS_ASYNC_CLIENT, "xbill");
     LOGGER.info("Dns client type is: " + clientType);
     String dnsResolver = configAccessor.getString(DNS_ASYNC_RESOLVER_HOST);
-    long timeout = configAccessor.getLong(DNS_ASYNC_QUERY_TIMEOUT, 10000);
+    long timeout = configAccessor.getLong(DNS_ASYNC_QUERY_TIMEOUT, DnsClientOptions.DEFAULT_QUERY_TIMEOUT);
     if (dnsResolver != null) {
       LOGGER.info("Dns resolver host set with the value (" + dnsResolver + ") of the configuration (" + DNS_ASYNC_RESOLVER_HOST + ")");
     } else {
@@ -218,15 +218,15 @@ public class TowerDnsClient {
       HashSet<T> result = new HashSet<>();
       return Future.succeededFuture(result);
     }
-    String heading = "Error while resolving the " + recordType + " records for the domain (" + dnsName + ").";
-    String message = null;
     if (cause instanceof ServerFailedException) {
-      message = "The DNS server returned a SERVFAIL status;";
+      // The DNS server returned a SERVFAIL status
+      // issue reaching the DNS server for your domain
+      // domain does not exists any more
+      HashSet<T> result = new HashSet<>();
+      return Future.succeededFuture(result);
     }
-    if (message == null) {
-      message = err.getMessage() + " (" + err.getClass().getName() + ")";
-    }
-
+    String heading = "Error while resolving the " + recordType + " records for the domain (" + dnsName + ").";
+    String message = err.getMessage() + " (" + err.getClass().getName() + ")";
     DnsException dnsException = new DnsException(heading + " Message: " + message, err);
     return Future.failedFuture(dnsException);
   }

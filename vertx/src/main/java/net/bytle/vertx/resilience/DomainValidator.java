@@ -53,6 +53,8 @@ public class DomainValidator {
     whiteListDomains.add("yandex.ru");
     whiteListDomains.add("mail.com");
     whiteListDomains.add("zoho.com");
+    // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
+    whiteListDomains.add("mail.ru");
   }
 
   /**

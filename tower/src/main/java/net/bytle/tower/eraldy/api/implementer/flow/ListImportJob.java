@@ -14,7 +14,6 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.TowerCompositeFuture;
-import net.bytle.vertx.resilience.ValidationTestResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +23,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.bytle.vertx.resilience.ValidationStatus.FATAL_ERROR;
 
 public class ListImportJob {
 
@@ -60,7 +61,6 @@ public class ListImportJob {
     this.originalFileName = Path.of(fileUpload.fileName());
     // time + the random uploaded file name
     this.jobId = creationTime.toFileSystemString() + "-" + this.uploadedCsvFile.getFileName().toString();
-
     // Init all field
     // to avoid dealing with empty value when returning the data object
     this.listImportJobStatus = new ListImportJobStatus();
@@ -86,7 +86,7 @@ public class ListImportJob {
   public Future<ListImportJob> executeSequentially() {
 
     synchronized (this) {
-      if(this.isComplete()){
+      if (this.isComplete()) {
         return Future.succeededFuture(this);
       }
       executionStatusCode = RUNNING_STATUS_CODE;
@@ -95,24 +95,51 @@ public class ListImportJob {
     listImportJobStatus.setStatusCode(executionStatusCode);
 
     return this.buildFutureListToExecute()
-      .compose(v -> buildFutureListToExecute()
-        .compose(listFuture -> TowerCompositeFuture.allSequentially(listFuture, this.listImportJobStatus)
-          .compose(composite -> {
-            if (composite.hasFailed()) {
-              Throwable failure = composite.getFailure();
-              return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + composite.getFailureIndex() + " (header row index is -1)", composite.getResults());
-            }
-            return this.closeJob(composite.getResults());
-          })));
+      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, new ArrayList<>(futuresToExecute.size()), 1));
 
 
+  }
+
+  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, List<ListImportJobRow> resultImportJobRows, int iterationCount) {
+    return TowerCompositeFuture.allSequentially(listFutureToExecute, this.listImportJobStatus)
+      .compose(composite -> {
+        List<ListImportJobRow> listImportJobRows = composite.getResults();
+        if (composite.hasFailed()) {
+          Throwable failure = composite.getFailure();
+          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + composite.getFailureIndex() + " (header row index is -1)", listImportJobRows);
+        }
+        List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
+        for (ListImportJobRow listImportJobRow : listImportJobRows) {
+          if (
+            iterationCount < this.listImportFlow.getRowValidationRetryCount()
+              && listImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
+          ) {
+            toRetryFutures.add(listImportJobRow.executableFuture());
+          }
+          /**
+           * We build the list first
+           * One retry, the elements will be replaced
+           */
+          int rowId = listImportJobRow.getRowId();
+          if (rowId >= 0 && rowId < resultImportJobRows.size()) {
+            resultImportJobRows.set(rowId, listImportJobRow);
+          } else {
+            resultImportJobRows.add(rowId, listImportJobRow);
+          }
+        }
+        if (!toRetryFutures.isEmpty()) {
+          int nextIterationCount = iterationCount + 1;
+          return executeSequentiallyWithRetry(toRetryFutures, resultImportJobRows, nextIterationCount);
+        }
+        return this.closeJob(resultImportJobRows);
+      });
   }
 
 
   /**
    * Build the list of future to process
    */
-  private Future<List<Future<ListImportJobRowStatus>>> buildFutureListToExecute() {
+  private Future<List<Future<ListImportJobRow>>> buildFutureListToExecute() {
     /**
      * Jackson Csv Processing
      * Csv import Doc for Jackson is at:
@@ -138,7 +165,7 @@ public class ListImportJob {
       .readValues(uploadedCsvFile.toFile())) {
 
       int counter = -1;
-      List<Future<ListImportJobRowStatus>> listFutureJobRowStatus = new ArrayList<>();
+      List<Future<ListImportJobRow>> listFutureJobRowStatus = new ArrayList<>();
       while (it.hasNextValue()) {
         counter++;
         String[] row = it.nextValue();
@@ -188,7 +215,13 @@ public class ListImportJob {
         listImportJobStatus.setCountTotal(counter);
         // fail early make the report returns to the first error
         boolean failEarly = true;
-        Future<ListImportJobRowStatus> futureListImportRow = getImportFuture(row, headerMapping, failEarly);
+        int rowId = counter - 1;
+        ListImportJobRow listImportJobRow = new ListImportJobRow(this, rowId, failEarly);
+        String email = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)];
+        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
+        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
+        listImportJobRow.setEmail(email);
+        Future<ListImportJobRow> futureListImportRow = listImportJobRow.executableFuture();
         listFutureJobRowStatus.add(futureListImportRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
         if (counter >= maxRowsProcessedByImport) {
@@ -205,28 +238,14 @@ public class ListImportJob {
     }
   }
 
-  private Future<ListImportJobRowStatus> getImportFuture(String[] row, Map<ListImportFlow.IMPORT_FIELD, Integer> headerMapping, boolean failEarly) {
-    String email = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)];
-    return this.listImportFlow.getEmailAddressValidator()
-      .validate(email, failEarly)
-      .compose(emailAddressValidityReport -> {
-        ListImportJobRowStatus listImportRow = new ListImportJobRowStatus();
-        listImportRow.setEmailAddress(emailAddressValidityReport.getEmailAddress());
-        listImportRow.setStatusCode(emailAddressValidityReport.getStatus().getStatusCode());
-        listImportRow.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
-        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
-        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
-        return Future.succeededFuture(listImportRow);
-      });
-  }
 
   private int getMaxRowCountToProcess() {
     return this.maxRowCountToProcess;
   }
 
-  private Future<ListImportJob> closeJobWithFatalError(Throwable e, String message, List<ListImportJobRowStatus> results) {
-    if (message == null) {
-      message = e.getMessage();
+  public Future<ListImportJob> closeJobWithFatalError(Throwable e, String message, List<ListImportJobRow> results) {
+    if (message == null || message.isEmpty()) {
+      message = e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
     }
     listImportJobStatus.setStatusMessage(message);
     this.executionStatusCode = FAILURE_STATUS_CODE;
@@ -235,13 +254,16 @@ public class ListImportJob {
   }
 
 
-  private Future<ListImportJob> closeJob(List<ListImportJobRowStatus> listJobRowStatus) {
+  private Future<ListImportJob> closeJob(List<ListImportJobRow> listJobRow) {
 
 
     /**
      * Write the row status
      */
     Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
+    List<ListImportJobRowStatus> listJobRowStatus = listJobRow.stream()
+      .map(ListImportJobRow::toListJobRowStatus)
+      .collect(Collectors.toList());
     String resultString = new JsonArray(listJobRowStatus).toString();
     Fs.write(resultFile, resultString);
 
@@ -293,5 +315,9 @@ public class ListImportJob {
 
   public boolean isRunning() {
     return this.getStatus().getStatusCode() == RUNNING_STATUS_CODE;
+  }
+
+  public ListImportFlow getListImportFlow() {
+    return this.listImportFlow;
   }
 }

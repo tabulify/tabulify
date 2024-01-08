@@ -3,6 +3,7 @@ package net.bytle.dns;
 import org.xbill.DNS.*;
 import org.xbill.DNS.lookup.LookupSession;
 import org.xbill.DNS.lookup.NoSuchDomainException;
+import org.xbill.DNS.lookup.ServerFailedException;
 
 import java.util.List;
 import java.util.Set;
@@ -116,6 +117,12 @@ public class XBillDnsClient extends DnsClientAbs {
   public static DnsException handleLookupException(DnsName dnsName, Exception e) throws DnsNotFoundException {
     if (e.getCause() instanceof NoSuchDomainException) {
       throw new DnsNotFoundException("The domain name does not exist (" + dnsName + ")", e);
+    }
+    if (e.getCause() instanceof ServerFailedException) {
+      // The DNS server returned a SERVFAIL status
+      // issue reaching the DNS server for your domain
+      // domain does not exists any more
+      throw new DnsNotFoundException("The domain name does not have any server (" + dnsName + ")", e);
     }
     return new DnsException(e);
   }
