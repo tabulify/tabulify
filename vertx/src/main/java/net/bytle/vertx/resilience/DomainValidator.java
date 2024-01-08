@@ -2,6 +2,8 @@ package net.bytle.vertx.resilience;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import net.bytle.dns.*;
 import net.bytle.html.HtmlGrading;
@@ -11,7 +13,6 @@ import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerDnsClient;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,27 +40,29 @@ public class DomainValidator {
      * The known white list that we don't test
      */
     whiteListDomains = new HashSet<>();
+    whiteListDomains.add("aol.com");
+    whiteListDomains.add("free.fr");
+    whiteListDomains.add("hotmail.com");
+    whiteListDomains.add("icloud.com");
     whiteListDomains.add("gmail.com");
+    whiteListDomains.add("gmx.com");
     whiteListDomains.add("googlemail.com");
     whiteListDomains.add("yahoo.com");
     whiteListDomains.add("outlook.com");
-    whiteListDomains.add("hotmail.com");
     whiteListDomains.add("live.com");
-    whiteListDomains.add("icloud.com");
-    whiteListDomains.add("aol.com");
+    whiteListDomains.add("mail.com");
+    whiteListDomains.add("mail.ru"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
+    whiteListDomains.add("orange.fr"); // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
     whiteListDomains.add("protonmail.com");
-    whiteListDomains.add("gmx.com");
+    whiteListDomains.add("wanadoo.fr");
     whiteListDomains.add("yandex.com");
     whiteListDomains.add("yandex.ru");
-    whiteListDomains.add("mail.com");
     whiteListDomains.add("zoho.com");
-    // mail.ru: https://en.wikipedia.org/wiki/VK_(company)
-    whiteListDomains.add("mail.ru");
+
   }
 
   /**
-   *
-   * @param dnsName - the domain to validate
+   * @param dnsName   - the domain to validate
    * @param failEarly - if true, will stop to the first failure and return it
    * @return a list of validation
    */
@@ -157,28 +160,30 @@ public class DomainValidator {
     // gsalike@mail.ru
     ValidationTestResult.Builder webServer = ValidationTest.WEB_SERVER.createResultBuilder();
     ValidationTestResult.Builder homePage = ValidationTest.HOME_PAGE.createResultBuilder();
-    String absoluteURI = "https://" + apexDomainNameAsString;
-    Future<ValidationTestResult.Builder> homePageFuture = webClient.getAbs(absoluteURI)
-      .send()
+
+    Future<ValidationTestResult.Builder> homePageFuture = this.getPageContent(apexDomainNameAsString)
       .compose(response -> {
           try {
             HtmlGrading.grade(response.bodyAsString());
-            return Future.succeededFuture(homePage.setMessage("HTML page legit at (" + absoluteURI + ")"));
+            return Future.succeededFuture(homePage.setMessage("HTML page legit at (" + apexDomainNameAsString + ")"));
           } catch (HtmlStructureException e) {
-            return Future.failedFuture(homePage.setMessage("The HTML page (" + absoluteURI + ") is not legit" + e.getMessage()));
+            return Future.failedFuture(homePage.setMessage("The HTML page (" + apexDomainNameAsString + ") is not legit" + e.getMessage()));
           }
         },
         err -> {
-          String message = "The web server (" + absoluteURI + ") could not be contacted.";
+          String message = "The http or https web server (" + apexDomainNameAsString + ") could not be contacted.";
+
           Set<Class<?>> nonFatalError = new HashSet<>();
-          // bad ssl (don't repeat)
+          // Bad certificate
           nonFatalError.add(javax.net.ssl.SSLHandshakeException.class);
-          // unknown host (don't repeat)
-          nonFatalError.add(UnknownHostException.class);
-          // connection was closed
-          nonFatalError.add(io.vertx.core.http.HttpClosedException.class);
-          // time out
-          nonFatalError.add(io.netty.channel.ConnectTimeoutException.class);
+          // Default throwable when the future is failed in getPageContent
+          nonFatalError.add(io.vertx.core.impl.NoStackTraceThrowable.class);
+          /**
+           * Fatal error example due to network that could be solved when run twice
+           * io.vertx.core.http.HttpClosedException
+           * java.net.UnknownHostException
+           * io.netty.channel.ConnectTimeoutException
+           */
           if (nonFatalError.contains(err.getClass())) {
             return Future.failedFuture(webServer.setNonFatalError(err, message));
           }
@@ -234,5 +239,42 @@ public class DomainValidator {
           return Future.succeededFuture(domainValidatorResult.addTests(validationTestResults));
         }
       );
+  }
+
+  private Future<HttpResponse<Buffer>> getPageContent(String apexDomainNameAsString) {
+
+    /**
+     * HTTPS with redirect first (https://vertx.io/docs/vertx-core/java/#_30x_redirection_handling)
+     */
+    String httpsUri = "https://" + apexDomainNameAsString;
+    return webClient.getAbs(httpsUri)
+      .followRedirects(true)
+      .send()
+      .compose(Future::succeededFuture,
+        httpsErr -> {
+          /**
+           * Try a redirection on http
+           * to see if we land on a HTTPS url (example: ntlworld.com, orange.fr)
+           */
+          String httpUri = "http://" + apexDomainNameAsString;
+          return webClient.getAbs(httpUri)
+            .followRedirects(true)
+            .send()
+            .compose(
+              request -> {
+                List<String> followedRedirects = request.followedRedirects();
+                if (followedRedirects.isEmpty()) {
+                  return Future.failedFuture("The domain (" + apexDomainNameAsString + ") is only on http, not on https");
+                }
+                String lastRedirect = followedRedirects.get(followedRedirects.size() - 1);
+                if (!lastRedirect.startsWith("https")) {
+                  return Future.failedFuture("The domain (" + httpUri + ") does not redirect to a HTTPS URI. Redirect URI: " + lastRedirect);
+                }
+                return Future.succeededFuture(request);
+              },
+              // return the https error
+              httpErr -> Future.failedFuture(httpsErr)
+            );
+        });
   }
 }

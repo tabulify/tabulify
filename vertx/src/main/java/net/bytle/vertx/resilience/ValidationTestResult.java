@@ -73,6 +73,11 @@ public class ValidationTestResult {
       return this;
     }
 
+    /**
+     * Fatal error could be retried
+     * because they do depend on request condition such as network, disk
+     * Example: timeout, host not found
+     */
     public Builder setFatalError(Throwable fatalError) {
       return setFatalError(fatalError, null);
     }
@@ -109,7 +114,10 @@ public class ValidationTestResult {
       return new ValidationTestResult(this);
     }
 
-
+    /**
+     * Non-fatal error will not be retried
+     * because they do not depend on request condition such as network, disk
+     */
     public Builder setNonFatalError(Throwable error, String s) {
       this.message = error.getClass().getSimpleName() + ": " + error.getMessage();
       if (s != null) {

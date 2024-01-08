@@ -17,7 +17,6 @@ public class TowerCompositeFuture<T> {
   public TowerCompositeFuture(List<Future<T>> futures, TowerCompositeFutureListener listener) {
     this.futures = futures;
     this.listener = listener;
-    this.listener.setCountTotal(futures.size());
   }
 
   /**
@@ -56,7 +55,7 @@ public class TowerCompositeFuture<T> {
             return Future.succeededFuture(this);
           }
           if (this.listener != null) {
-            this.listener.setCountComplete(index + 1);
+            this.listener.setCountComplete(this.listener.getCountComplete() + 1);
           }
           this.results.add(index, castResult);
           return executeSequentiallyRecursively(index + 1);
