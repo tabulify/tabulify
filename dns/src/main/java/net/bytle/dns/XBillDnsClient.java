@@ -47,7 +47,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(DnsIp::createFromInetAddress)
         .collect(Collectors.toSet());
     } catch (Exception e) {
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
@@ -70,7 +70,7 @@ public class XBillDnsClient extends DnsClientAbs {
         })
         .collect(Collectors.toSet());
     } catch (Exception e) {
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
@@ -103,7 +103,7 @@ public class XBillDnsClient extends DnsClientAbs {
       } catch (DnsIllegalArgumentException ex) {
         throw new DnsInternalException("The reverse name should be good ("+reverseName+")");
       }
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
@@ -113,7 +113,7 @@ public class XBillDnsClient extends DnsClientAbs {
   }
 
 
-  public DnsException handleLookupException(DnsName dnsName, Exception e) throws DnsNotFoundException {
+  public static DnsException handleLookupException(DnsName dnsName, Exception e) throws DnsNotFoundException {
     if (e.getCause() instanceof NoSuchDomainException) {
       throw new DnsNotFoundException("The domain name does not exist (" + dnsName + ")", e);
     }
@@ -139,11 +139,11 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(XBillDnsClient::getStringFromTxtRecord)
         .collect(Collectors.toList());
     } catch (Exception e) {
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
-  private Name getXbillName(DnsName dnsName) throws DnsException {
+  public static Name getXbillName(DnsName dnsName) throws DnsException {
     try {
       return Name.fromString(dnsName.toString());
     } catch (TextParseException e) {
@@ -179,7 +179,7 @@ public class XBillDnsClient extends DnsClientAbs {
         })
         .collect(Collectors.toList());
     } catch (Exception e) {
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
@@ -196,7 +196,7 @@ public class XBillDnsClient extends DnsClientAbs {
         .map(r -> DnsIp.createFromInetAddress(r.getAddress()))
         .collect(Collectors.toSet());
     } catch (Exception e) {
-      throw this.handleLookupException(dnsName, e);
+      throw handleLookupException(dnsName, e);
     }
   }
 
