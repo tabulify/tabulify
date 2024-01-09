@@ -2,31 +2,40 @@ package net.bytle.vertx.resilience;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import jakarta.mail.MessagingException;
 import net.bytle.dns.*;
+import net.bytle.email.BMailSmtpClient;
+import net.bytle.email.BMailStartTls;
 import net.bytle.html.HtmlGrading;
 import net.bytle.html.HtmlStructureException;
 import net.bytle.vertx.HttpClientBuilder;
 import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerDnsClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.net.ssl.SSLHandshakeException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DomainValidator {
 
+  private static final Logger LOGGER = LogManager.getLogger(DomainValidator.class);
+  private static final String VALIDATOR_DOMAIN_CHECK_PING_MX_CONF = "validator.domain.check.ping.mx";
   private final WebClient webClient;
   private final TowerDnsClient dnsClient;
   /**
    * ESP Domains
    */
   private final Set<String> whiteListDomains;
+  private final Vertx vertx;
+  private final Boolean checkPingMx;
 
 
   public DomainValidator(TowerApp towerApp) {
@@ -36,6 +45,11 @@ public class DomainValidator {
       .setConnectTimeout(1000) // 1 second, 163.com
       .buildWebClient();
     dnsClient = server.getDnsClient();
+    vertx = server.getVertx();
+    // At home, the port 25 may be firewalld by the USP
+    this.checkPingMx = server.getConfigAccessor().getBoolean(VALIDATOR_DOMAIN_CHECK_PING_MX_CONF, true);
+    LOGGER.info("Ping check Mx ( "+VALIDATOR_DOMAIN_CHECK_PING_MX_CONF+") was set to "+this.checkPingMx+". The validation will try to connect to the SMTP server");
+
     /**
      * The known white list that we don't test
      */
@@ -91,7 +105,51 @@ public class DomainValidator {
         if (records.isEmpty()) {
           return Future.failedFuture(mxValidCheck.setMessage(noMxRecordMessage));
         } else {
-          return Future.succeededFuture(mxValidCheck.setMessage("Mx records were found"));
+          List<DnsMxRecord> mxDnsRecords = records
+            .stream()
+            .sorted(Comparator.comparingInt(DnsMxRecord::getPriority))
+            .collect(Collectors.toList());
+          String mxLists = mxDnsRecords.stream().map(r -> r.getTarget().toStringWithoutRoot()).collect(Collectors.joining(", "));
+          return vertx.executeBlocking(() -> {
+
+              if (!this.checkPingMx) {
+                return null;
+              }
+
+              Throwable smtpException = null;
+              String smtpHost;
+              for (DnsMxRecord dnsMxRecord : mxDnsRecords) {
+
+                smtpHost = dnsMxRecord.getTarget().toStringWithoutRoot();
+                String finalSmtpHost = smtpHost;
+                try {
+                  BMailSmtpClient.create()
+                    .setPort(25)
+                    .setHost(finalSmtpHost)
+                    .setStartTls(BMailStartTls.ENABLE)
+                    .setConnectionTimeout(1000)
+                    .build()
+                    .ping();
+                  return null;
+                } catch (MessagingException e) {
+                  smtpException = e;
+                }
+              }
+              return smtpException;
+            })
+            .compose(smtpError -> {
+              String message = "Mx records were found";
+              if (smtpError == null) {
+                if (this.checkPingMx) {
+                  message += " and smtp servers pinged (" + mxLists + ")";
+                } else {
+                  message += " and smtp servers ping is disabled (" + mxLists + ")";
+                }
+                return Future.succeededFuture(mxValidCheck.setMessage(message));
+              } else {
+                return Future.failedFuture(mxValidCheck.setFatalError(smtpError, message + " but no smtp server has responded (" + mxLists + ")"));
+              }
+            });
         }
       }, err -> Future.failedFuture(mxValidCheck.setFatalError(err)));
     List<Future<ValidationTestResult.Builder>> compositeFutureList = new ArrayList<>();
@@ -175,9 +233,9 @@ public class DomainValidator {
 
           Set<Class<?>> nonFatalError = new HashSet<>();
           // Bad certificate
-          nonFatalError.add(javax.net.ssl.SSLHandshakeException.class);
+          nonFatalError.add(SSLHandshakeException.class);
           // Default throwable when the future is failed in getPageContent
-          nonFatalError.add(io.vertx.core.impl.NoStackTraceThrowable.class);
+          nonFatalError.add(NoStackTraceThrowable.class);
           /**
            * Fatal error example due to network that could be solved when run twice
            * io.vertx.core.http.HttpClosedException

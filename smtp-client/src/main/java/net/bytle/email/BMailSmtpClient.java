@@ -129,8 +129,11 @@ public class BMailSmtpClient {
 
     }
 
-    // smtpServerProps.put(smtpProtocolConfigurationPrefix +".connectiontimeout", "");
-    // smtpServerProps.put(smtpProtocolConfigurationPrefix +".timeout", "");
+
+    // Sets the timeout for establishing a connection with the SMTP server.
+    smtpServerProps.put(smtpProtocolConfigurationPrefix + ".connectiontimeout",this.config.connectionTimeout);
+    // Sets the timeout for socket read operations when waiting for a response from the SMTP server.
+    smtpServerProps.put(smtpProtocolConfigurationPrefix +".timeout", this.config.timeout);
     // smtpServerProps.put(smtpProtocolConfigurationPrefix +".writetimeout", "");
     smtpServerProps.put(smtpProtocolConfigurationPrefix + ".quitwait", "false");
 
@@ -147,7 +150,7 @@ public class BMailSmtpClient {
     /**
      * May be null for direct SSL/TLS connection
      */
-    if(config.startTls!=null) {
+    if (config.startTls != null) {
       switch (config.startTls) {
         case NONE:
           smtpServerProps.put(smtpProtocolConfigurationPrefix + ".starttls.enable", "false");
@@ -213,15 +216,11 @@ public class BMailSmtpClient {
     return toUri().toString();
   }
 
-  public Boolean ping() {
+  public Boolean ping() throws MessagingException {
     try {
       Transport transport = smtpSession.getTransport();
-      try {
-        transport.connect();
-        transport.close();
-      } catch (MessagingException e) {
-        throw new RuntimeException("Unable to connect. Error: " + e.getMessage());
-      }
+      transport.connect();
+      transport.close();
       return true;
     } catch (NoSuchProviderException e) {
       throw new RuntimeException(e);
@@ -274,10 +273,11 @@ public class BMailSmtpClient {
     String password;
     BMailStartTls startTls = null;
     boolean debugLogging;
-    Integer sessionTimeout;
+    Integer timeout = 5000;
     Integer chunkSize;
     Boolean trustAll = false;
     private BMailInternetAddress sender;
+    private int connectionTimeout = 5000;
 
     public config() {
 
@@ -332,8 +332,12 @@ public class BMailSmtpClient {
       return this;
     }
 
-    public config setSessionTimeout(int timeout) {
-      this.sessionTimeout = timeout;
+    /**
+     * Sets the timeout for socket read operations when waiting for a response from the SMTP server.
+     * @param timeout in milliseconds
+     */
+    public config setTimeout(int timeout) {
+      this.timeout = timeout;
       return this;
     }
 
@@ -366,6 +370,15 @@ public class BMailSmtpClient {
 
     public BMailSmtpClient.config setSenderEmail(BMailInternetAddress sender) {
       this.sender = sender;
+      return this;
+    }
+
+    /**
+     * // Sets the timeout for establishing a connection with the SMTP server.
+     * @param connectionTimeout in milliseconds
+     */
+    public BMailSmtpClient.config setConnectionTimeout(int connectionTimeout) {
+      this.connectionTimeout = connectionTimeout;
       return this;
     }
   }

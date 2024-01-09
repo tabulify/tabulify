@@ -100,3 +100,7 @@ password.hash.salt: 'welcome'
 
 # The max number of rows imported by batch
 list.import.max.rows: 10
+
+# by default, because the port 25 is blocked by USP
+# we don't try to connect the MX smtp server
+validator.domain.check.ping.mx: false

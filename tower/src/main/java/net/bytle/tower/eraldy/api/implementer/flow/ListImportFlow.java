@@ -18,10 +18,9 @@ import net.bytle.vertx.resilience.EmailAddressValidator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,6 +44,16 @@ public class ListImportFlow implements WebFlow {
    * we retry up to this number (default is 3)
    */
   private final int rowValidationRetryCount;
+
+  /**
+   * The maximum of jobs to keep by list
+   */
+  private final int maxJobHistoryByList;
+  /**
+   * The retention days
+   * Passed these number of days, we delete the import jobs
+   */
+  private final int maxJobHistoryRetentionInDays;
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();
@@ -140,8 +149,52 @@ public class ListImportFlow implements WebFlow {
     this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
     this.rowValidationRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
     vertx.setPeriodic(executionPeriodInMilliSec, executionPeriodInMilliSec, jobId -> executeJobs());
+    int oneDay = 24 * 60 * 60000;
+    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", oneDay);
+    vertx.setPeriodic(6000, purgeHistoryDelay, jobId -> purgeJobHistory());
+    /**
+     * The number of files created by job import
+     * - The original file
+     * - the status report for the job
+     * - the status report for the rows
+     */
+    int numberOfFilesToPurgeByJob = 3;
+    this.maxJobHistoryByList = 10 * numberOfFilesToPurgeByJob;
+    this.maxJobHistoryRetentionInDays = 30;
 
 
+  }
+
+  private void purgeJobHistory() {
+
+    List<Path> firstLevelChildren = Fs.getChildrenFiles(this.runtimeDataDirectory);
+    Instant maxRetentionTime = Instant.now().minus(Duration.ofDays(this.maxJobHistoryRetentionInDays));
+
+    for (Path child : firstLevelChildren) {
+
+      if (Fs.isFile(child)) {
+        continue;
+      }
+
+      List<Path> secondLevelChildren = Fs.getChildrenFiles(child);
+      // sort in descending order to keep the recent first
+      secondLevelChildren.sort(Comparator.comparing(Fs::getCreationTime).reversed());
+      int fileCounter = 0;
+      for (Path listImportFile : secondLevelChildren) {
+
+        fileCounter++;
+
+        if (fileCounter > this.maxJobHistoryByList) {
+          Fs.deleteIfExists(listImportFile);
+          continue;
+        }
+        boolean isTooOld = Fs.getCreationTime(listImportFile).isBefore(maxRetentionTime);
+        if (isTooOld) {
+          Fs.deleteIfExists(listImportFile);
+        }
+      }
+
+    }
   }
 
   public String step1CreateAndGetJobId(ListItem list, FileUpload upload, Integer maxRowCountToProcess) throws TowerFailureException {

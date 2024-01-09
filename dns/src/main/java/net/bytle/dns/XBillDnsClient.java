@@ -178,7 +178,7 @@ public class XBillDnsClient extends DnsClientAbs {
           @Override
           public DnsName getTarget() {
             try {
-              return DnsName.create(mx.getName().toString());
+              return DnsName.create(mx.getTarget().toString());
             } catch (DnsIllegalArgumentException e) {
               throw new RuntimeException(e);
             }

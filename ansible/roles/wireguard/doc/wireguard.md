@@ -1,4 +1,4 @@
-
+# Wireguard
 
 
 [wg_tool](https://github.com/gene-git/wg_tool) — Tool to manage wireguard configs for server and users.
@@ -18,7 +18,7 @@ https://www.procustodibus.com/blog/2022/09/wireguard-port-forward-from-internet/
 ## Utility
 https://www.procustodibus.com/blog/2021/11/wireguard-nftables/#troubleshooting
 
-Check the rout
+Check the route
 ```
 ping
 ```

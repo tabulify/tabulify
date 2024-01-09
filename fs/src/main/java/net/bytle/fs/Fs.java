@@ -17,8 +17,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,8 +38,12 @@ public class Fs {
    * @return true if this a regular file
    */
   public static boolean isFile(String s) {
+    return isFile(Paths.get(s));
+  }
+
+  public static boolean isFile(Path s) {
     try {
-      return Files.isRegularFile(Paths.get(s));
+      return Files.isRegularFile(s);
     } catch (java.nio.file.InvalidPathException e) {
       return false;
     }
@@ -251,7 +257,7 @@ public class Fs {
 
   @SuppressWarnings("unused")
   private static String getPathSeparator() {
-    return System.getProperty("file.separator");
+    return FileSystems.getDefault().getSeparator();
   }
 
   /**
@@ -260,7 +266,7 @@ public class Fs {
    */
   @SuppressWarnings("unused")
   private static String getSystemEncoding() {
-    return System.getProperty("file.encoding");
+    return Charset.defaultCharset().displayName();
   }
 
   @SuppressWarnings("unused")
@@ -734,4 +740,15 @@ public class Fs {
 
   }
 
+  public static Instant getCreationTime(Path path) {
+    BasicFileAttributes attributes;
+    try {
+      attributes = Files.readAttributes(path, BasicFileAttributes.class);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return attributes.creationTime().toInstant();
+
+  }
 }
