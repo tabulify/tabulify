@@ -115,6 +115,17 @@ WeatherType:
     - Rainy
 ```
 
+### Rename / Refactor / Alias
+
+If the field name change, use the [jackson alias](json-jackson.md) with the `x-field-extra-annotation`
+
+Example from `optInUri` to `optInOrigin`
+```yaml
+optInOrigin:
+  type: string
+  x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
+```
+
 ### File Upload
 
 Example with the list import functionality that accepts a csv

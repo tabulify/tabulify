@@ -622,14 +622,15 @@ components:
         optInIp:
           description: The opt-in ip
           type: string
-        optInUri:
+        optInOrigin:
           description: |
-            The opt-in uri (or a text)
+            The opt-in origin (a uri or a text)
 
-            The opt-in uri is used in the mailing reason:
-            You are receiving this email because you subscribe to it from {optInUri}
+            The opt-in origin is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {optInOrigin}
             at {optInTime} with the Ip {optInIp}
           type: string
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
         flow:
           description: The source flow of registration
           $ref: '#/components/schemas/RegistrationFlow'

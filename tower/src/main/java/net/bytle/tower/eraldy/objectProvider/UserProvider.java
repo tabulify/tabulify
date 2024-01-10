@@ -34,6 +34,7 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.PasswordHashManager;
 import net.bytle.tower.util.Postgres;
 import net.bytle.vertx.*;
+import net.bytle.vertx.analytics.AnalyticsEventName;
 import net.bytle.vertx.auth.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,13 +167,34 @@ public class UserProvider {
   }
 
   /**
-   * Package private because the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
-   *
-   * @param user - the user to insert (sign-up)
+   * @param user           - the user
+   * @return a user suitable
+   */
+  public Future<User> insertUserFromImport(User user) {
+    return this
+      .insertUser(user)
+      .compose(insertedUser -> {
+        this.apiApp
+          .getApexDomain()
+          .getHttpServer()
+          .getServer()
+          .getTrackerAnalytics()
+          .eventBuilderForServerEvent(AnalyticsEventName.SIGN_UP_VIA_IMPORT)
+          .setUser(this.apiApp.getAuthProvider().toAuthUser(user))
+          .sendEventAsync();
+        return Future.succeededFuture(insertedUser);
+      });
+
+  }
+
+  /**
+   * Package Private,
+   * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
+   * for creation via import, the insertion should be driven by {@link #insertUserFromImport(User)}
+   * @param user - the user to insert (sign-up or import)
    * @return a user
    */
   Future<User> insertUser(User user) {
-
 
     String sql = "INSERT INTO\n" +
       QUALIFIED_TABLE_NAME + " (\n" +

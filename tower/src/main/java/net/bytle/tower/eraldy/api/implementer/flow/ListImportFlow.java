@@ -130,7 +130,7 @@ public class ListImportFlow implements WebFlow {
    * The fields in the import file
    */
   enum IMPORT_FIELD {
-    GIVEN_NAME, FAMILY_NAME, EMAIL_ADDRESS
+    GIVEN_NAME, FAMILY_NAME, OPT_IN_TIME, OPT_IN_IP, CONFIRM_TIME, LOCATION, CONFIRM_IP, OPT_IN_ORIGIN, EMAIL_ADDRESS
   }
 
   /**

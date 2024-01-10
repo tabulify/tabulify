@@ -9,7 +9,17 @@ public class AnalyticsEventName {
 
 
   public static final AnalyticsEventName SIGN_IN = new AnalyticsEventName("Sign In");
+
+  /**
+   * When a user sign up
+   */
   public static AnalyticsEventName SIGN_UP = new AnalyticsEventName("Sign Up");
+
+  /**
+   * When a user is created by import
+   * (ie mailing list import)
+   */
+  public static AnalyticsEventName SIGN_UP_VIA_IMPORT = new AnalyticsEventName("Sign Up Import");
 
   private final String name;
 

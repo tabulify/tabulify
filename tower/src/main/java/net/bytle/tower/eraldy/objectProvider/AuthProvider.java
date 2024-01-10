@@ -350,6 +350,7 @@ public class AuthProvider {
     return authUserClaims;
   }
 
+
   /**
    * @param authUserAsClaims - the claims as auth user
    * @param routingContext   - the routing context for analytics (Maybe null when loading user without HTTP call, for instance for test
@@ -470,7 +471,7 @@ public class AuthProvider {
   }
 
   public Future<ListItem> checkListAuthorization(RoutingContext routingContext, ListItem list, AuthScope authScope) {
-    return this.checkRealmAuthorization(routingContext,list.getRealm(), authScope)
-      .compose(realm->Future.succeededFuture(list));
+    return this.checkRealmAuthorization(routingContext, list.getRealm(), authScope)
+      .compose(realm -> Future.succeededFuture(list));
   }
 }

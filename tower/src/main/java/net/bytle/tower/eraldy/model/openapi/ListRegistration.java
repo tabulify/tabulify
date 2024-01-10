@@ -1,10 +1,14 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
+import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
  * A registration
@@ -29,7 +33,7 @@ public class ListRegistration   {
 
   protected String optInIp;
 
-  protected String optInUri;
+  protected String optInOrigin;
 
   protected RegistrationFlow flow;
 
@@ -59,7 +63,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed) 
   */
   @JsonProperty("status")
   public Integer getStatus() {
@@ -67,7 +71,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed) 
   */
   @SuppressWarnings("unused")
   public void setStatus(Integer status) {
@@ -171,19 +175,20 @@ public class ListRegistration   {
   }
 
   /**
-  * @return optInUri The opt-in uri (or a text)  The opt-in uri is used in the mailing reason: You are receiving this email because you subscribe to it from {optInUri} at {optInTime} with the Ip {optInIp}
+  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp} 
   */
-  @JsonProperty("optInUri")
-  public String getOptInUri() {
-    return optInUri;
+  @com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})
+  @JsonProperty("optInOrigin")
+  public String getOptInOrigin() {
+    return optInOrigin;
   }
 
   /**
-  * @param optInUri The opt-in uri (or a text)  The opt-in uri is used in the mailing reason: You are receiving this email because you subscribe to it from {optInUri} at {optInTime} with the Ip {optInIp}
+  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp} 
   */
   @SuppressWarnings("unused")
-  public void setOptInUri(String optInUri) {
-    this.optInUri = optInUri;
+  public void setOptInOrigin(String optInOrigin) {
+    this.optInOrigin = optInOrigin;
   }
 
   /**
@@ -212,17 +217,17 @@ public class ListRegistration   {
       return false;
     }
     ListRegistration listRegistration = (ListRegistration) o;
-    return
-
-            Objects.equals(guid, listRegistration.guid) && Objects.equals(status, listRegistration.status) && Objects.equals(list, listRegistration.list) && Objects.equals(subscriber, listRegistration.subscriber) && Objects.equals(confirmationTime, listRegistration.confirmationTime) && Objects.equals(confirmationIp, listRegistration.confirmationIp) && Objects.equals(optInTime, listRegistration.optInTime) && Objects.equals(optInIp, listRegistration.optInIp) && Objects.equals(optInUri, listRegistration.optInUri) && Objects.equals(flow, listRegistration.flow);
+    return 
+            
+            Objects.equals(guid, listRegistration.guid) && Objects.equals(status, listRegistration.status) && Objects.equals(list, listRegistration.list) && Objects.equals(subscriber, listRegistration.subscriber) && Objects.equals(confirmationTime, listRegistration.confirmationTime) && Objects.equals(confirmationIp, listRegistration.confirmationIp) && Objects.equals(optInTime, listRegistration.optInTime) && Objects.equals(optInIp, listRegistration.optInIp) && Objects.equals(optInOrigin, listRegistration.optInOrigin) && Objects.equals(flow, listRegistration.flow);
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(guid, status, list, subscriber, confirmationTime, confirmationIp, optInTime, optInIp, optInUri, flow);
+  public int hashCode() { 
+    return Objects.hash(guid, status, list, subscriber, confirmationTime, confirmationIp, optInTime, optInIp, optInOrigin, flow);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

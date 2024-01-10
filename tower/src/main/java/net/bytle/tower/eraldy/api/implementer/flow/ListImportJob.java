@@ -194,8 +194,27 @@ public class ListImportJob {
               case "familyname":
                 headerMapping.put(ListImportFlow.IMPORT_FIELD.FAMILY_NAME, i);
                 break;
+              case "optinuri":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.OPT_IN_ORIGIN, i);
+                break;
+              case "optintime":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.OPT_IN_TIME, i);
+                break;
+              case "optinip":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.OPT_IN_IP, i);
+                break;
+              case "confirmtime":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.CONFIRM_TIME, i);
+                break;
+              case "confirmip":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.CONFIRM_IP, i);
+                break;
+              case "location":
+              case "region":
+                headerMapping.put(ListImportFlow.IMPORT_FIELD.LOCATION, i);
+                break;
               default:
-                System.out.println(normalizedHeader);
+                break;
             }
           }
           if (headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS) == null) {
@@ -218,9 +237,15 @@ public class ListImportJob {
         int rowId = counter - 1;
         ListImportJobRow listImportJobRow = new ListImportJobRow(this, rowId, failEarly);
         String email = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)];
-        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
-        // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
         listImportJobRow.setEmail(email);
+        String familyName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
+        listImportJobRow.setFamilyName(familyName);
+        String givenName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
+        listImportJobRow.setGivenName(givenName);
+        String optInOrigin = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_ORIGIN)];
+        listImportJobRow.setOptInOrigin(optInOrigin);
+        String optInIp = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_IP)];
+          listImportJobRow.setOptInIp(optInIp);
         Future<ListImportJobRow> futureListImportRow = listImportJobRow.getExecutableFuture();
         listFutureJobRowStatus.add(futureListImportRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
