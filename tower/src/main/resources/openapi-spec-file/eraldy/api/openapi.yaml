@@ -1918,7 +1918,8 @@ components:
       required:
       - jobId
       type: object
-      x-implements: net.bytle.vertx.TowerCompositeFutureListener
+      x-implements:
+      - net.bytle.vertx.TowerCompositeFutureListener
     AuthEmailPost:
       description: "A auth post object based on email to register, get a magic link,\
         \ ..."
@@ -3275,7 +3276,6 @@ components:
       description: A registration
       example:
         confirmationIp: confirmationIp
-        optInUri: optInUri
         subscriber:
           disabledReason: disabledReason
           website: https://mywebsite
@@ -3306,6 +3306,7 @@ components:
         optInIp: optInIp
         guid: xmmmN
         confirmationTime: 2000-01-23T04:56:07.000+00:00
+        optInOrigin: optInOrigin
         list:
           ownerUser:
             disabledReason: disabledReason
@@ -3431,14 +3432,16 @@ components:
         optInIp:
           description: The opt-in ip
           type: string
-        optInUri:
+        optInOrigin:
           description: |
-            The opt-in uri (or a text)
+            The opt-in origin (a uri or a text)
 
-            The opt-in uri is used in the mailing reason:
-            You are receiving this email because you subscribe to it from {optInUri}
+            The opt-in origin is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {optInOrigin}
             at {optInTime} with the Ip {optInIp}
           type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            optInUri\"})"
         flow:
           $ref: '#/components/schemas/RegistrationFlow'
       title: A registration to a list
