@@ -1,7 +1,13 @@
 package net.bytle.tower.eraldy.api.implementer.flow;
 
 import io.vertx.core.Future;
+import net.bytle.email.BMailInternetAddress;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
+import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.vertx.resilience.ValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
 
@@ -30,13 +36,29 @@ public class ListImportJobRow {
     this.email = email;
   }
 
-  public Future<ListImportJobRow> executableFuture() {
+  public Future<ListImportJobRow> getExecutableFuture() {
     this.executionCount++;
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
       .validate(email, failEarly)
       .compose(emailAddressValidityReport -> {
-        this.setStatusCode(emailAddressValidityReport.getStatus().getStatusCode());
-        this.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
+        int emailValidityStatus = emailAddressValidityReport.getStatus().getStatusCode();
+        if (emailValidityStatus != ValidationStatus.LEGIT.getStatusCode()) {
+          this.setStatusCode(emailValidityStatus);
+          this.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
+          return Future.succeededFuture(this);
+        }
+        UserProvider userProvider = this.listImportJob.getListImportFlow().getApp().getUserProvider();
+        BMailInternetAddress emailInternetAddress;
+        try {
+          emailInternetAddress = emailAddressValidityReport.getEmailInternetAddress();
+        } catch (NullValueException e) {
+          return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
+        }
+        ListItem list = this.listImportJob.getList();
+        Future<User> user = userProvider.getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm());
+        if(user==null){
+
+        }
         return Future.succeededFuture(this);
       });
   }

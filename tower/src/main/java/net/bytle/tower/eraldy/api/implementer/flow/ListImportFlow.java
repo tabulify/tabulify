@@ -10,7 +10,6 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
 import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.TowerApp;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
@@ -60,7 +59,7 @@ public class ListImportFlow implements WebFlow {
   }
 
   @Override
-  public TowerApp getApp() {
+  public EraldyApiApp getApp() {
     return apiApp;
   }
 

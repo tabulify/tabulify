@@ -71,7 +71,7 @@ public class ListImportJob {
     listImportJobStatus.setCountComplete(0);
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
-    this.maxRowCountToProcess = Objects.requireNonNullElse(maxRowCountToProcess, 10000);
+    this.maxRowCountToProcess = Objects.requireNonNullElse(maxRowCountToProcess, 5000);
 
   }
 
@@ -114,7 +114,7 @@ public class ListImportJob {
             iterationCount < this.listImportFlow.getRowValidationRetryCount()
               && listImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
           ) {
-            toRetryFutures.add(listImportJobRow.executableFuture());
+            toRetryFutures.add(listImportJobRow.getExecutableFuture());
           }
           /**
            * We build the list first
@@ -221,7 +221,7 @@ public class ListImportJob {
         // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
         // row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
         listImportJobRow.setEmail(email);
-        Future<ListImportJobRow> futureListImportRow = listImportJobRow.executableFuture();
+        Future<ListImportJobRow> futureListImportRow = listImportJobRow.getExecutableFuture();
         listFutureJobRowStatus.add(futureListImportRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
         if (counter >= maxRowsProcessedByImport) {

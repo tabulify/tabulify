@@ -502,11 +502,10 @@ public class AppProvider {
         userToGetOrCreate.setRealm(realm);
         return apiApp.getUserProvider()
           .getOrCreateUserFromEmail(userToGetOrCreate)
-          .onFailure(t -> LOGGER.error("Error on app upsert", t))
           .compose(user -> {
             app.setUser(user);
             return upsertApp(app);
-          });
+          }, err -> Future.failedFuture(new InternalException("Error on app upsert", err)));
       });
 
   }

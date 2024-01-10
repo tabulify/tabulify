@@ -15,6 +15,7 @@ import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -190,12 +191,20 @@ public class UserProvider {
             user.setLocalId(userId);
             this.computeGuid(user);
             String databaseJsonString = this.toDatabaseJsonString(user);
+            String email = user.getEmail();
+            String emailAddressNormalized;
+            try {
+              emailAddressNormalized = BMailInternetAddress.of(email)
+                .toNormalizedString();
+            } catch (AddressException e) {
+              return Future.failedFuture(new InternalError("The email value (" + email + ") is not valid", e));
+            }
             return sqlConnection
               .preparedQuery(sql)
               .execute(Tuple.of(
                   user.getRealm().getLocalId(),
                   user.getLocalId(),
-                  user.getEmail().toLowerCase(),
+                  emailAddressNormalized,
                   databaseJsonString,
                   DateTimeUtil.getNowUtc()
                 )
@@ -504,7 +513,7 @@ public class UserProvider {
   }
 
 
-  public Future<? extends User> getUserByEmail(String userEmail, String realmIdentifier) {
+  public Future<? extends User> getUserByEmail(BMailInternetAddress userEmail, String realmIdentifier) {
     return this.apiApp.getRealmProvider()
       .getRealmFromIdentifier(realmIdentifier)
       .onFailure(err -> LOGGER.error("getUserByEmail: Error while trying to retrieve the realm", err))
@@ -527,7 +536,7 @@ public class UserProvider {
    * @param realm        - the realm to use to build the user (maybe null)
    * @return the user or null if not found
    */
-  public <T extends User> Future<T> getUserByEmail(String userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
+  public <T extends User> Future<T> getUserByEmail(BMailInternetAddress userEmail, Long realmLocalId, Class<T> userClass, Realm realm) {
 
     assert userEmail != null;
     assert realmLocalId != null;
@@ -536,19 +545,21 @@ public class UserProvider {
       " WHERE " +
       EMAIL_COLUMN + " = $1\n" +
       " AND " + REALM_COLUMN + " = $2";
+    String lowerCaseEmailAddress = userEmail.toNormalizedString();
+
     return jdbcPool.preparedQuery(sql)
-      .execute(Tuple.of(userEmail.toLowerCase(), realmLocalId))
-      .onFailure(t -> LOGGER.error("Error while retrieving the user by email and realm. Sql: \n" + sql, t))
-      .compose(userRows -> {
+      .execute(Tuple.of(lowerCaseEmailAddress, realmLocalId))
+      .compose(
+        userRows -> {
 
-        if (userRows.size() == 0) {
-          // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
-          return Future.succeededFuture();
-        }
+          if (userRows.size() == 0) {
+            // return Future.failedFuture(new NotFoundException("the user id (" + userId + ") was not found"));
+            return Future.succeededFuture();
+          }
 
-        Row row = userRows.iterator().next();
-        return getUserFromRow(row, userClass, realm);
-      });
+          Row row = userRows.iterator().next();
+          return getUserFromRow(row, userClass, realm);
+        }, err -> Future.failedFuture(new InternalError("Error while retrieving the user by email and realm. Sql: \n" + sql, err)));
 
   }
 
@@ -563,7 +574,18 @@ public class UserProvider {
     Long userId = user.getLocalId();
     String userEmail = user.getEmail();
     Realm realm = user.getRealm();
-    return getUserFromIdOrEmail(userId, userEmail, realm)
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(userEmail);
+    } catch (AddressException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setMessage("The user email (" + userEmail + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .build()
+      );
+    }
+    return getUserFromIdOrEmail(userId, bMailInternetAddress, realm)
       .compose(dbUser -> {
         if (dbUser != null) {
           return Future.succeededFuture(dbUser);
@@ -578,7 +600,7 @@ public class UserProvider {
       });
   }
 
-  public Future<User> getUserFromIdOrEmail(Long userId, String userEmail, Realm realm) {
+  public Future<User> getUserFromIdOrEmail(Long userId, BMailInternetAddress userEmail, Realm realm) {
     if (userId == null && userEmail == null) {
       throw new IllegalArgumentException("The user email and id cannot be both null");
     }
@@ -845,7 +867,17 @@ public class UserProvider {
       if (realm == null) {
         return Future.failedFuture(new InternalException("With a user email (" + identifier + ") as user identifier, the realm should be provided"));
       }
-      return getUserByEmail(identifier, realm.getLocalId(), User.class, realm);
+      BMailInternetAddress email;
+      try {
+        email = BMailInternetAddress.of(identifier);
+      } catch (AddressException e) {
+        return Future.failedFuture(TowerFailureException.builder()
+          .setMessage("The user identifier (" + identifier + ") is not a guid nor an email")
+          .setType(TowerFailureTypeEnum.BAD_STRUCTURE_422)
+          .build()
+        );
+      }
+      return getUserByEmail(email, realm.getLocalId(), User.class, realm);
     }
   }
 

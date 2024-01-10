@@ -285,11 +285,25 @@ public class ListRegistrationFlow extends WebFlowAbs {
       optInIp = "";
     }
 
+    String subjectEmail = authUserAsClaims.getSubjectEmail();
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
+    } catch (AddressException e) {
+      TowerFailureException
+        .builder()
+        .setMessage("The AUTH subject email (" + subjectEmail + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .buildWithContextFailingTerminal(ctx);
+      return;
+    }
+
     String finalOptInIp = optInIp;
 
     AuthProvider authProvider = getApp().getAuthProvider();
+
     authProvider
-      .getAuthUserForSessionByEmail(authUserAsClaims.getSubjectEmail(), authUserAsClaims.getAudience())
+      .getAuthUserForSessionByEmail(bMailInternetAddress, authUserAsClaims.getAudience())
       .onFailure(ctx::fail)
       .onSuccess(authUserForSession -> {
         Future<AuthUser> futureFinaleAuthSessionUser;

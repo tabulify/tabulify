@@ -49,10 +49,22 @@ public class EmailLoginFlow extends WebFlowAbs {
     String redirectUri = authEmailPost.getRedirectUri();
     UriEnhanced redirectUriEnhanced = ValidationUtil.validateAndGetRedirectUriAsUri(redirectUri);
     OAuthInternalSession.addRedirectUri(routingContext, redirectUriEnhanced);
+    String userEmail = authEmailPost.getUserEmail();
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(userEmail);
+    } catch (AddressException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setMessage("The user email (" + userEmail + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .build()
+      );
+    }
 
     return getApp()
       .getUserProvider()
-      .getUserByEmail(authEmailPost.getUserEmail(), authEmailPost.getRealmIdentifier())
+      .getUserByEmail(bMailInternetAddress, authEmailPost.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(userToLogin -> {
 

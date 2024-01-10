@@ -43,9 +43,21 @@ public class PasswordResetFlow extends WebFlowAbs {
   }
 
   public Future<ApiResponse<Void>> step1SendEmail(RoutingContext routingContext, EmailIdentifier emailIdentifier) {
+    BMailInternetAddress bMailInternetAddress;
+    String emailAddressAsString = emailIdentifier.getUserEmail();
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(emailAddressAsString);
+    } catch (AddressException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setMessage("The email (" + emailAddressAsString + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .build()
+      );
+    }
     return getApp()
       .getUserProvider()
-      .getUserByEmail(emailIdentifier.getUserEmail(), emailIdentifier.getRealmIdentifier())
+      .getUserByEmail(bMailInternetAddress, emailIdentifier.getRealmIdentifier())
       .onFailure(routingContext::fail)
       .compose(userToResetPassword -> {
 

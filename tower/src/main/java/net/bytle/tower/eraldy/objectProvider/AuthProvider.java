@@ -2,6 +2,8 @@ package net.bytle.tower.eraldy.objectProvider;
 
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.AssertionException;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
@@ -293,7 +295,7 @@ public class AuthProvider {
 
   }
 
-  public Future<AuthUser> getAuthUserForSessionByEmailNotNull(String email, String realmIdentifier) {
+  public Future<AuthUser> getAuthUserForSessionByEmailNotNull(BMailInternetAddress email, String realmIdentifier) {
 
     return this.apiApp.getUserProvider()
       .getUserByEmail(email, realmIdentifier)
@@ -312,7 +314,7 @@ public class AuthProvider {
 
   }
 
-  public Future<AuthUser> getAuthUserForSessionByEmail(String email, String realmIdentifier) {
+  public Future<AuthUser> getAuthUserForSessionByEmail(BMailInternetAddress email, String realmIdentifier) {
 
     return this.apiApp.getUserProvider()
       .getUserByEmail(email, realmIdentifier)
@@ -415,8 +417,20 @@ public class AuthProvider {
   }
 
   public Future<AuthUser> getAuthUserForSessionByClaims(AuthUser authUserClaims) {
+    String subjectEmail = authUserClaims.getSubjectEmail();
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
+    } catch (AddressException e) {
+      return Future.failedFuture(TowerFailureException
+        .builder()
+        .setMessage("The AuthUser subject email (" + subjectEmail + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .build()
+      );
+    }
     return this.apiApp.getUserProvider()
-      .getUserByEmail(authUserClaims.getSubjectEmail(), authUserClaims.getAudience())
+      .getUserByEmail(bMailInternetAddress, authUserClaims.getAudience())
       .compose(userInDb -> {
         if (userInDb == null) {
           return Future.succeededFuture();

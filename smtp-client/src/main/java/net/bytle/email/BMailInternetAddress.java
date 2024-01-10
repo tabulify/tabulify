@@ -220,4 +220,14 @@ public class BMailInternetAddress {
     return this.emailAddress;
   }
 
+  /**
+   *
+   * @return the email in lowercase format
+   * ChatGpt: In practice, most mail servers and services treat both the local and domain parts of email addresses as case-insensitive.
+   * Nonetheless, it's always recommended to follow the standard conventions and use lowercase characters
+   * for the entire email address to avoid potential issues or confusion.
+   */
+  public String toNormalizedString() {
+    return this.emailAddress.toLowerCase();
+  }
 }

@@ -189,15 +189,27 @@ public class UserRegistrationFlow extends WebFlowAbs {
   /**
    * Second steps:
    *
-   * @param ctx      - the context
+   * @param ctx              - the context
    * @param authUserAsClaims - the claims
    */
   public void handleStep2ClickOnEmailValidationLink(RoutingContext ctx, AuthUser authUserAsClaims) {
 
-
+    String subjectEmail = authUserAsClaims.getSubjectEmail();
+    BMailInternetAddress bMailInternetAddress;
+    try {
+      bMailInternetAddress = BMailInternetAddress.of(subjectEmail);
+    } catch (AddressException e) {
+      TowerFailureException
+        .builder()
+        .setMessage("The AuthUser subject Email (" + subjectEmail + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .buildWithContextFailingTerminal(ctx);
+      return;
+    }
     AuthProvider authProvider = getApp().getAuthProvider();
+
     authProvider
-      .getAuthUserForSessionByEmailNotNull(authUserAsClaims.getSubjectEmail(), authUserAsClaims.getRealmIdentifier())
+      .getAuthUserForSessionByEmailNotNull(bMailInternetAddress, authUserAsClaims.getRealmIdentifier())
       .onFailure(ctx::fail)
       .onSuccess(authUserFromGet -> {
         if (authUserFromGet != null) {

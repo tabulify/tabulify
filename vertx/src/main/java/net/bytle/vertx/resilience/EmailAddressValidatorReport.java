@@ -1,7 +1,9 @@
 package net.bytle.vertx.resilience;
 
 import io.vertx.core.json.JsonObject;
+import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
+import net.bytle.exception.NullValueException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,7 +29,7 @@ public class EmailAddressValidatorReport {
   public JsonObject toJsonObject() {
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("pass", this.builder.status);
-    jsonObject.put("email", this.builder.emailAddress);
+    jsonObject.put("email", this.builder.emailInternetAddress);
     JsonObject jsonObjectMessage = new JsonObject();
     jsonObject.put("results", jsonObjectMessage);
     jsonObjectMessage.put("errors", this.getErrors()
@@ -48,8 +50,12 @@ public class EmailAddressValidatorReport {
     return jsonObject;
   }
 
-  public String getEmailAddress() {
-    return this.builder.emailAddress;
+  public BMailInternetAddress getEmailInternetAddress() throws NullValueException {
+    BMailInternetAddress emailInternetAddress = this.builder.emailInternetAddress;
+    if (emailInternetAddress == null) {
+      throw new NullValueException("This method returns a value only if the address is valid.");
+    }
+    return emailInternetAddress;
   }
 
   public List<ValidationTestResult> getErrors() {
@@ -63,12 +69,13 @@ public class EmailAddressValidatorReport {
 
   public static class Builder {
 
-    private final String emailAddress;
+    private BMailInternetAddress emailInternetAddress;
+    private final String inputEmailAddress;
     public ValidationStatus status;
     private final Set<ValidationTestResult> validationTestResults = new HashSet<>();
 
-    public Builder(String emailAddress) {
-      this.emailAddress = emailAddress;
+    public Builder(String inputEmailAddress) {
+      this.inputEmailAddress = inputEmailAddress;
     }
 
     public Builder addResult(ValidationTestResult validationTestResult) {
@@ -83,7 +90,7 @@ public class EmailAddressValidatorReport {
       status = ValidationStatus.LEGIT;
       for (ValidationTestResult validationTestResult : validationTestResults) {
         if (validationTestResult.fail()) {
-          if(validationTestResult.hasFatalError()){
+          if (validationTestResult.hasFatalError()) {
             status = ValidationStatus.FATAL_ERROR;
             break;
           }
@@ -99,6 +106,15 @@ public class EmailAddressValidatorReport {
     public Builder addResults(Collection<ValidationTestResult> res) {
       validationTestResults.addAll(res);
       return this;
+    }
+
+
+    public BMailInternetAddress getEmailInternetAddress() {
+      return this.emailInternetAddress;
+    }
+
+    public void setEmailInternetAddress(BMailInternetAddress mailInternetAddress) {
+      this.emailInternetAddress = mailInternetAddress;
     }
   }
 }

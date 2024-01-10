@@ -12,6 +12,7 @@ public class EmailAddressValidator {
 
   private final DomainValidator domainValidator;
 
+
   public EmailAddressValidator(TowerApp towerApp) {
 
     domainValidator = new DomainValidator(towerApp);
@@ -23,14 +24,15 @@ public class EmailAddressValidator {
    * @return {@link EmailAddressValidatorReport}
    */
   public Future<EmailAddressValidatorReport> validate(String email, boolean failEarly) {
-    BMailInternetAddress mail;
+
 
     ValidationTestResult.Builder emailValidCheck = ValidationTest.EMAIL_ADDRESS.createResultBuilder();
     EmailAddressValidatorReport.Builder emailValidityReport = EmailAddressValidatorReport.builder(email);
+    BMailInternetAddress emailAddress;
     try {
-      mail = BMailInternetAddress.of(email);
+      emailAddress = BMailInternetAddress.of(email);
+      emailValidityReport.setEmailInternetAddress(emailAddress);
     } catch (AddressException e) {
-
       return Future.succeededFuture(
         emailValidityReport
           .addResult(emailValidCheck.setMessage("Email address is not valid").fail())
@@ -44,7 +46,7 @@ public class EmailAddressValidator {
      */
     DnsName emailDomain;
     try {
-      emailDomain = DnsName.create(mail.getDomain());
+      emailDomain = DnsName.create(emailAddress.getDomain());
     } catch (DnsIllegalArgumentException e) {
       return Future.failedFuture(e);
     }
