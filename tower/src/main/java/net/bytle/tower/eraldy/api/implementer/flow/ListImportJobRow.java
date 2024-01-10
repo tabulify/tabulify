@@ -9,9 +9,12 @@ import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
+import net.bytle.type.time.TimeException;
+import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.resilience.ValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +33,10 @@ public class ListImportJobRow {
   private String familyName;
   private String givenName;
   private String optInIp;
+  private String optInTime;
+  private String confirmIp;
+  private String confirmTime;
+  private String location;
 
   public ListImportJobRow(ListImportJob listImportJob, int rowId, boolean failEarly) {
     this.rowId = rowId;
@@ -46,11 +53,10 @@ public class ListImportJobRow {
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
       .validate(email, failEarly)
       .compose(emailAddressValidityReport -> {
-        int emailValidityStatus = emailAddressValidityReport.getStatus().getStatusCode();
-        if (emailValidityStatus != ValidationStatus.LEGIT.getStatusCode()) {
-          this.setStatusCode(emailValidityStatus);
-          this.setStatusMessage(emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", ")));
-          return Future.succeededFuture(this);
+        ValidationStatus emailValidityStatus = emailAddressValidityReport.getStatus();
+        if (emailValidityStatus != ValidationStatus.LEGIT) {
+          String message = emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", "));
+          return this.closeExecution(emailValidityStatus, message);
         }
         UserProvider userProvider = this.listImportJob.getListImportFlow().getApp().getUserProvider();
         BMailInternetAddress emailInternetAddress;
@@ -60,7 +66,7 @@ public class ListImportJobRow {
           return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
         }
         ListItem list = this.listImportJob.getList();
-        userProvider.getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
+        return userProvider.getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
           .compose(userFromRegistry -> {
             if (userFromRegistry != null) {
               return Future.succeededFuture(userFromRegistry);
@@ -74,24 +80,64 @@ public class ListImportJobRow {
           .compose(user -> {
             ListRegistrationProvider listRegistrationProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
             ListRegistration listRegistration = new ListRegistration();
+            listRegistration.setSubscriber(user);
             listRegistration.setList(list);
             listRegistration.setFlow(RegistrationFlow.IMPORT);
+            listRegistration.setStatus(1);
             if (this.optInOrigin == null) {
               listRegistration.setOptInOrigin(RegistrationFlow.IMPORT.toString());
             } else {
               listRegistration.setOptInOrigin(this.optInOrigin);
             }
-            try {
-              DnsIp optInIpAsDnsIp = DnsIp.createFromString(optInIp);
-            } catch (DnsException e) {
-              throw new RuntimeException(e);
+            if (optInIp != null) {
+              DnsIp optInIpAsDnsIp;
+              try {
+                optInIpAsDnsIp = DnsIp.createFromString(optInIp);
+              } catch (DnsException e) {
+                return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
+              }
+              listRegistration.setOptInIp(optInIpAsDnsIp.getAddress());
             }
-
-            return listRegistrationProvider.upsertRegistration(listRegistration);
+            if (optInTime != null) {
+              LocalDateTime optInTimeAsObject;
+                try {
+                  optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
+                } catch (TimeException e) {
+                  return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
+                }
+                listRegistration.setOptInTime(optInTimeAsObject);
+            }
+            if (confirmIp != null) {
+              DnsIp confirmIpAsDnsIp;
+              try {
+                confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
+              } catch (DnsException e) {
+                return this.closeExecution(ValidationStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
+              }
+              listRegistration.setConfirmationIp(confirmIpAsDnsIp.getAddress());
+            }
+            if (confirmTime != null) {
+              LocalDateTime confirmTimeAsObject;
+              try {
+                confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
+              } catch (TimeException e) {
+                return this.closeExecution(ValidationStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
+              }
+              listRegistration.setConfirmationTime(confirmTimeAsObject);
+            }
+            return listRegistrationProvider.upsertRegistration(listRegistration)
+              .compose(listRegistration1 -> {
+                return Future.succeededFuture(this);
+              });
           });
 
-        return Future.succeededFuture(this);
       });
+  }
+
+  private Future<ListImportJobRow> closeExecution(ValidationStatus status, String message) {
+    this.setStatusMessage(message);
+    this.setStatusCode(status.getStatusCode());
+    return Future.succeededFuture(this);
   }
 
   private void setStatusMessage(String message) {
@@ -136,5 +182,21 @@ public class ListImportJobRow {
 
   public void setOptInIp(String optInIp) {
     this.optInIp = optInIp;
+  }
+
+  public void setOptInTime(String optInTime) {
+    this.optInTime = optInTime;
+  }
+
+  public void setConfirmIp(String confirmIp) {
+    this.confirmIp = confirmIp;
+  }
+
+  public void setConfirmTime(String confirmTime) {
+    this.confirmTime = confirmTime;
+  }
+
+  public void setLocation(String location) {
+    this.location = location;
   }
 }

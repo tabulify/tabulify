@@ -25,11 +25,16 @@ public class Timestamp {
   }
 
 
-  public static Timestamp createFromString(String s) {
+  public static Timestamp createFromString(String s) throws TimeException {
 
     String pattern = TimeStringParser.detectFormat(s);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-    LocalDateTime dateTime = LocalDateTime.parse(s, formatter);
+    LocalDateTime dateTime;
+    try {
+      dateTime = LocalDateTime.parse(s, formatter);
+    } catch (Exception e) {
+      throw new TimeException("The string (" + s + ") is not a date", e);
+    }
     return createFromLocalDateTime(dateTime);
 
     /**
@@ -54,7 +59,7 @@ public class Timestamp {
     return new Timestamp(LocalDateTime.now());
   }
 
-  public static Timestamp createFromObject(Object sourceObject) {
+  public static Timestamp createFromObject(Object sourceObject) throws TimeException {
     if (sourceObject == null) {
       return new Timestamp(null);
     } else if (sourceObject instanceof Timestamp) {
@@ -74,7 +79,7 @@ public class Timestamp {
     } else if (sourceObject instanceof Integer) {
       return createFromEpochMilli(((Integer) sourceObject).longValue());
     } else {
-      throw new IllegalArgumentException("The value (" + sourceObject + ") with the class (" + sourceObject.getClass().getSimpleName() + ") cannot be transformed to a timestamp");
+      throw new TimeException("The value (" + sourceObject + ") with the class (" + sourceObject.getClass().getSimpleName() + ") cannot be transformed to a timestamp");
     }
   }
 
@@ -145,6 +150,7 @@ public class Timestamp {
     SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
     return sdf.format(toDate());
   }
+
   public String toString(String format, TimeZone timeZone) {
     SimpleDateFormat sdf = new SimpleDateFormat(format);
     sdf.setTimeZone(timeZone);
@@ -238,6 +244,6 @@ public class Timestamp {
     /**
      * An ISO string has `:` that is not permitted
      */
-    return toString("YYYYMMDDHHMMSS")  ;
+    return toString("YYYYMMDDHHMMSS");
   }
 }

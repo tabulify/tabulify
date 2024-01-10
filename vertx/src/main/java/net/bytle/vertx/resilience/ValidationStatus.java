@@ -16,6 +16,11 @@ public enum ValidationStatus {
    */
   EMAIL_ADDRESS_INVALID(2, "addressInvalid", 900),
   /**
+   * Data is invalid
+   * (Example: an ip for the import that is not an ip)
+   */
+  DATA_INVALID(7, "dataInvalid", 800),
+  /**
    * The domain does not pass the test
    * (mx record, ...)
    */

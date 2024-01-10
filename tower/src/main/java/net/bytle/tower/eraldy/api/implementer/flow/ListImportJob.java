@@ -245,7 +245,15 @@ public class ListImportJob {
         String optInOrigin = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_ORIGIN)];
         listImportJobRow.setOptInOrigin(optInOrigin);
         String optInIp = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_IP)];
-          listImportJobRow.setOptInIp(optInIp);
+        listImportJobRow.setOptInIp(optInIp);
+        String optInTime = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_TIME)];
+        listImportJobRow.setOptInTime(optInTime);
+        String confirmIp = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_IP)];
+        listImportJobRow.setConfirmIp(confirmIp);
+        String confirmTime = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_TIME)];
+        listImportJobRow.setConfirmTime(confirmTime);
+        String location = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.LOCATION)];
+        listImportJobRow.setLocation(location);
         Future<ListImportJobRow> futureListImportRow = listImportJobRow.getExecutableFuture();
         listFutureJobRowStatus.add(futureListImportRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
