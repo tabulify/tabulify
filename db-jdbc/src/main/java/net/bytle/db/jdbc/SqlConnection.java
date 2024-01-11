@@ -476,7 +476,7 @@ public class SqlConnection extends NoOpConnection {
       }
 
       String catalog = this.getCurrentConnection().getCatalog();
-      if (catalog == null || (catalog.equals("")
+      if (catalog == null || (catalog.isEmpty()
       )) {
         throw new NoCatalogException("Catalog is not supported");
       }
@@ -671,7 +671,7 @@ public class SqlConnection extends NoOpConnection {
      * Date/timestamp are saved as:
      *   * sql text
      *   * or Epoch Ms
-     *
+     * <p>
      * even if the documentation states https://sqlite.org/datatype3.html
      * that the Unix Time is the number of **seconds** since 1970-01-01 00:00:00 UTC.
      * because the driver save them at the ms level
@@ -1071,21 +1071,33 @@ public class SqlConnection extends NoOpConnection {
             /**
              * We return the SQL Timestamp string
              * ie 2020-11-17 00:00:00.0
-             *
+             * <p>
              * Postgres would prefer {@link Timestamp#toIsoString()} ie 2020-11-17T00:00
              */
-            return Timestamp.createFromObject(objectInserted).toSqlTimestamp().toString();
-          case EPOCH_MS:
+              try {
+                  return Timestamp.createFromObject(objectInserted).toSqlTimestamp().toString();
+              } catch (CastException e) {
+                  throw new RuntimeException(e);
+              }
+            case EPOCH_MS:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
             } else {
-              return Timestamp.createFromObject(objectInserted).toEpochMilli().toString();
+                try {
+                    return Timestamp.createFromObject(objectInserted).toEpochMilli().toString();
+                } catch (CastException e) {
+                    throw new RuntimeException(e);
+                }
             }
           case EPOCH_SEC:
             if (objectInserted instanceof Long || objectInserted instanceof Integer) {
               return objectInserted.toString();
             } else {
-              return Timestamp.createFromObject(objectInserted).toEpochSec().toString();
+                try {
+                    return Timestamp.createFromObject(objectInserted).toEpochSec().toString();
+                } catch (CastException e) {
+                    throw new RuntimeException(e);
+                }
             }
           case EPOCH_DAY:
             throw new IllegalStateException("The timestamp data type storage (" + timestampDataType + ") is not valid for a timestamp. You can choose (" + SQL_LITERAL + "," + NATIVE + "," + EPOCH_MS + "," + EPOCH_SEC + ")");

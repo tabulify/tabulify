@@ -1,5 +1,7 @@
 package net.bytle.type.time;
 
+import net.bytle.exception.CastException;
+
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +27,7 @@ public class Timestamp {
   }
 
 
-  public static Timestamp createFromString(String s) throws TimeException {
+  public static Timestamp createFromString(String s) throws CastException {
 
     String pattern = TimeStringParser.detectFormat(s);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
@@ -33,7 +35,7 @@ public class Timestamp {
     try {
       dateTime = LocalDateTime.parse(s, formatter);
     } catch (Exception e) {
-      throw new TimeException("The string (" + s + ") is not a date", e);
+      throw new CastException("The string (" + s + ") is not a date", e);
     }
     return createFromLocalDateTime(dateTime);
 
@@ -59,7 +61,7 @@ public class Timestamp {
     return new Timestamp(LocalDateTime.now());
   }
 
-  public static Timestamp createFromObject(Object sourceObject) throws TimeException {
+  public static Timestamp createFromObject(Object sourceObject) throws CastException {
     if (sourceObject == null) {
       return new Timestamp(null);
     } else if (sourceObject instanceof Timestamp) {
@@ -79,7 +81,7 @@ public class Timestamp {
     } else if (sourceObject instanceof Integer) {
       return createFromEpochMilli(((Integer) sourceObject).longValue());
     } else {
-      throw new TimeException("The value (" + sourceObject + ") with the class (" + sourceObject.getClass().getSimpleName() + ") cannot be transformed to a timestamp");
+      throw new CastException("The value (" + sourceObject + ") with the class (" + sourceObject.getClass().getSimpleName() + ") cannot be transformed to a timestamp");
     }
   }
 

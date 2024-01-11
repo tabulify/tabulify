@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class Strings {
 
 
-  public static final String EOL = System.getProperty("line.separator");
+  public static final String EOL = System.lineSeparator();
   public static final String EOL_WINDOWS = "\r\n";
   public static final String EOL_LINUX = "\n";
 
@@ -174,7 +174,7 @@ public class Strings {
     try (FileInputStream fis = new FileInputStream(path.toFile())) {
       String eol = parseEndOfLine(fis, String.class);
       if (eol == null) {
-        return System.getProperty("line.separator");
+        return System.lineSeparator();
       } else {
         return eol;
       }
@@ -419,7 +419,7 @@ public class Strings {
     return net.bytle.type.time.Date.createFromString(stringBuilderField.toString()).toSqlDate();
   }
 
-  public Timestamp toSqlTimestamp() {
+  public Timestamp toSqlTimestamp() throws CastException {
     return net.bytle.type.time.Timestamp.createFromString(stringBuilderField.toString()).toSqlTimestamp();
   }
 

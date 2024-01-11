@@ -4,6 +4,7 @@ import io.vertx.core.Future;
 import net.bytle.dns.DnsException;
 import net.bytle.dns.DnsIp;
 import net.bytle.email.BMailInternetAddress;
+import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
@@ -12,7 +13,6 @@ import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
-import net.bytle.type.time.TimeException;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
@@ -164,7 +164,7 @@ public class ListImportJobRow {
                   LocalDateTime optInTimeAsObject;
                   try {
                     optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
-                  } catch (TimeException e) {
+                  } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
                   }
                   listRegistrationToInsert.setOptInTime(optInTimeAsObject);
@@ -182,7 +182,7 @@ public class ListImportJobRow {
                   LocalDateTime confirmTimeAsObject;
                   try {
                     confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
-                  } catch (TimeException e) {
+                  } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
                   }
                   listRegistrationToInsert.setConfirmationTime(confirmTimeAsObject);
