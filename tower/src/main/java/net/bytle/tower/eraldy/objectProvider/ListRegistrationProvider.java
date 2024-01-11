@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Manage the get/upsert of a {@link ListRegistration} object asynchronously
@@ -74,8 +75,8 @@ public class ListRegistrationProvider {
     // the sql too big to handle in Java
     String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
     this.registrationsBySearchTermSql = Strings.createFromResource(ListRegistrationProvider.class, registrationPath).toString();
-    if(this.registrationsBySearchTermSql==null){
-      throw new InternalException("The registration by search sql was not found in the resource path ("+registrationPath+")");
+    if (this.registrationsBySearchTermSql == null) {
+      throw new InternalException("The registration by search sql was not found in the resource path (" + registrationPath + ")");
     }
 
   }
@@ -194,7 +195,7 @@ public class ListRegistrationProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        REGISTERED_STATUS,
+        listRegistration.getStatus(),
         this.getDatabaseObject(listRegistration),
         DateTimeUtil.getNowUtc(),
         listRegistration.getList().getRealm().getLocalId(),
@@ -204,7 +205,7 @@ public class ListRegistrationProvider {
       .onFailure(e -> LOGGER.error("Registration Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
   }
 
-  private Future<ListRegistration> insertRegistration(ListRegistration listRegistration) {
+  public Future<ListRegistration> insertRegistration(ListRegistration listRegistration) {
 
     String sql = "INSERT INTO\n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
@@ -287,27 +288,27 @@ public class ListRegistrationProvider {
 
   }
 
-  public Future<ListRegistration> getRegistrationByGuid(String registrationGuid) {
-
-    Guid guidObject;
-    try {
-      guidObject = this.getGuidObject(registrationGuid);
-    } catch (CastException e) {
-      throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
+  public Future<ListRegistration> getRegistrationByListAndUser(ListItem listItem, User user) {
+    if (!Objects.equals(listItem.getRealm().getLocalId(), user.getRealm().getLocalId())) {
+      throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
+    return getRegistrationByLocalIds(listItem.getLocalId(), user.getLocalId(), listItem.getRealm().getLocalId());
+  }
 
+  private Future<ListRegistration> getRegistrationByLocalIds(Long listId, Long userId, Long realmId) {
     String sql = "SELECT * " +
       "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
       REALM_COLUMN + " = $1\n" +
       "AND " + LIST_ID_COLUMN + " = $2\n " +
       "and " + USER_ID_COLUMN + " = $3";
-    long realmId = guidObject.getRealmOrOrganizationId();
+
     return jdbcPool.preparedQuery(sql)
       .execute(Tuple.of(
-        realmId,
-        guidObject.validateRealmAndGetFirstObjectId(realmId),
-        guidObject.validateAndGetSecondObjectId(realmId))
+          realmId,
+          listId,
+          userId
+        )
       )
       .onFailure(e -> LOGGER.error("Unable to retrieve the registration. Error: " + e.getMessage() + ". Sql: \n" + sql, e))
       .compose(userRows -> {
@@ -317,13 +318,30 @@ public class ListRegistrationProvider {
         }
 
         if (userRows.size() > 1) {
-          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration guid " + guidObject);
+          InternalException internalException = new InternalException("Registration Get: More than one rows (" + userRows.size() + ") returned from the registration ( " + realmId + ", " + listId + ", " + userId);
           return Future.failedFuture(internalException);
         }
 
         Row row = userRows.iterator().next();
         return getRegistrationFromRow(row);
       });
+  }
+
+  public Future<ListRegistration> getRegistrationByGuid(String registrationGuid) {
+
+    Guid guidObject;
+    try {
+      guidObject = this.getGuidObject(registrationGuid);
+    } catch (CastException e) {
+      throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
+    }
+
+    long realmId = guidObject.getRealmOrOrganizationId();
+    long listId = guidObject.validateRealmAndGetFirstObjectId(realmId);
+    long userId = guidObject.validateAndGetSecondObjectId(realmId);
+
+    return getRegistrationByLocalIds(listId, userId, realmId);
+
   }
 
   private Guid getGuidObject(String registrationGuid) throws CastException {

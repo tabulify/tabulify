@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.bytle.vertx.resilience.ValidationStatus.FATAL_ERROR;
+import static net.bytle.vertx.resilience.EmailAddressValidationStatus.FATAL_ERROR;
 
 public class ListImportJob {
 

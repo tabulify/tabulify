@@ -14,9 +14,17 @@ public class ListImportJobRowStatus   {
 
   protected String emailAddress;
 
+  protected String userGuid;
+
   protected Integer statusCode;
 
   protected String statusMessage;
+
+  protected Boolean userAdded;
+
+  protected Boolean userCreated;
+
+  protected Boolean userUpdated;
 
   /**
   * The empty constructor is
@@ -41,6 +49,22 @@ public class ListImportJobRowStatus   {
   @SuppressWarnings("unused")
   public void setEmailAddress(String emailAddress) {
     this.emailAddress = emailAddress;
+  }
+
+  /**
+  * @return userGuid The user guid (may be null)
+  */
+  @JsonProperty("userGuid")
+  public String getUserGuid() {
+    return userGuid;
+  }
+
+  /**
+  * @param userGuid The user guid (may be null)
+  */
+  @SuppressWarnings("unused")
+  public void setUserGuid(String userGuid) {
+    this.userGuid = userGuid;
   }
 
   /**
@@ -75,6 +99,54 @@ public class ListImportJobRowStatus   {
     this.statusMessage = statusMessage;
   }
 
+  /**
+  * @return userAdded True if the user was added to the list
+  */
+  @JsonProperty("userAdded")
+  public Boolean getUserAdded() {
+    return userAdded;
+  }
+
+  /**
+  * @param userAdded True if the user was added to the list
+  */
+  @SuppressWarnings("unused")
+  public void setUserAdded(Boolean userAdded) {
+    this.userAdded = userAdded;
+  }
+
+  /**
+  * @return userCreated True if the user was created in the realm
+  */
+  @JsonProperty("userCreated")
+  public Boolean getUserCreated() {
+    return userCreated;
+  }
+
+  /**
+  * @param userCreated True if the user was created in the realm
+  */
+  @SuppressWarnings("unused")
+  public void setUserCreated(Boolean userCreated) {
+    this.userCreated = userCreated;
+  }
+
+  /**
+  * @return userUpdated True if the user profile was updated in the realm
+  */
+  @JsonProperty("userUpdated")
+  public Boolean getUserUpdated() {
+    return userUpdated;
+  }
+
+  /**
+  * @param userUpdated True if the user profile was updated in the realm
+  */
+  @SuppressWarnings("unused")
+  public void setUserUpdated(Boolean userUpdated) {
+    this.userUpdated = userUpdated;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -87,12 +159,12 @@ public class ListImportJobRowStatus   {
     ListImportJobRowStatus listImportJobRowStatus = (ListImportJobRowStatus) o;
     return
 
-            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage);
+            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(emailAddress, statusCode, statusMessage);
+    return Objects.hash(emailAddress, userGuid, statusCode, statusMessage, userAdded, userCreated, userUpdated);
   }
 
   @Override

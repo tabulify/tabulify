@@ -1850,11 +1850,18 @@ components:
         This object represents the status of a row in a import job for a list.
       example:
         emailAddress: emailAddress
+        userUpdated: true
+        userAdded: true
+        userGuid: userGuid
+        userCreated: true
         statusMessage: statusMessage
         statusCode: 0
       properties:
         emailAddress:
           description: The email to import
+          type: string
+        userGuid:
+          description: The user guid (may be null)
           type: string
         statusCode:
           description: The status code
@@ -1863,6 +1870,15 @@ components:
         statusMessage:
           description: A message
           type: string
+        userAdded:
+          description: True if the user was added to the list
+          type: boolean
+        userCreated:
+          description: True if the user was created in the realm
+          type: boolean
+        userUpdated:
+          description: True if the user profile was updated in the realm
+          type: boolean
       type: object
     ListImportJobStatus:
       description: |

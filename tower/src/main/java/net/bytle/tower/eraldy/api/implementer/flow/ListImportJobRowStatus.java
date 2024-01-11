@@ -1,16 +1,17 @@
-package net.bytle.vertx.resilience;
+package net.bytle.tower.eraldy.api.implementer.flow;
 
-public enum ValidationStatus {
+public enum ListImportJobRowStatus {
+
 
   /**
-   * The email is legit
+   * The import completed without any error
    */
-  LEGIT(0, "Legit",0),
+  COMPLETED(0, "complete", 0),
   /**
    * A fatal error has occurred during
    * validation
    */
-  FATAL_ERROR(1, "fatalError",999),
+  FATAL_ERROR(1, "fatalError", 999),
   /**
    * The email address is invalid
    */
@@ -19,28 +20,28 @@ public enum ValidationStatus {
    * Data is invalid
    * (Example: an ip for the import that is not an ip)
    */
-  DATA_INVALID(7, "dataInvalid", 800),
+  DATA_INVALID(3, "dataInvalid", 800),
   /**
    * The domain does not pass the test
    * (mx record, ...)
    */
-  DOMAIN_SUSPICIOUS(3, "domainSuspicious", 700),
+  DOMAIN_SUSPICIOUS(4, "domainSuspicious", 700),
   /**
    * The domain is on an external blocking list
    */
-  DOMAIN_BLOCKED(4, "domainBlocked", 800),
+  DOMAIN_BLOCKED(5, "domainBlocked", 800),
   /**
    * The email (ie domain) is soft banned
    * (meaning that the domain is banned for a period of time)
    * The domain didn't pass the validation tests (ie was suspicious)
    * The validation tests were not performed
    */
-  SOFT_BAN(5, "softBan", 700),
+  SOFT_BAN(6, "softBan", 700),
   /**
    * The email (ie domain) is hard banned
    * (meaning that the domain is on our internal blocking list)
    */
-  HARD_BAN(6, "hardBan", 500);
+  HARD_BAN(7, "hardBan", 500);
 
   private final int statusCode;
   private final String statusName;
@@ -50,7 +51,7 @@ public enum ValidationStatus {
    */
   private final int orderOfPrecedence;
 
-  ValidationStatus(int statusCode, String statusName, int orderOfPrecedence) {
+  ListImportJobRowStatus(int statusCode, String statusName, int orderOfPrecedence) {
     this.statusCode = statusCode;
     this.statusName = statusName;
     this.orderOfPrecedence = orderOfPrecedence;
@@ -68,5 +69,6 @@ public enum ValidationStatus {
   public int getStatusCode() {
     return this.statusCode;
   }
+
 
 }

@@ -6,12 +6,15 @@ import net.bytle.dns.DnsIp;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.model.openapi.*;
+import net.bytle.tower.eraldy.model.openapi.ListItem;
+import net.bytle.tower.eraldy.model.openapi.ListRegistration;
+import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
+import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.TimeException;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.resilience.ValidationStatus;
+import net.bytle.vertx.resilience.EmailAddressValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
 
 import java.time.LocalDateTime;
@@ -36,6 +39,10 @@ public class ListImportJobRow {
   private String confirmIp;
   private String confirmTime;
   private String location;
+  private String userGuid;
+  private boolean userAdded = false;
+  private boolean userCreated = false;
+  private boolean userUpdated = false;
 
   public ListImportJobRow(ListImportJob listImportJob, int rowId) {
     this.rowId = rowId;
@@ -51,10 +58,35 @@ public class ListImportJobRow {
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
       .validate(email, this.listImportJob.getFailEarly())
       .compose(emailAddressValidityReport -> {
-        ValidationStatus emailValidityStatus = emailAddressValidityReport.getStatus();
-        if (emailValidityStatus != ValidationStatus.LEGIT) {
+        EmailAddressValidationStatus emailValidityStatus = emailAddressValidityReport.getStatus();
+        if (emailValidityStatus != EmailAddressValidationStatus.LEGIT) {
           String message = emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", "));
-          return this.closeExecution(emailValidityStatus, message);
+          ListImportJobRowStatus listImportJobStatus;
+          switch (emailValidityStatus){
+            case FATAL_ERROR:
+              listImportJobStatus = ListImportJobRowStatus.FATAL_ERROR;
+              break;
+            case HARD_BAN:
+              listImportJobStatus = ListImportJobRowStatus.HARD_BAN;
+              break;
+            case SOFT_BAN:
+              listImportJobStatus = ListImportJobRowStatus.SOFT_BAN;
+              break;
+            case EMAIL_ADDRESS_INVALID:
+              listImportJobStatus = ListImportJobRowStatus.EMAIL_ADDRESS_INVALID;
+              break;
+            case DOMAIN_BLOCKED:
+              listImportJobStatus = ListImportJobRowStatus.DOMAIN_BLOCKED;
+              break;
+            case DOMAIN_SUSPICIOUS:
+              listImportJobStatus = ListImportJobRowStatus.DOMAIN_SUSPICIOUS;
+              break;
+            default:
+              listImportJobStatus = ListImportJobRowStatus.EMAIL_ADDRESS_INVALID;
+              message = "Email validity mapping is missing. The real status is ("+emailValidityStatus+"). "+message;
+              break;
+          }
+          return this.closeExecution(listImportJobStatus, message);
         }
         UserProvider userProvider = this.listImportJob.getListImportFlow().getApp().getUserProvider();
         BMailInternetAddress emailInternetAddress;
@@ -69,16 +101,23 @@ public class ListImportJobRow {
             if (userFromRegistry != null) {
               if (this.listImportJob.getUpdateExistingUser()) {
                 User patchUser = new User();
+                boolean updateUser = false;
                 if(!this.givenName.isBlank()) {
                   patchUser.setGivenName(this.givenName);
+                  updateUser = true;
                 }
                 if(!this.familyName.isBlank()){
                   patchUser.setFamilyName(this.familyName);
+                  updateUser = true;
                 }
                 if(!this.location.isBlank()){
                   patchUser.setLocation(this.location);
+                  updateUser = true;
                 }
-                return userProvider.patchUserIfPropertyValueIsNull(userFromRegistry, patchUser);
+                if(updateUser){
+                  this.userUpdated = true;
+                  return userProvider.patchUserIfPropertyValueIsNull(userFromRegistry, patchUser);
+                }
               }
               return Future.succeededFuture(userFromRegistry);
             } else {
@@ -88,67 +127,75 @@ public class ListImportJobRow {
               newUser.setFamilyName(this.familyName);
               newUser.setLocation(this.location);
               newUser.setRealm(list.getRealm());
+              this.userCreated = true;
               return userProvider.insertUserFromImport(newUser);
             }
           })
           .compose(user -> {
+            this.userGuid = user.getGuid();
             ListRegistrationProvider listRegistrationProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
-            ListRegistration listRegistration = new ListRegistration();
-            listRegistration.setSubscriber(user);
-            listRegistration.setList(list);
-            listRegistration.setFlow(RegistrationFlow.IMPORT);
-            listRegistration.setStatus(1);
-            if (this.optInOrigin == null) {
-              listRegistration.setOptInOrigin(RegistrationFlow.IMPORT.toString());
-            } else {
-              listRegistration.setOptInOrigin(this.optInOrigin);
-            }
-            if (optInIp != null) {
-              DnsIp optInIpAsDnsIp;
-              try {
-                optInIpAsDnsIp = DnsIp.createFromString(optInIp);
-              } catch (DnsException e) {
-                return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
-              }
-              listRegistration.setOptInIp(optInIpAsDnsIp.getAddress());
-            }
-            if (optInTime != null) {
-              LocalDateTime optInTimeAsObject;
-              try {
-                optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
-              } catch (TimeException e) {
-                return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
-              }
-              listRegistration.setOptInTime(optInTimeAsObject);
-            }
-            if (confirmIp != null) {
-              DnsIp confirmIpAsDnsIp;
-              try {
-                confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
-              } catch (DnsException e) {
-                return this.closeExecution(ValidationStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
-              }
-              listRegistration.setConfirmationIp(confirmIpAsDnsIp.getAddress());
-            }
-            if (confirmTime != null) {
-              LocalDateTime confirmTimeAsObject;
-              try {
-                confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
-              } catch (TimeException e) {
-                return this.closeExecution(ValidationStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
-              }
-              listRegistration.setConfirmationTime(confirmTimeAsObject);
-            }
-            return listRegistrationProvider.upsertRegistration(listRegistration)
-              .compose(listRegistration1 -> {
-                return Future.succeededFuture(this);
+            return listRegistrationProvider.
+              getRegistrationByListAndUser(list,user)
+              .compose(listRegistration->{
+                if(listRegistration==null){
+                  this.userAdded = false;
+                  return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                }
+                ListRegistration listRegistrationToInsert = new ListRegistration();
+                listRegistrationToInsert.setSubscriber(user);
+                listRegistrationToInsert.setList(list);
+                listRegistrationToInsert.setFlow(RegistrationFlow.IMPORT);
+                listRegistrationToInsert.setStatus(1);
+                if (this.optInOrigin == null) {
+                  listRegistrationToInsert.setOptInOrigin(RegistrationFlow.IMPORT.toString());
+                } else {
+                  listRegistrationToInsert.setOptInOrigin(this.optInOrigin);
+                }
+                if (optInIp != null) {
+                  DnsIp optInIpAsDnsIp;
+                  try {
+                    optInIpAsDnsIp = DnsIp.createFromString(optInIp);
+                  } catch (DnsException e) {
+                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
+                  }
+                  listRegistrationToInsert.setOptInIp(optInIpAsDnsIp.getAddress());
+                }
+                if (optInTime != null) {
+                  LocalDateTime optInTimeAsObject;
+                  try {
+                    optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
+                  } catch (TimeException e) {
+                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
+                  }
+                  listRegistrationToInsert.setOptInTime(optInTimeAsObject);
+                }
+                if (confirmIp != null) {
+                  DnsIp confirmIpAsDnsIp;
+                  try {
+                    confirmIpAsDnsIp = DnsIp.createFromString(confirmIp);
+                  } catch (DnsException e) {
+                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
+                  }
+                  listRegistrationToInsert.setConfirmationIp(confirmIpAsDnsIp.getAddress());
+                }
+                if (confirmTime != null) {
+                  LocalDateTime confirmTimeAsObject;
+                  try {
+                    confirmTimeAsObject = Timestamp.createFromString(confirmTime).toLocalDateTime();
+                  } catch (TimeException e) {
+                    return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
+                  }
+                  listRegistrationToInsert.setConfirmationTime(confirmTimeAsObject);
+                }
+                return listRegistrationProvider.insertRegistration(listRegistrationToInsert)
+                  .compose(listRegistrationInserted -> this.closeExecution(ListImportJobRowStatus.COMPLETED, null));
               });
           });
 
       });
   }
 
-  private Future<ListImportJobRow> closeExecution(ValidationStatus status, String message) {
+  private Future<ListImportJobRow> closeExecution(ListImportJobRowStatus status, String message) {
     this.setStatusMessage(message);
     this.setStatusCode(status.getStatusCode());
     return Future.succeededFuture(this);
@@ -162,12 +209,16 @@ public class ListImportJobRow {
     this.statusCode = statusCode;
   }
 
-  public ListImportJobRowStatus toListJobRowStatus() {
-    ListImportJobRowStatus jobRowStatus = new ListImportJobRowStatus();
+  public net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus toListJobRowStatus() {
+    net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus jobRowStatus = new net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus();
     jobRowStatus.setEmailAddress(this.email);
+    jobRowStatus.setUserGuid(this.userGuid);
     jobRowStatus.setStatusCode(this.statusCode);
+    jobRowStatus.setUserAdded(this.userAdded);
+    jobRowStatus.setUserCreated(this.userCreated);
+    jobRowStatus.setUserUpdated(this.userUpdated);
     String statusMessage = this.statusMessage;
-    if (statusCode == ValidationStatus.FATAL_ERROR.getStatusCode()) {
+    if (statusCode == EmailAddressValidationStatus.FATAL_ERROR.getStatusCode()) {
       statusMessage += " . After " + this.executionCount + " attempts";
     }
     jobRowStatus.setStatusMessage(statusMessage);

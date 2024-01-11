@@ -108,6 +108,9 @@ components:
         emailAddress:
           type: string
           description: The email to import
+        userGuid:
+          type: string
+          description: The user guid (may be null)
         statusCode:
           description: "The status code"
           type: integer
@@ -115,6 +118,15 @@ components:
         statusMessage:
           type: string
           description: A message
+        userAdded:
+          type: boolean
+          description: True if the user was added to the list
+        userCreated:
+          type: boolean
+          description: True if the user was created in the realm
+        userUpdated:
+          type: boolean
+          description: True if the user profile was updated in the realm
     ListImportJobStatus:
       type: object
       description: |

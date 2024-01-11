@@ -22,7 +22,7 @@ public class EmailAddressValidatorReport {
   }
 
 
-  public ValidationStatus getStatus() {
+  public EmailAddressValidationStatus getStatus() {
     return this.builder.status;
   }
 
@@ -71,7 +71,7 @@ public class EmailAddressValidatorReport {
 
     private BMailInternetAddress emailInternetAddress;
     private final String inputEmailAddress;
-    public ValidationStatus status;
+    public EmailAddressValidationStatus status;
     private final Set<ValidationTestResult> validationTestResults = new HashSet<>();
 
     public Builder(String inputEmailAddress) {
@@ -87,16 +87,16 @@ public class EmailAddressValidatorReport {
       if (this.validationTestResults.isEmpty()) {
         throw new InternalException("A validation result should be added");
       }
-      status = ValidationStatus.LEGIT;
+      status = EmailAddressValidationStatus.LEGIT;
       for (ValidationTestResult validationTestResult : validationTestResults) {
         if (validationTestResult.fail()) {
           if (validationTestResult.hasFatalError()) {
-            status = ValidationStatus.FATAL_ERROR;
+            status = EmailAddressValidationStatus.FATAL_ERROR;
             break;
           }
-          ValidationStatus validationStatus = validationTestResult.getValidation().getValidationType();
-          if (validationStatus.getOrderOfPrecedence() > status.getOrderOfPrecedence()) {
-            status = validationStatus;
+          EmailAddressValidationStatus emailAddressValidationStatus = validationTestResult.getValidation().getValidationType();
+          if (emailAddressValidationStatus.getOrderOfPrecedence() > status.getOrderOfPrecedence()) {
+            status = emailAddressValidationStatus;
           }
         }
       }
