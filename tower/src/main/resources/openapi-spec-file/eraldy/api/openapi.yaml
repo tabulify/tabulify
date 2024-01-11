@@ -1855,11 +1855,16 @@ components:
         userGuid: userGuid
         userCreated: true
         statusMessage: statusMessage
-        statusCode: 0
+        rowId: 0
+        statusCode: 6
       properties:
         emailAddress:
           description: The email to import
           type: string
+        rowId:
+          description: The row id in the input file
+          format: int32
+          type: integer
         userGuid:
           description: The user guid (may be null)
           type: string

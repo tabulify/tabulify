@@ -108,6 +108,10 @@ components:
         emailAddress:
           type: string
           description: The email to import
+        rowId:
+          type: integer
+          format: int32 # integer
+          description: The row id in the input file
         userGuid:
           type: string
           description: The user guid (may be null)

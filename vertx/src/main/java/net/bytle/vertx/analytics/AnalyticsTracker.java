@@ -6,6 +6,7 @@ import com.mixpanel.mixpanelapi.MixpanelAPI;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import net.bytle.exception.IllegalStructure;
+import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.*;
@@ -104,7 +105,7 @@ public class AnalyticsTracker {
 
   public AnalyticsTracker sendEventsInQueue() {
 
-    if (this.eventsQueue.size() == 0) {
+    if (this.eventsQueue.isEmpty()) {
       return this;
     }
 
@@ -164,7 +165,7 @@ public class AnalyticsTracker {
           // otherwise we get continuously an email error
           this.eventsQueue.remove(event.getId());
         }
-        throw new RuntimeException(e);
+        throw new InternalException("Error on event "+event.getName(),e);
       }
       this.eventsQueue.remove(event.getId());
     }

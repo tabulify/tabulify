@@ -147,7 +147,7 @@ public class ListImportJob {
         List<ListImportJobRow> listImportJobRows = composite.getResults();
         if (composite.hasFailed()) {
           Throwable failure = composite.getFailure();
-          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + composite.getFailureIndex() + " (header row index is -1)", listImportJobRows);
+          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + (composite.getFailureIndex() + 1), listImportJobRows);
         }
         List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
         for (ListImportJobRow listImportJobRow : listImportJobRows) {
@@ -245,9 +245,11 @@ public class ListImportJob {
                 headerMapping.put(ListImportFlow.IMPORT_FIELD.OPT_IN_IP, i);
                 break;
               case "confirmtime":
+              case "confirmationtime":
                 headerMapping.put(ListImportFlow.IMPORT_FIELD.CONFIRM_TIME, i);
                 break;
               case "confirmip":
+              case "confirmationip":
                 headerMapping.put(ListImportFlow.IMPORT_FIELD.CONFIRM_IP, i);
                 break;
               case "location":
@@ -258,7 +260,9 @@ public class ListImportJob {
                 break;
             }
           }
-          if (headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS) == null) {
+          // end for loop parsing header columns
+          Integer emailIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS);
+          if (emailIndex == null) {
 
             String statusMessage = "An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row);
             listImportJobStatus.setStatusMessage(statusMessage);
@@ -267,34 +271,57 @@ public class ListImportJob {
               .compose(v -> Future.failedFuture(statusMessage));
 
           }
-          // second record
+          // continue the loop and process the second record
           continue;
         }
 
         // header is at 0, 1 is the first row
         listImportJobStatus.setCountTotal(counter);
-        // fail early make the report returns to the first error
-        boolean failEarly = true;
         int rowId = counter - 1;
         ListImportJobRow listImportJobRow = new ListImportJobRow(this, rowId);
-        String email = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)];
+        Integer emailIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS);
+        String email = row[emailIndex];
         listImportJobRow.setEmail(email);
-        String familyName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
-        listImportJobRow.setFamilyName(familyName);
-        String givenName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME)];
-        listImportJobRow.setGivenName(givenName);
-        String optInOrigin = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_ORIGIN)];
-        listImportJobRow.setOptInOrigin(optInOrigin);
-        String optInIp = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_IP)];
-        listImportJobRow.setOptInIp(optInIp);
-        String optInTime = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_TIME)];
-        listImportJobRow.setOptInTime(optInTime);
-        String confirmIp = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_IP)];
-        listImportJobRow.setConfirmIp(confirmIp);
-        String confirmTime = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_TIME)];
-        listImportJobRow.setConfirmTime(confirmTime);
-        String location = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.LOCATION)];
-        listImportJobRow.setLocation(location);
+        Integer familyNameIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME);
+        if (familyNameIndex != null) {
+          String familyName = row[familyNameIndex];
+          listImportJobRow.setFamilyName(familyName);
+        }
+        Integer givenNameIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.GIVEN_NAME);
+        if (givenNameIndex != null) {
+          String givenName = row[givenNameIndex];
+          listImportJobRow.setGivenName(givenName);
+        }
+        Integer optInOriginIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_ORIGIN);
+        if (optInOriginIndex != null) {
+          String optInOrigin = row[optInOriginIndex];
+          listImportJobRow.setOptInOrigin(optInOrigin);
+        }
+        Integer optInIpIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_IP);
+        if (optInIpIndex != null) {
+          String optInIp = row[optInIpIndex];
+          listImportJobRow.setOptInIp(optInIp);
+        }
+        Integer optInTimeIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.OPT_IN_TIME);
+        if (optInTimeIndex != null) {
+          String optInTime = row[optInTimeIndex];
+          listImportJobRow.setOptInTime(optInTime);
+        }
+        Integer confirmIpIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_IP);
+        if (confirmIpIndex != null) {
+          String confirmIp = row[confirmIpIndex];
+          listImportJobRow.setConfirmIp(confirmIp);
+        }
+        Integer confirmTimeIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.CONFIRM_TIME);
+        if (confirmTimeIndex != null) {
+          String confirmTime = row[confirmTimeIndex];
+          listImportJobRow.setConfirmTime(confirmTime);
+        }
+        Integer locationIndex = headerMapping.get(ListImportFlow.IMPORT_FIELD.LOCATION);
+        if (locationIndex != null) {
+          String location = row[locationIndex];
+          listImportJobRow.setLocation(location);
+        }
         Future<ListImportJobRow> futureListImportRow = listImportJobRow.getExecutableFuture();
         listFutureJobRowStatus.add(futureListImportRow);
         int maxRowsProcessedByImport = this.getMaxRowCountToProcess();
@@ -306,7 +333,7 @@ public class ListImportJob {
       }
       return Future.succeededFuture(listFutureJobRowStatus);
     } catch (IOException e) {
-      String message = "List import couldn't read the csv file (" + this.getFileNameWithExtension() + "). Error: " + e.getMessage();
+      String message = "List import couldn't read the csv file (" + this.getFileNameWithExtension() + ").";
       return this.closeJobWithFatalError(e, message, new ArrayList<>())
         .compose(v -> Future.failedFuture(message));
     }
@@ -318,8 +345,11 @@ public class ListImportJob {
   }
 
   public Future<ListImportJob> closeJobWithFatalError(Throwable e, String message, List<ListImportJobRow> results) {
-    if (message == null || message.isEmpty()) {
-      message = e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
+    String exceptionSuffix = "Error:" + e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
+    if (message == null) {
+      message = exceptionSuffix;
+    } else {
+      message = message + " " + exceptionSuffix;
     }
     listImportJobStatus.setStatusMessage(message);
     this.executionStatusCode = FAILURE_STATUS_CODE;

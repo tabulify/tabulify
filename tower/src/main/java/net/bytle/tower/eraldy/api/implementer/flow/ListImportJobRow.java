@@ -16,6 +16,8 @@ import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
 import net.bytle.vertx.resilience.ValidationTestResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
  * that can be re-executed if there is a fatal error (timeout, servfail DNS, ...)
  */
 public class ListImportJobRow {
+
+  static final Logger LOGGER = LogManager.getLogger(ListImportJobRow.class);
   private final int rowId;
   private final ListImportJob listImportJob;
   private String email;
@@ -54,6 +58,19 @@ public class ListImportJobRow {
   }
 
   public Future<ListImportJobRow> getExecutableFuture() {
+    return this.getExecutableFutureWithoutErrorHandling()
+      .compose(
+        listImportJobRow -> Future.succeededFuture(this),
+        err -> {
+          // database timeout for instance
+          this.closeExecution(ListImportJobRowStatus.FATAL_ERROR, err.getMessage() + " (" + err.getClass().getSimpleName() + ")");
+          LOGGER.error("A fatal error has occurred on the row (" + this.rowId + ", " + this.email + ") with the list import job (" + listImportJob.getList().getGuid() + "," + listImportJob.getStatus().getJobId() + ")", err);
+          return Future.succeededFuture(this);
+        }
+      );
+  }
+
+  public Future<ListImportJobRow> getExecutableFutureWithoutErrorHandling() {
     this.executionCount++;
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
       .validate(email, this.listImportJob.getFailEarly())
@@ -62,7 +79,7 @@ public class ListImportJobRow {
         if (emailValidityStatus != EmailAddressValidationStatus.LEGIT) {
           String message = emailAddressValidityReport.getErrors().stream().map(ValidationTestResult::getMessage).collect(Collectors.joining(", "));
           ListImportJobRowStatus listImportJobStatus;
-          switch (emailValidityStatus){
+          switch (emailValidityStatus) {
             case FATAL_ERROR:
               listImportJobStatus = ListImportJobRowStatus.FATAL_ERROR;
               break;
@@ -83,7 +100,7 @@ public class ListImportJobRow {
               break;
             default:
               listImportJobStatus = ListImportJobRowStatus.EMAIL_ADDRESS_INVALID;
-              message = "Email validity mapping is missing. The real status is ("+emailValidityStatus+"). "+message;
+              message = "Email validity mapping is missing. The real status is (" + emailValidityStatus + "). " + message;
               break;
           }
           return this.closeExecution(listImportJobStatus, message);
@@ -96,25 +113,26 @@ public class ListImportJobRow {
           return Future.failedFuture(new InternalException("Email address was null but the email was validated. It should not happen."));
         }
         ListItem list = this.listImportJob.getList();
-        return userProvider.getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
+        return userProvider
+          .getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
           .compose(userFromRegistry -> {
             if (userFromRegistry != null) {
               if (this.listImportJob.getUpdateExistingUser()) {
                 User patchUser = new User();
                 boolean updateUser = false;
-                if(!this.givenName.isBlank()) {
+                if (!this.givenName.isBlank()) {
                   patchUser.setGivenName(this.givenName);
                   updateUser = true;
                 }
-                if(!this.familyName.isBlank()){
+                if (!this.familyName.isBlank()) {
                   patchUser.setFamilyName(this.familyName);
                   updateUser = true;
                 }
-                if(!this.location.isBlank()){
+                if (!this.location.isBlank()) {
                   patchUser.setLocation(this.location);
                   updateUser = true;
                 }
-                if(updateUser){
+                if (updateUser) {
                   this.userUpdated = true;
                   return userProvider.patchUserIfPropertyValueIsNull(userFromRegistry, patchUser);
                 }
@@ -135,9 +153,9 @@ public class ListImportJobRow {
             this.userGuid = user.getGuid();
             ListRegistrationProvider listRegistrationProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
             return listRegistrationProvider.
-              getRegistrationByListAndUser(list,user)
-              .compose(listRegistration->{
-                if(listRegistration==null){
+              getRegistrationByListAndUser(list, user)
+              .compose(listRegistration -> {
+                if (listRegistration == null) {
                   this.userAdded = false;
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
@@ -214,6 +232,7 @@ public class ListImportJobRow {
     jobRowStatus.setEmailAddress(this.email);
     jobRowStatus.setUserGuid(this.userGuid);
     jobRowStatus.setStatusCode(this.statusCode);
+    jobRowStatus.setRowId(this.rowId);
     jobRowStatus.setUserAdded(this.userAdded);
     jobRowStatus.setUserCreated(this.userCreated);
     jobRowStatus.setUserUpdated(this.userUpdated);

@@ -247,7 +247,7 @@ public class ListImportFlow implements WebFlow {
           .onComplete(blockingAsyncResult -> {
             if (blockingAsyncResult.failed()) {
               Throwable cause = blockingAsyncResult.cause();
-              listImportJob.closeJobWithFatalError(cause, cause.getMessage(), new ArrayList<>());
+              listImportJob.closeJobWithFatalError(cause, null, new ArrayList<>());
               executor.close();
             }
             blockingAsyncResult.result().onComplete(v -> {

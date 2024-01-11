@@ -14,6 +14,8 @@ public class ListImportJobRowStatus   {
 
   protected String emailAddress;
 
+  protected Integer rowId;
+
   protected String userGuid;
 
   protected Integer statusCode;
@@ -49,6 +51,22 @@ public class ListImportJobRowStatus   {
   @SuppressWarnings("unused")
   public void setEmailAddress(String emailAddress) {
     this.emailAddress = emailAddress;
+  }
+
+  /**
+  * @return rowId The row id in the input file
+  */
+  @JsonProperty("rowId")
+  public Integer getRowId() {
+    return rowId;
+  }
+
+  /**
+  * @param rowId The row id in the input file
+  */
+  @SuppressWarnings("unused")
+  public void setRowId(Integer rowId) {
+    this.rowId = rowId;
   }
 
   /**
@@ -159,12 +177,12 @@ public class ListImportJobRowStatus   {
     ListImportJobRowStatus listImportJobRowStatus = (ListImportJobRowStatus) o;
     return
 
-            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
+            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(rowId, listImportJobRowStatus.rowId) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(emailAddress, userGuid, statusCode, statusMessage, userAdded, userCreated, userUpdated);
+    return Objects.hash(emailAddress, rowId, userGuid, statusCode, statusMessage, userAdded, userCreated, userUpdated);
   }
 
   @Override
