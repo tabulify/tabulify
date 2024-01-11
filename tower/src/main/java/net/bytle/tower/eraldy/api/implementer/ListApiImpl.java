@@ -14,6 +14,8 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
+import net.bytle.tower.eraldy.api.implementer.flow.ListImportJobAction;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationConfirmationLetter;
 import net.bytle.tower.eraldy.api.implementer.letter.ListRegistrationValidationLetter;
 import net.bytle.tower.eraldy.api.openapi.interfaces.ListApi;
@@ -166,9 +168,14 @@ public class ListApiImpl implements ListApi {
         return this.apiApp.getAuthProvider().checkListAuthorization(routingContext, list, AuthScope.LIST_IMPORT);
       })
       .compose(list -> {
+        ListImportJob importJob = this.apiApp.getListImportFlow()
+          .buildJob(list, fileBinary, ListImportJobAction.Register)
+          .setMaxRowCountToProcess(finalRowCountToProcess)
+          .setUpdateExistingUser(true)
+          .build();
         String jobId;
         try {
-          jobId = this.apiApp.getListImportFlow().step1CreateAndGetJobId(list, fileBinary, finalRowCountToProcess);
+          jobId = this.apiApp.getListImportFlow().step1AddJobToQueue(importJob);
         } catch (TowerFailureException e) {
           return Future.failedFuture(e);
         }

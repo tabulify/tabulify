@@ -283,11 +283,11 @@ components:
           description: The short and informal name of the user (used in signature, known also as the given, calling or first name)
           example: 'John'
           x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"name"})'
-        fullName:
+        familyName:
           type: string
-          description: The long and formal name of the user (used in address)
-          example: 'John Doe'
-          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"fullname"})'
+          description: The family name of the user
+          example: 'Doe'
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"fullname","fullName"})'
         title:
           type: string
           description: The title of the user (a short user description such as a role used in signature)

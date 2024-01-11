@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
  */
 public class ListImportJobRow {
   private final int rowId;
-  private final boolean failEarly;
   private final ListImportJob listImportJob;
   private String email;
   private int statusCode;
@@ -38,9 +37,8 @@ public class ListImportJobRow {
   private String confirmTime;
   private String location;
 
-  public ListImportJobRow(ListImportJob listImportJob, int rowId, boolean failEarly) {
+  public ListImportJobRow(ListImportJob listImportJob, int rowId) {
     this.rowId = rowId;
-    this.failEarly = failEarly;
     this.listImportJob = listImportJob;
   }
 
@@ -51,7 +49,7 @@ public class ListImportJobRow {
   public Future<ListImportJobRow> getExecutableFuture() {
     this.executionCount++;
     return this.listImportJob.getListImportFlow().getEmailAddressValidator()
-      .validate(email, failEarly)
+      .validate(email, this.listImportJob.getFailEarly())
       .compose(emailAddressValidityReport -> {
         ValidationStatus emailValidityStatus = emailAddressValidityReport.getStatus();
         if (emailValidityStatus != ValidationStatus.LEGIT) {
@@ -69,10 +67,26 @@ public class ListImportJobRow {
         return userProvider.getUserByEmail(emailInternetAddress, list.getRealm().getLocalId(), User.class, list.getRealm())
           .compose(userFromRegistry -> {
             if (userFromRegistry != null) {
+              if (this.listImportJob.getUpdateExistingUser()) {
+                User patchUser = new User();
+                if(!this.givenName.isBlank()) {
+                  patchUser.setGivenName(this.givenName);
+                }
+                if(!this.familyName.isBlank()){
+                  patchUser.setFamilyName(this.familyName);
+                }
+                if(!this.location.isBlank()){
+                  patchUser.setLocation(this.location);
+                }
+                return userProvider.patchUserIfPropertyValueIsNull(userFromRegistry, patchUser);
+              }
               return Future.succeededFuture(userFromRegistry);
             } else {
               User newUser = new User();
               newUser.setEmail(emailInternetAddress.toNormalizedString());
+              newUser.setGivenName(this.givenName);
+              newUser.setFamilyName(this.familyName);
+              newUser.setLocation(this.location);
               newUser.setRealm(list.getRealm());
               return userProvider.insertUserFromImport(newUser);
             }
@@ -100,12 +114,12 @@ public class ListImportJobRow {
             }
             if (optInTime != null) {
               LocalDateTime optInTimeAsObject;
-                try {
-                  optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
-                } catch (TimeException e) {
-                  return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
-                }
-                listRegistration.setOptInTime(optInTimeAsObject);
+              try {
+                optInTimeAsObject = Timestamp.createFromString(optInTime).toLocalDateTime();
+              } catch (TimeException e) {
+                return this.closeExecution(ValidationStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
+              }
+              listRegistration.setOptInTime(optInTimeAsObject);
             }
             if (confirmIp != null) {
               DnsIp confirmIpAsDnsIp;

@@ -41,6 +41,9 @@ Reprocessing: process real-time data and re-process historical data in the same 
   * Refactor early (as soon as possible) - waiting will increase the impact because the code base and test will grow
   * Throw an exception when you can give any context to the end user over what it should change
   * Throw an exception at object build-time, not at getting time
+  * Functional Logic should be located where it happens.
+    * For instance, if you receive a blank name from a csv (meaning null), you don't want to update it.
+    * You should add this function close to the update, not in the set function. Otherwise, it's difficult to read why there is a condition.
 
 
 ## Functional

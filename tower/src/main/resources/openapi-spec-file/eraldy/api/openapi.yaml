@@ -2356,13 +2356,13 @@ components:
         website: https://mywebsite
         creationTime: 2000-01-23T04:56:07.000+00:00
         givenName: John
-        fullName: John Doe
         bio: bio
         handle: foo
         avatar: https://en.gravatar.com/userimage/john.doe.png
         title: Chief Executive Officer
         localId: 1
         modificationTime: 2000-01-23T04:56:07.000+00:00
+        familyName: Doe
         guid: xmmmN
         disabled: true
         location: The world
@@ -2422,12 +2422,12 @@ components:
           type: string
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
             name\"})"
-        fullName:
-          description: The long and formal name of the user (used in address)
-          example: John Doe
+        familyName:
+          description: The family name of the user
+          example: Doe
           type: string
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
-            fullname\"})"
+            fullname\",\"fullName\"})"
         title:
           description: The title of the user (a short user description such as a role
             used in signature)
@@ -2588,13 +2588,13 @@ components:
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
-          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
           guid: xmmmN
           disabled: true
           location: The world
@@ -2759,13 +2759,13 @@ components:
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
-          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
           guid: xmmmN
           disabled: true
           location: The world
@@ -3072,13 +3072,13 @@ components:
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
-          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
           guid: xmmmN
           disabled: true
           location: The world
@@ -3137,13 +3137,13 @@ components:
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
             givenName: John
-            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
+            familyName: Doe
             guid: xmmmN
             disabled: true
             location: The world
@@ -3281,13 +3281,13 @@ components:
           website: https://mywebsite
           creationTime: 2000-01-23T04:56:07.000+00:00
           givenName: John
-          fullName: John Doe
           bio: bio
           handle: foo
           avatar: https://en.gravatar.com/userimage/john.doe.png
           title: Chief Executive Officer
           localId: 1
           modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
           guid: xmmmN
           disabled: true
           location: The world
@@ -3313,13 +3313,13 @@ components:
             website: https://mywebsite
             creationTime: 2000-01-23T04:56:07.000+00:00
             givenName: John
-            fullName: John Doe
             bio: bio
             handle: foo
             avatar: https://en.gravatar.com/userimage/john.doe.png
             title: Chief Executive Officer
             localId: 1
             modificationTime: 2000-01-23T04:56:07.000+00:00
+            familyName: Doe
             guid: xmmmN
             disabled: true
             location: The world
@@ -3378,13 +3378,13 @@ components:
               website: https://mywebsite
               creationTime: 2000-01-23T04:56:07.000+00:00
               givenName: John
-              fullName: John Doe
               bio: bio
               handle: foo
               avatar: https://en.gravatar.com/userimage/john.doe.png
               title: Chief Executive Officer
               localId: 1
               modificationTime: 2000-01-23T04:56:07.000+00:00
+              familyName: Doe
               guid: xmmmN
               disabled: true
               location: The world

@@ -25,7 +25,7 @@ public class User   {
 
   protected String givenName;
 
-  protected String fullName;
+  protected String familyName;
 
   protected String title;
 
@@ -139,20 +139,20 @@ public class User   {
   }
 
   /**
-  * @return fullName The long and formal name of the user (used in address)
+  * @return familyName The family name of the user
   */
-  @com.fasterxml.jackson.annotation.JsonAlias({"fullname"})
-  @JsonProperty("fullName")
-  public String getFullName() {
-    return fullName;
+  @com.fasterxml.jackson.annotation.JsonAlias({"fullname","fullName"})
+  @JsonProperty("familyName")
+  public String getFamilyName() {
+    return familyName;
   }
 
   /**
-  * @param fullName The long and formal name of the user (used in address)
+  * @param familyName The family name of the user
   */
   @SuppressWarnings("unused")
-  public void setFullName(String fullName) {
-    this.fullName = fullName;
+  public void setFamilyName(String familyName) {
+    this.familyName = familyName;
   }
 
   /**

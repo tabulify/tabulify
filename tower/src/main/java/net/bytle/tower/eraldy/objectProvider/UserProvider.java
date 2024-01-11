@@ -167,7 +167,7 @@ public class UserProvider {
   }
 
   /**
-   * @param user           - the user
+   * @param user - the user
    * @return a user suitable
    */
   public Future<User> insertUserFromImport(User user) {
@@ -191,6 +191,7 @@ public class UserProvider {
    * Package Private,
    * for creation with login/signup, the insertion should be driven by {@link AuthProvider#insertUserFromLoginAuthUserClaims(AuthUser, RoutingContext)}
    * for creation via import, the insertion should be driven by {@link #insertUserFromImport(User)}
+   *
    * @param user - the user to insert (sign-up or import)
    * @return a user
    */
@@ -738,12 +739,12 @@ public class UserProvider {
     assert patchUser != null;
 
     boolean patched = false;
-    if (dbUser.getGivenName() == null && patchUser.getGivenName() != null) {
+    if (dbUser.getGivenName() == null && !patchUser.getGivenName().isBlank()) {
       dbUser.setGivenName(patchUser.getGivenName());
       patched = true;
     }
-    if (dbUser.getFullName() == null && patchUser.getFullName() != null) {
-      dbUser.setFullName(patchUser.getFullName());
+    if (dbUser.getFamilyName() == null && patchUser.getFamilyName() != null) {
+      dbUser.setFamilyName(patchUser.getFamilyName());
       patched = true;
     }
     if (dbUser.getBio() == null && patchUser.getBio() != null) {

@@ -125,6 +125,10 @@ public class ListImportFlow implements WebFlow {
     return this.rowValidationRetryCount;
   }
 
+  public ListImportJob.Builder buildJob(ListItem list, FileUpload fileBinary, ListImportJobAction action) {
+    return ListImportJob.builder(this, list, fileBinary, action);
+  }
+
 
   /**
    * The fields in the import file
@@ -196,8 +200,9 @@ public class ListImportFlow implements WebFlow {
     }
   }
 
-  public String step1CreateAndGetJobId(ListItem list, FileUpload upload, Integer maxRowCountToProcess) throws TowerFailureException {
+  public String step1AddJobToQueue(ListImportJob importJob) throws TowerFailureException {
 
+    ListItem list = importJob.getList();
     for (ListImportJob listImportJob : importJobs.values()) {
       if (listImportJob.getList().equals(list)) {
         throw TowerFailureException.builder()
@@ -206,7 +211,6 @@ public class ListImportFlow implements WebFlow {
           .build();
       }
     }
-    ListImportJob importJob = new ListImportJob(this, list, upload, maxRowCountToProcess);
     String identifier = importJob.getIdentifier();
     importJobs.put(identifier, importJob);
     return identifier;

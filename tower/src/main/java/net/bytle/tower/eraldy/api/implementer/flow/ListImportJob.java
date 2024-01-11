@@ -45,6 +45,7 @@ public class ListImportJob {
   private final ListImportJobStatus listImportJobStatus;
 
   private final Integer maxRowCountToProcess;
+  private final ListImportJobAction action;
   /**
    * The execution status code
    * We use a runtime variable because
@@ -52,27 +53,67 @@ public class ListImportJob {
    * (ie the client can query on the status to see if the job is really completed)
    */
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
+  private boolean updateExistingUser;
 
-  public ListImportJob(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, Integer maxRowCountToProcess) {
-    this.listImportFlow = listImportFlow;
-    this.list = list;
-    this.uploadedCsvFile = Paths.get(fileUpload.uploadedFileName());
+  public ListImportJob(Builder builder) {
+    this.listImportFlow = builder.listImportFlow;
+    this.list = builder.list;
+    this.uploadedCsvFile = Paths.get(builder.fileUpload.uploadedFileName());
     Timestamp creationTime = Timestamp.createFromNow();
-    this.originalFileName = Path.of(fileUpload.fileName());
-    // time + the random uploaded file name
-    this.jobId = creationTime.toFileSystemString() + "-" + this.uploadedCsvFile.getFileName().toString();
+    this.originalFileName = Path.of(builder.fileUpload.fileName());
+    // time + list make the job unique
+    this.jobId = creationTime.toFileSystemString();
     // Init all field
     // to avoid dealing with empty value when returning the data object
     this.listImportJobStatus = new ListImportJobStatus();
     listImportJobStatus.setJobId(this.getIdentifier());
     listImportJobStatus.setStatusCode(TO_PROCESS_STATUS_CODE);
-    listImportJobStatus.setUploadedFileName(fileUpload.fileName());
+    listImportJobStatus.setUploadedFileName(builder.fileUpload.fileName());
     listImportJobStatus.setCountTotal(0);
     listImportJobStatus.setCountComplete(0);
     listImportJobStatus.setCountSuccess(0);
     listImportJobStatus.setCreationTime(creationTime.toLocalDateTime());
-    this.maxRowCountToProcess = Objects.requireNonNullElse(maxRowCountToProcess, 5000);
+    this.maxRowCountToProcess = Objects.requireNonNullElse(builder.maxRowCountToProcess, 5000);
+    this.action = Objects.requireNonNull(builder.action);
+    this.updateExistingUser = Objects.requireNonNullElse(builder.updateExistingUser, false);
+  }
 
+  public static ListImportJob.Builder builder(ListImportFlow listImportFlow, ListItem list, FileUpload filoeUpload, ListImportJobAction action) {
+    return new ListImportJob.Builder(listImportFlow, list, filoeUpload, action);
+  }
+
+  public boolean getUpdateExistingUser() {
+    return this.updateExistingUser;
+  }
+
+  public static class Builder {
+    private final FileUpload fileUpload;
+    private final ListImportFlow listImportFlow;
+    private final ListItem list;
+    private Integer maxRowCountToProcess;
+    private ListImportJobAction action;
+    private Boolean updateExistingUser;
+
+    Builder(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, ListImportJobAction action) {
+      this.listImportFlow = listImportFlow;
+      this.list = list;
+      this.fileUpload = fileUpload;
+      this.action = action;
+    }
+
+    public Builder setMaxRowCountToProcess(Integer maxRowCountToProcess) {
+      this.maxRowCountToProcess = maxRowCountToProcess;
+      return this;
+    }
+
+    public ListImportJob build() {
+      return new ListImportJob(this);
+    }
+
+    public Builder setUpdateExistingUser(Boolean updateExistingUser) {
+      this.updateExistingUser = updateExistingUser;
+      return this;
+    }
   }
 
 
@@ -235,7 +276,7 @@ public class ListImportJob {
         // fail early make the report returns to the first error
         boolean failEarly = true;
         int rowId = counter - 1;
-        ListImportJobRow listImportJobRow = new ListImportJobRow(this, rowId, failEarly);
+        ListImportJobRow listImportJobRow = new ListImportJobRow(this, rowId);
         String email = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.EMAIL_ADDRESS)];
         listImportJobRow.setEmail(email);
         String familyName = row[headerMapping.get(ListImportFlow.IMPORT_FIELD.FAMILY_NAME)];
@@ -352,5 +393,9 @@ public class ListImportJob {
 
   public ListImportFlow getListImportFlow() {
     return this.listImportFlow;
+  }
+
+  public boolean getFailEarly() {
+    return false;
   }
 }

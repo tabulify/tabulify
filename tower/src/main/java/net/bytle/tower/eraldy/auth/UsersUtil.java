@@ -70,7 +70,7 @@ public class UsersUtil {
     } catch (NotFoundException | AddressException e) {
       throw new InternalException("Should not occurs, a database user should have a valid email at least", e);
     }
-    outputUser.setFullName(user.getFullName() != null ? user.getFullName() : defaultName);
+    outputUser.setFamilyName(user.getFamilyName() != null ? user.getFamilyName() : defaultName);
     outputUser.setAvatar(user.getAvatar());
     outputUser.setTitle(user.getTitle());
     return outputUser;
@@ -89,7 +89,7 @@ public class UsersUtil {
       throw new InternalException(e);
     }
     smtpSender.setEmail(user.getEmail());
-    smtpSender.setFullName(user.getFullName());
+    smtpSender.setFullName(user.getFamilyName());
     smtpSender.setAvatar(user.getAvatar());
     smtpSender.setTitle(user.getTitle());
     return smtpSender;

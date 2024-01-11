@@ -142,7 +142,7 @@ public class AuthProvider {
     if (subjectFullName != null && subjectFamilyName != null) {
       subjectFullName += " " + subjectFamilyName;
     }
-    userEraldy.setFullName(subjectFullName);
+    userEraldy.setFamilyName(subjectFullName);
     userEraldy.setBio(authUser.getSubjectBio());
     userEraldy.setLocation(authUser.getSubjectLocation());
     userEraldy.setWebsite(authUser.getSubjectBlog());

@@ -164,7 +164,7 @@ public class ListRegistrationValidationLetter {
         )
         .setValediction("Kind Regards")
         .setSenderName(publisherName)
-        .setSenderFullName(publisher.getFullName())
+        .setSenderFullName(publisher.getFamilyName())
         .setSenderAvatar(publisher.getAvatar() != null ? publisher.getAvatar().toString() : null)
         .setSenderEmail(publisher.getEmail())
         .setSenderTitle(publisher.getTitle())

@@ -13,7 +13,7 @@ public enum RegistrationFlow {
 
   IMPORT("import");
 
-  private final String value;
+  private String value;
 
   RegistrationFlow(String value) {
     this.value = value;
