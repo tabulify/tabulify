@@ -2,47 +2,36 @@ package net.bytle.vertx;
 
 import io.vertx.core.Future;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public class TowerCompositeFuture<T> {
+public class TowerFutureSequentialComposite<T> {
 
-  private final List<Future<T>> futures;
+  private final Iterator<Future<T>> futureIterator;
+  private Integer index;
+  private final TowerCompositeFutureListener listener;
   private final List<T> results = new ArrayList<>();
   private Throwable failure;
-  private final TowerCompositeFutureListener listener;
   private Integer failureIndex;
 
 
-  public TowerCompositeFuture(List<Future<T>> futures, TowerCompositeFutureListener listener) {
-    this.futures = futures;
+  public TowerFutureSequentialComposite(Collection<Future<T>> futureCollection, TowerCompositeFutureListener listener) {
+    this.futureIterator = futureCollection.iterator();
     this.listener = listener;
+    this.index = -1;
   }
 
-  /**
-   * @param futures - execute future sequentially (stop when one failed)
-   * @return void when finished
-   */
-  public static <T> Future<TowerCompositeFuture<T>> allSequentially(List<Future<T>> futures, TowerCompositeFutureListener listener) {
 
-    TowerCompositeFuture<T> towerCompositeFuture = new TowerCompositeFuture<>(futures, listener);
-    return towerCompositeFuture
-      .executeSequentially();
+  Future<TowerFutureSequentialComposite<T>> executeSequentially() {
 
-  }
-
-  private Future<TowerCompositeFuture<T>> executeSequentially() {
-    return executeSequentiallyRecursively(0);
-  }
-
-  private Future<TowerCompositeFuture<T>> executeSequentiallyRecursively(int index) {
-
-
-    if (index >= futures.size()) {
+    Future<T> next;
+    try {
+      next = futureIterator.next();
+      this.index++;
+    } catch (NoSuchElementException e) {
       return Future.succeededFuture(this);
     }
 
-    return futures.get(index)
+    return next
       .compose(
         res -> {
           T castResult;
@@ -58,7 +47,7 @@ public class TowerCompositeFuture<T> {
             this.listener.setCountComplete(this.listener.getCountComplete() + 1);
           }
           this.results.add(index, castResult);
-          return executeSequentiallyRecursively(index + 1);
+          return executeSequentially();
         },
         err -> {
           this.failure = err;

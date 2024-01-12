@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
@@ -13,7 +14,7 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.TowerCompositeFuture;
+import net.bytle.vertx.TowerFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,7 +54,7 @@ public class ListImportJob {
    * (ie the client can query on the status to see if the job is really completed)
    */
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
-  private boolean updateExistingUser;
+  private final boolean updateExistingUser;
 
   public ListImportJob(Builder builder) {
     this.listImportFlow = builder.listImportFlow;
@@ -86,12 +87,16 @@ public class ListImportJob {
     return this.updateExistingUser;
   }
 
+  public ListImportJobAction getAction() {
+    return this.action;
+  }
+
   public static class Builder {
     private final FileUpload fileUpload;
     private final ListImportFlow listImportFlow;
     private final ListItem list;
     private Integer maxRowCountToProcess;
-    private ListImportJobAction action;
+    private final ListImportJobAction action;
     private Boolean updateExistingUser;
 
     Builder(ListImportFlow listImportFlow, ListItem list, FileUpload fileUpload, ListImportJobAction action) {
@@ -142,7 +147,8 @@ public class ListImportJob {
   }
 
   private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, List<ListImportJobRow> resultImportJobRows, int iterationCount) {
-    return TowerCompositeFuture.allSequentially(listFutureToExecute, this.listImportJobStatus)
+    Vertx vertx = this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getVertx();
+    return TowerFuture.allRateLimited(listFutureToExecute, this.listImportJobStatus, vertx)
       .compose(composite -> {
         List<ListImportJobRow> listImportJobRows = composite.getResults();
         if (composite.hasFailed()) {

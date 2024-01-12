@@ -155,8 +155,11 @@ public class ListImportJobRow {
             return listRegistrationProvider.
               getRegistrationByListAndUser(list, user)
               .compose(listRegistration -> {
-                if (listRegistration == null) {
+                if (listRegistration != null) {
                   this.userAdded = false;
+                  return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
+                }
+                if (this.listImportJob.getAction() != ListImportJobAction.Register) {
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
                 ListRegistration listRegistrationToInsert = new ListRegistration();
