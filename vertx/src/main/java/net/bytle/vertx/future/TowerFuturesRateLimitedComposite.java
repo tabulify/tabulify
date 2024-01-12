@@ -15,10 +15,6 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
   private final TowerFuturesRateLimitedScheduler<T> rateLimitedMeta;
   private final TowerFutureCoordination coordinationType;
 
-  /**
-   * The id starting at 0 of the element in the collection
-   */
-  private int elementId;
 
   private final List<T> results = new ArrayList<>();
   private Throwable failure;
@@ -35,9 +31,9 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
     TowerFutureCoordination coordinationType,
     TowerCompositeFutureListener listener
   ) {
+
     this.futureIterator = futures.iterator();
     this.rateLimitedMeta = rateLimitedMeta;
-    this.elementId = -1;
     this.actualPeriodEndTime = LocalDateTime.now().plus(rateLimitedMeta.getRatePeriodeDuration());
     this.actualPeriodExecutedAmount = 0;
     this.listener = listener;
@@ -46,8 +42,9 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
   }
 
   @Override
-  public void handle(Promise<TowerFutureComposite<T>> event) {
-    this.actualPeriodPromise = event;
+  public void handle(Promise<TowerFutureComposite<T>> promise) {
+    this.actualPeriodPromise = promise;
+    handleRecursively();
   }
 
   private void handleRecursively() {
@@ -90,31 +87,22 @@ public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite
           if (asyncResult.failed()) {
             this.failure = asyncResult.cause();
             for (int i = 0; i < this.rateLimitedMeta.getBatchSize(); i++) {
-              this.elementId++;
               if (asyncResult.result().failed(i)) {
+                this.failureIndex = this.results.size()-1;
                 break;
               }
+              this.results.add(asyncResult.result().resultAt(i));
             }
-            this.failureIndex = this.elementId;
             this.actualPeriodPromise.complete(this);
             return;
           }
           for (Object element : asyncResult.result().list()) {
-            this.elementId++;
-            T castResult;
-            try {
-              //noinspection unchecked
-              castResult = (T) element;
-            } catch (Exception e) {
-              this.failure = e;
-              this.failureIndex = elementId;
-              this.actualPeriodPromise.complete(this);
-              return;
-            }
+            //noinspection unchecked
+            T castResult = (T) element;
             if (this.listener != null) {
               this.listener.setCountComplete(this.listener.getCountComplete() + 1);
             }
-            this.results.add(elementId, castResult);
+            this.results.add(castResult);
           }
           handleRecursively();
         }

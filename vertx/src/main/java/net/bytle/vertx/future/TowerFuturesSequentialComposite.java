@@ -12,7 +12,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
 
   private final Iterator<Future<T>> futureIterator;
   private final TowerFutureCoordination coordinatation;
-  private Integer index;
+  private Integer rowId;
   private final TowerCompositeFutureListener listener;
   private final List<T> results = new ArrayList<>();
   private Throwable failure;
@@ -23,7 +23,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
   public TowerFuturesSequentialComposite(Collection<Future<T>> futures, TowerFutureCoordination towerFutureCoordination, TowerCompositeFutureListener listener) {
     this.futureIterator = futures.iterator();
     this.listener = listener;
-    this.index = -1;
+    this.rowId = -1;
     this.coordinatation = towerFutureCoordination;
   }
 
@@ -37,7 +37,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
     Future<T> next;
     try {
       next = futureIterator.next();
-      this.index++;
+      this.rowId++;
     } catch (NoSuchElementException e) {
       this.promise.complete(this);
       return;
@@ -47,24 +47,15 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
         res -> {
           if (res.failed()) {
             this.failure = res.cause();
-            this.failureIndex = index;
+            this.failureIndex = rowId;
             promise.complete(this);
             return;
           }
-          T castResult;
-          try {
-            //noinspection unchecked
-            castResult = (T) res;
-          } catch (Exception e) {
-            this.failure = e;
-            this.failureIndex = index;
-            this.promise.complete(this);
-            return;
-          }
+          T castResult = res.result();
           if (this.listener != null) {
             this.listener.setCountComplete(this.listener.getCountComplete() + 1);
           }
-          this.results.add(index, castResult);
+          this.results.add(rowId, castResult);
           executeSequentially();
         }
       );

@@ -61,8 +61,8 @@ public class TowerFuturesRateLimitedScheduler<T> {
 
   public static class Builder<T> {
     private final Server server;
-    public int rateCount = 150;
-    public int batchSize = 5;
+    private int rateCount = 150;
+    private int batchSize = 5;
 
     private int ratePeriodeAmount = 5;
     private TimeUnit ratePeriodeUnit = TimeUnit.SECONDS;
@@ -74,25 +74,19 @@ public class TowerFuturesRateLimitedScheduler<T> {
     /**
      * @param batchSize - the number of future executed at a time
      */
-    Builder<T> setBatchSize(int batchSize) {
+    public Builder<T> setBatchSize(int batchSize) {
       this.batchSize = batchSize;
       return this;
     }
 
     /**
-     * @param rateCount - the maximum execution that should occur in a rate period of time
+     * @param amount - the maximum execution that should occur in a rate period of time
+     * @param timeAmount    - the rate period amount
+     * @param timeUnit  - the rate period unit
      */
-    Builder<T> setRateCount(int rateCount) {
-      this.rateCount = rateCount;
-      return this;
-    }
-
-    /**
-     * @param amount   - the rate period amount
-     * @param timeUnit - the rate period unit
-     */
-    Builder<T> setRatePeriod(int amount, TimeUnit timeUnit) {
-      this.ratePeriodeAmount = amount;
+    public Builder<T> setRateLimit(int amount, int timeAmount, TimeUnit timeUnit) {
+      this.rateCount = amount;
+      this.ratePeriodeAmount = timeAmount;
       this.ratePeriodeUnit = timeUnit;
       return this;
     }

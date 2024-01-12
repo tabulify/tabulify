@@ -5,10 +5,14 @@ import net.bytle.vertx.TowerCompositeFutureListener;
 
 import java.util.Collection;
 
+/**
+ * Execute futures one after the other (sequentially)
+ * @param <T>
+ */
 public class TowerFuturesSequentialScheduler<T> {
 
   /**
-   * Execute them all, fail at the first failure
+   * Execute them all one after the other, fail at the first failure
    */
   public Future<TowerFutureComposite<T>> all(Collection<Future<T>> futures, TowerCompositeFutureListener listener) {
     TowerFuturesSequentialComposite<T> towerComposite = new TowerFuturesSequentialComposite<>(futures, TowerFutureCoordination.ALL, listener);
