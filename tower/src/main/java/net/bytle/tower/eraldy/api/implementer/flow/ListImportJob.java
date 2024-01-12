@@ -148,8 +148,7 @@ public class ListImportJob {
 
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
-      .createRateLimitedCoordinationScheduler(ListImportJobRow.class)
-      .build()
+      .createSequentialScheduler(ListImportJobRow.class)
       .all(listFutureToExecute, this.listImportJobStatus)
       .compose(composite -> {
         List<ListImportJobRow> listImportJobRows = composite.getResults();

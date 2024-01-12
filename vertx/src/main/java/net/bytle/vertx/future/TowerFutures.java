@@ -18,7 +18,8 @@ public class TowerFutures {
    * Execute future sequentially one by one
    * @return void when finished
    */
-  public <T> TowerFuturesSequentialScheduler<T> createSequentialScheduler() {
+  @SuppressWarnings("unused") // tClass is used by the code analytics to define the type on the function level
+  public <T> TowerFuturesSequentialScheduler<T> createSequentialScheduler(Class<T> tClass) {
 
     return new TowerFuturesSequentialScheduler<>();
 
@@ -27,7 +28,7 @@ public class TowerFutures {
   /**
    * Execute futures in batch mode and with rate limiting
    */
-  @SuppressWarnings("unused")
+  @SuppressWarnings("unused") // tClass is used by the code analytics to define the type on the function level
   public <T> TowerFuturesRateLimitedScheduler.Builder<T> createRateLimitedCoordinationScheduler(Class<T> tClass) {
 
     return new TowerFuturesRateLimitedScheduler.Builder<>(this.server);
