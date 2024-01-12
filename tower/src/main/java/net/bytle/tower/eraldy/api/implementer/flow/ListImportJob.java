@@ -5,7 +5,6 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
@@ -14,7 +13,6 @@ import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.time.Timestamp;
-import net.bytle.vertx.TowerFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -147,8 +145,12 @@ public class ListImportJob {
   }
 
   private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, List<ListImportJobRow> resultImportJobRows, int iterationCount) {
-    Vertx vertx = this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getVertx();
-    return TowerFuture.allRateLimited(listFutureToExecute, this.listImportJobStatus, vertx)
+
+
+    return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
+      .createRateLimitedCoordinationScheduler(ListImportJobRow.class)
+      .build()
+      .all(listFutureToExecute, this.listImportJobStatus)
       .compose(composite -> {
         List<ListImportJobRow> listImportJobRows = composite.getResults();
         if (composite.hasFailed()) {

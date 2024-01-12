@@ -10,6 +10,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NoSecretException;
 import net.bytle.vertx.analytics.AnalyticsTracker;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
+import net.bytle.vertx.future.TowerFutures;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -210,6 +211,10 @@ public class Server implements AutoCloseable {
       LOGGER.info("Closing " + closable.getClass().getSimpleName());
       closable.close();
     }
+  }
+
+  public TowerFutures getFutureSchedulers() {
+    return new TowerFutures(this);
   }
 
 

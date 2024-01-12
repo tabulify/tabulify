@@ -1,24 +1,20 @@
-package net.bytle.vertx;
+package net.bytle.vertx.future;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import net.bytle.exception.InternalException;
+import net.bytle.vertx.TowerCompositeFutureListener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-public class TowerFutureRateLimitedComposite<T> {
-
-
+public class TowerFuturesRateLimitedComposite<T> implements TowerFutureComposite<T>, Handler<Promise<TowerFutureComposite<T>>> {
   private final Iterator<Future<T>> futureIterator;
-  private final TowerCompositeFutureListener listener;
+  private final TowerFuturesRateLimitedScheduler<T> rateLimitedMeta;
+  private final TowerFutureCoordination coordinationType;
 
-  private final int batchSize;
-  private final Duration rateDuration;
-  private final int rateCount;
-  private final Vertx vertx;
   /**
    * The id starting at 0 of the element in the collection
    */
@@ -29,36 +25,36 @@ public class TowerFutureRateLimitedComposite<T> {
   private Integer failureIndex;
   private LocalDateTime actualPeriodEndTime;
   private int actualPeriodExecutedAmount;
-  private Promise<TowerFutureRateLimitedComposite<T>> actualPeriodPromise;
+  private Promise<TowerFutureComposite<T>> actualPeriodPromise;
 
-  public TowerFutureRateLimitedComposite(Collection<Future<T>> futureCollection, TowerCompositeFutureListener listener, Vertx vertx) {
-    this.futureIterator = futureCollection.iterator();
-    this.listener = listener;
+  private final TowerCompositeFutureListener listener;
+
+  public TowerFuturesRateLimitedComposite(
+    TowerFuturesRateLimitedScheduler<T> rateLimitedMeta,
+    Collection<Future<T>> futures,
+    TowerFutureCoordination coordinationType,
+    TowerCompositeFutureListener listener
+  ) {
+    this.futureIterator = futures.iterator();
+    this.rateLimitedMeta = rateLimitedMeta;
     this.elementId = -1;
-    this.rateCount = 150;
-    int ratePeriodAmount = 5;
-    TimeUnit ratePeriodUnit = TimeUnit.SECONDS;
-    this.rateDuration = Duration.of(ratePeriodAmount, ratePeriodUnit.toChronoUnit());
-    this.batchSize = 5;
-    this.vertx = vertx;
-  }
-
-  Future<TowerFutureRateLimitedComposite<T>> execute() {
-    return Future.future(this::handler);
-  }
-
-  private void handler(Promise<TowerFutureRateLimitedComposite<T>> promise) {
-    this.actualPeriodEndTime = LocalDateTime.now().plus(rateDuration);
+    this.actualPeriodEndTime = LocalDateTime.now().plus(rateLimitedMeta.getRatePeriodeDuration());
     this.actualPeriodExecutedAmount = 0;
-    this.actualPeriodPromise = promise;
-    handleRecursively();
+    this.listener = listener;
+    this.coordinationType = coordinationType;
+
+  }
+
+  @Override
+  public void handle(Promise<TowerFutureComposite<T>> event) {
+    this.actualPeriodPromise = event;
   }
 
   private void handleRecursively() {
 
     List<Future<T>> next = new ArrayList<>();
     try {
-      for (int i = 0; i < this.batchSize; i++) {
+      for (int i = 0; i < this.rateLimitedMeta.getBatchSize(); i++) {
         next.add(futureIterator.next());
         this.actualPeriodExecutedAmount++;
       }
@@ -71,11 +67,11 @@ public class TowerFutureRateLimitedComposite<T> {
     }
     if (LocalDateTime.now().isAfter(this.actualPeriodEndTime)) {
       this.actualPeriodExecutedAmount = 0;
-      this.actualPeriodEndTime = LocalDateTime.now().plus(rateDuration);
+      this.actualPeriodEndTime = LocalDateTime.now().plus(this.rateLimitedMeta.getRatePeriodeDuration());
     }
-    if (this.actualPeriodExecutedAmount > this.rateCount) {
+    if (this.actualPeriodExecutedAmount > this.rateLimitedMeta.getRateCount()) {
       long delay = Duration.between(LocalDateTime.now(), this.actualPeriodEndTime).toMillis();
-      vertx.setTimer(delay, (id) -> executeBatch(next));
+      this.rateLimitedMeta.getServer().getVertx().setTimer(delay, (id) -> executeBatch(next));
       return;
     }
     executeBatch(next);
@@ -83,12 +79,17 @@ public class TowerFutureRateLimitedComposite<T> {
   }
 
   private void executeBatch(List<Future<T>> next) {
+    if (this.coordinationType != TowerFutureCoordination.ALL) {
+      this.failure = new InternalException("The future coordination (" + coordinationType + ") is not yet implemented.");
+      this.actualPeriodPromise.complete(this);
+      return;
+    }
     Future.all(next)
       .onComplete(
         asyncResult -> {
           if (asyncResult.failed()) {
             this.failure = asyncResult.cause();
-            for (int i = 0; i < this.batchSize; i++) {
+            for (int i = 0; i < this.rateLimitedMeta.getBatchSize(); i++) {
               this.elementId++;
               if (asyncResult.result().failed(i)) {
                 break;
@@ -135,6 +136,5 @@ public class TowerFutureRateLimitedComposite<T> {
   public Integer getFailureIndex() {
     return this.failureIndex;
   }
-
 
 }
