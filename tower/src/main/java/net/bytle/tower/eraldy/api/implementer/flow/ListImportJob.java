@@ -53,6 +53,7 @@ public class ListImportJob {
    */
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
   private final boolean updateExistingUser;
+  private List<ListImportJobRow> resultImportJobRows = new ArrayList<>();
 
   public ListImportJob(Builder builder) {
     this.listImportFlow = builder.listImportFlow;
@@ -139,47 +140,47 @@ public class ListImportJob {
     listImportJobStatus.setStatusCode(executionStatusCode);
 
     return this.buildFutureListToExecute()
-      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, new ArrayList<>(futuresToExecute.size()), 1));
+      .compose(futuresToExecute -> this.executeSequentiallyWithRetry(futuresToExecute, 1));
 
 
   }
 
-  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, List<ListImportJobRow> resultImportJobRows, int iterationCount) {
+  private Future<ListImportJob> executeSequentiallyWithRetry(List<Future<ListImportJobRow>> listFutureToExecute, int iterationCount) {
 
 
     return this.listImportFlow.getApp().getApexDomain().getHttpServer().getServer().getFutureSchedulers()
       .createSequentialScheduler(ListImportJobRow.class)
       .all(listFutureToExecute, this.listImportJobStatus)
       .compose(composite -> {
-        List<ListImportJobRow> listImportJobRows = composite.getResults();
+        List<ListImportJobRow> resultsListImportJobRows = composite.getResults();
         if (composite.hasFailed()) {
           Throwable failure = composite.getFailure();
-          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + (composite.getFailureIndex() + 1), listImportJobRows);
+          return this.closeJobWithFatalError(failure, "A fatal error has happened on the row " + (composite.getFailureIndex() + 1));
         }
         List<Future<ListImportJobRow>> toRetryFutures = new ArrayList<>();
-        for (ListImportJobRow listImportJobRow : listImportJobRows) {
+        for (ListImportJobRow resultListImportJobRow : resultsListImportJobRows) {
           if (
             iterationCount < this.listImportFlow.getRowValidationRetryCount()
-              && listImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
+              && resultListImportJobRow.getStatus().equals(FATAL_ERROR.getStatusCode())
           ) {
-            toRetryFutures.add(listImportJobRow.getExecutableFuture());
+            toRetryFutures.add(resultListImportJobRow.getExecutableFuture());
           }
           /**
            * We build the list first
            * One retry, the elements will be replaced
            */
-          int rowId = listImportJobRow.getRowId();
+          int rowId = resultListImportJobRow.getRowId();
           if (rowId >= 0 && rowId < resultImportJobRows.size()) {
-            resultImportJobRows.set(rowId, listImportJobRow);
+            resultImportJobRows.set(rowId, resultListImportJobRow);
           } else {
-            resultImportJobRows.add(rowId, listImportJobRow);
+            resultImportJobRows.add(rowId, resultListImportJobRow);
           }
         }
         if (!toRetryFutures.isEmpty()) {
           int nextIterationCount = iterationCount + 1;
-          return executeSequentiallyWithRetry(toRetryFutures, resultImportJobRows, nextIterationCount);
+          return executeSequentiallyWithRetry(toRetryFutures, nextIterationCount);
         }
-        return this.closeJob(resultImportJobRows);
+        return this.closeJob();
       });
   }
 
@@ -274,7 +275,7 @@ public class ListImportJob {
             String statusMessage = "An email address header could not be found in the file (" + this.getFileNameWithExtension() + "). Headers found: " + Arrays.toString(row);
             listImportJobStatus.setStatusMessage(statusMessage);
             this.executionStatusCode = BAD_FILE_STATUS;
-            return this.closeJob(new ArrayList<>())
+            return this.closeJob()
               .compose(v -> Future.failedFuture(statusMessage));
 
           }
@@ -341,7 +342,7 @@ public class ListImportJob {
       return Future.succeededFuture(listFutureJobRowStatus);
     } catch (IOException e) {
       String message = "List import couldn't read the csv file (" + this.getFileNameWithExtension() + ").";
-      return this.closeJobWithFatalError(e, message, new ArrayList<>())
+      return this.closeJobWithFatalError(e, message)
         .compose(v -> Future.failedFuture(message));
     }
   }
@@ -351,7 +352,7 @@ public class ListImportJob {
     return this.maxRowCountToProcess;
   }
 
-  public Future<ListImportJob> closeJobWithFatalError(Throwable e, String message, List<ListImportJobRow> results) {
+  public Future<ListImportJob> closeJobWithFatalError(Throwable e, String message) {
     String exceptionSuffix = "Error:" + e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
     if (message == null) {
       message = exceptionSuffix;
@@ -361,18 +362,18 @@ public class ListImportJob {
     listImportJobStatus.setStatusMessage(message);
     this.executionStatusCode = FAILURE_STATUS_CODE;
     LOGGER.error("A fatal error has occurred with the list import job (" + list.getGuid() + "," + listImportJobStatus.getJobId() + ")", e);
-    return this.closeJob(results);
+    return this.closeJob();
   }
 
 
-  private Future<ListImportJob> closeJob(List<ListImportJobRow> listJobRow) {
-
+  private Future<ListImportJob> closeJob() {
 
     /**
      * Write the row status
      */
     Path resultFile = this.listImportFlow.getRowStatusFileJobByIdentifier(this.list.getGuid(), this.getIdentifier());
-    List<ListImportJobRowStatus> listJobRowStatus = listJobRow.stream()
+    List<ListImportJobRowStatus> listJobRowStatus = this.resultImportJobRows
+      .stream()
       .map(ListImportJobRow::toListJobRowStatus)
       .collect(Collectors.toList());
     String resultString = new JsonArray(listJobRowStatus).toString();

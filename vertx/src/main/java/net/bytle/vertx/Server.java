@@ -217,6 +217,9 @@ public class Server implements AutoCloseable {
     return new TowerFutures(this);
   }
 
+  public void addCloseableService(AutoCloseable autoCloseable) {
+    this.closeableServices.add(autoCloseable);
+  }
 
   public static class builder {
     private final String name;
@@ -374,8 +377,8 @@ public class Server implements AutoCloseable {
         LOGGER.info("Analytics tracker disabled");
       }
 
-      if(this.enableDnsClient){
-       server.dnsClient = new TowerDnsClient(server);
+      if (this.enableDnsClient) {
+        server.dnsClient = new TowerDnsClient(server);
       }
 
       return server;
@@ -449,7 +452,6 @@ public class Server implements AutoCloseable {
       this.enableDnsClient = true;
       return this;
     }
-
 
 
     public Server.builder enableTrackerAnalytics() {

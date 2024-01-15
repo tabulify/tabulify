@@ -8,10 +8,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import net.bytle.exception.CastException;
-import net.bytle.exception.IllegalArgumentExceptions;
-import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
+import net.bytle.exception.*;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
@@ -267,17 +264,19 @@ public class ListApiImpl implements ListApi {
   @Override
   public Future<ApiResponse<ListImportJobStatus>> listListImportJobGet(RoutingContext routingContext, String listIdentifier, String jobIdentifier) {
 
-    ListImportFlow listImport = this.apiApp.getListImportFlow();
+    ListImportFlow listImportFlow = this.apiApp.getListImportFlow();
 
-    // Running Job
-    if (listImport.isRunning(jobIdentifier)) {
-      ListImportJobStatus listImportStatus = listImport.getQueuedJob(jobIdentifier)
+    // Running, Queued Job
+    try {
+      ListImportJobStatus listImportStatus = listImportFlow.getQueuedJob(jobIdentifier)
         .getStatus();
       return Future.succeededFuture(new ApiResponse<>(listImportStatus));
+    } catch (NullValueException e) {
+      // not found
     }
 
     // Processed Job On file system?
-    Path path = listImport
+    Path path = listImportFlow
       .getStatusFileJobByIdentifier(listIdentifier, jobIdentifier);
     if (!Files.exists(path)) {
       return Future.failedFuture(TowerFailureException.builder()

@@ -7,6 +7,8 @@ import net.bytle.exception.InternalException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A custom <a href="https://vertx.io/docs/vertx-core/java/#_the_vert_x_launcher">Vertx Launcher</a>
  * (to set environment before launching)
@@ -37,7 +39,12 @@ public class MainLauncher extends io.vertx.core.Launcher {
   public void beforeStartingVertx(VertxOptions options) {
     super.beforeStartingVertx(options);
     LOGGER.info("Enabling Metrics");
-    options.setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
+    options
+      .setMetricsOptions(VertxPrometheusMetrics.getInitMetricsOptions());
+    LOGGER.info("Workers default max execution time");
+    options
+      .setMaxWorkerExecuteTime(30) // default 60 seconds
+      .setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS); // default nanoseconds
   }
 
   @Override

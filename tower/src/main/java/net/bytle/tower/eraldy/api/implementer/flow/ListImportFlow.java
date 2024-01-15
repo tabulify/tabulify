@@ -4,12 +4,15 @@ import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NullValueException;
 import net.bytle.fs.Fs;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
 import net.bytle.vertx.ConfigAccessor;
+import net.bytle.vertx.Server;
 import net.bytle.vertx.TowerFailureException;
 import net.bytle.vertx.TowerFailureTypeEnum;
 import net.bytle.vertx.flow.WebFlow;
@@ -19,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * A class tha handles
  * the list import flow
  */
-public class ListImportFlow implements WebFlow {
+public class ListImportFlow implements WebFlow, AutoCloseable {
 
   private static final String FILE_SUFFIX_JOB_STATUS = "-status.json";
 
@@ -53,6 +57,16 @@ public class ListImportFlow implements WebFlow {
    * Passed these number of days, we delete the import jobs
    */
   private final int maxJobHistoryRetentionInDays;
+  /**
+   * The delay/period to set on the timer to execute
+   * the jobs.
+   */
+  private final Integer executionPeriodInMilliSec;
+  /**
+   * The last execution time to check that the job execution is still healthy
+   */
+  private LocalDateTime executionLastTime;
+
 
   public EmailAddressValidator getEmailAddressValidator() {
     return this.apiApp.getEmailAddressValidator();
@@ -113,12 +127,19 @@ public class ListImportFlow implements WebFlow {
     return listImportJobStatuses;
   }
 
-  public boolean isRunning(String jobIdentifier) {
-    return this.importJobs.containsKey(jobIdentifier);
-  }
 
-  public ListImportJob getQueuedJob(String jobIdentifier) {
-    return this.importJobs.get(jobIdentifier);
+  public ListImportJob getQueuedJob(String jobIdentifier) throws NullValueException {
+
+    /**
+     * In the queue
+     */
+    for (ListImportJob listImportJob : this.importJobQueue) {
+      if (listImportJob.getIdentifier().equals(jobIdentifier)) {
+        return listImportJob;
+      }
+    }
+    throw new NullValueException();
+
   }
 
   public int getRowValidationRetryCount() {
@@ -127,6 +148,14 @@ public class ListImportFlow implements WebFlow {
 
   public ListImportJob.Builder buildJob(ListItem list, FileUpload fileBinary, ListImportJobAction action) {
     return ListImportJob.builder(this, list, fileBinary, action);
+  }
+
+  @Override
+  public void close() {
+    InternalException e = new InternalException("The server has restarted while this job was running. We are Sorry. You need to re-create a new import job.");
+    for (ListImportJob listImportJob : this.importJobQueue) {
+      listImportJob.closeJobWithFatalError(e, null);
+    }
   }
 
 
@@ -140,18 +169,20 @@ public class ListImportFlow implements WebFlow {
   /**
    * Import Job by JobId String
    */
-  Map<String, ListImportJob> importJobs = new HashMap<>();
+  Queue<ListImportJob> importJobQueue = new LinkedList<>();
 
   public ListImportFlow(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
-    this.vertx = apiApp.getApexDomain().getHttpServer().getServer().getVertx();
+    Server server = apiApp.getApexDomain().getHttpServer().getServer();
+    server.addCloseableService(this);
+    this.vertx = server.getVertx();
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
-    ConfigAccessor configAccessor = apiApp.getApexDomain().getHttpServer().getServer().getConfigAccessor();
-    int executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
+    ConfigAccessor configAccessor = server.getConfigAccessor();
+    this.executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
     this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
     this.rowValidationRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
-    vertx.setPeriodic(executionPeriodInMilliSec, executionPeriodInMilliSec, jobId -> executeJobs());
+    this.scheduleNextJob();
     int oneDay = 24 * 60 * 60000;
     int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", oneDay);
     vertx.setPeriodic(6000, purgeHistoryDelay, jobId -> purgeJobHistory());
@@ -165,7 +196,10 @@ public class ListImportFlow implements WebFlow {
     this.maxJobHistoryByList = 10 * numberOfFilesToPurgeByJob;
     this.maxJobHistoryRetentionInDays = 30;
 
+  }
 
+  private void scheduleNextJob() {
+    vertx.setTimer(executionPeriodInMilliSec, jobId -> executeNextJob());
   }
 
   private void purgeJobHistory() {
@@ -203,83 +237,83 @@ public class ListImportFlow implements WebFlow {
   public String step1AddJobToQueue(ListImportJob importJob) throws TowerFailureException {
 
     ListItem list = importJob.getList();
-    for (ListImportJob listImportJob : importJobs.values()) {
+    for (ListImportJob listImportJob : importJobQueue) {
       if (listImportJob.getList().equals(list)) {
         throw TowerFailureException.builder()
           .setType(TowerFailureTypeEnum.ALREADY_EXIST_409)
-          .setMessage("The list (" + list + ") has already a job running")
+          .setMessage("The list (" + list + ") has already a job in the queue")
           .build();
       }
     }
+
     String identifier = importJob.getIdentifier();
-    importJobs.put(identifier, importJob);
+    importJobQueue.add(importJob);
     return identifier;
   }
 
 
-  public void executeJobs() {
+  public void executeNextJob() {
 
-
-    if (this.importJobs.isEmpty()) {
+    this.executionLastTime = LocalDateTime.now();
+    ListImportJob executingJob = this.importJobQueue.peek();
+    if (executingJob == null) {
+      this.scheduleNextJob();
       return;
     }
 
-    int executingJobsCount = this.getExecutingJobsCount();
-    if (executingJobsCount >= this.executionJobCount) {
+    if (executingJob.isRunning()) {
+      this.scheduleNextJob();
       return;
     }
 
-    for (Map.Entry<String, ListImportJob> listImportJobEntry : this.importJobs.entrySet()) {
-      ListImportJob listImportJob = listImportJobEntry.getValue();
-      if (listImportJob.isComplete()) {
-        this.importJobs.remove(listImportJobEntry.getKey());
-        continue;
-      }
-      /**
-       * Not completed, not running
-       */
-      if (!listImportJob.isRunning()) {
-        int poolSize = 1;
-        long maxExecutionTime = 1;
-        TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
-        WorkerExecutor executor = vertx.createSharedWorkerExecutor("list-import-flow", poolSize, maxExecutionTime, maxExecuteTimeUnit);
-        executor.executeBlocking(listImportJob::executeSequentially)
-          .onComplete(blockingAsyncResult -> {
-            if (blockingAsyncResult.failed()) {
-              Throwable cause = blockingAsyncResult.cause();
-              listImportJob.closeJobWithFatalError(cause, null, new ArrayList<>());
-              executor.close();
-            }
-            blockingAsyncResult.result().onComplete(v -> {
-              if (v.failed()) {
-                // timeout
-                Throwable cause = v.cause();
-                listImportJob.closeJobWithFatalError(cause, null, new ArrayList<>());
-              }
-              executor.close();
-            });
-          });
-        executingJobsCount++;
-      }
-      if (executingJobsCount >= this.executionJobCount) {
-        break;
-      }
+    int poolSize = 1;
+    long maxExecutionTime = 10;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    WorkerExecutor executor = vertx.createSharedWorkerExecutor("list-import-flow", poolSize, maxExecutionTime, maxExecuteTimeUnit);
+    executor
+      .executeBlocking(executingJob::executeSequentially)
+      .onComplete(blockingAsyncResult -> {
 
-    }
+        /**
+         * Executor Fatal Error
+         * (Timeout)
+         */
+        if (blockingAsyncResult.failed()) {
+          Throwable cause = blockingAsyncResult.cause();
+          executingJob.closeJobWithFatalError(cause, null);
+          this.closeExecutionAndExecuteNextJob(executingJob, executor);
+          return;
+        }
+        /**
+         * JobRow Fatal Error
+         */
+        blockingAsyncResult.result().onComplete(v -> {
+          if (v.failed()) {
+            // timeout
+            Throwable cause = v.cause();
+            executingJob.closeJobWithFatalError(cause, null);
+          }
+          this.closeExecutionAndExecuteNextJob(executingJob, executor);
+        });
+      });
 
   }
 
-  /**
-   * @return the number of jobs actually executing
-   */
-  private int getExecutingJobsCount() {
-    int count = 0;
-    for (ListImportJob listImportJob : this.importJobs.values()) {
-      if (listImportJob.isRunning()) {
-        count++;
-      }
-    }
-    return count;
+  private void closeExecutionAndExecuteNextJob(ListImportJob executingJob, WorkerExecutor executor) {
+    /**
+     * Remove from the queue
+     */
+    this.importJobQueue.remove(executingJob);
+    /**
+     * Destory executor
+     */
+    executor.close();
+    /**
+     *
+     * Execute the next one
+     */
+    this.executeNextJob();
   }
+
 
 }
