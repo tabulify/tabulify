@@ -47,7 +47,7 @@ public class EraldyApiApp extends TowerApp {
 
   private final HashId hashIds;
   private final OrganizationProvider organizationProvider;
-  private final ListRegistrationProvider listRegistrationProvider;
+  private final ListUserProvider listUserProvider;
   private final ServiceProvider serviceProvider;
   @SuppressWarnings({"FieldCanBeLocal", "unused"})
   private final OrganizationUserProvider organizationUserProvider;
@@ -86,7 +86,7 @@ public class EraldyApiApp extends TowerApp {
     this.listImportFlow = new ListImportFlow(this);
     this.organizationProvider = new OrganizationProvider(this);
     this.authProvider = new AuthProvider(this);
-    this.listRegistrationProvider = new ListRegistrationProvider(this);
+    this.listUserProvider = new ListUserProvider(this);
     this.serviceProvider = new ServiceProvider(this);
     this.organizationUserProvider = new OrganizationUserProvider(this);
     this.hashIds = this.getApexDomain().getHttpServer().getServer().getHashId();
@@ -352,9 +352,9 @@ public class EraldyApiApp extends TowerApp {
       .build();
   }
 
-  public ListRegistrationProvider getListRegistrationProvider() {
+  public ListUserProvider getListRegistrationProvider() {
 
-    return this.listRegistrationProvider;
+    return this.listUserProvider;
   }
 
   public ServiceProvider getServiceProvider() {

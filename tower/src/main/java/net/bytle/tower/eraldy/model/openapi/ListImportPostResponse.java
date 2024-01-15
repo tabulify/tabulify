@@ -1,12 +1,11 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
-
 /**
- * The succesful response to the submission of a import job for a list
+ * The succesful response to the submission of a import job for a list 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListImportPostResponse   {
@@ -49,17 +48,17 @@ public class ListImportPostResponse   {
       return false;
     }
     ListImportPostResponse listImportPostResponse = (ListImportPostResponse) o;
-    return
-
+    return 
+            
             Objects.equals(jobIdentifier, listImportPostResponse.jobIdentifier);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(jobIdentifier);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

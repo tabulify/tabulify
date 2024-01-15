@@ -10,8 +10,6 @@ src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EmailApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EmailApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/EnvApiHandler.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApi.java
-src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/HealthApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApi.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/ListApiHandler.java
 src/main/java/net/bytle/tower/eraldy/api/openapi/interfaces/OrganizationApi.java
@@ -37,9 +35,11 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobRowStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListItem.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistration.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/ListRegistrationPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUser.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserFlow.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserPostBody.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Organization.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java
@@ -49,8 +49,6 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/Realm.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/RealmWithAppUris.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationFlow.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/RegistrationShort.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Service.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ServiceSmtpPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/User.java

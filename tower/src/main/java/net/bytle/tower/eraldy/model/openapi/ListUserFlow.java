@@ -1,11 +1,17 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
+
+/**
+ * How the user has been added to the list
+ **/
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * How the user has been registered
+ * How the user has been added to the list
  */
-public enum RegistrationFlow {
+public enum ListUserFlow {
 
   OAUTH("oauth"),
 
@@ -15,7 +21,7 @@ public enum RegistrationFlow {
 
   private String value;
 
-  RegistrationFlow(String value) {
+  ListUserFlow(String value) {
     this.value = value;
   }
 
@@ -29,8 +35,8 @@ public enum RegistrationFlow {
     return String.valueOf(value);
   }
 
-  public static RegistrationFlow fromValue(String value) {
-    for (RegistrationFlow b : RegistrationFlow.values()) {
+  public static ListUserFlow fromValue(String value) {
+    for (ListUserFlow b : ListUserFlow.values()) {
       if (b.value.equals(value)) {
         return b;
       }

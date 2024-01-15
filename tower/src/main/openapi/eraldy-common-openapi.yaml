@@ -567,19 +567,19 @@ components:
           example:
             - "john@doe.com"
             - "usr-xklls"
-    RegistrationShort:
-      title: A registration to a list in a short format (used to represent a list format)
+    ListUserShort:
+      title: A user in list in a short format (used to represent a list format)
       type: object
       properties:
         guid:
           type: string
-          description: The public registration id
+          description: The list user guid
           example: xmmmN
-        subscriberGuid:
-          description: The subscriber guid
+        userGuid:
+          description: The user guid
           type: string
-        subscriberEmail:
-          description: The subscriber email
+        userEmail:
+          description: The user email
           type: string
         confirmationTime:
           description: The confirmation time
@@ -588,9 +588,12 @@ components:
         status:
           description: The status of the registration
           type: integer
-    ListRegistration:
-      title: A registration to a list
-      description: A registration
+    ListUser:
+      # we use listUser as name and not listRegistration or listSubscription
+      # because it can be confusing
+      title: A list user
+      description: |
+        A user in a list (ie a subscription or a registration)
       type: object
       properties:
         guid:
@@ -605,8 +608,8 @@ components:
         list:
           description: The list
           $ref: '#/components/schemas/ListItem'
-        subscriber:
-          description: The subscriber
+        user:
+          description: The user (subscriber, registered)
           $ref: '#/components/schemas/User'
         confirmationTime:
           description: The confirmation time
@@ -633,15 +636,15 @@ components:
           x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
         flow:
           description: The source flow of registration
-          $ref: '#/components/schemas/RegistrationFlow'
-    RegistrationFlow:
-      description: How the user has been registered
+          $ref: '#/components/schemas/ListUserFlow'
+    ListUserFlow:
+      description: How the user has been added to the list
       type: string
       enum:
         - oauth # the user has clicked on the oauth button
         - email # the user has given its email
         - import # the user was imported
-    ListRegistrationPostBody:
+    ListUserPostBody:
       title: Registration Request to a list
       description: |
         The data needed to register a user to a list
@@ -651,11 +654,11 @@ components:
         a list id or guid is mandatory
       type: object
       required:
-        - subscriberEmail
+        - userEmail
         - listGuid
         - redirectUri
       properties:
-        subscriberEmail:
+        userEmail:
           type: string
           description: The email of the user that want to subscribe
           format: email
@@ -1012,17 +1015,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/UserPostBody'
-    ListRegistrationPostBody:
+    ListUserPostBody:
       description: The data needed to register a user to a list
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
+            $ref: '#/components/schemas/ListUserPostBody'
         #https://swagger.io/docs/specification/describing-request-body/multipart-requests/
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
+            $ref: '#/components/schemas/ListUserPostBody'
     RealmPostBody:
       description: The data needed to create a realm
       required: true

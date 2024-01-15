@@ -1,10 +1,10 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.Map;
 
 /**
  * the csp report
@@ -86,17 +86,17 @@ public class CspReport extends HashMap<String, String>  {
       return false;
     }
     CspReport cspReport = (CspReport) o;
-    return super.equals(o) &&
-
+    return super.equals(o) && 
+            
             Objects.equals(documentUri, cspReport.documentUri) && Objects.equals(referrer, cspReport.referrer) && Objects.equals(blockedUri, cspReport.blockedUri);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(super.hashCode(), documentUri, referrer, blockedUri);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString() + super.toString();
   }

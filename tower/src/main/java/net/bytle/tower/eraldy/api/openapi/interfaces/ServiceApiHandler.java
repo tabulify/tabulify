@@ -1,5 +1,8 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
+import net.bytle.tower.eraldy.model.openapi.Service;
+import net.bytle.tower.eraldy.model.openapi.ServiceSmtpPostBody;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
@@ -8,9 +11,10 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
-import net.bytle.tower.eraldy.model.openapi.ServiceSmtpPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map; // for pure json data
 
 public class ServiceApiHandler {
 

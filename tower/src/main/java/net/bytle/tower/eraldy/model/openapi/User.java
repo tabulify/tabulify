@@ -1,11 +1,13 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
+import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-import java.util.Objects;
+
+import net.bytle.tower.eraldy.model.openapi.Realm;
 
 /**
  * A user
@@ -57,7 +59,7 @@ public class User   {
   }
 
   /**
-  * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
+   * @return guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -65,7 +67,7 @@ public class User   {
   }
 
   /**
-  * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
+   * @param guid It is the global identifier * a string representation of realm id + user local id * never changes. It's the public id that: * you can see in the url * send to external application such as Analytics SAAS provider.  The database id (ie realm id + user local id) is not public.
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -73,7 +75,7 @@ public class User   {
   }
 
   /**
-  * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   * @return localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"id"})
   @JsonProperty("localId")
@@ -82,7 +84,7 @@ public class User   {
   }
 
   /**
-  * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
+   * @param localId The user id in the realm in the database (ie local to the realm)  We have called it local to avoid to really indicate that is not the true id.  You can't check with this id if this is the same user as this is the id inside the realm, there is other id with the same value in another realm.
   */
   @SuppressWarnings("unused")
   public void setLocalId(Long localId) {

@@ -8,10 +8,10 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.ListRegistration;
-import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
+import net.bytle.tower.eraldy.model.openapi.ListUser;
+import net.bytle.tower.eraldy.model.openapi.ListUserFlow;
 import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
+import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.resilience.EmailAddressValidationStatus;
@@ -47,6 +47,7 @@ public class ListImportJobRow {
   private boolean userAdded = false;
   private boolean userCreated = false;
   private boolean userUpdated = false;
+  private String listRegistrationGuid;
 
   public ListImportJobRow(ListImportJob listImportJob, int rowId) {
     this.rowId = rowId;
@@ -151,26 +152,28 @@ public class ListImportJobRow {
           })
           .compose(user -> {
             this.userGuid = user.getGuid();
-            ListRegistrationProvider listRegistrationProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
-            return listRegistrationProvider.
+            ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
+            return listUserProvider.
               getRegistrationByListAndUser(list, user)
               .compose(listRegistration -> {
                 if (listRegistration != null) {
                   this.userAdded = false;
+                  this.listRegistrationGuid = listRegistration.getGuid();
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
+
                 if (this.listImportJob.getAction() != ListImportJobAction.Register) {
                   return this.closeExecution(ListImportJobRowStatus.COMPLETED, null);
                 }
-                ListRegistration listRegistrationToInsert = new ListRegistration();
-                listRegistrationToInsert.setSubscriber(user);
-                listRegistrationToInsert.setList(list);
-                listRegistrationToInsert.setFlow(RegistrationFlow.IMPORT);
-                listRegistrationToInsert.setStatus(1);
+                ListUser listUserToInsert = new ListUser();
+                listUserToInsert.setUser(user);
+                listUserToInsert.setList(list);
+                listUserToInsert.setFlow(ListUserFlow.IMPORT);
+                listUserToInsert.setStatus(1);
                 if (this.optInOrigin == null) {
-                  listRegistrationToInsert.setOptInOrigin(RegistrationFlow.IMPORT.toString());
+                  listUserToInsert.setOptInOrigin(ListUserFlow.IMPORT.toString());
                 } else {
-                  listRegistrationToInsert.setOptInOrigin(this.optInOrigin);
+                  listUserToInsert.setOptInOrigin(this.optInOrigin);
                 }
                 if (optInIp != null) {
                   DnsIp optInIpAsDnsIp;
@@ -179,7 +182,7 @@ public class ListImportJobRow {
                   } catch (DnsException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
                   }
-                  listRegistrationToInsert.setOptInIp(optInIpAsDnsIp.getAddress());
+                  listUserToInsert.setOptInIp(optInIpAsDnsIp.getAddress());
                 }
                 if (optInTime != null) {
                   LocalDateTime optInTimeAsObject;
@@ -188,7 +191,7 @@ public class ListImportJobRow {
                   } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
                   }
-                  listRegistrationToInsert.setOptInTime(optInTimeAsObject);
+                  listUserToInsert.setOptInTime(optInTimeAsObject);
                 }
                 if (confirmIp != null) {
                   DnsIp confirmIpAsDnsIp;
@@ -197,7 +200,7 @@ public class ListImportJobRow {
                   } catch (DnsException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
                   }
-                  listRegistrationToInsert.setConfirmationIp(confirmIpAsDnsIp.getAddress());
+                  listUserToInsert.setConfirmationIp(confirmIpAsDnsIp.getAddress());
                 }
                 if (confirmTime != null) {
                   LocalDateTime confirmTimeAsObject;
@@ -206,9 +209,9 @@ public class ListImportJobRow {
                   } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
                   }
-                  listRegistrationToInsert.setConfirmationTime(confirmTimeAsObject);
+                  listUserToInsert.setConfirmationTime(confirmTimeAsObject);
                 }
-                return listRegistrationProvider.insertRegistration(listRegistrationToInsert)
+                return listUserProvider.insertRegistration(listUserToInsert)
                   .compose(listRegistrationInserted -> this.closeExecution(ListImportJobRowStatus.COMPLETED, null));
               });
           });
@@ -234,6 +237,7 @@ public class ListImportJobRow {
     net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus jobRowStatus = new net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus();
     jobRowStatus.setEmailAddress(this.email);
     jobRowStatus.setUserGuid(this.userGuid);
+    jobRowStatus.setListUserGuid(this.listRegistrationGuid);
     jobRowStatus.setStatusCode(this.statusCode);
     jobRowStatus.setRowId(this.rowId);
     jobRowStatus.setUserAdded(this.userAdded);

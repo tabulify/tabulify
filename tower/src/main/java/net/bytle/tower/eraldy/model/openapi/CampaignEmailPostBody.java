@@ -1,12 +1,11 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
-
 /**
- * Email Campaign creation and/or modification
+ * Email Campaign creation and/or modification 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CampaignEmailPostBody   {
@@ -103,17 +102,17 @@ public class CampaignEmailPostBody   {
       return false;
     }
     CampaignEmailPostBody campaignEmailPostBody = (CampaignEmailPostBody) o;
-    return
-
+    return 
+            
             Objects.equals(campaignGuid, campaignEmailPostBody.campaignGuid) && Objects.equals(campaignHandle, campaignEmailPostBody.campaignHandle) && Objects.equals(emailSubject, campaignEmailPostBody.emailSubject) && Objects.equals(listGuid, campaignEmailPostBody.listGuid);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(campaignGuid, campaignHandle, emailSubject, listGuid);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

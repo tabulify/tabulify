@@ -1,12 +1,11 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
-
 /**
- * Organization for the users using the Combostrap product (Not from the user of other Realm)
+ * Organization for the users using the Combostrap product (Not from the user of other Realm) 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Organization   {
@@ -86,17 +85,17 @@ public class Organization   {
       return false;
     }
     Organization organization = (Organization) o;
-    return
-
+    return 
+            
             Objects.equals(guid, organization.guid) && Objects.equals(localId, organization.localId) && Objects.equals(name, organization.name);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(guid, localId, name);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

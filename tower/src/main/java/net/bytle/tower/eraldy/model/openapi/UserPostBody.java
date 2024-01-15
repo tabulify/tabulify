@@ -1,13 +1,12 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
-import java.util.Objects;
 
 /**
- * A user. If the guid is given, it&#39;s used to identify the user otherwise, it&#39;s the email
+ * A user. If the guid is given, it&#39;s used to identify the user otherwise, it&#39;s the email 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserPostBody   {
@@ -158,17 +157,17 @@ public class UserPostBody   {
       return false;
     }
     UserPostBody userPostBody = (UserPostBody) o;
-    return
-
+    return 
+            
             Objects.equals(userGuid, userPostBody.userGuid) && Objects.equals(realmIdentifier, userPostBody.realmIdentifier) && Objects.equals(userEmail, userPostBody.userEmail) && Objects.equals(userName, userPostBody.userName) && Objects.equals(userFullname, userPostBody.userFullname) && Objects.equals(userTitle, userPostBody.userTitle) && Objects.equals(userAvatar, userPostBody.userAvatar);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(userGuid, realmIdentifier, userEmail, userName, userFullname, userTitle, userAvatar);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

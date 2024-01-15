@@ -265,7 +265,7 @@ paths:
     post:
       operationId: authRegisterListPost
       requestBody:
-        $ref: '#/components/requestBodies/ListRegistrationPostBody'
+        $ref: '#/components/requestBodies/ListUserPostBody'
       responses:
         "200":
           description: Email was send for validation
@@ -397,17 +397,6 @@ paths:
       summary: Return environment data
       tags:
       - env
-      x-accepts: application/json
-  /ping:
-    get:
-      operationId: pingGet
-      responses:
-        "200":
-          description: API health status
-      security: []
-      summary: A health check endpoint
-      tags:
-      - health
       x-accepts: application/json
   /realm/{realmIdentifier}/users:
     get:
@@ -1240,60 +1229,39 @@ paths:
       tags:
       - list
       x-accepts: application/json
-  /list/registration:
+  /list/user/{listUserIdentifier}:
     get:
       description: |
-        Get a registration
-          * by id with the registrationGuid
-          * by name with the subscriberEmail and listGuid
-      operationId: listRegistrationGet
+        Get a list user with the list user Guid
+      operationId: listUserIdentifierGet
       parameters:
-      - description: The guid of the registration
-        explode: true
-        in: query
-        name: guid
-        required: false
+        - description: The guid of the user in the list
+          explode: false
+          in: path
+          name: listUserIdentifier
+          required: true
         schema:
-          example: xjkkLmi
+          example: liu-xjkkLmi
           type: string
-        style: form
-      - description: The list guid of the registration
-        explode: true
-        in: query
-        name: listGuid
-        required: false
-        schema:
-          example: xjkkLmi
-          type: string
-        style: form
-      - description: The email of the subscriber
-        explode: true
-        in: query
-        name: subscriberEmail
-        required: false
-        schema:
-          example: joe@doe.com
-          format: email
-          type: string
-        style: form
+          style: simple
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListRegistration'
-          description: The registration
+                $ref: '#/components/schemas/ListUser'
+          description: The list user
       security:
       - apiKeyAuth: []
       - cookieAuth: []
-      summary: Get a registration object
+      summary: Get a user in a list
       tags:
       - list
       x-accepts: application/json
-  /list/registration/letter/confirmation:
+  /list/user/letter/confirmation:
     get:
       deprecated: true
-      operationId: listRegistrationLetterConfirmationGet
+      operationId: listUserLetterConfirmationGet
       parameters:
       - description: The name of the subscriber
         explode: true
@@ -1372,9 +1340,9 @@ paths:
       tags:
       - list
       x-accepts: text/html
-  /list/registration/letter/validation:
+  /list/user/letter/validation:
     get:
-      operationId: listRegistrationLetterValidationGet
+      operationId: listUserLetterValidationGet
       parameters:
       - description: The list guid
         explode: true
@@ -1427,14 +1395,14 @@ paths:
       tags:
       - list
       x-accepts: text/html
-  /list/register/confirmation/{registration_guid}:
+  /list/user/confirmation/{listUserIdentifier}:
     get:
-      operationId: listRegisterConfirmationRegistrationGet
+      operationId: listUserConfirmationUserGet
       parameters:
-      - description: The registration guid
+        - description: The list user identifier (guid)
         explode: false
         in: path
-        name: registration_guid
+          name: listUserIdentifier
         required: true
         schema:
           type: string
@@ -1610,9 +1578,9 @@ paths:
       tags:
       - list
       x-accepts: application/json
-  /list/{listIdentifier}/registrations:
+  /list/{listIdentifier}/users:
     get:
-      operationId: listListRegistrationsGet
+      operationId: listListUsersGet
       parameters:
       - description: The identifier of the list (guid)
         explode: false
@@ -1658,13 +1626,13 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/RegistrationShort'
+                  $ref: '#/components/schemas/ListUserShort'
                 type: array
           description: List of registrations
       security:
       - apiKeyAuth: []
       - cookieAuth: []
-      summary: List the registrations for a list
+      summary: List the users for a list
       tags:
       - list
       x-accepts: application/json
@@ -1768,14 +1736,14 @@ components:
             $ref: '#/components/schemas/EmailIdentifier'
       description: A json object with only a email
       required: true
-    ListRegistrationPostBody:
+    ListUserPostBody:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
+            $ref: '#/components/schemas/ListUserPostBody'
         multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ListRegistrationPostBody'
+            $ref: '#/components/schemas/ListUserPostBody'
       description: The data needed to register a user to a list
       required: true
     CspViolationReportBody:
@@ -1850,6 +1818,7 @@ components:
         This object represents the status of a row in a import job for a list.
       example:
         emailAddress: emailAddress
+        listUserGuid: listUserGuid
         userUpdated: true
         userAdded: true
         userGuid: userGuid
@@ -1867,6 +1836,9 @@ components:
           type: integer
         userGuid:
           description: The user guid (may be null)
+          type: string
+        listUserGuid:
+          description: The list user guid (may be null if there is an error)
           type: string
         statusCode:
           description: The status code
@@ -2019,7 +1991,7 @@ components:
       - realmIdentifier
       - userEmail
       type: object
-    ListRegistrationPostBody:
+    ListUserPostBody:
       description: |
         The data needed to register a user to a list
         Note that a user email or a user id is required
@@ -3293,37 +3265,11 @@ components:
           type: integer
       title: A list summary
       type: object
-    ListRegistration:
-      description: A registration
+    ListUser:
+      description: |
+        A user in a list (ie a subscription or a registration)
       example:
         confirmationIp: confirmationIp
-        subscriber:
-          disabledReason: disabledReason
-          website: https://mywebsite
-          creationTime: 2000-01-23T04:56:07.000+00:00
-          givenName: John
-          bio: bio
-          handle: foo
-          avatar: https://en.gravatar.com/userimage/john.doe.png
-          title: Chief Executive Officer
-          localId: 1
-          modificationTime: 2000-01-23T04:56:07.000+00:00
-          familyName: Doe
-          guid: xmmmN
-          disabled: true
-          location: The world
-          realm:
-            defaultApp: ""
-            ownerUser: null
-            organization:
-              name: name
-              guid: org-xmmmN
-              localId: 1
-            name: name
-            guid: guid
-            handle: handle
-            localId: 0
-          email: john@doe.com
         optInIp: optInIp
         guid: xmmmN
         confirmationTime: 2000-01-23T04:56:07.000+00:00
@@ -3422,6 +3368,33 @@ components:
                 localId: 0
               email: john@doe.com
             home: https://doe.com
+        user:
+          disabledReason: disabledReason
+          website: https://mywebsite
+          creationTime: 2000-01-23T04:56:07.000+00:00
+          givenName: John
+          bio: bio
+          handle: foo
+          avatar: https://en.gravatar.com/userimage/john.doe.png
+          title: Chief Executive Officer
+          localId: 1
+          modificationTime: 2000-01-23T04:56:07.000+00:00
+          familyName: Doe
+          guid: xmmmN
+          disabled: true
+          location: The world
+          realm:
+            defaultApp: ""
+            ownerUser: null
+            organization:
+              name: name
+              guid: org-xmmmN
+              localId: 1
+            name: name
+            guid: guid
+            handle: handle
+            localId: 0
+          email: john@doe.com
         flow: null
         status: 0
         optInTime: 2000-01-23T04:56:07.000+00:00
@@ -3437,7 +3410,7 @@ components:
           type: integer
         list:
           $ref: '#/components/schemas/ListItem'
-        subscriber:
+        user:
           $ref: '#/components/schemas/User'
         confirmationTime:
           description: The confirmation time
@@ -3464,33 +3437,33 @@ components:
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
             optInUri\"})"
         flow:
-          $ref: '#/components/schemas/RegistrationFlow'
-      title: A registration to a list
+          $ref: '#/components/schemas/ListUserFlow'
+      title: A list user
       type: object
-    RegistrationFlow:
-      description: How the user has been registered
+    ListUserFlow:
+      description: How the user has been added to the list
       enum:
       - oauth
       - email
       - import
       type: string
-    RegistrationShort:
+    ListUserShort:
       example:
-        subscriberGuid: subscriberGuid
         guid: xmmmN
         confirmationTime: 2000-01-23T04:56:07.000+00:00
-        subscriberEmail: subscriberEmail
+        userEmail: userEmail
+        userGuid: userGuid
         status: 0
       properties:
         guid:
-          description: The public registration id
+          description: The list user guid
           example: xmmmN
           type: string
-        subscriberGuid:
-          description: The subscriber guid
+        userGuid:
+          description: The user guid
           type: string
-        subscriberEmail:
-          description: The subscriber email
+        userEmail:
+          description: The user email
           type: string
         confirmationTime:
           description: The confirmation time
@@ -3499,8 +3472,7 @@ components:
         status:
           description: The status of the registration
           type: integer
-      title: A registration to a list in a short format (used to represent a list
-        format)
+      title: A user in list in a short format (used to represent a list format)
       type: object
     PasswordCredentials:
       description: |

@@ -1,20 +1,21 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RegistrationShort   {
+public class ListUserShort {
 
 
   protected String guid;
 
-  protected String subscriberGuid;
+  protected String userGuid;
 
-  protected String subscriberEmail;
+  protected String userEmail;
 
   protected LocalDateTime confirmationTime;
 
@@ -26,11 +27,11 @@ public class RegistrationShort   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public RegistrationShort () {
+  public ListUserShort() {
   }
 
   /**
-  * @return guid The public registration id
+   * @return guid The list user guid
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -38,7 +39,7 @@ public class RegistrationShort   {
   }
 
   /**
-  * @param guid The public registration id
+   * @param guid The list user guid
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -46,35 +47,35 @@ public class RegistrationShort   {
   }
 
   /**
-  * @return subscriberGuid The subscriber guid
+   * @return userGuid The user guid
   */
-  @JsonProperty("subscriberGuid")
-  public String getSubscriberGuid() {
-    return subscriberGuid;
+  @JsonProperty("userGuid")
+  public String getUserGuid() {
+    return userGuid;
   }
 
   /**
-  * @param subscriberGuid The subscriber guid
+   * @param userGuid The user guid
   */
   @SuppressWarnings("unused")
-  public void setSubscriberGuid(String subscriberGuid) {
-    this.subscriberGuid = subscriberGuid;
+  public void setUserGuid(String userGuid) {
+    this.userGuid = userGuid;
   }
 
   /**
-  * @return subscriberEmail The subscriber email
+   * @return userEmail The user email
   */
-  @JsonProperty("subscriberEmail")
-  public String getSubscriberEmail() {
-    return subscriberEmail;
+  @JsonProperty("userEmail")
+  public String getUserEmail() {
+    return userEmail;
   }
 
   /**
-  * @param subscriberEmail The subscriber email
+   * @param userEmail The user email
   */
   @SuppressWarnings("unused")
-  public void setSubscriberEmail(String subscriberEmail) {
-    this.subscriberEmail = subscriberEmail;
+  public void setUserEmail(String userEmail) {
+    this.userEmail = userEmail;
   }
 
   /**
@@ -118,15 +119,15 @@ public class RegistrationShort   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RegistrationShort registrationShort = (RegistrationShort) o;
+    ListUserShort listUserShort = (ListUserShort) o;
     return
 
-            Objects.equals(guid, registrationShort.guid) && Objects.equals(subscriberGuid, registrationShort.subscriberGuid) && Objects.equals(subscriberEmail, registrationShort.subscriberEmail) && Objects.equals(confirmationTime, registrationShort.confirmationTime) && Objects.equals(status, registrationShort.status);
+      Objects.equals(guid, listUserShort.guid) && Objects.equals(userGuid, listUserShort.userGuid) && Objects.equals(userEmail, listUserShort.userEmail) && Objects.equals(confirmationTime, listUserShort.confirmationTime) && Objects.equals(status, listUserShort.status);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, subscriberGuid, subscriberEmail, confirmationTime, status);
+    return Objects.hash(guid, userGuid, userEmail, confirmationTime, status);
   }
 
   @Override

@@ -7,7 +7,7 @@ import io.vertx.json.schema.ValidationException;
 import net.bytle.exception.IllegalStructure;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
+import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.util.Env;
 import net.bytle.type.UriEnhanced;
 import net.bytle.type.time.Timestamp;
@@ -127,8 +127,8 @@ public class ListRegistrationValidationToken {
       return this;
     }
 
-    public config setFromListObject(ListRegistrationPostBody publicationSubscriptionPost) {
-      this.token.userEmail = publicationSubscriptionPost.getSubscriberEmail();
+    public config setFromListObject(ListUserPostBody publicationSubscriptionPost) {
+      this.token.userEmail = publicationSubscriptionPost.getUserEmail();
       this.token.optInUri = publicationSubscriptionPost.getRedirectUri();
       this.token.publicationGuid = publicationSubscriptionPost.getListGuid();
       return this;

@@ -1,13 +1,12 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
-import java.util.Objects;
 
 /**
- * App creation, modification If:   * the guid is defined, it will be used to update the existing app.   * not, the uri is used instead. The user (guid or email) is mandatory (the public face of the app) The realm (guid or handle) is also mandatory
+ * App creation, modification If:   * the guid is defined, it will be used to update the existing app.   * not, the uri is used instead. The user (guid or email) is mandatory (the public face of the app) The realm (guid or handle) is also mandatory 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AppPostBody   {
@@ -230,17 +229,17 @@ public class AppPostBody   {
       return false;
     }
     AppPostBody appPostBody = (AppPostBody) o;
-    return
-
+    return 
+            
             Objects.equals(appGuid, appPostBody.appGuid) && Objects.equals(appUri, appPostBody.appUri) && Objects.equals(realmIdentifier, appPostBody.realmIdentifier) && Objects.equals(userGuid, appPostBody.userGuid) && Objects.equals(userEmail, appPostBody.userEmail) && Objects.equals(appName, appPostBody.appName) && Objects.equals(appSlogan, appPostBody.appSlogan) && Objects.equals(appHome, appPostBody.appHome) && Objects.equals(appLogo, appPostBody.appLogo) && Objects.equals(appPrimaryColor, appPostBody.appPrimaryColor) && Objects.equals(appTerms, appPostBody.appTerms);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(appGuid, appUri, realmIdentifier, userGuid, userEmail, appName, appSlogan, appHome, appLogo, appPrimaryColor, appTerms);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

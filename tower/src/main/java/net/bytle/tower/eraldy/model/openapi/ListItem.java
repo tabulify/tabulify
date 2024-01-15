@@ -1,10 +1,13 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
-import java.util.Objects;
+
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
  * A list where a user can register.  ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class)

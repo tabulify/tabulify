@@ -56,12 +56,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
    */
   private static final String FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH = "/register/list/confirmation/" + REGISTRATION_GUID_PARAM;
   private final ListRegistrationEmailCallback callback;
-  private final FrontEndCookie<ListRegistration> cookieData;
+  private final FrontEndCookie<ListUser> cookieData;
 
   public ListRegistrationFlow(EraldyApiApp eraldyApiApp) {
     super(eraldyApiApp);
     this.callback = new ListRegistrationEmailCallback(this);
-    this.cookieData = FrontEndCookie.createCookieData(ListRegistration.class);
+    this.cookieData = FrontEndCookie.createCookieData(ListUser.class);
   }
 
   @Override
@@ -80,37 +80,37 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<ListRegistration> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, RegistrationFlow registrationFlow) {
+  public Future<ListUser> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserFlow registrationFlow) {
 
     return this.getApp()
       .getListProvider()
       .getListByGuid(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
       .compose(list -> {
-        ListRegistration inputListRegistration = new ListRegistration();
-        inputListRegistration.setList(list);
-        inputListRegistration.setSubscriber(user);
-        inputListRegistration.setOptInTime(optInTime);
-        inputListRegistration.setConfirmationTime(LocalDateTime.now());
-        inputListRegistration.setOptInIp(optInIp);
+        ListUser inputListUser = new ListUser();
+        inputListUser.setList(list);
+        inputListUser.setUser(user);
+        inputListUser.setOptInTime(optInTime);
+        inputListUser.setConfirmationTime(LocalDateTime.now());
+        inputListUser.setOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          inputListRegistration.setConfirmationIp(realRemoteClient);
+          inputListUser.setConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        inputListRegistration.setFlow(registrationFlow);
+        inputListUser.setFlow(registrationFlow);
         return this
           .getApp()
           .getListRegistrationProvider()
-          .upsertRegistration(inputListRegistration)
+          .upsertListUser(inputListUser)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
           .onSuccess(Future::succeededFuture);
       });
   }
 
-  public UriEnhanced getRegistrationConfirmationOperationPath(ListRegistration listRegistration) {
-    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, listRegistration.getGuid());
+  public UriEnhanced getRegistrationConfirmationOperationPath(ListUser listUser) {
+    String registrationConfirmationOperationPath = FRONTEND_LIST_REGISTRATION_CONFIRMATION_PATH.replace(REGISTRATION_GUID_PARAM, listUser.getGuid());
     return this.getApp().getMemberAppUri().setPath(registrationConfirmationOperationPath);
   }
 
@@ -118,11 +118,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * Send registration data to the front end via cookie
    *
    * @param routingContext - the context
-   * @param listRegistration   - the registration
+   * @param listUser   - the registration
    */
-  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, ListRegistration listRegistration) {
-    ListRegistration templateClone = this.getApp().getListRegistrationProvider()
-      .toTemplateClone(listRegistration);
+  public void addRegistrationConfirmationCookieData(RoutingContext routingContext, ListUser listUser) {
+    ListUser templateClone = this.getApp().getListRegistrationProvider()
+      .toTemplateClone(listUser);
     this.cookieData.setValue(templateClone, routingContext);
   }
 
@@ -132,12 +132,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param routingContext              - the routing context
    * @param publicationSubscriptionPost - the post data
    */
-  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListRegistrationPostBody publicationSubscriptionPost) {
+  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListUserPostBody publicationSubscriptionPost) {
 
     /**
      * Email validation
      */
-    ValidationUtil.validateEmail(publicationSubscriptionPost.getSubscriberEmail(), "subscriberEmail");
+    ValidationUtil.validateEmail(publicationSubscriptionPost.getUserEmail(), "userEmail");
 
     /**
      * We validate the publication id value
@@ -153,7 +153,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       .compose(registrationList -> {
 
         User subscriber = new User();
-        subscriber.setEmail(publicationSubscriptionPost.getSubscriberEmail());
+        subscriber.setEmail(publicationSubscriptionPost.getUserEmail());
         Realm listRealm = registrationList.getRealm();
         subscriber.setRealm(listRealm);
 
@@ -314,7 +314,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, RegistrationFlow.EMAIL)
+          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserFlow.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(registration -> {
               if (ctx.user() == null) {
@@ -442,7 +442,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       }
 
       User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
-      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, RegistrationFlow.OAUTH)
+      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, ListUserFlow.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(registration -> authContext.next());
     };

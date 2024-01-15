@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.RegistrationFlow;
+import net.bytle.tower.eraldy.model.openapi.ListUserFlow;
 import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
- * A registration
+ * A user in a list (ie a subscription or a registration)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListRegistration   {
+public class ListUser {
 
 
   protected String guid;
@@ -23,7 +23,7 @@ public class ListRegistration   {
 
   protected ListItem list;
 
-  protected User subscriber;
+  protected User user;
 
   protected LocalDateTime confirmationTime;
 
@@ -35,7 +35,7 @@ public class ListRegistration   {
 
   protected String optInOrigin;
 
-  protected RegistrationFlow flow;
+  protected ListUserFlow flow;
 
   /**
   * The empty constructor is
@@ -43,7 +43,7 @@ public class ListRegistration   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListRegistration () {
+  public ListUser() {
   }
 
   /**
@@ -63,7 +63,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed) 
+  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @JsonProperty("status")
   public Integer getStatus() {
@@ -71,7 +71,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed) 
+  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @SuppressWarnings("unused")
   public void setStatus(Integer status) {
@@ -95,19 +95,19 @@ public class ListRegistration   {
   }
 
   /**
-  * @return subscriber
+   * @return user
   */
-  @JsonProperty("subscriber")
-  public User getSubscriber() {
-    return subscriber;
+  @JsonProperty("user")
+  public User getUser() {
+    return user;
   }
 
   /**
-  * @param subscriber Set subscriber
+   * @param user Set user
   */
   @SuppressWarnings("unused")
-  public void setSubscriber(User subscriber) {
-    this.subscriber = subscriber;
+  public void setUser(User user) {
+    this.user = user;
   }
 
   /**
@@ -175,7 +175,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp} 
+  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})
   @JsonProperty("optInOrigin")
@@ -184,7 +184,7 @@ public class ListRegistration   {
   }
 
   /**
-  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp} 
+  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
   */
   @SuppressWarnings("unused")
   public void setOptInOrigin(String optInOrigin) {
@@ -195,7 +195,7 @@ public class ListRegistration   {
   * @return flow
   */
   @JsonProperty("flow")
-  public RegistrationFlow getFlow() {
+  public ListUserFlow getFlow() {
     return flow;
   }
 
@@ -203,7 +203,7 @@ public class ListRegistration   {
   * @param flow Set flow
   */
   @SuppressWarnings("unused")
-  public void setFlow(RegistrationFlow flow) {
+  public void setFlow(ListUserFlow flow) {
     this.flow = flow;
   }
 
@@ -216,18 +216,18 @@ public class ListRegistration   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListRegistration listRegistration = (ListRegistration) o;
-    return 
-            
-            Objects.equals(guid, listRegistration.guid) && Objects.equals(status, listRegistration.status) && Objects.equals(list, listRegistration.list) && Objects.equals(subscriber, listRegistration.subscriber) && Objects.equals(confirmationTime, listRegistration.confirmationTime) && Objects.equals(confirmationIp, listRegistration.confirmationIp) && Objects.equals(optInTime, listRegistration.optInTime) && Objects.equals(optInIp, listRegistration.optInIp) && Objects.equals(optInOrigin, listRegistration.optInOrigin) && Objects.equals(flow, listRegistration.flow);
+    ListUser listUser = (ListUser) o;
+    return
+
+      Objects.equals(guid, listUser.guid) && Objects.equals(status, listUser.status) && Objects.equals(list, listUser.list) && Objects.equals(user, listUser.user) && Objects.equals(confirmationTime, listUser.confirmationTime) && Objects.equals(confirmationIp, listUser.confirmationIp) && Objects.equals(optInTime, listUser.optInTime) && Objects.equals(optInIp, listUser.optInIp) && Objects.equals(optInOrigin, listUser.optInOrigin) && Objects.equals(flow, listUser.flow);
   }
 
   @Override
-  public int hashCode() { 
-    return Objects.hash(guid, status, list, subscriber, confirmationTime, confirmationIp, optInTime, optInIp, optInOrigin, flow);
+  public int hashCode() {
+    return Objects.hash(guid, status, list, user, confirmationTime, confirmationIp, optInTime, optInIp, optInOrigin, flow);
   }
 
-  @Override 
+  @Override
   public String toString() {
     return super.toString();
   }

@@ -1,14 +1,15 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 /**
- * A realm with the app Uri that it supports
+ * A realm with the app Uri that it supports 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RealmWithAppUris   {
@@ -105,17 +106,17 @@ public class RealmWithAppUris   {
       return false;
     }
     RealmWithAppUris realmWithAppUris = (RealmWithAppUris) o;
-    return
-
+    return 
+            
             Objects.equals(guid, realmWithAppUris.guid) && Objects.equals(name, realmWithAppUris.name) && Objects.equals(handle, realmWithAppUris.handle) && Objects.equals(appUris, realmWithAppUris.appUris);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(guid, name, handle, appUris);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString();
   }

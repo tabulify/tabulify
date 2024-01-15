@@ -13,7 +13,7 @@ import net.bytle.tower.eraldy.api.implementer.model.ListRegistrationValidationTo
 import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.ListRegistrationPostBody;
+import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.type.Booleans;
@@ -66,7 +66,7 @@ public class ListRegistrationValidationLetter {
     private final BMailTransactionalTemplate transactionalTemplate;
     private final TowerApp towerApp;
     private RoutingContext routingContext;
-    private ListRegistrationPostBody subscriptionPostObject;
+    private ListUserPostBody subscriptionPostObject;
     private ListItem listItem;
 
     public Config(TowerApp towerApp) {
@@ -122,7 +122,7 @@ public class ListRegistrationValidationLetter {
 
       String recipientName = null;
       User subscriber = new User();
-      subscriber.setEmail(subscriptionPostObject.getSubscriberEmail());
+      subscriber.setEmail(subscriptionPostObject.getUserEmail());
       try {
         recipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
       } catch (NotFoundException e) {
@@ -178,8 +178,8 @@ public class ListRegistrationValidationLetter {
 
     }
 
-    public Config withSubscriptionPostObject(ListRegistrationPostBody publicationSubscriptionPost) {
-      this.subscriptionPostObject = publicationSubscriptionPost;
+    public Config withSubscriptionPostObject(ListUserPostBody listUserPostBody) {
+      this.subscriptionPostObject = listUserPostBody;
       return this;
     }
 

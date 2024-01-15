@@ -8,7 +8,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.ValidationException;
-import net.bytle.exception.*;
+import net.bytle.exception.CastException;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NotFoundException;
+import net.bytle.exception.NullValueException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportFlow;
 import net.bytle.tower.eraldy.api.implementer.flow.ListImportJob;
@@ -20,7 +23,7 @@ import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
 import net.bytle.tower.eraldy.auth.AuthScope;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
-import net.bytle.tower.eraldy.objectProvider.ListRegistrationProvider;
+import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.RealmProvider;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
@@ -383,7 +386,7 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<String>> listRegisterConfirmationRegistrationGet(RoutingContext routingContext, String registrationGuid, String redirectUri) {
+  public Future<ApiResponse<String>> listUserConfirmationUserGet(RoutingContext routingContext, String registrationGuid, String redirectUri) {
     /**
      * Note that the redirection uri is not mandatory
      * and is used by the front end to redirect if present
@@ -394,34 +397,20 @@ public class ListApiImpl implements ListApi {
   public static final String REGISTRATION_EMAIL_SUBJECT_PREFIX = "User Registration: ";
 
   @Override
-  public Future<ApiResponse<ListRegistration>> listRegistrationGet(RoutingContext routingContext, String guid, String
-    listGuid, String subscriberEmail) {
+  public Future<ApiResponse<ListUser>> listUserIdentifierGet(RoutingContext routingContext, String guid) {
 
-    Future<ListRegistration> futureListRegistration;
-    ListRegistrationProvider listRegistrationProvider = apiApp.getListRegistrationProvider();
-    if (guid != null) {
-      futureListRegistration = listRegistrationProvider
-        .getRegistrationByGuid(guid);
-    } else if (listGuid != null || subscriberEmail != null) {
-      if (listGuid == null) {
-        throw IllegalArgumentExceptions.createWithInputNameAndValue("The listGuid should be given with a subscriberEmail", "listGuid", null);
-      }
-      if (subscriberEmail == null) {
-        throw IllegalArgumentExceptions.createWithInputNameAndValue("The subscriberEmail should be given with a listGuid", "subscriberEmail", null);
-      }
-      futureListRegistration = listRegistrationProvider
-        .getRegistrationByListGuidAndSubscriberEmail(listGuid, subscriberEmail);
-    } else {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("A registration guid or a listGuid and a subscriberEmail should be given", "guid", null);
-    }
-    return futureListRegistration
+
+    ListUserProvider listUserProvider = apiApp.getListRegistrationProvider();
+
+    return listUserProvider
+      .getRegistrationByGuid(guid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(subscription -> Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listRegistrationProvider.getApiMapper())));
+      .compose(subscription -> Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listUserProvider.getApiMapper())));
 
   }
 
   @Override
-  public Future<ApiResponse<List<RegistrationShort>>> listListRegistrationsGet(RoutingContext routingContext, String listIdentifier, Long pageId, Long pageSize, String searchTerm) {
+  public Future<ApiResponse<List<ListUserShort>>> listListUsersGet(RoutingContext routingContext, String listIdentifier, Long pageId, Long pageSize, String searchTerm) {
     RoutingContextWrapper routingContextWrapper = RoutingContextWrapper.createFrom(routingContext);
     try {
       listIdentifier = routingContextWrapper.getRequestPathParameter("listIdentifier").getString();
@@ -460,7 +449,7 @@ public class ListApiImpl implements ListApi {
 
 
   @Override
-  public Future<ApiResponse<String>> listRegistrationLetterConfirmationGet(RoutingContext routingContext, String
+  public Future<ApiResponse<String>> listUserLetterConfirmationGet(RoutingContext routingContext, String
     subscriberName, String publicationGuid, String publicationName, String publisherName, String
                                                                              publisherEmail, String
                                                                              publisherLogo) {
@@ -492,11 +481,11 @@ public class ListApiImpl implements ListApi {
   }
 
   @Override
-  public Future<ApiResponse<String>> listRegistrationLetterValidationGet(RoutingContext routingContext, String
+  public Future<ApiResponse<String>> listUserLetterValidationGet(RoutingContext routingContext, String
     listGuid, String subscriberName, String subscriberEmail, Boolean debug) {
 
-    ListRegistrationPostBody listRegistrationPostBody = new ListRegistrationPostBody();
-    listRegistrationPostBody.setSubscriberEmail(subscriberEmail);
+    ListUserPostBody listRegistrationPostBody = new ListUserPostBody();
+    listRegistrationPostBody.setUserEmail(subscriberEmail);
     listRegistrationPostBody.setListGuid(listGuid);
 
     Vertx vertx = routingContext.vertx();

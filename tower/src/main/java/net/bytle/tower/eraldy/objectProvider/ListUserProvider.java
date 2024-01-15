@@ -32,35 +32,36 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 /**
- * Manage the get/upsert of a {@link ListRegistration} object asynchronously
+ * Manage the get/upsert of a {@link ListUser} object asynchronously
  * <p>
- * They don't have any id as the table can be become huge
+ * The primary key is a compose of list and user pk
+ *
  */
-public class ListRegistrationProvider {
+public class ListUserProvider {
 
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(ListRegistrationProvider.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(ListUserProvider.class);
 
-  static final String TABLE_NAME = "realm_list_registration";
+  static final String TABLE_NAME = "realm_list_user";
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String REGISTRATION_PREFIX = "registration";
-  public static final String STATUS_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "status";
-  public static final String ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
-  public static final String LIST_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
-  public static final String USER_ID_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
-  private static final String GUID_PREFIX = "reg";
-  static final String REALM_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
-  public static final String REGISTERED_STATUS = "registered";
-  private static final String DATA_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + "data";
+  private static final String LIST_USER_PREFIX = "listuser";
+  public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status";
+  public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
+  public static final String USER_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + UserProvider.ID_COLUMN;
+  private static final String GUID_PREFIX = "liu";
+  static final String REALM_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + RealmProvider.ID_COLUMN;
+  public static final Integer OK_STATUS = 0;
+  private static final String DATA_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "data";
   private final EraldyApiApp apiApp;
-  private static final String CREATION_TIME_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-  private static final String MODIFICATION_COLUMN = REGISTRATION_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+  private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
+  private static final String MODIFICATION_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
   private final String registrationsBySearchTermSql;
   private final ObjectMapper apiMapper;
 
 
-  public ListRegistrationProvider(EraldyApiApp apiApp) {
+  public ListUserProvider(EraldyApiApp apiApp) {
 
     this.apiApp = apiApp;
     this.jdbcPool = apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
@@ -72,9 +73,9 @@ public class ListRegistrationProvider {
       .addMixIn(ListItem.class, ListItemMixin.class)
       .build();
 
-    // the sql too big to handle in Java
+    // the sql is too big to be inlined in Java
     String registrationPath = "/db/parameterized-statement/list-registration-users-by-search-term.sql";
-    this.registrationsBySearchTermSql = Strings.createFromResource(ListRegistrationProvider.class, registrationPath).toString();
+    this.registrationsBySearchTermSql = Strings.createFromResource(ListUserProvider.class, registrationPath).toString();
     if (this.registrationsBySearchTermSql == null) {
       throw new InternalException("The registration by search sql was not found in the resource path (" + registrationPath + ")");
     }
@@ -83,26 +84,26 @@ public class ListRegistrationProvider {
 
 
   /**
-   * @param listRegistration - the publication to make public
+   * @param listUser - the publication to make public
    * @return the publication without id, realm and with a guid
    */
-  public ListRegistration toPublicClone(ListRegistration listRegistration) {
+  public ListUser toPublicClone(ListUser listUser) {
 
-    return toClone(listRegistration, false);
+    return toClone(listUser, false);
   }
 
   /**
-   * @param listRegistration - the registration
+   * @param listUser - the registration
    * @param forTemplate      - if true, the data have default (for instance, the username would never be empty)
    */
-  private ListRegistration toClone(ListRegistration listRegistration, boolean forTemplate) {
+  private ListUser toClone(ListUser listUser, boolean forTemplate) {
 
-    ListRegistration listRegistrationClone = JsonObject.mapFrom(listRegistration).mapTo(ListRegistration.class);
+    ListUser listUserClone = JsonObject.mapFrom(listUser).mapTo(ListUser.class);
 
     /**
      * User
      */
-    User subscriberUser = listRegistration.getSubscriber();
+    User subscriberUser = listUser.getUser();
     if (subscriberUser != null) {
       User publicCloneWithoutRealm;
       UserProvider userProvider = this.apiApp.getUserProvider();
@@ -111,34 +112,34 @@ public class ListRegistrationProvider {
       } else {
         publicCloneWithoutRealm = userProvider.toTemplateCloneWithoutRealm(subscriberUser);
       }
-      listRegistrationClone.setSubscriber(publicCloneWithoutRealm);
+      listUserClone.setUser(publicCloneWithoutRealm);
     }
 
     /**
      * List
      */
     ListProvider listProvider = this.apiApp.getListProvider();
-    ListItem listItem = listRegistration.getList();
+    ListItem listItem = listUser.getList();
     if (!forTemplate) {
       listItem = listProvider.toPublicClone(listItem);
     } else {
       listItem = listProvider.toTemplateClone(listItem);
     }
-    listRegistrationClone.setList(listItem);
+    listUserClone.setList(listItem);
 
 
-    return listRegistrationClone;
+    return listUserClone;
   }
 
 
   /**
-   * @param listRegistration the registration to upsert
+   * @param listUser the registration to upsert
    * @return the realm with the id
    */
-  public Future<ListRegistration> upsertRegistration(ListRegistration listRegistration) {
+  public Future<ListUser> upsertListUser(ListUser listUser) {
 
 
-    User subscriberUser = listRegistration.getSubscriber();
+    User subscriberUser = listUser.getUser();
     if (subscriberUser == null) {
       return Future.failedFuture(new InternalError("The subscriber user is mandatory when inserting a publication subscription"));
     }
@@ -146,7 +147,7 @@ public class ListRegistrationProvider {
     if (subscriberId == null) {
       throw new InternalException("The subscriber id of a user object should not be null");
     }
-    ListItem listItem = listRegistration.getList();
+    ListItem listItem = listUser.getList();
     if (listItem == null) {
       return Future.failedFuture(new InternalError("The list is mandatory when upserting a registration"));
     }
@@ -168,18 +169,18 @@ public class ListRegistrationProvider {
      * (Even if this case it had been possible
      * because there is no object id)
      */
-    return updateRegistrationAndGetRowSet(listRegistration)
+    return updateRegistrationAndGetRowSet(listUser)
       .compose(rowSet -> {
         if (rowSet.rowCount() == 0) {
-          return insertRegistration(listRegistration);
+          return insertRegistration(listUser);
         }
-        this.computeGuid(listRegistration);
-        return Future.succeededFuture(listRegistration);
+        this.computeGuid(listUser);
+        return Future.succeededFuture(listUser);
       });
 
   }
 
-  private Future<RowSet<Row>> updateRegistrationAndGetRowSet(ListRegistration listRegistration) {
+  private Future<RowSet<Row>> updateRegistrationAndGetRowSet(ListUser listUser) {
 
     String sql = "UPDATE \n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + "\n" +
@@ -195,17 +196,17 @@ public class ListRegistrationProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        listRegistration.getStatus(),
-        this.getDatabaseObject(listRegistration),
+        listUser.getStatus(),
+        this.getDatabaseObject(listUser),
         DateTimeUtil.getNowUtc(),
-        listRegistration.getList().getRealm().getLocalId(),
-        listRegistration.getList().getLocalId(),
-        listRegistration.getSubscriber().getLocalId()
+        listUser.getList().getRealm().getLocalId(),
+        listUser.getList().getLocalId(),
+        listUser.getUser().getLocalId()
       ))
       .onFailure(e -> LOGGER.error("Registration Update Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e));
   }
 
-  public Future<ListRegistration> insertRegistration(ListRegistration listRegistration) {
+  public Future<ListUser> insertRegistration(ListUser listUser) {
 
     String sql = "INSERT INTO\n" +
       JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " (\n" +
@@ -222,23 +223,23 @@ public class ListRegistrationProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(Tuple.of(
-        listRegistration.getList().getRealm().getLocalId(),
-        listRegistration.getList().getLocalId(),
-        listRegistration.getSubscriber().getLocalId(),
-        this.getDatabaseObject(listRegistration),
-        REGISTERED_STATUS,
+        listUser.getList().getRealm().getLocalId(),
+        listUser.getList().getLocalId(),
+        listUser.getUser().getLocalId(),
+        this.getDatabaseObject(listUser),
+        OK_STATUS,
         DateTimeUtil.getNowUtc()
       ))
       .onFailure(e -> LOGGER.error("Registration Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
       .compose(rows -> {
-        this.computeGuid(listRegistration);
-        return Future.succeededFuture(listRegistration);
+        this.computeGuid(listUser);
+        return Future.succeededFuture(listUser);
       });
 
   }
 
-  private JsonObject getDatabaseObject(ListRegistration listRegistration) {
-    JsonObject data = JsonObject.mapFrom(listRegistration);
+  private JsonObject getDatabaseObject(ListUser listUser) {
+    JsonObject data = JsonObject.mapFrom(listUser);
     data.remove("list");
     data.remove("subscriber");
     data.remove(Guid.GUID);
@@ -246,7 +247,7 @@ public class ListRegistrationProvider {
   }
 
 
-  private Future<ListRegistration> getRegistrationFromRow(Row row) {
+  private Future<ListUser> getRegistrationFromRow(Row row) {
 
     Long realmId = row.getLong(REALM_COLUMN);
     Future<Realm> realmFuture = this.apiApp.getRealmProvider()
@@ -270,32 +271,32 @@ public class ListRegistrationProvider {
           .compose(mapper -> {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
-            ListRegistration listRegistration = Json.decodeValue(jsonAppData.toBuffer(), ListRegistration.class);
+            ListUser listUser = Json.decodeValue(jsonAppData.toBuffer(), ListUser.class);
 
             ListItem listItemResult = mapper.resultAt(0);
             User subscriberResult = mapper.resultAt(1);
 
-            listRegistration.setList(listItemResult);
-            listRegistration.setSubscriber(subscriberResult);
+            listUser.setList(listItemResult);
+            listUser.setUser(subscriberResult);
 
 //        LocalDateTime creationTime = row.getOffsetDateTime(SUBSCRIPTION_PREFIX + COLUMN_PART_SEP + CREATION_TIME);
 //        subscription.setCreationTime(creationTime);
 
-            return Future.succeededFuture(listRegistration);
+            return Future.succeededFuture(listUser);
           });
       });
 
 
   }
 
-  public Future<ListRegistration> getRegistrationByListAndUser(ListItem listItem, User user) {
+  public Future<ListUser> getRegistrationByListAndUser(ListItem listItem, User user) {
     if (!Objects.equals(listItem.getRealm().getLocalId(), user.getRealm().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
     return getRegistrationByLocalIds(listItem.getLocalId(), user.getLocalId(), listItem.getRealm().getLocalId());
   }
 
-  private Future<ListRegistration> getRegistrationByLocalIds(Long listId, Long userId, Long realmId) {
+  private Future<ListUser> getRegistrationByLocalIds(Long listId, Long userId, Long realmId) {
     String sql = "SELECT * " +
       "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
@@ -327,7 +328,7 @@ public class ListRegistrationProvider {
       });
   }
 
-  public Future<ListRegistration> getRegistrationByGuid(String registrationGuid) {
+  public Future<ListUser> getRegistrationByGuid(String registrationGuid) {
 
     Guid guidObject;
     try {
@@ -349,8 +350,8 @@ public class ListRegistrationProvider {
   }
 
 
-  public Future<java.util.List<RegistrationShort>> getRegistrations(String listGuid,
-                                                                    Long pageId, Long pageSize, String searchTerm) {
+  public Future<java.util.List<ListUserShort>> getRegistrations(String listGuid,
+                                                                Long pageId, Long pageSize, String searchTerm) {
     Guid guid;
     try {
       guid = apiApp.getListProvider().getGuidObject(listGuid);
@@ -414,28 +415,28 @@ public class ListRegistrationProvider {
       .onFailure(FailureStatic::failFutureWithTrace)
       .compose(registrationRows -> {
 
-        java.util.List<RegistrationShort> futureSubscriptions = new ArrayList<>();
+        java.util.List<ListUserShort> futureSubscriptions = new ArrayList<>();
         if (registrationRows.size() == 0) {
           return Future.succeededFuture(futureSubscriptions);
         }
 
         for (Row row : registrationRows) {
 
-          RegistrationShort registrationShort = new RegistrationShort();
+          ListUserShort listUserShort = new ListUserShort();
           String userIdAliasInQuery = "user_id";
           Long userId = row.getLong(userIdAliasInQuery);
           String guidString = apiApp.createGuidStringFromRealmAndTwoObjectId(GUID_PREFIX, realmId, listId, userId).toString();
-          registrationShort.setGuid(guidString);
+          listUserShort.setGuid(guidString);
           String userGuid = apiApp.getUserProvider().createUserGuid(realmId, userId).toString();
-          registrationShort.setSubscriberGuid(userGuid);
+          listUserShort.setUserGuid(userGuid);
           String userEmailAliasInQuery = "user_email";
           String subscriberEmail = row.getString(userEmailAliasInQuery);
-          registrationShort.setSubscriberEmail(subscriberEmail);
+          listUserShort.setUserEmail(subscriberEmail);
           LocalDateTime localDateTime = row.getLocalDateTime(CREATION_TIME_COLUMN);
-          registrationShort.setConfirmationTime(localDateTime);
+          listUserShort.setConfirmationTime(localDateTime);
           Integer registrationStatus = row.getInteger(STATUS_COLUMN);
-          registrationShort.setStatus(registrationStatus);
-          futureSubscriptions.add(registrationShort);
+          listUserShort.setStatus(registrationStatus);
+          futureSubscriptions.add(listUserShort);
 
         }
         return Future.succeededFuture(futureSubscriptions);
@@ -443,7 +444,7 @@ public class ListRegistrationProvider {
       });
   }
 
-  public Future<ListRegistration> getRegistrationByListGuidAndSubscriberEmail(String listGuid, String subscriberEmail) {
+  public Future<ListUser> getRegistrationByListGuidAndSubscriberEmail(String listGuid, String subscriberEmail) {
     Guid listGuidObject;
     try {
       listGuidObject = apiApp.getListProvider().getGuidObject(listGuid);
@@ -483,23 +484,23 @@ public class ListRegistrationProvider {
       });
   }
 
-  private void computeGuid(ListRegistration listRegistration) {
-    if (listRegistration.getGuid() != null) {
+  private void computeGuid(ListUser listUser) {
+    if (listUser.getGuid() != null) {
       return;
     }
     String guid = apiApp.createGuidStringFromRealmAndTwoObjectId(
         GUID_PREFIX,
-        listRegistration.getList().getRealm(),
-        listRegistration.getList().getLocalId(),
-        listRegistration.getSubscriber().getLocalId()
+        listUser.getList().getRealm(),
+        listUser.getList().getLocalId(),
+        listUser.getUser().getLocalId()
       )
       .toString();
-    listRegistration.setGuid(guid);
+    listUser.setGuid(guid);
   }
 
 
-  public ListRegistration toTemplateClone(ListRegistration listRegistration) {
-    return toClone(listRegistration, true);
+  public ListUser toTemplateClone(ListUser listUser) {
+    return toClone(listUser, true);
   }
 
   public ObjectMapper getApiMapper() {

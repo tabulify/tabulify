@@ -197,9 +197,9 @@ public class ListProvider {
             Long realmId = listItem.getRealm().getLocalId();
             Long listId = listItem.getLocalId();
             final String createListRegistrationPartition =
-              "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListRegistrationProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
-                "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListRegistrationProvider.TABLE_NAME + "\n" +
-                "        (" + ListRegistrationProvider.REALM_COLUMN + ", " + ListRegistrationProvider.LIST_ID_COLUMN + ")\n" +
+              "CREATE TABLE IF NOT EXISTS " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "_" + realmId + "_" + listId + "\n" +
+                "    partition of " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + "\n" +
+                "        (" + ListUserProvider.REALM_COLUMN + ", " + ListUserProvider.LIST_ID_COLUMN + ")\n" +
                 "        FOR VALUES FROM (" + realmId + "," + listId + ") TO (" + realmId + "," + (listId + 1) + " )";
             return sqlConnection
               .preparedQuery(createListRegistrationPartition)
@@ -497,7 +497,7 @@ public class ListProvider {
         "SELECT list.list_id, list.list_handle, app.app_uri, count(registration.registration_user_id) subscriber_count\n" +
           "FROM " +
           JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME + " list \n" +
-          " LEFT JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListRegistrationProvider.TABLE_NAME + " registration\n" +
+          " LEFT JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + ListUserProvider.TABLE_NAME + " registration\n" +
           "    on list.list_id = registration.registration_list_id\n" +
           " JOIN " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + AppProvider.TABLE_NAME + " app\n" +
           "    on list.list_owner_app_id = app.app_id\n" +

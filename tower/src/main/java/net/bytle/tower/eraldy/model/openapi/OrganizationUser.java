@@ -1,9 +1,16 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
+import java.net.URI;
+import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+
+import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.model.openapi.Realm;
+import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
  * A user in the organization They are the users of the Eraldy realm that own Realms

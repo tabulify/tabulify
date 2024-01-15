@@ -115,6 +115,9 @@ components:
         userGuid:
           type: string
           description: The user guid (may be null)
+        listUserGuid:
+          type: string
+          description: The list user guid (may be null if there is an error)
         statusCode:
           description: "The status code"
           type: integer
@@ -457,7 +460,7 @@ paths:
       security: [] # open
       requestBody:
         required: true
-        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListRegistrationPostBody'
+        $ref: './eraldy-common-openapi.yaml#/components/requestBodies/ListUserPostBody'
       responses:
         '200':
           description: "Email was send for validation"
@@ -1303,49 +1306,35 @@ paths:
                   $ref: './eraldy-common-openapi.yaml#/components/schemas/ListSummary'
         '403':
           description: "Not authenticated"
-  /list/registration:
+  /list/user/{listUserIdentifier}:
     get:
-      operationId: listRegistrationGet
-      summary: "Get a registration object"
+      operationId: listUserIdentifierGet
+      summary: "Get a user in a list"
       description: |
-        Get a registration
-          * by id with the registrationGuid
-          * by name with the subscriberEmail and listGuid
+        Get a list user with the list user Guid
       tags:
         - list
       security:
-        - apiKeyAuth: []
-        - cookieAuth: []
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
       parameters:
-        - name: guid
-          description: "The guid of the registration"
-          in: query
+        - name: listUserIdentifier
+          description: "The guid of the user in the list"
+          in: path
+          required: true
           schema:
             type: string
-            example: "xjkkLmi"
-        - name: listGuid
-          description: "The list guid of the registration"
-          in: query
-          schema:
-            type: string
-            example: "xjkkLmi"
-        - name: subscriberEmail
-          description: "The email of the subscriber"
-          in: query
-          schema:
-            type: string
-            format: email
-            example: "joe@doe.com"
+            example: "liu-xjkkLmi"
       responses:
         '200':
-          description: "The registration"
+          description: "The list user"
           content:
             application/json:
               schema:
-                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListRegistration'
-  /list/registration/letter/confirmation:
+                $ref: './eraldy-common-openapi.yaml#/components/schemas/ListUser'
+  /list/user/letter/confirmation:
     get:
-      operationId: listRegistrationLetterConfirmationGet
+      operationId: listUserLetterConfirmationGet
       deprecated: true
       summary: |
         Deprecated - The front end is now separated from the API
@@ -1359,8 +1348,8 @@ paths:
       tags:
         - list
       security:
-        - apiKeyAuth: []
-        - cookieAuth: []
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
       parameters:
         - name: subscriberName
           description: "The name of the subscriber"
@@ -1407,16 +1396,16 @@ paths:
             text/html:
               schema:
                 type: string
-  /list/registration/letter/validation:
+  /list/user/letter/validation:
     get:
-      operationId: listRegistrationLetterValidationGet
+      operationId: listUserLetterValidationGet
       summary: |
         Return the validation letter with a validation link as send by email.
       tags:
         - list
       security:
-        - apiKeyAuth: []
-        - cookieAuth: []
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
       parameters:
         - name: listGuid
           description: "The list guid"
@@ -1451,16 +1440,16 @@ paths:
               schema:
                 type: string
   # callback
-  /list/register/confirmation/{registration_guid}:
+  /list/user/confirmation/{listUserIdentifier}:
     get:
-      operationId: "listRegisterConfirmationRegistrationGet"
+      operationId: "listUserConfirmationUserGet"
       summary: "Shows a confirmation page for the registration"
       tags:
         - list
       security: [ ]
       parameters:
-        - name: "registration_guid"
-          description: The registration guid
+        - name: "listUserIdentifier"
+          description: The list user identifier (guid)
           required: true
           in: path
           schema:
@@ -1608,15 +1597,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListImportJobStatus'
-  /list/{listIdentifier}/registrations:
+  /list/{listIdentifier}/users:
     get:
-      operationId: listListRegistrationsGet
-      summary: "List the registrations for a list"
+      operationId: listListUsersGet
+      summary: "List the users for a list"
       tags:
         - list
       security:
-        - apiKeyAuth: []
-        - cookieAuth: []
+        - apiKeyAuth: [ ]
+        - cookieAuth: [ ]
       parameters:
         - name: listIdentifier
           description: "The identifier of the list (guid)"
@@ -1653,4 +1642,4 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: './eraldy-common-openapi.yaml#/components/schemas/RegistrationShort'
+                  $ref: './eraldy-common-openapi.yaml#/components/schemas/ListUserShort'

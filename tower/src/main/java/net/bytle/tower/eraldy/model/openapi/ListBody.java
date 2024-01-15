@@ -1,12 +1,11 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
-
 /**
- * List creation and update  If the communication channel should be personal, the publisher (guid / email) can be given.
+ * List creation and update  If the communication channel should be personal, the publisher (guid / email) can be given. 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListBody   {
@@ -143,11 +142,11 @@ public class ListBody   {
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(listHandle);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return listHandle;
   }

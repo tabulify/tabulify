@@ -1,9 +1,11 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Objects;
+import net.bytle.tower.eraldy.model.openapi.App;
+import net.bytle.tower.eraldy.model.openapi.Organization;
+import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
  * A realm.  It identifies a protection space where the user and their credentials are stored.  * In a marketing level, it represents a brand. When people log in, they see the realm logo. * In a web/dns level, it would be a domain name (and apps would be subdomain) * In a security level, this is the authentication realm. * In an infrastructure level, this is called a tenant.
@@ -53,7 +55,7 @@ public class Realm   {
   }
 
   /**
-  * @return guid The public id (derived from the database id)
+   * @return guid The public id (derived from the database id)
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -61,7 +63,7 @@ public class Realm   {
   }
 
   /**
-  * @param guid The public id (derived from the database id)
+   * @param guid The public id (derived from the database id)
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -117,7 +119,7 @@ public class Realm   {
   }
 
   /**
-  * @return handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
+   * @return handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @JsonProperty("handle")
   public String getHandle() {
@@ -125,7 +127,7 @@ public class Realm   {
   }
 
   /**
-  * @param handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
+   * @param handle The handle is a name unique identifier. It's used as:   - basic authentication: \"WWW-Authenticate: Basic realm=\"WallyWorld\"   - database schema, dns name
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {

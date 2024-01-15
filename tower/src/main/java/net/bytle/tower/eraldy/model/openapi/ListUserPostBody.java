@@ -10,7 +10,7 @@ import java.util.Objects;
  * The data needed to register a user to a list Note that a user email or a user id is required (OpenAPI cannot describe that in a elegant way) a user email or id is mandatory a list id or guid is mandatory
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListRegistrationPostBody   {
+public class ListUserPostBody {
 
 
   protected String subscriberEmail;
@@ -25,14 +25,14 @@ public class ListRegistrationPostBody   {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListRegistrationPostBody () {
+  public ListUserPostBody() {
   }
 
   /**
   * @return subscriberEmail The email of the user that want to subscribe
   */
   @JsonProperty("subscriberEmail")
-  public String getSubscriberEmail() {
+  public String getUserEmail() {
     return subscriberEmail;
   }
 
@@ -40,7 +40,7 @@ public class ListRegistrationPostBody   {
   * @param subscriberEmail The email of the user that want to subscribe
   */
   @SuppressWarnings("unused")
-  public void setSubscriberEmail(String subscriberEmail) {
+  public void setUserEmail(String subscriberEmail) {
     this.subscriberEmail = subscriberEmail;
   }
 
@@ -85,9 +85,9 @@ public class ListRegistrationPostBody   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ListRegistrationPostBody listRegistrationPostBody = (ListRegistrationPostBody) o;
+    ListUserPostBody listUserPostBody = (ListUserPostBody) o;
     return
-            Objects.equals(subscriberEmail, listRegistrationPostBody.subscriberEmail) && Objects.equals(listGuid, listRegistrationPostBody.listGuid) && Objects.equals(redirectUri, listRegistrationPostBody.redirectUri);
+      Objects.equals(subscriberEmail, listUserPostBody.subscriberEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
 
   }
 
