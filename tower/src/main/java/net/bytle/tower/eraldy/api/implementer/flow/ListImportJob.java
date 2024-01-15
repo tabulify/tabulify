@@ -53,7 +53,7 @@ public class ListImportJob {
    */
   private Integer executionStatusCode = TO_PROCESS_STATUS_CODE;
   private final boolean updateExistingUser;
-  private List<ListImportJobRow> resultImportJobRows = new ArrayList<>();
+  private final List<ListImportJobRow> resultImportJobRows = new ArrayList<>();
 
   public ListImportJob(Builder builder) {
     this.listImportFlow = builder.listImportFlow;

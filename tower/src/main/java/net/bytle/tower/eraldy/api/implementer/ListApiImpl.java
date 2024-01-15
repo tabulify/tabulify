@@ -26,8 +26,6 @@ import net.bytle.tower.util.Guid;
 import net.bytle.type.Casts;
 import net.bytle.type.Strings;
 import net.bytle.vertx.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +36,6 @@ import java.util.NoSuchElementException;
 
 public class ListApiImpl implements ListApi {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ListApiImpl.class);
   private final EraldyApiApp apiApp;
 
   public ListApiImpl(TowerApp towerApp) {

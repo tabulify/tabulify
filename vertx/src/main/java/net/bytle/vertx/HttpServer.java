@@ -1,5 +1,6 @@
 package net.bytle.vertx;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -11,6 +12,9 @@ import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents an HTTP server:
@@ -26,6 +30,11 @@ public class HttpServer implements AutoCloseable {
   private BasicAuthHandler basicAuthenticator;
   private PersistentLocalSessionStore persistentSessionStore;
   private BodyHandler bodyHandler;
+
+  /**
+   * The dynamic health check endpoint
+   */
+  private HttpServerHealth httpServerHealth;
 
 
   public HttpServer(builder builder) {
@@ -50,7 +59,7 @@ public class HttpServer implements AutoCloseable {
    * (in email, in oauth callback, ...)
    */
 
-  public io.vertx.core.http.HttpServer buildHttpServer() {
+  public Future<io.vertx.core.http.HttpServer> buildHttpServer() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
@@ -65,7 +74,23 @@ public class HttpServer implements AutoCloseable {
         )
         .setSsl(true);
     }
-    return this.builder.server.getVertx().createHttpServer(options);
+    io.vertx.core.http.HttpServer httpServer = this.builder.server.getVertx().createHttpServer(options);
+    return Future.all(this.futuresToExecuteOnBuild)
+      .compose(asyncResult -> {
+        if (asyncResult.failed()) {
+          return Future.failedFuture(new InternalException("A future failed while building the http server", asyncResult.cause()));
+        }
+        /**
+         * Health Check
+         * At the end because the services can register
+         * during the build
+         * (The argument is passed by reference, it may then also work at the beginning?)
+         */
+        if (this.builder.enableHealthCheck) {
+          this.httpServerHealth = new HttpServerHealth(this);
+        }
+        return Future.succeededFuture(httpServer);
+      });
   }
 
   public int getPublicPort() {
@@ -152,6 +177,14 @@ public class HttpServer implements AutoCloseable {
     return this.bodyHandler;
   }
 
+  /**
+   * Future to execute on build
+   */
+  List<Future<?>> futuresToExecuteOnBuild = new ArrayList<>();
+
+  public void addFutureToExecuteOnBuild(Future<?> future) {
+    futuresToExecuteOnBuild.add(future);
+  }
 
   public static class builder {
 
@@ -162,9 +195,13 @@ public class HttpServer implements AutoCloseable {
     private boolean enableFailureHandler = true;
     private boolean enableMetrics = true;
     private boolean fakeErrorHandler = false;
-    private boolean healthCheck = false;
+
     final Server server;
     private boolean enablePersistentSessionStore = false;
+    /**
+     * Enable the Health Check end point
+     */
+    private boolean enableHealthCheck = true;
 
 
     public builder(Server server) {
@@ -201,12 +238,6 @@ public class HttpServer implements AutoCloseable {
     public HttpServer.builder addFakeErrorHandler() {
       this.fakeErrorHandler = true;
       return this;
-    }
-
-    public HttpServer.builder addHealthCheck() {
-      this.healthCheck = true;
-      return this;
-
     }
 
     /**
@@ -279,10 +310,6 @@ public class HttpServer implements AutoCloseable {
          */
         router.get(ErrorFakeHandler.URI_PATH).handler(new ErrorFakeHandler());
       }
-      if (this.healthCheck) {
-        HealthChecksRouter.addHealtChecksToRouter(router, this.server.getVertx(), this);
-        HealthChecksEventBus.registerHandlerToEventBus(vertx);
-      }
       return router;
     }
 
@@ -303,5 +330,9 @@ public class HttpServer implements AutoCloseable {
       return this;
     }
 
+    public HttpServer.builder addHealthCheck() {
+      this.enableHealthCheck = true;
+      return this;
+    }
   }
 }

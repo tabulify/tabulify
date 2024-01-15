@@ -150,7 +150,7 @@ public class SmtpVerticle extends AbstractVerticle {
                       return;
                     }
 
-                    httpServer.buildHttpServer()
+                    httpServer.buildHttpServer(initFutures)
                       .requestHandler(httpServer.getRouter())
                       .listen(ar -> {
                         if (ar.succeeded()) {

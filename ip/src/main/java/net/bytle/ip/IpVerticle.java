@@ -68,10 +68,10 @@ public class IpVerticle extends AbstractVerticle {
 
             EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
             ipApp = IpApp.createForDomain(eraldyDomain);
-            vertx.executeBlocking(() -> ipApp.mount())
+            httpServer.addFutureToExecuteOnBuild(ipApp.mount());
+            httpServer.buildHttpServer()
               .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-              .onSuccess(Void -> httpServer.buildHttpServer()
-                .requestHandler(httpServer.getRouter())
+              .onSuccess(vertxHttpServer -> vertxHttpServer
                 .listen(ar -> {
                   if (ar.succeeded()) {
                     LOGGER.info("HTTP server running on port " + ar.result().actualPort());

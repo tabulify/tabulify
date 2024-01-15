@@ -3,6 +3,7 @@ package net.bytle.tower.eraldy.api.implementer.flow;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.healthchecks.Status;
 import io.vertx.ext.web.FileUpload;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
@@ -11,10 +12,7 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
 import net.bytle.tower.eraldy.model.openapi.ListItem;
 import net.bytle.type.Strings;
-import net.bytle.vertx.ConfigAccessor;
-import net.bytle.vertx.Server;
-import net.bytle.vertx.TowerFailureException;
-import net.bytle.vertx.TowerFailureTypeEnum;
+import net.bytle.vertx.*;
 import net.bytle.vertx.flow.WebFlow;
 import net.bytle.vertx.resilience.EmailAddressValidator;
 
@@ -36,10 +34,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
 
   private final EraldyApiApp apiApp;
   private final Path runtimeDataDirectory;
-  /**
-   * The number of import jobs executing at a time
-   */
-  private final Integer executionJobCount;
+
   private final Vertx vertx;
   /**
    * If a validation fail with a fatal error
@@ -62,10 +57,15 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
    * the jobs.
    */
   private final Integer executionPeriodInMilliSec;
+  private final int purgeDelay;
   /**
    * The last execution time to check that the job execution is still healthy
    */
   private LocalDateTime executionLastTime;
+  /**
+   * The last purge time to check that the job purge is still healthy
+   */
+  private LocalDateTime purgeLastTime;
 
 
   public EmailAddressValidator getEmailAddressValidator() {
@@ -174,18 +174,82 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   public ListImportFlow(EraldyApiApp apiApp) {
     this.apiApp = apiApp;
     Server server = apiApp.getApexDomain().getHttpServer().getServer();
-    server.addCloseableService(this);
+
+    /**
+     * Config
+     */
     this.vertx = server.getVertx();
     this.runtimeDataDirectory = this.apiApp.getRuntimeDataDirectory().resolve("list-import");
     Fs.createDirectoryIfNotExists(this.runtimeDataDirectory);
     ConfigAccessor configAccessor = server.getConfigAccessor();
-    this.executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
-    this.executionJobCount = configAccessor.getInteger("list.import.execution.job.count", 1);
     this.rowValidationRetryCount = configAccessor.getInteger("list.import.execution.row.validation.retry.count", 3);
+
+    /**
+     * Close running job when the app is stopped
+     */
+    server.addCloseableService(this);
+
+    /**
+     * Timer Queue Execution
+     */
+    this.executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
+    this.executionLastTime = LocalDateTime.now();
     this.scheduleNextJob();
-    int oneDay = 24 * 60 * 60000;
-    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", oneDay);
+
+    /**
+     * Purge
+     */
+    purgeDelay = 24 * 60 * 60000;
+    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", purgeDelay);
     vertx.setPeriodic(6000, purgeHistoryDelay, jobId -> purgeJobHistory());
+
+    /**
+     * Health Checks
+     */
+    server.getServerHealthCheck()
+      .register("list-import-execution", promise -> {
+        boolean isBefore = LocalDateTime.now()
+          .minus(this.executionPeriodInMilliSec, TimeUnit.MILLISECONDS.toChronoUnit())
+          .isBefore(this.executionLastTime);
+        Status status;
+        JsonObject data = new JsonObject();
+        /**
+         * Bug? even if we have added the LocalDateTime Jackson Time module, we get an error
+         * {@link JacksonMapperManager}
+         * We do it manually then
+         */
+        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
+        data.put("execution-last-time", executionsLastTimeString);
+        if (isBefore) {
+          status = Status.OK(data);
+        } else {
+          data.put("message", "The last time execution date is too old");
+          status = Status.KO(data);
+        }
+        promise.complete(status);
+      })
+      .register("list-import-purge", promise -> {
+        boolean isBefore = LocalDateTime.now()
+          .minus(this.purgeDelay, TimeUnit.MILLISECONDS.toChronoUnit())
+          .isBefore(this.purgeLastTime);
+        Status status;
+        JsonObject data = new JsonObject();
+        /**
+         * Bug? even if we have added the LocalDateTime Jackson Time module, we get an error
+         * {@link JacksonMapperManager}
+         * We do it manually then
+         */
+        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.purgeLastTime);
+        data.put("purge-last-time", executionsLastTimeString);
+        if (isBefore) {
+          status = Status.OK(data);
+        } else {
+          data.put("message", "The last time purge date is too old");
+          status = Status.KO(data);
+        }
+        promise.complete(status);
+      });
+
     /**
      * The number of files created by job import
      * - The original file
@@ -195,7 +259,6 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     int numberOfFilesToPurgeByJob = 3;
     this.maxJobHistoryByList = 10 * numberOfFilesToPurgeByJob;
     this.maxJobHistoryRetentionInDays = 30;
-
   }
 
   private void scheduleNextJob() {
@@ -204,6 +267,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
 
   private void purgeJobHistory() {
 
+    this.purgeLastTime = LocalDateTime.now();
     List<Path> firstLevelChildren = Fs.getChildrenFiles(this.runtimeDataDirectory);
     Instant maxRetentionTime = Instant.now().minus(Duration.ofDays(this.maxJobHistoryRetentionInDays));
 

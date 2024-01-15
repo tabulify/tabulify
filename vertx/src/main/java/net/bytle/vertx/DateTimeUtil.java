@@ -19,10 +19,13 @@ public class DateTimeUtil {
     return DateTimeFormatter.ISO_LOCAL_DATE_TIME;
   }
 
+  static public String LocalDateTimetoString(LocalDateTime localDateTime) {
+    return localDateTime.format(defaultFormat());
+  }
   static public class LocalDateTimeSerializer extends JsonSerializer<LocalDateTime> {
     @Override
     public void serialize(LocalDateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-      gen.writeString(value.format(defaultFormat()));
+      gen.writeString(DateTimeUtil.LocalDateTimetoString(value));
     }
 
   }

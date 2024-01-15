@@ -1,7 +1,6 @@
 package net.bytle.tower;
 
 
-import com.google.common.collect.Lists;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,8 +17,6 @@ import net.bytle.tower.util.GlobalUtilityObjectsCreation;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.List;
 
 /**
  * <a href="https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients">Doc</a>
@@ -92,7 +89,6 @@ public class VerticleApi extends AbstractVerticle {
               .setBehindProxy() // enable proxy forward
               .enableFailureHandler() // enable failure handler
               .addFakeErrorHandler()
-              .addHealthCheck()
               .enablePersistentSessionStore()
               .build();
           } catch (IllegalConfiguration e) {
@@ -120,40 +116,33 @@ public class VerticleApi extends AbstractVerticle {
           BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
 
           /**
-           * Future
+           * Future to be executed before the HTTP server listen
            */
           Future<Void> publicApiFuture = apiApp.mount();
+          httpServer.addFutureToExecuteOnBuild(publicApiFuture);
           Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm(); // Eraldy creation
+          httpServer.addFutureToExecuteOnBuild(eraldyRealm);
+          if (Env.IS_DEV) {
+            // Add the realm for datacadamia for test/purpose only
+            Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
+            httpServer.addFutureToExecuteOnBuild(realm);
+          }
 
           /**
            * Add the scheduled task
            */
           SqlAnalytics.create(eraldyDomain);
 
-          List<Future<?>> initFutures = Lists.newArrayList(publicApiFuture, eraldyRealm);
-
-          if (Env.IS_DEV) {
-            /**
-             * Add the realm for datacadamia for test/purpose only
-             */
-            Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
-            initFutures.add(realm);
-          }
-
           /**
            * Create the server
            * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
            *  0.0.0.0 means listen on all available addresses
            */
-
-          Future.join(initFutures)
+          httpServer
+            .buildHttpServer()
             .onFailure(FailureStatic::failFutureWithTrace)
-            .onSuccess(apiFutureResult -> httpServer.buildHttpServer()
-
-              /**
-               * https://vertx.io/docs/vertx-core/java/#_handling_requests
-               */
-              .requestHandler(router)
+            .onSuccess(vertxHttpServer -> vertxHttpServer
+              .requestHandler(router) // https://vertx.io/docs/vertx-core/java/#_handling_requests
               .listen(ar -> {
                 if (ar.succeeded()) {
                   LOGGER.info("API HTTP server running on port " + ar.result().actualPort());

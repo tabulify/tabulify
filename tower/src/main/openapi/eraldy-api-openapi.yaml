@@ -579,17 +579,6 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
-  /ping:
-    get:
-      operationId: "pingGet"
-      summary: A health check endpoint
-      # tag is the prefix of the API
-      security: [] # open
-      tags:
-        - health
-      responses:
-        '200':
-          description: API health status
   /realm/{realmIdentifier}/users:
     get:
       operationId: realmRealmUsersGet

@@ -27,6 +27,7 @@ public class Server implements AutoCloseable {
 
   static Logger LOGGER = LogManager.getLogger(Server.class);
 
+
   /**
    * Listen from all hostname
    * On ipv4 and Ipv6.
@@ -221,6 +222,16 @@ public class Server implements AutoCloseable {
     this.closeableServices.add(autoCloseable);
   }
 
+
+  /**
+   * @return a health check object where services/object can register health checks
+   */
+  public ServerHealth getServerHealthCheck() {
+
+    return this.builder.serverHealth;
+
+  }
+
   public static class builder {
     private final String name;
     private final Vertx vertx;
@@ -241,6 +252,7 @@ public class Server implements AutoCloseable {
     private String smtpClientUserAgentName = null;
     private boolean enableMapdb = false;
     private boolean enableDnsClient = false;
+    private ServerHealth serverHealth;
 
 
     public builder(String name, Vertx vertx, ConfigAccessor configAccessor) {
@@ -297,6 +309,24 @@ public class Server implements AutoCloseable {
 
     public Server build() throws ConfigIllegalException {
       Server server = new Server(this);
+
+      /**
+       * Data Type, used overal and also in the below handler
+       * Should be first
+       */
+      server.jacksonMapperManager = JacksonMapperManager.create();
+      if (this.enableJacksonTime) {
+        server.jacksonMapperManager.enableTimeModuleForVertx();
+      } else {
+        LOGGER.info("Jackson time not enabled for vertx");
+      }
+
+      /**
+       * At the beginning after data type (jackson) so that
+       * other service can register health checks
+       */
+      this.serverHealth = new ServerHealth(server);
+
       if (this.poolName != null) {
         LOGGER.info("Start creation of JDBC Pool (" + this.poolName + ")");
         server.jdbcConnectionInfo = JdbcConnectionInfo.createFromJson(this.poolName, server.getConfigAccessor());
@@ -328,12 +358,7 @@ public class Server implements AutoCloseable {
         server.hashId = new HashId(server.getConfigAccessor());
       }
 
-      server.jacksonMapperManager = JacksonMapperManager.create();
-      if (this.enableJacksonTime) {
-        server.jacksonMapperManager.enableTimeModuleForVertx();
-      } else {
-        LOGGER.info("Jackson time not enabled for vertx");
-      }
+
       if (this.enableJsonToken) {
         server.jsonToken = new JsonToken.config(configAccessor).create();
       }
@@ -380,6 +405,7 @@ public class Server implements AutoCloseable {
       if (this.enableDnsClient) {
         server.dnsClient = new TowerDnsClient(server);
       }
+
 
       return server;
     }
