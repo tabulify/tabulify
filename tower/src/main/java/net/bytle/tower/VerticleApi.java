@@ -140,7 +140,7 @@ public class VerticleApi extends AbstractVerticle {
            */
           httpServer
             .buildHttpServer()
-            .onFailure(FailureStatic::failFutureWithTrace)
+            .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
             .onSuccess(vertxHttpServer -> vertxHttpServer
               .requestHandler(router) // https://vertx.io/docs/vertx-core/java/#_handling_requests
               .listen(ar -> {
@@ -161,6 +161,11 @@ public class VerticleApi extends AbstractVerticle {
 
   private void handlePromiseFailure(Promise<Void> promise, Throwable e) {
     promise.fail(e);
+    // advertise the failure otherwise the error is not seen
+    LOGGER.error("Unable to start the verticle Api", e);
+    // closing vertx may create additional error if there is Futures running
+    // This is the only way known to stop the process
+    // use Future.join in the building/start process of the app is one solution
     this.vertx.close();
   }
 

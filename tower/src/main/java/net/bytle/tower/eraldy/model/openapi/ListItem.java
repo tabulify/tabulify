@@ -4,13 +4,12 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-
 import net.bytle.tower.eraldy.model.openapi.App;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
- * A list where a user can register.  ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class)
+ * A list where a user can register.  ListItem and not List because list is a language reserved word (for openapi generator and will create a ModelList class) 
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ListItem   {
@@ -219,11 +218,11 @@ public class ListItem   {
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(guid);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return guid + ", " + handle;
   }

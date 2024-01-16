@@ -22,8 +22,12 @@ Reprocessing: process real-time data and re-process historical data in the same 
   * Due to the first rule (use object as most as possible for data), pojo can't be used internally as parameter because they hold only primitive data type
   * Don't return `Null`. Throw instead to avoid a NPE. NULL means that it does not exist or was not set and is a database type not a functional type.
   * Explicit is better than implicit
-  * No bad experience (ie no 404 or internal error)
-  * No Global Cache (in memory) - Wel Persistence
+* Builder pattern:
+  * most object building needs some cross validation step (validation between argument)
+  * helps build an object as soon as possible in the process.
+* No bad experience (ie no 404 or internal error) - fix them automatically or shows a sorry/meaningful message with a
+  resolution
+* Scope - No Global Cache for variable (in memory) - Wel Persistence
   * Cache can be a local ephemeral cache in a function (example a function that build in one call several tables for instance)
   * No default value on mandatory options or argument - ie target database should be seen in the Cli Command
   * Every object should be created with a name.

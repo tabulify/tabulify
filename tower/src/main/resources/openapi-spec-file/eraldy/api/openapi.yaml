@@ -2001,9 +2001,9 @@ components:
       example:
         redirectUri: https://example.com/page
         listGuid: listGuid
-        subscriberEmail: john@doe.com
+        userEmail: john@doe.com
       properties:
-        subscriberEmail:
+        userEmail:
           description: The email of the user that want to subscribe
           example: john@doe.com
           format: email
@@ -2019,7 +2019,7 @@ components:
       required:
       - listGuid
       - redirectUri
-      - subscriberEmail
+      - userEmail
       title: Registration Request to a list
       type: object
     AnalyticsEventPost:

@@ -207,46 +207,52 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
      * Health Checks
      */
     server.getServerHealthCheck()
-      .register("list-import-execution", promise -> {
-        boolean isBefore = LocalDateTime.now()
-          .minus(this.executionPeriodInMilliSec, TimeUnit.MILLISECONDS.toChronoUnit())
-          .isBefore(this.executionLastTime);
-        Status status;
-        JsonObject data = new JsonObject();
+      .register(ListImportFlow.class, promise -> {
+
         /**
-         * Bug? even if we have added the LocalDateTime Jackson Time module, we get an error
-         * {@link JacksonMapperManager}
-         * We do it manually then
+         * Test
+         * Boolean should be true
          */
-        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
-        data.put("execution-last-time", executionsLastTimeString);
-        if (isBefore) {
-          status = Status.OK(data);
-        } else {
-          data.put("message", "The last time execution date is too old");
-          status = Status.KO(data);
-        }
-        promise.complete(status);
-      })
-      .register("list-import-purge", promise -> {
-        boolean isBefore = LocalDateTime.now()
+        Duration agoLastExecution = Duration.between(this.executionLastTime, LocalDateTime.now());
+        boolean agoLastPurge = LocalDateTime.now()
           .minus(this.purgeDelay, TimeUnit.MILLISECONDS.toChronoUnit())
           .isBefore(this.purgeLastTime);
-        Status status;
-        JsonObject data = new JsonObject();
+
         /**
+         * Data
          * Bug? even if we have added the LocalDateTime Jackson Time module, we get an error
          * {@link JacksonMapperManager}
          * We do it manually then
          */
-        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.purgeLastTime);
-        data.put("purge-last-time", executionsLastTimeString);
-        if (isBefore) {
-          status = Status.OK(data);
-        } else {
-          data.put("message", "The last time purge date is too old");
-          status = Status.KO(data);
+        String purgeLastTimeString = DateTimeUtil.LocalDateTimetoString(this.purgeLastTime);
+        String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
+        JsonObject data = new JsonObject();
+        data.put("purge-last-time", purgeLastTimeString);
+        data.put("execution-last-time", executionsLastTimeString);
+        data.put("execution-last-ago-sec", agoLastExecution.toSeconds());
+
+        boolean executionTest = agoLastExecution.toMillis() > this.executionPeriodInMilliSec;
+        /**
+         * Checks and Status Report
+         */
+        // ok
+        if (
+          executionTest
+            && agoLastPurge) {
+          promise.complete(Status.OK(data));
+          return;
         }
+        // not ok
+        Status status = Status.KO();
+        List<String> messages = new ArrayList<>();
+        if (!executionTest) {
+          messages.add("The last time execution date is too old.");
+        }
+        if (!agoLastPurge) {
+          messages.add("The last time purge date is too old.");
+        }
+        data.put("message", String.join(" ", messages));
+        status.setData(data);
         promise.complete(status);
       });
 

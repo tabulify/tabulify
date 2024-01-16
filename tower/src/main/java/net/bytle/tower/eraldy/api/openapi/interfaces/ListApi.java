@@ -66,23 +66,23 @@ public interface ListApi  {
     */
     Future<ApiResponse<String>> listUserConfirmationUserGet(RoutingContext routingContext, String listUserIdentifier, String redirectUri);
 
-    /**
+  /**
      * Get a user in a list
     */
     Future<ApiResponse<ListUser>> listUserIdentifierGet(RoutingContext routingContext, String listUserIdentifier);
 
-    /**
-     * Deprecated - The front end is now separated from the API  Return the confirmation letter after the user has clicked on the validation link.  To get a confirmation as it's show to a user, you just need to set the subscriber name and the list guid  The other parameters will overwrite other list information.
+  /**
+   * Deprecated - The front end is now separated from the API  Return the confirmation letter after the user has clicked on the validation link.  To get a confirmation as it's show to a user, you just need to set the subscriber name and the list guid  The other parameters will overwrite other list information.
     */
     Future<ApiResponse<String>> listUserLetterConfirmationGet(RoutingContext routingContext, String subscriberName, String listGuid, String listName, String ownerName, String ownerEmail, String ownerLogo);
 
-    /**
-     * Return the validation letter with a validation link as send by email.
+  /**
+   * Return the validation letter with a validation link as send by email.
     */
     Future<ApiResponse<String>> listUserLetterValidationGet(RoutingContext routingContext, String listGuid, String subscriberName, String subscriberEmail, Boolean debug);
 
-    /**
-     * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)
+  /**
+   * Get a list of lists  The app should be given via:   - the appGuid   - or the appUri along with a realm identifier (guid or handle)
     */
     Future<ApiResponse<List<ListItem>>> listsGet(RoutingContext routingContext, String appGuid, String appUri, String realmIdentifier);
 

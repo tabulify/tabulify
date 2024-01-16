@@ -75,11 +75,14 @@ public class HttpServer implements AutoCloseable {
         .setSsl(true);
     }
     io.vertx.core.http.HttpServer httpServer = this.builder.server.getVertx().createHttpServer(options);
-    return Future.all(this.futuresToExecuteOnBuild)
+    /**
+     * Future.join and not Future.all to finish all futures
+     * With Future.all if there is an error, the future still
+     * running produce an error when we close Vertx and it adds noise
+     */
+    return Future.join(this.futuresToExecuteOnBuild)
+      .recover(err -> Future.failedFuture(new InternalException("A future failed while building the http server", err)))
       .compose(asyncResult -> {
-        if (asyncResult.failed()) {
-          return Future.failedFuture(new InternalException("A future failed while building the http server", asyncResult.cause()));
-        }
         /**
          * Health Check
          * At the end because the services can register

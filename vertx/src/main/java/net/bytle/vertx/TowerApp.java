@@ -15,11 +15,6 @@ import net.bytle.exception.NotFoundException;
 import net.bytle.template.api.Template;
 import net.bytle.type.UriEnhanced;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 
 /**
  * This class represents an app that is served by
@@ -294,50 +289,35 @@ public abstract class TowerApp {
     /**
      * Load the open api
      * <p>
-     * This is blocking because we need to call
-     * the proxy at the end of the router so that the proxy requests have a lower priority
-     * We could make it non-blocking but the code would be replicated in the if block with openapi
-     * and without any openapi
-     * It will then not be really self-explaining.
-     * <p>
-     * It needs to be in a executeBlocking block because of the CompletableFuture
-     * Otherwise, it seems that the `CompletableFuture.get` is called
-     * quickly and that the mountOpenApi code goes into the wild (ie is not executed)
      */
-    return httpServer.getServer().getVertx().executeBlocking(() -> {
-      CompletableFuture<String> openApiMounter = new CompletableFuture<>();
-      if (this.hasOpenApiSpec()) {
-        /**
-         * Mount OpenApi
-         */
-        openApi = OpenApiManager.config(this)
-          .build();
-        openApi.mountOpenApi(this, rootRouter)
-          .onFailure(
-            // Something went wrong during router builder initialization
-            // "Unable to parse the openApi specification. Error: "
-            FailureStatic::failFutureWithTrace
-          )
-          .onSuccess(asyncResult -> openApiMounter.complete("done"));
-      } else {
-        openApiMounter.complete("done");
-      }
+    Future<Void> openApiMount;
+    if (this.hasOpenApiSpec()) {
+      /**
+       * Built OpenApi
+       */
+      openApi = OpenApiManager.config(this)
+        .build();
+      /**
+       * Mount
+       */
+      openApiMount = openApi.mountOpenApi(this, rootRouter);
 
+    } else {
 
-      try {
+      openApiMount = Future.succeededFuture();
+
+    }
+
+    return openApiMount
+      .compose(v -> {
         /**
          * The proxy handling is a `catch-all` handler
          * and should then be at the end to get a lower priority
          * than any other routes.
          */
-        openApiMounter.get(60, TimeUnit.SECONDS);
         this.addProxyHandlerForUnknownResourceOfHtmlApp(rootRouter);
-        return null;
-      } catch (InterruptedException | ExecutionException | TimeoutException e) {
-        throw new RuntimeException("Unable to load the open api spec", e);
-      }
-    });
-
+        return Future.succeededFuture();
+      });
   }
 
   /**
@@ -508,7 +488,6 @@ public abstract class TowerApp {
   public OpenApiManager getOpenApi() {
     return openApi;
   }
-
 
 
 }

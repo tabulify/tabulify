@@ -84,4 +84,8 @@ public class ServerHealth {
 
   }
 
+  public void register(Class<?> aClass, Handler<Promise<Status>> promiseHandler) {
+    register(aClass.getSimpleName(), promiseHandler);
+  }
+
 }

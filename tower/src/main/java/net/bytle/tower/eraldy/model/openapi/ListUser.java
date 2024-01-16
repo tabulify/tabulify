@@ -63,7 +63,7 @@ public class ListUser {
   }
 
   /**
-  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+   * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @JsonProperty("status")
   public Integer getStatus() {
@@ -71,7 +71,7 @@ public class ListUser {
   }
 
   /**
-  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+   * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @SuppressWarnings("unused")
   public void setStatus(Integer status) {
@@ -175,8 +175,8 @@ public class ListUser {
   }
 
   /**
-  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
-  */
+   * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
+   */
   @com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})
   @JsonProperty("optInOrigin")
   public String getOptInOrigin() {
@@ -184,8 +184,8 @@ public class ListUser {
   }
 
   /**
-  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
-  */
+   * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
+   */
   @SuppressWarnings("unused")
   public void setOptInOrigin(String optInOrigin) {
     this.optInOrigin = optInOrigin;

@@ -1,10 +1,9 @@
 package net.bytle.tower.eraldy.model.openapi;
 
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
-import java.util.Objects;
 
 /**
  * The data needed to register a user to a list Note that a user email or a user id is required (OpenAPI cannot describe that in a elegant way) a user email or id is mandatory a list id or guid is mandatory
@@ -13,7 +12,7 @@ import java.util.Objects;
 public class ListUserPostBody {
 
 
-  protected String subscriberEmail;
+  protected String userEmail;
 
   protected String listGuid;
 
@@ -29,19 +28,19 @@ public class ListUserPostBody {
   }
 
   /**
-  * @return subscriberEmail The email of the user that want to subscribe
+   * @return userEmail The email of the user that want to subscribe
   */
-  @JsonProperty("subscriberEmail")
+  @JsonProperty("userEmail")
   public String getUserEmail() {
-    return subscriberEmail;
+    return userEmail;
   }
 
   /**
-  * @param subscriberEmail The email of the user that want to subscribe
+   * @param userEmail The email of the user that want to subscribe
   */
   @SuppressWarnings("unused")
-  public void setUserEmail(String subscriberEmail) {
-    this.subscriberEmail = subscriberEmail;
+  public void setUserEmail(String userEmail) {
+    this.userEmail = userEmail;
   }
 
   /**
@@ -87,18 +86,18 @@ public class ListUserPostBody {
     }
     ListUserPostBody listUserPostBody = (ListUserPostBody) o;
     return
-      Objects.equals(subscriberEmail, listUserPostBody.subscriberEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
+      Objects.equals(userEmail, listUserPostBody.userEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
 
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(subscriberEmail, listGuid, redirectUri);
+    return Objects.hash(userEmail, listGuid, redirectUri);
   }
 
   @Override
   public String toString() {
-    return subscriberEmail + ", " + listGuid + ", " + redirectUri.toString();
+    return userEmail + ", " + listGuid + ", " + redirectUri.toString();
   }
 
 }

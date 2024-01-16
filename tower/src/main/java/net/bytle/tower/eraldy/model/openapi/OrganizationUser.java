@@ -3,17 +3,15 @@ package net.bytle.tower.eraldy.model.openapi;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-
 import net.bytle.tower.eraldy.model.openapi.Organization;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.model.openapi.User;
 
 /**
- * A user in the organization They are the users of the Eraldy realm that own Realms
+ * A user in the organization They are the users of the Eraldy realm that own Realms 
  **/
 @com.fasterxml.jackson.annotation.JsonIdentityInfo( generator = com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator.class, property = "guid", scope = User.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -57,17 +55,17 @@ public class OrganizationUser extends User  {
       return false;
     }
     OrganizationUser organizationUser = (OrganizationUser) o;
-    return super.equals(o) &&
-
+    return super.equals(o) && 
+            
             Objects.equals(organization, organizationUser.organization);
   }
 
   @Override
-  public int hashCode() {
+  public int hashCode() { 
     return Objects.hash(super.hashCode(), organization);
   }
 
-  @Override
+  @Override 
   public String toString() {
     return super.toString() + super.toString();
   }

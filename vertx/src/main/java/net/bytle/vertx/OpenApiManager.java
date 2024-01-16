@@ -66,7 +66,13 @@ public class OpenApiManager {
      */
     String specFileString = specFile.toString();
     return RouterBuilder.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), specFileString)
-      .onFailure(err -> LOGGER.error("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err))
+      .recover(err -> {
+        InternalError error = new InternalError("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err);
+        return Future.failedFuture(TowerFailureException.builder()
+          .setCauseException(error)
+          .build()
+        );
+      })
       .compose(routerBuilder -> {
 
         /**
@@ -120,10 +126,10 @@ public class OpenApiManager {
         } catch (Exception e) {
           return Future.failedFuture(
             TowerFailureException
-            .builder()
-            .setMessage("Error while building the openapi router for the app (" + this.towerApp + ")")
-            .setCauseException(e)
-            .build()
+              .builder()
+              .setMessage("Error while building the openapi router for the app (" + this.towerApp + ")")
+              .setCauseException(e)
+              .build()
           );
         }
         /**
