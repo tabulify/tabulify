@@ -399,7 +399,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    */
   public Future<ApiResponse<String>> handleStep3Confirmation(RoutingContext routingContext, String registrationGuid) {
     return this.getApp().getListRegistrationProvider()
-      .getRegistrationByGuid(registrationGuid)
+      .getListUserByGuid(registrationGuid)
       .onFailure(routingContext::fail)
       .compose(registration -> {
         addRegistrationConfirmationCookieData(routingContext, registration);

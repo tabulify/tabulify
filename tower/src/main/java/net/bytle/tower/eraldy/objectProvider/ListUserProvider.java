@@ -22,8 +22,8 @@ import net.bytle.tower.util.Guid;
 import net.bytle.tower.util.Postgres;
 import net.bytle.type.Strings;
 import net.bytle.vertx.DateTimeUtil;
-import net.bytle.vertx.FailureStatic;
 import net.bytle.vertx.JdbcSchemaManager;
+import net.bytle.vertx.TowerFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class ListUserProvider {
 
   static final String TABLE_NAME = "realm_list_user";
   public static final String COLUMN_PART_SEP = JdbcSchemaManager.COLUMN_PART_SEP;
-  private static final String LIST_USER_PREFIX = "listuser";
+  private static final String LIST_USER_PREFIX = "list_user";
   public static final String STATUS_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "status";
   public static final String ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
   public static final String LIST_ID_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + ListProvider.ID_COLUMN;
@@ -328,13 +328,13 @@ public class ListUserProvider {
       });
   }
 
-  public Future<ListUser> getRegistrationByGuid(String registrationGuid) {
+  public Future<ListUser> getListUserByGuid(String listUserGuid) {
 
     Guid guidObject;
     try {
-      guidObject = this.getGuidObject(registrationGuid);
+      guidObject = this.getGuidObject(listUserGuid);
     } catch (CastException e) {
-      throw ValidationException.create("The registration guid (" + registrationGuid + ") is not valid", "registrationGuid", registrationGuid);
+      throw ValidationException.create("The listUser guid (" + listUserGuid + ") is not valid", "listUserIdentifier", listUserGuid);
     }
 
     long realmId = guidObject.getRealmOrOrganizationId();
@@ -345,13 +345,13 @@ public class ListUserProvider {
 
   }
 
-  private Guid getGuidObject(String registrationGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(GUID_PREFIX, registrationGuid);
+  private Guid getGuidObject(String listUserGuid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(GUID_PREFIX, listUserGuid);
   }
 
 
-  public Future<java.util.List<ListUserShort>> getRegistrations(String listGuid,
-                                                                Long pageId, Long pageSize, String searchTerm) {
+  public Future<java.util.List<ListUserShort>> getListUsers(String listGuid,
+                                                            Long pageId, Long pageSize, String searchTerm) {
     Guid guid;
     try {
       guid = apiApp.getListProvider().getGuidObject(listGuid);
@@ -382,23 +382,23 @@ public class ListUserProvider {
        * The query on the whole set
        * (without search term)
        */
-      sql = "SELECT registration_pages.registration_creation_time,\n" +
-        "       registration_pages.registration_user_id as user_id,\n" +
-        "       registration_pages.registration_status,\n" +
+      sql = "SELECT registration_pages.list_user_creation_time,\n" +
+        "       registration_pages.list_user_user_id as user_id,\n" +
+        "       registration_pages.list_user_status,\n" +
         "       realm_user.user_email as user_email\n" +
         "FROM (select *\n" +
-        "      from (SELECT ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,\n" +
+        "      from (SELECT ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,\n" +
         "                   *\n" +
-        "            FROM cs_realms.realm_list_registration registration\n" +
-        "            where registration.registration_realm_id = $1\n" +
-        "              AND registration.registration_list_id = $2) registration\n" +
+        "            FROM cs_realms.realm_list_user registration\n" +
+        "            where registration.list_user_realm_id = $1\n" +
+        "              AND registration.list_user_list_id = $2) registration\n" +
         "      where rn >= 1 + $3::BIGINT * $4::BIGINT\n" +
         "        and rn < $5::BIGINT * $6::BIGINT + 1" +
         "       ) registration_pages\n" +
         "         JOIN cs_realms.realm_user realm_user\n" +
-        "              on registration_pages.registration_user_id = realm_user.user_id\n" +
-        "                  and registration_pages.registration_realm_id = realm_user.user_realm_id\n" +
-        "        order by registration_pages.registration_creation_time desc";
+        "              on registration_pages.list_user_user_id = realm_user.user_id\n" +
+        "                  and registration_pages.list_user_realm_id = realm_user.user_realm_id\n" +
+        "        order by registration_pages.list_user_creation_time desc";
       sqlParameters = Tuple.of(
         realmId,
         listId,
@@ -412,7 +412,10 @@ public class ListUserProvider {
 
     return jdbcPool.preparedQuery(sql)
       .execute(sqlParameters)
-      .onFailure(FailureStatic::failFutureWithTrace)
+      .recover(err -> Future.failedFuture(TowerFailureException.builder()
+        .setMessage("Error while getting the user of the list with the sql: " + sql)
+        .setCauseException(err)
+        .build()))
       .compose(registrationRows -> {
 
         java.util.List<ListUserShort> futureSubscriptions = new ArrayList<>();
@@ -454,10 +457,10 @@ public class ListUserProvider {
 
     String sql = "SELECT * FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME
       + " JOIN cs_realms." + UserProvider.TABLE_NAME + " userTable"
-      + " ON userTable.user_id = cs_realms.realm_list_registration.registration_user_id"
+      + " ON userTable.user_id = cs_realms.realm_list_user.list_user_user_id"
       + " WHERE "
-      + " registration_realm_id = $1 "
-      + "AND registration_list_id = $2 "
+      + " list_user_realm_id = $1 "
+      + "AND list_user_list_id = $2 "
       + "and userTable.user_email = $3";
     long realmId = listGuidObject.getRealmOrOrganizationId();
     Tuple parameters = Tuple.of(
@@ -468,7 +471,11 @@ public class ListUserProvider {
     return jdbcPool
       .preparedQuery(sql)
       .execute(parameters)
-      .onFailure(e -> LOGGER.error("Get registration by list guid and subscriber email error: " + e.getMessage(), e))
+      .recover(e -> Future.failedFuture(TowerFailureException.builder()
+        .setMessage("Get users of a list by list guid and subscriber email error with the sql " + sql)
+        .setCauseException(e)
+        .build())
+      )
       .compose(userRows -> {
 
         if (userRows.size() == 0) {

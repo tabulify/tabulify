@@ -1,0 +1,9 @@
+-- rename registration to list_user
+alter table cs_realms.realm_list_registration rename column registration_realm_id to list_user_realm_id;
+alter table cs_realms.realm_list_registration rename column registration_list_id to list_user_list_id;
+alter table cs_realms.realm_list_registration rename column registration_user_id to list_user_user_id;
+alter table cs_realms.realm_list_registration rename column registration_data to list_user_data;
+alter table cs_realms.realm_list_registration rename column registration_creation_time to list_user_creation_time;
+alter table cs_realms.realm_list_registration rename column registration_modification_time to list_user_modification_time;
+alter table cs_realms.realm_list_registration rename column registration_status to list_user_status;
+alter table cs_realms.realm_list_registration rename to realm_list_user;
