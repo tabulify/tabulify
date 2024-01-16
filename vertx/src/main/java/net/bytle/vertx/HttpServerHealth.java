@@ -14,11 +14,11 @@ import java.net.URL;
  */
 public class HttpServerHealth {
 
-  private static Logger LOGGER = LogManager.getLogger(HttpServerHealth.class);
+  private static final Logger LOGGER = LogManager.getLogger(HttpServerHealth.class);
 
   public static String PING_PATH = "/ping";
 
-  public HttpServerHealth(HttpServer httpServer) {
+  public static void addHandler(HttpServer httpServer) {
 
     /**
      * Http Handler

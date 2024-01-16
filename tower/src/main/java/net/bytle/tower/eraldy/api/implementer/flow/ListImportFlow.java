@@ -214,9 +214,9 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
          * Boolean should be true
          */
         Duration agoLastExecution = Duration.between(this.executionLastTime, LocalDateTime.now());
-        boolean executionTest = agoLastExecution.toMillis() < this.executionPeriodInMs;
+        boolean executionTest = agoLastExecution.toMillis() <= this.executionPeriodInMs + 1000;
         Duration agoLastPurge = Duration.between(this.purgeLastTime, LocalDateTime.now());
-        boolean purgeTest = agoLastPurge.toMillis()< this.purgeDelayMs;
+        boolean purgeTest = agoLastPurge.toMillis() <= this.purgeDelayMs + 1000;
 
 
         /**

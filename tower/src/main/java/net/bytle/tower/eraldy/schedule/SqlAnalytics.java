@@ -37,7 +37,7 @@ public class SqlAnalytics implements Handler<Long> {
          * Test
          */
         Duration agoLastExecution = Duration.between(this.executionLastTime, LocalDateTime.now());
-        boolean executionTest = agoLastExecution.toMillis() < delayMsEveryHour;
+        boolean executionTest = agoLastExecution.toMillis() <= delayMsEveryHour + 1000;
 
         /**
          * Data
