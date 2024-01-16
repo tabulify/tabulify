@@ -298,6 +298,12 @@ public class EraldyApiApp extends TowerApp {
       .build();
   }
 
+  public Guid createGuidFromHashWithOneRealmIdAndTwoObjectId(String guidPrefix, String guid) throws CastException {
+    return new builder(this.hashIds, guidPrefix)
+      .setCipherText(guid, REALM_ID_TWO_OBJECT_ID_TYPE)
+      .build();
+  }
+
   public Guid createGuidFromRealmOrOrganizationId(String shortPrefix, String guid) throws CastException {
     return new builder(this.hashIds, shortPrefix)
       .setCipherText(guid, ONE_ID_TYPE)

@@ -19,6 +19,7 @@ import java.util.TimeZone;
 public class Timestamp {
 
   public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+  private static final int DATE_TIME_STRING_LENGTH = 19;
   LocalDateTime localDateTime;
 
 
@@ -32,10 +33,21 @@ public class Timestamp {
     String pattern = TimeStringParser.detectFormat(s);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
     LocalDateTime dateTime;
+
+    // No Time
+    if (s.length() == 10) {
+      // no time
+      LocalTime localTime = LocalTime.of(0, 0, 0);
+      LocalDate localDate = LocalDate.parse(s, formatter);
+      dateTime = LocalDateTime.of(localDate, localTime);
+      return createFromLocalDateTime(dateTime);
+    }
+
+    // With time
     try {
       dateTime = LocalDateTime.parse(s, formatter);
     } catch (Exception e) {
-      throw new CastException("The string (" + s + ") is not a date", e);
+      throw new CastException("The string (" + s + ") is not a date time", e);
     }
     return createFromLocalDateTime(dateTime);
 

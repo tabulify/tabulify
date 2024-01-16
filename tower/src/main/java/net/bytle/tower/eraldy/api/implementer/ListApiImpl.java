@@ -403,7 +403,7 @@ public class ListApiImpl implements ListApi {
     ListUserProvider listUserProvider = apiApp.getListRegistrationProvider();
 
     return listUserProvider
-      .getListUserByGuid(guid)
+      .getListUserByGuidHash(guid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
       .compose(subscription -> Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listUserProvider.getApiMapper())));
 

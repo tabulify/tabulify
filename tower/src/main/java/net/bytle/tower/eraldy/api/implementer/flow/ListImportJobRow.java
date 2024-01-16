@@ -154,7 +154,7 @@ public class ListImportJobRow {
             this.userGuid = user.getGuid();
             ListUserProvider listUserProvider = this.listImportJob.getListImportFlow().getApp().getListRegistrationProvider();
             return listUserProvider.
-              getRegistrationByListAndUser(list, user)
+              getListUsersByListAndUser(list, user)
               .compose(listRegistration -> {
                 if (listRegistration != null) {
                   this.userAdded = false;

@@ -139,24 +139,24 @@ public class ListUserProvider {
   public Future<ListUser> upsertListUser(ListUser listUser) {
 
 
-    User subscriberUser = listUser.getUser();
-    if (subscriberUser == null) {
+    User user = listUser.getUser();
+    if (user == null) {
       return Future.failedFuture(new InternalError("The subscriber user is mandatory when inserting a publication subscription"));
     }
-    Long subscriberId = subscriberUser.getLocalId();
-    if (subscriberId == null) {
-      throw new InternalException("The subscriber id of a user object should not be null");
+    Long userId = user.getLocalId();
+    if (userId == null) {
+      throw new InternalException("The user local id of a user object should not be null");
     }
     ListItem listItem = listUser.getList();
     if (listItem == null) {
-      return Future.failedFuture(new InternalError("The list is mandatory when upserting a registration"));
+      return Future.failedFuture(new InternalError("The list is mandatory when upserting a user in a list"));
     }
 
     /**
      * Realm check
      */
-    if (!(subscriberUser.getRealm().getLocalId().equals(listItem.getRealm().getLocalId()))) {
-      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + listItem.getRealm().getHandle() + " and the subscriber (" + subscriberUser.getRealm().getHandle() + ")"));
+    if (!(user.getRealm().getLocalId().equals(listItem.getRealm().getLocalId()))) {
+      return Future.failedFuture(new InternalError("Inconsistency: The realm is not the same for the list (" + listItem.getRealm().getHandle() + " and the user (" + user.getRealm().getHandle() + ")"));
     }
 
     Long listId = listItem.getLocalId();
@@ -174,10 +174,23 @@ public class ListUserProvider {
         if (rowSet.rowCount() == 0) {
           return insertRegistration(listUser);
         }
-        this.computeGuid(listUser);
+        this.computeGuidForListUserObject(listUser);
         return Future.succeededFuture(listUser);
       });
 
+  }
+
+  private void computeGuidForListUserObject(ListUser listUser) {
+    if (listUser.getGuid() != null) {
+      return;
+    }
+    String guid = this.getGuidObjectFromLocalIds(
+        listUser.getList().getRealm(),
+        listUser.getList().getLocalId(),
+        listUser.getUser().getLocalId()
+      )
+      .toString();
+    listUser.setGuid(guid);
   }
 
   private Future<RowSet<Row>> updateRegistrationAndGetRowSet(ListUser listUser) {
@@ -232,7 +245,7 @@ public class ListUserProvider {
       ))
       .onFailure(e -> LOGGER.error("Registration Insert Sql Error " + e.getMessage() + ". With Sql:\n" + sql, e))
       .compose(rows -> {
-        this.computeGuid(listUser);
+        this.computeGuidForListUserObject(listUser);
         return Future.succeededFuture(listUser);
       });
 
@@ -242,12 +255,12 @@ public class ListUserProvider {
     JsonObject data = JsonObject.mapFrom(listUser);
     data.remove("list");
     data.remove("subscriber");
-    data.remove(Guid.GUID);
+    data.remove("user");
     return data;
   }
 
 
-  private Future<ListUser> getRegistrationFromRow(Row row) {
+  private Future<ListUser> getListUserFromDatabaseRow(Row row) {
 
     Long realmId = row.getLong(REALM_COLUMN);
     Future<Realm> realmFuture = this.apiApp.getRealmProvider()
@@ -259,25 +272,23 @@ public class ListUserProvider {
         Long listId = row.getLong(LIST_ID_COLUMN);
         Future<ListItem> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
 
-        Long subscriberId = row.getLong(USER_ID_COLUMN);
+        Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()
-          .getUserById(subscriberId, realm.getLocalId(), User.class, realm);
+          .getUserById(userId, realm.getLocalId(), User.class, realm);
 
         return Future
           .all(publicationFuture, publisherFuture)
-          .onFailure(e -> {
-            throw new InternalException(e);
-          })
-          .compose(mapper -> {
+          .recover(e -> Future.failedFuture(new InternalException("Error while building a list user from row",e)))
+          .compose(compositeFuture -> {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
             ListUser listUser = Json.decodeValue(jsonAppData.toBuffer(), ListUser.class);
 
-            ListItem listItemResult = mapper.resultAt(0);
-            User subscriberResult = mapper.resultAt(1);
+            ListItem listItemResult = compositeFuture.resultAt(0);
+            User userResult = compositeFuture.resultAt(1);
 
             listUser.setList(listItemResult);
-            listUser.setUser(subscriberResult);
+            listUser.setUser(userResult);
 
 //        LocalDateTime creationTime = row.getOffsetDateTime(SUBSCRIPTION_PREFIX + COLUMN_PART_SEP + CREATION_TIME);
 //        subscription.setCreationTime(creationTime);
@@ -289,14 +300,14 @@ public class ListUserProvider {
 
   }
 
-  public Future<ListUser> getRegistrationByListAndUser(ListItem listItem, User user) {
+  public Future<ListUser> getListUsersByListAndUser(ListItem listItem, User user) {
     if (!Objects.equals(listItem.getRealm().getLocalId(), user.getRealm().getLocalId())) {
       throw new InternalException("The realm should be the same between a list and a user for a registration");
     }
-    return getRegistrationByLocalIds(listItem.getLocalId(), user.getLocalId(), listItem.getRealm().getLocalId());
+    return getListUserByLocalIds(listItem.getLocalId(), user.getLocalId(), listItem.getRealm().getLocalId());
   }
 
-  private Future<ListUser> getRegistrationByLocalIds(Long listId, Long userId, Long realmId) {
+  private Future<ListUser> getListUserByLocalIds(Long listId, Long userId, Long realmId) {
     String sql = "SELECT * " +
       "FROM " + JdbcSchemaManager.CS_REALM_SCHEMA + "." + TABLE_NAME +
       " WHERE " +
@@ -324,15 +335,15 @@ public class ListUserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getRegistrationFromRow(row);
+        return getListUserFromDatabaseRow(row);
       });
   }
 
-  public Future<ListUser> getListUserByGuid(String listUserGuid) {
+  public Future<ListUser> getListUserByGuidHash(String listUserGuid) {
 
     Guid guidObject;
     try {
-      guidObject = this.getGuidObject(listUserGuid);
+      guidObject = this.getGuidObjectFromHash(listUserGuid);
     } catch (CastException e) {
       throw ValidationException.create("The listUser guid (" + listUserGuid + ") is not valid", "listUserIdentifier", listUserGuid);
     }
@@ -341,13 +352,11 @@ public class ListUserProvider {
     long listId = guidObject.validateRealmAndGetFirstObjectId(realmId);
     long userId = guidObject.validateAndGetSecondObjectId(realmId);
 
-    return getRegistrationByLocalIds(listId, userId, realmId);
+    return getListUserByLocalIds(listId, userId, realmId);
 
   }
 
-  private Guid getGuidObject(String listUserGuid) throws CastException {
-    return apiApp.createGuidFromHashWithOneRealmIdAndOneObjectId(GUID_PREFIX, listUserGuid);
-  }
+
 
 
   public Future<java.util.List<ListUserShort>> getListUsers(String listGuid,
@@ -487,22 +496,23 @@ public class ListUserProvider {
         }
 
         Row row = userRows.iterator().next();
-        return getRegistrationFromRow(row);
+        return getListUserFromDatabaseRow(row);
       });
   }
 
-  private void computeGuid(ListUser listUser) {
-    if (listUser.getGuid() != null) {
-      return;
-    }
-    String guid = apiApp.createGuidStringFromRealmAndTwoObjectId(
+  private Guid getGuidObjectFromHash(String listUserGuid) throws CastException {
+    return apiApp.createGuidFromHashWithOneRealmIdAndTwoObjectId(GUID_PREFIX, listUserGuid);
+  }
+
+  private Guid getGuidObjectFromLocalIds(Realm realm, Long listId, Long userId) {
+
+    return apiApp.createGuidStringFromRealmAndTwoObjectId(
         GUID_PREFIX,
-        listUser.getList().getRealm(),
-        listUser.getList().getLocalId(),
-        listUser.getUser().getLocalId()
-      )
-      .toString();
-    listUser.setGuid(guid);
+        realm.getLocalId(),
+        listId,
+        userId
+      );
+
   }
 
 

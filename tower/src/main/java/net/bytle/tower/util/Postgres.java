@@ -14,6 +14,9 @@ public class Postgres {
      * but with the Native Pg Client, we can return a JsonObject directly
      */
     Object value = row.getValue(columnName);
+    if(value instanceof JsonObject){
+      return (JsonObject) value;
+    }
     if(value instanceof String){
       return new JsonObject((String) value);
     }

@@ -35,10 +35,14 @@ public class TimeStringParser {
    * All regexps date format recognized by the function {@link #detectFormat(String)}
    *
    * <a href=https://stackoverflow.com/questions/3389348/parse-any-date-in-java>Regular expression list source</a>
+   * <p>
+   * Java 8 uses uuuu for year, not yyyy.
+   * In Java 8, yyyy means "year of era" (BC or AD) and the error message complains
+   * that MonthOfYear, DayOfMonth and YearOfEra is not enough information to construct the date because era is not known.
    */
   private static final Map<Pattern, String> DATE_FORMAT_REGEXPS = new HashMap<Pattern, String>() {{
     // Iso date
-    put(Pattern.compile("^\\d{4}-\\d{1,2}-\\d{1,2}$"), "yyyy-MM-dd");
+    put(Pattern.compile("^\\d{4}-\\d{1,2}-\\d{1,2}$"), "uuuu-MM-dd");
     // SQL timestamp with 1, 2 or 3 digits
     put(Pattern.compile("^\\d{4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{2}:\\d{2}\\.\\d{9}$"), "yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
     put(Pattern.compile("^\\d{4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{2}:\\d{2}\\.\\d{8}$"), "yyyy-MM-dd HH:mm:ss.SSSSSSSS");
