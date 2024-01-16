@@ -1,9 +1,9 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.CspReport;
+
+import java.util.Objects;
 
 /**
  * A CSP violation report object

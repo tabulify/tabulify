@@ -1235,15 +1235,15 @@ paths:
         Get a list user with the list user Guid
       operationId: listUserIdentifierGet
       parameters:
-        - description: The guid of the user in the list
-          explode: false
-          in: path
-          name: listUserIdentifier
-          required: true
+      - description: The guid of the user in the list
+        explode: false
+        in: path
+        name: listUserIdentifier
+        required: true
         schema:
           example: liu-xjkkLmi
           type: string
-          style: simple
+        style: simple
       responses:
         "200":
           content:
@@ -1399,10 +1399,10 @@ paths:
     get:
       operationId: listUserConfirmationUserGet
       parameters:
-        - description: The list user identifier (guid)
+      - description: The list user identifier (guid)
         explode: false
         in: path
-          name: listUserIdentifier
+        name: listUserIdentifier
         required: true
         schema:
           type: string

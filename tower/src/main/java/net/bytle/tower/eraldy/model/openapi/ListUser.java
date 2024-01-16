@@ -1,20 +1,16 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.time.OffsetDateTime;
+
 import java.time.LocalDateTime;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.ListUserFlow;
-import net.bytle.tower.eraldy.model.openapi.User;
+import java.util.Objects;
 
 /**
  * A user in a list (ie a subscription or a registration)
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUser {
+public class ListUser   {
 
 
   protected String guid;
@@ -43,7 +39,7 @@ public class ListUser {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUser() {
+  public ListUser () {
   }
 
   /**
@@ -63,7 +59,7 @@ public class ListUser {
   }
 
   /**
-   * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @JsonProperty("status")
   public Integer getStatus() {
@@ -71,7 +67,7 @@ public class ListUser {
   }
 
   /**
-   * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
   */
   @SuppressWarnings("unused")
   public void setStatus(Integer status) {
@@ -95,7 +91,7 @@ public class ListUser {
   }
 
   /**
-   * @return user
+  * @return user
   */
   @JsonProperty("user")
   public User getUser() {
@@ -103,7 +99,7 @@ public class ListUser {
   }
 
   /**
-   * @param user Set user
+  * @param user Set user
   */
   @SuppressWarnings("unused")
   public void setUser(User user) {
@@ -175,8 +171,8 @@ public class ListUser {
   }
 
   /**
-   * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
-   */
+  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
+  */
   @com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})
   @JsonProperty("optInOrigin")
   public String getOptInOrigin() {
@@ -184,8 +180,8 @@ public class ListUser {
   }
 
   /**
-   * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
-   */
+  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
+  */
   @SuppressWarnings("unused")
   public void setOptInOrigin(String optInOrigin) {
     this.optInOrigin = optInOrigin;
@@ -219,7 +215,7 @@ public class ListUser {
     ListUser listUser = (ListUser) o;
     return
 
-      Objects.equals(guid, listUser.guid) && Objects.equals(status, listUser.status) && Objects.equals(list, listUser.list) && Objects.equals(user, listUser.user) && Objects.equals(confirmationTime, listUser.confirmationTime) && Objects.equals(confirmationIp, listUser.confirmationIp) && Objects.equals(optInTime, listUser.optInTime) && Objects.equals(optInIp, listUser.optInIp) && Objects.equals(optInOrigin, listUser.optInOrigin) && Objects.equals(flow, listUser.flow);
+            Objects.equals(guid, listUser.guid) && Objects.equals(status, listUser.status) && Objects.equals(list, listUser.list) && Objects.equals(user, listUser.user) && Objects.equals(confirmationTime, listUser.confirmationTime) && Objects.equals(confirmationIp, listUser.confirmationIp) && Objects.equals(optInTime, listUser.optInTime) && Objects.equals(optInIp, listUser.optInIp) && Objects.equals(optInOrigin, listUser.optInOrigin) && Objects.equals(flow, listUser.flow);
   }
 
   @Override

@@ -1,15 +1,16 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * The data needed to register a user to a list Note that a user email or a user id is required (OpenAPI cannot describe that in a elegant way) a user email or id is mandatory a list id or guid is mandatory
  **/
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUserPostBody {
+public class ListUserPostBody   {
 
 
   protected String userEmail;
@@ -24,11 +25,11 @@ public class ListUserPostBody {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUserPostBody() {
+  public ListUserPostBody () {
   }
 
   /**
-   * @return userEmail The email of the user that want to subscribe
+  * @return userEmail The email of the user that want to subscribe
   */
   @JsonProperty("userEmail")
   public String getUserEmail() {
@@ -36,7 +37,7 @@ public class ListUserPostBody {
   }
 
   /**
-   * @param userEmail The email of the user that want to subscribe
+  * @param userEmail The email of the user that want to subscribe
   */
   @SuppressWarnings("unused")
   public void setUserEmail(String userEmail) {
@@ -86,7 +87,7 @@ public class ListUserPostBody {
     }
     ListUserPostBody listUserPostBody = (ListUserPostBody) o;
     return
-      Objects.equals(userEmail, listUserPostBody.userEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
+            Objects.equals(userEmail, listUserPostBody.userEmail) && Objects.equals(listGuid, listUserPostBody.listGuid) && Objects.equals(redirectUri, listUserPostBody.redirectUri);
 
   }
 

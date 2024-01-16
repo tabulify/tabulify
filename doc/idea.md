@@ -11,6 +11,9 @@ Minimal: 3000Mo
 You can see the memory in:
 Right-click the status bar and select Memory Indicator
 
+## Commit Checks options
+
+Bug: Reformatting on commit break openapi.yaml file
 
 ## Gradle Dependencies
 

@@ -1,26 +1,17 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
-import io.vertx.ext.web.FileUpload;
-import net.bytle.tower.eraldy.model.openapi.ListBody;
-import net.bytle.tower.eraldy.model.openapi.ListImportJobRowStatus;
-import net.bytle.tower.eraldy.model.openapi.ListImportJobStatus;
-import net.bytle.tower.eraldy.model.openapi.ListImportPostResponse;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.ListSummary;
-import net.bytle.tower.eraldy.model.openapi.ListUser;
-import net.bytle.tower.eraldy.model.openapi.ListUserShort;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.ListBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map; // for pure json data
 
 public class ListApiHandler {
 
@@ -40,11 +31,11 @@ public void mount(RouterBuilder builder) {
     builder.operation("listListImportPost").handler(this::listListImportPost);
     builder.operation("listListImportsGet").handler(this::listListImportsGet);
     builder.operation("listListPatch").handler(this::listListPatch);
-  builder.operation("listListUsersGet").handler(this::listListUsersGet);
-  builder.operation("listUserConfirmationUserGet").handler(this::listUserConfirmationUserGet);
-  builder.operation("listUserIdentifierGet").handler(this::listUserIdentifierGet);
-  builder.operation("listUserLetterConfirmationGet").handler(this::listUserLetterConfirmationGet);
-  builder.operation("listUserLetterValidationGet").handler(this::listUserLetterValidationGet);
+    builder.operation("listListUsersGet").handler(this::listListUsersGet);
+    builder.operation("listUserConfirmationUserGet").handler(this::listUserConfirmationUserGet);
+    builder.operation("listUserIdentifierGet").handler(this::listUserIdentifierGet);
+    builder.operation("listUserLetterConfirmationGet").handler(this::listUserLetterConfirmationGet);
+    builder.operation("listUserLetterValidationGet").handler(this::listUserLetterValidationGet);
     builder.operation("listsGet").handler(this::listsGet);
     builder.operation("listsSummaryGet").handler(this::listsSummaryGet);
 }
@@ -178,7 +169,7 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-  private void listListUsersGet(RoutingContext routingContext) {
+    private void listListUsersGet(RoutingContext routingContext) {
     logger.info("listListUsersGet()");
 
     // Param extraction
@@ -200,16 +191,16 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-  private void listUserConfirmationUserGet(RoutingContext routingContext) {
+    private void listUserConfirmationUserGet(RoutingContext routingContext) {
     logger.info("listUserConfirmationUserGet()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-    String listUserIdentifier = requestParameters.pathParameter("listUserIdentifier") != null ? requestParameters.pathParameter("listUserIdentifier").getString() : null;
+            String listUserIdentifier = requestParameters.pathParameter("listUserIdentifier") != null ? requestParameters.pathParameter("listUserIdentifier").getString() : null;
         String redirectUri = requestParameters.queryParameter("redirect_uri") != null ? requestParameters.queryParameter("redirect_uri").getString() : null;
 
-    logger.debug("Parameter listUserIdentifier is {}", listUserIdentifier);
+      logger.debug("Parameter listUserIdentifier is {}", listUserIdentifier);
       logger.debug("Parameter redirectUri is {}", redirectUri);
 
     // Based on Route#respond
@@ -218,15 +209,15 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-  private void listUserIdentifierGet(RoutingContext routingContext) {
+    private void listUserIdentifierGet(RoutingContext routingContext) {
     logger.info("listUserIdentifierGet()");
 
     // Param extraction
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
-    String listUserIdentifier = requestParameters.pathParameter("listUserIdentifier") != null ? requestParameters.pathParameter("listUserIdentifier").getString() : null;
+            String listUserIdentifier = requestParameters.pathParameter("listUserIdentifier") != null ? requestParameters.pathParameter("listUserIdentifier").getString() : null;
 
-    logger.debug("Parameter listUserIdentifier is {}", listUserIdentifier);
+      logger.debug("Parameter listUserIdentifier is {}", listUserIdentifier);
 
     // Based on Route#respond
     api.listUserIdentifierGet(routingContext, listUserIdentifier)
@@ -234,7 +225,7 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-  private void listUserLetterConfirmationGet(RoutingContext routingContext) {
+    private void listUserLetterConfirmationGet(RoutingContext routingContext) {
     logger.info("listUserLetterConfirmationGet()");
 
     // Param extraction
@@ -260,7 +251,7 @@ public void mount(RouterBuilder builder) {
     .onFailure(routingContext::fail);
     }
 
-  private void listUserLetterValidationGet(RoutingContext routingContext) {
+    private void listUserLetterValidationGet(RoutingContext routingContext) {
     logger.info("listUserLetterValidationGet()");
 
     // Param extraction

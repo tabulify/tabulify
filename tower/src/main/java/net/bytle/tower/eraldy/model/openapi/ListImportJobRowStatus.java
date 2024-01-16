@@ -1,8 +1,9 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Objects;
 
 /**
  * This object represents the status of a row in a import job for a list.
@@ -87,16 +88,16 @@ public class ListImportJobRowStatus   {
   }
 
   /**
-   * @return listUserGuid The list user guid (may be null if there is an error)
-   */
+  * @return listUserGuid The list user guid (may be null if there is an error)
+  */
   @JsonProperty("listUserGuid")
   public String getListUserGuid() {
     return listUserGuid;
   }
 
   /**
-   * @param listUserGuid The list user guid (may be null if there is an error)
-   */
+  * @param listUserGuid The list user guid (may be null if there is an error)
+  */
   @SuppressWarnings("unused")
   public void setListUserGuid(String listUserGuid) {
     this.listUserGuid = listUserGuid;
@@ -194,7 +195,7 @@ public class ListImportJobRowStatus   {
     ListImportJobRowStatus listImportJobRowStatus = (ListImportJobRowStatus) o;
     return
 
-      Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(rowId, listImportJobRowStatus.rowId) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(listUserGuid, listImportJobRowStatus.listUserGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
+            Objects.equals(emailAddress, listImportJobRowStatus.emailAddress) && Objects.equals(rowId, listImportJobRowStatus.rowId) && Objects.equals(userGuid, listImportJobRowStatus.userGuid) && Objects.equals(listUserGuid, listImportJobRowStatus.listUserGuid) && Objects.equals(statusCode, listImportJobRowStatus.statusCode) && Objects.equals(statusMessage, listImportJobRowStatus.statusMessage) && Objects.equals(userAdded, listImportJobRowStatus.userAdded) && Objects.equals(userCreated, listImportJobRowStatus.userCreated) && Objects.equals(userUpdated, listImportJobRowStatus.userUpdated);
   }
 
   @Override

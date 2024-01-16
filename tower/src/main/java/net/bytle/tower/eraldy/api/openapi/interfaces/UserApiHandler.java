@@ -1,8 +1,5 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
-import net.bytle.tower.eraldy.model.openapi.User;
-import net.bytle.tower.eraldy.model.openapi.UserPostBody;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
@@ -11,9 +8,9 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.UserPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map; // for pure json data
 
 public class UserApiHandler {
 
@@ -73,7 +70,8 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
 
-      // Based on Route#respond
+
+    // Based on Route#respond
     api.userMeGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);

@@ -1,10 +1,9 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
+
+import java.util.Objects;
 
 /**
  * Service
@@ -85,7 +84,7 @@ public class Service   {
   }
 
   /**
-   * @return type The type of the service (smtp, ...) that define the data type
+  * @return type The type of the service (smtp, ...) that define the data type
   */
   @JsonProperty("type")
   public String getType() {
@@ -93,7 +92,7 @@ public class Service   {
   }
 
   /**
-   * @param type The type of the service (smtp, ...) that define the data type
+  * @param type The type of the service (smtp, ...) that define the data type
   */
   @SuppressWarnings("unused")
   public void setType(String type) {

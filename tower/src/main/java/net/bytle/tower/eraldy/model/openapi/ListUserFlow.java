@@ -1,11 +1,5 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
-
-/**
- * How the user has been added to the list
- **/
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**

@@ -1,11 +1,5 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.RealmAnalytics;
-import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
-import net.bytle.tower.eraldy.model.openapi.RealmWithAppUris;
-import net.bytle.tower.eraldy.model.openapi.User;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.RoutingContext;
@@ -14,9 +8,9 @@ import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
+import net.bytle.tower.eraldy.model.openapi.RealmPostBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map; // for pure json data
 
 public class RealmApiHandler {
 
@@ -99,7 +93,8 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
 
-      // Based on Route#respond
+
+    // Based on Route#respond
     api.realmsGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);
@@ -128,7 +123,8 @@ public void mount(RouterBuilder builder) {
     RequestParameters requestParameters = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 
 
-      // Based on Route#respond
+
+    // Based on Route#respond
     api.realmsOwnedByMeGet(routingContext)
     .onSuccess(apiResponse -> ApiVertxSupport.respond(routingContext, apiResponse))
     .onFailure(routingContext::fail);

@@ -1,10 +1,10 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.OffsetDateTime;
+
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * This object represents the status of a job that imports users for a list.

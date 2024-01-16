@@ -1,8 +1,9 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Objects;
 
 /**
  * Smtp Mail Service creation and/or modification  * For the service, for an upsert, you may give the service Guid or the service Uri * For the impersonated user, you may give an email or its guid
@@ -89,7 +90,7 @@ public class ServiceSmtpPostBody   {
   }
 
   /**
-   * @return impersonatedUserEmail The user email for cold email, Null for system/app service
+  * @return impersonatedUserEmail The user email for cold email, Null for system/app service
   */
   @JsonProperty("impersonatedUserEmail")
   public String getImpersonatedUserEmail() {
@@ -97,7 +98,7 @@ public class ServiceSmtpPostBody   {
   }
 
   /**
-   * @param impersonatedUserEmail The user email for cold email, Null for system/app service
+  * @param impersonatedUserEmail The user email for cold email, Null for system/app service
   */
   @SuppressWarnings("unused")
   public void setImpersonatedUserEmail(String impersonatedUserEmail) {
@@ -105,7 +106,7 @@ public class ServiceSmtpPostBody   {
   }
 
   /**
-   * @return impersonatedUserGuid The user guid for cold email, Null for system/app service
+  * @return impersonatedUserGuid The user guid for cold email, Null for system/app service
   */
   @JsonProperty("impersonatedUserGuid")
   public String getImpersonatedUserGuid() {
@@ -113,7 +114,7 @@ public class ServiceSmtpPostBody   {
   }
 
   /**
-   * @param impersonatedUserGuid The user guid for cold email, Null for system/app service
+  * @param impersonatedUserGuid The user guid for cold email, Null for system/app service
   */
   @SuppressWarnings("unused")
   public void setImpersonatedUserGuid(String impersonatedUserGuid) {

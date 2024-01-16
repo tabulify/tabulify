@@ -1,11 +1,10 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.net.URI;
-import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.model.openapi.User;
+import java.util.Objects;
 
 /**
  * An app is the container for branding elements (such as logo, color)
@@ -79,7 +78,7 @@ public class App   {
   }
 
   /**
-   * @return handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+  * @return handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
   */
   @com.fasterxml.jackson.annotation.JsonAlias({"uri"})
   @JsonProperty("handle")
@@ -88,7 +87,7 @@ public class App   {
   }
 
   /**
-   * @param handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
+  * @param handle The handle of the app. The handle is unique for all apps on the realm. For instance, you may choose an authentication uri without the scheme (ie no parameters and anchor)
   */
   @SuppressWarnings("unused")
   public void setHandle(String handle) {

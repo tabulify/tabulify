@@ -1,13 +1,13 @@
 package net.bytle.tower.eraldy.model.openapi;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.OffsetDateTime;
+
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ListUserShort {
+public class ListUserShort   {
 
 
   protected String guid;
@@ -26,11 +26,11 @@ public class ListUserShort {
   * with the Jackson library
   */
   @SuppressWarnings("unused")
-  public ListUserShort() {
+  public ListUserShort () {
   }
 
   /**
-   * @return guid The list user guid
+  * @return guid The list user guid
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -38,7 +38,7 @@ public class ListUserShort {
   }
 
   /**
-   * @param guid The list user guid
+  * @param guid The list user guid
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -46,7 +46,7 @@ public class ListUserShort {
   }
 
   /**
-   * @return userGuid The user guid
+  * @return userGuid The user guid
   */
   @JsonProperty("userGuid")
   public String getUserGuid() {
@@ -54,7 +54,7 @@ public class ListUserShort {
   }
 
   /**
-   * @param userGuid The user guid
+  * @param userGuid The user guid
   */
   @SuppressWarnings("unused")
   public void setUserGuid(String userGuid) {
@@ -62,7 +62,7 @@ public class ListUserShort {
   }
 
   /**
-   * @return userEmail The user email
+  * @return userEmail The user email
   */
   @JsonProperty("userEmail")
   public String getUserEmail() {
@@ -70,7 +70,7 @@ public class ListUserShort {
   }
 
   /**
-   * @param userEmail The user email
+  * @param userEmail The user email
   */
   @SuppressWarnings("unused")
   public void setUserEmail(String userEmail) {
@@ -121,7 +121,7 @@ public class ListUserShort {
     ListUserShort listUserShort = (ListUserShort) o;
     return
 
-      Objects.equals(guid, listUserShort.guid) && Objects.equals(userGuid, listUserShort.userGuid) && Objects.equals(userEmail, listUserShort.userEmail) && Objects.equals(confirmationTime, listUserShort.confirmationTime) && Objects.equals(status, listUserShort.status);
+            Objects.equals(guid, listUserShort.guid) && Objects.equals(userGuid, listUserShort.userGuid) && Objects.equals(userEmail, listUserShort.userEmail) && Objects.equals(confirmationTime, listUserShort.confirmationTime) && Objects.equals(status, listUserShort.status);
   }
 
   @Override
