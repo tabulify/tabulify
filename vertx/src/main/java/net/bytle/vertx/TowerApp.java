@@ -58,7 +58,7 @@ public abstract class TowerApp {
   }
 
   public String getRelativeSpecFileResourcesPath() {
-    return OPEN_API_RESOURCES_PREFIX + getAbsoluteDomainName() + "/" + getAppName() + OPENAPI_YAML_PATH;
+    return OPEN_API_RESOURCES_PREFIX + getAbsoluteDomainName().toLowerCase() + "/" + getAppName().toLowerCase() + OPENAPI_YAML_PATH;
   }
 
 

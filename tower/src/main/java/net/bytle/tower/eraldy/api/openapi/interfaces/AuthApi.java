@@ -1,9 +1,20 @@
 package net.bytle.tower.eraldy.api.openapi.interfaces;
 
+import net.bytle.tower.eraldy.model.openapi.AuthEmailPost;
+import net.bytle.tower.eraldy.model.openapi.EmailIdentifier;
+import net.bytle.tower.eraldy.model.openapi.ListUserPostBody;
+import net.bytle.tower.eraldy.model.openapi.OAuthAccessTokenResponse;
+import net.bytle.tower.eraldy.model.openapi.PasswordCredentials;
+import net.bytle.tower.eraldy.model.openapi.PasswordOnly;
+
+import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
+
 import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
-import net.bytle.tower.eraldy.api.openapi.invoker.ApiResponse;
-import net.bytle.tower.eraldy.model.openapi.*;
+import io.vertx.core.json.JsonObject;
+
+import java.util.List;
+import java.util.Map;
 
 public interface AuthApi  {
 

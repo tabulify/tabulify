@@ -136,7 +136,7 @@ public class OpenApiManager {
          * Sub-router tip from https://vertx.io/docs/vertx-web-openapi/java/#_generate_the_router
          */
         String localhostAbsolutePathMount = towerApp.getPathMount();
-        if (!localhostAbsolutePathMount.equals("") && !localhostAbsolutePathMount.equals("/")) {
+        if (!localhostAbsolutePathMount.isEmpty() && !localhostAbsolutePathMount.equals("/")) {
           String apiAbsolutePath = localhostAbsolutePathMount + "/*";
           rootRouter.route(apiAbsolutePath)
             .subRouter(openApiRouter);
