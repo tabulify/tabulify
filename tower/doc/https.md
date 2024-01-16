@@ -15,9 +15,9 @@ They are generated with [mkcert](https://github.com/FiloSottile/mkcert)
 ```shello
 choco install mkcert
 ```
-* Add the environment variable `CAROOT` to the [cert directory](../cert/README.md) path each time
+* Add the environment variable `CAROOT` to the [cert directory](../../cert/README.md) path each time
 ```shell
-set CAROOT=D:\code\java-mono\tower\cert
+set CAROOT=D:\code\java-mono\cert
 ```
 * Install the Root CA (DOS)
 ```shell
@@ -25,10 +25,10 @@ mkcert -install
 ```
 * Create a certificate with the domain that you want. Note that we use `dev` as local TLD and not `local` to be compliant with Oauth Google that requires a valid public TLD.
 ```shell
-cd /D D:\code\java-mono\tower\cert
+cd /D D:\code\java-mono\cert
 mkcert "*.combostrap.dev" "*.eraldy.dev" datacadamia.dev localhost 127.0.0.1 ::1
 ```
-* Modify the names to [cert.pem](../cert/cert.pem) and [key.pem](../cert/key.pem)
+* Modify the names to [cert.pem](../../cert/cert.pem) and [key.pem](../../cert/key.pem)
 * Move them to the cert directory
 * The certificates and CA are used in Dev environment taken by:
   * [VerticleHttpServer](../src/main/java/net/bytle/tower/VerticleApi.java)

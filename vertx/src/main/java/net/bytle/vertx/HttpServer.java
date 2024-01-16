@@ -11,6 +11,7 @@ import io.vertx.ext.web.sstore.SessionStore;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
+import net.bytle.exception.NullValueException;
 import net.bytle.java.JavaEnvs;
 
 import java.util.ArrayList;
@@ -30,11 +31,6 @@ public class HttpServer implements AutoCloseable {
   private BasicAuthHandler basicAuthenticator;
   private PersistentLocalSessionStore persistentSessionStore;
   private BodyHandler bodyHandler;
-
-  /**
-   * The dynamic health check endpoint
-   */
-  private HttpServerHealth httpServerHealth;
 
 
   public HttpServer(builder builder) {
@@ -59,7 +55,7 @@ public class HttpServer implements AutoCloseable {
    * (in email, in oauth callback, ...)
    */
 
-  public Future<io.vertx.core.http.HttpServer> buildHttpServer() {
+  public Future<io.vertx.core.http.HttpServer> buildVertxHttpServer() {
     HttpServerOptions options = new HttpServerOptions()
       .setLogActivity(false)
       .setHost(this.builder.server.getListeningHost())
@@ -68,6 +64,9 @@ public class HttpServer implements AutoCloseable {
      * https://vertx.io/docs/apidocs/io/vertx/core/net/PemKeyCertOptions.html
      */
     if (this.getServer().getSsl()) {
+      if (!JavaEnvs.IS_DEV) {
+        return Future.failedFuture(new InternalException("In non-dev environment, the management of certificate is not done. Ssl should off and handled by the proxy"));
+      }
       options
         .setPemKeyCertOptions(
           new PemKeyCertOptions().addKeyPath(Server.DEV_KEY_PEM).addCertPath(Server.DEV_CERT_PEM)
@@ -90,8 +89,9 @@ public class HttpServer implements AutoCloseable {
          * (The argument is passed by reference, it may then also work at the beginning?)
          */
         if (this.builder.enableHealthCheck) {
-          this.httpServerHealth = new HttpServerHealth(this);
+          HttpServerHealth.addHandler(this);
         }
+        httpServer.requestHandler(router); // https://vertx.io/docs/vertx-core/java/#_handling_requests
         return Future.succeededFuture(httpServer);
       });
   }
@@ -152,7 +152,11 @@ public class HttpServer implements AutoCloseable {
   @SuppressWarnings("unused")
   public BasicAuthHandler getBasicAuthHandler() {
     if (this.basicAuthenticator == null) {
-      this.basicAuthenticator = BasicAuthHandler.create(this.getServer().getApiKeyAuth());
+      try {
+        this.basicAuthenticator = BasicAuthHandler.create(this.getServer().getApiKeyAuth());
+      } catch (NullValueException e) {
+        throw new InternalException("Api Key is not enabled on the server", e);
+      }
     }
     return this.basicAuthenticator;
   }
@@ -323,7 +327,11 @@ public class HttpServer implements AutoCloseable {
       if (this.enablePersistentSessionStore) {
         httpServer.persistentSessionStore = PersistentLocalSessionStore.create(httpServer);
       }
-      httpServer.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
+      try {
+        httpServer.apiKeyAuthenticator = APIKeyHandler.create(this.server.getApiKeyAuth());
+      } catch (NullValueException e) {
+        // not configured
+      }
       return httpServer;
     }
 

@@ -8,6 +8,7 @@ import net.bytle.email.BMailSmtpConnectionParameters;
 import net.bytle.exception.DbMigrationException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NoSecretException;
+import net.bytle.exception.NullValueException;
 import net.bytle.vertx.analytics.AnalyticsTracker;
 import net.bytle.vertx.auth.ApiKeyAuthenticationProvider;
 import net.bytle.vertx.future.TowerFutures;
@@ -43,8 +44,8 @@ public class Server implements AutoCloseable {
    * The default path for the key
    * See the https.md documentation for more info.
    */
-  public static final String DEV_KEY_PEM = "cert/key.pem";
-  public static final String DEV_CERT_PEM = "cert/cert.pem";
+  public static final String DEV_KEY_PEM = "../cert/key.pem";
+  public static final String DEV_CERT_PEM = "../cert/cert.pem";
   // Because they are constants, the names of an enum type's fields are in uppercase letters.
   static String HOST = "host";
   static String LISTENING_PORT = "port"; // the private listening port
@@ -149,9 +150,9 @@ public class Server implements AutoCloseable {
     return this.jwtAuthManager;
   }
 
-  public ApiKeyAuthenticationProvider getApiKeyAuth() {
+  public ApiKeyAuthenticationProvider getApiKeyAuth() throws NullValueException {
     if (this.apiKeyAuth == null) {
-      throw new InternalException("No API Key configured for the server");
+      throw new NullValueException("No API Key configured for the server");
     }
     return this.apiKeyAuth;
   }

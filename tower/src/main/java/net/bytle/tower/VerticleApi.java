@@ -5,7 +5,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
-import net.bytle.exception.IllegalConfiguration;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.AuthSessionHandler;
@@ -47,19 +46,15 @@ public class VerticleApi extends AbstractVerticle {
       .getConfigAccessor()
       .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
       .onSuccess(configAccessor -> vertx.executeBlocking(() -> {
-          GlobalUtilityObjectsCreation
-            .create(vertx, configAccessor)
-            .init();
-          return null;
-        })
-        .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
-        .onSuccess(Void -> {
 
-          /**
-           * Create the server
-           */
-          Server server;
-          try {
+            GlobalUtilityObjectsCreation
+              .create(vertx, configAccessor)
+              .init();
+
+            /**
+             * Create the server
+             */
+            Server server;
             server = Server.create("http", vertx, configAccessor)
               .setFromConfigAccessorWithPort(PORT_DEFAULT)
               .enableApiKeyAuth()
@@ -72,16 +67,11 @@ public class VerticleApi extends AbstractVerticle {
               .enableTrackerAnalytics()
               .enableDnsClient()
               .build();
-          } catch (ConfigIllegalException e) {
-            this.handlePromiseFailure(verticlePromise, e);
-            return;
-          }
 
-          /**
-           * Create the HTTP server
-           */
-          HttpServer httpServer;
-          try {
+            /**
+             * Create the HTTP server
+             */
+            HttpServer httpServer;
             httpServer = HttpServer.createFromServer(server)
               .addBodyHandler() // body transformation
               .addWebLog() // web log
@@ -90,53 +80,45 @@ public class VerticleApi extends AbstractVerticle {
               .addFakeErrorHandler()
               .enablePersistentSessionStore()
               .build();
-          } catch (IllegalConfiguration e) {
-            this.handlePromiseFailure(verticlePromise, e);
-            return;
-          }
 
-          /**
-           * App
-           */
-          EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
-          try {
+            /**
+             * App
+             */
+            EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
             apiApp = EraldyApiApp.create(eraldyDomain);
-          } catch (ConfigIllegalException e) {
-            this.handlePromiseFailure(verticlePromise, e);
-            return;
-          }
 
-          /**
-           * Building Router
-           */
-          Router router = httpServer.getRouter();
-          AuthRealmHandler.createFrom(router, apiApp);
-          AuthSessionHandler.addAuthCookieSessionHandler(router, apiApp); // Add the session handler cross domain, cross realm
-          BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
+            /**
+             * Building Router
+             */
+            Router router = httpServer.getRouter();
+            AuthRealmHandler.createFrom(router, apiApp);
+            AuthSessionHandler.addAuthCookieSessionHandler(router, apiApp); // Add the session handler cross domain, cross realm
+            BrowserCorsUtil.allowCorsForApexDomain(router, eraldyDomain); // Allow Browser cross-origin request in the domain
 
-          /**
-           * Future to be executed before the HTTP server listen
-           */
-          Future<Void> publicApiFuture = apiApp.mount();
-          httpServer.addFutureToExecuteOnBuild(publicApiFuture);
-          Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm(); // Eraldy creation
-          httpServer.addFutureToExecuteOnBuild(eraldyRealm);
-          if (Env.IS_DEV) {
-            // Add the realm for datacadamia for test/purpose only
-            Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
-            httpServer.addFutureToExecuteOnBuild(realm);
-          }
+            /**
+             * Future to be executed before the HTTP server listen
+             */
+            Future<Void> publicApiFuture = apiApp.mount();
+            httpServer.addFutureToExecuteOnBuild(publicApiFuture);
+            Future<Realm> eraldyRealm = EraldyRealm.create(apiApp).getFutureRealm(); // Eraldy creation
+            httpServer.addFutureToExecuteOnBuild(eraldyRealm);
+            if (Env.IS_DEV) {
+              // Add the realm for datacadamia for test/purpose only
+              Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
+              httpServer.addFutureToExecuteOnBuild(realm);
+            }
 
-          /**
-           * Create the server
-           * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
-           *  0.0.0.0 means listen on all available addresses
-           */
-          httpServer
-            .buildHttpServer()
+            /**
+             * Create the server
+             * https://vertx.io/docs/vertx-core/java/#_writing_http_servers_and_clients
+             *  0.0.0.0 means listen on all available addresses
+             */
+            return httpServer.buildVertxHttpServer();
+          })
+          .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
+          .onSuccess(httpServerFuture -> httpServerFuture
             .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
             .onSuccess(vertxHttpServer -> vertxHttpServer
-              .requestHandler(router) // https://vertx.io/docs/vertx-core/java/#_handling_requests
               .listen(ar -> {
                 if (ar.succeeded()) {
                   LOGGER.info("API HTTP server running on port " + ar.result().actualPort());
@@ -145,9 +127,8 @@ public class VerticleApi extends AbstractVerticle {
                   LOGGER.error("Could not start the API HTTP server " + ar.cause());
                   this.handlePromiseFailure(verticlePromise, ar.cause());
                 }
-              }));
-
-        }));
+              })))
+      );
 
 
   }

@@ -6,6 +6,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
+import net.bytle.exception.InternalException;
+import net.bytle.exception.NullValueException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,8 +61,8 @@ public class TowerAppRequestBuilder {
       default:
         throw new RuntimeException("The method " + this.method.name() + " is unknown");
     }
-    if(this.queryParams.size()!=0){
-      for(Map.Entry<String, String> queryParam : this.queryParams.entrySet()){
+    if (!this.queryParams.isEmpty()) {
+      for (Map.Entry<String, String> queryParam : this.queryParams.entrySet()) {
         httpRequest.addQueryParam(queryParam.getKey(), queryParam.getValue());
       }
     }
@@ -87,7 +89,11 @@ public class TowerAppRequestBuilder {
   }
 
   private String getSuperToken() {
-    return towerApp.getApexDomain().getHttpServer().getServer().getApiKeyAuth().getSuperToken();
+    try {
+      return towerApp.getApexDomain().getHttpServer().getServer().getApiKeyAuth().getSuperToken();
+    } catch (NullValueException e) {
+      throw new InternalException("no API key set/enabled for the server");
+    }
   }
 
   public TowerAppRequestBuilder withForwardProxyHeader() {

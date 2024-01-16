@@ -8,6 +8,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import net.bytle.exception.CastException;
 import net.bytle.exception.IllegalConfiguration;
+import net.bytle.exception.InternalException;
 import net.bytle.type.Casts;
 import net.bytle.vertx.*;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ public class SmtpVerticle extends AbstractVerticle {
   private static final Logger LOGGER = LogManager.getLogger(SmtpVerticle.class);
   private static final String APPLICATION_NAME = "smtp-server";
   private SmtpServer smtpServer;
+  private HttpServer httpServer;
 
 
   public static void main(String[] args) {
@@ -39,147 +41,151 @@ public class SmtpVerticle extends AbstractVerticle {
     ConfigManager.config(APPLICATION_NAME, this.vertx, this.config())
       .build()
       .getConfigAccessor()
-      .onFailure(verticlePromise::fail)
-      .onSuccess(configAccessor -> vertx.executeBlocking(SmtpConfig.create(this, configAccessor))
-        .onFailure(verticlePromise::fail)
-        .onSuccess(Void -> {
+      .onFailure(e -> this.handleVerticleFailure(verticlePromise, e))
+      .compose(configAccessor -> vertx.executeBlocking(() -> {
 
+        /**
+         * Smtp Server
+         */
+        this.smtpServer = SmtpServer.create(this, configAccessor);
+
+
+        /**
+         * Build a net server for each smtp service
+         */
+        List<Future<NetServer>> netServers = new ArrayList<>();
+        for (SmtpService smtpService : smtpServer.getSmtpServices()) {
 
           /**
-           * Smtp Server Configuration
+           * Server Certificates
            */
-          vertx.executeBlocking(() -> SmtpServer.create(this, configAccessor))
-            .onFailure(verticlePromise::fail)
-            .onSuccess(smtpServer -> {
-
-              this.smtpServer = smtpServer;
-
-              /**
-               * Build a net server for each smtp service
-               */
-              List<Future<NetServer>> netServers = new ArrayList<>();
-              for (SmtpService smtpService : smtpServer.getSmtpServices()) {
-
-                /**
-                 * Server Certificates
-                 */
-                PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions();
-                for (SmtpHost host : smtpServer.getHostedHosts().values()) {
-                  String keyPath = host.getPrivateKeyPath();
-                  if (keyPath == null) {
-                    continue;
-                  }
-                  String certificatePath = host.getCertificatePath();
-                  if (certificatePath == null) {
-                    this.handleVerticleFailure(verticlePromise, new ConfigIllegalException("The certificate of the host (" + host + ") is null but not its key"));
-                    return;
-                  }
-                  pemKeyCertOptions
-                    .addKeyPath(keyPath)
-                    .addCertPath(certificatePath);
-                }
-                /**
-                 * Note on protcol: The protocol is TLS, there is no old SSL allowed
-                 * The default are = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }
-                 * SSLv3 is NOT enabled due to POODLE vulnerability http:/en.wikipedia.org/wiki/POODLE
-                 * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
-                 */
-                /**
-                 * Note on StartTls: {@link SmtpSslOptionsWithStartTLS} was created to be able to use the STARTTLS option
-                 * of Netty in order to upgrade the server connection
-                 * and then send a reply (but unfortunately, it does not work
-                 * because Vertx wraps it and the wrapper set it back to non-enabled (false)
-                 * SmtpSslOptionsWithStartTLS sslEngineOptions = SmtpSslOptionsWithStartTLS.create();
-                 * then
-                 * NetServerOptions.setSslEngineOptions(sslEngineOptions)
-                 */
-                NetServerOptions serverOption = new NetServerOptions()
-                  .setPort(smtpService.getListeningPort())
-                  .setPemKeyCertOptions(pemKeyCertOptions)
-                  .setSsl(smtpService.getIsTlsEnabled())
-                  // SNI returns the certificate for the indicated server name in a SSL connection
-                  .setSni(smtpService.getIsSniEnabled())
-                  .setIdleTimeout(smtpServer.getIdleTimeoutSecond())
-                  .setSslHandshakeTimeout(smtpServer.getHandShakeTimeoutSecond());
+          PemKeyCertOptions pemKeyCertOptions = new PemKeyCertOptions();
+          for (SmtpHost host : smtpServer.getHostedHosts().values()) {
+            String keyPath = host.getPrivateKeyPath();
+            if (keyPath == null) {
+              continue;
+            }
+            String certificatePath = host.getCertificatePath();
+            if (certificatePath == null) {
+              throw new ConfigIllegalException("The certificate of the host (" + host + ") is null but not its key");
+            }
+            pemKeyCertOptions
+              .addKeyPath(keyPath)
+              .addCertPath(certificatePath);
+          }
+          /**
+           * Note on protcol: The protocol is TLS, there is no old SSL allowed
+           * The default are = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }
+           * SSLv3 is NOT enabled due to POODLE vulnerability http:/en.wikipedia.org/wiki/POODLE
+           * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
+           */
+          /**
+           * Note on StartTls: {@link SmtpSslOptionsWithStartTLS} was created to be able to use the STARTTLS option
+           * of Netty in order to upgrade the server connection
+           * and then send a reply (but unfortunately, it does not work
+           * because Vertx wraps it and the wrapper set it back to non-enabled (false)
+           * SmtpSslOptionsWithStartTLS sslEngineOptions = SmtpSslOptionsWithStartTLS.create();
+           * then
+           * NetServerOptions.setSslEngineOptions(sslEngineOptions)
+           */
+          NetServerOptions serverOption = new NetServerOptions()
+            .setPort(smtpService.getListeningPort())
+            .setPemKeyCertOptions(pemKeyCertOptions)
+            .setSsl(smtpService.getIsTlsEnabled())
+            // SNI returns the certificate for the indicated server name in a SSL connection
+            .setSni(smtpService.getIsSniEnabled())
+            .setIdleTimeout(smtpServer.getIdleTimeoutSecond())
+            .setSslHandshakeTimeout(smtpServer.getHandShakeTimeoutSecond());
 
 
-                Future<NetServer> futureNetServer = vertx.createNetServer(serverOption)
-                  .exceptionHandler(SmtpExceptionHandler.create())
-                  .connectHandler(smtpService::handle)
-                  .listen();
-                netServers.add(futureNetServer);
+          Future<NetServer> futureNetServer = vertx.createNetServer(serverOption)
+            .exceptionHandler(SmtpExceptionHandler.create())
+            .connectHandler(smtpService::handle)
+            .listen();
+          netServers.add(futureNetServer);
 
-              }
+        }
 
-              /**
-               * Promise handling
-               */
-              Future.join(netServers)
-                .onSuccess(result -> {
-                  try {
+        /**
+         * Promise handling
+         */
+        return Future.join(netServers)
+          .recover(err -> Future.failedFuture(new InternalException("Net server could not be started", err)))
+          .compose(result -> {
 
-                    for (NetServer netServer : Casts.castToList(result.list(), NetServer.class)) {
-                      LOGGER.info("Smtp server is now listening on port " + netServer.actualPort());
-                    }
+            List<NetServer> netServersList;
+            try {
+              netServersList = Casts.castToList(result.list(), NetServer.class);
+            } catch (CastException e) {
+              return Future.failedFuture(new InternalException("Should not happen", e));
+            }
+            for (NetServer netServer : netServersList) {
+              LOGGER.info("Smtp server is now listening on port " + netServer.actualPort());
+            }
 
-                    /**
-                     * Create the server object
-                     */
-                    Server server;
-                    try {
-                      server = Server.create("http", vertx, configAccessor)
-                        .setFromConfigAccessorWithPort(25026)
-                        .build();
-                    } catch (IllegalConfiguration e) {
-                      throw new RuntimeException(e);
-                    }
+            /**
+             * Create the net server for the HTTP server
+             */
+            Server server;
+            try {
+              server = Server.create("http", vertx, configAccessor)
+                .setFromConfigAccessorWithPort(25026)
+                .enableSmtpClient("Eraldy.com")
+                .build();
+            } catch (ConfigIllegalException e) {
+              return Future.failedFuture(new ConfigIllegalException("Illegal Net server configuration", e));
+            }
 
-                    /**
-                     * Create the HTTP server
-                     */
-                    HttpServer httpServer;
-                    try {
-                      httpServer = HttpServer.createFromServer(server)
-                        .addBodyHandler()
-                        .addWebLog()
-                        .setBehindProxy()
-                        .addMetrics()
-                        .build();
-                    } catch (Exception e) {
-                      this.handleVerticleFailure(verticlePromise, e);
-                      return;
-                    }
+            /**
+             * Create the HTTP server
+             */
+            try {
+              this.httpServer = HttpServer.createFromServer(server)
+                .addBodyHandler()
+                .addWebLog()
+                .setBehindProxy()
+                .addMetrics()
+                .build();
+            } catch (IllegalConfiguration e) {
+              return Future.failedFuture(e);
+            }
+            return httpServer
+              .buildVertxHttpServer();
+          });
+      }))
+      .onFailure(e -> this.handleVerticleFailure(verticlePromise, e))
+      .onSuccess(vertxHttpServerFuture -> vertxHttpServerFuture
+        .onFailure(e -> this.handleVerticleFailure(verticlePromise, e))
+        .onSuccess(vertxHttpServer -> vertxHttpServer
+          .listen(ar -> {
+            if (ar.succeeded()) {
+              LOGGER.info("HTTP server running on port " + ar.result().actualPort());
+              verticlePromise.complete();
+            } else {
+              Throwable cause = ar.cause();
+              LOGGER.error("Could not start the HTTP server:" + cause, cause);
+              this.handleVerticleFailure(verticlePromise, cause);
+            }
+          }))
+      );
 
-                    httpServer.buildHttpServer(initFutures)
-                      .requestHandler(httpServer.getRouter())
-                      .listen(ar -> {
-                        if (ar.succeeded()) {
-                          LOGGER.info("HTTP server running on port " + ar.result().actualPort());
-                          verticlePromise.complete();
-                        } else {
-                          LOGGER.error("Could not start a HTTP server:" + ar.cause());
-                          this.handleVerticleFailure(verticlePromise, ar.cause());
-                        }
-                      });
-
-                  } catch (CastException e) {
-                    verticlePromise.fail(e);
-                  }
-                })
-                .onFailure(e -> this.handleVerticleFailure(verticlePromise, e));
-            });
-
-        }));
 
   }
 
   private void handleVerticleFailure(Promise<Void> verticlePromise, Throwable e) {
     verticlePromise.fail(e);
     this.vertx.close();
+    LOGGER.error(e);
   }
 
 
   public SmtpServer getSmtpServer() {
     return this.smtpServer;
   }
+
+  @Override
+  public void stop() throws Exception {
+    this.httpServer.close();
+  }
+
 }

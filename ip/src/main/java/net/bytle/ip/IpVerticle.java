@@ -69,7 +69,7 @@ public class IpVerticle extends AbstractVerticle {
             EraldyDomain eraldyDomain = EraldyDomain.getOrCreate(httpServer, configAccessor);
             ipApp = IpApp.createForDomain(eraldyDomain);
             httpServer.addFutureToExecuteOnBuild(ipApp.mount());
-            httpServer.buildHttpServer()
+            httpServer.buildVertxHttpServer()
               .onFailure(err -> this.handlePromiseFailure(verticlePromise, err))
               .onSuccess(vertxHttpServer -> vertxHttpServer
                 .listen(ar -> {

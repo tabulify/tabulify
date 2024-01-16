@@ -20,7 +20,7 @@ public class SqlAnalytics implements Handler<Long> {
 
   private static final String SQL_RESOURCES_PATH = "/analytics/RealmAnalytics.sql";
   private final EraldyApiApp apiApp;
-  private LocalDateTime executionLastTime;
+  private LocalDateTime executionLastTime = LocalDateTime.now();
 
   /**
    * Run the analytics regularly

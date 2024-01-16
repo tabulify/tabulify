@@ -24,8 +24,8 @@ hosts: # the hosted hosts by hostname
   smtp.eraldy.dev:
     domain: eraldy.dev
     postmaster: bob@bytle.dev
-    key: ../tower/cert/key.pem # the path to the private key
-    cert: ../tower/cert/cert.pem # the path to the certificate
+    key: ../cert/key.pem # the path to the private key
+    cert: ../cert/cert.pem # the path to the certificate
   smtp.datacadamia.dev:
     domain: datacadamia.dev
     postmaster: bob@bytle.dev
