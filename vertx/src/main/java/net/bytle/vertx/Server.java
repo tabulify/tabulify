@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Properties, configuration and capabilities for a server (net/http)
- * <p>
+ * A server represents a TCP/IP server
+ * and offers multiple service that can be enabled/disabled
+ * and used by apps.
+ * It wraps a {@link Vertx object}
  */
 public class Server implements AutoCloseable {
 
@@ -75,7 +77,8 @@ public class Server implements AutoCloseable {
   }
 
   /**
-   * @param name - the name is used as prefix for the configuration (ie with the http name, the conf key are `http.host, http.port, ...`)
+   * @param name - the name is used as prefix for the server configuration (ie with the http name, the conf key are `http.host, http.port, ...`)
+   *             as you can create more than one server listening
    */
   public static builder create(String name, Vertx vertx, ConfigAccessor configAccessor) {
     return new builder(name, vertx, configAccessor);

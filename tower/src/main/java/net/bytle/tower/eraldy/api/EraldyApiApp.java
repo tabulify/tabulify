@@ -13,6 +13,7 @@ import net.bytle.tower.eraldy.api.implementer.flow.*;
 import net.bytle.tower.eraldy.api.openapi.invoker.ApiVertxSupport;
 import net.bytle.tower.eraldy.model.openapi.Realm;
 import net.bytle.tower.eraldy.objectProvider.*;
+import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
@@ -110,6 +111,7 @@ public class EraldyApiApp extends TowerApp {
     authHandlers.add(this.userListRegistrationFlow.handleStepOAuthAuthentication());
     this.oauthExternalFlow = new OAuthExternalCodeFlow(this, "/auth/oauth", authHandlers);
 
+    new SqlAnalytics(this);
 
   }
 

@@ -10,7 +10,6 @@ import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.auth.AuthRealmHandler;
 import net.bytle.tower.eraldy.auth.AuthSessionHandler;
 import net.bytle.tower.eraldy.model.openapi.Realm;
-import net.bytle.tower.eraldy.schedule.SqlAnalytics;
 import net.bytle.tower.util.DatacadamiaDomain;
 import net.bytle.tower.util.Env;
 import net.bytle.tower.util.GlobalUtilityObjectsCreation;
@@ -127,11 +126,6 @@ public class VerticleApi extends AbstractVerticle {
             Future<Realm> realm = DatacadamiaDomain.getOrCreate(this).createRealm();
             httpServer.addFutureToExecuteOnBuild(realm);
           }
-
-          /**
-           * Add the scheduled task
-           */
-          SqlAnalytics.create(eraldyDomain);
 
           /**
            * Create the server

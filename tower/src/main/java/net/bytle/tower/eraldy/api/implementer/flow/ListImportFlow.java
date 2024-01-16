@@ -56,8 +56,8 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
    * The delay/period to set on the timer to execute
    * the jobs.
    */
-  private final Integer executionPeriodInMilliSec;
-  private final int purgeDelay;
+  private final Integer executionPeriodInMs;
+  private final int purgeDelayMs;
   /**
    * The last execution time to check that the job execution is still healthy
    */
@@ -192,15 +192,15 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
     /**
      * Timer Queue Execution
      */
-    this.executionPeriodInMilliSec = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
+    this.executionPeriodInMs = configAccessor.getInteger("list.import.execution.delay.ms", 5000);
     this.executionLastTime = LocalDateTime.now();
     this.scheduleNextJob();
 
     /**
      * Purge
      */
-    purgeDelay = 24 * 60 * 60000;
-    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", purgeDelay);
+    purgeDelayMs = 24 * 60 * 60000;
+    int purgeHistoryDelay = configAccessor.getInteger("list.import.purge.history.delay", purgeDelayMs);
     vertx.setPeriodic(6000, purgeHistoryDelay, jobId -> purgeJobHistory());
 
     /**
@@ -214,9 +214,10 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
          * Boolean should be true
          */
         Duration agoLastExecution = Duration.between(this.executionLastTime, LocalDateTime.now());
-        boolean agoLastPurge = LocalDateTime.now()
-          .minus(this.purgeDelay, TimeUnit.MILLISECONDS.toChronoUnit())
-          .isBefore(this.purgeLastTime);
+        boolean executionTest = agoLastExecution.toMillis() < this.executionPeriodInMs;
+        Duration agoLastPurge = Duration.between(this.purgeLastTime, LocalDateTime.now());
+        boolean purgeTest = agoLastPurge.toMillis()< this.purgeDelayMs;
+
 
         /**
          * Data
@@ -228,17 +229,17 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
         String executionsLastTimeString = DateTimeUtil.LocalDateTimetoString(this.executionLastTime);
         JsonObject data = new JsonObject();
         data.put("purge-last-time", purgeLastTimeString);
+        data.put("purge-last-ago-sec", agoLastPurge.toSeconds());
         data.put("execution-last-time", executionsLastTimeString);
         data.put("execution-last-ago-sec", agoLastExecution.toSeconds());
 
-        boolean executionTest = agoLastExecution.toMillis() > this.executionPeriodInMilliSec;
         /**
          * Checks and Status Report
          */
         // ok
         if (
           executionTest
-            && agoLastPurge) {
+            && purgeTest) {
           promise.complete(Status.OK(data));
           return;
         }
@@ -248,7 +249,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
         if (!executionTest) {
           messages.add("The last time execution date is too old.");
         }
-        if (!agoLastPurge) {
+        if (!purgeTest) {
           messages.add("The last time purge date is too old.");
         }
         data.put("message", String.join(" ", messages));
@@ -268,7 +269,7 @@ public class ListImportFlow implements WebFlow, AutoCloseable {
   }
 
   private void scheduleNextJob() {
-    vertx.setTimer(executionPeriodInMilliSec, jobId -> executeNextJob());
+    vertx.setTimer(executionPeriodInMs, jobId -> executeNextJob());
   }
 
   private void purgeJobHistory() {
