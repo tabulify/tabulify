@@ -41,11 +41,7 @@ We have customized the generation with:
 
 We have:
 * added a SupportingFiles: [ApiVertxSupport.mustache](../src/main/openapi/templates/supportFiles/ApiVertxSupport.mustache) to generate the mount automatically (See the [customization doc](https://openapi-generator.tech/docs/customization)
-* customized the [vertx mustaches templates](
-  https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/resources/JavaVertXWebServer)
-  * added the description in the `pojo.mustache`.
-  * added the custom field `x-fields-identity` and `x-fields-to-string` in the `pojo.mustache`
-  * added the type of value in the `enumClass.mustache`.
+* customized the [vertx mustaches templates](../src/main/openapi/templates/README.md)
 
 The added custom templates (SupportingFiles) are defined in the [openapi-generator-config.yaml](../.openapi-generator-eraldy-api-config.yaml)
 

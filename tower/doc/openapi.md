@@ -52,6 +52,8 @@ The data type are detected via the [transformation](https://github.com/OpenAPITo
 * [OpenAPI Format](https://github.com/eclipse-vertx/vertx-json-schema/blob/master/src/main/java/io/vertx/json/schema/openapi3/FormatValidatorFactory.java#L32) [Specification](https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7.3)
 * [Validation Specification](https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7.3)
 
+#### Date
+
 FYI: For date:
 ```yaml
 properties:
@@ -60,14 +62,16 @@ properties:
     format: date-time
 ```
 
-For Long
+#### For Long
+
 ```yaml
 schema:
   type: integer
   format: int64
 ```
 
-For Integer
+#### For Integer
+
 ```yaml
 schema:
   type: integer
@@ -124,6 +128,22 @@ Example from `optInUri` to `optInOrigin`
 optInOrigin:
   type: string
   x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
+```
+
+### Data Type Migration
+
+Example from `flowId` (string) to `flowId` (integer)
+```yaml
+flowId:
+  type: integer
+  x-field-extra-annotation: '@com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.StringToIntegerDeserializer.class)'
+```
+
+Example from `flow` (string) to `flowId` (integer)
+```yaml
+flowId:
+  type: integer
+  x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"flow"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.StringToIntegerDeserializer.class)'
 ```
 
 ### File Upload

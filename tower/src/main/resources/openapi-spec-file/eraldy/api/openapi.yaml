@@ -3271,7 +3271,7 @@ components:
       example:
         confirmationIp: confirmationIp
         optInIp: optInIp
-        guid: xmmmN
+        guid: liu-xjjDjj
         confirmationTime: 2000-01-23T04:56:07.000+00:00
         optInOrigin: optInOrigin
         list:
@@ -3395,13 +3395,13 @@ components:
             handle: handle
             localId: 0
           email: john@doe.com
-        flow: null
+        flowId: null
         status: 0
         optInTime: 2000-01-23T04:56:07.000+00:00
       properties:
         guid:
-          description: The public registration id
-          example: xmmmN
+          description: The list user guid
+          example: liu-xjjDjj
           type: string
         status:
           description: |
@@ -3436,17 +3436,30 @@ components:
           type: string
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
             optInUri\"})"
-        flow:
+        flowId:
           $ref: '#/components/schemas/ListUserFlow'
-      title: A list user
+      required:
+      - guid
+      title: A user in a list
       type: object
     ListUserFlow:
       description: How the user has been added to the list
       enum:
-      - oauth
-      - email
-      - import
-      type: string
+      - 0
+      - 1
+      - 2
+      format: int32
+      type: integer
+      x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"flow\"\
+        }) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)"
+      x-enum-varnames:
+      - EMAIL
+      - OAUTH
+      - IMPORT
+      x-enum-descriptions:
+      - Email - the user has given its email
+      - Oauth - the user has clicked on the oauth button
+      - Import - the user has been imported
     ListUserShort:
       example:
         guid: xmmmN

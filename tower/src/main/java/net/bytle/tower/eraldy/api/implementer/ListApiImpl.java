@@ -404,8 +404,7 @@ public class ListApiImpl implements ListApi {
 
     return listUserProvider
       .getListUserByGuidHash(guid)
-      .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, routingContext))
-      .compose(subscription -> Future.succeededFuture(new ApiResponse<>(subscription).setMapper(listUserProvider.getApiMapper())));
+      .compose(listUser -> Future.succeededFuture(new ApiResponse<>(listUser).setMapper(listUserProvider.getApiMapper())));
 
   }
 

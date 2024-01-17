@@ -263,10 +263,9 @@ public class ListUserProvider {
   private Future<ListUser> getListUserFromDatabaseRow(Row row) {
 
     Long realmId = row.getLong(REALM_COLUMN);
-    Future<Realm> realmFuture = this.apiApp.getRealmProvider()
-      .getRealmFromId(realmId);
 
-    return realmFuture
+    return this.apiApp.getRealmProvider()
+      .getRealmFromId(realmId)
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
@@ -278,7 +277,7 @@ public class ListUserProvider {
 
         return Future
           .all(publicationFuture, publisherFuture)
-          .recover(e -> Future.failedFuture(new InternalException("Error while building a list user from row",e)))
+          .recover(e -> Future.failedFuture(new InternalException("A future error happened while building a list user from row", e)))
           .compose(compositeFuture -> {
 
             JsonObject jsonAppData = Postgres.getFromJsonB(row, DATA_COLUMN);
@@ -290,8 +289,7 @@ public class ListUserProvider {
             listUser.setList(listItemResult);
             listUser.setUser(userResult);
 
-//        LocalDateTime creationTime = row.getOffsetDateTime(SUBSCRIPTION_PREFIX + COLUMN_PART_SEP + CREATION_TIME);
-//        subscription.setCreationTime(creationTime);
+            this.computeGuidForListUserObject(listUser);
 
             return Future.succeededFuture(listUser);
           });
@@ -322,7 +320,11 @@ public class ListUserProvider {
           userId
         )
       )
-      .onFailure(e -> LOGGER.error("Unable to retrieve the registration. Error: " + e.getMessage() + ". Sql: \n" + sql, e))
+      .recover(e -> Future.failedFuture(TowerFailureException.builder()
+        .setMessage("Unable to retrieve the list user by local ids. Error: " + e.getMessage() + ". Sql: \n" + sql)
+        .setCauseException(e)
+        .build()
+      ))
       .compose(userRows -> {
 
         if (userRows.size() == 0) {
@@ -355,8 +357,6 @@ public class ListUserProvider {
     return getListUserByLocalIds(listId, userId, realmId);
 
   }
-
-
 
 
   public Future<java.util.List<ListUserShort>> getListUsers(String listGuid,
@@ -507,11 +507,11 @@ public class ListUserProvider {
   private Guid getGuidObjectFromLocalIds(Realm realm, Long listId, Long userId) {
 
     return apiApp.createGuidStringFromRealmAndTwoObjectId(
-        GUID_PREFIX,
-        realm.getLocalId(),
-        listId,
-        userId
-      );
+      GUID_PREFIX,
+      realm.getLocalId(),
+      listId,
+      userId
+    );
 
   }
 

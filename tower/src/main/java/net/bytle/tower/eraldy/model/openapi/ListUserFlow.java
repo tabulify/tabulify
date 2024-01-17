@@ -3,24 +3,24 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * How the user has been added to the list
- */
+* How the user has been added to the list
+*/
 public enum ListUserFlow {
 
-  OAUTH("oauth"),
+  EMAIL(0),
 
-  EMAIL("email"),
+  OAUTH(1),
 
-  IMPORT("import");
+  IMPORT(2);
 
-  private String value;
+  private final Integer value;
 
-  ListUserFlow(String value) {
+  ListUserFlow(Integer value) {
     this.value = value;
   }
 
   @JsonValue
-  public String getValue() {
+  public Integer getValue() {
     return value;
   }
 
@@ -29,7 +29,7 @@ public enum ListUserFlow {
     return String.valueOf(value);
   }
 
-  public static ListUserFlow fromValue(String value) {
+  public static ListUserFlow fromValue(Integer value) {
     for (ListUserFlow b : ListUserFlow.values()) {
       if (b.value.equals(value)) {
         return b;
@@ -37,4 +37,5 @@ public enum ListUserFlow {
     }
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
+
 }

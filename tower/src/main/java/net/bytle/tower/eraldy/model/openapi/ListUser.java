@@ -31,7 +31,7 @@ public class ListUser   {
 
   protected String optInOrigin;
 
-  protected ListUserFlow flow;
+  protected ListUserFlow flowId;
 
   /**
   * The empty constructor is
@@ -43,7 +43,7 @@ public class ListUser   {
   }
 
   /**
-  * @return guid The public registration id
+  * @return guid The list user guid
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -51,7 +51,7 @@ public class ListUser   {
   }
 
   /**
-  * @param guid The public registration id
+  * @param guid The list user guid
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -188,19 +188,20 @@ public class ListUser   {
   }
 
   /**
-  * @return flow
+  * @return flowId
   */
-  @JsonProperty("flow")
-  public ListUserFlow getFlow() {
-    return flow;
+  @com.fasterxml.jackson.annotation.JsonAlias({"flow"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)
+  @JsonProperty("flowId")
+  public ListUserFlow getFlowId() {
+    return flowId;
   }
 
   /**
-  * @param flow Set flow
+  * @param flowId Set flowId
   */
   @SuppressWarnings("unused")
-  public void setFlow(ListUserFlow flow) {
-    this.flow = flow;
+  public void setFlowId(ListUserFlow flowId) {
+    this.flowId = flowId;
   }
 
 
@@ -214,18 +215,18 @@ public class ListUser   {
     }
     ListUser listUser = (ListUser) o;
     return
+            Objects.equals(guid, listUser.guid);
 
-            Objects.equals(guid, listUser.guid) && Objects.equals(status, listUser.status) && Objects.equals(list, listUser.list) && Objects.equals(user, listUser.user) && Objects.equals(confirmationTime, listUser.confirmationTime) && Objects.equals(confirmationIp, listUser.confirmationIp) && Objects.equals(optInTime, listUser.optInTime) && Objects.equals(optInIp, listUser.optInIp) && Objects.equals(optInOrigin, listUser.optInOrigin) && Objects.equals(flow, listUser.flow);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(guid, status, list, user, confirmationTime, confirmationIp, optInTime, optInIp, optInOrigin, flow);
+    return Objects.hash(guid);
   }
 
   @Override
   public String toString() {
-    return super.toString();
+    return guid;
   }
 
 }

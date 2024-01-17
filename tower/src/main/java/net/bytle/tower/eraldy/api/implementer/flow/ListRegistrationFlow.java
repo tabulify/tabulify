@@ -99,7 +99,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        inputListUser.setFlow(registrationFlow);
+        inputListUser.setFlowId(registrationFlow);
         return this
           .getApp()
           .getListRegistrationProvider()

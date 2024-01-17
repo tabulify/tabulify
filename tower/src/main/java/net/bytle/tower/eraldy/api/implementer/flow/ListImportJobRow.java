@@ -168,7 +168,7 @@ public class ListImportJobRow {
                 ListUser listUserToInsert = new ListUser();
                 listUserToInsert.setUser(user);
                 listUserToInsert.setList(list);
-                listUserToInsert.setFlow(ListUserFlow.IMPORT);
+                listUserToInsert.setFlowId(ListUserFlow.IMPORT);
                 listUserToInsert.setStatus(1);
                 if (this.optInOrigin == null) {
                   listUserToInsert.setOptInOrigin(ListUserFlow.IMPORT.toString());
