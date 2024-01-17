@@ -1,35 +1,91 @@
 package net.bytle.tower.eraldy.schedule;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.healthchecks.Status;
 import io.vertx.pgclient.PgPool;
-import net.bytle.exception.InternalException;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
+import net.bytle.fs.Fs;
+import net.bytle.java.JavaEnvs;
+import net.bytle.java.Javas;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
+import net.bytle.vertx.ConfigIllegalException;
 import net.bytle.vertx.DateTimeUtil;
 import net.bytle.vertx.JacksonMapperManager;
 import net.bytle.vertx.Server;
+import net.bytle.vertx.future.TowerFutureComposite;
+import net.bytle.vertx.future.TowerFuturesSequentialScheduler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class SqlAnalytics implements Handler<Long> {
 
-  private static final String SQL_RESOURCES_PATH = "/analytics/RealmAnalytics.sql";
+  private static final Logger LOGGER = LogManager.getLogger(SqlAnalytics.class);
+  private static final String SQL_ANALYTICS_DIR_RESOURCES_PATH = "/analytics";
   private final EraldyApiApp apiApp;
+  private final Path analyticsDirectory;
+
   private LocalDateTime executionLastTime = LocalDateTime.now();
+  private boolean isRunning = false;
+  private List<Path> executedPaths = new ArrayList<>();
 
   /**
    * Run the analytics regularly
    */
-  public SqlAnalytics(EraldyApiApp apiApp) {
+  public SqlAnalytics(EraldyApiApp apiApp) throws ConfigIllegalException {
+
     this.apiApp = apiApp;
-    long delayMsEveryHour = 1000 * 60 * 60;
     Server server = apiApp.getApexDomain().getHttpServer().getServer();
-    server.getVertx().setPeriodic(delayMsEveryHour, this);
+
+    /**
+     * Analytics Directory
+     * where we found the SQL to run
+     */
+    if (JavaEnvs.IS_DEV) {
+      analyticsDirectory = Paths.get("src/main/resources" + SQL_ANALYTICS_DIR_RESOURCES_PATH);
+    } else {
+      URL analyticsDirectoryUrl = SqlAnalytics.class.getResource(SQL_ANALYTICS_DIR_RESOURCES_PATH);
+      if (analyticsDirectoryUrl == null) {
+        throw new ConfigIllegalException("The Analytics Resource directory was not found.");
+      }
+      analyticsDirectory = Javas.getFilePathFromUrl(analyticsDirectoryUrl);
+    }
+    if (!Files.exists(analyticsDirectory)) {
+      throw new ConfigIllegalException("The Analytics directory (" + analyticsDirectory + ") does not exist");
+    }
+    if (!Files.isDirectory(analyticsDirectory)) {
+      throw new ConfigIllegalException("The Analytics path (" + analyticsDirectory + ") is not a directory");
+    }
+    LOGGER.info("The analytics path was set to: " + analyticsDirectory);
+
+    /**
+     * The job
+     */
+    long delayMsEveryHour = 1000 * 60 * 60;
+    long startMs = 1000 * 60 * 60;
+    if (JavaEnvs.IS_DEV) {
+      startMs = 5 * 1000;
+    }
+    server.getVertx().setPeriodic(startMs, delayMsEveryHour, this);
+
+    /**
+     * The health of the job
+     */
     server.getServerHealthCheck()
       .register(SqlAnalytics.class, promise -> {
 
@@ -49,6 +105,7 @@ public class SqlAnalytics implements Handler<Long> {
         JsonObject data = new JsonObject();
         data.put("execution-last-time", executionsLastTimeString);
         data.put("execution-last-ago-sec", agoLastExecution.toSeconds());
+        data.put("execution-paths", executedPaths.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(", ")));
 
         /**
          * Checks and Status Report
@@ -70,20 +127,46 @@ public class SqlAnalytics implements Handler<Long> {
 
   @Override
   public void handle(Long event) {
-    this.executionLastTime = LocalDateTime.now();
-    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
-    InputStream inputStream = SqlAnalytics.class.getResourceAsStream(SQL_RESOURCES_PATH);
-    if (inputStream == null) {
-      throw new InternalException("The Realm Analytics file was not found");
+
+    synchronized (this) {
+      if (this.isRunning) {
+        return;
+      }
+      this.isRunning = true;
     }
-    Scanner s = new Scanner(inputStream).useDelimiter("\\A");
-    String sql = s.hasNext() ? s.next() : "";
-    jdbcPool.preparedQuery(sql)
-      .execute()
-      .onFailure(e -> {
-        throw new InternalException("Error on analytics update. Sql: " + sql, e);
+
+    PgPool jdbcPool = this.apiApp.getApexDomain().getHttpServer().getServer().getJdbcPool();
+
+    List<Future<RowSet<Row>>> futures = new ArrayList<>();
+    this.executedPaths = new ArrayList<>();
+    List<String> sqls = new ArrayList<>();
+
+    try (DirectoryStream<Path> files = Files.newDirectoryStream(this.analyticsDirectory)) {
+      for (Path path : files) {
+        this.executionLastTime = LocalDateTime.now();
+        String sql = Fs.getFileContent(path);
+        futures.add(jdbcPool.preparedQuery(sql).execute());
+        executedPaths.add(path);
+        sqls.add(sql);
+      }
+    } catch (IOException e) {
+      LOGGER.error("Error while reading the analytics directory", e);
+      return;
+    }
+    new TowerFuturesSequentialScheduler<RowSet<Row>>()
+      .join(futures, null)
+      .onComplete(async -> {
+        this.isRunning = false;
+        if (async.failed()) {
+          LOGGER.error("Error while running the analytics directory", async.cause());
+          return;
+        }
+        TowerFutureComposite<RowSet<Row>> towerComposite = async.result();
+        if (towerComposite.hasFailed()) {
+          int failureIndex = towerComposite.getFailureIndex();
+          LOGGER.error("The SQL analytic (" + executedPaths.get(failureIndex) + ") with the SQL: " + sqls.get(failureIndex), towerComposite.getFailure());
+        }
       });
   }
-
 
 }

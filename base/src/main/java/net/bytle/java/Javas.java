@@ -16,7 +16,7 @@ public class Javas {
   /**
    * @return return the class file path or the jar if located in a jar
    */
-  protected static Path getFilePathFromUrl(java.net.URL sourceCodeUrl) {
+  public static Path getFilePathFromUrl(java.net.URL sourceCodeUrl) {
     try {
 
       switch (sourceCodeUrl.getProtocol()) {

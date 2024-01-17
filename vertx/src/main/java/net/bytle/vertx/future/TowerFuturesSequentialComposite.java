@@ -29,7 +29,7 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
 
 
   void executeSequentially() {
-    if (this.coordinatation != TowerFutureCoordination.ALL) {
+    if (!(this.coordinatation == TowerFutureCoordination.ALL || this.coordinatation == TowerFutureCoordination.JOIN)) {
       this.failure = new InternalException("The coordination (" + this.coordinatation + ") is not implemented");
       this.promise.complete(this);
       return;
@@ -48,8 +48,10 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
           if (res.failed()) {
             this.failure = res.cause();
             this.failureIndex = rowId;
-            promise.complete(this);
-            return;
+            if (this.coordinatation == TowerFutureCoordination.ALL) {
+              promise.complete(this);
+              return;
+            }
           }
           T castResult = res.result();
           if (this.listener != null) {
@@ -82,4 +84,5 @@ public class TowerFuturesSequentialComposite<T> implements TowerFutureComposite<
     this.promise = event;
     executeSequentially();
   }
+
 }

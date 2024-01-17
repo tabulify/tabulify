@@ -2,6 +2,7 @@ package net.bytle.vertx;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
@@ -15,8 +16,6 @@ import io.vertx.ext.web.openapi.impl.OpenAPI3RouterBuilderImpl;
 import net.bytle.exception.IllegalConfiguration;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -30,8 +29,6 @@ import java.util.Set;
  */
 public class OpenApiManager {
 
-
-  private static final Logger LOGGER = LogManager.getLogger(OpenApiManager.class);
 
   /**
    * The key in the {@link io.vertx.ext.web.RoutingContext#get(String)} to get access
@@ -65,7 +62,8 @@ public class OpenApiManager {
      * https://vertx.io/docs/vertx-web-openapi/java/
      */
     String specFileString = specFile.toString();
-    return RouterBuilder.create(towerApp.getApexDomain().getHttpServer().getServer().getVertx(), specFileString)
+    Vertx vertx = towerApp.getApexDomain().getHttpServer().getServer().getVertx();
+    return RouterBuilder.create(vertx, specFileString)
       .recover(err -> {
         InternalError error = new InternalError("Unable to build the openapi memory model for the spec file (" + specFileString + "). Check the inputScope to see where the error is.", err);
         return Future.failedFuture(TowerFailureException.builder()

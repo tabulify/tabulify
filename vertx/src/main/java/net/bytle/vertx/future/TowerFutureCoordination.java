@@ -1,8 +1,17 @@
 package net.bytle.vertx.future;
 
 public enum TowerFutureCoordination {
+
   /**
-   * Execute them all, fail at the first failure
+   * Execute them all,
+   * Return at the first failure
+   * Fail at the first failure
    */
-  ALL
+  ALL,
+  /**
+   * Execute them all,
+   * Return when they are all executed,
+   * Fail at the first failure
+   */
+  JOIN,
 }

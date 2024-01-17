@@ -19,4 +19,8 @@ public class TowerFuturesSequentialScheduler<T> {
     return Future.future(towerComposite);
   }
 
+  public Future<TowerFutureComposite<T>> join(Collection<Future<T>> futures, TowerCompositeFutureListener listener) {
+    TowerFuturesSequentialComposite<T> towerComposite = new TowerFuturesSequentialComposite<>(futures, TowerFutureCoordination.JOIN, listener);
+    return Future.future(towerComposite);
+  }
 }
