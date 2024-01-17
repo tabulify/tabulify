@@ -24,6 +24,3 @@ from (select realm.realm_id,
                          group by list_realm_id) as listCount
                         on realm.realm_id = listCount.list_realm_id) as analytics
 WHERE realm.realm_id = analytics.realm_id;
-
-
---group by realmAgg.realm_id
