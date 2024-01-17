@@ -7,10 +7,7 @@ import net.bytle.email.BMailInternetAddress;
 import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.exception.NullValueException;
-import net.bytle.tower.eraldy.model.openapi.ListItem;
-import net.bytle.tower.eraldy.model.openapi.ListUser;
-import net.bytle.tower.eraldy.model.openapi.ListUserFlow;
-import net.bytle.tower.eraldy.model.openapi.User;
+import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.ListUserProvider;
 import net.bytle.tower.eraldy.objectProvider.UserProvider;
 import net.bytle.type.time.Timestamp;
@@ -168,12 +165,12 @@ public class ListImportJobRow {
                 ListUser listUserToInsert = new ListUser();
                 listUserToInsert.setUser(user);
                 listUserToInsert.setList(list);
-                listUserToInsert.setFlowId(ListUserFlow.IMPORT);
-                listUserToInsert.setStatus(1);
+                listUserToInsert.setInSourceId(ListUserSource.IMPORT);
+                listUserToInsert.setStatus(ListUserStatus.OK);
                 if (this.optInOrigin == null) {
-                  listUserToInsert.setOptInOrigin(ListUserFlow.IMPORT.toString());
+                  listUserToInsert.setInOptInOrigin(ListUserSource.IMPORT.toString());
                 } else {
-                  listUserToInsert.setOptInOrigin(this.optInOrigin);
+                  listUserToInsert.setInOptInOrigin(this.optInOrigin);
                 }
                 if (optInIp != null) {
                   DnsIp optInIpAsDnsIp;
@@ -182,7 +179,7 @@ public class ListImportJobRow {
                   } catch (DnsException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInIp (" + optInIp + ") is not a valid ipv4 or ipv6.");
                   }
-                  listUserToInsert.setOptInIp(optInIpAsDnsIp.getAddress());
+                  listUserToInsert.setInOptInIp(optInIpAsDnsIp.getAddress());
                 }
                 if (optInTime != null) {
                   LocalDateTime optInTimeAsObject;
@@ -191,7 +188,7 @@ public class ListImportJobRow {
                   } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The optInTime (" + optInTime + ") is not a known time string.");
                   }
-                  listUserToInsert.setOptInTime(optInTimeAsObject);
+                  listUserToInsert.setInOptInTime(optInTimeAsObject);
                 }
                 if (confirmIp != null) {
                   DnsIp confirmIpAsDnsIp;
@@ -200,7 +197,7 @@ public class ListImportJobRow {
                   } catch (DnsException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmIp (" + confirmIp + ") is not a valid ipv4 or ipv6.");
                   }
-                  listUserToInsert.setConfirmationIp(confirmIpAsDnsIp.getAddress());
+                  listUserToInsert.setInOptInConfirmationIp(confirmIpAsDnsIp.getAddress());
                 }
                 if (confirmTime != null) {
                   LocalDateTime confirmTimeAsObject;
@@ -209,7 +206,7 @@ public class ListImportJobRow {
                   } catch (CastException e) {
                     return this.closeExecution(ListImportJobRowStatus.DATA_INVALID, "The confirmTime (" + confirmTime + ") is not a known time string.");
                   }
-                  listUserToInsert.setConfirmationTime(confirmTimeAsObject);
+                  listUserToInsert.setInOptInConfirmationTime(confirmTimeAsObject);
                 }
                 return listUserProvider.insertRegistration(listUserToInsert)
                   .compose(listRegistrationInserted -> this.closeExecution(ListImportJobRowStatus.COMPLETED, null));

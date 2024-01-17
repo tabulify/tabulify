@@ -3,14 +3,14 @@ with users as (select user_id, user_email, user_realm_id
                where user_realm_id = $1 -- 1 -- realm id
                  and user_email like $2 -- '%gmail%' email
 ),
-     registrations as (select users.*, registration.registration_creation_time, registration.registration_status
+     registrations as (select users.*, registration.list_user_creation_time, registration.list_user_status
                        from users
-                              join cs_realms.realm_list_registration registration
-                                   on users.user_realm_id = registration.registration_realm_id
-                                     and users.user_id = registration.registration_user_id
-                                     and registration.registration_list_id = $3 -- 1 -- list id
+                              join cs_realms.realm_list_user registration
+                                   on users.user_realm_id = registration.list_user_realm_id
+                                     and users.user_id = registration.list_user_user_id
+                                     and registration.list_user_list_id = $3 -- 1 -- list id
      ),
-     rowNumbered as (select ROW_NUMBER() OVER (ORDER BY registration_creation_time DESC) AS rn,
+     rowNumbered as (select ROW_NUMBER() OVER (ORDER BY list_user_creation_time DESC) AS rn,
                             *
                      from registrations),
      final as (select *
@@ -20,4 +20,4 @@ with users as (select user_id, user_email, user_realm_id
      )
 select *
 from final
-order by registration_creation_time desc
+order by list_user_creation_time desc

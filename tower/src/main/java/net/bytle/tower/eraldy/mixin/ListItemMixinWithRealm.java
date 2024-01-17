@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-public abstract class ListItemMixin {
+public abstract class ListItemMixinWithRealm {
 
   @JsonIgnore
   @JsonProperty("localId")

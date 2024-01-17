@@ -3269,11 +3269,9 @@ components:
       description: |
         A user in a list (ie a subscription or a registration)
       example:
-        confirmationIp: confirmationIp
-        optInIp: optInIp
-        guid: liu-xjjDjj
-        confirmationTime: 2000-01-23T04:56:07.000+00:00
-        optInOrigin: optInOrigin
+        inSourceId: null
+        creationTime: 2000-01-23T04:56:07.000+00:00
+        inOptInOrigin: inOptInOrigin
         list:
           ownerUser:
             disabledReason: disabledReason
@@ -3368,6 +3366,12 @@ components:
                 localId: 0
               email: john@doe.com
             home: https://doe.com
+        inOptInConfirmationIp: inOptInConfirmationIp
+        modificationTime: 2000-01-23T04:56:07.000+00:00
+        outOptOutTime: 2000-01-23T04:56:07.000+00:00
+        inOptInTime: 2000-01-23T04:56:07.000+00:00
+        guid: liu-xjjDjj
+        inOptInIp: inOptInIp
         user:
           disabledReason: disabledReason
           website: https://mywebsite
@@ -3395,54 +3399,83 @@ components:
             handle: handle
             localId: 0
           email: john@doe.com
-        flowId: null
-        status: 0
-        optInTime: 2000-01-23T04:56:07.000+00:00
+        status: null
+        inOptInConfirmationTime: 2000-01-23T04:56:07.000+00:00
       properties:
         guid:
-          description: The list user guid
+          description: The listing guid
           example: liu-xjjDjj
           type: string
         status:
-          description: |
-            The status code of the registration
-            (0: registred or subscribed, other: not registred or unsubscribed)
-          type: integer
+          $ref: '#/components/schemas/ListUserStatus'
         list:
           $ref: '#/components/schemas/ListItem'
         user:
           $ref: '#/components/schemas/User'
-        confirmationTime:
-          description: The confirmation time
-          format: date-time
-          type: string
-        confirmationIp:
-          description: The confirmation ip
-          type: string
-        optInTime:
-          description: The opt-in time
-          format: date-time
-          type: string
-        optInIp:
-          description: The opt-in ip
-          type: string
-        optInOrigin:
+        inSourceId:
+          $ref: '#/components/schemas/ListUserSource'
+        inOptInOrigin:
           description: |
-            The opt-in origin (a uri or a text)
+            The listing origin (a uri or a text)
 
-            The opt-in origin is used in the mailing reason:
-            You are receiving this email because you subscribe to it from {optInOrigin}
+            The listing origin is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {origin}
             at {optInTime} with the Ip {optInIp}
           type: string
           x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
-            optInUri\"})"
-        flowId:
-          $ref: '#/components/schemas/ListUserFlow'
+            optInUri\",\"optInOrigin\"})"
+        inOptInConfirmationTime:
+          description: The confirmation time
+          format: date-time
+          type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            confirmationTime\"})"
+        inOptInConfirmationIp:
+          description: The confirmation ip
+          type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            confirmationIp\"})"
+        inOptInTime:
+          description: The opt-in time
+          format: date-time
+          type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            optInTime\"})"
+        inOptInIp:
+          description: The opt-in ip
+          type: string
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"\
+            optInIp\"})"
+        outOptOutTime:
+          description: The opt-out time
+          format: date-time
+          type: string
+        creationTime:
+          description: The creation time of the listing
+          format: date-time
+          type: string
+        modificationTime:
+          description: The last modification time of the listing
+          format: date-time
+          type: string
       required:
       - guid
-      title: A user in a list
+      title: A user in a list (A listing)
       type: object
-    ListUserFlow:
+    ListUserStatus:
+      description: The status of the user on the list
+      enum:
+      - 0
+      - 1
+      format: int32
+      type: integer
+      x-enum-varnames:
+      - OK
+      - UNSUBSCRIBED
+      x-enum-descriptions:
+      - The user is on the list
+      - The user has unsubscribed
+    ListUserSource:
       description: How the user has been added to the list
       enum:
       - 0
@@ -3451,7 +3484,8 @@ components:
       format: int32
       type: integer
       x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonAlias({\"flow\"\
-        }) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)"
+        ,\"sourceId\"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using\
+        \ = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)"
       x-enum-varnames:
       - EMAIL
       - OAUTH

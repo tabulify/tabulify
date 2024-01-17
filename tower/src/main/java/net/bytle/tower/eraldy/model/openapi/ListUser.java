@@ -15,23 +15,29 @@ public class ListUser   {
 
   protected String guid;
 
-  protected Integer status;
+  protected ListUserStatus status;
 
   protected ListItem list;
 
   protected User user;
 
-  protected LocalDateTime confirmationTime;
+  protected ListUserSource inSourceId;
 
-  protected String confirmationIp;
+  protected String inOptInOrigin;
 
-  protected LocalDateTime optInTime;
+  protected LocalDateTime inOptInConfirmationTime;
 
-  protected String optInIp;
+  protected String inOptInConfirmationIp;
 
-  protected String optInOrigin;
+  protected LocalDateTime inOptInTime;
 
-  protected ListUserFlow flowId;
+  protected String inOptInIp;
+
+  protected LocalDateTime outOptOutTime;
+
+  protected LocalDateTime creationTime;
+
+  protected LocalDateTime modificationTime;
 
   /**
   * The empty constructor is
@@ -43,7 +49,7 @@ public class ListUser   {
   }
 
   /**
-  * @return guid The list user guid
+  * @return guid The listing guid
   */
   @JsonProperty("guid")
   public String getGuid() {
@@ -51,7 +57,7 @@ public class ListUser   {
   }
 
   /**
-  * @param guid The list user guid
+  * @param guid The listing guid
   */
   @SuppressWarnings("unused")
   public void setGuid(String guid) {
@@ -59,18 +65,18 @@ public class ListUser   {
   }
 
   /**
-  * @return status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @return status
   */
   @JsonProperty("status")
-  public Integer getStatus() {
+  public ListUserStatus getStatus() {
     return status;
   }
 
   /**
-  * @param status The status code of the registration (0: registred or subscribed, other: not registred or unsubscribed)
+  * @param status Set status
   */
   @SuppressWarnings("unused")
-  public void setStatus(Integer status) {
+  public void setStatus(ListUserStatus status) {
     this.status = status;
   }
 
@@ -107,101 +113,153 @@ public class ListUser   {
   }
 
   /**
-  * @return confirmationTime The confirmation time
+  * @return inSourceId
   */
-  @JsonProperty("confirmationTime")
-  public LocalDateTime getConfirmationTime() {
-    return confirmationTime;
+  @com.fasterxml.jackson.annotation.JsonAlias({"flow","sourceId"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)
+  @JsonProperty("inSourceId")
+  public ListUserSource getInSourceId() {
+    return inSourceId;
   }
 
   /**
-  * @param confirmationTime The confirmation time
+  * @param inSourceId Set inSourceId
   */
   @SuppressWarnings("unused")
-  public void setConfirmationTime(LocalDateTime confirmationTime) {
-    this.confirmationTime = confirmationTime;
+  public void setInSourceId(ListUserSource inSourceId) {
+    this.inSourceId = inSourceId;
   }
 
   /**
-  * @return confirmationIp The confirmation ip
+  * @return inOptInOrigin The listing origin (a uri or a text)  The listing origin is used in the mailing reason: You are receiving this email because you subscribe to it from {origin} at {optInTime} with the Ip {optInIp}
   */
-  @JsonProperty("confirmationIp")
-  public String getConfirmationIp() {
-    return confirmationIp;
+  @com.fasterxml.jackson.annotation.JsonAlias({"optInUri","optInOrigin"})
+  @JsonProperty("inOptInOrigin")
+  public String getInOptInOrigin() {
+    return inOptInOrigin;
   }
 
   /**
-  * @param confirmationIp The confirmation ip
-  */
-  @SuppressWarnings("unused")
-  public void setConfirmationIp(String confirmationIp) {
-    this.confirmationIp = confirmationIp;
-  }
-
-  /**
-  * @return optInTime The opt-in time
-  */
-  @JsonProperty("optInTime")
-  public LocalDateTime getOptInTime() {
-    return optInTime;
-  }
-
-  /**
-  * @param optInTime The opt-in time
+  * @param inOptInOrigin The listing origin (a uri or a text)  The listing origin is used in the mailing reason: You are receiving this email because you subscribe to it from {origin} at {optInTime} with the Ip {optInIp}
   */
   @SuppressWarnings("unused")
-  public void setOptInTime(LocalDateTime optInTime) {
-    this.optInTime = optInTime;
+  public void setInOptInOrigin(String inOptInOrigin) {
+    this.inOptInOrigin = inOptInOrigin;
   }
 
   /**
-  * @return optInIp The opt-in ip
+  * @return inOptInConfirmationTime The confirmation time
   */
-  @JsonProperty("optInIp")
-  public String getOptInIp() {
-    return optInIp;
+  @com.fasterxml.jackson.annotation.JsonAlias({"confirmationTime"})
+  @JsonProperty("inOptInConfirmationTime")
+  public LocalDateTime getInOptInConfirmationTime() {
+    return inOptInConfirmationTime;
   }
 
   /**
-  * @param optInIp The opt-in ip
-  */
-  @SuppressWarnings("unused")
-  public void setOptInIp(String optInIp) {
-    this.optInIp = optInIp;
-  }
-
-  /**
-  * @return optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
-  */
-  @com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})
-  @JsonProperty("optInOrigin")
-  public String getOptInOrigin() {
-    return optInOrigin;
-  }
-
-  /**
-  * @param optInOrigin The opt-in origin (a uri or a text)  The opt-in origin is used in the mailing reason: You are receiving this email because you subscribe to it from {optInOrigin} at {optInTime} with the Ip {optInIp}
+  * @param inOptInConfirmationTime The confirmation time
   */
   @SuppressWarnings("unused")
-  public void setOptInOrigin(String optInOrigin) {
-    this.optInOrigin = optInOrigin;
+  public void setInOptInConfirmationTime(LocalDateTime inOptInConfirmationTime) {
+    this.inOptInConfirmationTime = inOptInConfirmationTime;
   }
 
   /**
-  * @return flowId
+  * @return inOptInConfirmationIp The confirmation ip
   */
-  @com.fasterxml.jackson.annotation.JsonAlias({"flow"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)
-  @JsonProperty("flowId")
-  public ListUserFlow getFlowId() {
-    return flowId;
+  @com.fasterxml.jackson.annotation.JsonAlias({"confirmationIp"})
+  @JsonProperty("inOptInConfirmationIp")
+  public String getInOptInConfirmationIp() {
+    return inOptInConfirmationIp;
   }
 
   /**
-  * @param flowId Set flowId
+  * @param inOptInConfirmationIp The confirmation ip
   */
   @SuppressWarnings("unused")
-  public void setFlowId(ListUserFlow flowId) {
-    this.flowId = flowId;
+  public void setInOptInConfirmationIp(String inOptInConfirmationIp) {
+    this.inOptInConfirmationIp = inOptInConfirmationIp;
+  }
+
+  /**
+  * @return inOptInTime The opt-in time
+  */
+  @com.fasterxml.jackson.annotation.JsonAlias({"optInTime"})
+  @JsonProperty("inOptInTime")
+  public LocalDateTime getInOptInTime() {
+    return inOptInTime;
+  }
+
+  /**
+  * @param inOptInTime The opt-in time
+  */
+  @SuppressWarnings("unused")
+  public void setInOptInTime(LocalDateTime inOptInTime) {
+    this.inOptInTime = inOptInTime;
+  }
+
+  /**
+  * @return inOptInIp The opt-in ip
+  */
+  @com.fasterxml.jackson.annotation.JsonAlias({"optInIp"})
+  @JsonProperty("inOptInIp")
+  public String getInOptInIp() {
+    return inOptInIp;
+  }
+
+  /**
+  * @param inOptInIp The opt-in ip
+  */
+  @SuppressWarnings("unused")
+  public void setInOptInIp(String inOptInIp) {
+    this.inOptInIp = inOptInIp;
+  }
+
+  /**
+  * @return outOptOutTime The opt-out time
+  */
+  @JsonProperty("outOptOutTime")
+  public LocalDateTime getOutOptOutTime() {
+    return outOptOutTime;
+  }
+
+  /**
+  * @param outOptOutTime The opt-out time
+  */
+  @SuppressWarnings("unused")
+  public void setOutOptOutTime(LocalDateTime outOptOutTime) {
+    this.outOptOutTime = outOptOutTime;
+  }
+
+  /**
+  * @return creationTime The creation time of the listing
+  */
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+
+  /**
+  * @param creationTime The creation time of the listing
+  */
+  @SuppressWarnings("unused")
+  public void setCreationTime(LocalDateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  /**
+  * @return modificationTime The last modification time of the listing
+  */
+  @JsonProperty("modificationTime")
+  public LocalDateTime getModificationTime() {
+    return modificationTime;
+  }
+
+  /**
+  * @param modificationTime The last modification time of the listing
+  */
+  @SuppressWarnings("unused")
+  public void setModificationTime(LocalDateTime modificationTime) {
+    this.modificationTime = modificationTime;
   }
 
 

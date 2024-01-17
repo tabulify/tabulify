@@ -4,25 +4,25 @@ import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import net.bytle.tower.eraldy.model.openapi.ListUserFlow;
+import net.bytle.tower.eraldy.model.openapi.ListUserSource;
 
 import java.io.IOException;
 
 public class ListUserUtil {
 
-  public static class FlowDeserializer extends JsonDeserializer<ListUserFlow> {
+  public static class FlowDeserializer extends JsonDeserializer<ListUserSource> {
     @Override
-    public ListUserFlow deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JacksonException {
+    public ListUserSource deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JacksonException {
       String value = p.getValueAsString();
       switch (value) {
         case "oauth":
-          return ListUserFlow.OAUTH;
+          return ListUserSource.OAUTH;
         case "import":
-          return ListUserFlow.IMPORT;
+          return ListUserSource.IMPORT;
         case "email":
-          return ListUserFlow.EMAIL;
+          return ListUserSource.EMAIL;
         default:
-          return ListUserFlow.fromValue(Integer.valueOf(value));
+          return ListUserSource.fromValue(Integer.valueOf(value));
       }
     }
 

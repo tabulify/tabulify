@@ -14,7 +14,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.ListItemMixin;
+import net.bytle.tower.eraldy.mixin.ListItemMixinWithoutRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 /**
- * Manage the get/upsert of a {@link ListUser} object asynchronously
+ * Manage the get/upsert of a {@link ListUser} listing object asynchronously
  * <p>
- * The primary key is a compose of list and user pk
+ * The primary key is a composition of the list and user pk
  *
  */
 public class ListUserProvider {
@@ -55,7 +55,7 @@ public class ListUserProvider {
   private static final String DATA_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + "data";
   private final EraldyApiApp apiApp;
   private static final String CREATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.CREATION_TIME_COLUMN_SUFFIX;
-  private static final String MODIFICATION_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
+  private static final String MODIFICATION_TIME_COLUMN = LIST_USER_PREFIX + COLUMN_PART_SEP + JdbcSchemaManager.MODIFICATION_TIME_COLUMN_SUFFIX;
   private final PgPool jdbcPool;
   private final String registrationsBySearchTermSql;
   private final ObjectMapper apiMapper;
@@ -70,7 +70,7 @@ public class ListUserProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixin.class)
+      .addMixIn(ListItem.class, ListItemMixinWithoutRealm.class)
       .build();
 
     // the sql is too big to be inlined in Java
@@ -200,7 +200,7 @@ public class ListUserProvider {
       " SET\n" +
       "  " + STATUS_COLUMN + " = $1,\n" +
       "  " + DATA_COLUMN + " = $2,\n" +
-      "  " + MODIFICATION_COLUMN + " = $3\n" +
+      "  " + MODIFICATION_TIME_COLUMN + " = $3\n" +
       "where\n" +
       "  " + REALM_COLUMN + " = $4\n" +
       "AND  " + ID_COLUMN + " = $5\n" +
@@ -288,6 +288,11 @@ public class ListUserProvider {
 
             listUser.setList(listItemResult);
             listUser.setUser(userResult);
+
+            listUser.setStatus(ListUserStatus.fromValue(row.getInteger(STATUS_COLUMN)));
+
+            listUser.setCreationTime(row.getLocalDateTime(CREATION_TIME_COLUMN));
+            listUser.setModificationTime(row.getLocalDateTime(MODIFICATION_TIME_COLUMN));
 
             this.computeGuidForListUserObject(listUser);
 

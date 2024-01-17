@@ -37,9 +37,10 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListItem.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUser.java
-src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserFlow.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserPostBody.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserShort.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserSource.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OAuthAccessTokenResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/Organization.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/OrganizationUser.java

@@ -87,6 +87,30 @@ schema:
 ```
 
 ### Enum
+
+Enum should be integer, not string as the label may change
+(Ref: https://openapi-generator.tech/docs/templating#all-generators-core)
+
+```yaml
+FlowId:
+  type: integer
+  format: int32
+  enum:
+    - 0
+    - 1
+    - 2
+  x-enum-varnames:
+    - EMAIL
+    - OAUTH
+    - IMPORT
+  x-enum-descriptions:
+    - 'Email'
+    - 'Oauth'
+    - 'Import'
+```
+
+FYI: don't use as we don't want to publish a string but a number
+to not be label dependent as it can change
 ```yaml
 - name: orderBy
   description: "A user attribute to order by"
@@ -97,28 +121,6 @@ schema:
       - 'asc'
       - 'desc'
 ```
-
-May be more sophisticated:
-https://openapi-generator.tech/docs/templating#all-generators-core
-
-```yaml
-WeatherType:
-  type: integer
-  format: int32
-  enum:
-    - 42
-    - 18
-    - 56
-  x-enum-descriptions:
-    - 'Blue sky'
-    - 'Slightly overcast'
-    - 'Take an umbrella with you'
-  x-enum-varnames:
-    - Sunny
-    - Cloudy
-    - Rainy
-```
-
 ### Rename / Refactor / Alias
 
 If the field name change, use the [jackson alias](json-jackson.md) with the `x-field-extra-annotation`

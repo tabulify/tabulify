@@ -3,19 +3,17 @@ package net.bytle.tower.eraldy.model.openapi;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
-* How the user has been added to the list
+* The status of the user on the list
 */
-public enum ListUserFlow {
+public enum ListUserStatus {
 
-  EMAIL(0),
+  OK(0),
 
-  OAUTH(1),
-
-  IMPORT(2);
+  UNSUBSCRIBED(1);
 
   private final Integer value;
 
-  ListUserFlow(Integer value) {
+  ListUserStatus(Integer value) {
     this.value = value;
   }
 
@@ -29,8 +27,8 @@ public enum ListUserFlow {
     return String.valueOf(value);
   }
 
-  public static ListUserFlow fromValue(Integer value) {
-    for (ListUserFlow b : ListUserFlow.values()) {
+  public static ListUserStatus fromValue(Integer value) {
+    for (ListUserStatus b : ListUserStatus.values()) {
       if (b.value.equals(value)) {
         return b;
       }

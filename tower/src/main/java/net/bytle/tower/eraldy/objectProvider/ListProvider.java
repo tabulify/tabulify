@@ -16,7 +16,7 @@ import net.bytle.exception.CastException;
 import net.bytle.exception.InternalException;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.mixin.AppPublicMixinWithoutRealm;
-import net.bytle.tower.eraldy.mixin.ListItemMixin;
+import net.bytle.tower.eraldy.mixin.ListItemMixinWithRealm;
 import net.bytle.tower.eraldy.mixin.RealmPublicMixin;
 import net.bytle.tower.eraldy.mixin.UserPublicMixinWithoutRealm;
 import net.bytle.tower.eraldy.model.openapi.*;
@@ -69,7 +69,7 @@ public class ListProvider {
       .addMixIn(User.class, UserPublicMixinWithoutRealm.class)
       .addMixIn(Realm.class, RealmPublicMixin.class)
       .addMixIn(App.class, AppPublicMixinWithoutRealm.class)
-      .addMixIn(ListItem.class, ListItemMixin.class)
+      .addMixIn(ListItem.class, ListItemMixinWithRealm.class)
       .build();
   }
 

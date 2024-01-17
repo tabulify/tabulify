@@ -592,7 +592,7 @@ components:
       # we use listUser as name and not listRegistration or listSubscription
       # because it can be confusing as it depends on the type of list
       # ListUser = A user in a list
-      title: A user in a list
+      title: A user in a list (A listing)
       description: |
         A user in a list (ie a subscription or a registration)
       type: object
@@ -601,49 +601,75 @@ components:
       properties:
         guid:
           type: string
-          description: The list user guid
+          description: The listing guid
           example: liu-xjjDjj
         status:
-          type: integer
-          description: |
-            The status code of the registration
-            (0: registred or subscribed, other: not registred or unsubscribed)
+          $ref: '#/components/schemas/ListUserStatus'
         list:
           description: The list
           $ref: '#/components/schemas/ListItem'
         user:
           description: The user (subscriber, registered)
           $ref: '#/components/schemas/User'
-        confirmationTime:
+        inSourceId:
+          description: The source flow of the listing
+          $ref: '#/components/schemas/ListUserSource'
+        inOptInOrigin:
+          description: |
+            The listing origin (a uri or a text)
+
+            The listing origin is used in the mailing reason:
+            You are receiving this email because you subscribe to it from {origin}
+            at {optInTime} with the Ip {optInIp}
+          type: string
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri","optInOrigin"})'
+        inOptInConfirmationTime:
           description: The confirmation time
           type: string
           format: date-time
-        confirmationIp:
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"confirmationTime"})'
+        inOptInConfirmationIp:
           description: The confirmation ip
           type: string
-        optInTime:
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"confirmationIp"})'
+        inOptInTime:
           description: The opt-in time
           type: string
           format: date-time
-        optInIp:
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInTime"})'
+        inOptInIp:
           description: The opt-in ip
           type: string
-        optInOrigin:
-          description: |
-            The opt-in origin (a uri or a text)
-
-            The opt-in origin is used in the mailing reason:
-            You are receiving this email because you subscribe to it from {optInOrigin}
-            at {optInTime} with the Ip {optInIp}
+          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInIp"})'
+        outOptOutTime:
+          description: The opt-out time
           type: string
-          x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"optInUri"})'
-        flowId:
-          description: The source flow of registration
-          $ref: '#/components/schemas/ListUserFlow'
-    ListUserFlow:
+          format: date-time
+        creationTime:
+          description: The creation time of the listing
+          type: string
+          format: date-time
+        modificationTime:
+          description: The last modification time of the listing
+          type: string
+          format: date-time
+    ListUserStatus:
+      description: The status of the user on the list
+      type: integer
+      format: int32
+      enum:
+        - 0 # the user is on the list
+        - 1 # Unsubscribed via link
+      x-enum-varnames:
+        - OK
+        - UNSUBSCRIBED
+      x-enum-descriptions:
+        - 'The user is on the list'
+        - 'The user has unsubscribed'
+    ListUserSource:
       description: How the user has been added to the list
       type: integer
-      x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"flow"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)'
+      x-field-extra-annotation: '@com.fasterxml.jackson.annotation.JsonAlias({"flow","sourceId"}) @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = net.bytle.tower.eraldy.api.implementer.util.ListUserUtil.FlowDeserializer.class)'
       format: int32
       enum:
         - 0 # the user has given its email

@@ -80,7 +80,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<ListUser> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserFlow registrationFlow) {
+  public Future<ListUser> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
 
     return this.getApp()
       .getListProvider()
@@ -90,16 +90,16 @@ public class ListRegistrationFlow extends WebFlowAbs {
         ListUser inputListUser = new ListUser();
         inputListUser.setList(list);
         inputListUser.setUser(user);
-        inputListUser.setOptInTime(optInTime);
-        inputListUser.setConfirmationTime(LocalDateTime.now());
-        inputListUser.setOptInIp(optInIp);
+        inputListUser.setInOptInTime(optInTime);
+        inputListUser.setInOptInConfirmationTime(LocalDateTime.now());
+        inputListUser.setInOptInIp(optInIp);
         try {
           String realRemoteClient = HttpRequestUtil.getRealRemoteClientIp(ctx.request());
-          inputListUser.setConfirmationIp(realRemoteClient);
+          inputListUser.setInOptInConfirmationIp(realRemoteClient);
         } catch (NotFoundException e) {
           LOGGER.warn("List registration validation: The remote ip client could not be found. Error: " + e.getMessage());
         }
-        inputListUser.setFlowId(registrationFlow);
+        inputListUser.setInSourceId(registrationFlow);
         return this
           .getApp()
           .getListRegistrationProvider()
@@ -314,7 +314,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserFlow.EMAIL)
+          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(registration -> {
               if (ctx.user() == null) {
@@ -442,7 +442,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       }
 
       User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
-      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, ListUserFlow.OAUTH)
+      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, ListUserSource.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(registration -> authContext.next());
     };
