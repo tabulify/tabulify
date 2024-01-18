@@ -1,64 +1,141 @@
 package net.bytle.vertx.analytics.model;
 
-import jakarta.mail.internet.AddressException;
-import net.bytle.email.BMailInternetAddress;
-import net.bytle.exception.NotFoundException;
-import net.bytle.type.time.Timestamp;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
-public class AnalyticsUser {
-  private String id;
-  private String email;
-  private String name;
-  private Timestamp creationTime;
-  private URI avatar;
+/**
+ * The user
+ **/
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class AnalyticsUser   {
 
+
+  protected String id;
+
+  protected String givenName;
+
+  protected String email;
+
+  protected URI avatar;
+
+  protected LocalDateTime creationTime;
+
+  /**
+  * The empty constructor is
+  * needed for the construction of the pojo
+  * with the Jackson library
+  */
+  @SuppressWarnings("unused")
+  public AnalyticsUser () {
+  }
+
+  /**
+  * @return id A unique identifier
+  */
+  @JsonProperty("id")
   public String getId() {
-    return this.id;
+    return id;
   }
 
-  public String getEmail() {
-    return this.email;
-  }
-
-  public String getGivenName() {
-    return this.name;
-  }
-
-  public Timestamp getCreationTime() {
-    return this.creationTime;
-  }
-
-  public URI getAvatar() {
-    return this.avatar;
-  }
-
-  public String getNameOrEmail() throws NotFoundException, AddressException {
-    if (name != null) {
-      return name;
-    }
-    if (this.email == null) {
-      throw new NotFoundException("No name could be found for this user");
-    }
-    return BMailInternetAddress.of(email)
-      .getLocalPart();
-  }
-
+  /**
+  * @param id A unique identifier
+  */
+  @SuppressWarnings("unused")
   public void setId(String id) {
     this.id = id;
   }
 
+  /**
+  * @return givenName the user given name
+  */
+  @JsonProperty("givenName")
+  public String getGivenName() {
+    return givenName;
+  }
+
+  /**
+  * @param givenName the user given name
+  */
+  @SuppressWarnings("unused")
+  public void setGivenName(String givenName) {
+    this.givenName = givenName;
+  }
+
+  /**
+  * @return email the user email
+  */
+  @JsonProperty("email")
+  public String getEmail() {
+    return email;
+  }
+
+  /**
+  * @param email the user email
+  */
+  @SuppressWarnings("unused")
   public void setEmail(String email) {
     this.email = email;
   }
 
-  public void setGivenName(String name) {
-    this.name = name;
+  /**
+  * @return avatar the user avatar
+  */
+  @JsonProperty("avatar")
+  public URI getAvatar() {
+    return avatar;
   }
 
+  /**
+  * @param avatar the user avatar
+  */
+  @SuppressWarnings("unused")
   public void setAvatar(URI avatar) {
     this.avatar = avatar;
+  }
+
+  /**
+  * @return creationTime The timestamp when the user was created
+  */
+  @JsonProperty("creationTime")
+  public LocalDateTime getCreationTime() {
+    return creationTime;
+  }
+
+  /**
+  * @param creationTime The timestamp when the user was created
+  */
+  @SuppressWarnings("unused")
+  public void setCreationTime(LocalDateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AnalyticsUser analyticsUser = (AnalyticsUser) o;
+    return
+
+            Objects.equals(id, analyticsUser.id) && Objects.equals(givenName, analyticsUser.givenName) && Objects.equals(email, analyticsUser.email) && Objects.equals(avatar, analyticsUser.avatar) && Objects.equals(creationTime, analyticsUser.creationTime);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, givenName, email, avatar, creationTime);
+  }
+
+  @Override
+  public String toString() {
+    return super.toString();
   }
 
 }

@@ -219,7 +219,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(apiG
    */
   outputDir.set("$projectDir")
   generatorName.set("java-vertx-web")
-  templateDir.set("$projectDir/src/main/openapi/templates")
+  templateDir.set("$projectDir/../openapi/templates")
 
   /**
    * For inheritance, see openapi.md
@@ -298,7 +298,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(gene
    */
   outputDir.set("$projectDir")
   generatorName.set("java-vertx-web")
-  templateDir.set("$projectDir/src/main/openapi/templates")
+  templateDir.set("$projectDir/../openapi/templates")
 
   /**
    * For inheritance, see openapi.md

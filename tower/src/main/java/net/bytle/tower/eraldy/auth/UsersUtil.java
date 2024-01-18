@@ -6,6 +6,7 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.tower.eraldy.model.openapi.User;
 import net.bytle.vertx.EraldyDomain;
+import net.bytle.vertx.auth.AuthUserUtils;
 import net.bytle.vertx.flow.SmtpSender;
 
 public class UsersUtil {
@@ -41,17 +42,8 @@ public class UsersUtil {
    * @throws AddressException  - bad email address
    */
   public static String getNameOrNameFromEmail(User user) throws NotFoundException, AddressException {
-    String name = user.getGivenName();
-    if (name != null) {
-      return name;
-    }
-    String email = user.getEmail();
-    if (email == null) {
-      // should not happen as an email is mandatory
-      throw new NotFoundException("No name could be found for this user");
-    }
-    return BMailInternetAddress.of(email)
-      .getLocalPart();
+
+    return AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmail());
 
   }
 

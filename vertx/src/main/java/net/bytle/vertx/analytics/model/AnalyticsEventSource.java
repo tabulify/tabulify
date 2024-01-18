@@ -3,24 +3,24 @@ package net.bytle.vertx.analytics.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * where the request originated from server, browser or mobile
- */
-public enum AnalyticsEventChannel {
+* Where the request was created (server, browser or mobile) (known also as the Channel)
+*/
+public enum AnalyticsEventSource {
 
-  SERVER("server"),
+  SERVER(0),
 
-  BROWSER("browser"),
+  API(1),
 
-  MOBILE("mobile");
+  NUMBER_2(2);
 
-  private final String value;
+  private final Integer value;
 
-  AnalyticsEventChannel(String value) {
+  AnalyticsEventSource(Integer value) {
     this.value = value;
   }
 
   @JsonValue
-  public String getValue() {
+  public Integer getValue() {
     return value;
   }
 
@@ -29,12 +29,13 @@ public enum AnalyticsEventChannel {
     return String.valueOf(value);
   }
 
-  public static AnalyticsEventChannel fromValue(String value) {
-    for (AnalyticsEventChannel b : AnalyticsEventChannel.values()) {
+  public static AnalyticsEventSource fromValue(Integer value) {
+    for (AnalyticsEventSource b : AnalyticsEventSource.values()) {
       if (b.value.equals(value)) {
         return b;
       }
     }
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
+
 }

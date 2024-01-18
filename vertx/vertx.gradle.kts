@@ -9,6 +9,7 @@ val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
 
+
 dependencies {
 
   implementation(project(":bytle-fs"))
@@ -112,6 +113,7 @@ dependencies {
 
 plugins {
   id("org.flywaydb.flyway")
+  id("org.openapi.generator")
 }
 
 val csIpDbSchema = "cs_ip"
@@ -129,5 +131,78 @@ tasks.register<org.flywaydb.gradle.task.FlywayMigrateTask>("flywayIp") {
 tasks.getByName<org.flywaydb.gradle.task.FlywayCleanTask>("flywayClean") {
 
   schemas = arrayOf(csIpDbSchema)
+
+}
+
+val openApiAnalytics = "openapi-analytics"
+val openApiGroup = "OpenApi"
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>(openApiAnalytics) {
+
+  group = openApiGroup
+
+  /**
+   * The location of the spec file
+   */
+  inputSpec.set("$projectDir/src/main/openapi/analytics-openapi.yaml")
+
+  /**
+   * Common is not a valid spec
+   */
+  validateSpec.set(false)
+
+  /**
+   * The pojos package
+   */
+  modelPackage.set("net.bytle.vertx.analytics.model")
+
+  /**
+   * Common to API, vertx-based
+   */
+  outputDir.set("$projectDir")
+  generatorName.set("java-vertx-web")
+  templateDir.set("$projectDir/../openapi/templates")
+
+  /**
+   * For inheritance, see openapi.md
+   */
+  openapiNormalizer.set(
+    mapOf(
+      "REF_AS_PARENT_IN_ALLOF" to "true"
+    )
+  )
+
+  reservedWordsMappings.set(
+    mapOf(
+      "list" to "list"
+    )
+  )
+
+  typeMappings.set(
+    mapOf(
+      "OffsetDateTime" to "LocalDateTime"
+    )
+  )
+  importMappings.set(
+    mapOf(
+      "java.time.OffsetDateTime" to "java.time.LocalDateTime"
+    )
+  )
+
+  // https://openapi-generator.tech/docs/generators/java-vertx-web
+  val configs = mapOf(
+    "dateLibrary" to "java8"
+  )
+  configOptions.set(configs)
+  // https://openapi-generator.tech/docs/globals/
+  // https://openapi-generator.tech/docs/customization#selective-generation
+  globalProperties.set(
+    mapOf(
+      // Generate only models (ie POJO)
+      // The value should be kept empty (true is not working)
+      "models" to ""
+      //, "debugModels" to "true"
+    )
+  )
+
 
 }

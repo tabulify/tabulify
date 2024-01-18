@@ -177,15 +177,14 @@ public class AnalyticsLogger {
   static public void log(AnalyticsEvent analyticsEvent) throws IllegalStructure {
 
 
-
     // Event Name
     String eventName = analyticsEvent.getName();
     if (eventName == null) {
       throw new IllegalStructure("The event name is mandatory");
     }
-    String groupIdFromEvent = analyticsEvent.getContext().getGroupId();
-    if (groupIdFromEvent == null) {
-      throw new IllegalStructure("The group id is mandatory");
+    String realmIdFromEvent = analyticsEvent.getAppRealmId();
+    if (realmIdFromEvent == null) {
+      throw new IllegalStructure("The realm id is mandatory");
     }
 
     /**
@@ -196,7 +195,7 @@ public class AnalyticsLogger {
     AnalyticsEventName analyticsEventName = AnalyticsEventName.createFromEvent(eventName);
     String eventFileSystemName = analyticsEventName.toFileSystemName();
     ThreadContext.put(LOOKUP_VARIABLE_EVENT_SLUG, eventFileSystemName);
-    ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, groupIdFromEvent);
+    ThreadContext.put(LOOKUP_VARIABLE_REALM_GUID, realmIdFromEvent);
     String jsonString = JsonObject.mapFrom(analyticsEvent).toString();
     ANALYTICS_LOGGER.info(jsonString);
     ThreadContext.clearAll();

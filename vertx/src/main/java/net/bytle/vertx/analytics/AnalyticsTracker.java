@@ -10,7 +10,9 @@ import net.bytle.exception.InternalException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.java.JavaEnvs;
 import net.bytle.vertx.*;
-import net.bytle.vertx.analytics.model.*;
+import net.bytle.vertx.analytics.model.AnalyticsEvent;
+import net.bytle.vertx.analytics.model.AnalyticsEventSource;
+import net.bytle.vertx.analytics.model.AnalyticsUser;
 import net.bytle.vertx.auth.AuthUser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -176,17 +178,24 @@ public class AnalyticsTracker {
   public ServerEventBuilder eventBuilderForServerEvent(AnalyticsEventName eventName) {
 
     return new ServerEventBuilder(eventName)
-      .setChannel(AnalyticsEventChannel.SERVER);
+      .setSource(AnalyticsEventSource.SERVER);
 
   }
 
-  public ServerEventBuilder eventBuilderForBrowserEvent(AnalyticsEvent analyticsEvent) {
+//  public <T> ServerEventBuilder eventBuilderForServerEvent(Class<T> aClass) {
+//
+//    return new ServerEventBuilder(eventName)
+//      .setSource(AnalyticsEventChannel.SERVER);
+//
+//  }
+
+  public ServerEventBuilder eventBuilderFromApi(AnalyticsEvent analyticsEvent) {
 
     AnalyticsEventName eventName = AnalyticsEventName.createFromEvent(analyticsEvent.getName());
     analyticsEvent.setName(eventName.toString()); // normalize
     ServerEventBuilder serverEventBuilder = new ServerEventBuilder(eventName);
     serverEventBuilder.analyticsEvent = analyticsEvent;
-    serverEventBuilder.setChannel(AnalyticsEventChannel.BROWSER);
+    serverEventBuilder.setSource(AnalyticsEventSource.API);
     return serverEventBuilder;
 
   }
@@ -203,8 +212,10 @@ public class AnalyticsTracker {
      * The context may be therefore null
      */
     private RoutingContext routingContext;
-    private AnalyticsEventChannel channel;
-    private String groupId;
+    private AnalyticsEventSource source;
+
+    private String organizationId;
+    private String realmId;
 
     public ServerEventBuilder(AnalyticsEventName eventName) {
       this.eventName = eventName;
@@ -233,58 +244,50 @@ public class AnalyticsTracker {
 
     public AnalyticsEvent buildEvent() {
 
+
       if (analyticsEvent == null) {
+
+        /**
+         * Server Event (not event from the API)
+         */
         analyticsEvent = new AnalyticsEvent();
         analyticsEvent.setName(this.eventName.toCamelCase());
         analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
 
         if (this.authUser != null) {
-          AnalyticsUser analyticsUser = new AnalyticsUser();
-          analyticsUser.setId(authUser.getSubject());
-          analyticsUser.setEmail(authUser.getSubjectEmail());
-          analyticsUser.setGivenName(authUser.getSubjectGivenName());
-          analyticsUser.setAvatar(authUser.getSubjectAvatar());
-          analyticsEvent.setUser(analyticsUser);
+          analyticsEvent.setUserId(authUser.getSubject());
+          analyticsEvent.setUserEmail(authUser.getSubjectEmail());
+          analyticsEvent.setAppRealmId(authUser.getAudience());
+          analyticsEvent.setAppOrganisationId(authUser.getGroup());
         }
 
         /**
          * Context
          */
-        AnalyticsEventContext analyticsEventContext = new AnalyticsEventContext();
-        this.buildContext(routingContext, analyticsEventContext);
-        analyticsEvent.setContext(analyticsEventContext);
+        this.buildContext(routingContext, analyticsEvent);
 
         /**
          * OS
          */
-        AnalyticsOperatingSystem analyticsOperatingSystem = new AnalyticsOperatingSystem();
-        analyticsOperatingSystem.setName(System.getProperty("os.name"));
-        analyticsOperatingSystem.setVersion(System.getProperty("os.version"));
-        analyticsOperatingSystem.setArch(System.getProperty("os.arch"));
-        analyticsEventContext.setOs(analyticsOperatingSystem);
+        analyticsEvent.setOsName(System.getProperty("os.name"));
+        analyticsEvent.setOsVersion(System.getProperty("os.version"));
+        analyticsEvent.setOsArch(System.getProperty("os.arch"));
 
-      } else {
 
-        /**
-         * Browser event
-         */
-        AnalyticsEventContext context = analyticsEvent.getContext();
-        if (context == null) {
-          context = new AnalyticsEventContext();
-          analyticsEvent.setContext(context);
-        }
-        this.buildContext(routingContext, context);
+      }
 
+      if(this.realmId!=null){
+        analyticsEvent.setAppRealmId(this.realmId);
+      }
+      if(this.organizationId!=null){
+        analyticsEvent.setAppOrganisationId(this.realmId);
       }
 
       /**
        * General
        */
-      AnalyticsEventContext context = analyticsEvent.getContext();
-      context.setChannel(this.channel);
-      if (this.groupId != null) {
-        context.setGroupId(this.groupId);
-      }
+      analyticsEvent.setSource(this.source);
+
 
       if (analyticsEvent.getId() == null) {
         analyticsEvent.setId(UUID.randomUUID().toString());
@@ -293,24 +296,29 @@ public class AnalyticsTracker {
       return analyticsEvent;
     }
 
-    private void buildContext(RoutingContext routingContext, AnalyticsEventContext analyticsEventContext) {
+    private void buildContext(RoutingContext routingContext, AnalyticsEvent analyticsEventContext) {
       if (routingContext == null) {
         return;
       }
       try {
-        analyticsEventContext.setIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
+        analyticsEventContext.setRemoteIp(HttpRequestUtil.getRealRemoteClientIp(routingContext.request()));
       } catch (NotFoundException e) {
         //
       }
     }
 
-    public ServerEventBuilder setChannel(AnalyticsEventChannel channel) {
-      this.channel = channel;
+    public ServerEventBuilder setSource(AnalyticsEventSource source) {
+      this.source = source;
       return this;
     }
 
-    public ServerEventBuilder setGroupId(String groupId) {
-      this.groupId = groupId;
+    public ServerEventBuilder setOrganizationId(String organizationId) {
+      this.organizationId = organizationId;
+      return this;
+    }
+
+    public ServerEventBuilder setRealmId(String realmId) {
+      this.realmId = realmId;
       return this;
     }
   }

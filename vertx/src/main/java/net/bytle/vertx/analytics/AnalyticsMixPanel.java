@@ -5,9 +5,8 @@ import jakarta.mail.internet.AddressException;
 import net.bytle.exception.NotFoundException;
 import net.bytle.type.time.Timestamp;
 import net.bytle.vertx.analytics.model.AnalyticsEvent;
-import net.bytle.vertx.analytics.model.AnalyticsEventChannel;
-import net.bytle.vertx.analytics.model.AnalyticsOperatingSystem;
 import net.bytle.vertx.analytics.model.AnalyticsUser;
+import net.bytle.vertx.auth.AuthUserUtils;
 
 import java.net.URI;
 import java.util.Map;
@@ -18,7 +17,6 @@ import java.util.Map;
  * <a href="https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java"></a>
  */
 public class AnalyticsMixPanel {
-
 
 
   /**
@@ -32,7 +30,7 @@ public class AnalyticsMixPanel {
     // $group_id, the group identifier, for group profiles, as these are the canonical identifiers in Mixpanel.
     props.put("$email", user.getEmail());
     try {
-      props.put("$name", user.getNameOrEmail());
+      props.put("$name", AuthUserUtils.getNameOrNameFromEmail(user.getGivenName(), user.getEmail()));
     } catch (NotFoundException | AddressException e) {
       // should not
     }
@@ -71,9 +69,9 @@ public class AnalyticsMixPanel {
     /**
      * $user_id
      */
-    AnalyticsUser user = event.getUser();
-    if (user != null) {
-      props.put("$user_id", event.getUser().getId());
+    String userId = event.getUserId();
+    if (userId != null) {
+      props.put("$user_id", userId);
     }
 
     /**
@@ -87,7 +85,7 @@ public class AnalyticsMixPanel {
      * Geolocation is by default turned on
      * https://docs.mixpanel.com/docs/tracking/how-tos/privacy-friendly-tracking#disabling-geolocation
      */
-    String ip = event.getContext().getIp();
+    String ip = event.getRemoteIp();
     if (ip != null) {
       props.put("ip", ip);
     }
@@ -95,8 +93,10 @@ public class AnalyticsMixPanel {
     /**
      * $os: OS of the event sender.
      */
-    AnalyticsOperatingSystem os = event.getContext().getOs();
-    props.put("$os", os.getName());
+    String osName = event.getOsName();
+    if (osName != null) {
+      props.put("$os", osName);
+    }
 
     /**
      * Session
@@ -104,24 +104,20 @@ public class AnalyticsMixPanel {
      */
 
     /**
-     * Channel
+     * Channel (Paid Search, ..)
+     * https://docs.mixpanel.com/docs/features/custom-properties#grouping-marketing-channels
+     * props.put("channel", );
      */
-    AnalyticsEventChannel channel = event.getContext().getChannel();
-    if (channel != null) {
-      props.put("channel", channel.toString());
-    }
 
     /**
      * Timestamp
      */
     props.put("creationTime", Timestamp.createFromLocalDateTime(event.getCreationTime()).toIsoString());
-//    props.put("sendingTime", Timestamp.createFromLocalDateTime(event.getSendingTime()).toIsoString());
-
 
     /**
      * Additional properties along with events
      */
-    for(Map.Entry<String, Object> entry: event.getProperties().entrySet()){
+    for (Map.Entry<String, Object> entry : event.getProperties().entrySet()) {
       /**
        * Does the `toString` work with MixPanel Data???
        * https://docs.mixpanel.com/docs/other-bits/tutorials/developers/mixpanel-for-developers-fundamentals#supported-data-types
@@ -150,9 +146,9 @@ public class AnalyticsMixPanel {
    * @return the user id
    */
   protected static String toMixPanelUserDistinctId(AnalyticsEvent event) {
-    AnalyticsUser user = event.getUser();
-    if (user != null) {
-      return user.getId();
+    String userId = event.getUserId();
+    if (userId != null) {
+      return userId;
     }
     return event.getDeviceId();
   }

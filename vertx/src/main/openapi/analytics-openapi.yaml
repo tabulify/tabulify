@@ -6,119 +6,23 @@ info:
   version: "v2023-06-18"
 components:
   schemas:
-    AnalyticsEventChannel:
-      description: where the request originated from server, browser or mobile
-      type: string
+    AnalyticsEventSource:
+      description: |
+        Where the request was created (server, browser or mobile)
+        (known also as the Channel)
+      type: integer
+      format: int32
       enum:
-        - server # create by the server
-        - browser # create by the browser
-        - mobile # create by a mobile app
-    AnalyticsOperatingSystem:
-      description: The os data
-      type: object
-      properties:
-        name:
-          type: string
-          description: the name
-        version:
-          type: string
-          description: the version
-        arch:
-          type: string
-          description: the architecture
-    AnalyticsUrchinTrackingModule:
-      description: |
-        The UTM data
-        See:
-        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
-        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
-        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
-      type: object
-      properties:
-        id:
-          type: string
-          description: |
-            The Campaign ID is used to identify a specific ad campaign or promotion
-            This is a required key for GA4 data import.
-          example: summer-sale, abc.123
-        campaign:
-          type: string
-          description: Product, slogan, promo code
-          example: spring_sale
-        source:
-          type: string
-          description: |
-            Referrer.
-            Identifies which site sent the traffic, and is a required parameter
-            Example: the referrer (e.g. google, newsletter)
-          example: summer-mailer
-        medium:
-          type: string
-          description: |
-            Marketing medium (e.g. cpc, banner, email)
-            Identifies what type of link was used, such as cost per click or email.
-          example: email
-        term:
-          type: string
-          description: |
-            Identifies search terms, the paid keywords
-        content:
-          type: string
-          description: |
-            Identifies what specifically was clicked to bring the user to the site,
-            such as a banner ad or a text link.
-            It is often used for A/B testing and content-targeted ads
-        referrer:
-          type: string
-          format: uri
-          description: |
-            Identifies the referrer URL as it's not passed by default by browser HTTP request
-            and therefore not available in the `document.referrer` attribute
-            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
-            utm_source is also a referer but in a named format
-    AnalyticsEventContext:
-      description: |
-        The event context
-        A dictionary of extra information that provides useful context about a event
-        We follow https://segment.com/docs/connections/spec/common/#context
-      type: object
-      properties:
-        timezone:
-          type: string
-          description: the timezone id (ie Europe/London)
-        locale:
-          type: string
-          description: the locale (in a browser, this is the language setting)
-        ip:
-          type: string
-          description: The ip (the remote client ip)
-          example: 143.176.206.76
-        userAgent:
-          type: string
-          description: The user agent string
-        channel:
-          $ref: '#/components/schemas/AnalyticsEventChannel'
-        os:
-          $ref: '#/components/schemas/AnalyticsOperatingSystem'
-        utm:
-          $ref: '#/components/schemas/AnalyticsUrchinTrackingModule'
-        browser:
-          $ref: '#/components/schemas/AnalyticsBrowser'
-    AnalyticsBrowser:
-      type: object
-      description: Track browser specific information
-      properties:
-        uri:
-          type: string
-          format: uri
-          description: the address uri in the browser
-        referrer:
-          type: string
-          format: uri
-          description: |
-            The `document.referrer`
-            Note that Google Analytics will use "utm_referrer" over "document.referrer"
-            if set as document.referrer is only the domain/authority part
+        - 0
+        - 1
+        - 2
+      x-enum-varnames:
+        - SERVER
+        - API
+      x-enum-descriptions:
+        - 'Created by the server'
+        - 'Created by the browser'
+        - 'Created by the mobile app'
     AnalyticsEvent:
       description: |
         The event. They are the things that happen in our product.
@@ -127,7 +31,7 @@ components:
         * the <a href="https://segment.com/docs/connections/spec/common/">Segment Spec</a>
         * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
 
-        The segment spec separates the event property from the context as we do.
+        All properties are on the same level, no hierarchy (as MixPanel do)
       type: object
       properties:
         id:
@@ -143,6 +47,19 @@ components:
         name:
           type: string
           description: the event name
+        source:
+          $ref: '#/components/schemas/AnalyticsEventSource'
+        appId:
+          type: string
+          description: The app id that has created this event
+        appRealmId:
+          type: string
+          description: |
+            The realm of the app
+            If the user is not anonymous, it is the user audience.
+        appOrganisationId:
+          type: string
+          description: the organization id (the billing logical unit, known also as the group id)
         properties:
           description: The additional event properties
           additionalProperties:
@@ -166,11 +83,12 @@ components:
             It's not the same as a session id because:
             * a session id may be regenerated (when the user sign in for instance).
             * the device id does not have any security feature. You can't login
-        user:
-          description: The user that created this event
-          $ref: '#/components/schemas/AnalyticsUser'
-        context:
-          $ref: '#/components/schemas/AnalyticsEventContext'
+        userId:
+          type: string
+          description: A unique identifier
+        userEmail:
+          type: string
+          description: the user email
         receptionTime:
           type: string
           format: date-time
@@ -186,6 +104,87 @@ components:
           type: string
           format: date-time
           description: The timestamp when the object was created
+        osName:
+          type: string
+          description: the OS name
+        osVersion:
+          type: string
+          description: the OS version
+        osArch:
+          type: string
+          description: the OS architecture
+        originUri:
+          type: string
+          format: uri
+          description: |
+            The origin address uri
+            The uri in the address bar in the browser or a iframe uri
+        referrerUri:
+          type: string
+          format: uri
+          description: |
+            The `document.referrer`
+            Note that Google Analytics will use "utm_referrer" over "document.referrer"
+            if set as document.referrer is only the domain/authority part
+        timezoneId:
+          type: string
+          description: the timezone id (ie Europe/London)
+        locale:
+          type: string
+          description: the locale (in a browser, this is the language setting)
+        remoteIp:
+          type: string
+          description: The ip (the remote client ip)
+          example: 143.176.206.76
+        userAgent:
+          type: string
+          description: The user agent string
+        # The UTM data
+        #        See:
+        #        * <a href="https://datacadamia.com/marketing/analytics/utm">UTM</a>
+        #        * <a href="https://ga-dev-tools.google/campaign-url-builder/">UTM builder</a>
+        #        * <a href="https://support.google.com/analytics/answer/10917952">[GA4] URL builders: Collect campaign data with custom URLs</a>
+        utmCampaignId:
+          type: string
+          description: |
+            The Campaign ID is used to identify a specific ad campaign or promotion
+            Known as utm_id, this is a required key for GA4 data import.
+          example: summer-sale, abc.123
+        utmCampaignName:
+          type: string
+          description: Product, slogan, promo code
+          example: spring_sale
+        utmSource:
+          type: string
+          description: |
+            Referrer.
+            Identifies which site sent the traffic, and is a required parameter
+            Example: the referrer (e.g. google, newsletter)
+          example: summer-mailer
+        utmMedium:
+          type: string
+          description: |
+            Marketing medium (e.g. cpc, banner, email)
+            Identifies what type of link was used, such as cost per click or email.
+          example: email
+        utmTerm:
+          type: string
+          description: |
+            Identifies search terms, the paid keywords
+        utmContent:
+          type: string
+          description: |
+            Identifies what specifically was clicked to bring the user to the site,
+            such as a banner ad or a text link.
+            It is often used for A/B testing and content-targeted ads
+        utmReferrer:
+          type: string
+          format: uri
+          description: |
+            Identifies the referrer URL as it's not passed by default by browser HTTP request
+            and therefore not available in the `document.referrer` attribute
+            Google Analytics will use "utm_referrer" over "document.referrer" set in AnalyticsBrowser
+            utm_source is also a referer but in a named format
     AnalyticsUser:
       description: The user
       type: object

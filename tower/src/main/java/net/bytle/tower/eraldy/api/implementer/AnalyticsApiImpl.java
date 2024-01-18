@@ -62,9 +62,10 @@ public class AnalyticsApiImpl implements AnalyticsApi {
     AnalyticsEvent analyticsEvent = JsonObject.mapFrom(requestBody).mapTo(AnalyticsEvent.class);
     Realm authRealm = AuthRealmHandler.getFromRoutingContextKeyStore(routingContext);
     this.apiApp.getApexDomain().getHttpServer().getServer().getTrackerAnalytics()
-      .eventBuilderForBrowserEvent(analyticsEvent)
+      .eventBuilderFromApi(analyticsEvent)
       .setRoutingContext(routingContext)
-      .setGroupId(authRealm.getOrganization().getGuid())
+      .setOrganizationId(authRealm.getOrganization().getGuid())
+      .setRealmId(authRealm.getGuid())
       .sendEventAsync();
     return Future.succeededFuture(new ApiResponse<>());
 

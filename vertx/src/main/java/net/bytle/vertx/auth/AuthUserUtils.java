@@ -1,7 +1,13 @@
 package net.bytle.vertx.auth;
 
+import jakarta.mail.internet.AddressException;
+import net.bytle.email.BMailInternetAddress;
+import net.bytle.exception.NotFoundException;
 import net.bytle.type.Strings;
 
+/**
+ * Auth and non-auth users utils
+ */
 public class AuthUserUtils {
   /**
    * Example: in Nicolas GERARD, the given name is Nicolas because it's not fully uppercase
@@ -33,5 +39,19 @@ public class AuthUserUtils {
       return possibleFamilyName;
     }
     return familyName;
+  }
+
+  public static String getNameOrNameFromEmail(String name, String email) throws NotFoundException, AddressException {
+
+    if (name != null) {
+      return name;
+    }
+
+    if (email == null) {
+      // should not happen as an email is mandatory
+      throw new NotFoundException("No name could be found for this user");
+    }
+    return BMailInternetAddress.of(email).getLocalPart();
+
   }
 }
