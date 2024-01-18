@@ -1051,7 +1051,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListItem'
+                $ref: '#/components/schemas/ListItemAnalytics'
           description: Ok
       security:
       - apiKeyAuth: []
@@ -3054,6 +3054,19 @@ components:
       additionalProperties: true
       description: A Json object
       type: object
+    ListItemAnalytics:
+      allOf:
+      - $ref: '#/components/schemas/ListItem'
+      - properties:
+          userCount:
+            description: The number of users for the list (subscribed/unsubscribed
+              - registered/unregistered)
+            type: integer
+          userInCount:
+            description: The number of users that are still in the list
+            type: integer
+        type: object
+      description: "List Analytics (count, ...)"
     ListItem:
       description: |
         A list where a user can register.
@@ -3197,6 +3210,7 @@ components:
       x-fields-to-string:
       - guid
       - handle
+      x-parent: true
     ListBody:
       description: |
         List creation and update

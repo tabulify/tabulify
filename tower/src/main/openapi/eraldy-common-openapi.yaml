@@ -959,6 +959,21 @@ components:
               type: string
               format: date-time
               description: the last active time (should be on date level)
+    ListItemAnalytics:
+      description: "List Analytics (count, ...)"
+      allOf:
+        - $ref: "#/components/schemas/ListItem"
+        - type: object
+          properties:
+            userCount:
+              type: integer
+              description: The number of users for the list (subscribed/unsubscribed - registered/unregistered)
+              # userCount and not usersCount
+              # https://forum.wordreference.com/threads/user-count-vs-users-count.3983032/
+              # User is being used in an adjectival role, and we don't pluralize adjectives. Therefore, as a rule, we don't pluralize attributive nouns.
+            userInCount:
+              type: integer
+              description: The number of users that are still in the list
     RealmAnalytics:
       description: "Realm Analytics (count, ...)"
       allOf:

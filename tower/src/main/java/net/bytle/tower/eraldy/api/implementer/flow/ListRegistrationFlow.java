@@ -10,10 +10,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.mail.internet.AddressException;
 import net.bytle.email.BMailInternetAddress;
 import net.bytle.email.BMailTransactionalTemplate;
-import net.bytle.exception.IllegalArgumentExceptions;
-import net.bytle.exception.InternalException;
-import net.bytle.exception.NotFoundException;
-import net.bytle.exception.NullValueException;
+import net.bytle.exception.*;
 import net.bytle.tower.eraldy.api.EraldyApiApp;
 import net.bytle.tower.eraldy.api.implementer.callback.ListRegistrationEmailCallback;
 import net.bytle.tower.eraldy.api.implementer.util.FrontEndCookie;
@@ -23,6 +20,7 @@ import net.bytle.tower.eraldy.auth.UsersUtil;
 import net.bytle.tower.eraldy.model.openapi.*;
 import net.bytle.tower.eraldy.objectProvider.AuthProvider;
 import net.bytle.tower.eraldy.objectProvider.ListProvider;
+import net.bytle.tower.util.Guid;
 import net.bytle.type.UriEnhanced;
 import net.bytle.vertx.*;
 import net.bytle.vertx.auth.AuthContext;
@@ -80,11 +78,11 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @param optInIp          - the opt-in-ip
    * @param registrationFlow - the flow used to register the user to the list
    */
-  public Future<ListUser> registerUserToList(RoutingContext ctx, String listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
+  public Future<ListUser> registerUserToList(RoutingContext ctx, Guid listGuid, User user, LocalDateTime optInTime, String optInIp, ListUserSource registrationFlow) {
 
     return this.getApp()
       .getListProvider()
-      .getListByGuid(listGuid)
+      .getListByGuidObject(listGuid)
       .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
       .compose(list -> {
         ListUser inputListUser = new ListUser();
@@ -105,7 +103,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
           .getListRegistrationProvider()
           .upsertListUser(inputListUser)
           .onFailure(e -> FailureStatic.failRoutingContextWithTrace(e, ctx))
-          .onSuccess(Future::succeededFuture);
+          .compose(Future::succeededFuture);
       });
   }
 
@@ -130,48 +128,48 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * Handle the post list registration
    *
    * @param routingContext              - the routing context
-   * @param publicationSubscriptionPost - the post data
+   * @param listUserPostBody - the post data
    */
-  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListUserPostBody publicationSubscriptionPost) {
+  public Future<Void> handleStep1SendingValidationEmail(RoutingContext routingContext, ListUserPostBody listUserPostBody) {
 
     /**
      * Email validation
      */
-    ValidationUtil.validateEmail(publicationSubscriptionPost.getUserEmail(), "userEmail");
+    ValidationUtil.validateEmail(listUserPostBody.getUserEmail(), "userEmail");
 
     /**
      * We validate the publication id value
      * (not against the database)
      */
-    String publicationGuid = publicationSubscriptionPost.getListGuid();
-    if (publicationGuid == null) {
-      throw IllegalArgumentExceptions.createWithInputNameAndValue("Publication guid should not be null", "publicationGuid", null);
+    String listGuidHash = listUserPostBody.getListGuid();
+    if (listGuidHash == null) {
+      throw IllegalArgumentExceptions.createWithInputNameAndValue("List guid should not be null", "listGuid", null);
     }
 
     return getApp().getListProvider()
-      .getListByGuid(publicationGuid)
+      .getListByGuidHashIdentifier(listGuidHash)
       .compose(registrationList -> {
 
-        User subscriber = new User();
-        subscriber.setEmail(publicationSubscriptionPost.getUserEmail());
+        User user = new User();
+        user.setEmail(listUserPostBody.getUserEmail());
         Realm listRealm = registrationList.getRealm();
-        subscriber.setRealm(listRealm);
+        user.setRealm(listRealm);
 
 
         AuthUser jwtClaims = getApp().getAuthProvider()
-          .toAuthUser(subscriber)
+          .toAuthUser(user)
           .addRoutingClaims(routingContext)
-          .setListGuidClaim(publicationGuid);
+          .setListGuidClaim(listGuidHash);
 
         SmtpSender sender = UsersUtil.toSenderUser(registrationList.getOwnerUser());
         String subscriberRecipientName;
         try {
-          subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(subscriber);
+          subscriberRecipientName = UsersUtil.getNameOrNameFromEmail(user);
         } catch (NotFoundException | AddressException e) {
           return Future.failedFuture(TowerFailureException
             .builder()
             .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-            .setMessage("The name of the subscriber could not be determined (" + e.getMessage() + ")")
+            .setMessage("The name of the user could not be determined (" + e.getMessage() + ")")
             .setCauseException(e)
             .buildWithContextFailing(routingContext)
           );
@@ -216,12 +214,12 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
             String subscriberAddressWithName;
             try {
-              subscriberAddressWithName = BMailInternetAddress.of(subscriber.getEmail(), subscriberRecipientName).toString();
+              subscriberAddressWithName = BMailInternetAddress.of(user.getEmail(), subscriberRecipientName).toString();
             } catch (AddressException e) {
               return Future.failedFuture(TowerFailureException
                 .builder()
                 .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
-                .setMessage("The subscriber email (" + subscriber.getEmail() + ") is not good (" + e.getMessage() + ")")
+                .setMessage("The subscriber email (" + user.getEmail() + ") is not good (" + e.getMessage() + ")")
                 .setCauseException(e)
                 .buildWithContextFailing(routingContext)
               );
@@ -298,6 +296,18 @@ public class ListRegistrationFlow extends WebFlowAbs {
       return;
     }
 
+    Guid listGuidObject;
+    try {
+      listGuidObject = this.getApp().getListProvider().getGuidObject(listGuid);
+    } catch (CastException e) {
+      TowerFailureException
+        .builder()
+        .setMessage("The list guid (" + listGuid + ") is not valid.")
+        .setType(TowerFailureTypeEnum.BAD_REQUEST_400)
+        .buildWithContextFailingTerminal(ctx);
+      return;
+    }
+
     String finalOptInIp = optInIp;
 
     AuthProvider authProvider = getApp().getAuthProvider();
@@ -314,7 +324,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
         }
         futureFinaleAuthSessionUser
           .onFailure(ctx::fail)
-          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuid, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
+          .onSuccess(finalAuthSessionUser -> registerUserToList(ctx, listGuidObject, authProvider.toBaseModelUser(finalAuthSessionUser), optInTime, finalOptInIp, ListUserSource.EMAIL)
             .onFailure(ctx::fail)
             .onSuccess(registration -> {
               if (ctx.user() == null) {
@@ -340,15 +350,14 @@ public class ListRegistrationFlow extends WebFlowAbs {
    * @return the frontend html page
    */
   @SuppressWarnings("unused")
-  public static Future<ApiResponse<String>> handleStep0RegistrationForm(EraldyApiApp apiApp, RoutingContext routingContext, String listGuid) {
+  public static Future<ApiResponse<String>> handleStep0RegistrationForm(EraldyApiApp apiApp, RoutingContext routingContext, Guid listGuid) {
 
 
     Vertx vertx = routingContext.vertx();
     return apiApp.getListProvider()
-      .getListByGuid(listGuid)
+      .getListByGuidObject(listGuid)
       .onFailure(t -> FailureStatic.failRoutingContextWithTrace(t, routingContext))
       .compose(list -> {
-
         if (list == null) {
           return Future.failedFuture(
             TowerFailureException
@@ -361,7 +370,6 @@ public class ListRegistrationFlow extends WebFlowAbs {
           );
         }
         Map<String, Object> variables = new HashMap<>();
-        list.setGuid(listGuid); // all object does not have any guid by default when retrieved
         User owner = ListProvider.getOwnerUser(list);
         variables.put("list", list);
         variables.put("owner", UsersUtil.getPublicUserForTemplateWithDefaultValues(owner));
@@ -412,7 +420,9 @@ public class ListRegistrationFlow extends WebFlowAbs {
   }
 
   /**
-   * Handle when a user is authenticated via OAuth
+   * Handle when a user is authenticated via OAuth.
+   * This is a handler filter function, meaning that the authentication should continue.
+   * <p>
    * If the user authenticate via a list, we register
    * the user to the list
    */
@@ -421,7 +431,23 @@ public class ListRegistrationFlow extends WebFlowAbs {
 
       String listGuid = authContext.getAuthState().getListGuid();
       if (listGuid == null) {
+        // no list in registration context, we continue
         authContext.next();
+        return;
+      }
+
+      /**
+       * A list in auth context, we register the user
+       */
+      Guid listGuidObject;
+      try {
+        listGuidObject = this.getApp().getListProvider().getGuidObject(listGuid);
+      } catch (CastException e) {
+        TowerFailureException
+          .builder()
+          .setMessage("The list guid in the Oauth context (" + listGuid + ") is not valid")
+          .setCauseException(e)
+          .buildWithContextFailingTerminal(authContext.getRoutingContext());
         return;
       }
 
@@ -442,7 +468,7 @@ public class ListRegistrationFlow extends WebFlowAbs {
       }
 
       User user = this.getApp().getAuthProvider().toBaseModelUser(authUser);
-      this.registerUserToList(ctx, listGuid, user, optInTime, optInIp, ListUserSource.OAUTH)
+      this.registerUserToList(ctx, listGuidObject, user, optInTime, optInIp, ListUserSource.OAUTH)
         .onFailure(err -> authContext.getRoutingContext().fail(err))
         .onSuccess(registration -> authContext.next());
     };

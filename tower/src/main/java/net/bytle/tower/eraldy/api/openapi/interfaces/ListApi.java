@@ -18,7 +18,7 @@ public interface ListApi  {
     /**
      * Get list information  Access by: * id with the listGuid * name with the listHandle and realmIdentifier
     */
-    Future<ApiResponse<ListItem>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
+    Future<ApiResponse<ListItemAnalytics>> listListGet(RoutingContext routingContext, String listIdentifier, String realmIdentifier);
 
     /**
      * The list of emails with their import status

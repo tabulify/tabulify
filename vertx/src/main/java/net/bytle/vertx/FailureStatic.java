@@ -1,6 +1,9 @@
 package net.bytle.vertx;
 
+import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
 import net.bytle.exception.InternalException;
 
 public class FailureStatic {
@@ -50,5 +53,13 @@ public class FailureStatic {
    */
   public static void failRoutingContextWithTrace(Throwable throwable, RoutingContext routingContext) {
     TowerFailureHttpHandler.failRoutingContextWithTrace(throwable, routingContext, null);
+  }
+
+  public static Future<RowSet<Row>> SqlFailFuture(String listSummary, String sql, Throwable err) {
+    return Future.failedFuture(TowerFailureException.builder()
+      .setMessage("Error on query ("+listSummary+"). Sql: "+sql)
+      .setCauseException(err)
+      .build()
+    );
   }
 }

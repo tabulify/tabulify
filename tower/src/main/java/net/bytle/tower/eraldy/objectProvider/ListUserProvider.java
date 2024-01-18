@@ -269,7 +269,7 @@ public class ListUserProvider {
       .compose(realm -> {
 
         Long listId = row.getLong(LIST_ID_COLUMN);
-        Future<ListItem> publicationFuture = apiApp.getListProvider().getListById(listId, realm);
+        Future<ListItem> publicationFuture = apiApp.getListProvider().getListById(listId, realm, ListItem.class);
 
         Long userId = row.getLong(USER_ID_COLUMN);
         Future<User> publisherFuture = apiApp.getUserProvider()

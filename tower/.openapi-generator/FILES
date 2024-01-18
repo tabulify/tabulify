@@ -35,6 +35,7 @@ src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobRowStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportJobStatus.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListImportPostResponse.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListItem.java
+src/main/java/net/bytle/tower/eraldy/model/openapi/ListItemAnalytics.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListSummary.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUser.java
 src/main/java/net/bytle/tower/eraldy/model/openapi/ListUserPostBody.java
