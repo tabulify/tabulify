@@ -1,10 +1,9 @@
 UPDATE realm_list
 SET list_analytics      =
-      coalesce(list_analytics, '{}'::jsonb) || ((
-        '{' ||
+        ('{' ||
         ' "userCount": ' || analytics.userCount::text || ',' ||
         ' "userInCount": ' || analytics.userInCount::text ||
-        '}')::jsonb),
+        '}')::jsonb,
     list_analytics_time = now()
 from (select realm_list.list_id,
              realm_list.list_realm_id,
