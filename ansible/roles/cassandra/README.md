@@ -6,6 +6,7 @@
 
 ```bash
 ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags cassandra
+ansible-playbook playbook-root.yml -i inventories/beau.yml --vault-id passphrase.sh --tags cassandra-conf
 ```
 
 ## Command Line

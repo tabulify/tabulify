@@ -1,5 +1,6 @@
 package net.bytle.vertx.analytics;
 
+import com.fasterxml.uuid.Generators;
 import com.mixpanel.mixpanelapi.ClientDelivery;
 import com.mixpanel.mixpanelapi.MessageBuilder;
 import com.mixpanel.mixpanelapi.MixpanelAPI;
@@ -21,6 +22,8 @@ import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -167,7 +170,7 @@ public class AnalyticsTracker {
           // otherwise we get continuously an email error
           this.eventsQueue.remove(event.getId());
         }
-        throw new InternalException("Error on event "+event.getName(),e);
+        throw new InternalException("Error on event " + event.getName(), e);
       }
       this.eventsQueue.remove(event.getId());
     }
@@ -252,7 +255,7 @@ public class AnalyticsTracker {
          */
         analyticsEvent = new AnalyticsEvent();
         analyticsEvent.setName(this.eventName.toCamelCase());
-        analyticsEvent.setCreationTime(DateTimeUtil.getNowUtc());
+
 
         if (this.authUser != null) {
           analyticsEvent.setUserId(authUser.getSubject());
@@ -276,10 +279,10 @@ public class AnalyticsTracker {
 
       }
 
-      if(this.realmId!=null){
+      if (this.realmId != null) {
         analyticsEvent.setAppRealmId(this.realmId);
       }
-      if(this.organizationId!=null){
+      if (this.organizationId != null) {
         analyticsEvent.setAppOrganisationId(this.realmId);
       }
 
@@ -288,9 +291,22 @@ public class AnalyticsTracker {
        */
       analyticsEvent.setSource(this.source);
 
-
+      /**
+       * Creation time and uuid time part should be the same
+       * to allow retrieval on event id
+       * with data partition
+       * (ie extract time from uuid, select on creation time
+       * to partition)
+       */
       if (analyticsEvent.getId() == null) {
-        analyticsEvent.setId(UUID.randomUUID().toString());
+
+        LocalDateTime nowUtc = DateTimeUtil.getNowUtc();
+        analyticsEvent.setCreationTime(nowUtc);
+
+        long timestamp = nowUtc.toEpochSecond(ZoneOffset.UTC);
+        UUID uuid = Generators.timeBasedEpochGenerator().construct(timestamp);
+        analyticsEvent.setId(uuid.toString());
+
       }
 
       return analyticsEvent;

@@ -1,5 +1,5 @@
 # Deprecated - All monitoring is done via netdata
-# Install the Ngxin agent for the SAAS monitoring service - https://amplify.nginx.com
+# Install the Nginx agent for the SAAS monitoring service - https://amplify.nginx.com
 # based on https://amplify.nginx.com/docs/guide-installing-and-managing-nginx-amplify-agent.html
 
 - name: Nginx Amplify Agent - Import Nginx Amplify GPG key.

@@ -8,7 +8,7 @@ val hashIdVersion = rootProject.ext.get("hashIdVersion").toString()
 val jacksonVersion = rootProject.ext.get("jacksonVersion").toString()
 val caffeineVersion = rootProject.ext.get("caffeineVersion").toString()
 val mapdbVersion = rootProject.ext.get("mapdbVersion").toString()
-
+val uuidVersion: String by project
 
 dependencies {
 
@@ -101,6 +101,9 @@ dependencies {
 
   // https://mvnrepository.com/artifact/org.hashids/hashids
   implementation("org.hashids:hashids:$hashIdVersion")
+
+  // uuid (used in Analytics to create the uuid v7)
+  implementation("com.fasterxml.uuid:java-uuid-generator:$uuidVersion")
 
   // For test api to pass it on
   testImplementation("io.vertx:vertx-unit:$vertxVersion")

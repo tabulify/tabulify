@@ -6,23 +6,6 @@ info:
   version: "v2023-06-18"
 components:
   schemas:
-    AnalyticsEventSource:
-      description: |
-        Where the request was created (server, browser or mobile)
-        (known also as the Channel)
-      type: integer
-      format: int32
-      enum:
-        - 0
-        - 1
-        - 2
-      x-enum-varnames:
-        - SERVER
-        - API
-      x-enum-descriptions:
-        - 'Created by the server'
-        - 'Created by the browser'
-        - 'Created by the mobile app'
     AnalyticsEvent:
       description: |
         The event. They are the things that happen in our product.
@@ -32,6 +15,9 @@ components:
         * the <a href="https://segment.com/docs/connections/spec/common/">MixPanel Spec</a>
 
         All properties are on the same level, no hierarchy (as MixPanel do)
+
+        The extended property should have as prefix, the name of the event
+        Example: for signUp, signUpFlowId
       type: object
       properties:
         id:
@@ -47,8 +33,6 @@ components:
         name:
           type: string
           description: the event name
-        source:
-          $ref: '#/components/schemas/AnalyticsEventSource'
         appId:
           type: string
           description: The app id that has created this event
